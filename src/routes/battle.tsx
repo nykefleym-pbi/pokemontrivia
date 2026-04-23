@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Sparkles, Trophy } from "lucide-react";
 import { useGameStore } from "@/lib/store";
@@ -7,25 +7,51 @@ import { Button } from "@/components/ui/button";
 import { AppHeader, XpBar, PokeballSpinner } from "@/components/game-ui";
 import { rankForLevel, xpForLevel } from "@/lib/game-data";
 import { spriteUrl } from "@/lib/pokemon-data";
+import { BattleScreen } from "@/components/battle-screen";
+import { Toaster } from "@/components/ui/sonner";
 
 export const Route = createFileRoute("/battle")({
-  component: BattleHome,
+  component: BattlePage,
 });
 
-function BattleHome() {
+function BattlePage() {
   const hasOnboarded = useGameStore((s) => s.hasOnboarded);
-  const trainerName = useGameStore((s) => s.trainerName);
-  const pokemon = useGameStore((s) => s.pokemon);
-  const level = useGameStore((s) => s.level);
-  const xp = useGameStore((s) => s.xp);
-  const stats = useGameStore((s) => s.stats);
   const navigate = useNavigate();
+  const [fighting, setFighting] = useState(false);
+  const [battleKey, setBattleKey] = useState(0);
 
   useEffect(() => {
     if (!hasOnboarded) navigate({ to: "/" });
   }, [hasOnboarded, navigate]);
 
-  if (!hasOnboarded || !pokemon) return null;
+  if (!hasOnboarded) return null;
+
+  return (
+    <>
+      <Toaster position="top-center" />
+      {fighting ? (
+        <BattleScreen
+          key={battleKey}
+          onExit={() => {
+            setFighting(false);
+            setBattleKey((k) => k + 1);
+          }}
+        />
+      ) : (
+        <BattleHome onStart={() => setFighting(true)} />
+      )}
+    </>
+  );
+}
+
+function BattleHome({ onStart }: { onStart: () => void }) {
+  const trainerName = useGameStore((s) => s.trainerName);
+  const pokemon = useGameStore((s) => s.pokemon);
+  const level = useGameStore((s) => s.level);
+  const xp = useGameStore((s) => s.xp);
+  const stats = useGameStore((s) => s.stats);
+
+  if (!pokemon) return null;
 
   const rank = rankForLevel(level);
   const need = xpForLevel(level);
@@ -45,7 +71,6 @@ function BattleHome() {
       </AppHeader>
 
       <div className="px-5 pt-2">
-        {/* Hero card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -71,14 +96,12 @@ function BattleHome() {
           </div>
         </motion.div>
 
-        {/* Stats summary */}
         <div className="mt-4 grid grid-cols-3 gap-2">
           <StatPill label="Battles" value={stats.battles} />
           <StatPill label="Wins" value={stats.wins} />
           <StatPill label="Streak" value={stats.bestStreak} />
         </div>
 
-        {/* CTA */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -92,7 +115,7 @@ function BattleHome() {
           </p>
           <Button
             size="lg"
-            onClick={() => navigate({ to: "/battle/fight" })}
+            onClick={onStart}
             className="mt-5 w-full rounded-full bg-primary py-6 font-semibold shadow-pop hover:scale-[1.02]"
           >
             <Sparkles className="mr-2 h-4 w-4" />
@@ -100,7 +123,6 @@ function BattleHome() {
           </Button>
         </motion.div>
 
-        {/* Tips */}
         <div className="mt-6 rounded-2xl border-2 border-dashed border-border p-4 text-xs text-muted-foreground">
           <div className="mb-1 flex items-center gap-2 font-pixel text-[10px] uppercase text-foreground">
             <Trophy className="h-3 w-3" /> Tip
