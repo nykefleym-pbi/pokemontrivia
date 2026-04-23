@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BattleIndexRouteImport } from './routes/battle.index'
 import { Route as ApiTriviaRouteImport } from './routes/api.trivia'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BattleIndexRoute = BattleIndexRouteImport.update({
+  id: '/battle/',
+  path: '/battle/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiTriviaRoute = ApiTriviaRouteImport.update({
@@ -26,27 +32,31 @@ const ApiTriviaRoute = ApiTriviaRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/api/trivia': typeof ApiTriviaRoute
+  '/battle/': typeof BattleIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api/trivia': typeof ApiTriviaRoute
+  '/battle': typeof BattleIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/api/trivia': typeof ApiTriviaRoute
+  '/battle/': typeof BattleIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/trivia'
+  fullPaths: '/' | '/api/trivia' | '/battle/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/trivia'
-  id: '__root__' | '/' | '/api/trivia'
+  to: '/' | '/api/trivia' | '/battle'
+  id: '__root__' | '/' | '/api/trivia' | '/battle/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApiTriviaRoute: typeof ApiTriviaRoute
+  BattleIndexRoute: typeof BattleIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -56,6 +66,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/battle/': {
+      id: '/battle/'
+      path: '/battle'
+      fullPath: '/battle/'
+      preLoaderRoute: typeof BattleIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/trivia': {
@@ -71,7 +88,17 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApiTriviaRoute: ApiTriviaRoute,
+  BattleIndexRoute: BattleIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

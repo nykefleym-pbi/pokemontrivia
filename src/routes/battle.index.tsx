@@ -8,7 +8,7 @@ import { AppHeader, XpBar, PokeballSpinner } from "@/components/game-ui";
 import { rankForLevel, xpForLevel } from "@/lib/game-data";
 import { spriteUrl } from "@/lib/pokemon-data";
 
-export const Route = createFileRoute("/battle")({
+export const Route = createFileRoute("/battle/")({
   component: BattleHome,
 });
 
