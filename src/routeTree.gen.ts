@@ -9,18 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as BattleRouteImport } from './routes/battle'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as BattleIndexRouteImport } from './routes/battle.index'
 import { Route as ApiTriviaRouteImport } from './routes/api.trivia'
 
+const BattleRoute = BattleRouteImport.update({
+  id: '/battle',
+  path: '/battle',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BattleIndexRoute = BattleIndexRouteImport.update({
-  id: '/battle/',
-  path: '/battle/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiTriviaRoute = ApiTriviaRouteImport.update({
@@ -31,48 +31,48 @@ const ApiTriviaRoute = ApiTriviaRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/battle': typeof BattleRoute
   '/api/trivia': typeof ApiTriviaRoute
-  '/battle/': typeof BattleIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/battle': typeof BattleRoute
   '/api/trivia': typeof ApiTriviaRoute
-  '/battle': typeof BattleIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/battle': typeof BattleRoute
   '/api/trivia': typeof ApiTriviaRoute
-  '/battle/': typeof BattleIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/trivia' | '/battle/'
+  fullPaths: '/' | '/battle' | '/api/trivia'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/trivia' | '/battle'
-  id: '__root__' | '/' | '/api/trivia' | '/battle/'
+  to: '/' | '/battle' | '/api/trivia'
+  id: '__root__' | '/' | '/battle' | '/api/trivia'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BattleRoute: typeof BattleRoute
   ApiTriviaRoute: typeof ApiTriviaRoute
-  BattleIndexRoute: typeof BattleIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/battle': {
+      id: '/battle'
+      path: '/battle'
+      fullPath: '/battle'
+      preLoaderRoute: typeof BattleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/battle/': {
-      id: '/battle/'
-      path: '/battle'
-      fullPath: '/battle/'
-      preLoaderRoute: typeof BattleIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/trivia': {
@@ -87,8 +87,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BattleRoute: BattleRoute,
   ApiTriviaRoute: ApiTriviaRoute,
-  BattleIndexRoute: BattleIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
