@@ -9,10 +9,22 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ShopRouteImport } from './routes/shop'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as BattleRouteImport } from './routes/battle'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiTriviaRouteImport } from './routes/api.trivia'
 
+const ShopRoute = ShopRouteImport.update({
+  id: '/shop',
+  path: '/shop',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BattleRoute = BattleRouteImport.update({
   id: '/battle',
   path: '/battle',
@@ -32,35 +44,57 @@ const ApiTriviaRoute = ApiTriviaRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/battle': typeof BattleRoute
+  '/profile': typeof ProfileRoute
+  '/shop': typeof ShopRoute
   '/api/trivia': typeof ApiTriviaRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/battle': typeof BattleRoute
+  '/profile': typeof ProfileRoute
+  '/shop': typeof ShopRoute
   '/api/trivia': typeof ApiTriviaRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/battle': typeof BattleRoute
+  '/profile': typeof ProfileRoute
+  '/shop': typeof ShopRoute
   '/api/trivia': typeof ApiTriviaRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/battle' | '/api/trivia'
+  fullPaths: '/' | '/battle' | '/profile' | '/shop' | '/api/trivia'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/battle' | '/api/trivia'
-  id: '__root__' | '/' | '/battle' | '/api/trivia'
+  to: '/' | '/battle' | '/profile' | '/shop' | '/api/trivia'
+  id: '__root__' | '/' | '/battle' | '/profile' | '/shop' | '/api/trivia'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BattleRoute: typeof BattleRoute
+  ProfileRoute: typeof ProfileRoute
+  ShopRoute: typeof ShopRoute
   ApiTriviaRoute: typeof ApiTriviaRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/shop': {
+      id: '/shop'
+      path: '/shop'
+      fullPath: '/shop'
+      preLoaderRoute: typeof ShopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/battle': {
       id: '/battle'
       path: '/battle'
@@ -88,6 +122,8 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BattleRoute: BattleRoute,
+  ProfileRoute: ProfileRoute,
+  ShopRoute: ShopRoute,
   ApiTriviaRoute: ApiTriviaRoute,
 }
 export const routeTree = rootRouteImport

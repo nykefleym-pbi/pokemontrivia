@@ -15,7 +15,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/profile")({
@@ -254,6 +253,3 @@ function Stat({ label, value }: { label: string; value: number | string }) {
   );
 }
 
-// trigger usage to silence unused-import warning if any
-const _ = DialogTrigger;
-void _;
