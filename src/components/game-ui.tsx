@@ -81,18 +81,23 @@ export function XpBar({ xp, need }: { xp: number; need: number }) {
 export function PokeballSpinner({ size = 64 }: { size?: number }) {
   return (
     <div
-      className="animate-pokeball relative rounded-full shadow-pop"
+      className="animate-pokeball relative overflow-hidden rounded-full border-[3px] border-poke-dark shadow-pop"
       style={{ width: size, height: size }}
     >
-      <div className="absolute inset-0 rounded-full bg-gradient-to-b from-primary to-primary via-poke-dark via-50%" />
-      <div className="absolute left-0 right-0 top-1/2 h-[10%] -translate-y-1/2 bg-poke-dark" />
+      {/* Top half — red */}
+      <div className="absolute inset-x-0 top-0 h-1/2 bg-poke-red" />
+      {/* Bottom half — white */}
+      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-white" />
+      {/* Black band */}
+      <div className="absolute left-0 right-0 top-1/2 h-[12%] -translate-y-1/2 bg-poke-dark" />
+      {/* Center button */}
       <div
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-poke-dark bg-white"
-        style={{ width: size * 0.28, height: size * 0.28 }}
+        style={{ width: size * 0.3, height: size * 0.3 }}
       >
         <div
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-poke-dark"
-          style={{ width: size * 0.1, height: size * 0.1 }}
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white ring-1 ring-poke-dark/40"
+          style={{ width: size * 0.12, height: size * 0.12 }}
         />
       </div>
     </div>
