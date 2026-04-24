@@ -1,60 +1,72 @@
 
-# Pokémon Trivia Battle — Modern Mobile Game
+# Adjustments
 
-A vibrant, mobile-first Pokémon trivia battler that recreates the full mechanics from the reference HTML, rebuilt with a modern Pokémon-themed look (bright type-colored gradients, soft cards, smooth animations) and AI-generated questions via Lovable AI.
+Five focused tweaks to the existing app — no new screens.
 
-## Screens & Navigation
+## 1. Pokéball spinner colors (red top / white bottom)
 
-**Bottom tab nav** (sticky, mobile-only width capped at ~480px): Battle · PokéMart · Profile.
+Update `PokeballSpinner` in `src/components/game-ui.tsx` so the top half is solid red and the bottom is white, with the classic black band and white center button (matching a real Poké Ball).
 
-1. **Splash / Onboarding**
-   - Animated Poké Ball, bright gradient background, "New Trainer" / "Guest Mode".
-   - Trainer creation: search Gen 1 Pokémon (with sprite preview) + trainer name.
+## 2. Trainer selection during onboarding
 
-2. **Battle (Home)**
-   - "Find a Battle" CTA when idle. Shows current rank, level, XP bar.
-   - Battle view: enemy trainer + their Pokémon (front sprite) at top with HP bar; player Pokémon (back sprite) at bottom with HP bar; battle dialog box; question card with 4 answer buttons; circular timer (20s); item bag button; floating damage text; shake/throw/appear animations.
-   - Result screen: win/loss, XP earned, stats summary, "Battle Again" / "Home".
+In `src/routes/index.tsx` (`TrainerCreate`):
 
-3. **PokéMart (Shop)**
-   - Buy items with XP. All 8 items from original (Potion, Revive, X Attack, Escape Rope, Rare Candy, Lucky Egg, Scope Lens, X Accuracy) with icons, descriptions, premium tag, owned count.
+- Add a third step to onboarding: **Name → Trainer Avatar → Pokémon**.
+- Show a searchable grid of trainer sprites pulled from `https://play.pokemonshowdown.com/sprites/trainers/{id}.png`.
+- Curate ~30 popular trainer IDs (red, blue, ethan, lyra, brendan, may, lucas, dawn, hilbert, hilda, calem, serena, elio, selene, victor, gloria, florian, juliana, misty, brock, erika, sabrina, blaine, giovanni, lance, cynthia, steven, oak, n, cheren, etc.).
+- Add `trainerSprite: string` to the game store (persisted).
+- Use the chosen trainer sprite as the avatar on the Battle home and Profile screens (replacing the Pokémon-as-avatar in the profile identity card; Pokémon sprite still appears as the starter).
+- In Profile, allow editing the trainer sprite the same way the starter is edited (separate "Change Trainer" picker dialog).
 
-4. **Profile**
-   - Avatar (chosen Pokémon), editable name, rank badge, level, XP bar to next level.
-   - Stat grid: Battles, Wins, Losses, Accuracy, Best Streak, Avg Time.
-   - Change starter Pokémon (search), inventory display, dark mode toggle, reset progress.
+## 3. Pre-fetch 20 unique questions per battle
 
-## Core Mechanics (full parity)
+Goal: zero network wait between questions, no repeats within a battle.
 
-- **HP system**: 100 HP each side. Correct answer deals 10 dmg (×2 if super-effective, +20 with X Attack). Wrong/timeout costs player 15 HP.
-- **Type effectiveness**: full Gen 1 type chart (151 Pokémon) for super-effective bonus, shown as "It's super effective!" intro.
-- **Timer**: 20s per question with color-pulse warning at low time.
-- **Levels & ranks**: XP curve `80 + (level-1)*40`. Ranks: Youngster → Bug Catcher → Pokéfan → Ace Trainer → Gym Leader → Elite Four → Champion → Pokémon Master.
-- **Enemies**: random rotation (Oak, Misty, Brock, Surge, Erika, Sabrina, Blaine, Giovanni, Lance, Cynthia, Red, Blue).
-- **Items** with all original constraints (per-set caps, cooldowns measured in completed sets, Revive only at ≤10 HP, etc.).
-- **Difficulty scaling**: question difficulty (easy → master) tied to player level, sent to AI prompt.
+- Add a new server route `src/routes/api.trivia-batch.ts` (POST) that accepts `{ difficulty, count: 20 }` and returns `{ questions: Trivia[] }`.
+  - Calls Lovable AI **once** with a tool that returns an array of 20 trivia objects.
+  - System prompt enforces: all 20 must be **distinct** (different topics, no paraphrases, no overlapping correct answers), spread across the 10 categories, and factually accurate.
+  - Server-side de-duplication pass: normalize question text (lowercase, strip punctuation), drop any near-duplicate (Jaccard similarity > 0.6 on token sets); top-up from the fallback bank if fewer than 20 unique remain.
+  - Returns 429 / 402 passthrough as today.
+- Update `src/routes/battle.tsx`:
+  - When user clicks **Find a Battle**, show a brief "Preparing battle…" loading state with the spinning Poké Ball.
+  - Fetch the batch of 20, store in component state, then mount `BattleScreen` with `questions` as a prop.
+- Update `src/components/battle-screen.tsx`:
+  - Remove the per-question `fetch("/api/trivia")` call.
+  - Take `questions: Trivia[]` as a prop, advance through them sequentially via `questionIdx`.
+  - Battle ends naturally when HP hits 0 (already handled); if all 20 are used without a KO, declare the battle won (player outlasted the trainer).
+- Keep the legacy `api.trivia.ts` for safety as a single-question fallback if the batch call fails.
 
-## Questions (AI-generated)
+## 4. Real PokéMart item icons
 
-- Lovable AI Gateway via a TanStack server function (`/api/trivia`). Server picks a random category (General, Games, Anime, Pokédex, Moves & Abilities, Items, Regions, Lore, Competitive, Generations) and difficulty based on player level, returns one validated trivia object `{question, options[4], correct, explanation, category}` using tool-calling for structured output.
-- Small built-in safety fallback bank if the AI call fails or rate-limits (kept tiny — primary source is AI).
-- Surfaces 429 / 402 errors as toasts.
+Update `src/lib/game-data.ts`:
 
-## Visual Direction — Vibrant Pokémon-Themed
+- Add `iconUrl: string` to each item using `https://play.pokemonshowdown.com/sprites/itemicons/{slug}.png`:
+  - Potion → `potion.png`
+  - Revive → `revive.png`
+  - X Attack → `x-attack.png`
+  - Escape Rope → `escape-rope.png`
+  - Rare Candy → `rare-candy.png`
+  - Lucky Egg → `lucky-egg.png`
+  - Scope Lens → `scope-lens.png`
+  - X Accuracy → `x-accuracy.png`
 
-- Type-colored accent system (Electric yellow, Fire orange-red, Grass green, Water blue) used contextually based on the player's Pokémon.
-- Bright gradient backgrounds (sky → grass for battle, sunset for victory), soft rounded cards, drop-shadowed sprites, pixel-perfect Pokémon sprites from PokeAPI.
-- Press Start 2P for tags/numbers (rank, HP, dmg) and Outfit for body — same hybrid as the reference, but lighter and more polished.
-- Smooth Framer-style animations (already in the reference: Poké Ball throw, shake on hit, floating damage, fade-up screen transitions, confetti on victory).
-- Light mode by default with a Dark Mode toggle in Profile.
+Replace the emoji `<div>` with `<img src={iconUrl} className="sprite h-10 w-10">` in:
+- `src/routes/shop.tsx` (item tile)
+- `src/components/battle-screen.tsx` (item bag sheet + toast message)
+- `src/routes/profile.tsx` (inventory grid)
 
-## Persistence
+Keep the `emoji` field as a fallback in case the image fails to load (`onError` swap).
 
-- All progress (profile, level, XP, stats, inventory, dark mode, item cooldowns) saved to `localStorage` and restored on load. No account needed.
+## 5. Remove dark mode
 
-## Architecture
+- `src/lib/store.ts`: remove `darkMode`, `toggleDark`, the `onRehydrateStorage` dark class toggle, and `darkMode` from `partialize`.
+- `src/routes/__root.tsx`: drop the `darkMode` import and the `useEffect` that toggles `.dark`.
+- `src/routes/profile.tsx`: remove the entire dark-mode toggle row (and `Moon`/`Sun` imports).
+- `src/styles.css`: delete the `.dark { … }` block and the `.dark .bg-battle-field` override (light theme only).
 
-- TanStack Start routes: `/` (splash/onboarding gate → battle), `/battle`, `/shop`, `/profile`.
-- Server function for AI question generation (keeps prompt + key on backend).
-- Type-safe state managed with Zustand (single store) for clean cross-screen reactivity (HP, timer, inventory).
-- Tailwind v4 theme tokens for type colors + dark mode.
+## Technical Notes
+
+- Showdown trainer sprite IDs are lowercase slugs (e.g., `https://play.pokemonshowdown.com/sprites/trainers/red.png`). Image errors fall back to a generic Poké Ball icon.
+- AI batch call uses tool-calling with `questions: { type: "array", minItems: 20, maxItems: 20 }` for structured output. One ~3–5s call replaces 20 sequential calls.
+- "Preparing battle…" loader prevents the user from entering the battle UI before questions are ready, so the in-battle experience is fully offline-feeling.
+- No new dependencies.
