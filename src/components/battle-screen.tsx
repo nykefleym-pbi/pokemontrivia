@@ -6,7 +6,6 @@ import { useGameStore, getItemDef } from "@/lib/store";
 import {
   pickRandomEnemy,
   type EnemyTrainer,
-  difficultyForLevel,
   ITEMS,
 } from "@/lib/game-data";
 import { isSuperEffective, spriteUrl } from "@/lib/pokemon-data";
@@ -270,7 +269,20 @@ export function BattleScreen({ questions, onExit }: Props) {
                     onClick={() => tryUseItem(it.id)}
                     className="flex items-start gap-3 rounded-2xl border-2 p-3 text-left transition disabled:opacity-40 enabled:hover:border-primary"
                   >
-                    <div className="text-2xl">{it.emoji}</div>
+                    <img
+                      src={it.iconUrl}
+                      alt={it.name}
+                      className="sprite h-9 w-9 shrink-0 object-contain"
+                      onError={(e) => {
+                        const el = e.currentTarget as HTMLImageElement;
+                        el.replaceWith(
+                          Object.assign(document.createElement("span"), {
+                            textContent: it.emoji,
+                            className: "text-2xl",
+                          }),
+                        );
+                      }}
+                    />
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 text-sm font-semibold">
                         {it.name}
@@ -404,7 +416,7 @@ export function BattleScreen({ questions, onExit }: Props) {
                   return (
                     <button
                       key={i}
-                      disabled={phase !== "question" || isRevealed || loading}
+                      disabled={phase !== "question" || isRevealed}
                       onClick={() => handleAnswer(i)}
                       className={`rounded-2xl border-2 px-4 py-3 text-left text-sm font-medium transition ${
                         isCorrect
