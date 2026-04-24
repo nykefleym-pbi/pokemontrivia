@@ -72,8 +72,21 @@ function ShopPage() {
                     <Star className="h-2.5 w-2.5" /> PREMIUM
                   </div>
                 )}
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-muted text-3xl">
-                  {item.emoji}
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-muted">
+                  <img
+                    src={item.iconUrl}
+                    alt={item.name}
+                    className="sprite h-10 w-10 object-contain"
+                    onError={(e) => {
+                      const el = e.currentTarget as HTMLImageElement;
+                      el.replaceWith(
+                        Object.assign(document.createElement("span"), {
+                          textContent: item.emoji,
+                          className: "text-3xl",
+                        }),
+                      );
+                    }}
+                  />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">

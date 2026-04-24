@@ -13,6 +13,7 @@ import { Route as ShopRouteImport } from './routes/shop'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as BattleRouteImport } from './routes/battle'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiTriviaBatchRouteImport } from './routes/api.trivia-batch'
 import { Route as ApiTriviaRouteImport } from './routes/api.trivia'
 
 const ShopRoute = ShopRouteImport.update({
@@ -35,6 +36,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTriviaBatchRoute = ApiTriviaBatchRouteImport.update({
+  id: '/api/trivia-batch',
+  path: '/api/trivia-batch',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTriviaRoute = ApiTriviaRouteImport.update({
   id: '/api/trivia',
   path: '/api/trivia',
@@ -47,6 +53,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/shop': typeof ShopRoute
   '/api/trivia': typeof ApiTriviaRoute
+  '/api/trivia-batch': typeof ApiTriviaBatchRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/shop': typeof ShopRoute
   '/api/trivia': typeof ApiTriviaRoute
+  '/api/trivia-batch': typeof ApiTriviaBatchRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,13 +70,33 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/shop': typeof ShopRoute
   '/api/trivia': typeof ApiTriviaRoute
+  '/api/trivia-batch': typeof ApiTriviaBatchRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/battle' | '/profile' | '/shop' | '/api/trivia'
+  fullPaths:
+    | '/'
+    | '/battle'
+    | '/profile'
+    | '/shop'
+    | '/api/trivia'
+    | '/api/trivia-batch'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/battle' | '/profile' | '/shop' | '/api/trivia'
-  id: '__root__' | '/' | '/battle' | '/profile' | '/shop' | '/api/trivia'
+  to:
+    | '/'
+    | '/battle'
+    | '/profile'
+    | '/shop'
+    | '/api/trivia'
+    | '/api/trivia-batch'
+  id:
+    | '__root__'
+    | '/'
+    | '/battle'
+    | '/profile'
+    | '/shop'
+    | '/api/trivia'
+    | '/api/trivia-batch'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -77,6 +105,7 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   ShopRoute: typeof ShopRoute
   ApiTriviaRoute: typeof ApiTriviaRoute
+  ApiTriviaBatchRoute: typeof ApiTriviaBatchRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -109,6 +138,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/trivia-batch': {
+      id: '/api/trivia-batch'
+      path: '/api/trivia-batch'
+      fullPath: '/api/trivia-batch'
+      preLoaderRoute: typeof ApiTriviaBatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/trivia': {
       id: '/api/trivia'
       path: '/api/trivia'
@@ -125,6 +161,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   ShopRoute: ShopRoute,
   ApiTriviaRoute: ApiTriviaRoute,
+  ApiTriviaBatchRoute: ApiTriviaBatchRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
