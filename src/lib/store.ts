@@ -23,6 +23,7 @@ export interface GameState {
   // profile
   hasOnboarded: boolean;
   trainerName: string;
+  trainerSprite: string;
   pokemon: PokeEntry | null;
 
   // progression
@@ -31,9 +32,6 @@ export interface GameState {
   stats: PlayerStats;
   inventory: Record<ItemId, number>;
   itemCooldowns: Partial<Record<ItemId, number>>; // sets-remaining cooldown
-
-  // settings
-  darkMode: boolean;
 
   // battle ephemeral state
   inBattle: boolean;
@@ -45,11 +43,11 @@ export interface GameState {
   luckyEggActive: boolean;
 
   // actions
-  setOnboarded: (name: string, pokemon: PokeEntry) => void;
+  setOnboarded: (name: string, pokemon: PokeEntry, trainerSprite: string) => void;
   reset: () => void;
-  toggleDark: () => void;
   setName: (name: string) => void;
   setPokemon: (p: PokeEntry) => void;
+  setTrainerSprite: (id: string) => void;
 
   buyItem: (id: ItemId, cost: number) => boolean;
   useItem: (id: ItemId) => boolean;
@@ -89,13 +87,13 @@ export const useGameStore = create<GameState>()(
     (set, get) => ({
       hasOnboarded: false,
       trainerName: "",
+      trainerSprite: "red",
       pokemon: null,
       level: 1,
       xp: 0,
       stats: defaultStats,
       inventory: { ...defaultInventory },
       itemCooldowns: {},
-      darkMode: false,
 
       inBattle: false,
       setsThisBattle: 0,
@@ -105,13 +103,14 @@ export const useGameStore = create<GameState>()(
       bonusTimeThisBattle: 0,
       luckyEggActive: false,
 
-      setOnboarded: (name, pokemon) =>
-        set({ hasOnboarded: true, trainerName: name, pokemon }),
+      setOnboarded: (name, pokemon, trainerSprite) =>
+        set({ hasOnboarded: true, trainerName: name, pokemon, trainerSprite }),
 
       reset: () =>
         set({
           hasOnboarded: false,
           trainerName: "",
+          trainerSprite: "red",
           pokemon: null,
           level: 1,
           xp: 0,
@@ -127,16 +126,9 @@ export const useGameStore = create<GameState>()(
           luckyEggActive: false,
         }),
 
-      toggleDark: () => {
-        const next = !get().darkMode;
-        set({ darkMode: next });
-        if (typeof document !== "undefined") {
-          document.documentElement.classList.toggle("dark", next);
-        }
-      },
-
       setName: (name) => set({ trainerName: name }),
       setPokemon: (p) => set({ pokemon: p }),
+      setTrainerSprite: (id) => set({ trainerSprite: id }),
 
       buyItem: (id, cost) => {
         const { xp, inventory } = get();
@@ -264,19 +256,14 @@ export const useGameStore = create<GameState>()(
       partialize: (s) => ({
         hasOnboarded: s.hasOnboarded,
         trainerName: s.trainerName,
+        trainerSprite: s.trainerSprite,
         pokemon: s.pokemon,
         level: s.level,
         xp: s.xp,
         stats: s.stats,
         inventory: s.inventory,
         itemCooldowns: s.itemCooldowns,
-        darkMode: s.darkMode,
       }),
-      onRehydrateStorage: () => (state) => {
-        if (state?.darkMode && typeof document !== "undefined") {
-          document.documentElement.classList.add("dark");
-        }
-      },
     },
   ),
 );

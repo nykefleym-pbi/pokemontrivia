@@ -5,6 +5,7 @@ export interface ItemDef {
   id: ItemId;
   name: string;
   emoji: string;
+  iconUrl: string;
   desc: string;
   cost: number;
   premium?: boolean;
@@ -20,16 +21,33 @@ export type ItemId =
   | "scope"
   | "xaccuracy";
 
+const ICON = (slug: string) =>
+  `https://play.pokemonshowdown.com/sprites/itemicons/${slug}.png`;
+
 export const ITEMS: ItemDef[] = [
-  { id: "potion", name: "Potion", emoji: "🧪", desc: "Restore 30 HP. (max 2 per battle)", cost: 30 },
-  { id: "revive", name: "Revive", emoji: "💖", desc: "Heal to 50 HP when you're at 10 or less.", cost: 80 },
-  { id: "xattack", name: "X Attack", emoji: "⚔️", desc: "Next correct answer deals +20 damage.", cost: 45 },
-  { id: "escape", name: "Escape Rope", emoji: "🪢", desc: "Flee a battle without losing XP.", cost: 60 },
-  { id: "candy", name: "Rare Candy", emoji: "🍬", desc: "Instantly gain 50 XP.", cost: 120, premium: true },
-  { id: "luckyegg", name: "Lucky Egg", emoji: "🥚", desc: "Double XP from your next battle.", cost: 150, premium: true },
-  { id: "scope", name: "Scope Lens", emoji: "🔭", desc: "Reveal one wrong answer.", cost: 70 },
-  { id: "xaccuracy", name: "X Accuracy", emoji: "🎯", desc: "Add +5 seconds to the timer this battle.", cost: 50 },
+  { id: "potion", name: "Potion", emoji: "🧪", iconUrl: ICON("potion"), desc: "Restore 30 HP. (max 2 per battle)", cost: 30 },
+  { id: "revive", name: "Revive", emoji: "💖", iconUrl: ICON("revive"), desc: "Heal to 50 HP when you're at 10 or less.", cost: 80 },
+  { id: "xattack", name: "X Attack", emoji: "⚔️", iconUrl: ICON("x-attack"), desc: "Next correct answer deals +20 damage.", cost: 45 },
+  { id: "escape", name: "Escape Rope", emoji: "🪢", iconUrl: ICON("escape-rope"), desc: "Flee a battle without losing XP.", cost: 60 },
+  { id: "candy", name: "Rare Candy", emoji: "🍬", iconUrl: ICON("rare-candy"), desc: "Instantly gain 50 XP.", cost: 120, premium: true },
+  { id: "luckyegg", name: "Lucky Egg", emoji: "🥚", iconUrl: ICON("lucky-egg"), desc: "Double XP from your next battle.", cost: 150, premium: true },
+  { id: "scope", name: "Scope Lens", emoji: "🔭", iconUrl: ICON("scope-lens"), desc: "Reveal one wrong answer.", cost: 70 },
+  { id: "xaccuracy", name: "X Accuracy", emoji: "🎯", iconUrl: ICON("x-accuracy"), desc: "Add +5 seconds to the timer this battle.", cost: 50 },
 ];
+
+export const TRAINER_SPRITES = [
+  "red", "blue", "ethan", "lyra", "brendan", "may", "lucas", "dawn",
+  "hilbert", "hilda", "nate", "rosa", "calem", "serena", "elio", "selene",
+  "victor", "gloria", "florian", "juliana", "misty", "brock", "erika",
+  "sabrina", "blaine", "giovanni", "lance", "cynthia", "steven", "oak",
+  "n", "cheren", "bianca", "wally", "barry",
+];
+
+export const TRAINER_SPRITE_BASE = "https://play.pokemonshowdown.com/sprites/trainers";
+
+export function trainerSpriteUrl(id: string) {
+  return `${TRAINER_SPRITE_BASE}/${id}.png`;
+}
 
 export const RANKS = [
   "Youngster",
