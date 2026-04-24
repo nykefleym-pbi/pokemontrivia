@@ -1,6 +1,5 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts, useLocation } from "@tanstack/react-router";
 import { Swords, ShoppingBag, User } from "lucide-react";
-import { useEffect } from "react";
 import { useGameStore } from "@/lib/store";
 
 import appCss from "../styles.css?url";
@@ -110,14 +109,7 @@ function BottomNav() {
 
 function RootComponent() {
   const loc = useLocation();
-  const darkMode = useGameStore((s) => s.darkMode);
   const hasOnboarded = useGameStore((s) => s.hasOnboarded);
-
-  useEffect(() => {
-    if (typeof document !== "undefined") {
-      document.documentElement.classList.toggle("dark", darkMode);
-    }
-  }, [darkMode]);
 
   // hide nav on splash/onboarding
   const showNav = hasOnboarded && loc.pathname !== "/";

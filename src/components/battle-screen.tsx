@@ -6,7 +6,6 @@ import { useGameStore, getItemDef } from "@/lib/store";
 import {
   pickRandomEnemy,
   type EnemyTrainer,
-  difficultyForLevel,
   ITEMS,
 } from "@/lib/game-data";
 import { isSuperEffective, spriteUrl } from "@/lib/pokemon-data";
@@ -21,7 +20,7 @@ import {
 } from "@/components/ui/sheet";
 import type { ItemId } from "@/lib/game-data";
 
-interface Trivia {
+export interface Trivia {
   question: string;
   options: string[];
   correct: number;
@@ -35,10 +34,11 @@ const TIMER_BASE = 20;
 type Phase = "intro" | "question" | "feedback" | "result";
 
 interface Props {
+  questions: Trivia[];
   onExit: () => void;
 }
 
-export function BattleScreen({ onExit }: Props) {
+export function BattleScreen({ questions, onExit }: Props) {
   const player = useGameStore((s) => s.pokemon)!;
   const level = useGameStore((s) => s.level);
   const trainerName = useGameStore((s) => s.trainerName);
@@ -72,7 +72,6 @@ export function BattleScreen({ onExit }: Props) {
   const [bagOpen, setBagOpen] = useState(false);
   const [resultWon, setResultWon] = useState<boolean | null>(null);
   const [xpEarned, setXpEarned] = useState(0);
-  const [loading, setLoading] = useState(false);
   const questionStart = useRef<number>(0);
   const startedRef = useRef(false);
 
@@ -89,42 +88,29 @@ export function BattleScreen({ onExit }: Props) {
     } else {
       setTimeout(() => setDialog(`Go, ${player.name}!`), 1500);
     }
-    setTimeout(() => fetchQuestion(), 2800);
+    setTimeout(() => loadQuestion(0), 2800);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function fetchQuestion() {
-    setLoading(true);
+  function loadQuestion(idx: number) {
     setChosen(null);
     setRevealedWrong(null);
-    try {
-      const resp = await fetch("/api/trivia", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ difficulty: difficultyForLevel(level) }),
-      });
-      if (resp.status === 429) {
-        toast.error("Rate limited. Please wait a moment.");
-      } else if (resp.status === 402) {
-        toast.error("AI credits exhausted. Add credits in Settings.");
-      }
-      const data = (await resp.json()) as Trivia;
-      setTrivia(data);
-      setPhase("question");
-      setTimer(TIMER_BASE + bonusTime);
-      setDialog(`Category: ${data.category}`);
-      questionStart.current = Date.now();
-      // scope reveal
-      if (scopeRevealedThisBattle) {
-        const wrongs = [0, 1, 2, 3].filter((i) => i !== data.correct);
-        setRevealedWrong(wrongs[Math.floor(Math.random() * wrongs.length)]);
-        consumeScope();
-      }
-    } catch (e) {
-      console.error(e);
-      toast.error("Couldn't load question");
-    } finally {
-      setLoading(false);
+    const data = questions[idx];
+    if (!data) {
+      // Out of questions — player outlasted the trainer
+      setTimeout(() => finish(true), 600);
+      return;
+    }
+    setTrivia(data);
+    setPhase("question");
+    setTimer(TIMER_BASE + bonusTime);
+    setDialog(`Category: ${data.category}`);
+    questionStart.current = Date.now();
+    // scope reveal
+    if (scopeRevealedThisBattle) {
+      const wrongs = [0, 1, 2, 3].filter((i) => i !== data.correct);
+      setRevealedWrong(wrongs[Math.floor(Math.random() * wrongs.length)]);
+      consumeScope();
     }
   }
 
@@ -203,7 +189,7 @@ export function BattleScreen({ onExit }: Props) {
     if (next % QUESTIONS_PER_SET === 0) {
       completeSet();
     }
-    fetchQuestion();
+    loadQuestion(next);
   }
 
   function finish(won: boolean) {
@@ -283,7 +269,20 @@ export function BattleScreen({ onExit }: Props) {
                     onClick={() => tryUseItem(it.id)}
                     className="flex items-start gap-3 rounded-2xl border-2 p-3 text-left transition disabled:opacity-40 enabled:hover:border-primary"
                   >
-                    <div className="text-2xl">{it.emoji}</div>
+                    <img
+                      src={it.iconUrl}
+                      alt={it.name}
+                      className="sprite h-9 w-9 shrink-0 object-contain"
+                      onError={(e) => {
+                        const el = e.currentTarget as HTMLImageElement;
+                        el.replaceWith(
+                          Object.assign(document.createElement("span"), {
+                            textContent: it.emoji,
+                            className: "text-2xl",
+                          }),
+                        );
+                      }}
+                    />
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 text-sm font-semibold">
                         {it.name}
@@ -417,7 +416,7 @@ export function BattleScreen({ onExit }: Props) {
                   return (
                     <button
                       key={i}
-                      disabled={phase !== "question" || isRevealed || loading}
+                      disabled={phase !== "question" || isRevealed}
                       onClick={() => handleAnswer(i)}
                       className={`rounded-2xl border-2 px-4 py-3 text-left text-sm font-medium transition ${
                         isCorrect
