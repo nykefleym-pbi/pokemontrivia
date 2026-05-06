@@ -313,6 +313,8 @@ export const useGameStore = create<GameState>()(
         stats: s.stats,
         inventory: s.inventory,
         itemCooldowns: s.itemCooldowns,
+        seenQuestionHashes: s.seenQuestionHashes,
+        seenQuestions: s.seenQuestions,
       }),
     },
   ),
