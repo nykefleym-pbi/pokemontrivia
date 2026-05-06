@@ -257,14 +257,14 @@ CRITICAL RULES:
           }
           if (!resp.ok) {
             console.error("AI gateway error", resp.status, await resp.text());
-            const fallback = topUpFromFallback([], BATCH_SIZE);
+            const fallback = topUpFromFallback([], BATCH_SIZE, isSeen);
             return Response.json({ questions: fallback, source: "fallback-error" });
           }
 
           const data = await resp.json();
           const toolCall = data?.choices?.[0]?.message?.tool_calls?.[0];
           if (!toolCall?.function?.arguments) {
-            const fallback = topUpFromFallback([], BATCH_SIZE);
+            const fallback = topUpFromFallback([], BATCH_SIZE, isSeen);
             return Response.json({ questions: fallback, source: "fallback-no-tool" });
           }
 
@@ -272,19 +272,23 @@ CRITICAL RULES:
           try {
             parsed = JSON.parse(toolCall.function.arguments);
           } catch {
-            const fallback = topUpFromFallback([], BATCH_SIZE);
+            const fallback = topUpFromFallback([], BATCH_SIZE, isSeen);
             return Response.json({ questions: fallback, source: "fallback-parse" });
           }
 
           const raw = Array.isArray(parsed.questions) ? parsed.questions : [];
           const valid = raw.filter(isValid);
-          const unique = dedupe(valid);
-          const finalList = unique.length >= BATCH_SIZE ? unique.slice(0, BATCH_SIZE) : topUpFromFallback(unique, BATCH_SIZE);
+          const unfiltered = dedupe(valid);
+          const unseen = unfiltered.filter((q) => !isSeen(q.question));
+          const finalList =
+            unseen.length >= BATCH_SIZE
+              ? unseen.slice(0, BATCH_SIZE)
+              : topUpFromFallback(unseen, BATCH_SIZE, isSeen);
 
           return Response.json({ questions: finalList, source: "ai" });
         } catch (e) {
           console.error("trivia-batch error", e);
-          const fallback = topUpFromFallback([], BATCH_SIZE);
+          const fallback = topUpFromFallback([], BATCH_SIZE, isSeen);
           return Response.json({ questions: fallback, source: "fallback-exception" });
         }
       },
