@@ -1,72 +1,55 @@
+# No Repeats + Source-Grounded Trivia
 
-# Adjustments
+Two tightly scoped changes — no new screens, no backend tables.
 
-Five focused tweaks to the existing app — no new screens.
+## 1. Per-device "seen questions" history (localStorage)
 
-## 1. Pokéball spinner colors (red top / white bottom)
+Goal: a player never sees the same (or near-duplicate) question twice across sessions on their device.
 
-Update `PokeballSpinner` in `src/components/game-ui.tsx` so the top half is solid red and the bottom is white, with the classic black band and white center button (matching a real Poké Ball).
+- Add `seenQuestionHashes: string[]` to `useGameStore` (persisted via the existing zustand persist).
+- Add a stable `hashQuestion(text)` helper in `src/lib/store.ts`:
+  - Normalize: lowercase, strip punctuation, collapse whitespace.
+  - Hash with a tiny FNV-1a (no deps) → short hex string.
+- Add store actions:
+  - `markQuestionsSeen(questions: Trivia[])` — push hashes, dedupe, cap the list at the **last 2,000 entries** (FIFO trim) to keep storage small.
+  - `hasSeenQuestion(text): boolean`.
+- Update `src/components/battle-screen.tsx`: when a question is shown (or when the batch is received), call `markQuestionsSeen` for that question. Marking on first display ensures even abandoned battles count.
 
-## 2. Trainer selection during onboarding
+## 2. Send the seen-history to the AI batch endpoint
 
-In `src/routes/index.tsx` (`TrainerCreate`):
+Goal: the model actively avoids repeats and near-paraphrases.
 
-- Add a third step to onboarding: **Name → Trainer Avatar → Pokémon**.
-- Show a searchable grid of trainer sprites pulled from `https://play.pokemonshowdown.com/sprites/trainers/{id}.png`.
-- Curate ~30 popular trainer IDs (red, blue, ethan, lyra, brendan, may, lucas, dawn, hilbert, hilda, calem, serena, elio, selene, victor, gloria, florian, juliana, misty, brock, erika, sabrina, blaine, giovanni, lance, cynthia, steven, oak, n, cheren, etc.).
-- Add `trainerSprite: string` to the game store (persisted).
-- Use the chosen trainer sprite as the avatar on the Battle home and Profile screens (replacing the Pokémon-as-avatar in the profile identity card; Pokémon sprite still appears as the starter).
-- In Profile, allow editing the trainer sprite the same way the starter is edited (separate "Change Trainer" picker dialog).
+- Update `src/routes/battle.tsx`'s pre-fetch call to `POST /api/trivia-batch` with:
+  ```json
+  { "difficulty": "...", "seenHashes": [...], "seenSamples": [last 40 question texts] }
+  ```
+  - `seenHashes`: full list (hashes are tiny, ~8 chars each).
+  - `seenSamples`: the **40 most recent** raw question texts (capped, so the prompt stays small) for semantic avoidance.
+- Add a parallel `seenQuestions: string[]` to the store (last 200, FIFO) so we can send recent samples without storing all raw texts forever.
 
-## 3. Pre-fetch 20 unique questions per battle
+## 3. Update `src/routes/api.trivia-batch.ts`
 
-Goal: zero network wait between questions, no repeats within a battle.
+- Accept the new fields in the POST body.
+- **Prompt changes** — add to the system prompt:
+  - "You are crafting questions grounded in canonical Pokémon sources: **pokemondb.net**, **bulbapedia.bulbagarden.net**, and **pvpoke.com** (for competitive/PvP content). Only use facts verifiable on those sources."
+  - "AVOID these recent questions and any paraphrase of them (different wording, same answer/topic counts as a repeat):" followed by the `seenSamples` list.
+  - Encourage breadth: spread across the 10 categories AND across generations (1–9), regions, mechanics, anime arcs, TCG, and competitive (PvP tiers, movesets) to maximize variety.
+- **Server-side filter**: after dedupe, drop any question whose normalized hash matches `seenHashes`, OR whose Jaccard similarity vs any `seenSamples` token set > 0.6. Top-up from fallback bank only if needed (and skip fallback entries the user has already seen).
+- Keep existing 429/402 passthrough and tool-calling structure.
 
-- Add a new server route `src/routes/api.trivia-batch.ts` (POST) that accepts `{ difficulty, count: 20 }` and returns `{ questions: Trivia[] }`.
-  - Calls Lovable AI **once** with a tool that returns an array of 20 trivia objects.
-  - System prompt enforces: all 20 must be **distinct** (different topics, no paraphrases, no overlapping correct answers), spread across the 10 categories, and factually accurate.
-  - Server-side de-duplication pass: normalize question text (lowercase, strip punctuation), drop any near-duplicate (Jaccard similarity > 0.6 on token sets); top-up from the fallback bank if fewer than 20 unique remain.
-  - Returns 429 / 402 passthrough as today.
-- Update `src/routes/battle.tsx`:
-  - When user clicks **Find a Battle**, show a brief "Preparing battle…" loading state with the spinning Poké Ball.
-  - Fetch the batch of 20, store in component state, then mount `BattleScreen` with `questions` as a prop.
-- Update `src/components/battle-screen.tsx`:
-  - Remove the per-question `fetch("/api/trivia")` call.
-  - Take `questions: Trivia[]` as a prop, advance through them sequentially via `questionIdx`.
-  - Battle ends naturally when HP hits 0 (already handled); if all 20 are used without a KO, declare the battle won (player outlasted the trainer).
-- Keep the legacy `api.trivia.ts` for safety as a single-question fallback if the batch call fails.
+## 4. Fallback bank de-dup
 
-## 4. Real PokéMart item icons
+- In `topUpFromFallback`, also skip entries whose hash is in `seenHashes`. Prevents the small fallback bank from cycling the same 8 items forever.
 
-Update `src/lib/game-data.ts`:
+## 5. Profile screen: small "Reset question history" control
 
-- Add `iconUrl: string` to each item using `https://play.pokemonshowdown.com/sprites/itemicons/{slug}.png`:
-  - Potion → `potion.png`
-  - Revive → `revive.png`
-  - X Attack → `x-attack.png`
-  - Escape Rope → `escape-rope.png`
-  - Rare Candy → `rare-candy.png`
-  - Lucky Egg → `lucky-egg.png`
-  - Scope Lens → `scope-lens.png`
-  - X Accuracy → `x-accuracy.png`
+- In `src/routes/profile.tsx`, under the existing settings area, add a subtle button: **Reset question history** (clears `seenQuestionHashes` + `seenQuestions` only; keeps XP, inventory, trainer, etc.).
+- Confirms via existing `AlertDialog` pattern.
 
-Replace the emoji `<div>` with `<img src={iconUrl} className="sprite h-10 w-10">` in:
-- `src/routes/shop.tsx` (item tile)
-- `src/components/battle-screen.tsx` (item bag sheet + toast message)
-- `src/routes/profile.tsx` (inventory grid)
+## Technical notes
 
-Keep the `emoji` field as a fallback in case the image fails to load (`onError` swap).
-
-## 5. Remove dark mode
-
-- `src/lib/store.ts`: remove `darkMode`, `toggleDark`, the `onRehydrateStorage` dark class toggle, and `darkMode` from `partialize`.
-- `src/routes/__root.tsx`: drop the `darkMode` import and the `useEffect` that toggles `.dark`.
-- `src/routes/profile.tsx`: remove the entire dark-mode toggle row (and `Moon`/`Sun` imports).
-- `src/styles.css`: delete the `.dark { … }` block and the `.dark .bg-battle-field` override (light theme only).
-
-## Technical Notes
-
-- Showdown trainer sprite IDs are lowercase slugs (e.g., `https://play.pokemonshowdown.com/sprites/trainers/red.png`). Image errors fall back to a generic Poké Ball icon.
-- AI batch call uses tool-calling with `questions: { type: "array", minItems: 20, maxItems: 20 }` for structured output. One ~3–5s call replaces 20 sequential calls.
-- "Preparing battle…" loader prevents the user from entering the battle UI before questions are ready, so the in-battle experience is fully offline-feeling.
+- Storage budget: 2,000 hashes × ~10 bytes ≈ 20 KB; 200 sample texts × ~80 bytes ≈ 16 KB. Well within the localStorage budget already used by the store.
+- Network budget: even 2,000 hashes is ~20 KB JSON — fine for one POST per battle. If it ever balloons, we can switch to sending only the last N hashes.
+- Why both hashes + samples: hashes give cheap exact-match dedupe across the entire history; the 40 recent samples let the LLM semantically avoid paraphrases without bloating the prompt.
+- No DB, no auth — fully per-device as requested.
 - No new dependencies.

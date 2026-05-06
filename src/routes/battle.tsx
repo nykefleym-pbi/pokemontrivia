@@ -19,6 +19,9 @@ export const Route = createFileRoute("/battle")({
 function BattlePage() {
   const hasOnboarded = useGameStore((s) => s.hasOnboarded);
   const level = useGameStore((s) => s.level);
+  const seenHashes = useGameStore((s) => s.seenQuestionHashes);
+  const seenQuestions = useGameStore((s) => s.seenQuestions);
+  const markQuestionsSeen = useGameStore((s) => s.markQuestionsSeen);
   const navigate = useNavigate();
   const [phase, setPhase] = useState<"home" | "loading" | "fighting">("home");
   const [questions, setQuestions] = useState<Trivia[]>([]);
@@ -36,7 +39,11 @@ function BattlePage() {
       const resp = await fetch("/api/trivia-batch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ difficulty: difficultyForLevel(level) }),
+        body: JSON.stringify({
+          difficulty: difficultyForLevel(level),
+          seenHashes,
+          seenSamples: seenQuestions.slice(-40),
+        }),
       });
       if (resp.status === 429) {
         toast.error("Rate limited. Please wait a moment.");
@@ -54,6 +61,7 @@ function BattlePage() {
         setPhase("home");
         return;
       }
+      markQuestionsSeen(data.questions.map((q) => q.question));
       setQuestions(data.questions);
       setPhase("fighting");
     } catch (e) {

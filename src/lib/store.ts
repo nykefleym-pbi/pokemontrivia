@@ -5,6 +5,28 @@ import { ITEMS, xpForLevel } from "./game-data";
 import type { PokeEntry } from "./pokemon-data";
 import { GEN1_POKEMON } from "./pokemon-data";
 
+const MAX_SEEN_HASHES = 2000;
+const MAX_SEEN_TEXTS = 200;
+
+export function normalizeQuestion(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function hashQuestion(s: string): string {
+  // FNV-1a 32-bit
+  const norm = normalizeQuestion(s);
+  let h = 0x811c9dc5;
+  for (let i = 0; i < norm.length; i++) {
+    h ^= norm.charCodeAt(i);
+    h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
+  }
+  return h.toString(16);
+}
+
 export interface PlayerStats {
   battles: number;
   wins: number;
@@ -42,12 +64,18 @@ export interface GameState {
   bonusTimeThisBattle: number;
   luckyEggActive: boolean;
 
+  // question history (per-device)
+  seenQuestionHashes: string[];
+  seenQuestions: string[];
+
   // actions
   setOnboarded: (name: string, pokemon: PokeEntry, trainerSprite: string) => void;
   reset: () => void;
   setName: (name: string) => void;
   setPokemon: (p: PokeEntry) => void;
   setTrainerSprite: (id: string) => void;
+  markQuestionsSeen: (texts: string[]) => void;
+  resetQuestionHistory: () => void;
 
   buyItem: (id: ItemId, cost: number) => boolean;
   useItem: (id: ItemId) => boolean;
@@ -102,6 +130,28 @@ export const useGameStore = create<GameState>()(
       scopeRevealedThisBattle: false,
       bonusTimeThisBattle: 0,
       luckyEggActive: false,
+
+      seenQuestionHashes: [],
+      seenQuestions: [],
+
+      markQuestionsSeen: (texts) => {
+        const s = get();
+        const newHashes = [...s.seenQuestionHashes];
+        const newTexts = [...s.seenQuestions];
+        const have = new Set(newHashes);
+        for (const t of texts) {
+          const h = hashQuestion(t);
+          if (have.has(h)) continue;
+          have.add(h);
+          newHashes.push(h);
+          newTexts.push(t);
+        }
+        set({
+          seenQuestionHashes: newHashes.slice(-MAX_SEEN_HASHES),
+          seenQuestions: newTexts.slice(-MAX_SEEN_TEXTS),
+        });
+      },
+      resetQuestionHistory: () => set({ seenQuestionHashes: [], seenQuestions: [] }),
 
       setOnboarded: (name, pokemon, trainerSprite) =>
         set({ hasOnboarded: true, trainerName: name, pokemon, trainerSprite }),
@@ -263,6 +313,8 @@ export const useGameStore = create<GameState>()(
         stats: s.stats,
         inventory: s.inventory,
         itemCooldowns: s.itemCooldowns,
+        seenQuestionHashes: s.seenQuestionHashes,
+        seenQuestions: s.seenQuestions,
       }),
     },
   ),
