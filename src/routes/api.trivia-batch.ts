@@ -107,29 +107,73 @@ export const Route = createFileRoute("/api/trivia-batch")({
     handlers: {
       POST: async ({ request }) => {
         let difficulty = "easy";
+        let seenHashes: string[] = [];
+        let seenSamples: string[] = [];
         try {
-          const body = (await request.json()) as { difficulty?: string };
+          const body = (await request.json()) as {
+            difficulty?: string;
+            seenHashes?: string[];
+            seenSamples?: string[];
+          };
           if (body.difficulty) difficulty = body.difficulty;
+          if (Array.isArray(body.seenHashes)) seenHashes = body.seenHashes.slice(-2000);
+          if (Array.isArray(body.seenSamples)) seenSamples = body.seenSamples.slice(-40);
         } catch {
           /* defaults */
         }
 
+        const seenHashSet = new Set(seenHashes);
+        const seenTokenSets = seenSamples.map((s) => tokens(s));
+
+        const fnv1a = (str: string) => {
+          const norm = str
+            .toLowerCase()
+            .replace(/[^a-z0-9\s]/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+          let h = 0x811c9dc5;
+          for (let i = 0; i < norm.length; i++) {
+            h ^= norm.charCodeAt(i);
+            h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
+          }
+          return h.toString(16);
+        };
+
+        const isSeen = (q: string) => {
+          if (seenHashSet.has(fnv1a(q))) return true;
+          const t = tokens(q);
+          for (const ex of seenTokenSets) {
+            if (jaccard(t, ex) > 0.6) return true;
+          }
+          return false;
+        };
+
         const apiKey = process.env.LOVABLE_API_KEY;
         if (!apiKey) {
-          const fallback = topUpFromFallback([], BATCH_SIZE);
+          const fallback = topUpFromFallback([], BATCH_SIZE, isSeen);
           return Response.json({ questions: fallback, source: "fallback-no-key" });
         }
 
-        const systemPrompt = `You are a Pokémon trivia question generator. Generate exactly ${BATCH_SIZE} factually accurate multiple-choice questions about the Pokémon franchise (games, anime, manga, TCG).
+        const avoidBlock = seenSamples.length
+          ? `\n\nAVOID these recent questions and any paraphrase of them (different wording but same answer/topic counts as a repeat):\n${seenSamples.map((s, i) => `${i + 1}. ${s}`).join("\n")}`
+          : "";
+
+        const systemPrompt = `You are a Pokémon trivia question generator. Generate exactly ${BATCH_SIZE} factually accurate multiple-choice questions about the Pokémon franchise (games, anime, manga, TCG, competitive).
+
+KNOWLEDGE SOURCES — only use facts verifiable on these canonical sources:
+- pokemondb.net (Pokédex, moves, abilities, items, locations)
+- bulbapedia.bulbagarden.net (lore, anime, characters, history, regions, generations)
+- pvpoke.com (competitive PvP movesets, tiers, meta)
 
 CRITICAL RULES:
 - All ${BATCH_SIZE} questions MUST be DISTINCT — different topics, no paraphrases, no overlapping correct answers, no repeated subjects.
-- Spread the questions across these categories: ${CATEGORIES.join(", ")} (each category at least once when possible).
+- Spread across these categories: ${CATEGORIES.join(", ")} (each category at least once when possible).
+- Spread across generations 1-9, multiple regions, mechanics, anime arcs, TCG, and competitive (PvP tiers, movesets) for maximum variety.
 - Each question must have 4 plausible options with exactly one correct answer.
 - Keep questions concise. Keep each explanation under 30 words.
-- Difficulty for the whole set: ${difficulty}.`;
+- Difficulty for the whole set: ${difficulty}.${avoidBlock}`;
 
-        const userPrompt = `Generate ${BATCH_SIZE} unique ${difficulty} difficulty Pokémon trivia questions. Return them via the submit_trivia_batch tool.`;
+        const userPrompt = `Generate ${BATCH_SIZE} unique ${difficulty} difficulty Pokémon trivia questions grounded in pokemondb.net, bulbapedia.bulbagarden.net, and pvpoke.com. Return them via the submit_trivia_batch tool.`;
 
         try {
           const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
