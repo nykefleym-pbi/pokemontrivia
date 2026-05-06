@@ -131,6 +131,28 @@ export const useGameStore = create<GameState>()(
       bonusTimeThisBattle: 0,
       luckyEggActive: false,
 
+      seenQuestionHashes: [],
+      seenQuestions: [],
+
+      markQuestionsSeen: (texts) => {
+        const s = get();
+        const newHashes = [...s.seenQuestionHashes];
+        const newTexts = [...s.seenQuestions];
+        const have = new Set(newHashes);
+        for (const t of texts) {
+          const h = hashQuestion(t);
+          if (have.has(h)) continue;
+          have.add(h);
+          newHashes.push(h);
+          newTexts.push(t);
+        }
+        set({
+          seenQuestionHashes: newHashes.slice(-MAX_SEEN_HASHES),
+          seenQuestions: newTexts.slice(-MAX_SEEN_TEXTS),
+        });
+      },
+      resetQuestionHistory: () => set({ seenQuestionHashes: [], seenQuestions: [] }),
+
       setOnboarded: (name, pokemon, trainerSprite) =>
         set({ hasOnboarded: true, trainerName: name, pokemon, trainerSprite }),
 
