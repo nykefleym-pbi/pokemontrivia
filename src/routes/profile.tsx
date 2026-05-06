@@ -35,6 +35,8 @@ function ProfilePage() {
   const setPokemon = useGameStore((s) => s.setPokemon);
   const setTrainerSprite = useGameStore((s) => s.setTrainerSprite);
   const reset = useGameStore((s) => s.reset);
+  const resetQuestionHistory = useGameStore((s) => s.resetQuestionHistory);
+  const seenCount = useGameStore((s) => s.seenQuestionHashes.length);
 
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(trainerName);
