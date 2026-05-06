@@ -42,12 +42,18 @@ export interface GameState {
   bonusTimeThisBattle: number;
   luckyEggActive: boolean;
 
+  // question history (per-device)
+  seenQuestionHashes: string[];
+  seenQuestions: string[];
+
   // actions
   setOnboarded: (name: string, pokemon: PokeEntry, trainerSprite: string) => void;
   reset: () => void;
   setName: (name: string) => void;
   setPokemon: (p: PokeEntry) => void;
   setTrainerSprite: (id: string) => void;
+  markQuestionsSeen: (texts: string[]) => void;
+  resetQuestionHistory: () => void;
 
   buyItem: (id: ItemId, cost: number) => boolean;
   useItem: (id: ItemId) => boolean;
