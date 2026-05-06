@@ -80,12 +80,17 @@ function isValid(q: unknown): q is TriviaPayload {
   );
 }
 
-function topUpFromFallback(existing: TriviaPayload[], target: number): TriviaPayload[] {
+function topUpFromFallback(
+  existing: TriviaPayload[],
+  target: number,
+  isSeen?: (q: string) => boolean,
+): TriviaPayload[] {
   const tokSets = existing.map((q) => tokens(q.question));
   const out = [...existing];
   const shuffled = [...FALLBACK_QUESTIONS].sort(() => Math.random() - 0.5);
   for (const f of shuffled) {
     if (out.length >= target) break;
+    if (isSeen && isSeen(f.question)) continue;
     const t = tokens(f.question);
     let dup = false;
     for (const ex of tokSets) {
@@ -97,6 +102,14 @@ function topUpFromFallback(existing: TriviaPayload[], target: number): TriviaPay
     if (!dup) {
       out.push({ ...f });
       tokSets.push(t);
+    }
+  }
+  // If still short and isSeen filtered too aggressively, fill anyway from any leftover fallback
+  if (out.length < target && isSeen) {
+    for (const f of shuffled) {
+      if (out.length >= target) break;
+      if (out.some((o) => o.question === f.question)) continue;
+      out.push({ ...f });
     }
   }
   return out;
