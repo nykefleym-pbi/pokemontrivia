@@ -5,6 +5,28 @@ import { ITEMS, xpForLevel } from "./game-data";
 import type { PokeEntry } from "./pokemon-data";
 import { GEN1_POKEMON } from "./pokemon-data";
 
+const MAX_SEEN_HASHES = 2000;
+const MAX_SEEN_TEXTS = 200;
+
+export function normalizeQuestion(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function hashQuestion(s: string): string {
+  // FNV-1a 32-bit
+  const norm = normalizeQuestion(s);
+  let h = 0x811c9dc5;
+  for (let i = 0; i < norm.length; i++) {
+    h ^= norm.charCodeAt(i);
+    h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
+  }
+  return h.toString(16);
+}
+
 export interface PlayerStats {
   battles: number;
   wins: number;
