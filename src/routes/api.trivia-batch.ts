@@ -122,15 +122,18 @@ export const Route = createFileRoute("/api/trivia-batch")({
         let difficulty = "easy";
         let seenHashes: string[] = [];
         let seenSamples: string[] = [];
+        let flowSeed = Math.floor(Math.random() * 1_000_000);
         try {
           const body = (await request.json()) as {
             difficulty?: string;
             seenHashes?: string[];
             seenSamples?: string[];
+            flowSeed?: number;
           };
           if (body.difficulty) difficulty = body.difficulty;
-          if (Array.isArray(body.seenHashes)) seenHashes = body.seenHashes.slice(-2000);
+          if (Array.isArray(body.seenHashes)) seenHashes = body.seenHashes.slice(-500);
           if (Array.isArray(body.seenSamples)) seenSamples = body.seenSamples.slice(-40);
+          if (typeof body.flowSeed === "number") flowSeed = body.flowSeed;
         } catch {
           /* defaults */
         }
