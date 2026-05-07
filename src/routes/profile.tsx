@@ -50,13 +50,11 @@ function ProfilePage() {
   }, [hasOnboarded, navigate]);
 
   const results = useMemo(() => searchPokemon(query, 9), [query]);
-  const trainerResults = useMemo(
-    () =>
-      TRAINER_SPRITES.filter((id) =>
-        id.toLowerCase().includes(trainerQuery.trim().toLowerCase()),
-      ),
-    [trainerQuery],
-  );
+  const trainerResults = useMemo(() => {
+    const q = trainerQuery.trim().toLowerCase();
+    if (!q) return TRAINER_SPRITES.slice(0, 9);
+    return TRAINER_SPRITES.filter((id) => id.toLowerCase().includes(q)).slice(0, 30);
+  }, [trainerQuery]);
 
   if (!hasOnboarded || !pokemon) return null;
 
