@@ -7,6 +7,7 @@ import {
   pickRandomEnemy,
   type EnemyTrainer,
   ITEMS,
+  enemyHpForLevel,
 } from "@/lib/game-data";
 import { isSuperEffective, spriteUrl } from "@/lib/pokemon-data";
 import { HpBar, TypeBadge } from "@/components/game-ui";
