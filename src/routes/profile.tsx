@@ -148,7 +148,7 @@ function ProfilePage() {
             </div>
           </div>
           <div className="mt-4">
-            <XpBar xp={xp} need={need} />
+            <XpBar xp={xpProg.current} need={xpProg.need} />
           </div>
         </motion.div>
 
