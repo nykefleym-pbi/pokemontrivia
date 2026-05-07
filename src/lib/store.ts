@@ -118,6 +118,7 @@ export const useGameStore = create<GameState>()(
       trainerSprite: "red",
       pokemon: null,
       level: 1,
+      peakLevel: 1,
       xp: 0,
       stats: defaultStats,
       inventory: { ...defaultInventory },
