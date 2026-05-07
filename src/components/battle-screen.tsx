@@ -58,8 +58,9 @@ export function BattleScreen({ questions, onExit }: Props) {
   const cooldowns = useGameStore((s) => s.itemCooldowns);
 
   const [enemy] = useState<EnemyTrainer>(() => pickRandomEnemy());
+  const enemyMaxHp = enemyHpForLevel(level);
   const [playerHp, setPlayerHp] = useState(100);
-  const [enemyHp, setEnemyHp] = useState(100);
+  const [enemyHp, setEnemyHp] = useState(enemyMaxHp);
   const [phase, setPhase] = useState<Phase>("intro");
   const [trivia, setTrivia] = useState<Trivia | null>(null);
   const [chosen, setChosen] = useState<number | null>(null);
@@ -75,6 +76,7 @@ export function BattleScreen({ questions, onExit }: Props) {
   const [xpEarned, setXpEarned] = useState(0);
   const questionStart = useRef<number>(0);
   const startedRef = useRef(false);
+  const maxStreakRef = useRef(0);
 
   const superEff = isSuperEffective(player, enemy.pokemon);
 
