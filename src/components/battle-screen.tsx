@@ -138,6 +138,7 @@ export function BattleScreen({ questions, onExit }: Props) {
     let newStreak = streak;
     if (correct) {
       newStreak += 1;
+      if (newStreak > maxStreakRef.current) maxStreakRef.current = newStreak;
       let dmg = 10;
       if (superEff) dmg *= 2;
       if (xAttackActive) {
