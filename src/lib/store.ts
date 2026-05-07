@@ -76,7 +76,6 @@ export interface GameState {
   setPokemon: (p: PokeEntry) => void;
   setTrainerSprite: (id: string) => void;
   markQuestionsSeen: (texts: string[]) => void;
-  resetQuestionHistory: () => void;
 
   buyItem: (id: ItemId, cost: number) => boolean;
   useItem: (id: ItemId) => boolean;
