@@ -217,25 +217,6 @@ function ProfilePage() {
         <h3 className="mb-2 mt-6 font-pixel text-[11px] uppercase text-muted-foreground">Settings</h3>
         <div className="space-y-2">
           <button
-            onClick={() => {
-              if (confirm(`Clear ${seenCount} seen questions? You'll start seeing fresh questions.`)) {
-                resetQuestionHistory();
-                toast.success("Question history cleared!");
-              }
-            }}
-            className="flex w-full items-center justify-between rounded-2xl border-2 border-border bg-card p-4 shadow-sm transition hover:bg-muted/50"
-          >
-            <div className="flex items-center gap-3">
-              <RotateCcw className="h-5 w-5 text-muted-foreground" />
-              <div className="text-left">
-                <div className="font-medium">Reset question history</div>
-                <div className="text-[11px] text-muted-foreground">
-                  {seenCount} unique questions seen
-                </div>
-              </div>
-            </div>
-          </button>
-          <button
             onClick={doReset}
             className="flex w-full items-center justify-between rounded-2xl border-2 border-destructive/30 bg-card p-4 text-destructive shadow-sm transition hover:bg-destructive/5"
           >
