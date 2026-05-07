@@ -312,6 +312,7 @@ export const useGameStore = create<GameState>()(
         trainerSprite: s.trainerSprite,
         pokemon: s.pokemon,
         level: s.level,
+        peakLevel: s.peakLevel,
         xp: s.xp,
         stats: s.stats,
         inventory: s.inventory,
