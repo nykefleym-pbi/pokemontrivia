@@ -236,7 +236,7 @@ export function BattleScreen({ questions, onExit }: Props) {
       <ResultScreen
         won={resultWon!}
         xpEarned={xpEarned}
-        streak={streak}
+        streak={maxStreakRef.current}
         onRebattle={() => onExit()}
       />
     );
