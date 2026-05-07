@@ -6,7 +6,7 @@ import { Sparkles, Trophy } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { AppHeader, XpBar, PokeballSpinner } from "@/components/game-ui";
-import { rankForLevel, xpForLevel, difficultyForLevel } from "@/lib/game-data";
+import { rankForLevel, xpProgressInLevel, difficultyForLevel } from "@/lib/game-data";
 import { spriteUrl } from "@/lib/pokemon-data";
 import { trainerSpriteUrl } from "@/lib/game-data";
 import { BattleScreen, type Trivia } from "@/components/battle-screen";
