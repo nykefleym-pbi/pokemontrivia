@@ -260,15 +260,11 @@ export const useGameStore = create<GameState>()(
       },
 
       addXp: (amount) => {
-        let { level, xp } = get();
-        xp += amount;
-        let need = xpForLevel(level);
-        while (xp >= need) {
-          xp -= need;
-          level += 1;
-          need = xpForLevel(level);
-        }
-        set({ level, xp });
+        const s = get();
+        const newXp = s.xp + amount;
+        const newLevel = levelFromTotalXp(newXp);
+        const newPeak = Math.max(s.peakLevel, newLevel);
+        set({ xp: newXp, level: newLevel, peakLevel: newPeak });
       },
 
       recordAnswer: (correct, timeMs, streak) =>
