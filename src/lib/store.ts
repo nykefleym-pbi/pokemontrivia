@@ -1,11 +1,11 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { ItemId } from "./game-data";
-import { ITEMS, xpForLevel } from "./game-data";
+import { ITEMS, levelFromTotalXp } from "./game-data";
 import type { PokeEntry } from "./pokemon-data";
 import { GEN1_POKEMON } from "./pokemon-data";
 
-const MAX_SEEN_HASHES = 2000;
+const MAX_SEEN_HASHES = 500;
 const MAX_SEEN_TEXTS = 200;
 
 export function normalizeQuestion(s: string): string {
