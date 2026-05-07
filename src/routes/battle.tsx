@@ -101,7 +101,7 @@ function BattleHome({ onStart, loading }: { onStart: () => void; loading: boolea
   if (!pokemon) return null;
 
   const rank = rankForLevel(level);
-  const need = xpForLevel(level);
+  const xpProg = xpProgressInLevel(xp);
 
   return (
     <div className="bg-poke-hero min-h-screen">
