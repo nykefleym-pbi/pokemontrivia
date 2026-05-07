@@ -198,7 +198,7 @@ export function BattleScreen({ questions, onExit }: Props) {
 
   function finish(won: boolean) {
     const baseXp = won ? 40 + level * 5 : 10 + level * 2;
-    const bonus = streak * 2;
+    const bonus = maxStreakRef.current * 2;
     const total = baseXp + bonus;
     setXpEarned(total);
     setResultWon(won);
