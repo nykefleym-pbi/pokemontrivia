@@ -152,7 +152,6 @@ export const useGameStore = create<GameState>()(
           seenQuestions: newTexts.slice(-MAX_SEEN_TEXTS),
         });
       },
-      resetQuestionHistory: () => set({ seenQuestionHashes: [], seenQuestions: [] }),
 
       setOnboarded: (name, pokemon, trainerSprite) =>
         set({ hasOnboarded: true, trainerName: name, pokemon, trainerSprite }),
@@ -164,6 +163,7 @@ export const useGameStore = create<GameState>()(
           trainerSprite: "red",
           pokemon: null,
           level: 1,
+          peakLevel: 1,
           xp: 0,
           stats: defaultStats,
           inventory: { ...defaultInventory },
@@ -175,6 +175,8 @@ export const useGameStore = create<GameState>()(
           scopeRevealedThisBattle: false,
           bonusTimeThisBattle: 0,
           luckyEggActive: false,
+          seenQuestionHashes: [],
+          seenQuestions: [],
         }),
 
       setName: (name) => set({ trainerName: name }),
@@ -182,11 +184,15 @@ export const useGameStore = create<GameState>()(
       setTrainerSprite: (id) => set({ trainerSprite: id }),
 
       buyItem: (id, cost) => {
-        const { xp, inventory } = get();
-        if (xp < cost) return false;
+        const s = get();
+        if (s.xp < cost) return false;
+        const newXp = s.xp - cost;
+        // Spending XP can lower the displayed level bar progress, but never demote.
+        const recalcLevel = Math.max(s.peakLevel, levelFromTotalXp(newXp));
         set({
-          xp: xp - cost,
-          inventory: { ...inventory, [id]: (inventory[id] ?? 0) + 1 },
+          xp: newXp,
+          level: recalcLevel,
+          inventory: { ...s.inventory, [id]: (s.inventory[id] ?? 0) + 1 },
         });
         return true;
       },
