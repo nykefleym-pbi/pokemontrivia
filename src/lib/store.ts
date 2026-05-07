@@ -50,6 +50,7 @@ export interface GameState {
 
   // progression
   level: number;
+  peakLevel: number;
   xp: number;
   stats: PlayerStats;
   inventory: Record<ItemId, number>;
