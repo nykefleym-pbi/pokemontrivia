@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Pencil, RotateCcw, Check, Search } from "lucide-react";
 import { useGameStore } from "@/lib/store";
-import { rankForLevel, xpForLevel, ITEMS, TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
+import { rankForLevel, xpProgressInLevel, ITEMS, TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
 import { searchPokemon, spriteUrl } from "@/lib/pokemon-data";
 import { AppHeader, XpBar, TypeBadge } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
