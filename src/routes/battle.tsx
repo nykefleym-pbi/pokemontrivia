@@ -6,7 +6,7 @@ import { Sparkles, Trophy } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { AppHeader, XpBar, PokeballSpinner } from "@/components/game-ui";
-import { rankForLevel, xpForLevel, difficultyForLevel } from "@/lib/game-data";
+import { rankForLevel, xpProgressInLevel, difficultyForLevel } from "@/lib/game-data";
 import { spriteUrl } from "@/lib/pokemon-data";
 import { trainerSpriteUrl } from "@/lib/game-data";
 import { BattleScreen, type Trivia } from "@/components/battle-screen";
@@ -43,6 +43,7 @@ function BattlePage() {
           difficulty: difficultyForLevel(level),
           seenHashes,
           seenSamples: seenQuestions.slice(-40),
+          flowSeed: Math.floor(Math.random() * 1_000_000),
         }),
       });
       if (resp.status === 429) {
@@ -100,7 +101,7 @@ function BattleHome({ onStart, loading }: { onStart: () => void; loading: boolea
   if (!pokemon) return null;
 
   const rank = rankForLevel(level);
-  const need = xpForLevel(level);
+  const xpProg = xpProgressInLevel(xp);
 
   return (
     <div className="bg-poke-hero min-h-screen">
@@ -146,7 +147,7 @@ function BattleHome({ onStart, loading }: { onStart: () => void; loading: boolea
               <h2 className="truncate text-xl font-bold">{pokemon.name}</h2>
               <p className="text-xs text-muted-foreground">Your starter — ready to battle</p>
               <div className="mt-2">
-                <XpBar xp={xp} need={need} />
+                <XpBar xp={xpProg.current} need={xpProg.need} />
               </div>
             </div>
           </div>

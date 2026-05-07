@@ -122,15 +122,18 @@ export const Route = createFileRoute("/api/trivia-batch")({
         let difficulty = "easy";
         let seenHashes: string[] = [];
         let seenSamples: string[] = [];
+        let flowSeed = Math.floor(Math.random() * 1_000_000);
         try {
           const body = (await request.json()) as {
             difficulty?: string;
             seenHashes?: string[];
             seenSamples?: string[];
+            flowSeed?: number;
           };
           if (body.difficulty) difficulty = body.difficulty;
-          if (Array.isArray(body.seenHashes)) seenHashes = body.seenHashes.slice(-2000);
+          if (Array.isArray(body.seenHashes)) seenHashes = body.seenHashes.slice(-500);
           if (Array.isArray(body.seenSamples)) seenSamples = body.seenSamples.slice(-40);
+          if (typeof body.flowSeed === "number") flowSeed = body.flowSeed;
         } catch {
           /* defaults */
         }
@@ -184,7 +187,8 @@ CRITICAL RULES:
 - Spread across generations 1-9, multiple regions, mechanics, anime arcs, TCG, and competitive (PvP tiers, movesets) for maximum variety.
 - Each question must have 4 plausible options with exactly one correct answer.
 - Keep questions concise. Keep each explanation under 30 words.
-- Difficulty for the whole set: ${difficulty}.${avoidBlock}`;
+- Difficulty for the whole set: ${difficulty}.
+- Variation seed: ${flowSeed}. Use this seed to vary category order, phrasing, and topic emphasis so this batch does NOT mirror prior batches even if some topics recur.${avoidBlock}`;
 
         const userPrompt = `Generate ${BATCH_SIZE} unique ${difficulty} difficulty Pokémon trivia questions grounded in pokemondb.net, bulbapedia.bulbagarden.net, and pvpoke.com. Return them via the submit_trivia_batch tool.`;
 

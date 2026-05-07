@@ -7,6 +7,7 @@ import {
   pickRandomEnemy,
   type EnemyTrainer,
   ITEMS,
+  enemyHpForLevel,
 } from "@/lib/game-data";
 import { isSuperEffective, spriteUrl } from "@/lib/pokemon-data";
 import { HpBar, TypeBadge } from "@/components/game-ui";
@@ -57,8 +58,9 @@ export function BattleScreen({ questions, onExit }: Props) {
   const cooldowns = useGameStore((s) => s.itemCooldowns);
 
   const [enemy] = useState<EnemyTrainer>(() => pickRandomEnemy());
+  const enemyMaxHp = enemyHpForLevel(level);
   const [playerHp, setPlayerHp] = useState(100);
-  const [enemyHp, setEnemyHp] = useState(100);
+  const [enemyHp, setEnemyHp] = useState(enemyMaxHp);
   const [phase, setPhase] = useState<Phase>("intro");
   const [trivia, setTrivia] = useState<Trivia | null>(null);
   const [chosen, setChosen] = useState<number | null>(null);
@@ -74,6 +76,7 @@ export function BattleScreen({ questions, onExit }: Props) {
   const [xpEarned, setXpEarned] = useState(0);
   const questionStart = useRef<number>(0);
   const startedRef = useRef(false);
+  const maxStreakRef = useRef(0);
 
   const superEff = isSuperEffective(player, enemy.pokemon);
 
@@ -135,6 +138,7 @@ export function BattleScreen({ questions, onExit }: Props) {
     let newStreak = streak;
     if (correct) {
       newStreak += 1;
+      if (newStreak > maxStreakRef.current) maxStreakRef.current = newStreak;
       let dmg = 10;
       if (superEff) dmg *= 2;
       if (xAttackActive) {
@@ -194,7 +198,7 @@ export function BattleScreen({ questions, onExit }: Props) {
 
   function finish(won: boolean) {
     const baseXp = won ? 40 + level * 5 : 10 + level * 2;
-    const bonus = streak * 2;
+    const bonus = maxStreakRef.current * 2;
     const total = baseXp + bonus;
     setXpEarned(total);
     setResultWon(won);
@@ -216,6 +220,10 @@ export function BattleScreen({ questions, onExit }: Props) {
     if (id === "revive" && playerHp <= 10) {
       setPlayerHp(50);
     }
+    if (id === "xaccuracy") {
+      // Also extend the currently-running question's timer immediately.
+      setTimer((t) => t + 5);
+    }
     if (id === "escape") {
       setBagOpen(false);
       setTimeout(() => onExit(), 300);
@@ -228,7 +236,7 @@ export function BattleScreen({ questions, onExit }: Props) {
       <ResultScreen
         won={resultWon!}
         xpEarned={xpEarned}
-        streak={streak}
+        streak={maxStreakRef.current}
         onRebattle={() => onExit()}
       />
     );
@@ -315,7 +323,7 @@ export function BattleScreen({ questions, onExit }: Props) {
               </div>
             </div>
             <div className="w-32">
-              <HpBar hp={enemyHp} label="HP" />
+              <HpBar hp={enemyHp} max={enemyMaxHp} label="HP" />
             </div>
           </div>
         </div>

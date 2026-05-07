@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Pencil, RotateCcw, Check, Search } from "lucide-react";
 import { useGameStore } from "@/lib/store";
-import { rankForLevel, xpForLevel, ITEMS, TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
+import { rankForLevel, xpProgressInLevel, ITEMS, TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
 import { searchPokemon, spriteUrl } from "@/lib/pokemon-data";
 import { AppHeader, XpBar, TypeBadge } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
@@ -35,8 +35,8 @@ function ProfilePage() {
   const setPokemon = useGameStore((s) => s.setPokemon);
   const setTrainerSprite = useGameStore((s) => s.setTrainerSprite);
   const reset = useGameStore((s) => s.reset);
-  const resetQuestionHistory = useGameStore((s) => s.resetQuestionHistory);
-  const seenCount = useGameStore((s) => s.seenQuestionHashes.length);
+
+
 
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(trainerName);
@@ -50,18 +50,16 @@ function ProfilePage() {
   }, [hasOnboarded, navigate]);
 
   const results = useMemo(() => searchPokemon(query, 9), [query]);
-  const trainerResults = useMemo(
-    () =>
-      TRAINER_SPRITES.filter((id) =>
-        id.toLowerCase().includes(trainerQuery.trim().toLowerCase()),
-      ),
-    [trainerQuery],
-  );
+  const trainerResults = useMemo(() => {
+    const q = trainerQuery.trim().toLowerCase();
+    if (!q) return TRAINER_SPRITES.slice(0, 9);
+    return TRAINER_SPRITES.filter((id) => id.toLowerCase().includes(q)).slice(0, 30);
+  }, [trainerQuery]);
 
   if (!hasOnboarded || !pokemon) return null;
 
   const rank = rankForLevel(level);
-  const need = xpForLevel(level);
+  const xpProg = xpProgressInLevel(xp);
   const accuracy = stats.answered > 0 ? Math.round((stats.correct / stats.answered) * 100) : 0;
   const avgTime = stats.answered > 0 ? Math.round(stats.totalAnswerTime / stats.answered / 100) / 10 : 0;
 
@@ -148,7 +146,7 @@ function ProfilePage() {
             </div>
           </div>
           <div className="mt-4">
-            <XpBar xp={xp} need={need} />
+            <XpBar xp={xpProg.current} need={xpProg.need} />
           </div>
         </motion.div>
 
@@ -216,25 +214,6 @@ function ProfilePage() {
         {/* Settings */}
         <h3 className="mb-2 mt-6 font-pixel text-[11px] uppercase text-muted-foreground">Settings</h3>
         <div className="space-y-2">
-          <button
-            onClick={() => {
-              if (confirm(`Clear ${seenCount} seen questions? You'll start seeing fresh questions.`)) {
-                resetQuestionHistory();
-                toast.success("Question history cleared!");
-              }
-            }}
-            className="flex w-full items-center justify-between rounded-2xl border-2 border-border bg-card p-4 shadow-sm transition hover:bg-muted/50"
-          >
-            <div className="flex items-center gap-3">
-              <RotateCcw className="h-5 w-5 text-muted-foreground" />
-              <div className="text-left">
-                <div className="font-medium">Reset question history</div>
-                <div className="text-[11px] text-muted-foreground">
-                  {seenCount} unique questions seen
-                </div>
-              </div>
-            </div>
-          </button>
           <button
             onClick={doReset}
             className="flex w-full items-center justify-between rounded-2xl border-2 border-destructive/30 bg-card p-4 text-destructive shadow-sm transition hover:bg-destructive/5"
