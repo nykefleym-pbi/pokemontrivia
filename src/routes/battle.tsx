@@ -43,6 +43,7 @@ function BattlePage() {
           difficulty: difficultyForLevel(level),
           seenHashes,
           seenSamples: seenQuestions.slice(-40),
+          flowSeed: Math.floor(Math.random() * 1_000_000),
         }),
       });
       if (resp.status === 429) {
