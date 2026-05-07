@@ -323,7 +323,7 @@ export function BattleScreen({ questions, onExit }: Props) {
               </div>
             </div>
             <div className="w-32">
-              <HpBar hp={enemyHp} label="HP" />
+              <HpBar hp={enemyHp} max={enemyMaxHp} label="HP" />
             </div>
           </div>
         </div>
