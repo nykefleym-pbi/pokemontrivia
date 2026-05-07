@@ -220,6 +220,10 @@ export function BattleScreen({ questions, onExit }: Props) {
     if (id === "revive" && playerHp <= 10) {
       setPlayerHp(50);
     }
+    if (id === "xaccuracy") {
+      // Also extend the currently-running question's timer immediately.
+      setTimer((t) => t + 5);
+    }
     if (id === "escape") {
       setBagOpen(false);
       setTimeout(() => onExit(), 300);
