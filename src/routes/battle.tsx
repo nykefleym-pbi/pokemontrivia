@@ -147,7 +147,7 @@ function BattleHome({ onStart, loading }: { onStart: () => void; loading: boolea
               <h2 className="truncate text-xl font-bold">{pokemon.name}</h2>
               <p className="text-xs text-muted-foreground">Your starter — ready to battle</p>
               <div className="mt-2">
-                <XpBar xp={xp} need={need} />
+                <XpBar xp={xpProg.current} need={xpProg.need} />
               </div>
             </div>
           </div>
