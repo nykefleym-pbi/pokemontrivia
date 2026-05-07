@@ -187,7 +187,8 @@ CRITICAL RULES:
 - Spread across generations 1-9, multiple regions, mechanics, anime arcs, TCG, and competitive (PvP tiers, movesets) for maximum variety.
 - Each question must have 4 plausible options with exactly one correct answer.
 - Keep questions concise. Keep each explanation under 30 words.
-- Difficulty for the whole set: ${difficulty}.${avoidBlock}`;
+- Difficulty for the whole set: ${difficulty}.
+- Variation seed: ${flowSeed}. Use this seed to vary category order, phrasing, and topic emphasis so this batch does NOT mirror prior batches even if some topics recur.${avoidBlock}`;
 
         const userPrompt = `Generate ${BATCH_SIZE} unique ${difficulty} difficulty Pokémon trivia questions grounded in pokemondb.net, bulbapedia.bulbagarden.net, and pvpoke.com. Return them via the submit_trivia_batch tool.`;
 
