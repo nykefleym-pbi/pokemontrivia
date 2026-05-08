@@ -5,7 +5,7 @@ export interface TrainerSprite {
   url: string;
   gen: 3 | 4 | 5 | "masters";
 }
-const _DATA: TrainerSprite[] = [
+const _DATA = ([
   {
     "id": "e-brendan-back",
     "name": "E Brendan Back",
@@ -12504,5 +12504,5 @@ const _DATA: TrainerSprite[] = [
     "url": "https://archives.bulbagarden.net/media/upload/f/fa/Spr_Masters_Zinnia.png",
     "gen": "masters"
   }
-];
-export const TRAINER_SPRITES: TrainerSprite[] = _DATA;
+] as Array<{id:string;name:string;url:string;gen:string|number}>);
+export const TRAINER_SPRITES: TrainerSprite[] = _DATA as unknown as TrainerSprite[];
