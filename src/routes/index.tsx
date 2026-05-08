@@ -64,7 +64,10 @@ function SplashPage() {
                 size="lg"
                 variant="outline"
                 className="rounded-full border-2 py-6 font-semibold"
-                onClick={() => setStep("create")}
+                onClick={() => {
+                  useGameStore.getState().startGuestSession();
+                  navigate({ to: "/battle", search: { autostart: 1 } as never });
+                }}
               >
                 Guest Mode
               </Button>
