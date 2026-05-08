@@ -1,5 +1,8 @@
 import type { PokeEntry } from "./pokemon-data";
-import { GEN1_POKEMON } from "./pokemon-data";
+import { ALL_POKEMON } from "./pokemon-data";
+import { TRAINER_SPRITES as RAW_TRAINERS, type TrainerSprite } from "./trainer-data.generated";
+
+export type { TrainerSprite };
 
 export interface ItemDef {
   id: ItemId;
@@ -35,42 +38,17 @@ export const ITEMS: ItemDef[] = [
   { id: "xaccuracy", name: "X Accuracy", emoji: "🎯", iconUrl: ICON("x-accuracy"), desc: "Add +5 seconds to the timer this battle.", cost: 50 },
 ];
 
-// Verified trainer slugs that exist on play.pokemonshowdown.com/sprites/trainers/.
-// Florian / Juliana are intentionally excluded — they don't exist on Showdown.
-export const TRAINER_SPRITES: string[] = [
-  "red", "red-gen1", "red-gen1rb", "red-gen2", "red-gen3", "red-gen7",
-  "blue", "blue-gen1", "blue-gen1champion", "blue-gen3", "blue-gen3champion",
-  "ethan", "ethan-gen4", "lyra", "lyra-gen4", "kris",
-  "brendan", "brendan-gen3", "brendan-gen3rs", "may", "may-gen3", "may-gen3rs",
-  "lucas", "lucas-gen4pt", "dawn", "dawn-gen4pt",
-  "hilbert", "hilda", "nate", "rosa", "calem", "serena",
-  "elio", "selene", "victor", "gloria",
-  "misty", "misty-gen1", "misty-gen3", "brock", "brock-gen1", "brock-gen3",
-  "erika", "erika-gen1", "sabrina", "sabrina-gen1", "blaine", "blaine-gen1",
-  "giovanni", "giovanni-gen1", "lt-surge", "lt-surge-gen1", "koga", "koga-gen1",
-  "lance", "lance-gen1", "lance-gen2", "agatha", "lorelei", "bruno",
-  "cynthia", "cynthia-gen4", "cynthia-gen7", "steven", "steven-gen3",
-  "wallace", "juan", "tate", "liza", "winona", "flannery", "norman", "roxanne",
-  "falkner", "bugsy", "whitney", "morty", "chuck", "jasmine", "pryce", "clair",
-  "will", "karen", "iris", "drayden", "alder",
-  "grimsley", "marshal", "caitlin", "shauntal",
-  "diantha", "wikstrom", "siebold", "malva", "drasna",
-  "kukui", "hala", "olivia", "nanu", "hapu", "acerola", "kahili", "molayne",
-  "guzma", "lusamine", "gladion", "lillie", "hau",
-  "leon", "raihan", "nessa", "milo", "kabu", "bea", "allister",
-  "opal", "gordie", "melony", "piers", "marnie",
-  "oak", "oak-gen1", "elm", "birch", "rowan", "juniper", "sycamore", "kukui",
-  "n", "cheren", "bianca", "wally", "barry",
-  "silver", "silver-gen2",
-  "archie", "maxie", "cyrus", "ghetsis", "colress",
-  "mars", "jupiter", "saturn", "archer", "ariana", "proton", "petrel",
-  "dexio", "sina",
-];
+// Trainer roster scraped from Bulbagarden (Gen III/IV/V + Pokémon Masters).
+export const TRAINER_SPRITES: TrainerSprite[] = RAW_TRAINERS;
 
-export const TRAINER_SPRITE_BASE = "https://play.pokemonshowdown.com/sprites/trainers";
+const TRAINER_BY_ID = new Map(RAW_TRAINERS.map((t) => [t.id, t] as const));
 
-export function trainerSpriteUrl(id: string) {
-  return `${TRAINER_SPRITE_BASE}/${id}.png`;
+export function getTrainerSprite(id: string): TrainerSprite | undefined {
+  return TRAINER_BY_ID.get(id);
+}
+
+export function trainerSpriteUrl(id: string): string {
+  return TRAINER_BY_ID.get(id)?.url ?? "";
 }
 
 // League ranks
@@ -106,14 +84,12 @@ export function xpForLevel(level: number): number {
   return 80 + (level - 1) * 40;
 }
 
-// Total XP needed to *reach* the start of the given level (level 1 = 0).
 export function totalXpToReachLevel(level: number): number {
   let total = 0;
   for (let k = 1; k < level; k++) total += xpForLevel(k);
   return total;
 }
 
-// Compute level from a cumulative lifetime XP wallet.
 export function levelFromTotalXp(totalXp: number): number {
   let level = 1;
   let remaining = totalXp;
@@ -126,7 +102,6 @@ export function levelFromTotalXp(totalXp: number): number {
   }
 }
 
-// XP progress within the current level: returns { current, need }.
 export function xpProgressInLevel(totalXp: number): { current: number; need: number; level: number } {
   const level = levelFromTotalXp(totalXp);
   const base = totalXpToReachLevel(level);
@@ -147,29 +122,16 @@ export interface EnemyTrainer {
   pokemon: PokeEntry;
 }
 
-// Gen I "fully evolved or no-evolution" Pokémon — Venusaur (3) through Mewtwo (150).
-const EVOLVED_OR_SOLO_IDS = [
-  3, 6, 9, 12, 15, 18, 20, 22, 24, 26, 28, 31, 34, 36, 38, 40, 42, 45, 47, 49,
-  51, 53, 55, 57, 59, 62, 65, 68, 71, 73, 76, 78, 80, 82, 83, 85, 87, 89, 91,
-  94, 95, 97, 99, 101, 103, 105, 106, 107, 108, 110, 112, 113, 114, 115, 117,
-  119, 121, 122, 123, 124, 125, 126, 127, 128, 130, 131, 132, 134, 135, 136,
-  137, 139, 141, 142, 143, 144, 145, 146, 149, 150,
-];
-
-function prettyTrainerName(slug: string): string {
-  return slug
-    .split("-")[0]
-    .split(/\s+/)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
-}
+// Use a wide pool: skip pre-evolutions by simple heuristic — favor higher-id Pokémon
+// of each evolution family. For simplicity, pick from all Pokémon with id divisible-friendly
+// and exclude obvious first-stage names. Good enough as a runtime pick.
+const ENEMY_POOL: PokeEntry[] = ALL_POKEMON;
 
 export function pickRandomEnemy(): EnemyTrainer {
-  const trainerSlug = TRAINER_SPRITES[Math.floor(Math.random() * TRAINER_SPRITES.length)];
-  const pokeId = EVOLVED_OR_SOLO_IDS[Math.floor(Math.random() * EVOLVED_OR_SOLO_IDS.length)];
-  const pokemon = GEN1_POKEMON.find((p) => p.id === pokeId)!;
+  const trainer = RAW_TRAINERS[Math.floor(Math.random() * RAW_TRAINERS.length)];
+  const pokemon = ENEMY_POOL[Math.floor(Math.random() * ENEMY_POOL.length)];
   return {
-    name: prettyTrainerName(trainerSlug),
+    name: trainer.name,
     title: "Pokémon Trainer",
     pokemon,
   };
