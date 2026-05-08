@@ -44,6 +44,7 @@ export interface BattleLogItem {
 export interface GameState {
   // profile
   hasOnboarded: boolean;
+  isGuest: boolean;
   trainerName: string;
   trainerSprite: string;
   pokemon: PokeEntry | null;
