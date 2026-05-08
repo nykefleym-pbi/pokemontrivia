@@ -106,7 +106,7 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
   const trainerResults = useMemo(() => {
     const q = trainerQuery.trim().toLowerCase();
     if (!q) return TRAINER_SPRITES.slice(0, 9);
-    return TRAINER_SPRITES.filter((id) => id.toLowerCase().includes(q)).slice(0, 30);
+    return TRAINER_SPRITES.filter((t) => t.id.toLowerCase().includes(q) || t.name.toLowerCase().includes(q)).slice(0, 30);
   }, [trainerQuery]);
 
   function start() {
