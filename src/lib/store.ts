@@ -116,8 +116,9 @@ export const useGameStore = create<GameState>()(
   persist(
     (set, get) => ({
       hasOnboarded: false,
+      isGuest: false,
       trainerName: "",
-      trainerSprite: "red",
+      trainerSprite: TRAINER_SPRITES[0]?.id ?? "",
       pokemon: null,
       level: 1,
       peakLevel: 1,
