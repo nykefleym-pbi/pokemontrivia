@@ -276,25 +276,25 @@ function ProfilePage() {
             />
           </div>
           <div className="grid max-h-[60vh] grid-cols-3 gap-2 overflow-y-auto">
-            {trainerResults.map((id) => (
+            {trainerResults.map((t) => (
               <button
-                key={id}
+                key={t.id}
                 onClick={() => {
-                  setTrainerSprite(id);
+                  setTrainerSprite(t.id);
                   setTrainerPickerOpen(false);
                   toast.success(`Trainer updated!`);
                 }}
                 className="flex flex-col items-center rounded-2xl border-2 p-2 transition hover:border-primary"
               >
                 <img
-                  src={trainerSpriteUrl(id)}
-                  alt={id}
+                  src={trainerSpriteUrl(t.id)}
+                  alt={t.name}
                   className="sprite h-16 w-16 object-contain"
                   onError={(e) => {
                     (e.currentTarget as HTMLImageElement).style.opacity = "0.3";
                   }}
                 />
-                <div className="text-[11px] font-semibold capitalize">{id}</div>
+                <div className="text-[11px] font-semibold capitalize">{t.name}</div>
               </button>
             ))}
           </div>
