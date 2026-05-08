@@ -157,7 +157,20 @@ export const useGameStore = create<GameState>()(
       },
 
       setOnboarded: (name, pokemon, trainerSprite) =>
-        set({ hasOnboarded: true, trainerName: name, pokemon, trainerSprite }),
+        set({ hasOnboarded: true, isGuest: false, trainerName: name, pokemon, trainerSprite }),
+
+      startGuestSession: () => {
+        const poke = ALL_POKEMON[Math.floor(Math.random() * ALL_POKEMON.length)];
+        const trainer = TRAINER_SPRITES[Math.floor(Math.random() * TRAINER_SPRITES.length)];
+        const suffix = Math.floor(Math.random() * 999);
+        set({
+          hasOnboarded: true,
+          isGuest: true,
+          trainerName: `${poke.name}-${suffix}`,
+          pokemon: poke,
+          trainerSprite: trainer.id,
+        });
+      },
 
       reset: () =>
         set({
