@@ -18,6 +18,9 @@ const typeColorMap: Record<PokeType, string> = {
   rock: "bg-type-rock",
   ghost: "bg-type-ghost",
   dragon: "bg-type-dragon",
+  dark: "bg-poke-dark",
+  steel: "bg-muted-foreground",
+  fairy: "bg-pink-400",
 };
 
 export function TypeBadge({ type }: { type: PokeType }) {

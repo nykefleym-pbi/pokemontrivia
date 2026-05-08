@@ -1,9 +1,9 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { ItemId } from "./game-data";
-import { ITEMS, levelFromTotalXp } from "./game-data";
+import { ITEMS, levelFromTotalXp, TRAINER_SPRITES } from "./game-data";
 import type { PokeEntry } from "./pokemon-data";
-import { GEN1_POKEMON } from "./pokemon-data";
+import { ALL_POKEMON } from "./pokemon-data";
 
 const MAX_SEEN_HASHES = 500;
 const MAX_SEEN_TEXTS = 200;
@@ -44,6 +44,7 @@ export interface BattleLogItem {
 export interface GameState {
   // profile
   hasOnboarded: boolean;
+  isGuest: boolean;
   trainerName: string;
   trainerSprite: string;
   pokemon: PokeEntry | null;
@@ -71,6 +72,7 @@ export interface GameState {
 
   // actions
   setOnboarded: (name: string, pokemon: PokeEntry, trainerSprite: string) => void;
+  startGuestSession: () => void;
   reset: () => void;
   setName: (name: string) => void;
   setPokemon: (p: PokeEntry) => void;
@@ -114,8 +116,9 @@ export const useGameStore = create<GameState>()(
   persist(
     (set, get) => ({
       hasOnboarded: false,
+      isGuest: false,
       trainerName: "",
-      trainerSprite: "red",
+      trainerSprite: TRAINER_SPRITES[0]?.id ?? "",
       pokemon: null,
       level: 1,
       peakLevel: 1,
@@ -154,7 +157,20 @@ export const useGameStore = create<GameState>()(
       },
 
       setOnboarded: (name, pokemon, trainerSprite) =>
-        set({ hasOnboarded: true, trainerName: name, pokemon, trainerSprite }),
+        set({ hasOnboarded: true, isGuest: false, trainerName: name, pokemon, trainerSprite }),
+
+      startGuestSession: () => {
+        const poke = ALL_POKEMON[Math.floor(Math.random() * ALL_POKEMON.length)];
+        const trainer = TRAINER_SPRITES[Math.floor(Math.random() * TRAINER_SPRITES.length)];
+        const suffix = Math.floor(Math.random() * 999);
+        set({
+          hasOnboarded: true,
+          isGuest: true,
+          trainerName: `${poke.name}-${suffix}`,
+          pokemon: poke,
+          trainerSprite: trainer.id,
+        });
+      },
 
       reset: () =>
         set({
@@ -328,4 +344,5 @@ export function getItemDef(id: ItemId) {
   return ITEMS.find((i) => i.id === id)!;
 }
 
-export const ALL_POKEMON = GEN1_POKEMON;
+// ALL_POKEMON re-exported from pokemon-data; kept here for back-compat consumers.
+export { ALL_POKEMON };

@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Sparkles, Trophy } from "lucide-react";
@@ -14,6 +14,7 @@ import { Toaster } from "@/components/ui/sonner";
 
 export const Route = createFileRoute("/battle")({
   component: BattlePage,
+  validateSearch: (s: Record<string, unknown>) => ({ autostart: s.autostart ? 1 : 0 }),
 });
 
 function BattlePage() {
@@ -23,13 +24,23 @@ function BattlePage() {
   const seenQuestions = useGameStore((s) => s.seenQuestions);
   const markQuestionsSeen = useGameStore((s) => s.markQuestionsSeen);
   const navigate = useNavigate();
+  const search = Route.useSearch();
   const [phase, setPhase] = useState<"home" | "loading" | "fighting">("home");
   const [questions, setQuestions] = useState<Trivia[]>([]);
   const [battleKey, setBattleKey] = useState(0);
+  const autoStartedRef = useRef(false);
 
   useEffect(() => {
     if (!hasOnboarded) navigate({ to: "/" });
   }, [hasOnboarded, navigate]);
+
+  useEffect(() => {
+    if (hasOnboarded && search.autostart === 1 && !autoStartedRef.current && phase === "home") {
+      autoStartedRef.current = true;
+      startBattle();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasOnboarded, search.autostart, phase]);
 
   if (!hasOnboarded) return null;
 

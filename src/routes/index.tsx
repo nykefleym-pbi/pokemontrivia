@@ -64,7 +64,10 @@ function SplashPage() {
                 size="lg"
                 variant="outline"
                 className="rounded-full border-2 py-6 font-semibold"
-                onClick={() => setStep("create")}
+                onClick={() => {
+                  useGameStore.getState().startGuestSession();
+                  navigate({ to: "/battle", search: { autostart: 1 } as never });
+                }}
               >
                 Guest Mode
               </Button>
@@ -103,7 +106,7 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
   const trainerResults = useMemo(() => {
     const q = trainerQuery.trim().toLowerCase();
     if (!q) return TRAINER_SPRITES.slice(0, 9);
-    return TRAINER_SPRITES.filter((id) => id.toLowerCase().includes(q)).slice(0, 30);
+    return TRAINER_SPRITES.filter((t) => t.id.toLowerCase().includes(q) || t.name.toLowerCase().includes(q)).slice(0, 30);
   }, [trainerQuery]);
 
   function start() {
@@ -181,12 +184,12 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
             </div>
           </div>
           <div className="grid max-h-[55vh] grid-cols-3 gap-2 overflow-y-auto pr-1">
-            {trainerResults.map((id) => {
-              const selected = trainerSprite === id;
+            {trainerResults.map((t) => {
+              const selected = trainerSprite === t.id;
               return (
                 <button
-                  key={id}
-                  onClick={() => setTrainerSprite(id)}
+                  key={t.id}
+                  onClick={() => setTrainerSprite(t.id)}
                   className={`flex flex-col items-center rounded-2xl border-2 bg-white/90 p-2 transition ${
                     selected
                       ? "border-primary shadow-pop scale-105"
@@ -194,15 +197,15 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                   }`}
                 >
                   <img
-                    src={trainerSpriteUrl(id)}
-                    alt={id}
+                    src={trainerSpriteUrl(t.id)}
+                    alt={t.name}
                     className="sprite h-20 w-20 object-contain"
                     loading="lazy"
                     onError={(e) => {
                       (e.currentTarget as HTMLImageElement).style.opacity = "0.3";
                     }}
                   />
-                  <span className="mt-1 truncate text-[11px] font-semibold capitalize">{id}</span>
+                  <span className="mt-1 truncate text-[11px] font-semibold capitalize">{t.name}</span>
                 </button>
               );
             })}
