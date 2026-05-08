@@ -81,8 +81,8 @@ export interface TrainerSprite {
   url: string;
   gen: 3 | 4 | 5 | "masters";
 }
-const _DATA: ReadonlyArray<{ id: string; name: string; url: string; gen: 3 | 4 | 5 | "masters" }> = ${JSON.stringify(list, null, 2)};
-export const TRAINER_SPRITES: TrainerSprite[] = _DATA as TrainerSprite[];
+const _DATA: TrainerSprite[] = ${JSON.stringify(list, null, 2)};
+export const TRAINER_SPRITES: TrainerSprite[] = _DATA;
 `;
   writeFileSync("src/lib/trainer-data.generated.ts", body);
   console.log(`wrote ${list.length} trainers`);
