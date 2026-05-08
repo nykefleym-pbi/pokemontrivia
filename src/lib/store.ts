@@ -72,6 +72,7 @@ export interface GameState {
 
   // actions
   setOnboarded: (name: string, pokemon: PokeEntry, trainerSprite: string) => void;
+  startGuestSession: () => void;
   reset: () => void;
   setName: (name: string) => void;
   setPokemon: (p: PokeEntry) => void;
