@@ -81,9 +81,12 @@ export interface TrainerSprite {
   url: string;
   gen: 3 | 4 | 5 | "masters";
 }
-const _DATA: TrainerSprite[] = ${JSON.stringify(list, null, 2)};
-export const TRAINER_SPRITES: TrainerSprite[] = _DATA;
+const _DATA = (${JSON.stringify(list, null, 2)} as Array<{id:string;name:string;url:string;gen:string|number}>);
+export const TRAINER_SPRITES: TrainerSprite[] = _DATA as unknown as TrainerSprite[];
 `;
+  writeFileSync("src/lib/trainer-data.generated.ts", body);
+  console.log(`wrote ${list.length} trainers`);
+}
   writeFileSync("src/lib/trainer-data.generated.ts", body);
   console.log(`wrote ${list.length} trainers`);
 }
