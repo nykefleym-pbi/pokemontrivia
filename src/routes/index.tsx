@@ -184,12 +184,12 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
             </div>
           </div>
           <div className="grid max-h-[55vh] grid-cols-3 gap-2 overflow-y-auto pr-1">
-            {trainerResults.map((id) => {
-              const selected = trainerSprite === id;
+            {trainerResults.map((t) => {
+              const selected = trainerSprite === t.id;
               return (
                 <button
-                  key={id}
-                  onClick={() => setTrainerSprite(id)}
+                  key={t.id}
+                  onClick={() => setTrainerSprite(t.id)}
                   className={`flex flex-col items-center rounded-2xl border-2 bg-white/90 p-2 transition ${
                     selected
                       ? "border-primary shadow-pop scale-105"
@@ -197,15 +197,15 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                   }`}
                 >
                   <img
-                    src={trainerSpriteUrl(id)}
-                    alt={id}
+                    src={trainerSpriteUrl(t.id)}
+                    alt={t.name}
                     className="sprite h-20 w-20 object-contain"
                     loading="lazy"
                     onError={(e) => {
                       (e.currentTarget as HTMLImageElement).style.opacity = "0.3";
                     }}
                   />
-                  <span className="mt-1 truncate text-[11px] font-semibold capitalize">{id}</span>
+                  <span className="mt-1 truncate text-[11px] font-semibold capitalize">{t.name}</span>
                 </button>
               );
             })}
