@@ -328,4 +328,5 @@ export function getItemDef(id: ItemId) {
   return ITEMS.find((i) => i.id === id)!;
 }
 
-export const ALL_POKEMON = GEN1_POKEMON;
+// ALL_POKEMON re-exported from pokemon-data; kept here for back-compat consumers.
+export { ALL_POKEMON };
