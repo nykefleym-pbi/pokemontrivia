@@ -5,7 +5,7 @@ export interface TrainerSprite {
   url: string;
   gen: 3 | 4 | 5 | "masters";
 }
-const _DATA: ReadonlyArray<{ id: string; name: string; url: string; gen: 3 | 4 | 5 | "masters" }> = [
+const _DATA = [
   {
     "id": "e-brendan-back",
     "name": "E Brendan Back",
@@ -12505,4 +12505,4 @@ const _DATA: ReadonlyArray<{ id: string; name: string; url: string; gen: 3 | 4 |
     "gen": "masters"
   }
 ];
-export const TRAINER_SPRITES: TrainerSprite[] = _DATA as TrainerSprite[];
+export const TRAINER_SPRITES: TrainerSprite[] = _DATA as unknown as TrainerSprite[];
