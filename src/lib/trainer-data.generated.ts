@@ -12504,4 +12504,4 @@ export const TRAINER_SPRITES: TrainerSprite[] = [
     "url": "https://archives.bulbagarden.net/media/upload/f/fa/Spr_Masters_Zinnia.png",
     "gen": "masters"
   }
-] as TrainerSprite[];
+];
