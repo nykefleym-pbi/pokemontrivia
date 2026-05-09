@@ -41,6 +41,22 @@ export interface BattleLogItem {
   setsCompleted: number;
 }
 
+export interface BattleLogEntry {
+  opponent: string;
+  won: boolean;
+  xpGained: number;
+  bestStreak: number;
+  timestamp: number;
+}
+
+export interface DailyResult {
+  date: string;
+  correct: number;
+  total: number;
+  timeMs: number;
+  pattern: string;
+}
+
 export interface GameState {
   // profile
   hasOnboarded: boolean;
@@ -70,6 +86,15 @@ export interface GameState {
   seenQuestionHashes: string[];
   seenQuestions: string[];
 
+  // achievements / progression flags
+  flags: string[];
+
+  // daily challenge
+  dailyResult: DailyResult | null;
+
+  // battle log (cap 20)
+  battleLog: BattleLogEntry[];
+
   // actions
   setOnboarded: (name: string, pokemon: PokeEntry, trainerSprite: string) => void;
   startGuestSession: () => void;
@@ -89,6 +114,9 @@ export interface GameState {
   consumeXAttack: () => void;
   consumeScope: () => void;
   addXp: (amount: number) => void;
+  raiseFlag: (name: string) => void;
+  recordDaily: (r: DailyResult) => void;
+  pushBattleLog: (e: BattleLogEntry) => void;
 }
 
 const defaultStats: PlayerStats = {
