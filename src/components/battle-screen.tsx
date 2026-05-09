@@ -103,6 +103,7 @@ function BattleMode({ questions, onExit }: Pick<Props, "questions" | "onExit">) 
     startedRef.current = true;
     startBattle();
     setDialog(`${enemy.name} sent out ${enemy.pokemon.name}!`);
+    playCry(enemy.pokemon.id);
     if (superEff) {
       setTimeout(() => setDialog(`Go, ${player.name}! It's super effective!`), 1500);
     } else {
