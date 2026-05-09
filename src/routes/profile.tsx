@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Pencil, RotateCcw, Check, Search } from "lucide-react";
+import { Pencil, RotateCcw, Check, Search, Volume2, VolumeX } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { rankForLevel, xpProgressInLevel, ITEMS, TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
 import { searchPokemon, spriteUrl } from "@/lib/pokemon-data";
@@ -10,12 +10,25 @@ import { AppHeader, XpBar, TypeBadge } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Toaster } from "@/components/ui/sonner";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { ACHIEVEMENTS, unlockedAchievements } from "@/lib/achievements";
+import { isMuted, setMuted } from "@/lib/audio";
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
@@ -44,6 +57,13 @@ function ProfilePage() {
   const [trainerPickerOpen, setTrainerPickerOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [trainerQuery, setTrainerQuery] = useState("");
+  const [resetOpen, setResetOpen] = useState(false);
+  const [muted, setMutedState] = useState(false);
+  const fullState = useGameStore();
+  const battleLog = useGameStore((s) => s.battleLog);
+  const unlocked = useMemo(() => new Set(unlockedAchievements(fullState)), [fullState]);
+
+  useEffect(() => { setMutedState(isMuted()); }, []);
 
   useEffect(() => {
     if (!hasOnboarded) navigate({ to: "/" });
@@ -72,10 +92,8 @@ function ProfilePage() {
   }
 
   function doReset() {
-    if (confirm("Reset all progress? This cannot be undone.")) {
-      reset();
-      navigate({ to: "/" });
-    }
+    reset();
+    navigate({ to: "/" });
   }
 
   return (
