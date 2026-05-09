@@ -381,7 +381,16 @@ export const useGameStore = create<GameState>()(
         itemCooldowns: s.itemCooldowns,
         seenQuestionHashes: s.seenQuestionHashes,
         seenQuestions: s.seenQuestions,
+        flags: s.flags,
+        dailyResult: s.dailyResult,
+        battleLog: s.battleLog,
       }),
+      merge: (persisted, current) => ({
+        ...current,
+        ...(persisted as Partial<GameState>),
+        flags: (persisted as Partial<GameState>)?.flags ?? [],
+        battleLog: (persisted as Partial<GameState>)?.battleLog ?? [],
+        dailyResult: (persisted as Partial<GameState>)?.dailyResult ?? null,
     },
   ),
 );
