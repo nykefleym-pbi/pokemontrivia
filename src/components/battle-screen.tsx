@@ -446,7 +446,7 @@ function BattleMode({ questions, onExit }: Pick<Props, "questions" | "onExit">) 
             />
             {floatDmg?.who === "enemy" && (
               <div className="animate-float-up pointer-events-none absolute -top-2 left-1/2 -translate-x-1/2 font-pixel text-base text-destructive">
-                -{floatDmg.n}{floatDmg.super && " 💥"}
+                -{floatDmg.n}{floatDmg.super && " 💥"}{floatDmg.speedy && " ⚡"}
               </div>
             )}
           </motion.div>
@@ -464,7 +464,7 @@ function BattleMode({ questions, onExit }: Pick<Props, "questions" | "onExit">) 
             <img
               src={spriteUrl(player.id, true)}
               alt={player.name}
-              className="sprite h-32 w-32"
+              className={`sprite h-32 w-32 ${streak >= 5 ? "mega-glow" : ""}`}
             />
             {floatDmg?.who === "player" && (
               <div className="animate-float-up pointer-events-none absolute -top-2 left-1/2 -translate-x-1/2 font-pixel text-base text-destructive">
@@ -509,9 +509,16 @@ function BattleMode({ questions, onExit }: Pick<Props, "questions" | "onExit">) 
             className="px-5 pb-6 pt-4"
           >
             <div className="rounded-3xl bg-card p-4 shadow-card">
-              <div className="mb-3 flex items-center justify-between">
-                <div className="font-pixel text-[10px] uppercase text-muted-foreground">
-                  {trivia.category}
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="font-pixel text-[10px] uppercase text-muted-foreground">
+                    {trivia.category}
+                  </div>
+                  {streak >= 2 && (
+                    <div className="rounded-full bg-poke-yellow/30 px-2 py-0.5 font-pixel text-[9px] text-poke-dark">
+                      🔥 {streak} · ×{streakMultiplier(streak)}
+                    </div>
+                  )}
                 </div>
                 <div
                   className={`flex items-center gap-1 rounded-full px-2 py-0.5 font-pixel text-[10px] ${
