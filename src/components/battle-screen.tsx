@@ -559,7 +559,7 @@ function BattleMode({ questions, onExit }: Pick<Props, "questions" | "onExit">) 
               </div>
               {phase === "feedback" && (
                 <p className="mt-3 rounded-xl bg-muted p-2 text-xs text-muted-foreground">
-                  💡 {trivia.explanation}
+                  💡 {trivia.explanation} · ⚡ {(lastElapsedMs / 1000).toFixed(1)}s
                 </p>
               )}
             </div>
