@@ -391,6 +391,7 @@ export const useGameStore = create<GameState>()(
         flags: (persisted as Partial<GameState>)?.flags ?? [],
         battleLog: (persisted as Partial<GameState>)?.battleLog ?? [],
         dailyResult: (persisted as Partial<GameState>)?.dailyResult ?? null,
+      }),
     },
   ),
 );
