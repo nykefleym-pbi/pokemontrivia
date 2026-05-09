@@ -229,11 +229,57 @@ function ProfilePage() {
           })}
         </div>
 
+        {/* Trophies */}
+        <h3 className="mb-2 mt-6 font-pixel text-[11px] uppercase text-muted-foreground">
+          Trophies ({unlocked.size}/{ACHIEVEMENTS.length})
+        </h3>
+        <div className="grid grid-cols-4 gap-2 rounded-2xl bg-card p-3 shadow-sm">
+          {ACHIEVEMENTS.map((a) => {
+            const got = unlocked.has(a.id);
+            return (
+              <div
+                key={a.id}
+                title={`${a.name} — ${a.desc}`}
+                className={`flex flex-col items-center rounded-xl p-2 ${got ? "bg-poke-yellow/20" : "grayscale opacity-30"}`}
+              >
+                <div className="text-2xl">{a.icon}</div>
+                <div className="mt-1 text-center text-[9px] font-semibold leading-tight">{a.name}</div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Battle Log */}
+        {battleLog.length > 0 && (
+          <>
+            <h3 className="mb-2 mt-6 font-pixel text-[11px] uppercase text-muted-foreground">Recent Battles</h3>
+            <div className="space-y-1.5 rounded-2xl bg-card p-3 shadow-sm">
+              {battleLog.slice(0, 10).map((e, i) => (
+                <div key={i} className="flex items-center justify-between text-xs">
+                  <span className={e.won ? "text-hp-good" : "text-destructive"}>{e.won ? "WIN" : "LOSS"}</span>
+                  <span className="flex-1 truncate px-2 text-muted-foreground">vs {e.opponent}</span>
+                  <span className="font-pixel text-[10px] text-primary">+{e.xpGained} XP</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
         {/* Settings */}
         <h3 className="mb-2 mt-6 font-pixel text-[11px] uppercase text-muted-foreground">Settings</h3>
         <div className="space-y-2">
+          <div className="flex items-center justify-between rounded-2xl border-2 bg-card p-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+              <span className="font-medium">Sound</span>
+            </div>
+            <Switch
+              checked={!muted}
+              onCheckedChange={(v) => { setMuted(!v); setMutedState(!v); }}
+            />
+          </div>
           <button
-            onClick={doReset}
+            onClick={() => setResetOpen(true)}
             className="flex w-full items-center justify-between rounded-2xl border-2 border-destructive/30 bg-card p-4 text-destructive shadow-sm transition hover:bg-destructive/5"
           >
             <div className="flex items-center gap-3">
@@ -243,6 +289,24 @@ function ProfilePage() {
           </button>
         </div>
       </div>
+
+      <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset all progress?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will erase your trainer, level, items, and stats. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={doReset} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Reset
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
 
       {/* Pokémon picker */}
       <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
