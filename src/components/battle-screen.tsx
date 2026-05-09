@@ -249,7 +249,38 @@ function BattleMode({ questions, onExit }: Pick<Props, "questions" | "onExit">) 
     const total = baseXp + bonus;
     setXpEarned(total);
     setResultWon(won);
+
+    // comeback flag — won at low HP
+    if (won && playerHp <= 10) {
+      raiseFlag("comeback");
+    }
+
+    // snapshot achievements before/after
+    const before = new Set(unlockedAchievements(useGameStore.getState()));
     endBattle(won, total);
+    pushBattleLog({
+      opponent: `${enemy.name}'s ${enemy.pokemon.name}`,
+      won,
+      xpGained: total,
+      bestStreak: maxStreakRef.current,
+      timestamp: Date.now(),
+    });
+    const after = unlockedAchievements(useGameStore.getState());
+    for (const id of after) {
+      if (!before.has(id)) {
+        const a = ACHIEVEMENTS.find((x) => x.id === id);
+        if (a) {
+          toast.success(`${a.icon} ${a.name}`, { description: a.desc, duration: 4000 });
+        }
+      }
+    }
+
+    playSfx(won ? "victory" : "defeat");
+    if (won) {
+      toast.success(`Victory! +${total} XP`, { duration: 2500 });
+    } else {
+      toast.error(`Defeat — +${total} XP`, { duration: 2500 });
+    }
     setPhase("result");
   }
 
