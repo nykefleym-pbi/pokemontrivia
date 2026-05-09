@@ -68,6 +68,8 @@ function BattleMode({ questions, onExit }: Pick<Props, "questions" | "onExit">) 
   const bonusTime = useGameStore((s) => s.bonusTimeThisBattle);
   const inventory = useGameStore((s) => s.inventory);
   const cooldowns = useGameStore((s) => s.itemCooldowns);
+  const raiseFlag = useGameStore((s) => s.raiseFlag);
+  const pushBattleLog = useGameStore((s) => s.pushBattleLog);
 
   const [enemy] = useState<EnemyTrainer>(() => pickRandomEnemy());
   const enemyMaxHp = enemyHpForLevel(level);
@@ -82,13 +84,16 @@ function BattleMode({ questions, onExit }: Pick<Props, "questions" | "onExit">) 
   const [timer, setTimer] = useState(TIMER_BASE);
   const [dialog, setDialog] = useState("");
   const [shakeWho, setShakeWho] = useState<"player" | "enemy" | null>(null);
-  const [floatDmg, setFloatDmg] = useState<{ who: "player" | "enemy"; n: number; super: boolean } | null>(null);
+  const [floatDmg, setFloatDmg] = useState<{ who: "player" | "enemy"; n: number; super: boolean; speedy: boolean } | null>(null);
   const [bagOpen, setBagOpen] = useState(false);
   const [resultWon, setResultWon] = useState<boolean | null>(null);
   const [xpEarned, setXpEarned] = useState(0);
+  const [streakBanner, setStreakBanner] = useState<string | null>(null);
+  const [lastElapsedMs, setLastElapsedMs] = useState(0);
   const questionStart = useRef<number>(0);
   const startedRef = useRef(false);
   const maxStreakRef = useRef(0);
+  const lastStreakLabelRef = useRef<string | null>(null);
 
   const superEff = isSuperEffective(player, enemy.pokemon);
 
