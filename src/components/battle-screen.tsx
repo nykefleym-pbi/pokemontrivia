@@ -623,3 +623,208 @@ function Row({ label, value, accent }: { label: string; value: string; accent?: 
     </div>
   );
 }
+
+// ----------------------------- Daily Challenge Mode -----------------------------
+
+function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">) {
+  const recordDaily = useGameStore((s) => s.recordDaily);
+  const [idx, setIdx] = useState(0);
+  const [phase, setPhase] = useState<"question" | "feedback" | "done">("question");
+  const [chosen, setChosen] = useState<number | null>(null);
+  const [pattern, setPattern] = useState<string>("");
+  const [correctCount, setCorrectCount] = useState(0);
+  const [timer, setTimer] = useState(20);
+  const startedAt = useRef(Date.now());
+  const qStart = useRef(Date.now());
+  const recordedRef = useRef(false);
+
+  const trivia = questions[idx];
+  const total = questions.length;
+
+  useEffect(() => {
+    qStart.current = Date.now();
+    setTimer(20);
+  }, [idx]);
+
+  useEffect(() => {
+    if (phase !== "question") return;
+    if (timer <= 0) {
+      handleAnswer(-1);
+      return;
+    }
+    const t = setTimeout(() => setTimer((x) => x - 1), 1000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timer, phase]);
+
+  function handleAnswer(picked: number) {
+    if (!trivia || phase !== "question") return;
+    setChosen(picked);
+    const correct = picked === trivia.correct;
+    const sym = picked === -1 ? "⬛" : correct ? "🟩" : "🟥";
+    const nextPattern = pattern + sym;
+    setPattern(nextPattern);
+    if (correct) setCorrectCount((c) => c + 1);
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      try {
+        navigator.vibrate(correct ? 30 : [50, 30, 50]);
+      } catch { /* ignore */ }
+    }
+    playSfx(correct ? "correct" : "wrong");
+    setPhase("feedback");
+    setTimeout(() => {
+      const next = idx + 1;
+      if (next >= total) {
+        const timeMs = Date.now() - startedAt.current;
+        if (!recordedRef.current) {
+          recordedRef.current = true;
+          const finalCorrect = correctCount + (correct ? 1 : 0);
+          recordDaily({
+            date: new Date().toISOString().slice(0, 10),
+            correct: finalCorrect,
+            total,
+            timeMs,
+            pattern: nextPattern,
+          });
+        }
+        playSfx("victory");
+        setPhase("done");
+      } else {
+        setChosen(null);
+        setIdx(next);
+        setPhase("question");
+      }
+    }, 1500);
+  }
+
+  if (phase === "done") {
+    const timeMs = Date.now() - startedAt.current;
+    return <DailyResultScreen correct={correctCount} total={total} timeMs={timeMs} pattern={pattern} onExit={onExit} />;
+  }
+
+  if (!trivia) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="font-pixel text-sm text-muted-foreground">No daily questions available.</div>
+      </div>
+    );
+  }
+
+  const progressPct = ((idx) / total) * 100;
+
+  return (
+    <div className="bg-poke-hero min-h-screen">
+      <div className="absolute left-0 right-0 top-0 z-40 h-1 bg-poke-dark/20">
+        <motion.div className="h-full bg-poke-yellow" initial={false} animate={{ width: `${progressPct}%` }} />
+      </div>
+      <div className="flex items-center justify-between px-4 pt-[calc(env(safe-area-inset-top)+0.5rem)]">
+        <button onClick={onExit} className="flex h-10 w-10 items-center justify-center rounded-full bg-card/80 backdrop-blur">
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+        <div className="rounded-full bg-poke-dark px-3 py-1 font-pixel text-[10px] text-poke-yellow">
+          🔥 DAILY · {idx + 1}/{total}
+        </div>
+        <div className="w-10" />
+      </div>
+
+      <div className="px-5 pt-6">
+        <div className="rounded-3xl bg-card p-5 shadow-card">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="font-pixel text-[10px] uppercase text-muted-foreground">{trivia.category}</div>
+            <div
+              className={`flex items-center gap-1 rounded-full px-2 py-0.5 font-pixel text-[10px] ${
+                timer <= 5 ? "bg-destructive text-destructive-foreground animate-pulse" : "bg-muted"
+              }`}
+            >
+              <Clock className="h-3 w-3" /> {timer}s
+            </div>
+          </div>
+          <p className="text-base font-semibold leading-snug">{trivia.question}</p>
+          <div className="mt-4 grid grid-cols-1 gap-2">
+            {trivia.options.map((opt, i) => {
+              const isCorrect = phase === "feedback" && i === trivia.correct;
+              const isWrong = phase === "feedback" && chosen === i && i !== trivia.correct;
+              return (
+                <button
+                  key={i}
+                  disabled={phase !== "question"}
+                  onClick={() => handleAnswer(i)}
+                  className={`rounded-2xl border-2 px-4 py-3 text-left text-sm font-medium transition ${
+                    isCorrect
+                      ? "border-hp-good bg-hp-good/20"
+                      : isWrong
+                        ? "border-destructive bg-destructive/15"
+                        : "border-border bg-card hover:border-primary hover:bg-primary/5"
+                  } disabled:cursor-not-allowed`}
+                >
+                  <span className="mr-2 font-pixel text-[10px] text-primary">{String.fromCharCode(65 + i)}</span>
+                  {opt}
+                </button>
+              );
+            })}
+          </div>
+          {phase === "feedback" && (
+            <p className="mt-3 rounded-xl bg-muted p-2 text-xs text-muted-foreground">💡 {trivia.explanation}</p>
+          )}
+        </div>
+        <div className="mt-4 text-center font-pixel text-base tracking-widest">{pattern || "—"}</div>
+      </div>
+    </div>
+  );
+}
+
+function DailyResultScreen({
+  correct,
+  total,
+  timeMs,
+  pattern,
+  onExit,
+}: {
+  correct: number;
+  total: number;
+  timeMs: number;
+  pattern: string;
+  onExit: () => void;
+}) {
+  const date = new Date().toISOString().slice(0, 10);
+  const seconds = Math.round(timeMs / 1000);
+  const shareText = `Pokémon Trivia · ${date}\n${correct}/${total} · ${seconds}s\n${pattern}\nplay → poketrivia.app`;
+
+  async function share() {
+    if (typeof navigator !== "undefined" && (navigator as Navigator & { share?: (d: ShareData) => Promise<void> }).share) {
+      try {
+        await (navigator as Navigator & { share: (d: ShareData) => Promise<void> }).share({ text: shareText });
+        return;
+      } catch { /* fall through to clipboard */ }
+    }
+    try {
+      await navigator.clipboard.writeText(shareText);
+      toast.success("Copied to clipboard!");
+    } catch {
+      toast.error("Couldn't copy. Long-press the text below.");
+    }
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="flex min-h-screen flex-col items-center justify-center bg-poke-hero px-6"
+    >
+      <div className="font-pixel text-2xl text-poke-dark">DAILY DONE!</div>
+      <div className="mt-3 text-5xl">🏅</div>
+      <div className="mt-6 w-full max-w-xs space-y-3 rounded-3xl bg-card/95 p-5 shadow-pop">
+        <div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Date</span><span className="font-pixel text-sm">{date}</span></div>
+        <div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Score</span><span className="font-pixel text-sm text-primary">{correct}/{total}</span></div>
+        <div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Time</span><span className="font-pixel text-sm">{seconds}s</span></div>
+        <div className="text-center font-pixel text-lg tracking-widest">{pattern}</div>
+      </div>
+      <Button size="lg" onClick={share} className="mt-6 w-full max-w-xs rounded-full bg-primary py-6 font-semibold shadow-pop">
+        <Share2 className="mr-2 h-4 w-4" /> Share Result
+      </Button>
+      <Button size="lg" variant="outline" onClick={onExit} className="mt-3 w-full max-w-xs rounded-full border-2 py-6 font-semibold">
+        Back
+      </Button>
+    </motion.div>
+  );
+}
