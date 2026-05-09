@@ -166,6 +166,10 @@ export const useGameStore = create<GameState>()(
       seenQuestionHashes: [],
       seenQuestions: [],
 
+      flags: [],
+      dailyResult: null,
+      battleLog: [],
+
       markQuestionsSeen: (texts) => {
         const s = get();
         const newHashes = [...s.seenQuestionHashes];
@@ -221,6 +225,9 @@ export const useGameStore = create<GameState>()(
           luckyEggActive: false,
           seenQuestionHashes: [],
           seenQuestions: [],
+          flags: [],
+          dailyResult: null,
+          battleLog: [],
         }),
 
       setName: (name) => set({ trainerName: name }),
@@ -257,7 +264,6 @@ export const useGameStore = create<GameState>()(
         // Set cooldowns (in completed sets)
         if (id === "xattack") nextCooldowns.xattack = 1;
         if (id === "scope") nextCooldowns.scope = 1;
-        if (id === "potion") nextCooldowns.potion = 0;
 
         set({
           inventory: nextInventory,
@@ -332,12 +338,24 @@ export const useGameStore = create<GameState>()(
         set({
           setsThisBattle: s.setsThisBattle + 1,
           itemCooldowns: nextCd,
-          xAttackActive: false,
         });
       },
 
       consumeXAttack: () => set({ xAttackActive: false }),
       consumeScope: () => set({ scopeRevealedThisBattle: false }),
+
+      raiseFlag: (name) => {
+        const s = get();
+        if (s.flags.includes(name)) return;
+        set({ flags: [...s.flags, name] });
+      },
+
+      recordDaily: (r) => set({ dailyResult: r }),
+
+      pushBattleLog: (e) => {
+        const s = get();
+        set({ battleLog: [e, ...s.battleLog].slice(0, 20) });
+      },
     }),
     {
       name: "poke-trivia-store",
