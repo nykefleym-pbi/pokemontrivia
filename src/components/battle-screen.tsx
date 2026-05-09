@@ -149,27 +149,54 @@ function BattleMode({ questions, onExit }: Pick<Props, "questions" | "onExit">) 
 
   function handleAnswer(idx: number) {
     if (phase !== "question" || !trivia) return;
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      try {
+        navigator.vibrate(idx === trivia.correct ? 30 : [50, 30, 50]);
+      } catch {
+        /* ignore */
+      }
+    }
     setChosen(idx);
     const correct = idx === trivia.correct;
     const elapsed = Date.now() - questionStart.current;
+    setLastElapsedMs(elapsed);
 
     let newStreak = streak;
     if (correct) {
       newStreak += 1;
       if (newStreak > maxStreakRef.current) maxStreakRef.current = newStreak;
-      let dmg = 10;
+
+      // streak multiplier
+      let dmg = Math.round(10 * streakMultiplier(newStreak));
+      // time bonus
+      const elapsedSec = elapsed / 1000;
+      const totalTime = TIMER_BASE + bonusTime;
+      const speedRatio = Math.max(0, (totalTime - elapsedSec) / totalTime);
+      const speedBonus = Math.round(5 * speedRatio);
+      dmg += speedBonus;
+      // type effectiveness AFTER multiplier
       if (superEff) dmg *= 2;
       if (xAttackActive) {
         dmg += 20;
         consumeXAttack();
       }
+
       const newEnemyHp = Math.max(0, enemyHp - dmg);
       setEnemyHp(newEnemyHp);
       setShakeWho("enemy");
-      setFloatDmg({ who: "enemy", n: dmg, super: superEff });
+      setFloatDmg({ who: "enemy", n: dmg, super: superEff, speedy: speedBonus >= 3 });
       setDialog(`${player.name} dealt ${dmg} damage!`);
       setStreak(newStreak);
       recordAnswer(true, elapsed, newStreak);
+      playSfx("correct");
+
+      const lbl = streakLabel(newStreak);
+      if (lbl && lbl !== lastStreakLabelRef.current) {
+        lastStreakLabelRef.current = lbl;
+        setStreakBanner(lbl);
+        setTimeout(() => setStreakBanner(null), 1500);
+      }
+
       setTimeout(() => setShakeWho(null), 500);
       setTimeout(() => setFloatDmg(null), 1000);
 
@@ -183,9 +210,11 @@ function BattleMode({ questions, onExit }: Pick<Props, "questions" | "onExit">) 
       const newPlayerHp = Math.max(0, playerHp - dmg);
       setPlayerHp(newPlayerHp);
       setShakeWho("player");
-      setFloatDmg({ who: "player", n: dmg, super: false });
+      setFloatDmg({ who: "player", n: dmg, super: false, speedy: false });
       setStreak(0);
+      lastStreakLabelRef.current = null;
       recordAnswer(false, elapsed, streak);
+      playSfx("wrong");
       setDialog(
         idx === -1
           ? `Time's up! ${player.name} took ${dmg} damage!`
