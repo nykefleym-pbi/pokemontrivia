@@ -41,6 +41,22 @@ export interface BattleLogItem {
   setsCompleted: number;
 }
 
+export interface BattleLogEntry {
+  opponent: string;
+  won: boolean;
+  xpGained: number;
+  bestStreak: number;
+  timestamp: number;
+}
+
+export interface DailyResult {
+  date: string;
+  correct: number;
+  total: number;
+  timeMs: number;
+  pattern: string;
+}
+
 export interface GameState {
   // profile
   hasOnboarded: boolean;
@@ -70,6 +86,15 @@ export interface GameState {
   seenQuestionHashes: string[];
   seenQuestions: string[];
 
+  // achievements / progression flags
+  flags: string[];
+
+  // daily challenge
+  dailyResult: DailyResult | null;
+
+  // battle log (cap 20)
+  battleLog: BattleLogEntry[];
+
   // actions
   setOnboarded: (name: string, pokemon: PokeEntry, trainerSprite: string) => void;
   startGuestSession: () => void;
@@ -89,6 +114,9 @@ export interface GameState {
   consumeXAttack: () => void;
   consumeScope: () => void;
   addXp: (amount: number) => void;
+  raiseFlag: (name: string) => void;
+  recordDaily: (r: DailyResult) => void;
+  pushBattleLog: (e: BattleLogEntry) => void;
 }
 
 const defaultStats: PlayerStats = {
@@ -137,6 +165,10 @@ export const useGameStore = create<GameState>()(
 
       seenQuestionHashes: [],
       seenQuestions: [],
+
+      flags: [],
+      dailyResult: null,
+      battleLog: [],
 
       markQuestionsSeen: (texts) => {
         const s = get();
@@ -193,6 +225,9 @@ export const useGameStore = create<GameState>()(
           luckyEggActive: false,
           seenQuestionHashes: [],
           seenQuestions: [],
+          flags: [],
+          dailyResult: null,
+          battleLog: [],
         }),
 
       setName: (name) => set({ trainerName: name }),
@@ -229,7 +264,6 @@ export const useGameStore = create<GameState>()(
         // Set cooldowns (in completed sets)
         if (id === "xattack") nextCooldowns.xattack = 1;
         if (id === "scope") nextCooldowns.scope = 1;
-        if (id === "potion") nextCooldowns.potion = 0;
 
         set({
           inventory: nextInventory,
@@ -304,12 +338,24 @@ export const useGameStore = create<GameState>()(
         set({
           setsThisBattle: s.setsThisBattle + 1,
           itemCooldowns: nextCd,
-          xAttackActive: false,
         });
       },
 
       consumeXAttack: () => set({ xAttackActive: false }),
       consumeScope: () => set({ scopeRevealedThisBattle: false }),
+
+      raiseFlag: (name) => {
+        const s = get();
+        if (s.flags.includes(name)) return;
+        set({ flags: [...s.flags, name] });
+      },
+
+      recordDaily: (r) => set({ dailyResult: r }),
+
+      pushBattleLog: (e) => {
+        const s = get();
+        set({ battleLog: [e, ...s.battleLog].slice(0, 20) });
+      },
     }),
     {
       name: "poke-trivia-store",
@@ -335,6 +381,16 @@ export const useGameStore = create<GameState>()(
         itemCooldowns: s.itemCooldowns,
         seenQuestionHashes: s.seenQuestionHashes,
         seenQuestions: s.seenQuestions,
+        flags: s.flags,
+        dailyResult: s.dailyResult,
+        battleLog: s.battleLog,
+      }),
+      merge: (persisted, current) => ({
+        ...current,
+        ...(persisted as Partial<GameState>),
+        flags: (persisted as Partial<GameState>)?.flags ?? [],
+        battleLog: (persisted as Partial<GameState>)?.battleLog ?? [],
+        dailyResult: (persisted as Partial<GameState>)?.dailyResult ?? null,
       }),
     },
   ),

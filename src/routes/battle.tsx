@@ -14,7 +14,10 @@ import { Toaster } from "@/components/ui/sonner";
 
 export const Route = createFileRoute("/battle")({
   component: BattlePage,
-  validateSearch: (s: Record<string, unknown>) => ({ autostart: s.autostart ? 1 : 0 }),
+  validateSearch: (s: Record<string, unknown>) => ({
+    autostart: s.autostart ? 1 : 0,
+    mode: s.mode === "daily" ? "daily" : "battle",
+  }),
 });
 
 function BattlePage() {
@@ -25,10 +28,13 @@ function BattlePage() {
   const markQuestionsSeen = useGameStore((s) => s.markQuestionsSeen);
   const navigate = useNavigate();
   const search = Route.useSearch();
-  const [phase, setPhase] = useState<"home" | "loading" | "fighting">("home");
+  const [phase, setPhase] = useState<"home" | "loading" | "fighting" | "daily">("home");
   const [questions, setQuestions] = useState<Trivia[]>([]);
   const [battleKey, setBattleKey] = useState(0);
   const autoStartedRef = useRef(false);
+  const dailyResult = useGameStore((s) => s.dailyResult);
+  const today = new Date().toISOString().slice(0, 10);
+  const dailyDone = dailyResult?.date === today;
 
   useEffect(() => {
     if (!hasOnboarded) navigate({ to: "/" });
@@ -83,6 +89,26 @@ function BattlePage() {
     }
   }
 
+  async function startDaily() {
+    if (dailyDone) return;
+    setPhase("loading");
+    try {
+      const resp = await fetch("/api/daily-challenge");
+      const data = (await resp.json()) as { questions: Trivia[] };
+      if (!data.questions?.length) {
+        toast.error("Daily challenge unavailable. Try again later.");
+        setPhase("home");
+        return;
+      }
+      setQuestions(data.questions);
+      setPhase("daily");
+    } catch (e) {
+      console.error(e);
+      toast.error("Couldn't load daily.");
+      setPhase("home");
+    }
+  }
+
   function exitBattle() {
     setPhase("home");
     setQuestions([]);
@@ -94,14 +120,34 @@ function BattlePage() {
       <Toaster position="top-center" />
       {phase === "fighting" ? (
         <BattleScreen key={battleKey} questions={questions} onExit={exitBattle} />
+      ) : phase === "daily" ? (
+        <BattleScreen key={battleKey} questions={questions} onExit={exitBattle} mode="daily" />
       ) : (
-        <BattleHome onStart={startBattle} loading={phase === "loading"} />
+        <BattleHome
+          onStart={startBattle}
+          onStartDaily={startDaily}
+          loading={phase === "loading"}
+          dailyDone={dailyDone}
+          dailyResult={dailyDone ? dailyResult : null}
+        />
       )}
     </>
   );
 }
 
-function BattleHome({ onStart, loading }: { onStart: () => void; loading: boolean }) {
+function BattleHome({
+  onStart,
+  onStartDaily,
+  loading,
+  dailyDone,
+  dailyResult,
+}: {
+  onStart: () => void;
+  onStartDaily: () => void;
+  loading: boolean;
+  dailyDone: boolean;
+  dailyResult: { correct: number; total: number; timeMs: number; pattern: string; date: string } | null;
+}) {
   const trainerName = useGameStore((s) => s.trainerName);
   const trainerSprite = useGameStore((s) => s.trainerSprite);
   const pokemon = useGameStore((s) => s.pokemon);
@@ -168,6 +214,39 @@ function BattleHome({ onStart, loading }: { onStart: () => void; loading: boolea
           <StatPill label="Battles" value={stats.battles} />
           <StatPill label="Wins" value={stats.wins} />
           <StatPill label="Streak" value={stats.bestStreak} />
+        </div>
+
+        {/* Daily Challenge */}
+        <div className="mt-4 rounded-3xl border-2 border-poke-yellow bg-card p-4 shadow-card">
+          <div className="font-pixel text-[11px] text-poke-dark">🔥 TODAY'S CHALLENGE</div>
+          {dailyDone && dailyResult ? (
+            <>
+              <div className="mt-2 text-sm">
+                Score: <span className="font-pixel text-primary">{dailyResult.correct}/{dailyResult.total}</span> · {Math.round(dailyResult.timeMs / 1000)}s
+              </div>
+              <div className="mt-1 font-pixel text-base tracking-widest">{dailyResult.pattern}</div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="mt-3 w-full rounded-full"
+                onClick={async () => {
+                  const text = `Pokémon Trivia · ${dailyResult.date}\n${dailyResult.correct}/${dailyResult.total} · ${Math.round(dailyResult.timeMs / 1000)}s\n${dailyResult.pattern}\nplay → poketrivia.app`;
+                  const nav = navigator as Navigator & { share?: (d: ShareData) => Promise<void> };
+                  if (nav.share) { try { await nav.share({ text }); return; } catch { /* fall */ } }
+                  try { await navigator.clipboard.writeText(text); toast.success("Copied!"); } catch { toast.error("Couldn't copy."); }
+                }}
+              >
+                Share Result
+              </Button>
+            </>
+          ) : (
+            <>
+              <p className="mt-1 text-xs text-muted-foreground">10 hard questions. Same for everyone today.</p>
+              <Button size="sm" className="mt-3 w-full rounded-full bg-poke-dark text-poke-yellow font-pixel text-[10px]" onClick={onStartDaily} disabled={loading}>
+                Start Daily
+              </Button>
+            </>
+          )}
         </div>
 
         <motion.div

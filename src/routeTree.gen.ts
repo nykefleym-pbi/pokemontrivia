@@ -15,6 +15,7 @@ import { Route as BattleRouteImport } from './routes/battle'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiTriviaBatchRouteImport } from './routes/api.trivia-batch'
 import { Route as ApiTriviaRouteImport } from './routes/api.trivia'
+import { Route as ApiDailyChallengeRouteImport } from './routes/api.daily-challenge'
 
 const ShopRoute = ShopRouteImport.update({
   id: '/shop',
@@ -46,12 +47,18 @@ const ApiTriviaRoute = ApiTriviaRouteImport.update({
   path: '/api/trivia',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDailyChallengeRoute = ApiDailyChallengeRouteImport.update({
+  id: '/api/daily-challenge',
+  path: '/api/daily-challenge',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/battle': typeof BattleRoute
   '/profile': typeof ProfileRoute
   '/shop': typeof ShopRoute
+  '/api/daily-challenge': typeof ApiDailyChallengeRoute
   '/api/trivia': typeof ApiTriviaRoute
   '/api/trivia-batch': typeof ApiTriviaBatchRoute
 }
@@ -60,6 +67,7 @@ export interface FileRoutesByTo {
   '/battle': typeof BattleRoute
   '/profile': typeof ProfileRoute
   '/shop': typeof ShopRoute
+  '/api/daily-challenge': typeof ApiDailyChallengeRoute
   '/api/trivia': typeof ApiTriviaRoute
   '/api/trivia-batch': typeof ApiTriviaBatchRoute
 }
@@ -69,6 +77,7 @@ export interface FileRoutesById {
   '/battle': typeof BattleRoute
   '/profile': typeof ProfileRoute
   '/shop': typeof ShopRoute
+  '/api/daily-challenge': typeof ApiDailyChallengeRoute
   '/api/trivia': typeof ApiTriviaRoute
   '/api/trivia-batch': typeof ApiTriviaBatchRoute
 }
@@ -79,6 +88,7 @@ export interface FileRouteTypes {
     | '/battle'
     | '/profile'
     | '/shop'
+    | '/api/daily-challenge'
     | '/api/trivia'
     | '/api/trivia-batch'
   fileRoutesByTo: FileRoutesByTo
@@ -87,6 +97,7 @@ export interface FileRouteTypes {
     | '/battle'
     | '/profile'
     | '/shop'
+    | '/api/daily-challenge'
     | '/api/trivia'
     | '/api/trivia-batch'
   id:
@@ -95,6 +106,7 @@ export interface FileRouteTypes {
     | '/battle'
     | '/profile'
     | '/shop'
+    | '/api/daily-challenge'
     | '/api/trivia'
     | '/api/trivia-batch'
   fileRoutesById: FileRoutesById
@@ -104,6 +116,7 @@ export interface RootRouteChildren {
   BattleRoute: typeof BattleRoute
   ProfileRoute: typeof ProfileRoute
   ShopRoute: typeof ShopRoute
+  ApiDailyChallengeRoute: typeof ApiDailyChallengeRoute
   ApiTriviaRoute: typeof ApiTriviaRoute
   ApiTriviaBatchRoute: typeof ApiTriviaBatchRoute
 }
@@ -152,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTriviaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/daily-challenge': {
+      id: '/api/daily-challenge'
+      path: '/api/daily-challenge'
+      fullPath: '/api/daily-challenge'
+      preLoaderRoute: typeof ApiDailyChallengeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -160,18 +180,10 @@ const rootRouteChildren: RootRouteChildren = {
   BattleRoute: BattleRoute,
   ProfileRoute: ProfileRoute,
   ShopRoute: ShopRoute,
+  ApiDailyChallengeRoute: ApiDailyChallengeRoute,
   ApiTriviaRoute: ApiTriviaRoute,
   ApiTriviaBatchRoute: ApiTriviaBatchRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
