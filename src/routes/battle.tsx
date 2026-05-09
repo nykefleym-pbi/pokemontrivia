@@ -14,7 +14,10 @@ import { Toaster } from "@/components/ui/sonner";
 
 export const Route = createFileRoute("/battle")({
   component: BattlePage,
-  validateSearch: (s: Record<string, unknown>) => ({ autostart: s.autostart ? 1 : 0 }),
+  validateSearch: (s: Record<string, unknown>) => ({
+    autostart: s.autostart ? 1 : 0,
+    mode: s.mode === "daily" ? "daily" : "battle",
+  }),
 });
 
 function BattlePage() {
@@ -25,10 +28,13 @@ function BattlePage() {
   const markQuestionsSeen = useGameStore((s) => s.markQuestionsSeen);
   const navigate = useNavigate();
   const search = Route.useSearch();
-  const [phase, setPhase] = useState<"home" | "loading" | "fighting">("home");
+  const [phase, setPhase] = useState<"home" | "loading" | "fighting" | "daily">("home");
   const [questions, setQuestions] = useState<Trivia[]>([]);
   const [battleKey, setBattleKey] = useState(0);
   const autoStartedRef = useRef(false);
+  const dailyResult = useGameStore((s) => s.dailyResult);
+  const today = new Date().toISOString().slice(0, 10);
+  const dailyDone = dailyResult?.date === today;
 
   useEffect(() => {
     if (!hasOnboarded) navigate({ to: "/" });
@@ -83,6 +89,26 @@ function BattlePage() {
     }
   }
 
+  async function startDaily() {
+    if (dailyDone) return;
+    setPhase("loading");
+    try {
+      const resp = await fetch("/api/daily-challenge");
+      const data = (await resp.json()) as { questions: Trivia[] };
+      if (!data.questions?.length) {
+        toast.error("Daily challenge unavailable. Try again later.");
+        setPhase("home");
+        return;
+      }
+      setQuestions(data.questions);
+      setPhase("daily");
+    } catch (e) {
+      console.error(e);
+      toast.error("Couldn't load daily.");
+      setPhase("home");
+    }
+  }
+
   function exitBattle() {
     setPhase("home");
     setQuestions([]);
@@ -94,14 +120,34 @@ function BattlePage() {
       <Toaster position="top-center" />
       {phase === "fighting" ? (
         <BattleScreen key={battleKey} questions={questions} onExit={exitBattle} />
+      ) : phase === "daily" ? (
+        <BattleScreen key={battleKey} questions={questions} onExit={exitBattle} mode="daily" />
       ) : (
-        <BattleHome onStart={startBattle} loading={phase === "loading"} />
+        <BattleHome
+          onStart={startBattle}
+          onStartDaily={startDaily}
+          loading={phase === "loading"}
+          dailyDone={dailyDone}
+          dailyResult={dailyDone ? dailyResult : null}
+        />
       )}
     </>
   );
 }
 
-function BattleHome({ onStart, loading }: { onStart: () => void; loading: boolean }) {
+function BattleHome({
+  onStart,
+  onStartDaily,
+  loading,
+  dailyDone,
+  dailyResult,
+}: {
+  onStart: () => void;
+  onStartDaily: () => void;
+  loading: boolean;
+  dailyDone: boolean;
+  dailyResult: { correct: number; total: number; timeMs: number; pattern: string; date: string } | null;
+}) {
   const trainerName = useGameStore((s) => s.trainerName);
   const trainerSprite = useGameStore((s) => s.trainerSprite);
   const pokemon = useGameStore((s) => s.pokemon);
