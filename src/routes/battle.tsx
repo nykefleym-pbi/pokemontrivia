@@ -216,6 +216,39 @@ function BattleHome({
           <StatPill label="Streak" value={stats.bestStreak} />
         </div>
 
+        {/* Daily Challenge */}
+        <div className="mt-4 rounded-3xl border-2 border-poke-yellow bg-card p-4 shadow-card">
+          <div className="font-pixel text-[11px] text-poke-dark">🔥 TODAY'S CHALLENGE</div>
+          {dailyDone && dailyResult ? (
+            <>
+              <div className="mt-2 text-sm">
+                Score: <span className="font-pixel text-primary">{dailyResult.correct}/{dailyResult.total}</span> · {Math.round(dailyResult.timeMs / 1000)}s
+              </div>
+              <div className="mt-1 font-pixel text-base tracking-widest">{dailyResult.pattern}</div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="mt-3 w-full rounded-full"
+                onClick={async () => {
+                  const text = `Pokémon Trivia · ${dailyResult.date}\n${dailyResult.correct}/${dailyResult.total} · ${Math.round(dailyResult.timeMs / 1000)}s\n${dailyResult.pattern}\nplay → poketrivia.app`;
+                  const nav = navigator as Navigator & { share?: (d: ShareData) => Promise<void> };
+                  if (nav.share) { try { await nav.share({ text }); return; } catch { /* fall */ } }
+                  try { await navigator.clipboard.writeText(text); toast.success("Copied!"); } catch { toast.error("Couldn't copy."); }
+                }}
+              >
+                Share Result
+              </Button>
+            </>
+          ) : (
+            <>
+              <p className="mt-1 text-xs text-muted-foreground">10 hard questions. Same for everyone today.</p>
+              <Button size="sm" className="mt-3 w-full rounded-full bg-poke-dark text-poke-yellow font-pixel text-[10px]" onClick={onStartDaily} disabled={loading}>
+                Start Daily
+              </Button>
+            </>
+          )}
+        </div>
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
