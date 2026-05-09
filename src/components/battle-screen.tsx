@@ -320,8 +320,36 @@ function BattleMode({ questions, onExit }: Pick<Props, "questions" | "onExit">) 
     );
   }
 
+  const totalQuestions = questions.length;
+  const progressPct = Math.min(100, (questionIdx / Math.max(1, totalQuestions)) * 100);
+
   return (
     <div className="bg-battle-field relative min-h-screen overflow-hidden">
+      {/* progress bar */}
+      <div className="absolute left-0 right-0 top-0 z-40 h-1 bg-poke-dark/20">
+        <motion.div
+          className="h-full bg-gradient-to-r from-poke-yellow to-primary"
+          initial={false}
+          animate={{ width: `${progressPct}%` }}
+        />
+      </div>
+      {/* streak banner overlay */}
+      <AnimatePresence>
+        {streakBanner && (
+          <motion.div
+            key={streakBanner}
+            initial={{ scale: 0.4, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 1.4, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 220, damping: 14 }}
+            className="pointer-events-none absolute inset-x-0 top-1/3 z-50 flex justify-center"
+          >
+            <div className="rounded-2xl bg-poke-dark/80 px-6 py-3 font-pixel text-lg text-poke-yellow shadow-pop">
+              {streakBanner}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* top bar */}
       <div className="flex items-center justify-between px-4 pt-[calc(env(safe-area-inset-top)+0.5rem)]">
         <button
