@@ -1,13 +1,15 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { ChevronLeft, Backpack, Clock } from "lucide-react";
+import { ChevronLeft, Backpack, Clock, Share2 } from "lucide-react";
 import { useGameStore, getItemDef } from "@/lib/store";
 import {
   pickRandomEnemy,
   type EnemyTrainer,
   ITEMS,
   enemyHpForLevel,
+  streakMultiplier,
+  streakLabel,
 } from "@/lib/game-data";
 import { isSuperEffective, spriteUrl } from "@/lib/pokemon-data";
 import { HpBar, TypeBadge } from "@/components/game-ui";
@@ -20,6 +22,8 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import type { ItemId } from "@/lib/game-data";
+import { ACHIEVEMENTS, unlockedAchievements } from "@/lib/achievements";
+import { playCry, playSfx } from "@/lib/audio";
 
 export interface Trivia {
   question: string;
@@ -37,9 +41,17 @@ type Phase = "intro" | "question" | "feedback" | "result";
 interface Props {
   questions: Trivia[];
   onExit: () => void;
+  mode?: "battle" | "daily";
 }
 
-export function BattleScreen({ questions, onExit }: Props) {
+export function BattleScreen({ questions, onExit, mode = "battle" }: Props) {
+  if (mode === "daily") {
+    return <DailyScreen questions={questions} onExit={onExit} />;
+  }
+  return <BattleMode questions={questions} onExit={onExit} />;
+}
+
+function BattleMode({ questions, onExit }: Pick<Props, "questions" | "onExit">) {
   const player = useGameStore((s) => s.pokemon)!;
   const level = useGameStore((s) => s.level);
   const trainerName = useGameStore((s) => s.trainerName);
