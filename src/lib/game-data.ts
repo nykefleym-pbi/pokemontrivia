@@ -108,6 +108,22 @@ export function xpProgressInLevel(totalXp: number): { current: number; need: num
   return { current: Math.max(0, totalXp - base), need: xpForLevel(level), level };
 }
 
+export function streakMultiplier(streak: number): number {
+  if (streak >= 10) return 3.0;
+  if (streak >= 7) return 2.5;
+  if (streak >= 5) return 2.0;
+  if (streak >= 3) return 1.5;
+  return 1.0;
+}
+
+export function streakLabel(streak: number): string | null {
+  if (streak >= 10) return "UNSTOPPABLE!";
+  if (streak >= 7) return "ON FIRE!";
+  if (streak >= 5) return "GREAT STREAK!";
+  if (streak >= 3) return "NICE COMBO!";
+  return null;
+}
+
 export function difficultyForLevel(level: number): "easy" | "medium" | "hard" | "expert" | "master" {
   if (level >= 26) return "master";
   if (level >= 16) return "expert";
