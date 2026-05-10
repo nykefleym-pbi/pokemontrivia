@@ -61,6 +61,12 @@ function ProfilePage() {
   const [muted, setMutedState] = useState(false);
   const fullState = useGameStore();
   const battleLog = useGameStore((s) => s.battleLog);
+  const pokedex = useGameStore((s) => s.pokedex);
+  const [dexGen, setDexGen] = useState(1);
+  const [dexQuery, setDexQuery] = useState("");
+  const [dexType, setDexType] = useState<"all" | PokeType>("all");
+  const [dexDetailId, setDexDetailId] = useState<number | null>(null);
+  const [dexShowShiny, setDexShowShiny] = useState(false);
   const unlocked = useMemo(() => new Set(unlockedAchievements(fullState)), [fullState]);
 
   useEffect(() => { setMutedState(isMuted()); }, []);
