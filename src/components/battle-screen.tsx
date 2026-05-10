@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { ChevronLeft, Backpack, Clock, Share2 } from "lucide-react";
+import { ChevronLeft, Backpack, Clock, Share2, Sparkles } from "lucide-react";
 import { useGameStore, getItemDef } from "@/lib/store";
 import {
   pickRandomEnemy,
@@ -70,6 +70,7 @@ function BattleMode({ questions, onExit }: Pick<Props, "questions" | "onExit">) 
   const cooldowns = useGameStore((s) => s.itemCooldowns);
   const raiseFlag = useGameStore((s) => s.raiseFlag);
   const pushBattleLog = useGameStore((s) => s.pushBattleLog);
+  const recordPokedexCapture = useGameStore((s) => s.recordPokedexCapture);
 
   const [enemy] = useState<EnemyTrainer>(() => pickRandomEnemy());
   const enemyMaxHp = enemyHpForLevel(level);
@@ -104,6 +105,12 @@ function BattleMode({ questions, onExit }: Pick<Props, "questions" | "onExit">) 
     startBattle();
     setDialog(`${enemy.name} sent out ${enemy.pokemon.name}!`);
     playCry(enemy.pokemon.id);
+    if (enemy.isShiny) {
+      toast.success(`✨ A SHINY ${enemy.pokemon.name} appeared!`, {
+        duration: 3000,
+        style: { background: "linear-gradient(90deg, #fde68a, #fbbf24)", color: "#1f2937" },
+      });
+    }
     if (superEff) {
       setTimeout(() => setDialog(`Go, ${player.name}! It's super effective!`), 1500);
     } else {
