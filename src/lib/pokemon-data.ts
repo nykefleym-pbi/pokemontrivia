@@ -22,11 +22,23 @@ export function searchPokemon(query: string, limit = 9): PokeEntry[] {
 }
 
 // Sprite URL: pokemondb for front sprites; PokeAPI Showdown for backs.
-export function spriteUrl(id: number, back = false): string {
+// Backward-compatible: spriteUrl(id, true) still works (= back sprite).
+export function spriteUrl(
+  id: number,
+  optsOrBack?: boolean | { back?: boolean; shiny?: boolean },
+): string {
+  const opts =
+    typeof optsOrBack === "boolean" ? { back: optsOrBack, shiny: false } : optsOrBack ?? {};
+  const back = opts.back ?? false;
+  const shiny = opts.shiny ?? false;
   const p = findPokemon(id);
   if (!p) return "";
+  const variant = shiny ? "shiny/" : "";
   if (back) {
-    return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/${id}.png`;
+    return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/${variant}${id}.png`;
+  }
+  if (shiny) {
+    return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${id}.png`;
   }
   // pokemondb black-white pack covers Gen 1–5; scarlet-violet covers later.
   const pack = id <= 649 ? "black-white" : "scarlet-violet";

@@ -136,7 +136,10 @@ export interface EnemyTrainer {
   name: string;
   title: string;
   pokemon: PokeEntry;
+  isShiny: boolean;
 }
+
+export const SHINY_CHANCE = 1 / 256;
 
 // Use a wide pool: skip pre-evolutions by simple heuristic — favor higher-id Pokémon
 // of each evolution family. For simplicity, pick from all Pokémon with id divisible-friendly
@@ -150,6 +153,7 @@ export function pickRandomEnemy(): EnemyTrainer {
     name: trainer.name,
     title: "Pokémon Trainer",
     pokemon,
+    isShiny: Math.random() < SHINY_CHANCE,
   };
 }
 
