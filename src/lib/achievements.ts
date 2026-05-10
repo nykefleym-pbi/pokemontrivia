@@ -94,6 +94,28 @@ export const ACHIEVEMENTS: Achievement[] = [
     icon: "💪",
     check: (s) => s.flags?.includes("comeback") ?? false,
   },
+  {
+    id: "pokedex_50",
+    name: "Pokémaniac",
+    desc: "Capture 50 Pokémon.",
+    icon: "📕",
+    check: (s) => Object.keys(s.pokedex ?? {}).length >= 50,
+  },
+  {
+    id: "pokedex_151",
+    name: "Kanto Complete",
+    desc: "Capture all 151 Gen 1 Pokémon.",
+    icon: "🟥",
+    check: (s) =>
+      Object.keys(s.pokedex ?? {}).filter((k) => Number(k) <= 151).length >= 151,
+  },
+  {
+    id: "shiny_first",
+    name: "Sparkle!",
+    desc: "Capture your first shiny Pokémon.",
+    icon: "✨",
+    check: (s) => Object.values(s.pokedex ?? {}).some((e) => e.shinyUnlocked),
+  },
 ];
 
 export function unlockedAchievements(s: GameState): string[] {
