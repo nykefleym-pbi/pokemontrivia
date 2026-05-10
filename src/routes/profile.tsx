@@ -255,6 +255,18 @@ function ProfilePage() {
           })}
         </div>
 
+        {/* Pokédex */}
+        <PokedexSection
+          pokedex={pokedex}
+          dexGen={dexGen}
+          setDexGen={setDexGen}
+          dexQuery={dexQuery}
+          setDexQuery={setDexQuery}
+          dexType={dexType}
+          setDexType={setDexType}
+          onOpen={(id) => { setDexDetailId(id); setDexShowShiny(false); }}
+        />
+
         {/* Battle Log */}
         {battleLog.length > 0 && (
           <>
