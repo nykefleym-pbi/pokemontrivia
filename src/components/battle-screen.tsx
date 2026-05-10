@@ -262,6 +262,11 @@ function BattleMode({ questions, onExit }: Pick<Props, "questions" | "onExit">) 
       raiseFlag("comeback");
     }
 
+    // Pokédex capture on win
+    if (won) {
+      recordPokedexCapture(enemy.pokemon.id, enemy.isShiny);
+    }
+
     // snapshot achievements before/after
     const before = new Set(unlockedAchievements(useGameStore.getState()));
     endBattle(won, total);
@@ -447,10 +452,13 @@ function BattleMode({ questions, onExit }: Pick<Props, "questions" | "onExit">) 
             animate={{ x: 0, opacity: 1 }}
           >
             <img
-              src={spriteUrl(enemy.pokemon.id)}
+              src={spriteUrl(enemy.pokemon.id, { shiny: enemy.isShiny })}
               alt={enemy.pokemon.name}
-              className="sprite h-32 w-32"
+              className={`sprite h-32 w-32 ${enemy.isShiny ? "shiny-glow" : ""}`}
             />
+            {enemy.isShiny && (
+              <Sparkles className="pointer-events-none absolute -right-1 -top-1 h-5 w-5 animate-pulse text-yellow-300 drop-shadow" />
+            )}
             {floatDmg?.who === "enemy" && (
               <div className="animate-float-up pointer-events-none absolute -top-2 left-1/2 -translate-x-1/2 font-pixel text-base text-destructive">
                 -{floatDmg.n}{floatDmg.super && " 💥"}{floatDmg.speedy && " ⚡"}
