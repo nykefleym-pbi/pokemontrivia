@@ -2,10 +2,10 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Pencil, RotateCcw, Check, Search, Volume2, VolumeX } from "lucide-react";
+import { Pencil, RotateCcw, Check, Search, Volume2, VolumeX, Sparkles } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { rankForLevel, xpProgressInLevel, ITEMS, TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
-import { searchPokemon, spriteUrl } from "@/lib/pokemon-data";
+import { ALL_POKEMON, searchPokemon, spriteUrl, type PokeType } from "@/lib/pokemon-data";
 import { AppHeader, XpBar, TypeBadge } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,6 +61,12 @@ function ProfilePage() {
   const [muted, setMutedState] = useState(false);
   const fullState = useGameStore();
   const battleLog = useGameStore((s) => s.battleLog);
+  const pokedex = useGameStore((s) => s.pokedex);
+  const [dexGen, setDexGen] = useState(1);
+  const [dexQuery, setDexQuery] = useState("");
+  const [dexType, setDexType] = useState<"all" | PokeType>("all");
+  const [dexDetailId, setDexDetailId] = useState<number | null>(null);
+  const [dexShowShiny, setDexShowShiny] = useState(false);
   const unlocked = useMemo(() => new Set(unlockedAchievements(fullState)), [fullState]);
 
   useEffect(() => { setMutedState(isMuted()); }, []);
@@ -249,6 +255,18 @@ function ProfilePage() {
           })}
         </div>
 
+        {/* Pokédex */}
+        <PokedexSection
+          pokedex={pokedex}
+          dexGen={dexGen}
+          setDexGen={setDexGen}
+          dexQuery={dexQuery}
+          setDexQuery={setDexQuery}
+          dexType={dexType}
+          setDexType={setDexType}
+          onOpen={(id) => { setDexDetailId(id); setDexShowShiny(false); }}
+        />
+
         {/* Battle Log */}
         {battleLog.length > 0 && (
           <>
@@ -382,7 +400,181 @@ function ProfilePage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Pokédex detail */}
+      <Dialog open={dexDetailId !== null} onOpenChange={(o) => !o && setDexDetailId(null)}>
+        <DialogContent className="max-w-xs">
+          {dexDetailId !== null && (() => {
+            const p = ALL_POKEMON.find((x) => x.id === dexDetailId);
+            const entry = pokedex[dexDetailId];
+            if (!p) return null;
+            const showShiny = dexShowShiny && entry?.shinyUnlocked;
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <span>#{String(p.id).padStart(4, "0")} {p.name}</span>
+                    {entry?.shinyUnlocked && <Sparkles className="h-4 w-4 text-yellow-400" />}
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="flex flex-col items-center gap-3">
+                  <img src={spriteUrl(p.id, { shiny: showShiny })} alt={p.name} className="sprite h-32 w-32" />
+                  <div className="flex gap-1">{p.types.map((t) => <TypeBadge key={t} type={t} />)}</div>
+                  {entry ? (
+                    <div className="text-center text-xs text-muted-foreground">
+                      <div>Defeated {entry.defeatCount}×</div>
+                      <div>First seen {new Date(entry.firstSeenAt).toLocaleDateString()}</div>
+                    </div>
+                  ) : (
+                    <div className="text-xs text-muted-foreground">Not yet captured</div>
+                  )}
+                  {entry?.shinyUnlocked && (
+                    <Button size="sm" variant="outline" onClick={() => setDexShowShiny((v) => !v)}>
+                      Toggle {showShiny ? "Normal" : "Shiny"}
+                    </Button>
+                  )}
+                </div>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+const ALL_TYPES: PokeType[] = [
+  "normal","fire","water","electric","grass","ice","fighting","poison","ground",
+  "flying","psychic","bug","rock","ghost","dragon","dark","steel","fairy",
+];
+
+const GEN_RANGES: Array<{ gen: number; from: number; to: number }> = [
+  { gen: 1, from: 1, to: 151 },
+  { gen: 2, from: 152, to: 251 },
+  { gen: 3, from: 252, to: 386 },
+  { gen: 4, from: 387, to: 493 },
+  { gen: 5, from: 494, to: 649 },
+  { gen: 6, from: 650, to: 721 },
+  { gen: 7, from: 722, to: 809 },
+  { gen: 8, from: 810, to: 905 },
+  { gen: 9, from: 906, to: 1025 },
+];
+
+function PokedexSection({
+  pokedex,
+  dexGen,
+  setDexGen,
+  dexQuery,
+  setDexQuery,
+  dexType,
+  setDexType,
+  onOpen,
+}: {
+  pokedex: Record<number, import("@/lib/store").PokedexEntry>;
+  dexGen: number;
+  setDexGen: (n: number) => void;
+  dexQuery: string;
+  setDexQuery: (s: string) => void;
+  dexType: "all" | PokeType;
+  setDexType: (t: "all" | PokeType) => void;
+  onOpen: (id: number) => void;
+}) {
+  const total = ALL_POKEMON.length;
+  const captured = Object.keys(pokedex).length;
+  const shinies = Object.values(pokedex).filter((e) => e.shinyUnlocked).length;
+
+  const range = GEN_RANGES.find((g) => g.gen === dexGen)!;
+  const q = dexQuery.trim().toLowerCase();
+  const filtered = useMemo(() => {
+    return ALL_POKEMON.filter((p) => {
+      if (p.id < range.from || p.id > range.to) return false;
+      if (q && !p.name.toLowerCase().includes(q)) return false;
+      if (dexType !== "all" && !p.types.includes(dexType)) return false;
+      return true;
+    });
+  }, [range.from, range.to, q, dexType]);
+
+  return (
+    <>
+      <h3 className="mb-2 mt-6 flex items-center justify-between font-pixel text-[11px] uppercase text-muted-foreground">
+        <span>Pokédex {captured}/{total}</span>
+        <span className="flex items-center gap-1 text-yellow-500">
+          <Sparkles className="h-3 w-3" /> {shinies}
+        </span>
+      </h3>
+      <div className="rounded-2xl bg-card p-3 shadow-sm">
+        <div className="mb-2 flex gap-2">
+          <Input
+            value={dexQuery}
+            onChange={(e) => setDexQuery(e.target.value)}
+            placeholder="Search name..."
+            className="h-8 flex-1 text-xs"
+          />
+          <select
+            value={dexType}
+            onChange={(e) => setDexType(e.target.value as "all" | PokeType)}
+            className="h-8 rounded-md border bg-background px-2 text-xs"
+          >
+            <option value="all">All types</option>
+            {ALL_TYPES.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+        </div>
+        <div className="mb-2 flex flex-wrap gap-1">
+          {GEN_RANGES.map((g) => (
+            <button
+              key={g.gen}
+              onClick={() => setDexGen(g.gen)}
+              className={`rounded-full px-2 py-0.5 font-pixel text-[9px] ${
+                dexGen === g.gen ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              }`}
+            >
+              GEN {g.gen}
+            </button>
+          ))}
+        </div>
+        <div className="grid grid-cols-5 gap-1.5">
+          {filtered.map((p) => {
+            const e = pokedex[p.id];
+            const got = !!e;
+            return (
+              <button
+                key={p.id}
+                onClick={() => onOpen(p.id)}
+                className={`relative flex flex-col items-center rounded-lg p-1 ${
+                  got ? "bg-muted/50" : "bg-muted/20"
+                }`}
+              >
+                <img
+                  src={spriteUrl(p.id)}
+                  alt={got ? p.name : "???"}
+                  loading="lazy"
+                  className="sprite h-12 w-12"
+                  style={got ? undefined : { filter: "brightness(0)" }}
+                />
+                <div className="w-full truncate text-center text-[8px] font-semibold">
+                  {got ? p.name : "???"}
+                </div>
+                {got && e.defeatCount > 1 && (
+                  <div className="absolute right-0.5 top-0.5 rounded bg-primary px-1 font-pixel text-[7px] text-primary-foreground">
+                    ×{e.defeatCount}
+                  </div>
+                )}
+                {e?.shinyUnlocked && (
+                  <Sparkles className="absolute left-0.5 top-0.5 h-3 w-3 text-yellow-400" />
+                )}
+              </button>
+            );
+          })}
+          {filtered.length === 0 && (
+            <div className="col-span-5 py-4 text-center text-xs text-muted-foreground">
+              No matches.
+            </div>
+          )}
+        </div>
+      </div>
+    </>
   );
 }
 

@@ -215,3 +215,9 @@
   100% { box-shadow: 0 0 0 0 oklch(0.62 0.24 25 / 0); }
 }
 .animate-pulse-ring { animation: pulse-ring 1s ease-out infinite; }
+
+@keyframes shiny-sparkle {
+  0%, 100% { filter: drop-shadow(0 0 6px gold) drop-shadow(0 0 2px white); }
+  50% { filter: drop-shadow(0 0 14px gold) drop-shadow(0 0 6px #fde68a); }
+}
+.shiny-glow { animation: shiny-sparkle 1.4s ease-in-out infinite; }

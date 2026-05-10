@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { ChevronLeft, Backpack, Clock, Share2 } from "lucide-react";
+import { ChevronLeft, Backpack, Clock, Share2, Sparkles } from "lucide-react";
 import { useGameStore, getItemDef } from "@/lib/store";
 import {
   pickRandomEnemy,
@@ -70,6 +70,7 @@ function BattleMode({ questions, onExit }: Pick<Props, "questions" | "onExit">) 
   const cooldowns = useGameStore((s) => s.itemCooldowns);
   const raiseFlag = useGameStore((s) => s.raiseFlag);
   const pushBattleLog = useGameStore((s) => s.pushBattleLog);
+  const recordPokedexCapture = useGameStore((s) => s.recordPokedexCapture);
 
   const [enemy] = useState<EnemyTrainer>(() => pickRandomEnemy());
   const enemyMaxHp = enemyHpForLevel(level);
@@ -104,6 +105,12 @@ function BattleMode({ questions, onExit }: Pick<Props, "questions" | "onExit">) 
     startBattle();
     setDialog(`${enemy.name} sent out ${enemy.pokemon.name}!`);
     playCry(enemy.pokemon.id);
+    if (enemy.isShiny) {
+      toast.success(`✨ A SHINY ${enemy.pokemon.name} appeared!`, {
+        duration: 3000,
+        style: { background: "linear-gradient(90deg, #fde68a, #fbbf24)", color: "#1f2937" },
+      });
+    }
     if (superEff) {
       setTimeout(() => setDialog(`Go, ${player.name}! It's super effective!`), 1500);
     } else {
@@ -253,6 +260,11 @@ function BattleMode({ questions, onExit }: Pick<Props, "questions" | "onExit">) 
     // comeback flag — won at low HP
     if (won && playerHp <= 10) {
       raiseFlag("comeback");
+    }
+
+    // Pokédex capture on win
+    if (won) {
+      recordPokedexCapture(enemy.pokemon.id, enemy.isShiny);
     }
 
     // snapshot achievements before/after
@@ -440,10 +452,13 @@ function BattleMode({ questions, onExit }: Pick<Props, "questions" | "onExit">) 
             animate={{ x: 0, opacity: 1 }}
           >
             <img
-              src={spriteUrl(enemy.pokemon.id)}
+              src={spriteUrl(enemy.pokemon.id, { shiny: enemy.isShiny })}
               alt={enemy.pokemon.name}
-              className="sprite h-32 w-32"
+              className={`sprite h-32 w-32 ${enemy.isShiny ? "shiny-glow" : ""}`}
             />
+            {enemy.isShiny && (
+              <Sparkles className="pointer-events-none absolute -right-1 -top-1 h-5 w-5 animate-pulse text-yellow-300 drop-shadow" />
+            )}
             {floatDmg?.who === "enemy" && (
               <div className="animate-float-up pointer-events-none absolute -top-2 left-1/2 -translate-x-1/2 font-pixel text-base text-destructive">
                 -{floatDmg.n}{floatDmg.super && " 💥"}{floatDmg.speedy && " ⚡"}
