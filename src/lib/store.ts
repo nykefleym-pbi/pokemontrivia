@@ -57,6 +57,13 @@ export interface DailyResult {
   pattern: string;
 }
 
+export interface PokedexEntry {
+  pokemonId: number;
+  firstSeenAt: number;
+  shinyUnlocked: boolean;
+  defeatCount: number;
+}
+
 export interface GameState {
   // profile
   hasOnboarded: boolean;
@@ -95,6 +102,10 @@ export interface GameState {
   // battle log (cap 20)
   battleLog: BattleLogEntry[];
 
+  // pokédex
+  pokedex: Record<number, PokedexEntry>;
+  defeatedEliteRegions: string[];
+
   // actions
   setOnboarded: (name: string, pokemon: PokeEntry, trainerSprite: string) => void;
   startGuestSession: () => void;
@@ -117,6 +128,7 @@ export interface GameState {
   raiseFlag: (name: string) => void;
   recordDaily: (r: DailyResult) => void;
   pushBattleLog: (e: BattleLogEntry) => void;
+  recordPokedexCapture: (pokemonId: number, isShiny: boolean) => void;
 }
 
 const defaultStats: PlayerStats = {
@@ -169,6 +181,8 @@ export const useGameStore = create<GameState>()(
       flags: [],
       dailyResult: null,
       battleLog: [],
+      pokedex: {},
+      defeatedEliteRegions: [],
 
       markQuestionsSeen: (texts) => {
         const s = get();
@@ -228,6 +242,8 @@ export const useGameStore = create<GameState>()(
           flags: [],
           dailyResult: null,
           battleLog: [],
+          pokedex: {},
+          defeatedEliteRegions: [],
         }),
 
       setName: (name) => set({ trainerName: name }),
@@ -356,6 +372,22 @@ export const useGameStore = create<GameState>()(
         const s = get();
         set({ battleLog: [e, ...s.battleLog].slice(0, 20) });
       },
+
+      recordPokedexCapture: (pokemonId, isShiny) => {
+        const s = get();
+        const existing = s.pokedex[pokemonId];
+        set({
+          pokedex: {
+            ...s.pokedex,
+            [pokemonId]: {
+              pokemonId,
+              firstSeenAt: existing?.firstSeenAt ?? Date.now(),
+              shinyUnlocked: (existing?.shinyUnlocked ?? false) || isShiny,
+              defeatCount: (existing?.defeatCount ?? 0) + 1,
+            },
+          },
+        });
+      },
     }),
     {
       name: "poke-trivia-store",
@@ -384,6 +416,8 @@ export const useGameStore = create<GameState>()(
         flags: s.flags,
         dailyResult: s.dailyResult,
         battleLog: s.battleLog,
+        pokedex: s.pokedex,
+        defeatedEliteRegions: s.defeatedEliteRegions,
       }),
       merge: (persisted, current) => ({
         ...current,
@@ -391,6 +425,8 @@ export const useGameStore = create<GameState>()(
         flags: (persisted as Partial<GameState>)?.flags ?? [],
         battleLog: (persisted as Partial<GameState>)?.battleLog ?? [],
         dailyResult: (persisted as Partial<GameState>)?.dailyResult ?? null,
+        pokedex: (persisted as Partial<GameState>)?.pokedex ?? {},
+        defeatedEliteRegions: (persisted as Partial<GameState>)?.defeatedEliteRegions ?? [],
       }),
     },
   ),
