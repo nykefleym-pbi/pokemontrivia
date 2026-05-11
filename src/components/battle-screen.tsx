@@ -294,8 +294,9 @@ function BattleMode({
 
   function finish(won: boolean) {
     const baseXp = won ? 40 + level * 5 : 10 + level * 2;
+    const eliteBonus = isElite && won ? 100 + level * 10 : 0;
     const bonus = maxStreakRef.current * 2;
-    const total = baseXp + bonus;
+    const total = baseXp + bonus + eliteBonus;
     setXpEarned(total);
     setResultWon(won);
 
@@ -307,6 +308,28 @@ function BattleMode({
     // Pokédex capture on win
     if (won) {
       recordPokedexCapture(enemy.pokemon.id, enemy.isShiny);
+    }
+
+    // Elite Four bookkeeping + premium item rewards
+    if (won && isElite && eliteMember) {
+      const nextDefeated = defeatedElites.includes(eliteMember.id)
+        ? defeatedElites
+        : [...defeatedElites, eliteMember.id];
+      const regionDone = regionCompleted(eliteMember.region, nextDefeated);
+      markEliteDefeated(eliteMember.id, eliteMember.region, regionDone);
+      // Grant premium items by directly mutating inventory through buyItem? simplest: emit toast + use store action.
+      const inv = useGameStore.getState().inventory;
+      useGameStore.setState({
+        inventory: {
+          ...inv,
+          candy: (inv.candy ?? 0) + 1,
+          luckyegg: (inv.luckyegg ?? 0) + 1,
+        },
+      });
+      toast.success("🍬 Rare Candy +1 · 🥚 Lucky Egg +1", { duration: 4000 });
+      if (regionDone) {
+        toast.success(`🏆 ${eliteMember.region} Elite Four cleared!`, { duration: 4500 });
+      }
     }
 
     // snapshot achievements before/after
