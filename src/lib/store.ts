@@ -105,6 +105,7 @@ export interface GameState {
   // pokédex
   pokedex: Record<number, PokedexEntry>;
   defeatedEliteRegions: string[];
+  defeatedElites: string[];
 
   // actions
   setOnboarded: (name: string, pokemon: PokeEntry, trainerSprite: string) => void;
@@ -129,6 +130,7 @@ export interface GameState {
   recordDaily: (r: DailyResult) => void;
   pushBattleLog: (e: BattleLogEntry) => void;
   recordPokedexCapture: (pokemonId: number, isShiny: boolean) => void;
+  markEliteDefeated: (memberId: string, region: string, regionDone: boolean) => void;
 }
 
 const defaultStats: PlayerStats = {
@@ -183,6 +185,7 @@ export const useGameStore = create<GameState>()(
       battleLog: [],
       pokedex: {},
       defeatedEliteRegions: [],
+      defeatedElites: [],
 
       markQuestionsSeen: (texts) => {
         const s = get();
@@ -244,6 +247,7 @@ export const useGameStore = create<GameState>()(
           battleLog: [],
           pokedex: {},
           defeatedEliteRegions: [],
+          defeatedElites: [],
         }),
 
       setName: (name) => set({ trainerName: name }),
@@ -388,6 +392,18 @@ export const useGameStore = create<GameState>()(
           },
         });
       },
+
+      markEliteDefeated: (memberId, region, regionDone) => {
+        const s = get();
+        const elites = s.defeatedElites.includes(memberId)
+          ? s.defeatedElites
+          : [...s.defeatedElites, memberId];
+        const regions =
+          regionDone && !s.defeatedEliteRegions.includes(region)
+            ? [...s.defeatedEliteRegions, region]
+            : s.defeatedEliteRegions;
+        set({ defeatedElites: elites, defeatedEliteRegions: regions });
+      },
     }),
     {
       name: "poke-trivia-store",
@@ -418,6 +434,7 @@ export const useGameStore = create<GameState>()(
         battleLog: s.battleLog,
         pokedex: s.pokedex,
         defeatedEliteRegions: s.defeatedEliteRegions,
+        defeatedElites: s.defeatedElites,
       }),
       merge: (persisted, current) => ({
         ...current,
@@ -427,6 +444,7 @@ export const useGameStore = create<GameState>()(
         dailyResult: (persisted as Partial<GameState>)?.dailyResult ?? null,
         pokedex: (persisted as Partial<GameState>)?.pokedex ?? {},
         defeatedEliteRegions: (persisted as Partial<GameState>)?.defeatedEliteRegions ?? [],
+        defeatedElites: (persisted as Partial<GameState>)?.defeatedElites ?? [],
       }),
     },
   ),
