@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Sparkles, Trophy } from "lucide-react";
+import { Sparkles, Trophy, Crown } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { AppHeader, XpBar, PokeballSpinner } from "@/components/game-ui";
@@ -11,6 +11,7 @@ import { spriteUrl } from "@/lib/pokemon-data";
 import { trainerSpriteUrl } from "@/lib/game-data";
 import { BattleScreen, type Trivia } from "@/components/battle-screen";
 import { Toaster } from "@/components/ui/sonner";
+import { nextPendingElite, type EliteMember } from "@/lib/elite-four";
 
 export const Route = createFileRoute("/battle")({
   component: BattlePage,
@@ -23,18 +24,23 @@ export const Route = createFileRoute("/battle")({
 function BattlePage() {
   const hasOnboarded = useGameStore((s) => s.hasOnboarded);
   const level = useGameStore((s) => s.level);
+  const peakLevel = useGameStore((s) => s.peakLevel);
+  const defeatedElites = useGameStore((s) => s.defeatedElites);
   const seenHashes = useGameStore((s) => s.seenQuestionHashes);
   const seenQuestions = useGameStore((s) => s.seenQuestions);
   const markQuestionsSeen = useGameStore((s) => s.markQuestionsSeen);
   const navigate = useNavigate();
   const search = Route.useSearch();
-  const [phase, setPhase] = useState<"home" | "loading" | "fighting" | "daily">("home");
+  const [phase, setPhase] = useState<"home" | "loading" | "fighting" | "daily" | "elite">("home");
   const [questions, setQuestions] = useState<Trivia[]>([]);
+  const [eliteOpponent, setEliteOpponent] = useState<EliteMember | null>(null);
   const [battleKey, setBattleKey] = useState(0);
   const autoStartedRef = useRef(false);
   const dailyResult = useGameStore((s) => s.dailyResult);
   const today = new Date().toISOString().slice(0, 10);
   const dailyDone = dailyResult?.date === today;
+
+  const pendingElite = nextPendingElite(peakLevel, defeatedElites);
 
   useEffect(() => {
     if (!hasOnboarded) navigate({ to: "/" });
@@ -51,6 +57,10 @@ function BattlePage() {
   if (!hasOnboarded) return null;
 
   async function startBattle() {
+    if (pendingElite) {
+      toast.error(`${pendingElite.name} blocks the way! Defeat them first.`);
+      return;
+    }
     setPhase("loading");
     try {
       const resp = await fetch("/api/trivia-batch", {
@@ -63,16 +73,8 @@ function BattlePage() {
           flowSeed: Math.floor(Math.random() * 1_000_000),
         }),
       });
-      if (resp.status === 429) {
-        toast.error("Rate limited. Please wait a moment.");
-        setPhase("home");
-        return;
-      }
-      if (resp.status === 402) {
-        toast.error("AI credits exhausted. Add credits in Settings.");
-        setPhase("home");
-        return;
-      }
+      if (resp.status === 429) { toast.error("Rate limited. Please wait a moment."); setPhase("home"); return; }
+      if (resp.status === 402) { toast.error("AI credits exhausted. Add credits in Settings."); setPhase("home"); return; }
       const data = (await resp.json()) as { questions: Trivia[] };
       if (!data.questions || data.questions.length === 0) {
         toast.error("Couldn't prepare battle. Try again.");
@@ -85,6 +87,40 @@ function BattlePage() {
     } catch (e) {
       console.error(e);
       toast.error("Couldn't prepare battle. Try again.");
+      setPhase("home");
+    }
+  }
+
+  async function startElite() {
+    if (!pendingElite) return;
+    setPhase("loading");
+    try {
+      const resp = await fetch("/api/trivia-elite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: pendingElite.type,
+          memberName: `${pendingElite.title} ${pendingElite.name}`,
+          seenHashes,
+          seenSamples: seenQuestions.slice(-40),
+          flowSeed: Math.floor(Math.random() * 1_000_000),
+        }),
+      });
+      if (resp.status === 429) { toast.error("Rate limited."); setPhase("home"); return; }
+      if (resp.status === 402) { toast.error("AI credits exhausted."); setPhase("home"); return; }
+      const data = (await resp.json()) as { questions: Trivia[] };
+      if (!data.questions?.length) {
+        toast.error("Couldn't prepare Elite battle.");
+        setPhase("home");
+        return;
+      }
+      markQuestionsSeen(data.questions.map((q) => q.question));
+      setEliteOpponent(pendingElite);
+      setQuestions(data.questions);
+      setPhase("elite");
+    } catch (e) {
+      console.error(e);
+      toast.error("Couldn't prepare Elite battle.");
       setPhase("home");
     }
   }
@@ -112,6 +148,7 @@ function BattlePage() {
   function exitBattle() {
     setPhase("home");
     setQuestions([]);
+    setEliteOpponent(null);
     setBattleKey((k) => k + 1);
   }
 
@@ -120,15 +157,19 @@ function BattlePage() {
       <Toaster position="top-center" />
       {phase === "fighting" ? (
         <BattleScreen key={battleKey} questions={questions} onExit={exitBattle} />
+      ) : phase === "elite" && eliteOpponent ? (
+        <BattleScreen key={battleKey} questions={questions} onExit={exitBattle} mode="elite" eliteMember={eliteOpponent} />
       ) : phase === "daily" ? (
         <BattleScreen key={battleKey} questions={questions} onExit={exitBattle} mode="daily" />
       ) : (
         <BattleHome
           onStart={startBattle}
           onStartDaily={startDaily}
+          onStartElite={startElite}
           loading={phase === "loading"}
           dailyDone={dailyDone}
           dailyResult={dailyDone ? dailyResult : null}
+          pendingElite={pendingElite}
         />
       )}
     </>
@@ -138,15 +179,19 @@ function BattlePage() {
 function BattleHome({
   onStart,
   onStartDaily,
+  onStartElite,
   loading,
   dailyDone,
   dailyResult,
+  pendingElite,
 }: {
   onStart: () => void;
   onStartDaily: () => void;
+  onStartElite: () => void;
   loading: boolean;
   dailyDone: boolean;
   dailyResult: { correct: number; total: number; timeMs: number; pattern: string; date: string } | null;
+  pendingElite: EliteMember | null;
 }) {
   const trainerName = useGameStore((s) => s.trainerName);
   const trainerSprite = useGameStore((s) => s.trainerSprite);
@@ -216,6 +261,47 @@ function BattleHome({
           <StatPill label="Streak" value={stats.bestStreak} />
         </div>
 
+        {/* Elite Four challenge */}
+        {pendingElite && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-4 overflow-hidden rounded-3xl border-2 border-poke-yellow bg-gradient-to-br from-poke-dark to-poke-dark/80 p-4 shadow-pop"
+          >
+            <div className="flex items-center gap-2 font-pixel text-[10px] text-poke-yellow">
+              <Crown className="h-3 w-3" /> {pendingElite.title.toUpperCase()} CHALLENGE
+            </div>
+            <div className="mt-2 flex items-center gap-3">
+              <img
+                src={pendingElite.trainerSpriteUrl}
+                alt={pendingElite.name}
+                className="sprite h-16 w-16 object-contain"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = "0.3"; }}
+              />
+              <div className="min-w-0 flex-1">
+                <div className="font-pixel text-sm text-poke-yellow">{pendingElite.name}</div>
+                <div className="text-[11px] text-poke-yellow/80">
+                  {pendingElite.region} · {pendingElite.type.toUpperCase()} specialist
+                </div>
+                <div className="mt-1 line-clamp-2 text-[11px] italic text-poke-yellow/70">
+                  "{pendingElite.quote}"
+                </div>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              onClick={onStartElite}
+              disabled={loading}
+              className="mt-3 w-full rounded-full bg-poke-yellow text-poke-dark font-pixel text-[10px] hover:bg-poke-yellow/90"
+            >
+              <Crown className="mr-1 h-3 w-3" /> Challenge {pendingElite.name}
+            </Button>
+            <p className="mt-2 text-center text-[10px] text-poke-yellow/60">
+              Regular battles locked until victory.
+            </p>
+          </motion.div>
+        )}
+
         {/* Daily Challenge */}
         <div className="mt-4 rounded-3xl border-2 border-poke-yellow bg-card p-4 shadow-card">
           <div className="font-pixel text-[11px] text-poke-dark">🔥 TODAY'S CHALLENGE</div>
@@ -257,21 +343,23 @@ function BattleHome({
         >
           <PokeballSpinner size={80} />
           <h3 className="mt-4 font-pixel text-sm text-foreground">
-            {loading ? "Preparing battle..." : "Ready to battle?"}
+            {loading ? "Preparing battle..." : pendingElite ? "Elite blocks your path!" : "Ready to battle?"}
           </h3>
           <p className="mt-1 text-center text-sm text-muted-foreground">
             {loading
-              ? "Loading 20 unique trivia questions..."
-              : "A wild trainer is searching for an opponent..."}
+              ? "Loading trivia questions..."
+              : pendingElite
+                ? `Defeat ${pendingElite.name} to continue your journey.`
+                : "A wild trainer is searching for an opponent..."}
           </p>
           <Button
             size="lg"
             onClick={onStart}
-            disabled={loading}
-            className="mt-5 w-full rounded-full bg-primary py-6 font-semibold shadow-pop hover:scale-[1.02] disabled:opacity-60"
+            disabled={loading || !!pendingElite}
+            className="mt-5 w-full rounded-full bg-primary py-6 font-semibold shadow-pop hover:scale-[1.02] disabled:opacity-50"
           >
             <Sparkles className="mr-2 h-4 w-4" />
-            {loading ? "Preparing..." : "Find a Battle"}
+            {loading ? "Preparing..." : pendingElite ? "Locked — Elite Challenge" : "Find a Battle"}
           </Button>
         </motion.div>
 
