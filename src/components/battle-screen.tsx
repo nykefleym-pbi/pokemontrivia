@@ -435,8 +435,11 @@ function BattleMode({
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
-        <div className="rounded-full bg-card/80 px-3 py-1 font-pixel text-[10px] text-foreground backdrop-blur">
-          Set {Math.floor(questionIdx / QUESTIONS_PER_SET) + 1} · Q{(questionIdx % QUESTIONS_PER_SET) + 1}/{QUESTIONS_PER_SET}
+        <div className={`flex items-center gap-1 rounded-full px-3 py-1 font-pixel text-[10px] backdrop-blur ${isElite ? "bg-poke-dark text-poke-yellow shadow-pop" : "bg-card/80 text-foreground"}`}>
+          {isElite && <Crown className="h-3 w-3" />}
+          {isElite
+            ? `ELITE · ${eliteMember!.region}`
+            : `Set ${Math.floor(questionIdx / QUESTIONS_PER_SET) + 1} · Q${(questionIdx % QUESTIONS_PER_SET) + 1}/${QUESTIONS_PER_SET}`}
         </div>
         <Sheet open={bagOpen} onOpenChange={setBagOpen}>
           <SheetTrigger asChild>
