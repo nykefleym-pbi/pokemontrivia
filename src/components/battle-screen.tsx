@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { ChevronLeft, Backpack, Clock, Share2, Sparkles } from "lucide-react";
+import { ChevronLeft, Backpack, Clock, Share2, Sparkles, Crown } from "lucide-react";
 import { useGameStore, getItemDef } from "@/lib/store";
 import {
   pickRandomEnemy,
@@ -11,7 +11,7 @@ import {
   streakMultiplier,
   streakLabel,
 } from "@/lib/game-data";
-import { isSuperEffective, spriteUrl } from "@/lib/pokemon-data";
+import { isSuperEffective, spriteUrl, findPokemon, type PokeEntry } from "@/lib/pokemon-data";
 import { HpBar, TypeBadge } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +24,11 @@ import {
 import type { ItemId } from "@/lib/game-data";
 import { ACHIEVEMENTS, unlockedAchievements } from "@/lib/achievements";
 import { playCry, playSfx } from "@/lib/audio";
+import {
+  type EliteMember,
+  ELITE_FOUR,
+  regionCompleted,
+} from "@/lib/elite-four";
 
 export interface Trivia {
   question: string;
@@ -41,17 +46,25 @@ type Phase = "intro" | "question" | "feedback" | "result";
 interface Props {
   questions: Trivia[];
   onExit: () => void;
-  mode?: "battle" | "daily";
+  mode?: "battle" | "daily" | "elite";
+  eliteMember?: EliteMember;
 }
 
-export function BattleScreen({ questions, onExit, mode = "battle" }: Props) {
+export function BattleScreen({ questions, onExit, mode = "battle", eliteMember }: Props) {
   if (mode === "daily") {
     return <DailyScreen questions={questions} onExit={onExit} />;
+  }
+  if (mode === "elite" && eliteMember) {
+    return <BattleMode questions={questions} onExit={onExit} eliteMember={eliteMember} />;
   }
   return <BattleMode questions={questions} onExit={onExit} />;
 }
 
-function BattleMode({ questions, onExit }: Pick<Props, "questions" | "onExit">) {
+function BattleMode({
+  questions,
+  onExit,
+  eliteMember,
+}: Pick<Props, "questions" | "onExit"> & { eliteMember?: EliteMember }) {
   const player = useGameStore((s) => s.pokemon)!;
   const level = useGameStore((s) => s.level);
   const trainerName = useGameStore((s) => s.trainerName);
