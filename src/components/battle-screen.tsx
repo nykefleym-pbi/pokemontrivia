@@ -84,9 +84,30 @@ function BattleMode({
   const raiseFlag = useGameStore((s) => s.raiseFlag);
   const pushBattleLog = useGameStore((s) => s.pushBattleLog);
   const recordPokedexCapture = useGameStore((s) => s.recordPokedexCapture);
+  const markEliteDefeated = useGameStore((s) => s.markEliteDefeated);
+  const defeatedElites = useGameStore((s) => s.defeatedElites);
 
-  const [enemy] = useState<EnemyTrainer>(() => pickRandomEnemy());
-  const enemyMaxHp = enemyHpForLevel(level);
+  const isElite = !!eliteMember;
+
+  const [enemy] = useState<EnemyTrainer>(() => {
+    if (eliteMember) {
+      const poke: PokeEntry =
+        findPokemon(eliteMember.signaturePokemonId) ?? {
+          id: eliteMember.signaturePokemonId,
+          slug: eliteMember.signaturePokemonName.toLowerCase(),
+          name: eliteMember.signaturePokemonName,
+          types: [eliteMember.type],
+        };
+      return {
+        name: eliteMember.name,
+        title: `${eliteMember.title} · ${eliteMember.region}`,
+        pokemon: poke,
+        isShiny: false,
+      };
+    }
+    return pickRandomEnemy();
+  });
+  const enemyMaxHp = isElite ? 200 : enemyHpForLevel(level);
   const [playerHp, setPlayerHp] = useState(100);
   const [enemyHp, setEnemyHp] = useState(enemyMaxHp);
   const [phase, setPhase] = useState<Phase>("intro");
@@ -116,20 +137,28 @@ function BattleMode({
     if (startedRef.current) return;
     startedRef.current = true;
     startBattle();
-    setDialog(`${enemy.name} sent out ${enemy.pokemon.name}!`);
-    playCry(enemy.pokemon.id);
+    if (isElite && eliteMember) {
+      playSfx("elite_intro");
+      setDialog(`${eliteMember.title} ${eliteMember.name}: "${eliteMember.quote}"`);
+      setTimeout(() => playCry(enemy.pokemon.id), 900);
+      setTimeout(() => setDialog(`${eliteMember.name} sent out ${enemy.pokemon.name}!`), 2200);
+    } else {
+      setDialog(`${enemy.name} sent out ${enemy.pokemon.name}!`);
+      playCry(enemy.pokemon.id);
+    }
     if (enemy.isShiny) {
       toast.success(`✨ A SHINY ${enemy.pokemon.name} appeared!`, {
         duration: 3000,
         style: { background: "linear-gradient(90deg, #fde68a, #fbbf24)", color: "#1f2937" },
       });
     }
+    const introDelay = isElite ? 3600 : 1500;
     if (superEff) {
-      setTimeout(() => setDialog(`Go, ${player.name}! It's super effective!`), 1500);
+      setTimeout(() => setDialog(`Go, ${player.name}! It's super effective!`), introDelay);
     } else {
-      setTimeout(() => setDialog(`Go, ${player.name}!`), 1500);
+      setTimeout(() => setDialog(`Go, ${player.name}!`), introDelay);
     }
-    setTimeout(() => loadQuestion(0), 2800);
+    setTimeout(() => loadQuestion(0), introDelay + 1300);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
