@@ -37,7 +37,7 @@ function getCtx(): AudioContext | null {
   }
 }
 
-export type SfxKind = "correct" | "wrong" | "victory" | "defeat" | "level";
+export type SfxKind = "correct" | "wrong" | "victory" | "defeat" | "level" | "elite_intro";
 
 const SFX: Record<SfxKind, { freq: number; type: OscillatorType; dur: number; vol: number }> = {
   correct: { freq: 880, type: "sine", dur: 0.15, vol: 0.18 },
@@ -45,6 +45,7 @@ const SFX: Record<SfxKind, { freq: number; type: OscillatorType; dur: number; vo
   victory: { freq: 660, type: "sine", dur: 0.4, vol: 0.22 },
   defeat: { freq: 120, type: "sawtooth", dur: 0.5, vol: 0.18 },
   level: { freq: 520, type: "triangle", dur: 0.3, vol: 0.2 },
+  elite_intro: { freq: 220, type: "triangle", dur: 0.6, vol: 0.25 },
 };
 
 export function playSfx(kind: SfxKind) {

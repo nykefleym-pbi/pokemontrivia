@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { ChevronLeft, Backpack, Clock, Share2, Sparkles } from "lucide-react";
+import { ChevronLeft, Backpack, Clock, Share2, Sparkles, Crown } from "lucide-react";
 import { useGameStore, getItemDef } from "@/lib/store";
 import {
   pickRandomEnemy,
@@ -11,7 +11,7 @@ import {
   streakMultiplier,
   streakLabel,
 } from "@/lib/game-data";
-import { isSuperEffective, spriteUrl } from "@/lib/pokemon-data";
+import { isSuperEffective, spriteUrl, findPokemon, type PokeEntry } from "@/lib/pokemon-data";
 import { HpBar, TypeBadge } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +24,11 @@ import {
 import type { ItemId } from "@/lib/game-data";
 import { ACHIEVEMENTS, unlockedAchievements } from "@/lib/achievements";
 import { playCry, playSfx } from "@/lib/audio";
+import {
+  type EliteMember,
+  ELITE_FOUR,
+  regionCompleted,
+} from "@/lib/elite-four";
 
 export interface Trivia {
   question: string;
@@ -41,17 +46,25 @@ type Phase = "intro" | "question" | "feedback" | "result";
 interface Props {
   questions: Trivia[];
   onExit: () => void;
-  mode?: "battle" | "daily";
+  mode?: "battle" | "daily" | "elite";
+  eliteMember?: EliteMember;
 }
 
-export function BattleScreen({ questions, onExit, mode = "battle" }: Props) {
+export function BattleScreen({ questions, onExit, mode = "battle", eliteMember }: Props) {
   if (mode === "daily") {
     return <DailyScreen questions={questions} onExit={onExit} />;
+  }
+  if (mode === "elite" && eliteMember) {
+    return <BattleMode questions={questions} onExit={onExit} eliteMember={eliteMember} />;
   }
   return <BattleMode questions={questions} onExit={onExit} />;
 }
 
-function BattleMode({ questions, onExit }: Pick<Props, "questions" | "onExit">) {
+function BattleMode({
+  questions,
+  onExit,
+  eliteMember,
+}: Pick<Props, "questions" | "onExit"> & { eliteMember?: EliteMember }) {
   const player = useGameStore((s) => s.pokemon)!;
   const level = useGameStore((s) => s.level);
   const trainerName = useGameStore((s) => s.trainerName);
@@ -71,9 +84,30 @@ function BattleMode({ questions, onExit }: Pick<Props, "questions" | "onExit">) 
   const raiseFlag = useGameStore((s) => s.raiseFlag);
   const pushBattleLog = useGameStore((s) => s.pushBattleLog);
   const recordPokedexCapture = useGameStore((s) => s.recordPokedexCapture);
+  const markEliteDefeated = useGameStore((s) => s.markEliteDefeated);
+  const defeatedElites = useGameStore((s) => s.defeatedElites);
 
-  const [enemy] = useState<EnemyTrainer>(() => pickRandomEnemy());
-  const enemyMaxHp = enemyHpForLevel(level);
+  const isElite = !!eliteMember;
+
+  const [enemy] = useState<EnemyTrainer>(() => {
+    if (eliteMember) {
+      const poke: PokeEntry =
+        findPokemon(eliteMember.signaturePokemonId) ?? {
+          id: eliteMember.signaturePokemonId,
+          slug: eliteMember.signaturePokemonName.toLowerCase(),
+          name: eliteMember.signaturePokemonName,
+          types: [eliteMember.type],
+        };
+      return {
+        name: eliteMember.name,
+        title: `${eliteMember.title} · ${eliteMember.region}`,
+        pokemon: poke,
+        isShiny: false,
+      };
+    }
+    return pickRandomEnemy();
+  });
+  const enemyMaxHp = isElite ? 200 : enemyHpForLevel(level);
   const [playerHp, setPlayerHp] = useState(100);
   const [enemyHp, setEnemyHp] = useState(enemyMaxHp);
   const [phase, setPhase] = useState<Phase>("intro");
@@ -103,20 +137,28 @@ function BattleMode({ questions, onExit }: Pick<Props, "questions" | "onExit">) 
     if (startedRef.current) return;
     startedRef.current = true;
     startBattle();
-    setDialog(`${enemy.name} sent out ${enemy.pokemon.name}!`);
-    playCry(enemy.pokemon.id);
+    if (isElite && eliteMember) {
+      playSfx("elite_intro");
+      setDialog(`${eliteMember.title} ${eliteMember.name}: "${eliteMember.quote}"`);
+      setTimeout(() => playCry(enemy.pokemon.id), 900);
+      setTimeout(() => setDialog(`${eliteMember.name} sent out ${enemy.pokemon.name}!`), 2200);
+    } else {
+      setDialog(`${enemy.name} sent out ${enemy.pokemon.name}!`);
+      playCry(enemy.pokemon.id);
+    }
     if (enemy.isShiny) {
       toast.success(`✨ A SHINY ${enemy.pokemon.name} appeared!`, {
         duration: 3000,
         style: { background: "linear-gradient(90deg, #fde68a, #fbbf24)", color: "#1f2937" },
       });
     }
+    const introDelay = isElite ? 3600 : 1500;
     if (superEff) {
-      setTimeout(() => setDialog(`Go, ${player.name}! It's super effective!`), 1500);
+      setTimeout(() => setDialog(`Go, ${player.name}! It's super effective!`), introDelay);
     } else {
-      setTimeout(() => setDialog(`Go, ${player.name}!`), 1500);
+      setTimeout(() => setDialog(`Go, ${player.name}!`), introDelay);
     }
-    setTimeout(() => loadQuestion(0), 2800);
+    setTimeout(() => loadQuestion(0), introDelay + 1300);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -252,8 +294,9 @@ function BattleMode({ questions, onExit }: Pick<Props, "questions" | "onExit">) 
 
   function finish(won: boolean) {
     const baseXp = won ? 40 + level * 5 : 10 + level * 2;
+    const eliteBonus = isElite && won ? 100 + level * 10 : 0;
     const bonus = maxStreakRef.current * 2;
-    const total = baseXp + bonus;
+    const total = baseXp + bonus + eliteBonus;
     setXpEarned(total);
     setResultWon(won);
 
@@ -265,6 +308,28 @@ function BattleMode({ questions, onExit }: Pick<Props, "questions" | "onExit">) 
     // Pokédex capture on win
     if (won) {
       recordPokedexCapture(enemy.pokemon.id, enemy.isShiny);
+    }
+
+    // Elite Four bookkeeping + premium item rewards
+    if (won && isElite && eliteMember) {
+      const nextDefeated = defeatedElites.includes(eliteMember.id)
+        ? defeatedElites
+        : [...defeatedElites, eliteMember.id];
+      const regionDone = regionCompleted(eliteMember.region, nextDefeated);
+      markEliteDefeated(eliteMember.id, eliteMember.region, regionDone);
+      // Grant premium items by directly mutating inventory through buyItem? simplest: emit toast + use store action.
+      const inv = useGameStore.getState().inventory;
+      useGameStore.setState({
+        inventory: {
+          ...inv,
+          candy: (inv.candy ?? 0) + 1,
+          luckyegg: (inv.luckyegg ?? 0) + 1,
+        },
+      });
+      toast.success("🍬 Rare Candy +1 · 🥚 Lucky Egg +1", { duration: 4000 });
+      if (regionDone) {
+        toast.success(`🏆 ${eliteMember.region} Elite Four cleared!`, { duration: 4500 });
+      }
     }
 
     // snapshot achievements before/after
@@ -370,8 +435,11 @@ function BattleMode({ questions, onExit }: Pick<Props, "questions" | "onExit">) 
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
-        <div className="rounded-full bg-card/80 px-3 py-1 font-pixel text-[10px] text-foreground backdrop-blur">
-          Set {Math.floor(questionIdx / QUESTIONS_PER_SET) + 1} · Q{(questionIdx % QUESTIONS_PER_SET) + 1}/{QUESTIONS_PER_SET}
+        <div className={`flex items-center gap-1 rounded-full px-3 py-1 font-pixel text-[10px] backdrop-blur ${isElite ? "bg-poke-dark text-poke-yellow shadow-pop" : "bg-card/80 text-foreground"}`}>
+          {isElite && <Crown className="h-3 w-3" />}
+          {isElite
+            ? `ELITE · ${eliteMember!.region}`
+            : `Set ${Math.floor(questionIdx / QUESTIONS_PER_SET) + 1} · Q${(questionIdx % QUESTIONS_PER_SET) + 1}/${QUESTIONS_PER_SET}`}
         </div>
         <Sheet open={bagOpen} onOpenChange={setBagOpen}>
           <SheetTrigger asChild>

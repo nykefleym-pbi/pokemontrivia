@@ -110,6 +110,7 @@ export interface GenerateOpts {
   seenHashes: string[];
   seenSamples: string[];
   batchSize?: number;
+  themeNote?: string;
 }
 
 export interface GenerateResult {
@@ -147,6 +148,7 @@ export async function generateTrivia(opts: GenerateOpts): Promise<GenerateResult
     return { questions: topUpFromFallback([], BATCH, isSeen), source: "fallback-no-key" };
   }
 
+  const themeBlock = opts.themeNote ? `\n\nTHEME OVERRIDE: ${opts.themeNote}` : "";
   const avoidBlock = opts.seenSamples.length
     ? `\n\nAVOID these recent questions and any paraphrase of them (different wording but same answer/topic counts as a repeat):\n${opts.seenSamples.map((s, i) => `${i + 1}. ${s}`).join("\n")}`
     : "";
@@ -176,7 +178,7 @@ CRITICAL RULES:
 - Each question must have 4 plausible options with exactly one correct answer.
 - Keep questions concise. Keep each explanation under 30 words.
 - Difficulty for the whole set: ${opts.difficulty}.
-- Variation seed: ${opts.flowSeed}. Use this seed to vary category order, phrasing, and topic emphasis so this batch does NOT mirror prior batches even if some topics recur.${avoidBlock}`;
+- Variation seed: ${opts.flowSeed}. Use this seed to vary category order, phrasing, and topic emphasis so this batch does NOT mirror prior batches even if some topics recur.${themeBlock}${avoidBlock}`;
 
   const userPrompt = `Generate ${BATCH} unique ${opts.difficulty} difficulty Pokémon trivia questions grounded in pokemondb.net, bulbapedia.bulbagarden.net, and pvpoke.com. Return them via the submit_trivia_batch tool.`;
 
