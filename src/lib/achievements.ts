@@ -116,6 +116,27 @@ export const ACHIEVEMENTS: Achievement[] = [
     icon: "✨",
     check: (s) => Object.values(s.pokedex ?? {}).some((e) => e.shinyUnlocked),
   },
+  {
+    id: "elite_first",
+    name: "Elite Slayer",
+    desc: "Defeat your first Elite Four member.",
+    icon: "🛡️",
+    check: (s) => (s.defeatedElites?.length ?? 0) >= 1,
+  },
+  {
+    id: "elite_kanto",
+    name: "Indigo Champion",
+    desc: "Defeat all Kanto Elite Four members + Lance.",
+    icon: "🏆",
+    check: (s) => (s.defeatedEliteRegions ?? []).includes("Kanto"),
+  },
+  {
+    id: "elite_all",
+    name: "Hall of Fame",
+    desc: "Defeat every Elite Four member.",
+    icon: "👑",
+    check: (s) => (s.defeatedElites?.length ?? 0) >= 20,
+  },
 ];
 
 export function unlockedAchievements(s: GameState): string[] {
