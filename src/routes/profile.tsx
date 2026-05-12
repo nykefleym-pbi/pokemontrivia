@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Pencil, RotateCcw, Check, Search, Volume2, VolumeX } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { rankForLevel, xpProgressInLevel, ITEMS, TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
-import { searchPokemon, spriteUrl } from "@/lib/pokemon-data";
+import { searchPokemon } from "@/lib/pokemon-data";
 import { XpBar, TypeBadge, PokemonSprite } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
