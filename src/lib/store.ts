@@ -422,6 +422,12 @@ export const useGameStore = create<GameState>()(
             : s.defeatedEliteRegions;
         set({ defeatedElites: elites, defeatedEliteRegions: regions });
       },
+
+      registerAbilityTriggered: (abilityId) => {
+        const s = get();
+        if (s.abilityCodex.includes(abilityId)) return;
+        set({ abilityCodex: [...s.abilityCodex, abilityId] });
+      },
     }),
     {
       name: "poke-trivia-store",
