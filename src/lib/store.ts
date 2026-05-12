@@ -1,9 +1,10 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { ItemId } from "./game-data";
-import { ITEMS, levelFromTotalXp, TRAINER_SPRITES, EVOLUTION_TP_COST } from "./game-data";
+import { ITEMS, levelFromTotalXp, TRAINER_SPRITES, EVOLUTION_TP_COST, getWeekRangeUtc } from "./game-data";
 import type { PokeEntry } from "./pokemon-data";
 import { ALL_POKEMON } from "./pokemon-data";
+import { pickRandomGymLeader } from "./gym-leaders";
 
 const MAX_SEEN_HASHES = 500;
 const MAX_SEEN_TEXTS = 200;
@@ -66,6 +67,20 @@ export interface PokedexEntry {
   defeatCount: number;
 }
 
+export interface WeeklyLeagueState {
+  weekStartTs: number;
+  gymLeaderId: string;
+  status: "not_started" | "in_progress" | "won" | "lost";
+  attemptStartedAt: number | null;
+  questionsAnswered: number;
+}
+
+export interface WeeklyLeagueAttempt {
+  weekStartTs: number;
+  gymLeaderId: string;
+  won: boolean;
+}
+
 export interface GameState {
   // profile
   hasOnboarded: boolean;
@@ -115,6 +130,11 @@ export interface GameState {
   // Phase 3: per-partner Training Points
   trainingPoints: Record<number, number>;
 
+  // Phase 4: Weekly League
+  weeklyLeague: WeeklyLeagueState | null;
+  gymBadges: string[];
+  weeklyLeagueHistory: WeeklyLeagueAttempt[];
+
   // actions
   setOnboarded: (name: string, pokemon: PokeEntry, trainerSprite: string) => void;
   startGuestSession: () => void;
@@ -147,6 +167,11 @@ export interface GameState {
   spendTrainingPoints: (pokemonId: number, amount: number) => boolean;
   getPartnerTp: (pokemonId: number) => number;
   evolvePartner: (toPokemon: PokeEntry) => boolean;
+
+  // Phase 4: Weekly League actions
+  initWeeklyLeague: () => void;
+  startWeeklyLeagueAttempt: () => void;
+  recordWeeklyLeagueResult: (won: boolean) => void;
 }
 
 const defaultStats: PlayerStats = {
@@ -204,6 +229,60 @@ export const useGameStore = create<GameState>()(
       defeatedElites: [],
       abilityCodex: [],
       trainingPoints: {},
+      weeklyLeague: null,
+      gymBadges: [],
+      weeklyLeagueHistory: [],
+
+      initWeeklyLeague: () => {
+        const s = get();
+        const { start: weekStartTs } = getWeekRangeUtc();
+        if (s.weeklyLeague && s.weeklyLeague.weekStartTs === weekStartTs) return;
+        const leader = pickRandomGymLeader(s.gymBadges);
+        set({
+          weeklyLeague: {
+            weekStartTs,
+            gymLeaderId: leader.id,
+            status: "not_started",
+            attemptStartedAt: null,
+            questionsAnswered: 0,
+          },
+        });
+      },
+
+      startWeeklyLeagueAttempt: () => {
+        const s = get();
+        if (!s.weeklyLeague) return;
+        if (s.weeklyLeague.status !== "not_started" && s.weeklyLeague.status !== "in_progress") return;
+        set({
+          weeklyLeague: {
+            ...s.weeklyLeague,
+            status: "in_progress",
+            attemptStartedAt: s.weeklyLeague.attemptStartedAt ?? Date.now(),
+          },
+        });
+      },
+
+      recordWeeklyLeagueResult: (won) => {
+        const s = get();
+        if (!s.weeklyLeague) return;
+        const newHistory: WeeklyLeagueAttempt[] = [
+          ...s.weeklyLeagueHistory,
+          {
+            weekStartTs: s.weeklyLeague.weekStartTs,
+            gymLeaderId: s.weeklyLeague.gymLeaderId,
+            won,
+          },
+        ].slice(-8);
+        let newBadges = s.gymBadges;
+        if (won && !s.gymBadges.includes(s.weeklyLeague.gymLeaderId)) {
+          newBadges = [...s.gymBadges, s.weeklyLeague.gymLeaderId];
+        }
+        set({
+          weeklyLeague: { ...s.weeklyLeague, status: won ? "won" : "lost" },
+          gymBadges: newBadges,
+          weeklyLeagueHistory: newHistory,
+        });
+      },
 
       addTrainingPoints: (pokemonId, amount) => {
         const s = get();
@@ -318,6 +397,9 @@ export const useGameStore = create<GameState>()(
           defeatedElites: [],
           abilityCodex: [],
           trainingPoints: {},
+          weeklyLeague: null,
+          gymBadges: [],
+          weeklyLeagueHistory: [],
         }),
 
       setName: (name) => set({ trainerName: name }),
@@ -522,6 +604,9 @@ export const useGameStore = create<GameState>()(
         defeatedElites: s.defeatedElites,
         abilityCodex: s.abilityCodex,
         trainingPoints: s.trainingPoints,
+        weeklyLeague: s.weeklyLeague,
+        gymBadges: s.gymBadges,
+        weeklyLeagueHistory: s.weeklyLeagueHistory,
       }),
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<GameState>;
@@ -545,6 +630,9 @@ export const useGameStore = create<GameState>()(
           defeatedElites: p.defeatedElites ?? [],
           abilityCodex: p.abilityCodex ?? [],
           trainingPoints: p.trainingPoints ?? {},
+          weeklyLeague: p.weeklyLeague ?? null,
+          gymBadges: p.gymBadges ?? [],
+          weeklyLeagueHistory: p.weeklyLeagueHistory ?? [],
         };
       },
     },

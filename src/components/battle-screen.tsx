@@ -43,6 +43,10 @@ import {
   ELITE_FOUR,
   regionCompleted,
 } from "@/lib/elite-four";
+import type { GymLeader } from "@/lib/gym-leaders";
+import { ShareCardDialog } from "@/components/share-card-dialog";
+import type { ShareData } from "@/components/share-card-builder";
+import { trainerSpriteUrl } from "@/lib/game-data";
 
 export interface Trivia {
   question: string;
@@ -60,16 +64,20 @@ type Phase = "intro" | "question" | "feedback" | "result";
 interface Props {
   questions: Trivia[];
   onExit: () => void;
-  mode?: "battle" | "daily" | "elite";
+  mode?: "battle" | "daily" | "elite" | "weekly";
   eliteMember?: EliteMember;
+  gymLeader?: GymLeader | null;
 }
 
-export function BattleScreen({ questions, onExit, mode = "battle", eliteMember }: Props) {
+export function BattleScreen({ questions, onExit, mode = "battle", eliteMember, gymLeader }: Props) {
   if (mode === "daily") {
     return <DailyScreen questions={questions} onExit={onExit} />;
   }
   if (mode === "elite" && eliteMember) {
     return <BattleMode questions={questions} onExit={onExit} eliteMember={eliteMember} />;
+  }
+  if (mode === "weekly" && gymLeader) {
+    return <BattleMode questions={questions} onExit={onExit} gymLeader={gymLeader} />;
   }
   return <BattleMode questions={questions} onExit={onExit} />;
 }
@@ -78,7 +86,8 @@ function BattleMode({
   questions,
   onExit,
   eliteMember,
-}: Pick<Props, "questions" | "onExit"> & { eliteMember?: EliteMember }) {
+  gymLeader,
+}: Pick<Props, "questions" | "onExit"> & { eliteMember?: EliteMember; gymLeader?: GymLeader }) {
   const player = useGameStore((s) => s.pokemon)!;
   const level = useGameStore((s) => s.level);
   const trainerName = useGameStore((s) => s.trainerName);
@@ -103,8 +112,29 @@ function BattleMode({
   const defeatedElites = useGameStore((s) => s.defeatedElites);
 
   const isElite = !!eliteMember;
+  const isWeekly = !!gymLeader;
+  const recordWeeklyLeagueResult = useGameStore((s) => s.recordWeeklyLeagueResult);
 
   const [enemy] = useState<EnemyTrainer>(() => {
+    if (gymLeader) {
+      const poke: PokeEntry =
+        findPokemon(gymLeader.signaturePokemonId) ?? {
+          id: gymLeader.signaturePokemonId,
+          slug: gymLeader.name.toLowerCase(),
+          name: gymLeader.name,
+          types: [gymLeader.type],
+          evolvesFromId: null,
+          evolvesToIds: [],
+          evolutionStage: 1,
+          isFullyEvolved: true,
+        };
+      return {
+        name: gymLeader.name,
+        title: `Gym Leader · ${gymLeader.region}`,
+        pokemon: poke,
+        isShiny: false,
+      };
+    }
     if (eliteMember) {
       const poke: PokeEntry =
         findPokemon(eliteMember.signaturePokemonId) ?? {
@@ -126,7 +156,7 @@ function BattleMode({
     }
     return pickRandomEnemy();
   });
-  const enemyMaxHp = isElite ? 200 : enemyHpForLevel(level);
+  const enemyMaxHp = isWeekly ? 250 : isElite ? 200 : enemyHpForLevel(level);
   const playerAbility = useMemo(() => getAbility(player.types), [player.types]);
   const playerMaxHp = playerAbility.id === "adaptable" ? 105 : 100;
   const [playerHp, setPlayerHp] = useState(playerMaxHp);

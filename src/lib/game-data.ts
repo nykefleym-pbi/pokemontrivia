@@ -169,6 +169,24 @@ export const TP_DAMAGE_TIERS: TpDamageBoost[] = [
   { threshold: 1500, multiplier: 1.20 },
 ];
 
+/** Returns UTC timestamp of the most recent Monday 00:00:00. */
+export function getCurrentWeekStartUtc(): number {
+  const now = new Date();
+  const day = now.getUTCDay();
+  const daysSinceMonday = (day + 6) % 7;
+  const monday = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - daysSinceMonday, 0, 0, 0, 0),
+  );
+  return monday.getTime();
+}
+
+export function getWeekRangeUtc(): { start: number; end: number; nextStart: number } {
+  const start = getCurrentWeekStartUtc();
+  const end = start + 7 * 24 * 60 * 60 * 1000 - 1;
+  const nextStart = start + 7 * 24 * 60 * 60 * 1000;
+  return { start, end, nextStart };
+}
+
 export function getTpMultiplier(tp: number): number {
   let mult = 1.0;
   for (const tier of TP_DAMAGE_TIERS) {

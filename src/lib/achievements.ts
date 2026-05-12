@@ -1,4 +1,5 @@
 import type { GameState } from "./store";
+import { findGymLeader, GYM_LEADERS } from "./gym-leaders";
 
 export interface Achievement {
   id: string;
@@ -136,6 +137,32 @@ export const ACHIEVEMENTS: Achievement[] = [
     desc: "Defeat every Elite Four member.",
     icon: "👑",
     check: (s) => (s.defeatedElites?.length ?? 0) >= 20,
+  },
+  {
+    id: "rising_star",
+    name: "Rising Star",
+    desc: "Earn your first Gym Badge.",
+    icon: "⭐",
+    check: (s) => (s.gymBadges?.length ?? 0) >= 1,
+  },
+  {
+    id: "type_master",
+    name: "Type Master",
+    desc: "Defeat one Gym Leader of every type.",
+    icon: "🎖️",
+    check: (s) => {
+      const beatenTypes = new Set(
+        (s.gymBadges ?? []).map((id) => findGymLeader(id)?.type).filter(Boolean),
+      );
+      return beatenTypes.size >= 18;
+    },
+  },
+  {
+    id: "hall_of_champions",
+    name: "Hall of Champions",
+    desc: "Defeat all 41 Gym Leaders.",
+    icon: "🏛️",
+    check: (s) => (s.gymBadges?.length ?? 0) >= GYM_LEADERS.length,
   },
 ];
 
