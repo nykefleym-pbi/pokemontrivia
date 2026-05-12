@@ -391,8 +391,8 @@ function ProfilePage() {
               <button key={t.id}
                 onClick={() => { setTrainerSprite(t.id); setTrainerPickerOpen(false); toast.success("Trainer updated!"); }}
                 className="flex flex-col items-center rounded-2xl border-2 p-2 transition active:scale-95 hover:border-primary">
-                <img src={trainerSpriteUrl(t.id)} alt={t.name} className="sprite h-16 w-16 object-contain"
-                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = "0.3"; }} />
+                <img src={trainerSpriteUrl(t.id)} alt={t.name} className="sprite h-16 w-16 object-contain" loading="lazy"
+                  onError={() => setBrokenTrainerIds((s) => { const n = new Set(s); n.add(t.id); return n; })} />
                 <div className="text-[11px] font-semibold capitalize">{t.name}</div>
               </button>
             ))}
