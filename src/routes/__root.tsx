@@ -1,6 +1,7 @@
-import { Outlet, Link, createRootRoute, HeadContent, Scripts, useLocation } from "@tanstack/react-router";
-import { Swords, ShoppingBag, User } from "lucide-react";
-import { useGameStore } from "@/lib/store";
+import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { BottomNav } from "@/components/bottom-nav";
+import { initTheme } from "@/lib/theme";
 
 import appCss from "../styles.css?url";
 
@@ -16,7 +17,7 @@ function NotFoundComponent() {
         <div className="mt-6">
           <Link
             to="/"
-            className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-pop transition hover:scale-105"
+            className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-pop transition active:scale-95"
           >
             Back to Battle
           </Link>
@@ -72,56 +73,15 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function BottomNav() {
-  const loc = useLocation();
-  const path = loc.pathname;
-  const tabs = [
-    { to: "/battle", label: "Battle", icon: Swords },
-    { to: "/shop", label: "PokéMart", icon: ShoppingBag },
-    { to: "/profile", label: "Profile", icon: User },
-  ] as const;
-
-  return (
-    <nav className="fixed bottom-0 left-1/2 z-40 w-full max-w-[480px] -translate-x-1/2 border-t border-border bg-card/95 backdrop-blur-xl">
-      <div className="grid grid-cols-3 px-2 pb-[env(safe-area-inset-bottom)] pt-2">
-        {tabs.map((t) => {
-          const active = path.startsWith(t.to);
-          const Icon = t.icon;
-          return (
-            <Link
-              key={t.to}
-              to={t.to}
-              className={`flex flex-col items-center gap-1 rounded-xl py-2 text-xs font-semibold transition ${
-                active ? "text-primary" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <div
-                className={`flex h-9 w-9 items-center justify-center rounded-full transition ${
-                  active ? "bg-primary text-primary-foreground shadow-pop" : ""
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-              </div>
-              {t.label}
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
-  );
-}
-
 function RootComponent() {
-  const loc = useLocation();
-  const hasOnboarded = useGameStore((s) => s.hasOnboarded);
-
-  // hide nav on splash/onboarding
-  const showNav = hasOnboarded && loc.pathname !== "/";
+  useEffect(() => {
+    initTheme();
+  }, []);
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-[480px] bg-background pb-24">
+    <div className="mx-auto min-h-screen w-full max-w-[480px] bg-background pb-20">
       <Outlet />
-      {showNav && <BottomNav />}
+      <BottomNav />
     </div>
   );
 }

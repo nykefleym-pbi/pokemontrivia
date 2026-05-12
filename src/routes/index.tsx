@@ -47,8 +47,9 @@ function SplashPage() {
           >
             <PokeballSpinner size={120} />
             <h1 className="mt-8 font-pixel text-2xl leading-relaxed text-poke-dark">
-              POKéMON<br />TRIVIA<br />BATTLE
+              POKéMON TRIVIA
             </h1>
+            <div className="mt-2 font-pixel text-base text-primary">⚔️ BATTLE ⚔️</div>
             <p className="mt-5 max-w-xs text-sm text-poke-dark/70">
               Battle gym leaders & champions with your knowledge. Earn XP, level up, collect items.
             </p>
