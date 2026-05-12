@@ -397,6 +397,9 @@ export const useGameStore = create<GameState>()(
           defeatedElites: [],
           abilityCodex: [],
           trainingPoints: {},
+          weeklyLeague: null,
+          gymBadges: [],
+          weeklyLeagueHistory: [],
         }),
 
       setName: (name) => set({ trainerName: name }),
