@@ -51,7 +51,7 @@ function SplashPage() {
             </h1>
             <div className="mt-2 font-pixel text-base text-primary">⚔️ BATTLE ⚔️</div>
             <p className="mt-5 max-w-xs text-sm text-poke-dark/70">
-              Battle gym leaders & champions with your knowledge. Earn XP, level up, collect items.
+              Test your Pokémon knowledge in trivia battles. Earn XP, climb leagues, collect items.
             </p>
             <div className="mt-10 flex w-full max-w-xs flex-col gap-3">
               <Button
@@ -70,7 +70,7 @@ function SplashPage() {
                   navigate({ to: "/battle", search: { autostart: 1 } as never });
                 }}
               >
-                Guest Mode
+                Play as Guest
               </Button>
             </div>
             <p className="mt-8 font-pixel text-[9px] text-poke-dark/50">v1.0 · GEN I</p>
@@ -100,15 +100,17 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
   const [trainerQuery, setTrainerQuery] = useState("");
   const [query, setQuery] = useState("");
   const [pick, setPick] = useState<PokeEntry | null>(null);
+  const [brokenTrainerIds, setBrokenTrainerIds] = useState<Set<string>>(new Set());
   const setOnboarded = useGameStore((s) => s.setOnboarded);
   const navigate = useNavigate();
 
   const results = useMemo(() => searchPokemon(query, 9), [query]);
   const trainerResults = useMemo(() => {
     const q = trainerQuery.trim().toLowerCase();
-    if (!q) return TRAINER_SPRITES.slice(0, 9);
-    return TRAINER_SPRITES.filter((t) => t.id.toLowerCase().includes(q) || t.name.toLowerCase().includes(q)).slice(0, 30);
-  }, [trainerQuery]);
+    const pool = TRAINER_SPRITES.filter((t) => !brokenTrainerIds.has(t.id));
+    if (!q) return pool.slice(0, 30);
+    return pool.filter((t) => t.id.toLowerCase().includes(q) || t.name.toLowerCase().includes(q)).slice(0, 60);
+  }, [trainerQuery, brokenTrainerIds]);
 
   function start() {
     if (!name.trim() || !pick) return;
@@ -202,9 +204,9 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                     alt={t.name}
                     className="sprite h-20 w-20 object-contain"
                     loading="lazy"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).style.opacity = "0.3";
-                    }}
+                    onError={() =>
+                      setBrokenTrainerIds((s) => { const n = new Set(s); n.add(t.id); return n; })
+                    }
                   />
                   <span className="mt-1 truncate text-[11px] font-semibold capitalize">{t.name}</span>
                 </button>
@@ -274,7 +276,7 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
             onClick={start}
             className="rounded-full bg-primary py-6 font-semibold shadow-pop disabled:opacity-50"
           >
-            Begin Adventure!
+            Start Adventure
           </Button>
         </div>
       )}

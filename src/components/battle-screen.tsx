@@ -131,6 +131,8 @@ function BattleMode({
   const lastStreakLabelRef = useRef<string | null>(null);
 
   const superEff = isSuperEffective(player, enemy.pokemon);
+  const enemySprite = useMemo(() => spriteUrl(enemy.pokemon.id, { shiny: enemy.isShiny }), [enemy.pokemon.id, enemy.isShiny]);
+  const playerSprite = useMemo(() => spriteUrl(player.id, true), [player.id]);
 
   // start once
   useEffect(() => {
@@ -154,7 +156,7 @@ function BattleMode({
     }
     const introDelay = isElite ? 3600 : 1500;
     if (superEff) {
-      setTimeout(() => setDialog(`Go, ${player.name}! It's super effective!`), introDelay);
+      setTimeout(() => setDialog(`Go, ${player.name}! Type advantage!`), introDelay);
     } else {
       setTimeout(() => setDialog(`Go, ${player.name}!`), introDelay);
     }
@@ -234,7 +236,7 @@ function BattleMode({
       setEnemyHp(newEnemyHp);
       setShakeWho("enemy");
       setFloatDmg({ who: "enemy", n: dmg, super: superEff, speedy: speedBonus >= 3 });
-      setDialog(`${player.name} dealt ${dmg} damage!`);
+      setDialog(`${player.name} hit for ${dmg}!`);
       setStreak(newStreak);
       recordAnswer(true, elapsed, newStreak);
       playSfx("correct");
@@ -266,8 +268,8 @@ function BattleMode({
       playSfx("wrong");
       setDialog(
         idx === -1
-          ? `Time's up! ${player.name} took ${dmg} damage!`
-          : `Wrong! The answer was: ${trivia.options[trivia.correct]}`,
+          ? `Out of time! ${player.name} took ${dmg}.`
+          : `Not quite — the answer was ${trivia.options[trivia.correct]}.`,
       );
       setTimeout(() => setShakeWho(null), 500);
       setTimeout(() => setFloatDmg(null), 1000);
@@ -336,7 +338,7 @@ function BattleMode({
     const before = new Set(unlockedAchievements(useGameStore.getState()));
     endBattle(won, total);
     pushBattleLog({
-      opponent: `${enemy.name}'s ${enemy.pokemon.name}`,
+      opponent: `${enemy.name} (${enemy.pokemon.name})`,
       won,
       xpGained: total,
       bestStreak: maxStreakRef.current,
@@ -500,8 +502,8 @@ function BattleMode({
         <div className="rounded-2xl bg-card/85 p-3 backdrop-blur shadow-card">
           <div className="flex items-center justify-between">
             <div>
-              <div className="font-pixel text-[10px] uppercase text-muted-foreground">{enemy.title}</div>
-              <div className="text-sm font-bold">{enemy.name}'s {enemy.pokemon.name}</div>
+              <div className="font-pixel text-[10px] uppercase text-muted-foreground">{enemy.name}</div>
+              <div className="text-sm font-bold">{enemy.pokemon.name}</div>
               <div className="mt-1 flex gap-1">
                 {enemy.pokemon.types.map((t) => (
                   <TypeBadge key={t} type={t} />
@@ -520,7 +522,7 @@ function BattleMode({
             animate={{ x: 0, opacity: 1 }}
           >
             <img
-              src={spriteUrl(enemy.pokemon.id, { shiny: enemy.isShiny })}
+              src={enemySprite}
               alt={enemy.pokemon.name}
               className={`sprite h-32 w-32 ${enemy.isShiny ? "shiny-glow" : ""}`}
             />
@@ -545,7 +547,7 @@ function BattleMode({
             animate={{ x: 0, opacity: 1 }}
           >
             <img
-              src={spriteUrl(player.id, true)}
+              src={playerSprite}
               alt={player.name}
               className={`sprite h-32 w-32 ${streak >= 5 ? "mega-glow" : ""}`}
             />
@@ -684,8 +686,8 @@ function ResultScreen({
         <div className="mt-3 text-6xl">{won ? "🏆" : "💔"}</div>
       </motion.div>
       <div className="mt-8 w-full max-w-xs space-y-3 rounded-3xl bg-card/95 p-5 shadow-pop backdrop-blur">
-        <Row label="XP Earned" value={`+${xpEarned}`} accent />
-        <Row label="Best Streak" value={String(streak)} />
+        <Row label="XP Gained" value={`+${xpEarned}`} accent />
+        <Row label="Top Streak" value={String(streak)} />
       </div>
       <Button
         size="lg"
@@ -894,7 +896,7 @@ function DailyResultScreen({
       animate={{ opacity: 1 }}
       className="flex min-h-screen flex-col items-center justify-center bg-poke-hero px-6"
     >
-      <div className="font-pixel text-2xl text-poke-dark">DAILY DONE!</div>
+      <div className="font-pixel text-2xl text-poke-dark">ALL DONE!</div>
       <div className="mt-3 text-5xl">🏅</div>
       <div className="mt-6 w-full max-w-xs space-y-3 rounded-3xl bg-card/95 p-5 shadow-pop">
         <div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Date</span><span className="font-pixel text-sm">{date}</span></div>
@@ -903,7 +905,7 @@ function DailyResultScreen({
         <div className="text-center font-pixel text-lg tracking-widest">{pattern}</div>
       </div>
       <Button size="lg" onClick={share} className="mt-6 w-full max-w-xs rounded-full bg-primary py-6 font-semibold shadow-pop">
-        <Share2 className="mr-2 h-4 w-4" /> Share Result
+        <Share2 className="mr-2 h-4 w-4" /> Share
       </Button>
       <Button size="lg" variant="outline" onClick={onExit} className="mt-3 w-full max-w-xs rounded-full border-2 py-6 font-semibold">
         Back

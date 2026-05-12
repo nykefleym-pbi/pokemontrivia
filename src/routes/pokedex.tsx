@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Search, Sparkles } from "lucide-react";
 import { useGameStore } from "@/lib/store";
@@ -144,6 +145,7 @@ function PokedexPage() {
               <button
                 key={p.id}
                 onClick={() => { setDetailId(p.id); setShowShiny(false); }}
+                style={{ contentVisibility: "auto", containIntrinsicSize: "96px 96px" } as React.CSSProperties}
                 className={`relative flex flex-col items-center rounded-2xl p-2 transition active:scale-95 ${
                   got ? "bg-card shadow-sm" : "bg-muted/30"
                 }`}

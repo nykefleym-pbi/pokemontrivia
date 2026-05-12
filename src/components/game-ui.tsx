@@ -23,7 +23,7 @@ const typeColorMap: Record<PokeType, string> = {
   fairy: "bg-pink-400",
 };
 
-export function TypeBadge({ type }: { type: PokeType }) {
+export const TypeBadge = React.memo(function TypeBadge({ type }: { type: PokeType }) {
   return (
     <span
       className={`inline-flex items-center rounded-full px-2.5 py-0.5 font-pixel text-[9px] uppercase tracking-wide text-white shadow-sm ${typeColorMap[type]}`}
@@ -31,9 +31,9 @@ export function TypeBadge({ type }: { type: PokeType }) {
       {type}
     </span>
   );
-}
+});
 
-export function HpBar({ hp, max = 100, label }: { hp: number; max?: number; label?: string }) {
+export const HpBar = React.memo(function HpBar({ hp, max = 100, label }: { hp: number; max?: number; label?: string }) {
   const pct = Math.max(0, Math.min(100, (hp / max) * 100));
   const color =
     pct > 50 ? "bg-hp-good" : pct > 20 ? "bg-hp-warn" : "bg-hp-low";
@@ -57,9 +57,9 @@ export function HpBar({ hp, max = 100, label }: { hp: number; max?: number; labe
       </div>
     </div>
   );
-}
+});
 
-export function XpBar({ xp, need }: { xp: number; need: number }) {
+export const XpBar = React.memo(function XpBar({ xp, need }: { xp: number; need: number }) {
   const pct = Math.max(0, Math.min(100, (xp / need) * 100));
   return (
     <div className="w-full">
@@ -79,9 +79,9 @@ export function XpBar({ xp, need }: { xp: number; need: number }) {
       </div>
     </div>
   );
-}
+});
 
-export function PokeballSpinner({ size = 64 }: { size?: number }) {
+export const PokeballSpinner = React.memo(function PokeballSpinner({ size = 64 }: { size?: number }) {
   return (
     <div
       className="animate-pokeball relative overflow-hidden rounded-full border-[3px] border-poke-dark shadow-pop"
@@ -105,7 +105,7 @@ export function PokeballSpinner({ size = 64 }: { size?: number }) {
       </div>
     </div>
   );
-}
+});
 
 export function AppHeader({ children, gradient }: { children?: React.ReactNode; gradient?: boolean }) {
   return (

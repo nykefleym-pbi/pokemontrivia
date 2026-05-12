@@ -51,8 +51,13 @@ function ProfilePage() {
   const setTrainerSprite = useGameStore((s) => s.setTrainerSprite);
   const reset = useGameStore((s) => s.reset);
   const battleLog = useGameStore((s) => s.battleLog);
-  const fullState = useGameStore();
-  const unlocked = useMemo(() => new Set(unlockedAchievements(fullState)), [fullState]);
+  const flags = useGameStore((s) => s.flags);
+  const peakLevel = useGameStore((s) => s.peakLevel);
+  const pokedex = useGameStore((s) => s.pokedex);
+  const unlocked = useMemo(() => {
+    const ctx = { stats, flags, peakLevel, pokedex } as Parameters<typeof unlockedAchievements>[0];
+    return new Set(unlockedAchievements(ctx));
+  }, [stats, flags, peakLevel, pokedex]);
 
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(trainerName);
@@ -63,6 +68,7 @@ function ProfilePage() {
   const [resetOpen, setResetOpen] = useState(false);
   const [muted, setMutedState] = useState(false);
   const [theme, setThemeState] = useState<Theme>("system");
+  const [brokenTrainerIds, setBrokenTrainerIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setMutedState(isMuted());
@@ -76,9 +82,10 @@ function ProfilePage() {
   const results = useMemo(() => searchPokemon(query, 9), [query]);
   const trainerResults = useMemo(() => {
     const q = trainerQuery.trim().toLowerCase();
-    if (!q) return TRAINER_SPRITES.slice(0, 9);
-    return TRAINER_SPRITES.filter((t) => t.id.toLowerCase().includes(q) || t.name.toLowerCase().includes(q)).slice(0, 30);
-  }, [trainerQuery]);
+    const pool = TRAINER_SPRITES.filter((t) => !brokenTrainerIds.has(t.id));
+    if (!q) return pool.slice(0, 30);
+    return pool.filter((t) => t.id.toLowerCase().includes(q) || t.name.toLowerCase().includes(q)).slice(0, 60);
+  }, [trainerQuery, brokenTrainerIds]);
 
   if (!hasOnboarded || !pokemon) return null;
 
@@ -384,8 +391,8 @@ function ProfilePage() {
               <button key={t.id}
                 onClick={() => { setTrainerSprite(t.id); setTrainerPickerOpen(false); toast.success("Trainer updated!"); }}
                 className="flex flex-col items-center rounded-2xl border-2 p-2 transition active:scale-95 hover:border-primary">
-                <img src={trainerSpriteUrl(t.id)} alt={t.name} className="sprite h-16 w-16 object-contain"
-                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = "0.3"; }} />
+                <img src={trainerSpriteUrl(t.id)} alt={t.name} className="sprite h-16 w-16 object-contain" loading="lazy"
+                  onError={() => setBrokenTrainerIds((s) => { const n = new Set(s); n.add(t.id); return n; })} />
                 <div className="text-[11px] font-semibold capitalize">{t.name}</div>
               </button>
             ))}
