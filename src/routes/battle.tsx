@@ -103,7 +103,7 @@ function BattlePage() {
           type: pendingElite.type,
           memberName: `${pendingElite.title} ${pendingElite.name}`,
           seenHashes,
-          seenSamples: seenQuestions.slice(-40),
+          seenSamples: seenQuestions.slice(-80),
           flowSeed: Math.floor(Math.random() * 1_000_000),
         }),
       });
