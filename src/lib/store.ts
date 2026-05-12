@@ -137,6 +137,7 @@ export interface GameState {
   pushBattleLog: (e: BattleLogEntry) => void;
   recordPokedexCapture: (pokemonId: number, isShiny: boolean) => void;
   markEliteDefeated: (memberId: string, region: string, regionDone: boolean) => void;
+  registerAbilityTriggered: (abilityId: string) => void;
 }
 
 const defaultStats: PlayerStats = {
