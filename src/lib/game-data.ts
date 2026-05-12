@@ -28,14 +28,14 @@ const ICON = (slug: string) =>
   `https://play.pokemonshowdown.com/sprites/itemicons/${slug}.png`;
 
 export const ITEMS: ItemDef[] = [
-  { id: "potion", name: "Potion", emoji: "🧪", iconUrl: ICON("potion"), desc: "Restore 30 HP. (max 2 per battle)", cost: 30 },
-  { id: "revive", name: "Revive", emoji: "💖", iconUrl: ICON("revive"), desc: "Heal to 50 HP when you're at 10 or less.", cost: 80 },
-  { id: "xattack", name: "X Attack", emoji: "⚔️", iconUrl: ICON("x-attack"), desc: "Next correct answer deals +20 damage.", cost: 45 },
-  { id: "escape", name: "Escape Rope", emoji: "🪢", iconUrl: ICON("escape-rope"), desc: "Flee a battle without losing XP.", cost: 60 },
-  { id: "candy", name: "Rare Candy", emoji: "🍬", iconUrl: ICON("rare-candy"), desc: "Instantly gain 50 XP.", cost: 120, premium: true },
-  { id: "luckyegg", name: "Lucky Egg", emoji: "🥚", iconUrl: ICON("lucky-egg"), desc: "Double XP from your next battle.", cost: 150, premium: true },
-  { id: "scope", name: "Scope Lens", emoji: "🔭", iconUrl: ICON("scope-lens"), desc: "Reveal one wrong answer.", cost: 70 },
-  { id: "xaccuracy", name: "X Accuracy", emoji: "🎯", iconUrl: ICON("x-accuracy"), desc: "Add +5 seconds to the timer this battle.", cost: 50 },
+  { id: "potion", name: "Potion", emoji: "🧪", iconUrl: ICON("potion"), desc: "Heals 30 HP. Up to 2 per battle.", cost: 30 },
+  { id: "revive", name: "Revive", emoji: "💖", iconUrl: ICON("revive"), desc: "Brings you back to 50 HP when nearly fainted.", cost: 80 },
+  { id: "xattack", name: "X Attack", emoji: "⚔️", iconUrl: ICON("x-attack"), desc: "Your next correct answer hits for +20.", cost: 45 },
+  { id: "escape", name: "Escape Rope", emoji: "🪢", iconUrl: ICON("escape-rope"), desc: "Bail out of a battle, no XP lost.", cost: 60 },
+  { id: "candy", name: "Rare Candy", emoji: "🍬", iconUrl: ICON("rare-candy"), desc: "+50 XP, instantly.", cost: 120, premium: true },
+  { id: "luckyegg", name: "Lucky Egg", emoji: "🥚", iconUrl: ICON("lucky-egg"), desc: "Doubles XP from your next battle.", cost: 150, premium: true },
+  { id: "scope", name: "Scope Lens", emoji: "🔭", iconUrl: ICON("scope-lens"), desc: "Eliminates one wrong choice.", cost: 70 },
+  { id: "xaccuracy", name: "X Accuracy", emoji: "🎯", iconUrl: ICON("x-accuracy"), desc: "+5 seconds to your timer this battle.", cost: 50 },
 ];
 
 // Trainer roster scraped from Bulbagarden (Gen III/IV/V + Pokémon Masters).
