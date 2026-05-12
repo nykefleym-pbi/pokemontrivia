@@ -123,11 +123,6 @@ function ProfilePage() {
     navigate({ to: "/" });
   }
 
-  function changeTheme(t: Theme) {
-    setTheme(t);
-    setThemeState(t);
-  }
-
   return (
     <div className="min-h-screen bg-background">
       <Toaster position="top-center" />
