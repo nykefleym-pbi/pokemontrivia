@@ -1124,6 +1124,8 @@ function ResultScreen({
   partnerName,
   streak,
   onRebattle,
+  canShare,
+  onShare,
 }: {
   won: boolean;
   xpEarned: number;
@@ -1131,6 +1133,8 @@ function ResultScreen({
   partnerName: string;
   streak: number;
   onRebattle: () => void;
+  canShare?: boolean;
+  onShare?: () => void;
 }) {
   return (
     <motion.div
