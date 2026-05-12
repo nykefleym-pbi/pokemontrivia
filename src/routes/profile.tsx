@@ -51,8 +51,13 @@ function ProfilePage() {
   const setTrainerSprite = useGameStore((s) => s.setTrainerSprite);
   const reset = useGameStore((s) => s.reset);
   const battleLog = useGameStore((s) => s.battleLog);
-  const fullState = useGameStore();
-  const unlocked = useMemo(() => new Set(unlockedAchievements(fullState)), [fullState]);
+  const flags = useGameStore((s) => s.flags);
+  const peakLevel = useGameStore((s) => s.peakLevel);
+  const pokedex = useGameStore((s) => s.pokedex);
+  const unlocked = useMemo(() => {
+    const ctx = { stats, flags, peakLevel, pokedex } as Parameters<typeof unlockedAchievements>[0];
+    return new Set(unlockedAchievements(ctx));
+  }, [stats, flags, peakLevel, pokedex]);
 
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(trainerName);
