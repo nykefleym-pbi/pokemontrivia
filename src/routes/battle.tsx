@@ -70,14 +70,14 @@ function BattlePage() {
         body: JSON.stringify({
           difficulty: difficultyForLevel(level),
           seenHashes,
-          seenSamples: seenQuestions.slice(-40),
+          seenSamples: seenQuestions.slice(-80),
           flowSeed: Math.floor(Math.random() * 1_000_000),
         }),
       });
       if (resp.status === 429) { toast.error("Rate limited. Please wait a moment."); setPhase("home"); return; }
       if (resp.status === 402) { toast.error("AI credits exhausted. Add credits in Settings."); setPhase("home"); return; }
       const data = (await resp.json()) as { questions: Trivia[] };
-      if (!data.questions || data.questions.length === 0) {
+      if (!data.questions || data.questions.length < 5) {
         toast.error("Couldn't prepare battle. Try again.");
         setPhase("home");
         return;
