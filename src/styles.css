@@ -170,11 +170,6 @@
 }
 
 /* Battle backgrounds */
-.bg-battle-field {
-  background:
-    radial-gradient(ellipse at top, oklch(0.85 0.1 220) 0%, transparent 60%),
-    linear-gradient(180deg, oklch(0.88 0.08 215) 0%, oklch(0.92 0.1 130) 60%, oklch(0.85 0.14 130) 100%);
-}
 .bg-victory {
   background: linear-gradient(180deg, oklch(0.88 0.16 60) 0%, oklch(0.78 0.2 30) 100%);
 }
