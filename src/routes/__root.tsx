@@ -1,7 +1,5 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
-import { useEffect } from "react";
 import { BottomNav } from "@/components/bottom-nav";
-import { initTheme } from "@/lib/theme";
 
 import appCss from "../styles.css?url";
 
