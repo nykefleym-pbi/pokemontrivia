@@ -502,8 +502,8 @@ function BattleMode({
         <div className="rounded-2xl bg-card/85 p-3 backdrop-blur shadow-card">
           <div className="flex items-center justify-between">
             <div>
-              <div className="font-pixel text-[10px] uppercase text-muted-foreground">{enemy.title}</div>
-              <div className="text-sm font-bold">{enemy.name}'s {enemy.pokemon.name}</div>
+              <div className="font-pixel text-[10px] uppercase text-muted-foreground">{enemy.name}</div>
+              <div className="text-sm font-bold">{enemy.pokemon.name}</div>
               <div className="mt-1 flex gap-1">
                 {enemy.pokemon.types.map((t) => (
                   <TypeBadge key={t} type={t} />
