@@ -905,7 +905,7 @@ function DailyResultScreen({
         <div className="text-center font-pixel text-lg tracking-widest">{pattern}</div>
       </div>
       <Button size="lg" onClick={share} className="mt-6 w-full max-w-xs rounded-full bg-primary py-6 font-semibold shadow-pop">
-        <Share2 className="mr-2 h-4 w-4" /> Share Result
+        <Share2 className="mr-2 h-4 w-4" /> Share
       </Button>
       <Button size="lg" variant="outline" onClick={onExit} className="mt-3 w-full max-w-xs rounded-full border-2 py-6 font-semibold">
         Back
