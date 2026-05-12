@@ -151,6 +151,8 @@ function BattleMode({
   const startedRef = useRef(false);
   const maxStreakRef = useRef(0);
   const lastStreakLabelRef = useRef<string | null>(null);
+  const correctCountRef = useRef(0);
+  const [tpEarned, setTpEarned] = useState(0);
 
   // Phase 2: ability + status state
   type StatusKind = "confused" | "poisoned";
