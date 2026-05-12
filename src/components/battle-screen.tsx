@@ -922,27 +922,11 @@ function DailyResultScreen({
   correct: number;
   total: number;
   timeMs: number;
-  pattern: string;
+  pattern: DailyMark[];
   onExit: () => void;
 }) {
   const date = new Date().toISOString().slice(0, 10);
   const seconds = Math.round(timeMs / 1000);
-  const shareText = `Pokémon Trivia · ${date}\n${correct}/${total} · ${seconds}s\n${pattern}\nplay → poketrivia.app`;
-
-  async function share() {
-    if (typeof navigator !== "undefined" && (navigator as Navigator & { share?: (d: ShareData) => Promise<void> }).share) {
-      try {
-        await (navigator as Navigator & { share: (d: ShareData) => Promise<void> }).share({ text: shareText });
-        return;
-      } catch { /* fall through to clipboard */ }
-    }
-    try {
-      await navigator.clipboard.writeText(shareText);
-      toast.success("Copied to clipboard!");
-    } catch {
-      toast.error("Couldn't copy. Long-press the text below.");
-    }
-  }
 
   return (
     <motion.div
@@ -956,12 +940,9 @@ function DailyResultScreen({
         <div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Date</span><span className="font-pixel text-sm">{date}</span></div>
         <div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Score</span><span className="font-pixel text-sm text-primary">{correct}/{total}</span></div>
         <div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Time</span><span className="font-pixel text-sm">{seconds}s</span></div>
-        <div className="text-center font-pixel text-lg tracking-widest">{pattern}</div>
+        <div className="pt-1"><PokeballPattern marks={pattern} /></div>
       </div>
-      <Button size="lg" onClick={share} className="mt-6 w-full max-w-xs rounded-full bg-primary py-6 font-semibold shadow-pop">
-        <Share2 className="mr-2 h-4 w-4" /> Share
-      </Button>
-      <Button size="lg" variant="outline" onClick={onExit} className="mt-3 w-full max-w-xs rounded-full border-2 py-6 font-semibold">
+      <Button size="lg" variant="outline" onClick={onExit} className="mt-6 w-full max-w-xs rounded-full border-2 py-6 font-semibold">
         Back
       </Button>
     </motion.div>
