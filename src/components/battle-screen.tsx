@@ -229,6 +229,7 @@ function BattleMode({
   useEffect(() => {
     if (phase !== "question") return;
     if (confirmExit) return;
+    if (tutorialStep !== null) return;
     if (timer <= 0) {
       handleAnswer(-1);
       return;
@@ -236,10 +237,20 @@ function BattleMode({
     const t = setTimeout(() => setTimer((x) => x - 1), 1000);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, timer, confirmExit]);
+  }, [phase, timer, confirmExit, tutorialStep]);
+
+  // Trigger tutorial on first 3 questions
+  useEffect(() => {
+    if (phase === "question" && tutorialActive && questionIdx <= 2) {
+      const id = (questionIdx + 1) as 1 | 2 | 3;
+      setTutorialStep(id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, questionIdx, tutorialActive]);
 
   function handleAnswer(idx: number) {
     if (phase !== "question" || !trivia) return;
+    if (tutorialStep !== null) return;
     if (typeof navigator !== "undefined" && "vibrate" in navigator) {
       try {
         navigator.vibrate(idx === trivia.correct ? 30 : [50, 30, 50]);
@@ -296,11 +307,15 @@ function BattleMode({
         return;
       }
     } else {
-      const dmg = 15;
-      const newPlayerHp = Math.max(0, playerHp - dmg);
+      // Matchup-aware wrong-answer damage
+      let wrongDmg = 10;
+      if (immune) wrongDmg = 5;
+      else if (disadvantaged) wrongDmg = 15;
+
+      const newPlayerHp = Math.max(0, playerHp - wrongDmg);
       setPlayerHp(newPlayerHp);
       setShakeWho("player");
-      setFloatDmg({ who: "player", n: dmg, super: false, speedy: false });
+      setFloatDmg({ who: "player", n: wrongDmg, super: false, speedy: false });
       setStreak(0);
       lastStreakLabelRef.current = null;
       recordAnswer(false, elapsed, streak);
