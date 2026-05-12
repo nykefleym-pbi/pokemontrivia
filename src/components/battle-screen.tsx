@@ -781,8 +781,8 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
     if (!trivia || phase !== "question") return;
     setChosen(picked);
     const correct = picked === trivia.correct;
-    const sym = picked === -1 ? "⬛" : correct ? "🟩" : "🟥";
-    const nextPattern = pattern + sym;
+    const sym: DailyMark = picked === -1 ? "timeout" : correct ? "correct" : "wrong";
+    const nextPattern: DailyMark[] = [...pattern, sym];
     setPattern(nextPattern);
     if (correct) setCorrectCount((c) => c + 1);
     if (typeof navigator !== "undefined" && "vibrate" in navigator) {
