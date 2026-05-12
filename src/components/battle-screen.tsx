@@ -503,6 +503,7 @@ function BattleMode({
       }
 
       const newEnemyHp = Math.max(0, enemyHp - dmg);
+      if (dmg > topDmgRef.current) topDmgRef.current = dmg;
       setEnemyHp(newEnemyHp);
       setShakeWho("enemy");
       setFloatDmg({ who: "enemy", n: dmg, super: superEff, speedy: speedBonus >= 3 });
