@@ -227,13 +227,16 @@ function BattleHome({
               <XpBar xp={xpProg.current} need={xpProg.need} />
             </div>
           </div>
-          <div className="relative shrink-0">
+          <div className="relative shrink-0 text-center">
             <div className="absolute inset-0 -m-1 rounded-full bg-gradient-to-br from-poke-yellow/40 to-primary/30 blur-xl" />
             <PokemonSprite
               id={pokemon.id}
               alt={pokemon.name}
               className="sprite relative h-20 w-20"
             />
+            <div className="relative mt-1 font-pixel text-[8px] text-poke-dark/70">
+              ⚡ {getAbility(pokemon.types).name}
+            </div>
           </div>
         </div>
         <div className="mt-2 flex items-center justify-between">
