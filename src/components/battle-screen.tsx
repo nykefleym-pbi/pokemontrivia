@@ -81,6 +81,7 @@ function BattleMode({
 
   const startBattle = useGameStore((s) => s.startBattle);
   const endBattle = useGameStore((s) => s.endBattle);
+  const abortBattle = useGameStore((s) => s.abortBattle);
   const recordAnswer = useGameStore((s) => s.recordAnswer);
   const completeSet = useGameStore((s) => s.completeSet);
   const consumeXAttack = useGameStore((s) => s.consumeXAttack);
