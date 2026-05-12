@@ -109,6 +109,9 @@ export interface GameState {
   defeatedEliteRegions: string[];
   defeatedElites: string[];
 
+  // ability codex (Phase 2)
+  abilityCodex: string[];
+
   // actions
   setOnboarded: (name: string, pokemon: PokeEntry, trainerSprite: string) => void;
   startGuestSession: () => void;
