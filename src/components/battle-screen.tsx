@@ -665,6 +665,25 @@ function BattleMode({
           </motion.div>
         )}
       </AnimatePresence>
+      <AlertDialog open={confirmExit} onOpenChange={setConfirmExit}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave battle?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your progress in this battle will be lost. You'll keep XP and trophies you've already earned.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Stay</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => { abortBattle(); onExit(); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Leave
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
