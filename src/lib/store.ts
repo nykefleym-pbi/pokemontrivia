@@ -123,6 +123,7 @@ export interface GameState {
 
   startBattle: () => void;
   endBattle: (won: boolean, xpGained: number) => void;
+  abortBattle: () => void;
   recordAnswer: (correct: boolean, timeMs: number, streak: number) => void;
   completeSet: () => void;
   consumeXAttack: () => void;
