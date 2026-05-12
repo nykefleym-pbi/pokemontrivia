@@ -596,6 +596,12 @@ function BattleMode({
   }
 
   function finish(won: boolean) {
+    // Clear Phase 2 battle-scoped state
+    stopPoisonTick();
+    setStatuses([]);
+    wrongStreakRef.current = 0;
+    abilityStateRef.current.cursedBodyPending = null;
+
     const baseXp = won ? 40 + level * 5 : 10 + level * 2;
     const eliteBonus = isElite && won ? 100 + level * 10 : 0;
     const bonus = maxStreakRef.current * 2;
