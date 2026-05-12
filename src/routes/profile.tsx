@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Pencil, RotateCcw, Check, Search, Volume2, VolumeX } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { rankForLevel, xpProgressInLevel, ITEMS, TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
-import { searchPokemon } from "@/lib/pokemon-data";
+import { ALL_POKEMON, isStartingPartner } from "@/lib/pokemon-data";
 import { ABILITIES, getAbility } from "@/lib/abilities";
 import { XpBar, TypeBadge, PokemonSprite } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
@@ -79,7 +79,12 @@ function ProfilePage() {
     if (!hasOnboarded) navigate({ to: "/" });
   }, [hasOnboarded, navigate]);
 
-  const results = useMemo(() => searchPokemon(query, 9), [query]);
+  const results = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return ALL_POKEMON.filter(isStartingPartner)
+      .filter((p) => (q ? p.name.toLowerCase().includes(q) : true))
+      .slice(0, 24);
+  }, [query]);
   const trainerResults = useMemo(() => {
     const q = trainerQuery.trim().toLowerCase();
     const pool = TRAINER_SPRITES.filter((t) => !brokenTrainerIds.has(t.id));

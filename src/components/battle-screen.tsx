@@ -10,6 +10,8 @@ import {
   enemyHpForLevel,
   streakMultiplier,
   streakLabel,
+  TP_REWARDS,
+  getTpMultiplier,
 } from "@/lib/game-data";
 import { isSuperEffective, findPokemon, isPlayerDisadvantaged, isPlayerImmune, type PokeEntry } from "@/lib/pokemon-data";
 import { getAbility, type Ability } from "@/lib/abilities";
@@ -110,6 +112,10 @@ function BattleMode({
           slug: eliteMember.signaturePokemonName.toLowerCase(),
           name: eliteMember.signaturePokemonName,
           types: [eliteMember.type],
+          evolvesFromId: null,
+          evolvesToIds: [],
+          evolutionStage: 1,
+          isFullyEvolved: true,
         };
       return {
         name: eliteMember.name,
@@ -145,6 +151,8 @@ function BattleMode({
   const startedRef = useRef(false);
   const maxStreakRef = useRef(0);
   const lastStreakLabelRef = useRef<string | null>(null);
+  const correctCountRef = useRef(0);
+  const [tpEarned, setTpEarned] = useState(0);
 
   // Phase 2: ability + status state
   type StatusKind = "confused" | "poisoned";
@@ -409,6 +417,7 @@ function BattleMode({
 
     let newStreak = streak;
     if (correct) {
+      correctCountRef.current += 1;
       wrongStreakRef.current = 0;
 
       // Confused miss: 25% chance to do nothing
@@ -432,6 +441,10 @@ function BattleMode({
 
       // streak multiplier
       let dmg = Math.round(10 * streakMultiplier(newStreak));
+      // TP damage boost
+      const tpNow = useGameStore.getState().trainingPoints[player.id] ?? 0;
+      const tpMult = getTpMultiplier(tpNow);
+      if (tpMult > 1.0) dmg = Math.round(dmg * tpMult);
       // time bonus
       const elapsedSec = elapsed / 1000;
       const totalTime = TIMER_BASE + bonusTime;
@@ -609,6 +622,18 @@ function BattleMode({
     setXpEarned(total);
     setResultWon(won);
 
+    // Phase 3: Training Points
+    let tp = 0;
+    if (isElite) {
+      tp = won ? TP_REWARDS.eliteWin : TP_REWARDS.battleLoss;
+    } else if (won) {
+      tp = Math.min(20, correctCountRef.current * TP_REWARDS.battleWinPerCorrect);
+    } else {
+      tp = TP_REWARDS.battleLoss;
+    }
+    useGameStore.getState().addTrainingPoints(player.id, tp);
+    setTpEarned(tp);
+
     // comeback flag — won at low HP
     if (won && playerHp <= 10) {
       raiseFlag("comeback");
@@ -701,6 +726,8 @@ function BattleMode({
       <ResultScreen
         won={resultWon!}
         xpEarned={xpEarned}
+        tpEarned={tpEarned}
+        partnerName={player.name}
         streak={maxStreakRef.current}
         onRebattle={() => onExit()}
       />
@@ -1025,11 +1052,15 @@ function BattleMode({
 function ResultScreen({
   won,
   xpEarned,
+  tpEarned,
+  partnerName,
   streak,
   onRebattle,
 }: {
   won: boolean;
   xpEarned: number;
+  tpEarned: number;
+  partnerName: string;
   streak: number;
   onRebattle: () => void;
 }) {
@@ -1055,6 +1086,7 @@ function ResultScreen({
       <div className="mt-8 w-full max-w-xs space-y-3 rounded-3xl bg-card/95 p-5 shadow-pop backdrop-blur">
         <Row label="XP Gained" value={`+${xpEarned}`} accent />
         <Row label="Top Streak" value={String(streak)} />
+        <Row label={`TP · ${partnerName}`} value={`+${tpEarned}`} accent />
       </div>
       <Button
         size="lg"
@@ -1140,6 +1172,15 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
             timeMs,
             pattern: nextPattern,
           });
+          // Phase 3: Daily TP
+          const partner = useGameStore.getState().pokemon;
+          if (partner) {
+            if (finalCorrect === total) {
+              useGameStore.getState().addTrainingPoints(partner.id, TP_REWARDS.dailyPerfect);
+            } else if (finalCorrect >= 5) {
+              useGameStore.getState().addTrainingPoints(partner.id, TP_REWARDS.dailyPartial);
+            }
+          }
         }
         playSfx("victory");
         setPhase("done");

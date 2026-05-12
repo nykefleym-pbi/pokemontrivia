@@ -141,6 +141,43 @@ export interface EnemyTrainer {
 
 export const SHINY_CHANCE = 1 / 256;
 
+// ----- Training Points (TP) economy -----
+export const TP_REWARDS = {
+  battleWinPerCorrect: 1, // capped at 20 per battle
+  battleLoss: 5,
+  dailyPerfect: 30,
+  dailyPartial: 15,
+  eliteWin: 50,
+  weeklyWin: 100,
+};
+
+export const EVOLUTION_TP_COST: Record<1 | 2, number> = {
+  1: 150,
+  2: 350,
+};
+
+export interface TpDamageBoost {
+  threshold: number;
+  multiplier: number;
+}
+
+export const TP_DAMAGE_TIERS: TpDamageBoost[] = [
+  { threshold: 0, multiplier: 1.0 },
+  { threshold: 100, multiplier: 1.05 },
+  { threshold: 300, multiplier: 1.10 },
+  { threshold: 700, multiplier: 1.15 },
+  { threshold: 1500, multiplier: 1.20 },
+];
+
+export function getTpMultiplier(tp: number): number {
+  let mult = 1.0;
+  for (const tier of TP_DAMAGE_TIERS) {
+    if (tp >= tier.threshold) mult = tier.multiplier;
+  }
+  return mult;
+}
+
+
 // Use a wide pool: skip pre-evolutions by simple heuristic — favor higher-id Pokémon
 // of each evolution family. For simplicity, pick from all Pokémon with id divisible-friendly
 // and exclude obvious first-stage names. Good enough as a runtime pick.

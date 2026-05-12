@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { ItemId } from "./game-data";
-import { ITEMS, levelFromTotalXp, TRAINER_SPRITES } from "./game-data";
+import { ITEMS, levelFromTotalXp, TRAINER_SPRITES, EVOLUTION_TP_COST } from "./game-data";
 import type { PokeEntry } from "./pokemon-data";
 import { ALL_POKEMON } from "./pokemon-data";
 
@@ -112,6 +112,9 @@ export interface GameState {
   // ability codex (Phase 2)
   abilityCodex: string[];
 
+  // Phase 3: per-partner Training Points
+  trainingPoints: Record<number, number>;
+
   // actions
   setOnboarded: (name: string, pokemon: PokeEntry, trainerSprite: string) => void;
   startGuestSession: () => void;
@@ -138,6 +141,12 @@ export interface GameState {
   recordPokedexCapture: (pokemonId: number, isShiny: boolean) => void;
   markEliteDefeated: (memberId: string, region: string, regionDone: boolean) => void;
   registerAbilityTriggered: (abilityId: string) => void;
+
+  // Phase 3 actions
+  addTrainingPoints: (pokemonId: number, amount: number) => void;
+  spendTrainingPoints: (pokemonId: number, amount: number) => boolean;
+  getPartnerTp: (pokemonId: number) => number;
+  evolvePartner: (toPokemon: PokeEntry) => boolean;
 }
 
 const defaultStats: PlayerStats = {
@@ -194,6 +203,57 @@ export const useGameStore = create<GameState>()(
       defeatedEliteRegions: [],
       defeatedElites: [],
       abilityCodex: [],
+      trainingPoints: {},
+
+      addTrainingPoints: (pokemonId, amount) => {
+        const s = get();
+        const current = s.trainingPoints[pokemonId] ?? 0;
+        set({
+          trainingPoints: { ...s.trainingPoints, [pokemonId]: current + amount },
+        });
+      },
+
+      spendTrainingPoints: (pokemonId, amount) => {
+        const s = get();
+        const current = s.trainingPoints[pokemonId] ?? 0;
+        if (current < amount) return false;
+        set({
+          trainingPoints: { ...s.trainingPoints, [pokemonId]: current - amount },
+        });
+        return true;
+      },
+
+      getPartnerTp: (pokemonId) => get().trainingPoints[pokemonId] ?? 0,
+
+      evolvePartner: (toPokemon) => {
+        const s = get();
+        if (!s.pokemon) return false;
+        const fromId = s.pokemon.id;
+        const stage = s.pokemon.evolutionStage;
+        if (stage !== 1 && stage !== 2) return false;
+        const cost = EVOLUTION_TP_COST[stage];
+        const currentTp = s.trainingPoints[fromId] ?? 0;
+        if (currentTp < cost) return false;
+        if (!s.pokemon.evolvesToIds.includes(toPokemon.id)) return false;
+        const remainingTp = currentTp - cost;
+        const newTpMap = { ...s.trainingPoints };
+        delete newTpMap[fromId];
+        newTpMap[toPokemon.id] = (newTpMap[toPokemon.id] ?? 0) + remainingTp;
+        set({
+          pokemon: toPokemon,
+          trainingPoints: newTpMap,
+          pokedex: {
+            ...s.pokedex,
+            [toPokemon.id]: {
+              pokemonId: toPokemon.id,
+              firstSeenAt: s.pokedex[toPokemon.id]?.firstSeenAt ?? Date.now(),
+              shinyUnlocked: s.pokedex[toPokemon.id]?.shinyUnlocked ?? false,
+              defeatCount: s.pokedex[toPokemon.id]?.defeatCount ?? 0,
+            },
+          },
+        });
+        return true;
+      },
 
       markQuestionsSeen: (texts) => {
         const s = get();
@@ -257,6 +317,7 @@ export const useGameStore = create<GameState>()(
           defeatedEliteRegions: [],
           defeatedElites: [],
           abilityCodex: [],
+          trainingPoints: {},
         }),
 
       setName: (name) => set({ trainerName: name }),
@@ -460,6 +521,7 @@ export const useGameStore = create<GameState>()(
         defeatedEliteRegions: s.defeatedEliteRegions,
         defeatedElites: s.defeatedElites,
         abilityCodex: s.abilityCodex,
+        trainingPoints: s.trainingPoints,
       }),
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<GameState>;
@@ -482,6 +544,7 @@ export const useGameStore = create<GameState>()(
           defeatedEliteRegions: p.defeatedEliteRegions ?? [],
           defeatedElites: p.defeatedElites ?? [],
           abilityCodex: p.abilityCodex ?? [],
+          trainingPoints: p.trainingPoints ?? {},
         };
       },
     },

@@ -9,6 +9,10 @@ export interface PokeEntry {
   slug: string;
   name: string;
   types: PokeType[];
+  evolvesFromId: number | null;
+  evolvesToIds: number[];
+  evolutionStage: 1 | 2 | 3;
+  isFullyEvolved: boolean;
 }
 
 export const ALL_POKEMON: PokeEntry[] = [
@@ -19,7 +23,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "poison"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      2
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 2,
@@ -28,7 +38,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "poison"
-    ]
+    ],
+    "evolvesFromId": 1,
+    "evolvesToIds": [
+      3
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 3,
@@ -37,7 +53,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "poison"
-    ]
+    ],
+    "evolvesFromId": 2,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 4,
@@ -45,7 +65,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Charmander",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      5
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 5,
@@ -53,7 +79,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Charmeleon",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": 4,
+    "evolvesToIds": [
+      6
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 6,
@@ -62,7 +94,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "flying"
-    ]
+    ],
+    "evolvesFromId": 5,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 7,
@@ -70,7 +106,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Squirtle",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      8
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 8,
@@ -78,7 +120,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Wartortle",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": 7,
+    "evolvesToIds": [
+      9
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 9,
@@ -86,7 +134,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Blastoise",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": 8,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 10,
@@ -94,7 +146,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Caterpie",
     "types": [
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      11
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 11,
@@ -102,7 +160,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Metapod",
     "types": [
       "bug"
-    ]
+    ],
+    "evolvesFromId": 10,
+    "evolvesToIds": [
+      12
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 12,
@@ -111,7 +175,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "bug"
-    ]
+    ],
+    "evolvesFromId": 11,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 13,
@@ -120,7 +188,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      14
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 14,
@@ -129,7 +203,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "bug"
-    ]
+    ],
+    "evolvesFromId": 13,
+    "evolvesToIds": [
+      15
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 15,
@@ -138,7 +218,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "bug"
-    ]
+    ],
+    "evolvesFromId": 14,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 16,
@@ -147,7 +231,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      17
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 17,
@@ -156,7 +246,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "flying"
-    ]
+    ],
+    "evolvesFromId": 16,
+    "evolvesToIds": [
+      18
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 18,
@@ -165,7 +261,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "flying"
-    ]
+    ],
+    "evolvesFromId": 17,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 19,
@@ -173,7 +273,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Rattata",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      20
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 20,
@@ -181,7 +287,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Raticate",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": 19,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 21,
@@ -190,7 +300,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      22
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 22,
@@ -199,7 +315,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "flying"
-    ]
+    ],
+    "evolvesFromId": 21,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 23,
@@ -207,7 +327,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Ekans",
     "types": [
       "poison"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      24
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 24,
@@ -215,7 +341,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Arbok",
     "types": [
       "poison"
-    ]
+    ],
+    "evolvesFromId": 23,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 25,
@@ -223,7 +353,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Pikachu",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": 172,
+    "evolvesToIds": [
+      26
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 26,
@@ -231,7 +367,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Raichu",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": 25,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 27,
@@ -239,7 +379,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Sandshrew",
     "types": [
       "ground"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      28
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 28,
@@ -247,7 +393,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Sandslash",
     "types": [
       "ground"
-    ]
+    ],
+    "evolvesFromId": 27,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 29,
@@ -255,7 +405,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Nidoran F",
     "types": [
       "poison"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      30
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 30,
@@ -263,7 +419,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Nidorina",
     "types": [
       "poison"
-    ]
+    ],
+    "evolvesFromId": 29,
+    "evolvesToIds": [
+      31
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 31,
@@ -272,7 +434,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "ground"
-    ]
+    ],
+    "evolvesFromId": 30,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 32,
@@ -280,7 +446,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Nidoran M",
     "types": [
       "poison"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      33
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 33,
@@ -288,7 +460,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Nidorino",
     "types": [
       "poison"
-    ]
+    ],
+    "evolvesFromId": 32,
+    "evolvesToIds": [
+      34
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 34,
@@ -297,7 +475,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "ground"
-    ]
+    ],
+    "evolvesFromId": 33,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 35,
@@ -305,7 +487,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Clefairy",
     "types": [
       "fairy"
-    ]
+    ],
+    "evolvesFromId": 173,
+    "evolvesToIds": [
+      36
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 36,
@@ -313,7 +501,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Clefable",
     "types": [
       "fairy"
-    ]
+    ],
+    "evolvesFromId": 35,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 37,
@@ -321,7 +513,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Vulpix",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      38
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 38,
@@ -329,7 +527,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Ninetales",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": 37,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 39,
@@ -338,7 +540,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": 174,
+    "evolvesToIds": [
+      40
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 40,
@@ -347,7 +555,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": 39,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 41,
@@ -356,7 +568,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      42
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 42,
@@ -365,7 +583,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "flying"
-    ]
+    ],
+    "evolvesFromId": 41,
+    "evolvesToIds": [
+      169
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 43,
@@ -374,7 +598,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "poison"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      44
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 44,
@@ -383,7 +613,14 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "poison"
-    ]
+    ],
+    "evolvesFromId": 43,
+    "evolvesToIds": [
+      45,
+      182
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 45,
@@ -392,7 +629,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "poison"
-    ]
+    ],
+    "evolvesFromId": 44,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 46,
@@ -401,7 +642,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      47
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 47,
@@ -410,7 +657,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "bug"
-    ]
+    ],
+    "evolvesFromId": 46,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 48,
@@ -419,7 +670,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      49
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 49,
@@ -428,7 +685,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "bug"
-    ]
+    ],
+    "evolvesFromId": 48,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 50,
@@ -436,7 +697,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Diglett",
     "types": [
       "ground"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      51
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 51,
@@ -444,7 +711,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Dugtrio",
     "types": [
       "ground"
-    ]
+    ],
+    "evolvesFromId": 50,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 52,
@@ -452,7 +723,14 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Meowth",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      53,
+      863
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 53,
@@ -460,7 +738,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Persian",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": 52,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 54,
@@ -468,7 +750,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Psyduck",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      55
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 55,
@@ -476,7 +764,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Golduck",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": 54,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 56,
@@ -484,7 +776,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Mankey",
     "types": [
       "fighting"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      57
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 57,
@@ -492,7 +790,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Primeape",
     "types": [
       "fighting"
-    ]
+    ],
+    "evolvesFromId": 56,
+    "evolvesToIds": [
+      979
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 58,
@@ -500,7 +804,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Growlithe",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      59
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 59,
@@ -508,7 +818,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Arcanine",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": 58,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 60,
@@ -516,7 +830,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Poliwag",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      61
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 61,
@@ -524,7 +844,14 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Poliwhirl",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": 60,
+    "evolvesToIds": [
+      62,
+      186
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 62,
@@ -533,7 +860,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "fighting"
-    ]
+    ],
+    "evolvesFromId": 61,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 63,
@@ -541,7 +872,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Abra",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      64
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 64,
@@ -549,7 +886,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Kadabra",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 63,
+    "evolvesToIds": [
+      65
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 65,
@@ -557,7 +900,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Alakazam",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 64,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 66,
@@ -565,7 +912,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Machop",
     "types": [
       "fighting"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      67
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 67,
@@ -573,7 +926,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Machoke",
     "types": [
       "fighting"
-    ]
+    ],
+    "evolvesFromId": 66,
+    "evolvesToIds": [
+      68
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 68,
@@ -581,7 +940,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Machamp",
     "types": [
       "fighting"
-    ]
+    ],
+    "evolvesFromId": 67,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 69,
@@ -590,7 +953,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "poison"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      70
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 70,
@@ -599,7 +968,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "poison"
-    ]
+    ],
+    "evolvesFromId": 69,
+    "evolvesToIds": [
+      71
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 71,
@@ -608,7 +983,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "poison"
-    ]
+    ],
+    "evolvesFromId": 70,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 72,
@@ -617,7 +996,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "poison"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      73
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 73,
@@ -626,7 +1011,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "poison"
-    ]
+    ],
+    "evolvesFromId": 72,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 74,
@@ -635,7 +1024,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      75
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 75,
@@ -644,7 +1039,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "rock"
-    ]
+    ],
+    "evolvesFromId": 74,
+    "evolvesToIds": [
+      76
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 76,
@@ -653,7 +1054,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "rock"
-    ]
+    ],
+    "evolvesFromId": 75,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 77,
@@ -661,7 +1066,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Ponyta",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      78
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 78,
@@ -669,7 +1080,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Rapidash",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": 77,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 79,
@@ -678,7 +1093,14 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      80,
+      199
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 80,
@@ -687,7 +1109,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 79,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 81,
@@ -696,7 +1122,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "electric",
       "steel"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      82
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 82,
@@ -705,7 +1137,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "electric",
       "steel"
-    ]
+    ],
+    "evolvesFromId": 81,
+    "evolvesToIds": [
+      462
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 83,
@@ -714,7 +1152,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      865
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 84,
@@ -723,7 +1167,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      85
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 85,
@@ -732,7 +1182,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "flying"
-    ]
+    ],
+    "evolvesFromId": 84,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 86,
@@ -740,7 +1194,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Seel",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      87
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 87,
@@ -749,7 +1209,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "ice"
-    ]
+    ],
+    "evolvesFromId": 86,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 88,
@@ -757,7 +1221,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Grimer",
     "types": [
       "poison"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      89
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 89,
@@ -765,7 +1235,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Muk",
     "types": [
       "poison"
-    ]
+    ],
+    "evolvesFromId": 88,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 90,
@@ -773,7 +1247,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Shellder",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      91
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 91,
@@ -782,7 +1262,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "ice"
-    ]
+    ],
+    "evolvesFromId": 90,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 92,
@@ -791,7 +1275,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      93
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 93,
@@ -800,7 +1290,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": 92,
+    "evolvesToIds": [
+      94
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 94,
@@ -809,7 +1305,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": 93,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 95,
@@ -818,7 +1318,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      208
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 96,
@@ -826,7 +1332,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Drowzee",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      97
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 97,
@@ -834,7 +1346,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Hypno",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 96,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 98,
@@ -842,7 +1358,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Krabby",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      99
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 99,
@@ -850,7 +1372,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Kingler",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": 98,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 100,
@@ -858,7 +1384,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Voltorb",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      101
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 101,
@@ -866,7 +1398,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Electrode",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": 100,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 102,
@@ -875,7 +1411,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      103
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 103,
@@ -884,7 +1426,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 102,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 104,
@@ -892,7 +1438,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Cubone",
     "types": [
       "ground"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      105
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 105,
@@ -900,7 +1452,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Marowak",
     "types": [
       "ground"
-    ]
+    ],
+    "evolvesFromId": 104,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 106,
@@ -908,7 +1464,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Hitmonlee",
     "types": [
       "fighting"
-    ]
+    ],
+    "evolvesFromId": 236,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 107,
@@ -916,7 +1476,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Hitmonchan",
     "types": [
       "fighting"
-    ]
+    ],
+    "evolvesFromId": 236,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 108,
@@ -924,7 +1488,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Lickitung",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      463
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 109,
@@ -932,7 +1502,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Koffing",
     "types": [
       "poison"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      110
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 110,
@@ -940,7 +1516,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Weezing",
     "types": [
       "poison"
-    ]
+    ],
+    "evolvesFromId": 109,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 111,
@@ -949,7 +1529,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      112
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 112,
@@ -958,7 +1544,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "rock"
-    ]
+    ],
+    "evolvesFromId": 111,
+    "evolvesToIds": [
+      464
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 113,
@@ -966,7 +1558,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Chansey",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": 440,
+    "evolvesToIds": [
+      242
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 114,
@@ -974,7 +1572,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Tangela",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      465
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 115,
@@ -982,7 +1586,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Kangaskhan",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 116,
@@ -990,7 +1598,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Horsea",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      117
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 117,
@@ -998,7 +1612,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Seadra",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": 116,
+    "evolvesToIds": [
+      230
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 118,
@@ -1006,7 +1626,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Goldeen",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      119
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 119,
@@ -1014,7 +1640,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Seaking",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": 118,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 120,
@@ -1022,7 +1652,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Staryu",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      121
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 121,
@@ -1031,7 +1667,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 120,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 122,
@@ -1040,7 +1680,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "psychic",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": 439,
+    "evolvesToIds": [
+      866
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 123,
@@ -1049,7 +1695,14 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      212,
+      900
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 124,
@@ -1058,7 +1711,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ice",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 238,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 125,
@@ -1066,7 +1723,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Electabuzz",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": 239,
+    "evolvesToIds": [
+      466
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 126,
@@ -1074,7 +1737,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Magmar",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": 240,
+    "evolvesToIds": [
+      467
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 127,
@@ -1082,7 +1751,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Pinsir",
     "types": [
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 128,
@@ -1090,7 +1763,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Tauros",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 129,
@@ -1098,7 +1775,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Magikarp",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      130
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 130,
@@ -1107,7 +1790,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "flying"
-    ]
+    ],
+    "evolvesFromId": 129,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 131,
@@ -1116,7 +1803,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "ice"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 132,
@@ -1124,7 +1815,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Ditto",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 133,
@@ -1132,7 +1827,20 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Eevee",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      134,
+      135,
+      136,
+      196,
+      197,
+      470,
+      471,
+      700
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 134,
@@ -1140,7 +1848,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Vaporeon",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": 133,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 135,
@@ -1148,7 +1860,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Jolteon",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": 133,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 136,
@@ -1156,7 +1872,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Flareon",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": 133,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 137,
@@ -1164,7 +1884,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Porygon",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      233
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 138,
@@ -1173,7 +1899,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      139
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 139,
@@ -1182,7 +1914,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "rock"
-    ]
+    ],
+    "evolvesFromId": 138,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 140,
@@ -1191,7 +1927,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      141
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 141,
@@ -1200,7 +1942,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "rock"
-    ]
+    ],
+    "evolvesFromId": 140,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 142,
@@ -1209,7 +1955,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 143,
@@ -1217,7 +1967,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Snorlax",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": 446,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 144,
@@ -1226,7 +1980,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ice",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 145,
@@ -1235,7 +1993,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "electric",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 146,
@@ -1244,7 +2006,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 147,
@@ -1252,7 +2018,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Dratini",
     "types": [
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      148
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 148,
@@ -1260,7 +2032,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Dragonair",
     "types": [
       "dragon"
-    ]
+    ],
+    "evolvesFromId": 147,
+    "evolvesToIds": [
+      149
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 149,
@@ -1269,7 +2047,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": 148,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 150,
@@ -1277,7 +2059,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Mewtwo",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 151,
@@ -1285,7 +2071,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Mew",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 152,
@@ -1293,7 +2083,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Chikorita",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      153
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 153,
@@ -1301,7 +2097,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Bayleef",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": 152,
+    "evolvesToIds": [
+      154
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 154,
@@ -1309,7 +2111,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Meganium",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": 153,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 155,
@@ -1317,7 +2123,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Cyndaquil",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      156
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 156,
@@ -1325,7 +2137,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Quilava",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": 155,
+    "evolvesToIds": [
+      157
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 157,
@@ -1333,7 +2151,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Typhlosion",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": 156,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 158,
@@ -1341,7 +2163,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Totodile",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      159
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 159,
@@ -1349,7 +2177,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Croconaw",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": 158,
+    "evolvesToIds": [
+      160
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 160,
@@ -1357,7 +2191,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Feraligatr",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": 159,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 161,
@@ -1365,7 +2203,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Sentret",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      162
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 162,
@@ -1373,7 +2217,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Furret",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": 161,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 163,
@@ -1382,7 +2230,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      164
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 164,
@@ -1391,7 +2245,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "flying"
-    ]
+    ],
+    "evolvesFromId": 163,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 165,
@@ -1400,7 +2258,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      166
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 166,
@@ -1409,7 +2273,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "bug"
-    ]
+    ],
+    "evolvesFromId": 165,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 167,
@@ -1418,7 +2286,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      168
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 168,
@@ -1427,7 +2301,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "bug"
-    ]
+    ],
+    "evolvesFromId": 167,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 169,
@@ -1436,7 +2314,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "flying"
-    ]
+    ],
+    "evolvesFromId": 42,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 170,
@@ -1445,7 +2327,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "electric"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      171
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 171,
@@ -1454,7 +2342,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "electric"
-    ]
+    ],
+    "evolvesFromId": 170,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 172,
@@ -1462,7 +2354,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Pichu",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      25
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 173,
@@ -1470,7 +2368,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Cleffa",
     "types": [
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      35
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 174,
@@ -1479,7 +2383,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      39
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 175,
@@ -1487,7 +2397,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Togepi",
     "types": [
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      176
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 176,
@@ -1496,7 +2412,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": 175,
+    "evolvesToIds": [
+      468
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 177,
@@ -1505,7 +2427,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      178
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 178,
@@ -1514,7 +2442,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 177,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 179,
@@ -1522,7 +2454,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Mareep",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      180
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 180,
@@ -1530,7 +2468,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Flaaffy",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": 179,
+    "evolvesToIds": [
+      181
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 181,
@@ -1538,7 +2482,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Ampharos",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": 180,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 182,
@@ -1546,7 +2494,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Bellossom",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": 44,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 183,
@@ -1555,7 +2507,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": 298,
+    "evolvesToIds": [
+      184
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 184,
@@ -1564,7 +2522,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": 183,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 185,
@@ -1572,7 +2534,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Sudowoodo",
     "types": [
       "rock"
-    ]
+    ],
+    "evolvesFromId": 438,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 186,
@@ -1580,7 +2546,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Politoed",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": 61,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 187,
@@ -1589,7 +2559,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      188
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 188,
@@ -1598,7 +2574,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "flying"
-    ]
+    ],
+    "evolvesFromId": 187,
+    "evolvesToIds": [
+      189
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 189,
@@ -1607,7 +2589,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "flying"
-    ]
+    ],
+    "evolvesFromId": 188,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 190,
@@ -1615,7 +2601,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Aipom",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      424
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 191,
@@ -1623,7 +2615,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Sunkern",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      192
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 192,
@@ -1631,7 +2629,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Sunflora",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": 191,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 193,
@@ -1640,7 +2642,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      469
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 194,
@@ -1649,7 +2657,14 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "ground"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      195,
+      980
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 195,
@@ -1658,7 +2673,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "ground"
-    ]
+    ],
+    "evolvesFromId": 194,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 196,
@@ -1666,7 +2685,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Espeon",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 133,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 197,
@@ -1674,7 +2697,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Umbreon",
     "types": [
       "dark"
-    ]
+    ],
+    "evolvesFromId": 133,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 198,
@@ -1683,7 +2710,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "dark"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      430
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 199,
@@ -1692,7 +2725,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 79,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 200,
@@ -1700,7 +2737,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Misdreavus",
     "types": [
       "ghost"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      429
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 201,
@@ -1708,7 +2751,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Unown",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 202,
@@ -1716,7 +2763,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Wobbuffet",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 360,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 203,
@@ -1725,7 +2776,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      981
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 204,
@@ -1733,7 +2790,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Pineco",
     "types": [
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      205
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 205,
@@ -1742,7 +2805,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "bug",
       "steel"
-    ]
+    ],
+    "evolvesFromId": 204,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 206,
@@ -1750,7 +2817,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Dunsparce",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      982
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 207,
@@ -1759,7 +2832,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      472
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 208,
@@ -1768,7 +2847,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "steel"
-    ]
+    ],
+    "evolvesFromId": 95,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 209,
@@ -1776,7 +2859,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Snubbull",
     "types": [
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      210
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 210,
@@ -1784,7 +2873,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Granbull",
     "types": [
       "fairy"
-    ]
+    ],
+    "evolvesFromId": 209,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 211,
@@ -1793,7 +2886,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "poison"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      904
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 212,
@@ -1802,7 +2901,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "bug",
       "steel"
-    ]
+    ],
+    "evolvesFromId": 123,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 213,
@@ -1811,7 +2914,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "bug",
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 214,
@@ -1820,7 +2927,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fighting",
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 215,
@@ -1829,7 +2940,14 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ice",
       "dark"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      461,
+      903
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 216,
@@ -1837,7 +2955,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Teddiursa",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      217
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 217,
@@ -1845,7 +2969,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Ursaring",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": 216,
+    "evolvesToIds": [
+      901
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 218,
@@ -1853,7 +2983,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Slugma",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      219
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 219,
@@ -1862,7 +2998,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "rock"
-    ]
+    ],
+    "evolvesFromId": 218,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 220,
@@ -1871,7 +3011,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ice",
       "ground"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      221
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 221,
@@ -1880,7 +3026,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ice",
       "ground"
-    ]
+    ],
+    "evolvesFromId": 220,
+    "evolvesToIds": [
+      473
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 222,
@@ -1889,7 +3041,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      864
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 223,
@@ -1897,7 +3055,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Remoraid",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      224
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 224,
@@ -1905,7 +3069,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Octillery",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": 223,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 225,
@@ -1914,7 +3082,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ice",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 226,
@@ -1923,7 +3095,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "flying"
-    ]
+    ],
+    "evolvesFromId": 458,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 227,
@@ -1932,7 +3108,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "steel"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 228,
@@ -1941,7 +3121,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "dark"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      229
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 229,
@@ -1950,7 +3136,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "dark"
-    ]
+    ],
+    "evolvesFromId": 228,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 230,
@@ -1959,7 +3149,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": 117,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 231,
@@ -1967,7 +3161,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Phanpy",
     "types": [
       "ground"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      232
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 232,
@@ -1975,7 +3175,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Donphan",
     "types": [
       "ground"
-    ]
+    ],
+    "evolvesFromId": 231,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 233,
@@ -1983,7 +3187,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Porygon2",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": 137,
+    "evolvesToIds": [
+      474
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 234,
@@ -1991,7 +3201,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Stantler",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      899
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 235,
@@ -1999,7 +3215,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Smeargle",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 236,
@@ -2007,7 +3227,15 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Tyrogue",
     "types": [
       "fighting"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      106,
+      107,
+      237
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 237,
@@ -2015,7 +3243,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Hitmontop",
     "types": [
       "fighting"
-    ]
+    ],
+    "evolvesFromId": 236,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 238,
@@ -2024,7 +3256,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ice",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      124
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 239,
@@ -2032,7 +3270,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Elekid",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      125
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 240,
@@ -2040,7 +3284,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Magby",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      126
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 241,
@@ -2048,7 +3298,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Miltank",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 242,
@@ -2056,7 +3310,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Blissey",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": 113,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 243,
@@ -2064,7 +3322,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Raikou",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 244,
@@ -2072,7 +3334,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Entei",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 245,
@@ -2080,7 +3346,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Suicune",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 246,
@@ -2089,7 +3359,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      247
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 247,
@@ -2098,7 +3374,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "rock"
-    ]
+    ],
+    "evolvesFromId": 246,
+    "evolvesToIds": [
+      248
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 248,
@@ -2107,7 +3389,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "rock",
       "dark"
-    ]
+    ],
+    "evolvesFromId": 247,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 249,
@@ -2116,7 +3402,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 250,
@@ -2125,7 +3415,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 251,
@@ -2134,7 +3428,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 252,
@@ -2142,7 +3440,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Treecko",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      253
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 253,
@@ -2150,7 +3454,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Grovyle",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": 252,
+    "evolvesToIds": [
+      254
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 254,
@@ -2158,7 +3468,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Sceptile",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": 253,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 255,
@@ -2166,7 +3480,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Torchic",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      256
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 256,
@@ -2175,7 +3495,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "fighting"
-    ]
+    ],
+    "evolvesFromId": 255,
+    "evolvesToIds": [
+      257
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 257,
@@ -2184,7 +3510,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "fighting"
-    ]
+    ],
+    "evolvesFromId": 256,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 258,
@@ -2192,7 +3522,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Mudkip",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      259
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 259,
@@ -2201,7 +3537,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "ground"
-    ]
+    ],
+    "evolvesFromId": 258,
+    "evolvesToIds": [
+      260
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 260,
@@ -2210,7 +3552,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "ground"
-    ]
+    ],
+    "evolvesFromId": 259,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 261,
@@ -2218,7 +3564,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Poochyena",
     "types": [
       "dark"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      262
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 262,
@@ -2226,7 +3578,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Mightyena",
     "types": [
       "dark"
-    ]
+    ],
+    "evolvesFromId": 261,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 263,
@@ -2234,7 +3590,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Zigzagoon",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      264
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 264,
@@ -2242,7 +3604,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Linoone",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": 263,
+    "evolvesToIds": [
+      862
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 265,
@@ -2250,7 +3618,14 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Wurmple",
     "types": [
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      266,
+      268
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 266,
@@ -2258,7 +3633,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Silcoon",
     "types": [
       "bug"
-    ]
+    ],
+    "evolvesFromId": 265,
+    "evolvesToIds": [
+      267
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 267,
@@ -2267,7 +3648,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "bug"
-    ]
+    ],
+    "evolvesFromId": 266,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 268,
@@ -2275,7 +3660,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Cascoon",
     "types": [
       "bug"
-    ]
+    ],
+    "evolvesFromId": 265,
+    "evolvesToIds": [
+      269
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 269,
@@ -2284,7 +3675,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "bug"
-    ]
+    ],
+    "evolvesFromId": 268,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 270,
@@ -2293,7 +3688,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "grass"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      271
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 271,
@@ -2302,7 +3703,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "grass"
-    ]
+    ],
+    "evolvesFromId": 270,
+    "evolvesToIds": [
+      272
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 272,
@@ -2311,7 +3718,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "grass"
-    ]
+    ],
+    "evolvesFromId": 271,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 273,
@@ -2319,7 +3730,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Seedot",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      274
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 274,
@@ -2328,7 +3745,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "dark"
-    ]
+    ],
+    "evolvesFromId": 273,
+    "evolvesToIds": [
+      275
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 275,
@@ -2337,7 +3760,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "dark"
-    ]
+    ],
+    "evolvesFromId": 274,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 276,
@@ -2346,7 +3773,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      277
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 277,
@@ -2355,7 +3788,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "flying"
-    ]
+    ],
+    "evolvesFromId": 276,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 278,
@@ -2364,7 +3801,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      279
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 279,
@@ -2373,7 +3816,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "flying"
-    ]
+    ],
+    "evolvesFromId": 278,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 280,
@@ -2382,7 +3829,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "psychic",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      281
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 281,
@@ -2391,7 +3844,14 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "psychic",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": 280,
+    "evolvesToIds": [
+      282,
+      475
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 282,
@@ -2400,7 +3860,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "psychic",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": 281,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 283,
@@ -2409,7 +3873,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      284
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 284,
@@ -2418,7 +3888,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "bug"
-    ]
+    ],
+    "evolvesFromId": 283,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 285,
@@ -2426,7 +3900,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Shroomish",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      286
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 286,
@@ -2435,7 +3915,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "fighting"
-    ]
+    ],
+    "evolvesFromId": 285,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 287,
@@ -2443,7 +3927,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Slakoth",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      288
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 288,
@@ -2451,7 +3941,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Vigoroth",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": 287,
+    "evolvesToIds": [
+      289
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 289,
@@ -2459,7 +3955,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Slaking",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": 288,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 290,
@@ -2468,7 +3968,14 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      291,
+      292
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 291,
@@ -2477,7 +3984,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "bug"
-    ]
+    ],
+    "evolvesFromId": 290,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 292,
@@ -2486,7 +3997,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "bug",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": 290,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 293,
@@ -2494,7 +4009,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Whismur",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      294
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 294,
@@ -2502,7 +4023,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Loudred",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": 293,
+    "evolvesToIds": [
+      295
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 295,
@@ -2510,7 +4037,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Exploud",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": 294,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 296,
@@ -2518,7 +4049,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Makuhita",
     "types": [
       "fighting"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      297
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 297,
@@ -2526,7 +4063,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Hariyama",
     "types": [
       "fighting"
-    ]
+    ],
+    "evolvesFromId": 296,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 298,
@@ -2535,7 +4076,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      183
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 299,
@@ -2543,7 +4090,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Nosepass",
     "types": [
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      476
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 300,
@@ -2551,7 +4104,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Skitty",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      301
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 301,
@@ -2559,7 +4118,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Delcatty",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": 300,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 302,
@@ -2568,7 +4131,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ghost",
       "dark"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 303,
@@ -2577,7 +4144,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "steel",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 304,
@@ -2586,7 +4157,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "rock",
       "steel"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      305
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 305,
@@ -2595,7 +4172,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "rock",
       "steel"
-    ]
+    ],
+    "evolvesFromId": 304,
+    "evolvesToIds": [
+      306
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 306,
@@ -2604,7 +4187,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "rock",
       "steel"
-    ]
+    ],
+    "evolvesFromId": 305,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 307,
@@ -2613,7 +4200,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fighting",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      308
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 308,
@@ -2622,7 +4215,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fighting",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 307,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 309,
@@ -2630,7 +4227,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Electrike",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      310
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 310,
@@ -2638,7 +4241,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Manectric",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": 309,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 311,
@@ -2646,7 +4253,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Plusle",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 312,
@@ -2654,7 +4265,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Minun",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 313,
@@ -2662,7 +4277,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Volbeat",
     "types": [
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 314,
@@ -2670,7 +4289,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Illumise",
     "types": [
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 315,
@@ -2679,7 +4302,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "poison"
-    ]
+    ],
+    "evolvesFromId": 406,
+    "evolvesToIds": [
+      407
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 316,
@@ -2687,7 +4316,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Gulpin",
     "types": [
       "poison"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      317
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 317,
@@ -2695,7 +4330,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Swalot",
     "types": [
       "poison"
-    ]
+    ],
+    "evolvesFromId": 316,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 318,
@@ -2704,7 +4343,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "dark"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      319
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 319,
@@ -2713,7 +4358,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "dark"
-    ]
+    ],
+    "evolvesFromId": 318,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 320,
@@ -2721,7 +4370,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Wailmer",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      321
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 321,
@@ -2729,7 +4384,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Wailord",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": 320,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 322,
@@ -2738,7 +4397,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "ground"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      323
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 323,
@@ -2747,7 +4412,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "ground"
-    ]
+    ],
+    "evolvesFromId": 322,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 324,
@@ -2755,7 +4424,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Torkoal",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 325,
@@ -2763,7 +4436,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Spoink",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      326
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 326,
@@ -2771,7 +4450,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Grumpig",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 325,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 327,
@@ -2779,7 +4462,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Spinda",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 328,
@@ -2787,7 +4474,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Trapinch",
     "types": [
       "ground"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      329
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 329,
@@ -2796,7 +4489,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": 328,
+    "evolvesToIds": [
+      330
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 330,
@@ -2805,7 +4504,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": 329,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 331,
@@ -2813,7 +4516,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Cacnea",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      332
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 332,
@@ -2822,7 +4531,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "dark"
-    ]
+    ],
+    "evolvesFromId": 331,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 333,
@@ -2831,7 +4544,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      334
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 334,
@@ -2840,7 +4559,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": 333,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 335,
@@ -2848,7 +4571,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Zangoose",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 336,
@@ -2856,7 +4583,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Seviper",
     "types": [
       "poison"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 337,
@@ -2865,7 +4596,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "psychic",
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 338,
@@ -2874,7 +4609,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "psychic",
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 339,
@@ -2883,7 +4622,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "ground"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      340
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 340,
@@ -2892,7 +4637,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "ground"
-    ]
+    ],
+    "evolvesFromId": 339,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 341,
@@ -2900,7 +4649,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Corphish",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      342
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 342,
@@ -2909,7 +4664,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "dark"
-    ]
+    ],
+    "evolvesFromId": 341,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 343,
@@ -2918,7 +4677,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      344
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 344,
@@ -2927,7 +4692,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 343,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 345,
@@ -2936,7 +4705,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      346
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 346,
@@ -2945,7 +4720,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "rock"
-    ]
+    ],
+    "evolvesFromId": 345,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 347,
@@ -2954,7 +4733,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "bug",
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      348
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 348,
@@ -2963,7 +4748,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "bug",
       "rock"
-    ]
+    ],
+    "evolvesFromId": 347,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 349,
@@ -2971,7 +4760,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Feebas",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      350
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 350,
@@ -2979,7 +4774,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Milotic",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": 349,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 351,
@@ -2987,7 +4786,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Castform",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 352,
@@ -2995,7 +4798,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Kecleon",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 353,
@@ -3003,7 +4810,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Shuppet",
     "types": [
       "ghost"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      354
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 354,
@@ -3011,7 +4824,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Banette",
     "types": [
       "ghost"
-    ]
+    ],
+    "evolvesFromId": 353,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 355,
@@ -3019,7 +4836,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Duskull",
     "types": [
       "ghost"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      356
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 356,
@@ -3027,7 +4850,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Dusclops",
     "types": [
       "ghost"
-    ]
+    ],
+    "evolvesFromId": 355,
+    "evolvesToIds": [
+      477
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 357,
@@ -3036,7 +4865,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 358,
@@ -3044,7 +4877,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Chimecho",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 433,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 359,
@@ -3052,7 +4889,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Absol",
     "types": [
       "dark"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 360,
@@ -3060,7 +4901,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Wynaut",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      202
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 361,
@@ -3068,7 +4915,14 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Snorunt",
     "types": [
       "ice"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      362,
+      478
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 362,
@@ -3076,7 +4930,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Glalie",
     "types": [
       "ice"
-    ]
+    ],
+    "evolvesFromId": 361,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 363,
@@ -3085,7 +4943,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "ice"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      364
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 364,
@@ -3094,7 +4958,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "ice"
-    ]
+    ],
+    "evolvesFromId": 363,
+    "evolvesToIds": [
+      365
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 365,
@@ -3103,7 +4973,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "ice"
-    ]
+    ],
+    "evolvesFromId": 364,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 366,
@@ -3111,7 +4985,14 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Clamperl",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      367,
+      368
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 367,
@@ -3119,7 +5000,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Huntail",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": 366,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 368,
@@ -3127,7 +5012,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Gorebyss",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": 366,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 369,
@@ -3136,7 +5025,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 370,
@@ -3144,7 +5037,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Luvdisc",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 371,
@@ -3152,7 +5049,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Bagon",
     "types": [
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      372
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 372,
@@ -3160,7 +5063,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Shelgon",
     "types": [
       "dragon"
-    ]
+    ],
+    "evolvesFromId": 371,
+    "evolvesToIds": [
+      373
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 373,
@@ -3169,7 +5078,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": 372,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 374,
@@ -3178,7 +5091,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "psychic",
       "steel"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      375
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 375,
@@ -3187,7 +5106,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "psychic",
       "steel"
-    ]
+    ],
+    "evolvesFromId": 374,
+    "evolvesToIds": [
+      376
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 376,
@@ -3196,7 +5121,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "psychic",
       "steel"
-    ]
+    ],
+    "evolvesFromId": 375,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 377,
@@ -3204,7 +5133,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Regirock",
     "types": [
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 378,
@@ -3212,7 +5145,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Regice",
     "types": [
       "ice"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 379,
@@ -3220,7 +5157,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Registeel",
     "types": [
       "steel"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 380,
@@ -3229,7 +5170,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "psychic",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 381,
@@ -3238,7 +5183,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "psychic",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 382,
@@ -3246,7 +5195,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Kyogre",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 383,
@@ -3254,7 +5207,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Groudon",
     "types": [
       "ground"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 384,
@@ -3263,7 +5220,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 385,
@@ -3272,7 +5233,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "psychic",
       "steel"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 386,
@@ -3280,7 +5245,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Deoxys Normal",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 387,
@@ -3288,7 +5257,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Turtwig",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      388
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 388,
@@ -3296,7 +5271,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Grotle",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": 387,
+    "evolvesToIds": [
+      389
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 389,
@@ -3305,7 +5286,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "ground"
-    ]
+    ],
+    "evolvesFromId": 388,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 390,
@@ -3313,7 +5298,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Chimchar",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      391
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 391,
@@ -3322,7 +5313,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "fighting"
-    ]
+    ],
+    "evolvesFromId": 390,
+    "evolvesToIds": [
+      392
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 392,
@@ -3331,7 +5328,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "fighting"
-    ]
+    ],
+    "evolvesFromId": 391,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 393,
@@ -3339,7 +5340,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Piplup",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      394
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 394,
@@ -3347,7 +5354,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Prinplup",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": 393,
+    "evolvesToIds": [
+      395
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 395,
@@ -3356,7 +5369,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "steel"
-    ]
+    ],
+    "evolvesFromId": 394,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 396,
@@ -3365,7 +5382,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      397
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 397,
@@ -3374,7 +5397,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "flying"
-    ]
+    ],
+    "evolvesFromId": 396,
+    "evolvesToIds": [
+      398
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 398,
@@ -3383,7 +5412,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "flying"
-    ]
+    ],
+    "evolvesFromId": 397,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 399,
@@ -3391,7 +5424,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Bidoof",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      400
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 400,
@@ -3400,7 +5439,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "water"
-    ]
+    ],
+    "evolvesFromId": 399,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 401,
@@ -3408,7 +5451,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Kricketot",
     "types": [
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      402
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 402,
@@ -3416,7 +5465,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Kricketune",
     "types": [
       "bug"
-    ]
+    ],
+    "evolvesFromId": 401,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 403,
@@ -3424,7 +5477,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Shinx",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      404
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 404,
@@ -3432,7 +5491,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Luxio",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": 403,
+    "evolvesToIds": [
+      405
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 405,
@@ -3440,7 +5505,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Luxray",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": 404,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 406,
@@ -3449,7 +5518,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "poison"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      315
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 407,
@@ -3458,7 +5533,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "poison"
-    ]
+    ],
+    "evolvesFromId": 315,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 408,
@@ -3466,7 +5545,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Cranidos",
     "types": [
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      409
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 409,
@@ -3474,7 +5559,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Rampardos",
     "types": [
       "rock"
-    ]
+    ],
+    "evolvesFromId": 408,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 410,
@@ -3483,7 +5572,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "rock",
       "steel"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      411
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 411,
@@ -3492,7 +5587,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "rock",
       "steel"
-    ]
+    ],
+    "evolvesFromId": 410,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 412,
@@ -3500,7 +5599,14 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Burmy",
     "types": [
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      413,
+      414
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 413,
@@ -3509,7 +5615,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "bug"
-    ]
+    ],
+    "evolvesFromId": 412,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 414,
@@ -3518,7 +5628,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "bug"
-    ]
+    ],
+    "evolvesFromId": 412,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 415,
@@ -3527,7 +5641,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      416
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 416,
@@ -3536,7 +5656,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "bug"
-    ]
+    ],
+    "evolvesFromId": 415,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 417,
@@ -3544,7 +5668,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Pachirisu",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 418,
@@ -3552,7 +5680,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Buizel",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      419
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 419,
@@ -3560,7 +5694,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Floatzel",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": 418,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 420,
@@ -3568,7 +5706,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Cherubi",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      421
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 421,
@@ -3576,7 +5720,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Cherrim",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": 420,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 422,
@@ -3584,7 +5732,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Shellos",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      423
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 423,
@@ -3593,7 +5747,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "ground"
-    ]
+    ],
+    "evolvesFromId": 422,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 424,
@@ -3601,7 +5759,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Ambipom",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": 190,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 425,
@@ -3610,7 +5772,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      426
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 426,
@@ -3619,7 +5787,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": 425,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 427,
@@ -3627,7 +5799,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Buneary",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      428
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 428,
@@ -3635,7 +5813,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Lopunny",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": 427,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 429,
@@ -3643,7 +5825,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Mismagius",
     "types": [
       "ghost"
-    ]
+    ],
+    "evolvesFromId": 200,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 430,
@@ -3652,7 +5838,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "dark"
-    ]
+    ],
+    "evolvesFromId": 198,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 431,
@@ -3660,7 +5850,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Glameow",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      432
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 432,
@@ -3668,7 +5864,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Purugly",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": 431,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 433,
@@ -3676,7 +5876,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Chingling",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      358
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 434,
@@ -3685,7 +5891,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "dark"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      435
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 435,
@@ -3694,7 +5906,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "dark"
-    ]
+    ],
+    "evolvesFromId": 434,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 436,
@@ -3703,7 +5919,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "psychic",
       "steel"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      437
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 437,
@@ -3712,7 +5934,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "psychic",
       "steel"
-    ]
+    ],
+    "evolvesFromId": 436,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 438,
@@ -3720,7 +5946,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Bonsly",
     "types": [
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      185
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 439,
@@ -3729,7 +5961,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "psychic",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      122
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 440,
@@ -3737,7 +5975,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Happiny",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      113
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 441,
@@ -3746,7 +5990,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 442,
@@ -3755,7 +6003,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ghost",
       "dark"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 443,
@@ -3764,7 +6016,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      444
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 444,
@@ -3773,7 +6031,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": 443,
+    "evolvesToIds": [
+      445
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 445,
@@ -3782,7 +6046,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": 444,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 446,
@@ -3790,7 +6058,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Munchlax",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      143
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 447,
@@ -3798,7 +6072,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Riolu",
     "types": [
       "fighting"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      448
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 448,
@@ -3807,7 +6087,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fighting",
       "steel"
-    ]
+    ],
+    "evolvesFromId": 447,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 449,
@@ -3815,7 +6099,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Hippopotas",
     "types": [
       "ground"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      450
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 450,
@@ -3823,7 +6113,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Hippowdon",
     "types": [
       "ground"
-    ]
+    ],
+    "evolvesFromId": 449,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 451,
@@ -3832,7 +6126,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      452
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 452,
@@ -3841,7 +6141,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "dark"
-    ]
+    ],
+    "evolvesFromId": 451,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 453,
@@ -3850,7 +6154,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fighting",
       "poison"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      454
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 454,
@@ -3859,7 +6169,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fighting",
       "poison"
-    ]
+    ],
+    "evolvesFromId": 453,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 455,
@@ -3867,7 +6181,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Carnivine",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 456,
@@ -3875,7 +6193,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Finneon",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      457
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 457,
@@ -3883,7 +6207,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Lumineon",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": 456,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 458,
@@ -3892,7 +6220,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      226
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 459,
@@ -3901,7 +6235,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "ice"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      460
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 460,
@@ -3910,7 +6250,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "ice"
-    ]
+    ],
+    "evolvesFromId": 459,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 461,
@@ -3919,7 +6263,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ice",
       "dark"
-    ]
+    ],
+    "evolvesFromId": 215,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 462,
@@ -3928,7 +6276,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "electric",
       "steel"
-    ]
+    ],
+    "evolvesFromId": 82,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 463,
@@ -3936,7 +6288,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Lickilicky",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": 108,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 464,
@@ -3945,7 +6301,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "rock"
-    ]
+    ],
+    "evolvesFromId": 112,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 465,
@@ -3953,7 +6313,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Tangrowth",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": 114,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 466,
@@ -3961,7 +6325,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Electivire",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": 125,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 467,
@@ -3969,7 +6337,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Magmortar",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": 126,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 468,
@@ -3978,7 +6350,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": 176,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 469,
@@ -3987,7 +6363,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "bug"
-    ]
+    ],
+    "evolvesFromId": 193,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 470,
@@ -3995,7 +6375,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Leafeon",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": 133,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 471,
@@ -4003,7 +6387,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Glaceon",
     "types": [
       "ice"
-    ]
+    ],
+    "evolvesFromId": 133,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 472,
@@ -4012,7 +6400,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "flying"
-    ]
+    ],
+    "evolvesFromId": 207,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 473,
@@ -4021,7 +6413,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ice",
       "ground"
-    ]
+    ],
+    "evolvesFromId": 221,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 474,
@@ -4029,7 +6425,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Porygon Z",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": 233,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 475,
@@ -4038,7 +6438,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fighting",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 281,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 476,
@@ -4047,7 +6451,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "rock",
       "steel"
-    ]
+    ],
+    "evolvesFromId": 299,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 477,
@@ -4055,7 +6463,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Dusknoir",
     "types": [
       "ghost"
-    ]
+    ],
+    "evolvesFromId": 356,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 478,
@@ -4064,7 +6476,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ice",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": 361,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 479,
@@ -4073,7 +6489,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "electric",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 480,
@@ -4081,7 +6501,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Uxie",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 481,
@@ -4089,7 +6513,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Mesprit",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 482,
@@ -4097,7 +6525,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Azelf",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 483,
@@ -4106,7 +6538,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "dragon",
       "steel"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 484,
@@ -4115,7 +6551,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 485,
@@ -4124,7 +6564,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "steel"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 486,
@@ -4132,7 +6576,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Regigigas",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 487,
@@ -4141,7 +6589,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ghost",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 488,
@@ -4149,7 +6601,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Cresselia",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 489,
@@ -4157,7 +6613,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Phione",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      490
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 490,
@@ -4165,7 +6627,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Manaphy",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 491,
@@ -4173,7 +6639,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Darkrai",
     "types": [
       "dark"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 492,
@@ -4181,7 +6651,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Shaymin Land",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 493,
@@ -4189,7 +6663,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Arceus",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 494,
@@ -4198,7 +6676,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 495,
@@ -4206,7 +6688,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Snivy",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      496
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 496,
@@ -4214,7 +6702,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Servine",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": 495,
+    "evolvesToIds": [
+      497
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 497,
@@ -4222,7 +6716,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Serperior",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": 496,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 498,
@@ -4230,7 +6728,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Tepig",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      499
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 499,
@@ -4239,7 +6743,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "fighting"
-    ]
+    ],
+    "evolvesFromId": 498,
+    "evolvesToIds": [
+      500
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 500,
@@ -4248,7 +6758,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "fighting"
-    ]
+    ],
+    "evolvesFromId": 499,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 501,
@@ -4256,7 +6770,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Oshawott",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      502
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 502,
@@ -4264,7 +6784,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Dewott",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": 501,
+    "evolvesToIds": [
+      503
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 503,
@@ -4272,7 +6798,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Samurott",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": 502,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 504,
@@ -4280,7 +6810,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Patrat",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      505
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 505,
@@ -4288,7 +6824,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Watchog",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": 504,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 506,
@@ -4296,7 +6836,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Lillipup",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      507
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 507,
@@ -4304,7 +6850,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Herdier",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": 506,
+    "evolvesToIds": [
+      508
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 508,
@@ -4312,7 +6864,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Stoutland",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": 507,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 509,
@@ -4320,7 +6876,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Purrloin",
     "types": [
       "dark"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      510
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 510,
@@ -4328,7 +6890,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Liepard",
     "types": [
       "dark"
-    ]
+    ],
+    "evolvesFromId": 509,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 511,
@@ -4336,7 +6902,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Pansage",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      512
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 512,
@@ -4344,7 +6916,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Simisage",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": 511,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 513,
@@ -4352,7 +6928,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Pansear",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      514
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 514,
@@ -4360,7 +6942,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Simisear",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": 513,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 515,
@@ -4368,7 +6954,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Panpour",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      516
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 516,
@@ -4376,7 +6968,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Simipour",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": 515,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 517,
@@ -4384,7 +6980,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Munna",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      518
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 518,
@@ -4392,7 +6994,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Musharna",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 517,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 519,
@@ -4401,7 +7007,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      520
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 520,
@@ -4410,7 +7022,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "flying"
-    ]
+    ],
+    "evolvesFromId": 519,
+    "evolvesToIds": [
+      521
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 521,
@@ -4419,7 +7037,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "flying"
-    ]
+    ],
+    "evolvesFromId": 520,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 522,
@@ -4427,7 +7049,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Blitzle",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      523
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 523,
@@ -4435,7 +7063,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Zebstrika",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": 522,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 524,
@@ -4443,7 +7075,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Roggenrola",
     "types": [
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      525
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 525,
@@ -4451,7 +7089,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Boldore",
     "types": [
       "rock"
-    ]
+    ],
+    "evolvesFromId": 524,
+    "evolvesToIds": [
+      526
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 526,
@@ -4459,7 +7103,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Gigalith",
     "types": [
       "rock"
-    ]
+    ],
+    "evolvesFromId": 525,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 527,
@@ -4468,7 +7116,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      528
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 528,
@@ -4477,7 +7131,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 527,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 529,
@@ -4485,7 +7143,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Drilbur",
     "types": [
       "ground"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      530
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 530,
@@ -4494,7 +7158,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "steel"
-    ]
+    ],
+    "evolvesFromId": 529,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 531,
@@ -4502,7 +7170,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Audino",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 532,
@@ -4510,7 +7182,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Timburr",
     "types": [
       "fighting"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      533
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 533,
@@ -4518,7 +7196,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Gurdurr",
     "types": [
       "fighting"
-    ]
+    ],
+    "evolvesFromId": 532,
+    "evolvesToIds": [
+      534
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 534,
@@ -4526,7 +7210,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Conkeldurr",
     "types": [
       "fighting"
-    ]
+    ],
+    "evolvesFromId": 533,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 535,
@@ -4534,7 +7222,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Tympole",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      536
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 536,
@@ -4543,7 +7237,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "ground"
-    ]
+    ],
+    "evolvesFromId": 535,
+    "evolvesToIds": [
+      537
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 537,
@@ -4552,7 +7252,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "ground"
-    ]
+    ],
+    "evolvesFromId": 536,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 538,
@@ -4560,7 +7264,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Throh",
     "types": [
       "fighting"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 539,
@@ -4568,7 +7276,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Sawk",
     "types": [
       "fighting"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 540,
@@ -4577,7 +7289,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      541
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 541,
@@ -4586,7 +7304,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "bug"
-    ]
+    ],
+    "evolvesFromId": 540,
+    "evolvesToIds": [
+      542
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 542,
@@ -4595,7 +7319,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "bug"
-    ]
+    ],
+    "evolvesFromId": 541,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 543,
@@ -4604,7 +7332,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      544
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 544,
@@ -4613,7 +7347,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "bug"
-    ]
+    ],
+    "evolvesFromId": 543,
+    "evolvesToIds": [
+      545
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 545,
@@ -4622,7 +7362,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "bug"
-    ]
+    ],
+    "evolvesFromId": 544,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 546,
@@ -4631,7 +7375,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      547
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 547,
@@ -4640,7 +7390,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": 546,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 548,
@@ -4648,7 +7402,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Petilil",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      549
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 549,
@@ -4656,7 +7416,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Lilligant",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": 548,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 550,
@@ -4664,7 +7428,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Basculin Red Striped",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      902
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 551,
@@ -4673,7 +7443,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "dark"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      552
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 552,
@@ -4682,7 +7458,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "dark"
-    ]
+    ],
+    "evolvesFromId": 551,
+    "evolvesToIds": [
+      553
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 553,
@@ -4691,7 +7473,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "dark"
-    ]
+    ],
+    "evolvesFromId": 552,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 554,
@@ -4699,7 +7485,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Darumaka",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      555
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 555,
@@ -4707,7 +7499,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Darmanitan Standard",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": 554,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 556,
@@ -4715,7 +7511,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Maractus",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 557,
@@ -4724,7 +7524,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "bug",
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      558
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 558,
@@ -4733,7 +7539,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "bug",
       "rock"
-    ]
+    ],
+    "evolvesFromId": 557,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 559,
@@ -4742,7 +7552,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fighting",
       "dark"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      560
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 560,
@@ -4751,7 +7567,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fighting",
       "dark"
-    ]
+    ],
+    "evolvesFromId": 559,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 561,
@@ -4760,7 +7580,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 562,
@@ -4768,7 +7592,14 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Yamask",
     "types": [
       "ghost"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      563,
+      867
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 563,
@@ -4776,7 +7607,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Cofagrigus",
     "types": [
       "ghost"
-    ]
+    ],
+    "evolvesFromId": 562,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 564,
@@ -4785,7 +7620,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      565
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 565,
@@ -4794,7 +7635,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "rock"
-    ]
+    ],
+    "evolvesFromId": 564,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 566,
@@ -4803,7 +7648,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      567
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 567,
@@ -4812,7 +7663,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "rock"
-    ]
+    ],
+    "evolvesFromId": 566,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 568,
@@ -4820,7 +7675,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Trubbish",
     "types": [
       "poison"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      569
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 569,
@@ -4828,7 +7689,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Garbodor",
     "types": [
       "poison"
-    ]
+    ],
+    "evolvesFromId": 568,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 570,
@@ -4836,7 +7701,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Zorua",
     "types": [
       "dark"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      571
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 571,
@@ -4844,7 +7715,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Zoroark",
     "types": [
       "dark"
-    ]
+    ],
+    "evolvesFromId": 570,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 572,
@@ -4852,7 +7727,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Minccino",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      573
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 573,
@@ -4860,7 +7741,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Cinccino",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": 572,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 574,
@@ -4868,7 +7753,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Gothita",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      575
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 575,
@@ -4876,7 +7767,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Gothorita",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 574,
+    "evolvesToIds": [
+      576
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 576,
@@ -4884,7 +7781,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Gothitelle",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 575,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 577,
@@ -4892,7 +7793,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Solosis",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      578
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 578,
@@ -4900,7 +7807,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Duosion",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 577,
+    "evolvesToIds": [
+      579
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 579,
@@ -4908,7 +7821,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Reuniclus",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 578,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 580,
@@ -4917,7 +7834,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      581
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 581,
@@ -4926,7 +7849,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "flying"
-    ]
+    ],
+    "evolvesFromId": 580,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 582,
@@ -4934,7 +7861,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Vanillite",
     "types": [
       "ice"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      583
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 583,
@@ -4942,7 +7875,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Vanillish",
     "types": [
       "ice"
-    ]
+    ],
+    "evolvesFromId": 582,
+    "evolvesToIds": [
+      584
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 584,
@@ -4950,7 +7889,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Vanilluxe",
     "types": [
       "ice"
-    ]
+    ],
+    "evolvesFromId": 583,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 585,
@@ -4959,7 +7902,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "grass"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      586
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 586,
@@ -4968,7 +7917,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "grass"
-    ]
+    ],
+    "evolvesFromId": 585,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 587,
@@ -4977,7 +7930,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "electric",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 588,
@@ -4985,7 +7942,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Karrablast",
     "types": [
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      589
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 589,
@@ -4994,7 +7957,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "bug",
       "steel"
-    ]
+    ],
+    "evolvesFromId": 588,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 590,
@@ -5003,7 +7970,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "poison"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      591
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 591,
@@ -5012,7 +7985,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "poison"
-    ]
+    ],
+    "evolvesFromId": 590,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 592,
@@ -5021,7 +7998,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      593
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 593,
@@ -5030,7 +8013,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": 592,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 594,
@@ -5038,7 +8025,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Alomomola",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 595,
@@ -5047,7 +8038,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "electric",
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      596
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 596,
@@ -5056,7 +8053,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "electric",
       "bug"
-    ]
+    ],
+    "evolvesFromId": 595,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 597,
@@ -5065,7 +8066,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "steel"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      598
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 598,
@@ -5074,7 +8081,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "steel"
-    ]
+    ],
+    "evolvesFromId": 597,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 599,
@@ -5082,7 +8093,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Klink",
     "types": [
       "steel"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      600
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 600,
@@ -5090,7 +8107,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Klang",
     "types": [
       "steel"
-    ]
+    ],
+    "evolvesFromId": 599,
+    "evolvesToIds": [
+      601
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 601,
@@ -5098,7 +8121,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Klinklang",
     "types": [
       "steel"
-    ]
+    ],
+    "evolvesFromId": 600,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 602,
@@ -5106,7 +8133,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Tynamo",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      603
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 603,
@@ -5114,7 +8147,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Eelektrik",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": 602,
+    "evolvesToIds": [
+      604
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 604,
@@ -5122,7 +8161,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Eelektross",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": 603,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 605,
@@ -5130,7 +8173,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Elgyem",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      606
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 606,
@@ -5138,7 +8187,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Beheeyem",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 605,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 607,
@@ -5147,7 +8200,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      608
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 608,
@@ -5156,7 +8215,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": 607,
+    "evolvesToIds": [
+      609
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 609,
@@ -5165,7 +8230,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": 608,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 610,
@@ -5173,7 +8242,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Axew",
     "types": [
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      611
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 611,
@@ -5181,7 +8256,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Fraxure",
     "types": [
       "dragon"
-    ]
+    ],
+    "evolvesFromId": 610,
+    "evolvesToIds": [
+      612
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 612,
@@ -5189,7 +8270,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Haxorus",
     "types": [
       "dragon"
-    ]
+    ],
+    "evolvesFromId": 611,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 613,
@@ -5197,7 +8282,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Cubchoo",
     "types": [
       "ice"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      614
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 614,
@@ -5205,7 +8296,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Beartic",
     "types": [
       "ice"
-    ]
+    ],
+    "evolvesFromId": 613,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 615,
@@ -5213,7 +8308,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Cryogonal",
     "types": [
       "ice"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 616,
@@ -5221,7 +8320,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Shelmet",
     "types": [
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      617
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 617,
@@ -5229,7 +8334,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Accelgor",
     "types": [
       "bug"
-    ]
+    ],
+    "evolvesFromId": 616,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 618,
@@ -5238,7 +8347,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "electric",
       "ground"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 619,
@@ -5246,7 +8359,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Mienfoo",
     "types": [
       "fighting"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      620
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 620,
@@ -5254,7 +8373,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Mienshao",
     "types": [
       "fighting"
-    ]
+    ],
+    "evolvesFromId": 619,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 621,
@@ -5262,7 +8385,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Druddigon",
     "types": [
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 622,
@@ -5271,7 +8398,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      623
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 623,
@@ -5280,7 +8413,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": 622,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 624,
@@ -5289,7 +8426,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "dark",
       "steel"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      625
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 625,
@@ -5298,7 +8441,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "dark",
       "steel"
-    ]
+    ],
+    "evolvesFromId": 624,
+    "evolvesToIds": [
+      983
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 626,
@@ -5306,7 +8455,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Bouffalant",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 627,
@@ -5315,7 +8468,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      628
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 628,
@@ -5324,7 +8483,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "flying"
-    ]
+    ],
+    "evolvesFromId": 627,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 629,
@@ -5333,7 +8496,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "dark"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      630
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 630,
@@ -5342,7 +8511,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "dark"
-    ]
+    ],
+    "evolvesFromId": 629,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 631,
@@ -5350,7 +8523,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Heatmor",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 632,
@@ -5359,7 +8536,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "bug",
       "steel"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 633,
@@ -5368,7 +8549,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "dragon",
       "dark"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      634
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 634,
@@ -5377,7 +8564,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "dragon",
       "dark"
-    ]
+    ],
+    "evolvesFromId": 633,
+    "evolvesToIds": [
+      635
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 635,
@@ -5386,7 +8579,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "dragon",
       "dark"
-    ]
+    ],
+    "evolvesFromId": 634,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 636,
@@ -5395,7 +8592,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      637
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 637,
@@ -5404,7 +8607,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "bug"
-    ]
+    ],
+    "evolvesFromId": 636,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 638,
@@ -5413,7 +8620,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fighting",
       "steel"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 639,
@@ -5422,7 +8633,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fighting",
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 640,
@@ -5431,7 +8646,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "fighting"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 641,
@@ -5439,7 +8658,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Tornadus Incarnate",
     "types": [
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 642,
@@ -5448,7 +8671,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "electric",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 643,
@@ -5457,7 +8684,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 644,
@@ -5466,7 +8697,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "electric",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 645,
@@ -5475,7 +8710,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 646,
@@ -5484,7 +8723,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ice",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 647,
@@ -5493,7 +8736,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "fighting"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 648,
@@ -5502,7 +8749,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 649,
@@ -5511,7 +8762,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "bug",
       "steel"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 650,
@@ -5519,7 +8774,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Chespin",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      651
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 651,
@@ -5527,7 +8788,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Quilladin",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": 650,
+    "evolvesToIds": [
+      652
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 652,
@@ -5536,7 +8803,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "fighting"
-    ]
+    ],
+    "evolvesFromId": 651,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 653,
@@ -5544,7 +8815,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Fennekin",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      654
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 654,
@@ -5552,7 +8829,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Braixen",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": 653,
+    "evolvesToIds": [
+      655
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 655,
@@ -5561,7 +8844,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 654,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 656,
@@ -5569,7 +8856,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Froakie",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      657
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 657,
@@ -5577,7 +8870,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Frogadier",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": 656,
+    "evolvesToIds": [
+      658
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 658,
@@ -5586,7 +8885,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "dark"
-    ]
+    ],
+    "evolvesFromId": 657,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 659,
@@ -5594,7 +8897,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Bunnelby",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      660
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 660,
@@ -5603,7 +8912,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "ground"
-    ]
+    ],
+    "evolvesFromId": 659,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 661,
@@ -5612,7 +8925,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      662
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 662,
@@ -5621,7 +8940,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "flying"
-    ]
+    ],
+    "evolvesFromId": 661,
+    "evolvesToIds": [
+      663
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 663,
@@ -5630,7 +8955,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "flying"
-    ]
+    ],
+    "evolvesFromId": 662,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 664,
@@ -5638,7 +8967,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Scatterbug",
     "types": [
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      665
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 665,
@@ -5646,7 +8981,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Spewpa",
     "types": [
       "bug"
-    ]
+    ],
+    "evolvesFromId": 664,
+    "evolvesToIds": [
+      666
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 666,
@@ -5655,7 +8996,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "bug"
-    ]
+    ],
+    "evolvesFromId": 665,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 667,
@@ -5664,7 +9009,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "fire"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      668
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 668,
@@ -5673,7 +9024,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "fire"
-    ]
+    ],
+    "evolvesFromId": 667,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 669,
@@ -5681,7 +9036,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Flabebe",
     "types": [
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      670
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 670,
@@ -5689,7 +9050,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Floette",
     "types": [
       "fairy"
-    ]
+    ],
+    "evolvesFromId": 669,
+    "evolvesToIds": [
+      671
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 671,
@@ -5697,7 +9064,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Florges",
     "types": [
       "fairy"
-    ]
+    ],
+    "evolvesFromId": 670,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 672,
@@ -5705,7 +9076,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Skiddo",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      673
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 673,
@@ -5713,7 +9090,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Gogoat",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": 672,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 674,
@@ -5721,7 +9102,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Pancham",
     "types": [
       "fighting"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      675
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 675,
@@ -5730,7 +9117,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fighting",
       "dark"
-    ]
+    ],
+    "evolvesFromId": 674,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 676,
@@ -5738,7 +9129,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Furfrou",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 677,
@@ -5746,7 +9141,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Espurr",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      678
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 678,
@@ -5754,7 +9155,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Meowstic Male",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 677,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 679,
@@ -5763,7 +9168,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ghost",
       "steel"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      680
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 680,
@@ -5772,7 +9183,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ghost",
       "steel"
-    ]
+    ],
+    "evolvesFromId": 679,
+    "evolvesToIds": [
+      681
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 681,
@@ -5781,7 +9198,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ghost",
       "steel"
-    ]
+    ],
+    "evolvesFromId": 680,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 682,
@@ -5789,7 +9210,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Spritzee",
     "types": [
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      683
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 683,
@@ -5797,7 +9224,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Aromatisse",
     "types": [
       "fairy"
-    ]
+    ],
+    "evolvesFromId": 682,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 684,
@@ -5805,7 +9236,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Swirlix",
     "types": [
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      685
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 685,
@@ -5813,7 +9250,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Slurpuff",
     "types": [
       "fairy"
-    ]
+    ],
+    "evolvesFromId": 684,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 686,
@@ -5822,7 +9263,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "psychic",
       "dark"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      687
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 687,
@@ -5831,7 +9278,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "psychic",
       "dark"
-    ]
+    ],
+    "evolvesFromId": 686,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 688,
@@ -5840,7 +9291,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      689
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 689,
@@ -5849,7 +9306,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "rock"
-    ]
+    ],
+    "evolvesFromId": 688,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 690,
@@ -5858,7 +9319,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "poison"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      691
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 691,
@@ -5867,7 +9334,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": 690,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 692,
@@ -5875,7 +9346,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Clauncher",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      693
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 693,
@@ -5883,7 +9360,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Clawitzer",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": 692,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 694,
@@ -5892,7 +9373,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "electric"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      695
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 695,
@@ -5901,7 +9388,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "electric"
-    ]
+    ],
+    "evolvesFromId": 694,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 696,
@@ -5910,7 +9401,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "rock",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      697
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 697,
@@ -5919,7 +9416,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "rock",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": 696,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 698,
@@ -5928,7 +9429,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ice",
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      699
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 699,
@@ -5937,7 +9444,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ice",
       "rock"
-    ]
+    ],
+    "evolvesFromId": 698,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 700,
@@ -5945,7 +9456,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Sylveon",
     "types": [
       "fairy"
-    ]
+    ],
+    "evolvesFromId": 133,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 701,
@@ -5954,7 +9469,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fighting",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 702,
@@ -5963,7 +9482,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "electric",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 703,
@@ -5972,7 +9495,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "rock",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 704,
@@ -5980,7 +9507,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Goomy",
     "types": [
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      705
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 705,
@@ -5988,7 +9521,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Sliggoo",
     "types": [
       "dragon"
-    ]
+    ],
+    "evolvesFromId": 704,
+    "evolvesToIds": [
+      706
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 706,
@@ -5996,7 +9535,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Goodra",
     "types": [
       "dragon"
-    ]
+    ],
+    "evolvesFromId": 705,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 707,
@@ -6005,7 +9548,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "steel",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 708,
@@ -6014,7 +9561,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      709
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 709,
@@ -6023,7 +9576,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": 708,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 710,
@@ -6032,7 +9589,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      711
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 711,
@@ -6041,7 +9604,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": 710,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 712,
@@ -6049,7 +9616,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Bergmite",
     "types": [
       "ice"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      713
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 713,
@@ -6057,7 +9630,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Avalugg",
     "types": [
       "ice"
-    ]
+    ],
+    "evolvesFromId": 712,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 714,
@@ -6066,7 +9643,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      715
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 715,
@@ -6075,7 +9658,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": 714,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 716,
@@ -6083,7 +9670,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Xerneas",
     "types": [
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 717,
@@ -6092,7 +9683,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "dark"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 718,
@@ -6101,7 +9696,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 719,
@@ -6110,7 +9709,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "rock",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 720,
@@ -6119,7 +9722,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "psychic",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 721,
@@ -6128,7 +9735,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 722,
@@ -6137,7 +9748,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      723
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 723,
@@ -6146,7 +9763,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "flying"
-    ]
+    ],
+    "evolvesFromId": 722,
+    "evolvesToIds": [
+      724
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 724,
@@ -6155,7 +9778,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": 723,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 725,
@@ -6163,7 +9790,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Litten",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      726
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 726,
@@ -6171,7 +9804,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Torracat",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": 725,
+    "evolvesToIds": [
+      727
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 727,
@@ -6180,7 +9819,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "dark"
-    ]
+    ],
+    "evolvesFromId": 726,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 728,
@@ -6188,7 +9831,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Popplio",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      729
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 729,
@@ -6196,7 +9845,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Brionne",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": 728,
+    "evolvesToIds": [
+      730
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 730,
@@ -6205,7 +9860,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": 729,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 731,
@@ -6214,7 +9873,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      732
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 732,
@@ -6223,7 +9888,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "flying"
-    ]
+    ],
+    "evolvesFromId": 731,
+    "evolvesToIds": [
+      733
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 733,
@@ -6232,7 +9903,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "flying"
-    ]
+    ],
+    "evolvesFromId": 732,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 734,
@@ -6240,7 +9915,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Yungoos",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      735
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 735,
@@ -6248,7 +9929,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Gumshoos",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": 734,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 736,
@@ -6256,7 +9941,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Grubbin",
     "types": [
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      737
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 737,
@@ -6265,7 +9956,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "electric",
       "bug"
-    ]
+    ],
+    "evolvesFromId": 736,
+    "evolvesToIds": [
+      738
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 738,
@@ -6274,7 +9971,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "electric",
       "bug"
-    ]
+    ],
+    "evolvesFromId": 737,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 739,
@@ -6282,7 +9983,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Crabrawler",
     "types": [
       "fighting"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      740
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 740,
@@ -6291,7 +9998,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ice",
       "fighting"
-    ]
+    ],
+    "evolvesFromId": 739,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 741,
@@ -6300,7 +10011,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 742,
@@ -6309,7 +10024,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "bug",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      743
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 743,
@@ -6318,7 +10039,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "bug",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": 742,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 744,
@@ -6326,7 +10051,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Rockruff",
     "types": [
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      745
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 745,
@@ -6334,7 +10065,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Lycanroc Midday",
     "types": [
       "rock"
-    ]
+    ],
+    "evolvesFromId": 744,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 746,
@@ -6342,7 +10077,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Wishiwashi Solo",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 747,
@@ -6351,7 +10090,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "poison"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      748
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 748,
@@ -6360,7 +10105,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "poison"
-    ]
+    ],
+    "evolvesFromId": 747,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 749,
@@ -6368,7 +10117,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Mudbray",
     "types": [
       "ground"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      750
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 750,
@@ -6376,7 +10131,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Mudsdale",
     "types": [
       "ground"
-    ]
+    ],
+    "evolvesFromId": 749,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 751,
@@ -6385,7 +10144,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      752
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 752,
@@ -6394,7 +10159,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "bug"
-    ]
+    ],
+    "evolvesFromId": 751,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 753,
@@ -6402,7 +10171,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Fomantis",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      754
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 754,
@@ -6410,7 +10185,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Lurantis",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": 753,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 755,
@@ -6419,7 +10198,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      756
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 756,
@@ -6428,7 +10213,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": 755,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 757,
@@ -6437,7 +10226,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "poison"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      758
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 758,
@@ -6446,7 +10241,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "poison"
-    ]
+    ],
+    "evolvesFromId": 757,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 759,
@@ -6455,7 +10254,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "fighting"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      760
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 760,
@@ -6464,7 +10269,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "fighting"
-    ]
+    ],
+    "evolvesFromId": 759,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 761,
@@ -6472,7 +10281,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Bounsweet",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      762
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 762,
@@ -6480,7 +10295,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Steenee",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": 761,
+    "evolvesToIds": [
+      763
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 763,
@@ -6488,7 +10309,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Tsareena",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": 762,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 764,
@@ -6496,7 +10321,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Comfey",
     "types": [
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 765,
@@ -6505,7 +10334,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 766,
@@ -6513,7 +10346,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Passimian",
     "types": [
       "fighting"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 767,
@@ -6522,7 +10359,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      768
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 768,
@@ -6531,7 +10374,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "bug"
-    ]
+    ],
+    "evolvesFromId": 767,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 769,
@@ -6540,7 +10387,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      770
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 770,
@@ -6549,7 +10402,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": 769,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 771,
@@ -6557,7 +10414,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Pyukumuku",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 772,
@@ -6565,7 +10426,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Type Null",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      773
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 773,
@@ -6573,7 +10440,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Silvally",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": 772,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 774,
@@ -6582,7 +10453,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 775,
@@ -6590,7 +10465,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Komala",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 776,
@@ -6599,7 +10478,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 777,
@@ -6608,7 +10491,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "electric",
       "steel"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 778,
@@ -6617,7 +10504,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ghost",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 779,
@@ -6626,7 +10517,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 780,
@@ -6635,7 +10530,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 781,
@@ -6644,7 +10543,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 782,
@@ -6652,7 +10555,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Jangmo O",
     "types": [
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      783
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 783,
@@ -6661,7 +10570,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fighting",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": 782,
+    "evolvesToIds": [
+      784
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 784,
@@ -6670,7 +10585,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fighting",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": 783,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 785,
@@ -6679,7 +10598,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "electric",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 786,
@@ -6688,7 +10611,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "psychic",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 787,
@@ -6697,7 +10624,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 788,
@@ -6706,7 +10637,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 789,
@@ -6714,7 +10649,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Cosmog",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      790
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 790,
@@ -6722,7 +10663,14 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Cosmoem",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 789,
+    "evolvesToIds": [
+      791,
+      792
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 791,
@@ -6731,7 +10679,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "psychic",
       "steel"
-    ]
+    ],
+    "evolvesFromId": 790,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 792,
@@ -6740,7 +10692,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "psychic",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": 790,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 793,
@@ -6749,7 +10705,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 794,
@@ -6758,7 +10718,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fighting",
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 795,
@@ -6767,7 +10731,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fighting",
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 796,
@@ -6775,7 +10743,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Xurkitree",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 797,
@@ -6784,7 +10756,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "steel"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 798,
@@ -6793,7 +10769,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "steel"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 799,
@@ -6802,7 +10782,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "dragon",
       "dark"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 800,
@@ -6810,7 +10794,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Necrozma",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 801,
@@ -6819,7 +10807,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "steel",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 802,
@@ -6828,7 +10820,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fighting",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 803,
@@ -6836,7 +10832,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Poipole",
     "types": [
       "poison"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      804
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 804,
@@ -6845,7 +10847,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": 803,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 805,
@@ -6854,7 +10860,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "rock",
       "steel"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 806,
@@ -6863,7 +10873,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 807,
@@ -6871,7 +10885,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Zeraora",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 808,
@@ -6879,7 +10897,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Meltan",
     "types": [
       "steel"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 809,
@@ -6887,7 +10909,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Melmetal",
     "types": [
       "steel"
-    ]
+    ],
+    "evolvesFromId": 808,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 810,
@@ -6895,7 +10921,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Grookey",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      811
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 811,
@@ -6903,7 +10935,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Thwackey",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": 810,
+    "evolvesToIds": [
+      812
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 812,
@@ -6911,7 +10949,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Rillaboom",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": 811,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 813,
@@ -6919,7 +10961,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Scorbunny",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      814
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 814,
@@ -6927,7 +10975,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Raboot",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": 813,
+    "evolvesToIds": [
+      815
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 815,
@@ -6935,7 +10989,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Cinderace",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": 814,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 816,
@@ -6943,7 +11001,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Sobble",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      817
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 817,
@@ -6951,7 +11015,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Drizzile",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": 816,
+    "evolvesToIds": [
+      818
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 818,
@@ -6959,7 +11029,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Inteleon",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": 817,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 819,
@@ -6967,7 +11041,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Skwovet",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      820
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 820,
@@ -6975,7 +11055,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Greedent",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": 819,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 821,
@@ -6983,7 +11067,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Rookidee",
     "types": [
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      822
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 822,
@@ -6991,7 +11081,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Corvisquire",
     "types": [
       "flying"
-    ]
+    ],
+    "evolvesFromId": 821,
+    "evolvesToIds": [
+      823
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 823,
@@ -7000,7 +11096,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "steel"
-    ]
+    ],
+    "evolvesFromId": 822,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 824,
@@ -7008,7 +11108,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Blipbug",
     "types": [
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      825
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 825,
@@ -7017,7 +11123,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "psychic",
       "bug"
-    ]
+    ],
+    "evolvesFromId": 824,
+    "evolvesToIds": [
+      826
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 826,
@@ -7026,7 +11138,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "psychic",
       "bug"
-    ]
+    ],
+    "evolvesFromId": 825,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 827,
@@ -7034,7 +11150,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Nickit",
     "types": [
       "dark"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      828
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 828,
@@ -7042,7 +11164,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Thievul",
     "types": [
       "dark"
-    ]
+    ],
+    "evolvesFromId": 827,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 829,
@@ -7050,7 +11176,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Gossifleur",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      830
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 830,
@@ -7058,7 +11190,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Eldegoss",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": 829,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 831,
@@ -7066,7 +11202,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Wooloo",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      832
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 832,
@@ -7074,7 +11216,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Dubwool",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": 831,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 833,
@@ -7082,7 +11228,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Chewtle",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      834
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 834,
@@ -7091,7 +11243,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "rock"
-    ]
+    ],
+    "evolvesFromId": 833,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 835,
@@ -7099,7 +11255,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Yamper",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      836
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 836,
@@ -7107,7 +11269,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Boltund",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": 835,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 837,
@@ -7115,7 +11281,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Rolycoly",
     "types": [
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      838
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 838,
@@ -7124,7 +11296,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "rock"
-    ]
+    ],
+    "evolvesFromId": 837,
+    "evolvesToIds": [
+      839
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 839,
@@ -7133,7 +11311,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "rock"
-    ]
+    ],
+    "evolvesFromId": 838,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 840,
@@ -7142,7 +11324,15 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      841,
+      842,
+      1011
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 841,
@@ -7151,7 +11341,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": 840,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 842,
@@ -7160,7 +11354,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": 840,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 843,
@@ -7168,7 +11366,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Silicobra",
     "types": [
       "ground"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      844
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 844,
@@ -7176,7 +11380,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Sandaconda",
     "types": [
       "ground"
-    ]
+    ],
+    "evolvesFromId": 843,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 845,
@@ -7185,7 +11393,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 846,
@@ -7193,7 +11405,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Arrokuda",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      847
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 847,
@@ -7201,7 +11419,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Barraskewda",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": 846,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 848,
@@ -7210,7 +11432,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "electric",
       "poison"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      849
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 849,
@@ -7219,7 +11447,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "electric",
       "poison"
-    ]
+    ],
+    "evolvesFromId": 848,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 850,
@@ -7228,7 +11460,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      851
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 851,
@@ -7237,7 +11475,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "bug"
-    ]
+    ],
+    "evolvesFromId": 850,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 852,
@@ -7245,7 +11487,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Clobbopus",
     "types": [
       "fighting"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      853
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 853,
@@ -7253,7 +11501,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Grapploct",
     "types": [
       "fighting"
-    ]
+    ],
+    "evolvesFromId": 852,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 854,
@@ -7261,7 +11513,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Sinistea",
     "types": [
       "ghost"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      855
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 855,
@@ -7269,7 +11527,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Polteageist",
     "types": [
       "ghost"
-    ]
+    ],
+    "evolvesFromId": 854,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 856,
@@ -7277,7 +11539,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Hatenna",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      857
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 857,
@@ -7285,7 +11553,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Hattrem",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 856,
+    "evolvesToIds": [
+      858
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 858,
@@ -7294,7 +11568,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "psychic",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": 857,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 859,
@@ -7303,7 +11581,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "dark",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      860
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 860,
@@ -7312,7 +11596,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "dark",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": 859,
+    "evolvesToIds": [
+      861
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 861,
@@ -7321,7 +11611,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "dark",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": 860,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 862,
@@ -7330,7 +11624,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "dark"
-    ]
+    ],
+    "evolvesFromId": 264,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 863,
@@ -7338,7 +11636,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Perrserker",
     "types": [
       "steel"
-    ]
+    ],
+    "evolvesFromId": 52,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 864,
@@ -7346,7 +11648,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Cursola",
     "types": [
       "ghost"
-    ]
+    ],
+    "evolvesFromId": 222,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 865,
@@ -7354,7 +11660,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Sirfetchd",
     "types": [
       "fighting"
-    ]
+    ],
+    "evolvesFromId": 83,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 866,
@@ -7363,7 +11673,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ice",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 122,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 867,
@@ -7372,7 +11686,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": 562,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 868,
@@ -7380,7 +11698,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Milcery",
     "types": [
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      869
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 869,
@@ -7388,7 +11712,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Alcremie",
     "types": [
       "fairy"
-    ]
+    ],
+    "evolvesFromId": 868,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 870,
@@ -7396,7 +11724,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Falinks",
     "types": [
       "fighting"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 871,
@@ -7404,7 +11736,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Pincurchin",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 872,
@@ -7413,7 +11749,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ice",
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      873
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 873,
@@ -7422,7 +11764,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ice",
       "bug"
-    ]
+    ],
+    "evolvesFromId": 872,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 874,
@@ -7430,7 +11776,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Stonjourner",
     "types": [
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 875,
@@ -7438,7 +11788,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Eiscue Ice",
     "types": [
       "ice"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 876,
@@ -7447,7 +11801,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 877,
@@ -7456,7 +11814,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "electric",
       "dark"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 878,
@@ -7464,7 +11826,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Cufant",
     "types": [
       "steel"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      879
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 879,
@@ -7472,7 +11840,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Copperajah",
     "types": [
       "steel"
-    ]
+    ],
+    "evolvesFromId": 878,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 880,
@@ -7481,7 +11853,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "electric",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 881,
@@ -7490,7 +11866,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "electric",
       "ice"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 882,
@@ -7499,7 +11879,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 883,
@@ -7508,7 +11892,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "ice"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 884,
@@ -7517,7 +11905,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "dragon",
       "steel"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      1018
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 885,
@@ -7526,7 +11920,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ghost",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      886
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 886,
@@ -7535,7 +11935,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ghost",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": 885,
+    "evolvesToIds": [
+      887
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 887,
@@ -7544,7 +11950,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ghost",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": 886,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 888,
@@ -7552,7 +11962,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Zacian",
     "types": [
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 889,
@@ -7560,7 +11974,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Zamazenta",
     "types": [
       "fighting"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 890,
@@ -7569,7 +11987,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 891,
@@ -7577,7 +11999,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Kubfu",
     "types": [
       "fighting"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      892
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 892,
@@ -7586,7 +12014,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fighting",
       "dark"
-    ]
+    ],
+    "evolvesFromId": 891,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 893,
@@ -7595,7 +12027,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "dark"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 894,
@@ -7603,7 +12039,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Regieleki",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 895,
@@ -7611,7 +12051,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Regidrago",
     "types": [
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 896,
@@ -7619,7 +12063,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Glastrier",
     "types": [
       "ice"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 897,
@@ -7627,7 +12075,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Spectrier",
     "types": [
       "ghost"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 898,
@@ -7636,7 +12088,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 899,
@@ -7645,7 +12101,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 234,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 900,
@@ -7654,7 +12114,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "bug",
       "rock"
-    ]
+    ],
+    "evolvesFromId": 123,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 901,
@@ -7663,7 +12127,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "ground"
-    ]
+    ],
+    "evolvesFromId": 217,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 902,
@@ -7672,7 +12140,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": 550,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 903,
@@ -7681,7 +12153,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fighting",
       "poison"
-    ]
+    ],
+    "evolvesFromId": 215,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 904,
@@ -7690,7 +12166,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "dark"
-    ]
+    ],
+    "evolvesFromId": 211,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 905,
@@ -7699,7 +12179,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 906,
@@ -7707,7 +12191,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Sprigatito",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      907
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 907,
@@ -7715,7 +12205,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Floragato",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": 906,
+    "evolvesToIds": [
+      908
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 908,
@@ -7724,7 +12220,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "dark"
-    ]
+    ],
+    "evolvesFromId": 907,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 909,
@@ -7732,7 +12232,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Fuecoco",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      910
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 910,
@@ -7740,7 +12246,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Crocalor",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": 909,
+    "evolvesToIds": [
+      911
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 911,
@@ -7749,7 +12261,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": 910,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 912,
@@ -7757,7 +12273,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Quaxly",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      913
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 913,
@@ -7765,7 +12287,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Quaxwell",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": 912,
+    "evolvesToIds": [
+      914
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 914,
@@ -7774,7 +12302,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "fighting"
-    ]
+    ],
+    "evolvesFromId": 913,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 915,
@@ -7782,7 +12314,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Lechonk",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      916
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 916,
@@ -7790,7 +12328,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Oinkologne Male",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": 915,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 917,
@@ -7798,7 +12340,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Tarountula",
     "types": [
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      918
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 918,
@@ -7806,7 +12354,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Spidops",
     "types": [
       "bug"
-    ]
+    ],
+    "evolvesFromId": 917,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 919,
@@ -7814,7 +12366,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Nymble",
     "types": [
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      920
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 920,
@@ -7823,7 +12381,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "bug",
       "dark"
-    ]
+    ],
+    "evolvesFromId": 919,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 921,
@@ -7831,7 +12393,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Pawmi",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      922
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 922,
@@ -7840,7 +12408,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "electric",
       "fighting"
-    ]
+    ],
+    "evolvesFromId": 921,
+    "evolvesToIds": [
+      923
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 923,
@@ -7849,7 +12423,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "electric",
       "fighting"
-    ]
+    ],
+    "evolvesFromId": 922,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 924,
@@ -7857,7 +12435,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Tandemaus",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      925
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 925,
@@ -7865,7 +12449,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Maushold Family Of Four",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": 924,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 926,
@@ -7873,7 +12461,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Fidough",
     "types": [
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      927
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 927,
@@ -7881,7 +12475,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Dachsbun",
     "types": [
       "fairy"
-    ]
+    ],
+    "evolvesFromId": 926,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 928,
@@ -7890,7 +12488,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "grass"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      929
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 929,
@@ -7899,7 +12503,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "grass"
-    ]
+    ],
+    "evolvesFromId": 928,
+    "evolvesToIds": [
+      930
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 930,
@@ -7908,7 +12518,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "grass"
-    ]
+    ],
+    "evolvesFromId": 929,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 931,
@@ -7917,7 +12531,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 932,
@@ -7925,7 +12543,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Nacli",
     "types": [
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      933
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 933,
@@ -7933,7 +12557,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Naclstack",
     "types": [
       "rock"
-    ]
+    ],
+    "evolvesFromId": 932,
+    "evolvesToIds": [
+      934
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 934,
@@ -7941,7 +12571,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Garganacl",
     "types": [
       "rock"
-    ]
+    ],
+    "evolvesFromId": 933,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 935,
@@ -7949,7 +12583,14 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Charcadet",
     "types": [
       "fire"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      936,
+      937
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 936,
@@ -7958,7 +12599,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 935,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 937,
@@ -7967,7 +12612,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": 935,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 938,
@@ -7975,7 +12624,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Tadbulb",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      939
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 939,
@@ -7983,7 +12638,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Bellibolt",
     "types": [
       "electric"
-    ]
+    ],
+    "evolvesFromId": 938,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 940,
@@ -7992,7 +12651,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "electric",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      941
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 941,
@@ -8001,7 +12666,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "electric",
       "flying"
-    ]
+    ],
+    "evolvesFromId": 940,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 942,
@@ -8009,7 +12678,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Maschiff",
     "types": [
       "dark"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      943
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 943,
@@ -8017,7 +12692,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Mabosstiff",
     "types": [
       "dark"
-    ]
+    ],
+    "evolvesFromId": 942,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 944,
@@ -8026,7 +12705,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "poison"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      945
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 945,
@@ -8035,7 +12720,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "poison"
-    ]
+    ],
+    "evolvesFromId": 944,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 946,
@@ -8044,7 +12733,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      947
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 947,
@@ -8053,7 +12748,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": 946,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 948,
@@ -8062,7 +12761,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "ground"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      949
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 949,
@@ -8071,7 +12776,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "ground"
-    ]
+    ],
+    "evolvesFromId": 948,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 950,
@@ -8079,7 +12788,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Klawf",
     "types": [
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 951,
@@ -8087,7 +12800,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Capsakid",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      952
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 952,
@@ -8096,7 +12815,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "grass"
-    ]
+    ],
+    "evolvesFromId": 951,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 953,
@@ -8104,7 +12827,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Rellor",
     "types": [
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      954
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 954,
@@ -8113,7 +12842,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "psychic",
       "bug"
-    ]
+    ],
+    "evolvesFromId": 953,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 955,
@@ -8121,7 +12854,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Flittle",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      956
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 956,
@@ -8129,7 +12868,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Espathra",
     "types": [
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 955,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 957,
@@ -8138,7 +12881,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "steel",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      958
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 958,
@@ -8147,7 +12896,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "steel",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": 957,
+    "evolvesToIds": [
+      959
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 959,
@@ -8156,7 +12911,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "steel",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": 958,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 960,
@@ -8164,7 +12923,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Wiglett",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      961
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 961,
@@ -8172,7 +12937,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Wugtrio",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": 960,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 962,
@@ -8181,7 +12950,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "dark"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 963,
@@ -8189,7 +12962,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Finizen",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      964
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 964,
@@ -8197,7 +12976,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Palafin Zero",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": 963,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 965,
@@ -8206,7 +12989,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "steel"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      966
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 966,
@@ -8215,7 +13004,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "steel"
-    ]
+    ],
+    "evolvesFromId": 965,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 967,
@@ -8224,7 +13017,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 968,
@@ -8232,7 +13029,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Orthworm",
     "types": [
       "steel"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 969,
@@ -8241,7 +13042,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      970
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 970,
@@ -8250,7 +13057,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "rock"
-    ]
+    ],
+    "evolvesFromId": 969,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 971,
@@ -8258,7 +13069,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Greavard",
     "types": [
       "ghost"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      972
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 972,
@@ -8266,7 +13083,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Houndstone",
     "types": [
       "ghost"
-    ]
+    ],
+    "evolvesFromId": 971,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 973,
@@ -8275,7 +13096,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fighting",
       "flying"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 974,
@@ -8283,7 +13108,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Cetoddle",
     "types": [
       "ice"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      975
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 975,
@@ -8291,7 +13122,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Cetitan",
     "types": [
       "ice"
-    ]
+    ],
+    "evolvesFromId": 974,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 976,
@@ -8300,7 +13135,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 977,
@@ -8308,7 +13147,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Dondozo",
     "types": [
       "water"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 978,
@@ -8317,7 +13160,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 979,
@@ -8326,7 +13173,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fighting",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": 57,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 980,
@@ -8335,7 +13186,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "ground"
-    ]
+    ],
+    "evolvesFromId": 194,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 981,
@@ -8344,7 +13199,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "normal",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": 203,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 982,
@@ -8352,7 +13211,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Dudunsparce Two Segment",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": 206,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 983,
@@ -8361,7 +13224,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "dark",
       "steel"
-    ]
+    ],
+    "evolvesFromId": 625,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 984,
@@ -8370,7 +13237,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fighting",
       "ground"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 985,
@@ -8379,7 +13250,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "psychic",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 986,
@@ -8388,7 +13263,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "dark"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 987,
@@ -8397,7 +13276,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ghost",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 988,
@@ -8406,7 +13289,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fighting",
       "bug"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 989,
@@ -8415,7 +13302,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "electric",
       "ground"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 990,
@@ -8424,7 +13315,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "steel"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 991,
@@ -8433,7 +13328,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "ice"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 992,
@@ -8442,7 +13341,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "electric",
       "fighting"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 993,
@@ -8451,7 +13354,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "flying",
       "dark"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 994,
@@ -8460,7 +13367,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "poison"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 995,
@@ -8469,7 +13380,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "electric",
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 996,
@@ -8478,7 +13393,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ice",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      997
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 997,
@@ -8487,7 +13408,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ice",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": 996,
+    "evolvesToIds": [
+      998
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 998,
@@ -8496,7 +13423,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ice",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": 997,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 999,
@@ -8504,7 +13435,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Gimmighoul",
     "types": [
       "ghost"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      1000
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 1000,
@@ -8513,7 +13450,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ghost",
       "steel"
-    ]
+    ],
+    "evolvesFromId": 999,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 1001,
@@ -8522,7 +13463,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "dark"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 1002,
@@ -8531,7 +13476,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ice",
       "dark"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 1003,
@@ -8540,7 +13489,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "ground",
       "dark"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 1004,
@@ -8549,7 +13502,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "dark"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 1005,
@@ -8558,7 +13515,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "dragon",
       "dark"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 1006,
@@ -8567,7 +13528,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fighting",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 1007,
@@ -8576,7 +13541,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fighting",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 1008,
@@ -8585,7 +13554,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "electric",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 1009,
@@ -8594,7 +13567,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "water",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 1010,
@@ -8603,7 +13580,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 1011,
@@ -8612,7 +13593,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": 840,
+    "evolvesToIds": [
+      1019
+    ],
+    "evolutionStage": 2,
+    "isFullyEvolved": false
   },
   {
     "id": 1012,
@@ -8621,7 +13608,13 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [
+      1013
+    ],
+    "evolutionStage": 1,
+    "isFullyEvolved": false
   },
   {
     "id": 1013,
@@ -8630,7 +13623,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": 1012,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 1014,
@@ -8639,7 +13636,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fighting",
       "poison"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 1015,
@@ -8648,7 +13649,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "psychic"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 1016,
@@ -8657,7 +13662,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "fairy"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 1017,
@@ -8665,7 +13674,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Ogerpon",
     "types": [
       "grass"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 1018,
@@ -8674,7 +13687,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "dragon",
       "steel"
-    ]
+    ],
+    "evolvesFromId": 884,
+    "evolvesToIds": [],
+    "evolutionStage": 2,
+    "isFullyEvolved": true
   },
   {
     "id": 1019,
@@ -8683,7 +13700,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "grass",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": 1011,
+    "evolvesToIds": [],
+    "evolutionStage": 3,
+    "isFullyEvolved": true
   },
   {
     "id": 1020,
@@ -8692,7 +13713,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "fire",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 1021,
@@ -8701,7 +13726,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "electric",
       "dragon"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 1022,
@@ -8710,7 +13739,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "psychic",
       "rock"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 1023,
@@ -8719,7 +13752,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "psychic",
       "steel"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 1024,
@@ -8727,7 +13764,11 @@ export const ALL_POKEMON: PokeEntry[] = [
     "name": "Terapagos",
     "types": [
       "normal"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   },
   {
     "id": 1025,
@@ -8736,6 +13777,10 @@ export const ALL_POKEMON: PokeEntry[] = [
     "types": [
       "poison",
       "ghost"
-    ]
+    ],
+    "evolvesFromId": null,
+    "evolvesToIds": [],
+    "evolutionStage": 1,
+    "isFullyEvolved": true
   }
 ] as PokeEntry[];
