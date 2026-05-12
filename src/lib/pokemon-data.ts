@@ -89,3 +89,46 @@ export function isSuperEffective(attacker: PokeEntry, defender: PokeEntry): bool
   }
   return false;
 }
+
+// Canonical type immunities (Gen 6+).
+// Key = attacker type, Value = defender types it CANNOT damage at all (0× damage).
+export const TYPE_IMMUNITIES: Record<PokeType, PokeType[]> = {
+  normal: ["ghost"],
+  fighting: ["ghost"],
+  poison: ["steel"],
+  ground: ["flying"],
+  ghost: ["normal"],
+  electric: [],
+  psychic: ["dark"],
+  dragon: ["fairy"],
+  fire: [],
+  water: [],
+  grass: [],
+  ice: [],
+  flying: [],
+  bug: [],
+  rock: [],
+  dark: [],
+  steel: [],
+  fairy: [],
+};
+
+/** Returns true if enemy has ANY type that's super-effective against ANY of the player's types. */
+export function isPlayerDisadvantaged(playerPokemon: PokeEntry, enemyPokemon: PokeEntry): boolean {
+  for (const eType of enemyPokemon.types) {
+    for (const pType of playerPokemon.types) {
+      if (TYPE_CHART[eType]?.includes(pType)) return true;
+    }
+  }
+  return false;
+}
+
+/** Returns true if NONE of the enemy's types can damage ANY of the player's types. */
+export function isPlayerImmune(playerPokemon: PokeEntry, enemyPokemon: PokeEntry): boolean {
+  for (const eType of enemyPokemon.types) {
+    const immunityList = TYPE_IMMUNITIES[eType] ?? [];
+    const playerHasImmunity = playerPokemon.types.some((pType) => immunityList.includes(pType));
+    if (!playerHasImmunity) return false;
+  }
+  return true;
+}
