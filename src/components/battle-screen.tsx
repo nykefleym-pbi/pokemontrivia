@@ -726,6 +726,8 @@ function BattleMode({
       <ResultScreen
         won={resultWon!}
         xpEarned={xpEarned}
+        tpEarned={tpEarned}
+        partnerName={player.name}
         streak={maxStreakRef.current}
         onRebattle={() => onExit()}
       />
