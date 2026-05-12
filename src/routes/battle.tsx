@@ -296,22 +296,10 @@ function BattleHome({
                     </span>{" "}
                     · {Math.round(dailyResult.timeMs / 1000)}s
                   </div>
-                  <div className="mt-1 font-pixel text-base tracking-widest">{dailyResult.pattern}</div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="mt-3 w-full rounded-full"
-                    onClick={async () => {
-                      const text = `Pokémon Trivia · ${dailyResult.date}\n${dailyResult.correct}/${dailyResult.total} · ${Math.round(dailyResult.timeMs / 1000)}s\n${dailyResult.pattern}\nplay → poketrivia.app`;
-                      const nav = navigator as Navigator & { share?: (d: ShareData) => Promise<void> };
-                      if (nav.share) {
-                        try { await nav.share({ text }); return; } catch { /* fall */ }
-                      }
-                      try { await navigator.clipboard.writeText(text); toast.success("Copied!"); } catch { toast.error("Couldn't copy."); }
-                    }}
-                  >
-                    Share
-                  </Button>
+                  <div className="mt-2 flex justify-center">
+                    <PokeballPattern marks={dailyResult.pattern} />
+                  </div>
+                  <p className="mt-3 text-[10px] text-muted-foreground">Come back tomorrow for a new challenge.</p>
                 </>
               ) : (
                 <>
