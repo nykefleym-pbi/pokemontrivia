@@ -132,6 +132,7 @@ function BattleMode({
   const [shakeWho, setShakeWho] = useState<"player" | "enemy" | null>(null);
   const [floatDmg, setFloatDmg] = useState<{ who: "player" | "enemy"; n: number; super: boolean; speedy: boolean } | null>(null);
   const [bagOpen, setBagOpen] = useState(false);
+  const [confirmExit, setConfirmExit] = useState(false);
   const [resultWon, setResultWon] = useState<boolean | null>(null);
   const [xpEarned, setXpEarned] = useState(0);
   const [streakBanner, setStreakBanner] = useState<string | null>(null);
