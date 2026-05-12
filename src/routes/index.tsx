@@ -274,7 +274,7 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
             onClick={start}
             className="rounded-full bg-primary py-6 font-semibold shadow-pop disabled:opacity-50"
           >
-            Begin Adventure!
+            Start Adventure
           </Button>
         </div>
       )}
