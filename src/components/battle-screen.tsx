@@ -182,7 +182,11 @@ function BattleMode({
   const maxStreakRef = useRef(0);
   const lastStreakLabelRef = useRef<string | null>(null);
   const correctCountRef = useRef(0);
+  const topDmgRef = useRef(0);
   const [tpEarned, setTpEarned] = useState(0);
+  const [shareData, setShareData] = useState<ShareData | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
+  const trainerSpriteId = useGameStore((s) => s.trainerSprite);
 
   // Phase 2: ability + status state
   type StatusKind = "confused" | "poisoned";
