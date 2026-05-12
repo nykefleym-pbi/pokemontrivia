@@ -207,12 +207,13 @@ function ProfilePage() {
 
         {/* Tabs */}
         <Tabs defaultValue="stats" className="mt-4">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="stats" className="font-pixel text-[9px]">Stats</TabsTrigger>
-            <TabsTrigger value="trophies" className="font-pixel text-[9px]">Trophies</TabsTrigger>
-            <TabsTrigger value="abilities" className="font-pixel text-[9px]">Abilities</TabsTrigger>
-            <TabsTrigger value="battles" className="font-pixel text-[9px]">Battles</TabsTrigger>
-            <TabsTrigger value="settings" className="font-pixel text-[9px]">Settings</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="stats" className="font-pixel text-[8px]">Stats</TabsTrigger>
+            <TabsTrigger value="trophies" className="font-pixel text-[8px]">Trophies</TabsTrigger>
+            <TabsTrigger value="badges" className="font-pixel text-[8px]">Badges</TabsTrigger>
+            <TabsTrigger value="abilities" className="font-pixel text-[8px]">Abilities</TabsTrigger>
+            <TabsTrigger value="battles" className="font-pixel text-[8px]">Battles</TabsTrigger>
+            <TabsTrigger value="settings" className="font-pixel text-[8px]">Settings</TabsTrigger>
           </TabsList>
 
           <TabsContent value="stats" className="mt-3 space-y-3">
