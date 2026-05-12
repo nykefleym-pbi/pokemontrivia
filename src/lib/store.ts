@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { ItemId } from "./game-data";
-import { ITEMS, levelFromTotalXp, TRAINER_SPRITES } from "./game-data";
+import { ITEMS, levelFromTotalXp, TRAINER_SPRITES, EVOLUTION_TP_COST } from "./game-data";
 import type { PokeEntry } from "./pokemon-data";
 import { ALL_POKEMON } from "./pokemon-data";
 
