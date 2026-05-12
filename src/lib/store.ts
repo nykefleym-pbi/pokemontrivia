@@ -112,6 +112,9 @@ export interface GameState {
   // ability codex (Phase 2)
   abilityCodex: string[];
 
+  // Phase 3: per-partner Training Points
+  trainingPoints: Record<number, number>;
+
   // actions
   setOnboarded: (name: string, pokemon: PokeEntry, trainerSprite: string) => void;
   startGuestSession: () => void;
@@ -138,6 +141,12 @@ export interface GameState {
   recordPokedexCapture: (pokemonId: number, isShiny: boolean) => void;
   markEliteDefeated: (memberId: string, region: string, regionDone: boolean) => void;
   registerAbilityTriggered: (abilityId: string) => void;
+
+  // Phase 3 actions
+  addTrainingPoints: (pokemonId: number, amount: number) => void;
+  spendTrainingPoints: (pokemonId: number, amount: number) => boolean;
+  getPartnerTp: (pokemonId: number) => number;
+  evolvePartner: (toPokemon: PokeEntry) => boolean;
 }
 
 const defaultStats: PlayerStats = {
