@@ -742,6 +742,7 @@ function BattleMode({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <TutorialOverlay step={tutorialStep} onDismiss={dismissTutorial} onSkip={skipTutorial} />
     </div>
   );
 }
