@@ -10,6 +10,18 @@ export function findPokemon(id: number): PokeEntry | undefined {
   return ALL_POKEMON.find((p) => p.id === id);
 }
 
+export function isStartingPartner(p: PokeEntry): boolean {
+  return p.evolvesFromId === null;
+}
+
+export function getEvolutionTargets(p: PokeEntry): PokeEntry[] {
+  return p.evolvesToIds.map((id) => findPokemon(id)).filter(Boolean) as PokeEntry[];
+}
+
+export function canEvolve(p: PokeEntry): boolean {
+  return p.evolvesToIds.length > 0;
+}
+
 export function findPokemonByName(name: string): PokeEntry | undefined {
   const n = name.trim().toLowerCase();
   return ALL_POKEMON.find((p) => p.name.toLowerCase() === n);
