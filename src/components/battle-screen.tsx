@@ -151,11 +151,11 @@ function BattleMode({
     startBattle();
     if (isElite && eliteMember) {
       playSfx("elite_intro");
-      setDialog(`${eliteMember.title} ${eliteMember.name}: "${eliteMember.quote}"`);
+      setIntroBanner(`${eliteMember.title} ${eliteMember.name}: "${eliteMember.quote}"`);
       setTimeout(() => playCry(enemy.pokemon.id), 900);
-      setTimeout(() => setDialog(`${eliteMember.name} sent out ${enemy.pokemon.name}!`), 2200);
+      setTimeout(() => setIntroBanner(`${eliteMember.name} sent out ${enemy.pokemon.name}!`), 2200);
     } else {
-      setDialog(`${enemy.name} sent out ${enemy.pokemon.name}!`);
+      setIntroBanner(`${enemy.name} sent out ${enemy.pokemon.name}!`);
       playCry(enemy.pokemon.id);
     }
     if (enemy.isShiny) {
@@ -165,11 +165,11 @@ function BattleMode({
       });
     }
     const introDelay = isElite ? 3600 : 1500;
-    if (superEff) {
-      setTimeout(() => setDialog(`Go, ${player.name}! Type advantage!`), introDelay);
-    } else {
-      setTimeout(() => setDialog(`Go, ${player.name}!`), introDelay);
-    }
+    setTimeout(
+      () => setIntroBanner(`Go, ${player.name}!${superEff ? " Type advantage!" : ""}`),
+      introDelay,
+    );
+    setTimeout(() => setIntroBanner(null), introDelay + 1300);
     setTimeout(() => loadQuestion(0), introDelay + 1300);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
