@@ -228,8 +228,8 @@ function BattleHome({
           </div>
           <div className="relative shrink-0">
             <div className="absolute inset-0 -m-1 rounded-full bg-gradient-to-br from-poke-yellow/40 to-primary/30 blur-xl" />
-            <img
-              src={spriteUrl(pokemon.id)}
+            <PokemonSprite
+              id={pokemon.id}
               alt={pokemon.name}
               className="sprite relative h-20 w-20"
             />
