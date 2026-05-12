@@ -49,12 +49,14 @@ export interface BattleLogEntry {
   timestamp: number;
 }
 
+export type DailyMark = "correct" | "wrong" | "timeout";
+
 export interface DailyResult {
   date: string;
   correct: number;
   total: number;
   timeMs: number;
-  pattern: string;
+  pattern: DailyMark[];
 }
 
 export interface PokedexEntry {
