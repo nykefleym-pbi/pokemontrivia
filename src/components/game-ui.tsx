@@ -119,3 +119,78 @@ export function AppHeader({ children, gradient }: { children?: React.ReactNode; 
     </header>
   );
 }
+
+export function PokemonSprite({
+  id,
+  shiny = false,
+  back = false,
+  className,
+  alt,
+}: {
+  id: number;
+  shiny?: boolean;
+  back?: boolean;
+  className?: string;
+  alt?: string;
+}) {
+  const sources = useMemo(() => {
+    if (back) {
+      const variant = shiny ? "shiny/" : "";
+      return [
+        `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/${variant}${id}.png`,
+        `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${variant}${id}.png`,
+      ];
+    }
+    return spriteFallbacks(id, shiny);
+  }, [id, shiny, back]);
+
+  const [idx, setIdx] = useState(0);
+  // Reset on id/shiny change
+  React.useEffect(() => { setIdx(0); }, [id, shiny, back]);
+  const src = sources[Math.min(idx, sources.length - 1)];
+
+  return (
+    <img
+      src={src}
+      alt={alt ?? `Pokemon ${id}`}
+      className={className}
+      loading="lazy"
+      onError={() => {
+        setIdx((i) => (i < sources.length - 1 ? i + 1 : i));
+      }}
+    />
+  );
+}
+
+export type DailyMark = "correct" | "wrong" | "timeout";
+
+const POKEBALL_SPRITE =
+  "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png";
+
+export function PokeballPattern({ marks }: { marks: DailyMark[] }) {
+  if (!marks?.length) return null;
+  return (
+    <div className="flex flex-wrap justify-center gap-1.5">
+      {marks.map((m, i) => (
+        <div
+          key={i}
+          className={`relative h-7 w-7 ${
+            m === "correct" ? "" : m === "wrong" ? "opacity-40 grayscale" : "opacity-30 grayscale"
+          }`}
+        >
+          <img src={POKEBALL_SPRITE} alt={m} className="sprite h-full w-full object-contain" />
+          {m === "wrong" && (
+            <span className="pointer-events-none absolute inset-0 flex items-center justify-center font-pixel text-[10px] text-destructive">
+              ✕
+            </span>
+          )}
+          {m === "timeout" && (
+            <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-[10px]">
+              ⏱
+            </span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
