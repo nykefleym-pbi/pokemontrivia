@@ -384,6 +384,22 @@ function BattleHome({
             </div>
           )}
         </div>
+
+        {/* Weekly League */}
+        {weeklyLeague && (
+          <div className="mt-4">
+            {weeklyLeague.status === "won" || weeklyLeague.status === "lost" ? (
+              <WeeklyLeagueResultCard weeklyLeague={weeklyLeague} nextWeekStart={weekRange.end} />
+            ) : (
+              <WeeklyLeagueCard
+                weeklyLeague={weeklyLeague}
+                onStart={onStartWeekly}
+                resumeMode={weeklyLeague.status === "in_progress"}
+                loading={loading}
+              />
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
