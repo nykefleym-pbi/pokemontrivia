@@ -604,6 +604,9 @@ export const useGameStore = create<GameState>()(
         defeatedElites: s.defeatedElites,
         abilityCodex: s.abilityCodex,
         trainingPoints: s.trainingPoints,
+        weeklyLeague: s.weeklyLeague,
+        gymBadges: s.gymBadges,
+        weeklyLeagueHistory: s.weeklyLeagueHistory,
       }),
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<GameState>;
@@ -627,6 +630,9 @@ export const useGameStore = create<GameState>()(
           defeatedElites: p.defeatedElites ?? [],
           abilityCodex: p.abilityCodex ?? [],
           trainingPoints: p.trainingPoints ?? {},
+          weeklyLeague: p.weeklyLeague ?? null,
+          gymBadges: p.gymBadges ?? [],
+          weeklyLeagueHistory: p.weeklyLeagueHistory ?? [],
         };
       },
     },
