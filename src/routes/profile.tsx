@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ACHIEVEMENTS, unlockedAchievements } from "@/lib/achievements";
 import { isMuted, setMuted } from "@/lib/audio";
-import { getTheme, setTheme, type Theme } from "@/lib/theme";
+
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
