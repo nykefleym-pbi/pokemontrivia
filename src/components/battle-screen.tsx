@@ -112,8 +112,29 @@ function BattleMode({
   const defeatedElites = useGameStore((s) => s.defeatedElites);
 
   const isElite = !!eliteMember;
+  const isWeekly = !!gymLeader;
+  const recordWeeklyLeagueResult = useGameStore((s) => s.recordWeeklyLeagueResult);
 
   const [enemy] = useState<EnemyTrainer>(() => {
+    if (gymLeader) {
+      const poke: PokeEntry =
+        findPokemon(gymLeader.signaturePokemonId) ?? {
+          id: gymLeader.signaturePokemonId,
+          slug: gymLeader.name.toLowerCase(),
+          name: gymLeader.name,
+          types: [gymLeader.type],
+          evolvesFromId: null,
+          evolvesToIds: [],
+          evolutionStage: 1,
+          isFullyEvolved: true,
+        };
+      return {
+        name: gymLeader.name,
+        title: `Gym Leader · ${gymLeader.region}`,
+        pokemon: poke,
+        isShiny: false,
+      };
+    }
     if (eliteMember) {
       const poke: PokeEntry =
         findPokemon(eliteMember.signaturePokemonId) ?? {
@@ -135,7 +156,7 @@ function BattleMode({
     }
     return pickRandomEnemy();
   });
-  const enemyMaxHp = isElite ? 200 : enemyHpForLevel(level);
+  const enemyMaxHp = isWeekly ? 250 : isElite ? 200 : enemyHpForLevel(level);
   const playerAbility = useMemo(() => getAbility(player.types), [player.types]);
   const playerMaxHp = playerAbility.id === "adaptable" ? 105 : 100;
   const [playerHp, setPlayerHp] = useState(playerMaxHp);
