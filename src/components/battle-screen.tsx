@@ -10,6 +10,8 @@ import {
   enemyHpForLevel,
   streakMultiplier,
   streakLabel,
+  TP_REWARDS,
+  getTpMultiplier,
 } from "@/lib/game-data";
 import { isSuperEffective, findPokemon, isPlayerDisadvantaged, isPlayerImmune, type PokeEntry } from "@/lib/pokemon-data";
 import { getAbility, type Ability } from "@/lib/abilities";
