@@ -6,7 +6,7 @@ import { Sparkles, Crown, Flame, Swords } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AppHeader, XpBar } from "@/components/game-ui";
+import { AppHeader, XpBar, PokeballSpinner } from "@/components/game-ui";
 import { rankForLevel, xpProgressInLevel, difficultyForLevel } from "@/lib/game-data";
 import { spriteUrl } from "@/lib/pokemon-data";
 import { trainerSpriteUrl } from "@/lib/game-data";
