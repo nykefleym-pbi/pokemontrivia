@@ -265,32 +265,27 @@ function BattleHome({
 
           {tab === "battle" ? (
             <div className="flex flex-col items-center text-center">
-              <h3 className="font-pixel text-sm text-foreground">
-                {loading ? "Preparing battle..." : "Ready to battle?"}
+              <PokeballSpinner size={72} />
+              <h3 className="mt-3 font-pixel text-sm text-foreground">
+                {loading ? "Setting up the battle..." : "Up for a battle?"}
               </h3>
               <p className="mt-1 text-xs text-muted-foreground">
-                Difficulty scales with your level.
+                {loading ? "Hang on, summoning a challenger..." : "A challenger has appeared!"}
               </p>
-              {loading ? (
-                <div className="mt-4 w-full space-y-2">
-                  <Skeleton className="h-4 w-2/3 mx-auto" />
-                  <Skeleton className="h-12 w-full rounded-2xl" />
-                  <Skeleton className="h-12 w-full rounded-2xl" />
-                </div>
-              ) : (
-                <Button
-                  size="lg"
-                  onClick={onStart}
-                  disabled={loading}
-                  className="mt-4 w-full rounded-full bg-primary py-6 font-semibold shadow-pop"
-                >
-                  <Sparkles className="mr-2 h-4 w-4" /> Find a Battle
-                </Button>
-              )}
+              <Button
+                size="lg"
+                onClick={onStart}
+                disabled={loading}
+                className="mt-4 w-full rounded-full bg-primary py-6 font-semibold shadow-pop disabled:opacity-60"
+              >
+                <Sparkles className="mr-2 h-4 w-4" /> {loading ? "Summoning..." : "Find Match"}
+              </Button>
+              <p className="mt-2 text-[10px] text-muted-foreground">Difficulty scales with your level.</p>
             </div>
           ) : (
-            <div className="flex flex-col text-center">
-              <h3 className="font-pixel text-sm text-foreground">🔥 TODAY'S CHALLENGE</h3>
+            <div className="flex flex-col items-center text-center">
+              {!dailyDone && <PokeballSpinner size={56} />}
+              <h3 className={`font-pixel text-sm text-foreground ${!dailyDone ? "mt-3" : ""}`}>🔥 DAILY CHALLENGE</h3>
               {dailyDone && dailyResult ? (
                 <>
                   <div className="mt-2 text-sm">
@@ -314,19 +309,19 @@ function BattleHome({
                       try { await navigator.clipboard.writeText(text); toast.success("Copied!"); } catch { toast.error("Couldn't copy."); }
                     }}
                   >
-                    Share Result
+                    Share
                   </Button>
                 </>
               ) : (
                 <>
-                  <p className="mt-1 text-xs text-muted-foreground">10 hard questions. Same for everyone today.</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Same 10 hard questions for everyone today. One try only!</p>
                   <Button
                     size="lg"
                     className="mt-4 w-full rounded-full bg-poke-dark py-6 font-pixel text-[11px] text-poke-yellow"
                     onClick={onStartDaily}
                     disabled={loading}
                   >
-                    <Flame className="mr-2 h-4 w-4" /> Start Daily
+                    <Flame className="mr-2 h-4 w-4" /> Take the Challenge
                   </Button>
                 </>
               )}
