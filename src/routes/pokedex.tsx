@@ -150,13 +150,12 @@ function PokedexPage() {
                   got ? "bg-card shadow-sm" : "bg-muted/30"
                 }`}
               >
-                <img
-                  src={spriteUrl(p.id)}
+                <PokemonSprite
+                  id={p.id}
                   alt={got ? p.name : "???"}
-                  loading="lazy"
                   className="sprite h-14 w-14"
-                  style={got ? undefined : { filter: "brightness(0)" }}
                 />
+                {!got && <div className="absolute inset-0 rounded-2xl" style={{ backdropFilter: "brightness(0)" }} />}
                 <div className="mt-1 w-full truncate text-center text-[10px] font-semibold">
                   {got ? p.name : "???"}
                 </div>
