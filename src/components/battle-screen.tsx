@@ -838,7 +838,7 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
         <motion.div className="h-full bg-poke-yellow" initial={false} animate={{ width: `${progressPct}%` }} />
       </div>
       <div className="flex items-center justify-between px-4 pt-[calc(env(safe-area-inset-top)+0.5rem)]">
-        <button onClick={onExit} className="flex h-10 w-10 items-center justify-center rounded-full bg-card/80 backdrop-blur">
+        <button onClick={() => setConfirmExit(true)} className="flex h-10 w-10 items-center justify-center rounded-full bg-card/80 backdrop-blur">
           <ChevronLeft className="h-5 w-5" />
         </button>
         <div className="rounded-full bg-poke-dark px-3 py-1 font-pixel text-[10px] text-poke-yellow">
@@ -846,6 +846,25 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
         </div>
         <div className="w-10" />
       </div>
+      <AlertDialog open={confirmExit} onOpenChange={setConfirmExit}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave the daily challenge?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Leaving will end today's challenge. You won't be able to retry until tomorrow.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Stay</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => { abortBattle(); onExit(); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Leave
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <div className="px-5 pt-6">
         <div className="rounded-3xl bg-card p-5 shadow-card">
