@@ -14,13 +14,67 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      curated_questions: {
+        Row: {
+          category: string
+          correct_index: number
+          created_at: string
+          created_by: string | null
+          difficulty: string
+          explanation: string
+          id: string
+          options: Json
+          question: string
+          times_correct: number
+          times_served: number
+          type_theme: string | null
+          verified: boolean
+        }
+        Insert: {
+          category: string
+          correct_index: number
+          created_at?: string
+          created_by?: string | null
+          difficulty: string
+          explanation: string
+          id?: string
+          options: Json
+          question: string
+          times_correct?: number
+          times_served?: number
+          type_theme?: string | null
+          verified?: boolean
+        }
+        Update: {
+          category?: string
+          correct_index?: number
+          created_at?: string
+          created_by?: string | null
+          difficulty?: string
+          explanation?: string
+          id?: string
+          options?: Json
+          question?: string
+          times_correct?: number
+          times_served?: number
+          type_theme?: string | null
+          verified?: boolean
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_curated_correct: {
+        Args: { question_id: string }
+        Returns: undefined
+      }
+      increment_curated_served: {
+        Args: { question_ids: string[] }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { generateTrivia } from "@/lib/trivia-core";
+import { fetchCuratedQuestions, recordCuratedServed } from "@/lib/curated-questions";
 
 export const Route = createFileRoute("/api/trivia-elite")({
   server: {
@@ -29,18 +30,44 @@ export const Route = createFileRoute("/api/trivia-elite")({
 
         const themeNote = `THIS IS AN ELITE FOUR BATTLE vs ${memberName}. Bias HEAVILY toward the ${type.toUpperCase()} type — at least 70% of questions must involve ${type}-type Pokémon, ${type}-type moves, abilities, matchups, lore, characters, or ${type}-themed regions/gyms. The remainder may be general Pokémon trivia. Make it feel like a thematic boss battle.`;
 
-        const result = await generateTrivia({
-          difficulty: "hard",
-          flowSeed,
-          seenHashes,
-          seenSamples,
-          batchSize: 12,
-          themeNote,
-        });
-        if (result.status) {
-          return Response.json({ error: result.error, code: result.status }, { status: result.status });
+        const CURATED_COUNT = 1;
+        const AI_COUNT = 11;
+
+        const [curatedResult, aiResult] = await Promise.all([
+          fetchCuratedQuestions({
+            difficulty: "hard",
+            count: CURATED_COUNT,
+            typeTheme: type.toLowerCase(),
+          }),
+          generateTrivia({
+            difficulty: "hard",
+            flowSeed,
+            seenHashes,
+            seenSamples,
+            batchSize: AI_COUNT,
+            themeNote,
+          }),
+        ]);
+
+        if (aiResult.status) {
+          return Response.json({ error: aiResult.error, code: aiResult.status }, { status: aiResult.status });
         }
-        return Response.json({ questions: result.questions, source: result.source });
+
+        recordCuratedServed(curatedResult.servedIds).catch(() => {});
+
+        const merged = [...aiResult.questions, ...curatedResult.questions];
+        const shuffled = merged
+          .map((q) => ({ q, sort: Math.random() }))
+          .sort((a, b) => a.sort - b.sort)
+          .map(({ q }) => q);
+
+        return Response.json({
+          questions: shuffled,
+          source:
+            curatedResult.questions.length > 0
+              ? `${aiResult.source}+curated-${curatedResult.questions.length}`
+              : aiResult.source,
+        });
       },
     },
   },
