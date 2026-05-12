@@ -481,6 +481,7 @@ export const useGameStore = create<GameState>()(
           pokedex: p.pokedex ?? {},
           defeatedEliteRegions: p.defeatedEliteRegions ?? [],
           defeatedElites: p.defeatedElites ?? [],
+          abilityCodex: p.abilityCodex ?? [],
         };
       },
     },
