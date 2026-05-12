@@ -4,10 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { searchPokemon, type PokeEntry } from "@/lib/pokemon-data";
-// (other imports below)
 import { PokeballSpinner, TypeBadge, PokemonSprite } from "@/components/game-ui";
 import { TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
-import { PokeballSpinner, TypeBadge } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
