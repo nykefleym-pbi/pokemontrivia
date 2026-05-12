@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { ChevronLeft, Backpack, Clock, Share2, Sparkles, Crown } from "lucide-react";
+import { ChevronLeft, Backpack, Clock, Sparkles, Crown } from "lucide-react";
 import { useGameStore, getItemDef } from "@/lib/store";
 import {
   pickRandomEnemy,
@@ -11,8 +11,8 @@ import {
   streakMultiplier,
   streakLabel,
 } from "@/lib/game-data";
-import { isSuperEffective, spriteUrl, findPokemon, type PokeEntry } from "@/lib/pokemon-data";
-import { HpBar, TypeBadge } from "@/components/game-ui";
+import { isSuperEffective, findPokemon, type PokeEntry } from "@/lib/pokemon-data";
+import { HpBar, TypeBadge, PokemonSprite, PokeballPattern, type DailyMark } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -21,6 +21,16 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { ItemId } from "@/lib/game-data";
 import { ACHIEVEMENTS, unlockedAchievements } from "@/lib/achievements";
 import { playCry, playSfx } from "@/lib/audio";
