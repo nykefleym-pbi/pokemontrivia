@@ -2,10 +2,11 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Sparkles, Trophy, Crown } from "lucide-react";
+import { Sparkles, Crown, Flame, Swords } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
-import { AppHeader, XpBar, PokeballSpinner } from "@/components/game-ui";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AppHeader, XpBar } from "@/components/game-ui";
 import { rankForLevel, xpProgressInLevel, difficultyForLevel } from "@/lib/game-data";
 import { spriteUrl } from "@/lib/pokemon-data";
 import { trainerSpriteUrl } from "@/lib/game-data";
@@ -161,15 +162,19 @@ function BattlePage() {
         <BattleScreen key={battleKey} questions={questions} onExit={exitBattle} mode="elite" eliteMember={eliteOpponent} />
       ) : phase === "daily" ? (
         <BattleScreen key={battleKey} questions={questions} onExit={exitBattle} mode="daily" />
+      ) : pendingElite ? (
+        <ElitePendingTakeover
+          elite={pendingElite}
+          onStart={startElite}
+          loading={phase === "loading"}
+        />
       ) : (
         <BattleHome
           onStart={startBattle}
           onStartDaily={startDaily}
-          onStartElite={startElite}
           loading={phase === "loading"}
           dailyDone={dailyDone}
           dailyResult={dailyDone ? dailyResult : null}
-          pendingElite={pendingElite}
         />
       )}
     </>
@@ -179,26 +184,22 @@ function BattlePage() {
 function BattleHome({
   onStart,
   onStartDaily,
-  onStartElite,
   loading,
   dailyDone,
   dailyResult,
-  pendingElite,
 }: {
   onStart: () => void;
   onStartDaily: () => void;
-  onStartElite: () => void;
   loading: boolean;
   dailyDone: boolean;
   dailyResult: { correct: number; total: number; timeMs: number; pattern: string; date: string } | null;
-  pendingElite: EliteMember | null;
 }) {
   const trainerName = useGameStore((s) => s.trainerName);
   const trainerSprite = useGameStore((s) => s.trainerSprite);
   const pokemon = useGameStore((s) => s.pokemon);
   const level = useGameStore((s) => s.level);
   const xp = useGameStore((s) => s.xp);
-  const stats = useGameStore((s) => s.stats);
+  const [tab, setTab] = useState<"battle" | "daily">("battle");
 
   if (!pokemon) return null;
 
@@ -206,180 +207,219 @@ function BattleHome({
   const xpProg = xpProgressInLevel(xp);
 
   return (
-    <div className="bg-poke-hero min-h-screen">
+    <div className="bg-poke-hero min-h-screen pb-24">
       <AppHeader gradient>
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <img
-              src={trainerSpriteUrl(trainerSprite)}
-              alt={trainerSprite}
-              className="sprite h-12 w-12 object-contain"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).style.opacity = "0.3";
-              }}
-            />
-            <div>
-              <p className="font-pixel text-[10px] uppercase text-poke-dark/60">Trainer</p>
-              <h1 className="font-pixel text-base text-poke-dark">{trainerName}</h1>
+        {/* Hero strip: trainer + xp/rank + partner */}
+        <div className="flex items-center gap-3">
+          <img
+            src={trainerSpriteUrl(trainerSprite)}
+            alt={trainerSprite}
+            className="sprite h-14 w-14 shrink-0 object-contain"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).style.opacity = "0.3";
+            }}
+          />
+          <div className="min-w-0 flex-1">
+            <p className="font-pixel text-[9px] uppercase text-poke-dark/60">{rank}</p>
+            <h1 className="truncate font-pixel text-sm text-poke-dark">{trainerName}</h1>
+            <div className="mt-1.5">
+              <XpBar xp={xpProg.current} need={xpProg.need} />
             </div>
           </div>
-          <div className="rounded-full bg-poke-dark px-3 py-1 font-pixel text-[10px] text-poke-yellow">
-            LV {level}
+          <div className="relative shrink-0">
+            <div className="absolute inset-0 -m-1 rounded-full bg-gradient-to-br from-poke-yellow/40 to-primary/30 blur-xl" />
+            <img
+              src={spriteUrl(pokemon.id)}
+              alt={pokemon.name}
+              className="sprite relative h-20 w-20"
+            />
           </div>
+        </div>
+        <div className="mt-2 flex items-center justify-between">
+          <span className="font-pixel text-[10px] text-poke-dark/70">LV {level}</span>
+          <span className="font-pixel text-[10px] text-poke-dark/60">✨ {xp} XP</span>
         </div>
       </AppHeader>
 
-      <div className="px-5 pt-2">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-3xl bg-card p-5 shadow-card"
-        >
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <div className="absolute inset-0 -m-2 rounded-full bg-gradient-to-br from-poke-yellow/40 to-primary/30 blur-xl" />
-              <img
-                src={spriteUrl(pokemon.id)}
-                alt={pokemon.name}
-                className="sprite relative h-28 w-28"
-              />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="font-pixel text-[10px] uppercase text-muted-foreground">{rank}</p>
-              <h2 className="truncate text-xl font-bold">{pokemon.name}</h2>
-              <p className="text-xs text-muted-foreground">Your starter — ready to battle</p>
-              <div className="mt-2">
-                <XpBar xp={xpProg.current} need={xpProg.need} />
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        <div className="mt-4 grid grid-cols-3 gap-2">
-          <StatPill label="Battles" value={stats.battles} />
-          <StatPill label="Wins" value={stats.wins} />
-          <StatPill label="Streak" value={stats.bestStreak} />
-        </div>
-
-        {/* Elite Four challenge */}
-        {pendingElite && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-4 overflow-hidden rounded-3xl border-2 border-poke-yellow bg-gradient-to-br from-poke-dark to-poke-dark/80 p-4 shadow-pop"
-          >
-            <div className="flex items-center gap-2 font-pixel text-[10px] text-poke-yellow">
-              <Crown className="h-3 w-3" /> {pendingElite.title.toUpperCase()} CHALLENGE
-            </div>
-            <div className="mt-2 flex items-center gap-3">
-              <img
-                src={pendingElite.trainerSpriteUrl}
-                alt={pendingElite.name}
-                className="sprite h-16 w-16 object-contain"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = "0.3"; }}
-              />
-              <div className="min-w-0 flex-1">
-                <div className="font-pixel text-sm text-poke-yellow">{pendingElite.name}</div>
-                <div className="text-[11px] text-poke-yellow/80">
-                  {pendingElite.region} · {pendingElite.type.toUpperCase()} specialist
-                </div>
-                <div className="mt-1 line-clamp-2 text-[11px] italic text-poke-yellow/70">
-                  "{pendingElite.quote}"
-                </div>
-              </div>
-            </div>
-            <Button
-              size="sm"
-              onClick={onStartElite}
-              disabled={loading}
-              className="mt-3 w-full rounded-full bg-poke-yellow text-poke-dark font-pixel text-[10px] hover:bg-poke-yellow/90"
+      <div className="px-5 pt-4">
+        {/* Segmented action card */}
+        <div className="rounded-3xl bg-card p-4 shadow-card">
+          <div className="mb-3 grid grid-cols-2 gap-1 rounded-full bg-muted p-1">
+            <button
+              onClick={() => setTab("battle")}
+              className={`flex items-center justify-center gap-1.5 rounded-full py-2 font-pixel text-[10px] transition ${
+                tab === "battle" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+              }`}
             >
-              <Crown className="mr-1 h-3 w-3" /> Challenge {pendingElite.name}
-            </Button>
-            <p className="mt-2 text-center text-[10px] text-poke-yellow/60">
-              Regular battles locked until victory.
-            </p>
-          </motion.div>
-        )}
-
-        {/* Daily Challenge */}
-        <div className="mt-4 rounded-3xl border-2 border-poke-yellow bg-card p-4 shadow-card">
-          <div className="font-pixel text-[11px] text-poke-dark">🔥 TODAY'S CHALLENGE</div>
-          {dailyDone && dailyResult ? (
-            <>
-              <div className="mt-2 text-sm">
-                Score: <span className="font-pixel text-primary">{dailyResult.correct}/{dailyResult.total}</span> · {Math.round(dailyResult.timeMs / 1000)}s
-              </div>
-              <div className="mt-1 font-pixel text-base tracking-widest">{dailyResult.pattern}</div>
-              <Button
-                size="sm"
-                variant="outline"
-                className="mt-3 w-full rounded-full"
-                onClick={async () => {
-                  const text = `Pokémon Trivia · ${dailyResult.date}\n${dailyResult.correct}/${dailyResult.total} · ${Math.round(dailyResult.timeMs / 1000)}s\n${dailyResult.pattern}\nplay → poketrivia.app`;
-                  const nav = navigator as Navigator & { share?: (d: ShareData) => Promise<void> };
-                  if (nav.share) { try { await nav.share({ text }); return; } catch { /* fall */ } }
-                  try { await navigator.clipboard.writeText(text); toast.success("Copied!"); } catch { toast.error("Couldn't copy."); }
-                }}
-              >
-                Share Result
-              </Button>
-            </>
-          ) : (
-            <>
-              <p className="mt-1 text-xs text-muted-foreground">10 hard questions. Same for everyone today.</p>
-              <Button size="sm" className="mt-3 w-full rounded-full bg-poke-dark text-poke-yellow font-pixel text-[10px]" onClick={onStartDaily} disabled={loading}>
-                Start Daily
-              </Button>
-            </>
-          )}
-        </div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="mt-6 flex flex-col items-center rounded-3xl bg-card p-6 shadow-card"
-        >
-          <PokeballSpinner size={80} />
-          <h3 className="mt-4 font-pixel text-sm text-foreground">
-            {loading ? "Preparing battle..." : pendingElite ? "Elite blocks your path!" : "Ready to battle?"}
-          </h3>
-          <p className="mt-1 text-center text-sm text-muted-foreground">
-            {loading
-              ? "Loading trivia questions..."
-              : pendingElite
-                ? `Defeat ${pendingElite.name} to continue your journey.`
-                : "A wild trainer is searching for an opponent..."}
-          </p>
-          <Button
-            size="lg"
-            onClick={onStart}
-            disabled={loading || !!pendingElite}
-            className="mt-5 w-full rounded-full bg-primary py-6 font-semibold shadow-pop hover:scale-[1.02] disabled:opacity-50"
-          >
-            <Sparkles className="mr-2 h-4 w-4" />
-            {loading ? "Preparing..." : pendingElite ? "Locked — Elite Challenge" : "Find a Battle"}
-          </Button>
-        </motion.div>
-
-        <div className="mt-6 rounded-2xl border-2 border-dashed border-border p-4 text-xs text-muted-foreground">
-          <div className="mb-1 flex items-center gap-2 font-pixel text-[10px] uppercase text-foreground">
-            <Trophy className="h-3 w-3" /> Tip
+              <Swords className="h-3 w-3" /> BATTLE
+            </button>
+            <button
+              onClick={() => setTab("daily")}
+              className={`flex items-center justify-center gap-1.5 rounded-full py-2 font-pixel text-[10px] transition ${
+                tab === "daily" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+              }`}
+            >
+              <Flame className="h-3 w-3" /> DAILY {dailyDone && <span className="text-primary">✓</span>}
+            </button>
           </div>
-          Use type advantage! When your Pokémon is super-effective vs the enemy, every correct
-          answer deals double damage.
+
+          {tab === "battle" ? (
+            <div className="flex flex-col items-center text-center">
+              <h3 className="font-pixel text-sm text-foreground">
+                {loading ? "Preparing battle..." : "Ready to battle?"}
+              </h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Difficulty scales with your level.
+              </p>
+              {loading ? (
+                <div className="mt-4 w-full space-y-2">
+                  <Skeleton className="h-4 w-2/3 mx-auto" />
+                  <Skeleton className="h-12 w-full rounded-2xl" />
+                  <Skeleton className="h-12 w-full rounded-2xl" />
+                </div>
+              ) : (
+                <Button
+                  size="lg"
+                  onClick={onStart}
+                  disabled={loading}
+                  className="mt-4 w-full rounded-full bg-primary py-6 font-semibold shadow-pop"
+                >
+                  <Sparkles className="mr-2 h-4 w-4" /> Find a Battle
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col text-center">
+              <h3 className="font-pixel text-sm text-foreground">🔥 TODAY'S CHALLENGE</h3>
+              {dailyDone && dailyResult ? (
+                <>
+                  <div className="mt-2 text-sm">
+                    Score:{" "}
+                    <span className="font-pixel text-primary">
+                      {dailyResult.correct}/{dailyResult.total}
+                    </span>{" "}
+                    · {Math.round(dailyResult.timeMs / 1000)}s
+                  </div>
+                  <div className="mt-1 font-pixel text-base tracking-widest">{dailyResult.pattern}</div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="mt-3 w-full rounded-full"
+                    onClick={async () => {
+                      const text = `Pokémon Trivia · ${dailyResult.date}\n${dailyResult.correct}/${dailyResult.total} · ${Math.round(dailyResult.timeMs / 1000)}s\n${dailyResult.pattern}\nplay → poketrivia.app`;
+                      const nav = navigator as Navigator & { share?: (d: ShareData) => Promise<void> };
+                      if (nav.share) {
+                        try { await nav.share({ text }); return; } catch { /* fall */ }
+                      }
+                      try { await navigator.clipboard.writeText(text); toast.success("Copied!"); } catch { toast.error("Couldn't copy."); }
+                    }}
+                  >
+                    Share Result
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <p className="mt-1 text-xs text-muted-foreground">10 hard questions. Same for everyone today.</p>
+                  <Button
+                    size="lg"
+                    className="mt-4 w-full rounded-full bg-poke-dark py-6 font-pixel text-[11px] text-poke-yellow"
+                    onClick={onStartDaily}
+                    disabled={loading}
+                  >
+                    <Flame className="mr-2 h-4 w-4" /> Start Daily
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-function StatPill({ label, value }: { label: string; value: number }) {
+function ElitePendingTakeover({
+  elite,
+  onStart,
+  loading,
+}: {
+  elite: EliteMember;
+  onStart: () => void;
+  loading: boolean;
+}) {
+  const [showInfo, setShowInfo] = useState(false);
   return (
-    <div className="rounded-2xl bg-card px-3 py-2 text-center shadow-sm">
-      <div className="font-pixel text-base text-primary">{value}</div>
-      <div className="text-[10px] uppercase text-muted-foreground">{label}</div>
+    <div className="bg-elite-arena relative min-h-screen overflow-hidden px-5 pb-24 pt-[calc(env(safe-area-inset-top)+1.5rem)]">
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-poke-dark/40 via-transparent to-poke-dark/60" />
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative flex items-center justify-center gap-2 font-pixel text-[10px] tracking-widest text-poke-yellow"
+      >
+        <Crown className="h-3 w-3" /> ELITE FOUR CHALLENGE
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.1 }}
+        className="relative mx-auto mt-6 flex max-w-xs flex-col items-center text-center"
+      >
+        <div className="relative">
+          <div className="absolute inset-0 -m-4 rounded-full bg-poke-yellow/20 blur-2xl" />
+          <img
+            src={elite.trainerSpriteUrl}
+            alt={elite.name}
+            className="sprite relative h-40 w-40 object-contain drop-shadow-2xl"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = "0.3"; }}
+          />
+        </div>
+        <p className="mt-3 font-pixel text-[10px] text-poke-yellow/80">{elite.title.toUpperCase()}</p>
+        <h1 className="mt-1 font-pixel text-2xl text-poke-yellow">{elite.name}</h1>
+        <p className="mt-1 text-xs text-poke-yellow/70">
+          {elite.region} · {elite.type.toUpperCase()} specialist
+        </p>
+        <p className="mt-4 text-sm italic leading-relaxed text-poke-yellow/85">
+          "{elite.quote}"
+        </p>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.25 }}
+        className="relative mx-auto mt-8 flex max-w-xs flex-col gap-3"
+      >
+        {loading ? (
+          <Skeleton className="h-14 w-full rounded-full" />
+        ) : (
+          <Button
+            size="lg"
+            onClick={onStart}
+            className="w-full rounded-full bg-poke-yellow py-6 font-pixel text-[11px] text-poke-dark shadow-pop hover:bg-poke-yellow/90"
+          >
+            <Crown className="mr-2 h-4 w-4" /> Challenge {elite.name}
+          </Button>
+        )}
+        <button
+          onClick={() => setShowInfo((v) => !v)}
+          className="text-center font-pixel text-[10px] text-poke-yellow/70 underline-offset-4 hover:underline"
+        >
+          {showInfo ? "Hide info" : "More info"}
+        </button>
+        {showInfo && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            className="rounded-2xl bg-poke-dark/60 p-3 text-xs text-poke-yellow/80"
+          >
+            <p>200 HP boss battle. Themed trivia favors {elite.type.toUpperCase()}-type Pokémon. Victory unlocks rare rewards and the next region. Regular battles are locked until you win.</p>
+          </motion.div>
+        )}
+        <p className="text-center font-pixel text-[9px] text-poke-yellow/50">
+          Regular battles locked until victory.
+        </p>
+      </motion.div>
     </div>
   );
 }
