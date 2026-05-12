@@ -154,7 +154,7 @@ function BattleMode({
     }
     const introDelay = isElite ? 3600 : 1500;
     if (superEff) {
-      setTimeout(() => setDialog(`Go, ${player.name}! It's super effective!`), introDelay);
+      setTimeout(() => setDialog(`Go, ${player.name}! Type advantage!`), introDelay);
     } else {
       setTimeout(() => setDialog(`Go, ${player.name}!`), introDelay);
     }
