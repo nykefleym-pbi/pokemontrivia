@@ -522,7 +522,7 @@ function BattleMode({
             animate={{ x: 0, opacity: 1 }}
           >
             <img
-              src={spriteUrl(enemy.pokemon.id, { shiny: enemy.isShiny })}
+              src={enemySprite}
               alt={enemy.pokemon.name}
               className={`sprite h-32 w-32 ${enemy.isShiny ? "shiny-glow" : ""}`}
             />
