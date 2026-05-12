@@ -181,7 +181,7 @@ function ProfilePage() {
           onClick={() => setPickerOpen(true)}
           className="mt-3 flex w-full items-center gap-3 rounded-2xl bg-card p-3 text-left shadow-sm transition active:scale-95 hover:bg-muted/40"
         >
-          <img src={spriteUrl(pokemon.id)} alt={pokemon.name} className="sprite h-14 w-14" />
+          <PokemonSprite id={pokemon.id} alt={pokemon.name} className="sprite h-14 w-14" />
           <div className="flex-1">
             <div className="font-pixel text-[9px] uppercase text-muted-foreground">Partner</div>
             <div className="text-sm font-bold">{pokemon.name}</div>
