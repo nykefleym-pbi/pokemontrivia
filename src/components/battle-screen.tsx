@@ -342,6 +342,56 @@ function BattleMode({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, questionIdx, tutorialActive]);
 
+  // Phase 2: ability onBattleStart effects (run once)
+  useEffect(() => {
+    if (playerAbility.id === "intimidate") {
+      setEnemyHp(Math.floor(enemyMaxHp * 0.9));
+    }
+    if (playerAbility.id === "sand-veil") {
+      useGameStore.setState((s) => ({ bonusTimeThisBattle: s.bonusTimeThisBattle + 2 }));
+    }
+    return () => {
+      stopPoisonTick();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Pause/resume poison tick when battle is paused
+  useEffect(() => {
+    const paused = confirmExit || tutorialStep !== null || phase === "result";
+    const poisoned = statuses.some((s) => s.kind === "poisoned");
+    if (paused && poisonTimerRef.current) {
+      stopPoisonTick();
+    } else if (!paused && poisoned && !poisonTimerRef.current) {
+      startPoisonTick();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [confirmExit, tutorialStep, statuses, phase]);
+
+  // Foresight: every 5th question reveal a wrong option
+  useEffect(() => {
+    if (phase !== "question" || !trivia) return;
+    if (playerAbility.id !== "foresight") return;
+    if ((questionIdx + 1) % 5 !== 0) return;
+    const wrongs = trivia.options.map((_, i) => i).filter((i) => i !== trivia.correct);
+    setRevealedWrong(wrongs[Math.floor(Math.random() * wrongs.length)]);
+    triggerAbilityToast(playerAbility);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, questionIdx, trivia, playerAbility]);
+
+  // Compound Eyes: reveal a wrong option on first/last of each set
+  useEffect(() => {
+    if (phase !== "question" || !trivia) return;
+    if (playerAbility.id !== "compound-eyes") return;
+    const pos = questionIdx % QUESTIONS_PER_SET;
+    if (pos !== 0 && pos !== QUESTIONS_PER_SET - 1) return;
+    const wrongs = trivia.options.map((_, i) => i).filter((i) => i !== trivia.correct);
+    setRevealedWrong(wrongs[Math.floor(Math.random() * wrongs.length)]);
+    triggerAbilityToast(playerAbility);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, questionIdx, trivia, playerAbility]);
+
+
   function handleAnswer(idx: number) {
     if (phase !== "question" || !trivia) return;
     if (tutorialStep !== null) return;
