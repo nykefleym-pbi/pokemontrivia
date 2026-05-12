@@ -193,6 +193,7 @@ export const useGameStore = create<GameState>()(
       pokedex: {},
       defeatedEliteRegions: [],
       defeatedElites: [],
+      abilityCodex: [],
 
       markQuestionsSeen: (texts) => {
         const s = get();
