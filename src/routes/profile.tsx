@@ -190,6 +190,7 @@ function ProfilePage() {
             <div className="mt-1 flex flex-wrap gap-1">
               {pokemon.types.map((t) => <TypeBadge key={t} type={t} />)}
             </div>
+            <div className="mt-1 font-pixel text-[9px] text-primary">⚡ {getAbility(pokemon.types).name}</div>
           </div>
           <Pencil className="h-4 w-4 text-muted-foreground" />
         </button>
