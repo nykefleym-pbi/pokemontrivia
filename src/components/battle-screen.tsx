@@ -906,7 +906,7 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
             <p className="mt-3 rounded-xl bg-muted p-2 text-xs text-muted-foreground">💡 {trivia.explanation}</p>
           )}
         </div>
-        <div className="mt-4 text-center font-pixel text-base tracking-widest">{pattern || "—"}</div>
+        <div className="mt-4 flex justify-center"><PokeballPattern marks={pattern} /></div>
       </div>
     </div>
   );
