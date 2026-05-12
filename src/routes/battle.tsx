@@ -158,10 +158,49 @@ function BattlePage() {
     }
   }
 
+  async function startWeekly() {
+    if (!weeklyLeague) return;
+    if (weeklyLeague.status === "won" || weeklyLeague.status === "lost") return;
+    const leader = findGymLeader(weeklyLeague.gymLeaderId);
+    if (!leader) return;
+    setPhase("loading");
+    try {
+      const resp = await fetch("/api/trivia-elite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: leader.type,
+          memberName: `Gym Leader ${leader.name}`,
+          seenHashes,
+          seenSamples: seenQuestions.slice(-80),
+          flowSeed: Math.floor(Math.random() * 1_000_000),
+        }),
+      });
+      if (resp.status === 429) { toast.error("Rate limited."); setPhase("home"); return; }
+      if (resp.status === 402) { toast.error("AI credits exhausted."); setPhase("home"); return; }
+      const data = (await resp.json()) as { questions: Trivia[] };
+      if (!data.questions?.length) {
+        toast.error("Couldn't prepare Weekly League.");
+        setPhase("home");
+        return;
+      }
+      markQuestionsSeen(data.questions.map((q) => q.question));
+      startWeeklyLeagueAttempt();
+      setWeeklyOpponent(leader);
+      setQuestions(data.questions);
+      setPhase("weekly");
+    } catch (e) {
+      console.error(e);
+      toast.error("Couldn't prepare Weekly League.");
+      setPhase("home");
+    }
+  }
+
   function exitBattle() {
     setPhase("home");
     setQuestions([]);
     setEliteOpponent(null);
+    setWeeklyOpponent(null);
     setBattleKey((k) => k + 1);
     useGameStore.getState().abortBattle();
   }
@@ -173,6 +212,8 @@ function BattlePage() {
         <BattleScreen key={battleKey} questions={questions} onExit={exitBattle} />
       ) : phase === "elite" && eliteOpponent ? (
         <BattleScreen key={battleKey} questions={questions} onExit={exitBattle} mode="elite" eliteMember={eliteOpponent} />
+      ) : phase === "weekly" && weeklyOpponent ? (
+        <BattleScreen key={battleKey} questions={questions} onExit={exitBattle} mode="weekly" gymLeader={weeklyOpponent} />
       ) : phase === "daily" ? (
         <BattleScreen key={battleKey} questions={questions} onExit={exitBattle} mode="daily" />
       ) : pendingElite ? (
@@ -185,6 +226,7 @@ function BattlePage() {
         <BattleHome
           onStart={startBattle}
           onStartDaily={startDaily}
+          onStartWeekly={startWeekly}
           loading={phase === "loading"}
           dailyDone={dailyDone}
           dailyResult={dailyDone ? dailyResult : null}
