@@ -127,7 +127,7 @@ function MorphAnimation({ fromId, toId }: { fromId: number; toId: number }) {
       <PokemonSprite
         id={showFrom ? fromId : toId}
         alt="evolving"
-        className="sprite-silhouette absolute inset-0 h-full w-full"
+        className="sprite-evolve-silhouette absolute inset-0 h-full w-full"
       />
     </div>
   );
