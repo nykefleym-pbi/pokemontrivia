@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppHeader, XpBar, PokeballSpinner, PokeballPattern, PokemonSprite, type DailyMark } from "@/components/game-ui";
 import { rankForLevel, xpProgressInLevel, difficultyForLevel } from "@/lib/game-data";
+import { getAbility } from "@/lib/abilities";
 import { trainerSpriteUrl } from "@/lib/game-data";
 import { BattleScreen, type Trivia } from "@/components/battle-screen";
 import { Toaster } from "@/components/ui/sonner";
