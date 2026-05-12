@@ -188,21 +188,20 @@ function ProfilePage() {
         </motion.div>
 
         {/* Partner card */}
-        <button
-          onClick={() => setPickerOpen(true)}
-          className="mt-3 flex w-full items-center gap-3 rounded-2xl bg-card p-3 text-left shadow-sm transition active:scale-95 hover:bg-muted/40"
-        >
-          <PokemonSprite id={pokemon.id} alt={pokemon.name} className="sprite h-14 w-14" />
-          <div className="flex-1">
-            <div className="font-pixel text-[9px] uppercase text-muted-foreground">Partner</div>
-            <div className="text-sm font-bold">{pokemon.name}</div>
-            <div className="mt-1 flex flex-wrap gap-1">
-              {pokemon.types.map((t) => <TypeBadge key={t} type={t} />)}
-            </div>
-            <div className="mt-1 font-pixel text-[9px] text-primary">⚡ {getAbility(pokemon.types).name}</div>
-          </div>
-          <Pencil className="h-4 w-4 text-muted-foreground" />
-        </button>
+        <PartnerCard
+          pokemon={pokemon}
+          tp={trainingPoints[pokemon.id] ?? 0}
+          onChange={() => setPickerOpen(true)}
+          onEvolve={(target) => {
+            const ok = evolvePartner(target);
+            if (ok) {
+              setEvolvingTo(target);
+              setEvolvingFrom(pokemon);
+            } else {
+              toast.error("Evolution failed.");
+            }
+          }}
+        />
 
         {/* Tabs */}
         <Tabs defaultValue="stats" className="mt-4">
