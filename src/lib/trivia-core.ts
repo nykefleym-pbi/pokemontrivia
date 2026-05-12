@@ -264,13 +264,20 @@ CRITICAL RULES:
 
     const raw = Array.isArray(parsed.questions) ? parsed.questions : [];
     const valid = raw.filter(isValid);
-    const unfiltered = dedupe(valid);
-    const unseen = unfiltered.filter((q) => !isSeen(q.question));
-    // If filtering left us short, return what we have rather than backfilling with seen items.
-    const finalList =
-      unseen.length >= BATCH ? unseen.slice(0, BATCH) : unseen;
+    const deduped = dedupe(valid);
+    const unseen = deduped.filter((q) => !isSeen(q.question));
 
-    return { questions: finalList, source: "ai" };
+    // Always backfill to BATCH so the client gets a full deck.
+    let finalList = unseen.slice(0, BATCH);
+    if (finalList.length < BATCH) {
+      finalList = topUpFromFallback(finalList, BATCH, isSeen);
+    }
+    if (finalList.length < BATCH) {
+      // Last resort: allow seen fallbacks. A repeat is better than no battle.
+      finalList = topUpFromFallback(finalList, BATCH);
+    }
+
+    return { questions: finalList, source: finalList.length === BATCH ? "ai" : "ai-partial" };
   } catch (e) {
     console.error("trivia-core error", e);
     return { questions: topUpFromFallback([], BATCH, isSeen), source: "fallback-exception" };
