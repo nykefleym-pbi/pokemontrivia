@@ -394,6 +394,7 @@ function BattleMode({
     }
     if (id === "escape") {
       setBagOpen(false);
+      abortBattle();
       setTimeout(() => onExit(), 300);
     }
     setBagOpen(false);
