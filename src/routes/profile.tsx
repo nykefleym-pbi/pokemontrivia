@@ -284,6 +284,33 @@ function ProfilePage() {
             </div>
           </TabsContent>
 
+          <TabsContent value="abilities" className="mt-3">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="font-pixel text-[9px] uppercase text-muted-foreground">
+                {abilityCodex.length}/{Object.keys(ABILITIES).length} discovered
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {Object.values(ABILITIES).map((ab) => {
+                const known = abilityCodex.includes(ab.id);
+                return (
+                  <div
+                    key={ab.id}
+                    className={`rounded-2xl bg-card p-3 shadow-sm ${known ? "" : "opacity-60"}`}
+                  >
+                    <div className="flex items-center justify-between gap-1">
+                      <div className="text-xs font-bold">{ab.name}</div>
+                      <TypeBadge type={ab.type} />
+                    </div>
+                    <div className="mt-1 text-[10px] leading-tight text-muted-foreground">
+                      {known ? ab.description : "???"}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </TabsContent>
+
           <TabsContent value="battles" className="mt-3">
             {battleLog.length === 0 ? (
               <p className="rounded-2xl bg-card p-4 text-center text-sm text-muted-foreground">No battles yet.</p>
