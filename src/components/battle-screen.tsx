@@ -701,6 +701,32 @@ function BattleMode({
       }
     }
 
+    // Weekly League: record result + prep share card
+    if (isWeekly && gymLeader) {
+      recordWeeklyLeagueResult(won);
+      if (won) {
+        setShareData({
+          type: "weekly",
+          trainerName,
+          trainerSpriteUrl: trainerSpriteUrl(trainerSpriteId),
+          partnerName: player.name,
+          partnerPokemonId: player.id,
+          partnerShiny: false,
+          opponentName: gymLeader.name,
+          opponentTitle: `Gym Leader · ${gymLeader.region}`,
+          opponentSpriteUrl: trainerSpriteUrl(gymLeader.trainerSpriteId),
+          signaturePokemonId: gymLeader.signaturePokemonId,
+          finalPlayerHp: playerHp,
+          maxPlayerHp: playerMaxHp,
+          topStreak: maxStreakRef.current,
+          topDamage: topDmgRef.current,
+          dateISO: new Date().toISOString().slice(0, 10),
+          badgeName: gymLeader.badge,
+        });
+        toast.success(`🎖 ${gymLeader.badge} earned!`, { duration: 4500 });
+      }
+    }
+
     // snapshot achievements before/after
     const before = new Set(unlockedAchievements(useGameStore.getState()));
     endBattle(won, total);
