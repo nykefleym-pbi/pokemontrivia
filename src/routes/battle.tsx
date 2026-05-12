@@ -240,6 +240,9 @@ function BattleHome({
             <div className="relative mt-1 font-pixel text-[8px] text-poke-dark/70">
               ⚡ {getAbility(pokemon.types).name}
             </div>
+            <div className="relative mt-0.5 font-pixel text-[8px] text-primary">
+              TP {partnerTp} · ×{tpMult.toFixed(2)}
+            </div>
           </div>
         </div>
         <div className="mt-2 flex items-center justify-between">
