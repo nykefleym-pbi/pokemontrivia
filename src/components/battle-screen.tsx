@@ -12,6 +12,7 @@ import {
   streakLabel,
 } from "@/lib/game-data";
 import { isSuperEffective, findPokemon, isPlayerDisadvantaged, isPlayerImmune, type PokeEntry } from "@/lib/pokemon-data";
+import { getAbility, type Ability } from "@/lib/abilities";
 import { TutorialOverlay } from "@/components/tutorial-overlay";
 import { HpBar, TypeBadge, PokemonSprite, PokeballPattern, type DailyMark } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
@@ -120,7 +121,9 @@ function BattleMode({
     return pickRandomEnemy();
   });
   const enemyMaxHp = isElite ? 200 : enemyHpForLevel(level);
-  const [playerHp, setPlayerHp] = useState(100);
+  const playerAbility = useMemo(() => getAbility(player.types), [player.types]);
+  const playerMaxHp = playerAbility.id === "adaptable" ? 105 : 100;
+  const [playerHp, setPlayerHp] = useState(playerMaxHp);
   const [enemyHp, setEnemyHp] = useState(enemyMaxHp);
   const [phase, setPhase] = useState<Phase>("intro");
   const [trivia, setTrivia] = useState<Trivia | null>(null);
@@ -143,6 +146,20 @@ function BattleMode({
   const maxStreakRef = useRef(0);
   const lastStreakLabelRef = useRef<string | null>(null);
 
+  // Phase 2: ability + status state
+  type StatusKind = "confused" | "poisoned";
+  interface ActiveStatus { kind: StatusKind; curesRemaining: number; appliedAt: number }
+  const [statuses, setStatuses] = useState<ActiveStatus[]>([]);
+  const wrongStreakRef = useRef(0);
+  const poisonTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const abilityStateRef = useRef({
+    sturdyUsed: false,
+    iceFirstWrongConsumed: false,
+    hydrationUsed: false,
+    cursedBodyPending: null as { hpBefore: number; appliedAt: number } | null,
+    triggered: new Set<string>(),
+  });
+
   const superEff = isSuperEffective(player, enemy.pokemon);
   const disadvantaged = useMemo(
     () => isPlayerDisadvantaged(player, enemy.pokemon),
@@ -152,6 +169,83 @@ function BattleMode({
     () => isPlayerImmune(player, enemy.pokemon),
     [player, enemy.pokemon],
   );
+
+  function triggerAbilityToast(ability: Ability) {
+    const already = abilityStateRef.current.triggered.has(ability.id);
+    toast.info(`✨ ${ability.name} activated!`, {
+      description: ability.description,
+      duration: 2200,
+    });
+    if (!already) {
+      abilityStateRef.current.triggered.add(ability.id);
+      useGameStore.getState().registerAbilityTriggered(ability.id);
+    }
+  }
+
+  function stopPoisonTick() {
+    if (poisonTimerRef.current) {
+      clearInterval(poisonTimerRef.current);
+      poisonTimerRef.current = null;
+    }
+  }
+
+  function startPoisonTick() {
+    stopPoisonTick();
+    poisonTimerRef.current = setInterval(() => {
+      setPlayerHp((hp) => {
+        const tick = Math.max(1, Math.floor(playerMaxHp * 0.02));
+        const next = Math.max(0, hp - tick);
+        setFloatDmg({ who: "player", n: tick, super: false, speedy: false });
+        setTimeout(() => setFloatDmg(null), 800);
+        if (next <= 0) {
+          stopPoisonTick();
+          setTimeout(() => finish(false), 800);
+        }
+        return next;
+      });
+    }, 2000);
+  }
+
+  function applyStatus(kind: StatusKind) {
+    if (
+      kind === "confused" &&
+      playerAbility.id === "hydration" &&
+      !abilityStateRef.current.hydrationUsed
+    ) {
+      abilityStateRef.current.hydrationUsed = true;
+      triggerAbilityToast(playerAbility);
+      return;
+    }
+    const cureNeeds = { confused: 2, poisoned: 3 } as const;
+    setStatuses((prev) => {
+      const without = prev.filter((s) => s.kind !== kind);
+      return [...without, { kind, curesRemaining: cureNeeds[kind], appliedAt: Date.now() }];
+    });
+    if (kind === "confused") {
+      toast.warning("🌀 Confused! Some correct answers may miss.");
+    } else {
+      toast.error("☠️ Poisoned! Losing HP over time.");
+      startPoisonTick();
+    }
+  }
+
+  function tickStatusCure(kind: StatusKind) {
+    setStatuses((prev) => {
+      const willClear = prev.some((s) => s.kind === kind && s.curesRemaining === 1);
+      const updated = prev
+        .map((s) => (s.kind === kind ? { ...s, curesRemaining: s.curesRemaining - 1 } : s))
+        .filter((s) => s.curesRemaining > 0);
+      if (willClear) {
+        if (kind === "confused") toast.success("Snapped out of confusion!");
+        if (kind === "poisoned") {
+          toast.success("Recovered from poison!");
+          stopPoisonTick();
+        }
+      }
+      return updated;
+    });
+  }
+
 
   // Tutorial state — only in regular battles, never Elite
   const flags = useGameStore((s) => s.flags);
@@ -248,6 +342,56 @@ function BattleMode({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, questionIdx, tutorialActive]);
 
+  // Phase 2: ability onBattleStart effects (run once)
+  useEffect(() => {
+    if (playerAbility.id === "intimidate") {
+      setEnemyHp(Math.floor(enemyMaxHp * 0.9));
+    }
+    if (playerAbility.id === "sand-veil") {
+      useGameStore.setState((s) => ({ bonusTimeThisBattle: s.bonusTimeThisBattle + 2 }));
+    }
+    return () => {
+      stopPoisonTick();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Pause/resume poison tick when battle is paused
+  useEffect(() => {
+    const paused = confirmExit || tutorialStep !== null || phase === "result";
+    const poisoned = statuses.some((s) => s.kind === "poisoned");
+    if (paused && poisonTimerRef.current) {
+      stopPoisonTick();
+    } else if (!paused && poisoned && !poisonTimerRef.current) {
+      startPoisonTick();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [confirmExit, tutorialStep, statuses, phase]);
+
+  // Foresight: every 5th question reveal a wrong option
+  useEffect(() => {
+    if (phase !== "question" || !trivia) return;
+    if (playerAbility.id !== "foresight") return;
+    if ((questionIdx + 1) % 5 !== 0) return;
+    const wrongs = trivia.options.map((_, i) => i).filter((i) => i !== trivia.correct);
+    setRevealedWrong(wrongs[Math.floor(Math.random() * wrongs.length)]);
+    triggerAbilityToast(playerAbility);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, questionIdx, trivia, playerAbility]);
+
+  // Compound Eyes: reveal a wrong option on first/last of each set
+  useEffect(() => {
+    if (phase !== "question" || !trivia) return;
+    if (playerAbility.id !== "compound-eyes") return;
+    const pos = questionIdx % QUESTIONS_PER_SET;
+    if (pos !== 0 && pos !== QUESTIONS_PER_SET - 1) return;
+    const wrongs = trivia.options.map((_, i) => i).filter((i) => i !== trivia.correct);
+    setRevealedWrong(wrongs[Math.floor(Math.random() * wrongs.length)]);
+    triggerAbilityToast(playerAbility);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, questionIdx, trivia, playerAbility]);
+
+
   function handleAnswer(idx: number) {
     if (phase !== "question" || !trivia) return;
     if (tutorialStep !== null) return;
@@ -265,6 +409,24 @@ function BattleMode({
 
     let newStreak = streak;
     if (correct) {
+      wrongStreakRef.current = 0;
+
+      // Confused miss: 25% chance to do nothing
+      const isConfused = statuses.some((s) => s.kind === "confused");
+      if (isConfused && Math.random() < 0.25) {
+        toast.warning(`🌀 ${player.name} is confused — its attack missed!`);
+        setShakeWho("player");
+        setTimeout(() => setShakeWho(null), 500);
+        tickStatusCure("confused");
+        setStreak(0);
+        lastStreakLabelRef.current = null;
+        recordAnswer(true, elapsed, streak);
+        playSfx("wrong");
+        setPhase("feedback");
+        setTimeout(nextQuestion, 1500);
+        return;
+      }
+
       newStreak += 1;
       if (newStreak > maxStreakRef.current) maxStreakRef.current = newStreak;
 
@@ -282,6 +444,16 @@ function BattleMode({
         dmg += 20;
         consumeXAttack();
       }
+      // Tailwind: +20% dmg on first 3 questions
+      if (playerAbility.id === "tailwind" && questionIdx < 3) {
+        dmg = Math.round(dmg * 1.2);
+        triggerAbilityToast(playerAbility);
+      }
+      // Guts: +10% dmg if below 50% HP
+      if (playerAbility.id === "guts" && playerHp < playerMaxHp / 2) {
+        dmg = Math.round(dmg * 1.1);
+        triggerAbilityToast(playerAbility);
+      }
 
       const newEnemyHp = Math.max(0, enemyHp - dmg);
       setEnemyHp(newEnemyHp);
@@ -290,6 +462,24 @@ function BattleMode({
       setStreak(newStreak);
       recordAnswer(true, elapsed, newStreak);
       playSfx("correct");
+
+      // Leech Seed: heal 2
+      if (playerAbility.id === "leech-seed") {
+        setPlayerHp((hp) => Math.min(playerMaxHp, hp + 2));
+        triggerAbilityToast(playerAbility);
+      }
+      // Cursed Body: restore HP if pending within 5s
+      if (playerAbility.id === "cursed-body" && abilityStateRef.current.cursedBodyPending) {
+        const { hpBefore, appliedAt } = abilityStateRef.current.cursedBodyPending;
+        if (Date.now() - appliedAt <= 5000) {
+          setPlayerHp(hpBefore);
+          triggerAbilityToast(playerAbility);
+        }
+        abilityStateRef.current.cursedBodyPending = null;
+      }
+      // Status cure ticks
+      tickStatusCure("confused");
+      tickStatusCure("poisoned");
 
       const lbl = streakLabel(newStreak);
       if (lbl && lbl !== lastStreakLabelRef.current) {
@@ -307,12 +497,59 @@ function BattleMode({
         return;
       }
     } else {
+      wrongStreakRef.current += 1;
       // Matchup-aware wrong-answer damage
       let wrongDmg = 10;
       if (immune) wrongDmg = 5;
       else if (disadvantaged) wrongDmg = 15;
 
-      const newPlayerHp = Math.max(0, playerHp - wrongDmg);
+      // Ability modifiers (in spec order)
+      if (playerAbility.id === "multiscale" && playerHp === playerMaxHp) {
+        wrongDmg = Math.floor(wrongDmg / 2);
+        triggerAbilityToast(playerAbility);
+      }
+      if (playerAbility.id === "filter" && disadvantaged) {
+        wrongDmg = Math.floor(wrongDmg * 0.75);
+        triggerAbilityToast(playerAbility);
+      }
+      if (playerAbility.id === "static" && Math.random() < 0.15) {
+        wrongDmg = Math.floor(wrongDmg / 2);
+        triggerAbilityToast(playerAbility);
+      }
+      if (playerAbility.id === "snow-cloak" && !abilityStateRef.current.iceFirstWrongConsumed) {
+        wrongDmg = 0;
+        abilityStateRef.current.iceFirstWrongConsumed = true;
+        triggerAbilityToast(playerAbility);
+      }
+      if (playerAbility.id === "flame-body" && Math.random() < 0.10) {
+        wrongDmg = 0;
+        triggerAbilityToast(playerAbility);
+      }
+      if (playerAbility.id === "cute-charm" && Math.random() < 0.05) {
+        wrongDmg = 0;
+        triggerAbilityToast(playerAbility);
+      }
+
+      // Cursed Body: track HP before damage for potential heal-back
+      if (playerAbility.id === "cursed-body") {
+        abilityStateRef.current.cursedBodyPending = {
+          hpBefore: playerHp,
+          appliedAt: Date.now(),
+        };
+      }
+
+      let newPlayerHp = Math.max(0, playerHp - wrongDmg);
+      // Sturdy: revive at 1
+      if (
+        playerAbility.id === "sturdy" &&
+        newPlayerHp <= 0 &&
+        !abilityStateRef.current.sturdyUsed
+      ) {
+        newPlayerHp = 1;
+        abilityStateRef.current.sturdyUsed = true;
+        triggerAbilityToast(playerAbility);
+      }
+
       setPlayerHp(newPlayerHp);
       setShakeWho("player");
       setFloatDmg({ who: "player", n: wrongDmg, super: false, speedy: false });
@@ -322,6 +559,21 @@ function BattleMode({
       playSfx("wrong");
       setTimeout(() => setShakeWho(null), 500);
       setTimeout(() => setFloatDmg(null), 1000);
+
+      // Status thresholds
+      if (
+        wrongStreakRef.current === 2 &&
+        !statuses.some((s) => s.kind === "confused")
+      ) {
+        applyStatus("confused");
+      }
+      if (
+        wrongStreakRef.current === 5 &&
+        !statuses.some((s) => s.kind === "poisoned") &&
+        playerAbility.id !== "toxic"
+      ) {
+        applyStatus("poisoned");
+      }
 
       if (newPlayerHp <= 0) {
         setTimeout(() => finish(false), 1400);
@@ -344,6 +596,12 @@ function BattleMode({
   }
 
   function finish(won: boolean) {
+    // Clear Phase 2 battle-scoped state
+    stopPoisonTick();
+    setStatuses([]);
+    wrongStreakRef.current = 0;
+    abilityStateRef.current.cursedBodyPending = null;
+
     const baseXp = won ? 40 + level * 5 : 10 + level * 2;
     const eliteBonus = isElite && won ? 100 + level * 10 : 0;
     const bonus = maxStreakRef.current * 2;
@@ -421,7 +679,7 @@ function BattleMode({
     }
     toast.success(`${def.emoji} Used ${def.name}!`);
     if (id === "potion") {
-      setPlayerHp((hp) => Math.min(100, hp + 30));
+      setPlayerHp((hp) => Math.min(playerMaxHp, hp + 30));
     }
     if (id === "revive" && playerHp <= 10) {
       setPlayerHp(50);
@@ -613,11 +871,12 @@ function BattleMode({
         <div className="mt-1 rounded-2xl bg-card/85 p-3 backdrop-blur shadow-card">
           <div className="flex items-center justify-between">
             <div className="w-32">
-              <HpBar hp={playerHp} label="HP" />
+              <HpBar hp={playerHp} max={playerMaxHp} label="HP" />
             </div>
             <div className="text-right">
               <div className="font-pixel text-[10px] uppercase text-muted-foreground">{trainerName}</div>
               <div className="text-sm font-bold">{player.name}</div>
+              <div className="font-pixel text-[9px] text-primary">⚡ {playerAbility.name}</div>
               <div className="mt-1 flex justify-end gap-1">
                 {player.types.map((t) => (
                   <TypeBadge key={t} type={t} />
@@ -636,6 +895,22 @@ function BattleMode({
                   </span>
                 </div>
               ) : null}
+              {statuses.length > 0 && (
+                <div className="mt-1 flex justify-end gap-1">
+                  {statuses.map((s) => (
+                    <span
+                      key={s.kind}
+                      className={`rounded-full px-2 py-0.5 font-pixel text-[9px] ${
+                        s.kind === "confused"
+                          ? "bg-poke-yellow/30 text-poke-dark"
+                          : "bg-purple-500/20 text-purple-700"
+                      }`}
+                    >
+                      {s.kind === "confused" ? "🌀 Confused" : "☠️ Poisoned"}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

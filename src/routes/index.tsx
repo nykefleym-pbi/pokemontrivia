@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { searchPokemon, type PokeEntry } from "@/lib/pokemon-data";
+import { getAbility } from "@/lib/abilities";
 import { PokeballSpinner, TypeBadge, PokemonSprite } from "@/components/game-ui";
 import { TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
 import { Button } from "@/components/ui/button";
@@ -263,6 +264,7 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                         <TypeBadge key={t} type={t} />
                       ))}
                     </div>
+                    <div className="font-pixel text-[8px] text-primary">⚡ {getAbility(p.types).name}</div>
                   </button>
                 );
               })}

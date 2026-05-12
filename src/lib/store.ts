@@ -109,6 +109,9 @@ export interface GameState {
   defeatedEliteRegions: string[];
   defeatedElites: string[];
 
+  // ability codex (Phase 2)
+  abilityCodex: string[];
+
   // actions
   setOnboarded: (name: string, pokemon: PokeEntry, trainerSprite: string) => void;
   startGuestSession: () => void;
@@ -134,6 +137,7 @@ export interface GameState {
   pushBattleLog: (e: BattleLogEntry) => void;
   recordPokedexCapture: (pokemonId: number, isShiny: boolean) => void;
   markEliteDefeated: (memberId: string, region: string, regionDone: boolean) => void;
+  registerAbilityTriggered: (abilityId: string) => void;
 }
 
 const defaultStats: PlayerStats = {
@@ -189,6 +193,7 @@ export const useGameStore = create<GameState>()(
       pokedex: {},
       defeatedEliteRegions: [],
       defeatedElites: [],
+      abilityCodex: [],
 
       markQuestionsSeen: (texts) => {
         const s = get();
@@ -251,6 +256,7 @@ export const useGameStore = create<GameState>()(
           pokedex: {},
           defeatedEliteRegions: [],
           defeatedElites: [],
+          abilityCodex: [],
         }),
 
       setName: (name) => set({ trainerName: name }),
@@ -416,6 +422,12 @@ export const useGameStore = create<GameState>()(
             : s.defeatedEliteRegions;
         set({ defeatedElites: elites, defeatedEliteRegions: regions });
       },
+
+      registerAbilityTriggered: (abilityId) => {
+        const s = get();
+        if (s.abilityCodex.includes(abilityId)) return;
+        set({ abilityCodex: [...s.abilityCodex, abilityId] });
+      },
     }),
     {
       name: "poke-trivia-store",
@@ -447,6 +459,7 @@ export const useGameStore = create<GameState>()(
         pokedex: s.pokedex,
         defeatedEliteRegions: s.defeatedEliteRegions,
         defeatedElites: s.defeatedElites,
+        abilityCodex: s.abilityCodex,
       }),
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<GameState>;
@@ -468,6 +481,7 @@ export const useGameStore = create<GameState>()(
           pokedex: p.pokedex ?? {},
           defeatedEliteRegions: p.defeatedEliteRegions ?? [],
           defeatedElites: p.defeatedElites ?? [],
+          abilityCodex: p.abilityCodex ?? [],
         };
       },
     },

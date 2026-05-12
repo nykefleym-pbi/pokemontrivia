@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppHeader, XpBar, PokeballSpinner, PokeballPattern, PokemonSprite, type DailyMark } from "@/components/game-ui";
 import { rankForLevel, xpProgressInLevel, difficultyForLevel } from "@/lib/game-data";
+import { getAbility } from "@/lib/abilities";
 import { trainerSpriteUrl } from "@/lib/game-data";
 import { BattleScreen, type Trivia } from "@/components/battle-screen";
 import { Toaster } from "@/components/ui/sonner";
@@ -226,13 +227,16 @@ function BattleHome({
               <XpBar xp={xpProg.current} need={xpProg.need} />
             </div>
           </div>
-          <div className="relative shrink-0">
+          <div className="relative shrink-0 text-center">
             <div className="absolute inset-0 -m-1 rounded-full bg-gradient-to-br from-poke-yellow/40 to-primary/30 blur-xl" />
             <PokemonSprite
               id={pokemon.id}
               alt={pokemon.name}
               className="sprite relative h-20 w-20"
             />
+            <div className="relative mt-1 font-pixel text-[8px] text-poke-dark/70">
+              ⚡ {getAbility(pokemon.types).name}
+            </div>
           </div>
         </div>
         <div className="mt-2 flex items-center justify-between">

@@ -6,6 +6,7 @@ import { Pencil, RotateCcw, Check, Search, Volume2, VolumeX } from "lucide-react
 import { useGameStore } from "@/lib/store";
 import { rankForLevel, xpProgressInLevel, ITEMS, TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
 import { searchPokemon } from "@/lib/pokemon-data";
+import { ABILITIES, getAbility } from "@/lib/abilities";
 import { XpBar, TypeBadge, PokemonSprite } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,6 +55,7 @@ function ProfilePage() {
   const flags = useGameStore((s) => s.flags);
   const peakLevel = useGameStore((s) => s.peakLevel);
   const pokedex = useGameStore((s) => s.pokedex);
+  const abilityCodex = useGameStore((s) => s.abilityCodex);
   const unlocked = useMemo(() => {
     const ctx = { stats, flags, peakLevel, pokedex } as Parameters<typeof unlockedAchievements>[0];
     return new Set(unlockedAchievements(ctx));
@@ -188,15 +190,17 @@ function ProfilePage() {
             <div className="mt-1 flex flex-wrap gap-1">
               {pokemon.types.map((t) => <TypeBadge key={t} type={t} />)}
             </div>
+            <div className="mt-1 font-pixel text-[9px] text-primary">⚡ {getAbility(pokemon.types).name}</div>
           </div>
           <Pencil className="h-4 w-4 text-muted-foreground" />
         </button>
 
         {/* Tabs */}
         <Tabs defaultValue="stats" className="mt-4">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="stats" className="font-pixel text-[9px]">Stats</TabsTrigger>
             <TabsTrigger value="trophies" className="font-pixel text-[9px]">Trophies</TabsTrigger>
+            <TabsTrigger value="abilities" className="font-pixel text-[9px]">Abilities</TabsTrigger>
             <TabsTrigger value="battles" className="font-pixel text-[9px]">Battles</TabsTrigger>
             <TabsTrigger value="settings" className="font-pixel text-[9px]">Settings</TabsTrigger>
           </TabsList>
@@ -280,6 +284,33 @@ function ProfilePage() {
             </div>
           </TabsContent>
 
+          <TabsContent value="abilities" className="mt-3">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="font-pixel text-[9px] uppercase text-muted-foreground">
+                {abilityCodex.length}/{Object.keys(ABILITIES).length} discovered
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {Object.values(ABILITIES).map((ab) => {
+                const known = abilityCodex.includes(ab.id);
+                return (
+                  <div
+                    key={ab.id}
+                    className={`rounded-2xl bg-card p-3 shadow-sm ${known ? "" : "opacity-60"}`}
+                  >
+                    <div className="flex items-center justify-between gap-1">
+                      <div className="text-xs font-bold">{ab.name}</div>
+                      <TypeBadge type={ab.type} />
+                    </div>
+                    <div className="mt-1 text-[10px] leading-tight text-muted-foreground">
+                      {known ? ab.description : "???"}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </TabsContent>
+
           <TabsContent value="battles" className="mt-3">
             {battleLog.length === 0 ? (
               <p className="rounded-2xl bg-card p-4 text-center text-sm text-muted-foreground">No battles yet.</p>
@@ -351,6 +382,7 @@ function ProfilePage() {
                 className="flex flex-col items-center rounded-2xl border-2 p-2 transition active:scale-95 hover:border-primary">
                 <PokemonSprite id={p.id} alt={p.name} className="sprite h-14 w-14" />
                 <div className="text-[11px] font-semibold">{p.name}</div>
+                <div className="font-pixel text-[8px] text-primary">⚡ {getAbility(p.types).name}</div>
               </button>
             ))}
           </div>
