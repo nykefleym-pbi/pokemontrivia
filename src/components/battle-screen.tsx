@@ -234,7 +234,7 @@ function BattleMode({
       setEnemyHp(newEnemyHp);
       setShakeWho("enemy");
       setFloatDmg({ who: "enemy", n: dmg, super: superEff, speedy: speedBonus >= 3 });
-      setDialog(`${player.name} dealt ${dmg} damage!`);
+      setDialog(`${player.name} hit for ${dmg}!`);
       setStreak(newStreak);
       recordAnswer(true, elapsed, newStreak);
       playSfx("correct");
