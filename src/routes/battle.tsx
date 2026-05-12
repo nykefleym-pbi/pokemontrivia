@@ -193,7 +193,7 @@ function BattleHome({
   onStartDaily: () => void;
   loading: boolean;
   dailyDone: boolean;
-  dailyResult: { correct: number; total: number; timeMs: number; pattern: string; date: string } | null;
+  dailyResult: { correct: number; total: number; timeMs: number; pattern: DailyMark[]; date: string } | null;
 }) {
   const trainerName = useGameStore((s) => s.trainerName);
   const trainerSprite = useGameStore((s) => s.trainerSprite);
