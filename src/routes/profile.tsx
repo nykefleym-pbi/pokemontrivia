@@ -32,6 +32,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ACHIEVEMENTS, unlockedAchievements } from "@/lib/achievements";
+import { GYM_LEADERS } from "@/lib/gym-leaders";
 import { isMuted, setMuted } from "@/lib/audio";
 
 
