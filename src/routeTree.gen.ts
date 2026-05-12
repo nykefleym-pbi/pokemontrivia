@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as PokedexRouteImport } from './routes/pokedex'
 import { Route as BattleRouteImport } from './routes/battle'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiTriviaEliteRouteImport } from './routes/api.trivia-elite'
@@ -26,6 +27,11 @@ const ShopRoute = ShopRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PokedexRoute = PokedexRouteImport.update({
+  id: '/pokedex',
+  path: '/pokedex',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BattleRoute = BattleRouteImport.update({
@@ -62,6 +68,7 @@ const ApiDailyChallengeRoute = ApiDailyChallengeRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/battle': typeof BattleRoute
+  '/pokedex': typeof PokedexRoute
   '/profile': typeof ProfileRoute
   '/shop': typeof ShopRoute
   '/api/daily-challenge': typeof ApiDailyChallengeRoute
@@ -72,6 +79,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/battle': typeof BattleRoute
+  '/pokedex': typeof PokedexRoute
   '/profile': typeof ProfileRoute
   '/shop': typeof ShopRoute
   '/api/daily-challenge': typeof ApiDailyChallengeRoute
@@ -83,6 +91,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/battle': typeof BattleRoute
+  '/pokedex': typeof PokedexRoute
   '/profile': typeof ProfileRoute
   '/shop': typeof ShopRoute
   '/api/daily-challenge': typeof ApiDailyChallengeRoute
@@ -95,6 +104,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/battle'
+    | '/pokedex'
     | '/profile'
     | '/shop'
     | '/api/daily-challenge'
@@ -105,6 +115,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/battle'
+    | '/pokedex'
     | '/profile'
     | '/shop'
     | '/api/daily-challenge'
@@ -115,6 +126,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/battle'
+    | '/pokedex'
     | '/profile'
     | '/shop'
     | '/api/daily-challenge'
@@ -126,6 +138,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BattleRoute: typeof BattleRoute
+  PokedexRoute: typeof PokedexRoute
   ProfileRoute: typeof ProfileRoute
   ShopRoute: typeof ShopRoute
   ApiDailyChallengeRoute: typeof ApiDailyChallengeRoute
@@ -148,6 +161,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pokedex': {
+      id: '/pokedex'
+      path: '/pokedex'
+      fullPath: '/pokedex'
+      preLoaderRoute: typeof PokedexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/battle': {
@@ -198,6 +218,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BattleRoute: BattleRoute,
+  PokedexRoute: PokedexRoute,
   ProfileRoute: ProfileRoute,
   ShopRoute: ShopRoute,
   ApiDailyChallengeRoute: ApiDailyChallengeRoute,
@@ -208,3 +229,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
