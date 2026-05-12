@@ -553,3 +553,55 @@ function Stat({ label, value }: { label: string; value: number | string }) {
     </div>
   );
 }
+
+function BadgesTab() {
+  const gymBadges = useGameStore((s) => s.gymBadges);
+  const owned = new Set(gymBadges);
+  const regions = ["Kanto", "Johto", "Hoenn", "Sinnoh", "Unova"] as const;
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="font-pixel text-[9px] uppercase text-muted-foreground">
+          {owned.size}/{GYM_LEADERS.length} badges
+        </span>
+        <span className="font-pixel text-[9px] text-primary">
+          {Math.round((owned.size / GYM_LEADERS.length) * 100)}%
+        </span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-muted">
+        <div
+          className="h-full bg-gradient-to-r from-poke-yellow to-primary"
+          style={{ width: `${(owned.size / GYM_LEADERS.length) * 100}%` }}
+        />
+      </div>
+      {regions.map((r) => {
+        const leaders = GYM_LEADERS.filter((g) => g.region === r);
+        return (
+          <div key={r} className="rounded-2xl bg-card p-3 shadow-sm">
+            <div className="mb-2 font-pixel text-[9px] uppercase text-muted-foreground">{r}</div>
+            <div className="grid grid-cols-4 gap-2">
+              {leaders.map((g) => {
+                const got = owned.has(g.id);
+                return (
+                  <div
+                    key={g.id}
+                    title={`${g.name} — ${g.badge}`}
+                    className={`flex flex-col items-center rounded-xl p-2 ${got ? "bg-poke-yellow/20" : "grayscale opacity-30"}`}
+                  >
+                    <div className="text-2xl">🎖</div>
+                    <div className="mt-1 truncate text-center text-[9px] font-semibold leading-tight">
+                      {g.name}
+                    </div>
+                    <div className="text-center text-[8px] leading-tight text-muted-foreground">
+                      {got ? g.badge.replace(" Badge", "") : "???"}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
