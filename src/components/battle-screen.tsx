@@ -186,7 +186,6 @@ function BattleMode({
     setTrivia(data);
     setPhase("question");
     setTimer(TIMER_BASE + bonusTime);
-    setDialog(`Category: ${data.category}`);
     questionStart.current = Date.now();
     // scope reveal
     if (scopeRevealedThisBattle) {
