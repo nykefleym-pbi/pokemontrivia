@@ -131,6 +131,8 @@ function BattleMode({
   const lastStreakLabelRef = useRef<string | null>(null);
 
   const superEff = isSuperEffective(player, enemy.pokemon);
+  const enemySprite = useMemo(() => spriteUrl(enemy.pokemon.id, { shiny: enemy.isShiny }), [enemy.pokemon.id, enemy.isShiny]);
+  const playerSprite = useMemo(() => spriteUrl(player.id, true), [player.id]);
 
   // start once
   useEffect(() => {
