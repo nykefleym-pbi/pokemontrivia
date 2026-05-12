@@ -871,11 +871,12 @@ function BattleMode({
         <div className="mt-1 rounded-2xl bg-card/85 p-3 backdrop-blur shadow-card">
           <div className="flex items-center justify-between">
             <div className="w-32">
-              <HpBar hp={playerHp} label="HP" />
+              <HpBar hp={playerHp} max={playerMaxHp} label="HP" />
             </div>
             <div className="text-right">
               <div className="font-pixel text-[10px] uppercase text-muted-foreground">{trainerName}</div>
               <div className="text-sm font-bold">{player.name}</div>
+              <div className="font-pixel text-[9px] text-primary">⚡ {playerAbility.name}</div>
               <div className="mt-1 flex justify-end gap-1">
                 {player.types.map((t) => (
                   <TypeBadge key={t} type={t} />
@@ -894,6 +895,22 @@ function BattleMode({
                   </span>
                 </div>
               ) : null}
+              {statuses.length > 0 && (
+                <div className="mt-1 flex justify-end gap-1">
+                  {statuses.map((s) => (
+                    <span
+                      key={s.kind}
+                      className={`rounded-full px-2 py-0.5 font-pixel text-[9px] ${
+                        s.kind === "confused"
+                          ? "bg-poke-yellow/30 text-poke-dark"
+                          : "bg-purple-500/20 text-purple-700"
+                      }`}
+                    >
+                      {s.kind === "confused" ? "🌀 Confused" : "☠️ Poisoned"}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
