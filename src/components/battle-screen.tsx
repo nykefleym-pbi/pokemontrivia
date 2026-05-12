@@ -583,12 +583,22 @@ function BattleMode({
         </div>
       </div>
 
-      {/* dialog box */}
-      <div className="px-5 pt-3">
-        <div className="rounded-xl border-2 border-poke-dark bg-card p-3 text-sm font-medium text-foreground shadow-card">
-          {dialog || "..."}
-        </div>
-      </div>
+      {/* intro banner overlay */}
+      <AnimatePresence>
+        {introBanner && (
+          <motion.div
+            key={introBanner}
+            initial={{ y: -10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -10, opacity: 0 }}
+            className="pointer-events-none absolute inset-x-5 top-1/2 z-40 -translate-y-1/2"
+          >
+            <div className="rounded-2xl border-2 border-poke-dark bg-card/95 p-3 text-center text-sm font-semibold shadow-pop backdrop-blur">
+              {introBanner}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* question card */}
       <AnimatePresence mode="wait">
@@ -603,9 +613,6 @@ function BattleMode({
             <div className="rounded-3xl bg-card p-4 shadow-card">
               <div className="mb-3 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <div className="font-pixel text-[10px] uppercase text-muted-foreground">
-                    {trivia.category}
-                  </div>
                   {streak >= 2 && (
                     <div className="rounded-full bg-poke-yellow/30 px-2 py-0.5 font-pixel text-[9px] text-poke-dark">
                       🔥 {streak} · ×{streakMultiplier(streak)}
