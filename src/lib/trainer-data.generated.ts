@@ -4,6 +4,5 @@ export interface TrainerSprite {
   id: string;
   name: string;
   url: string;
-  gen: 3 | 4 | 5 | "masters";
 }
 export const TRAINER_SPRITES: TrainerSprite[] = data as TrainerSprite[];
