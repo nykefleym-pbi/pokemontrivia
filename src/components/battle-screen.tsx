@@ -275,11 +275,6 @@ function BattleMode({
       lastStreakLabelRef.current = null;
       recordAnswer(false, elapsed, streak);
       playSfx("wrong");
-      setDialog(
-        idx === -1
-          ? `Out of time! ${player.name} took ${dmg}.`
-          : `Not quite — the answer was ${trivia.options[trivia.correct]}.`,
-      );
       setTimeout(() => setShakeWho(null), 500);
       setTimeout(() => setFloatDmg(null), 1000);
 
