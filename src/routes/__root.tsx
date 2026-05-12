@@ -73,9 +73,11 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   return (
-    <div className="mx-auto min-h-screen w-full max-w-[480px] bg-background pb-20">
-      <Outlet />
-      <BottomNav />
+    <div className="min-h-[100dvh] w-full bg-background">
+      <div className="mx-auto min-h-[100dvh] w-full max-w-[480px] bg-background pb-20">
+        <Outlet />
+        <BottomNav />
+      </div>
     </div>
   );
 }

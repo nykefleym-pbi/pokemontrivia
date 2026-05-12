@@ -128,7 +128,7 @@ function BattleMode({
   const [streak, setStreak] = useState(0);
   const [questionIdx, setQuestionIdx] = useState(0);
   const [timer, setTimer] = useState(TIMER_BASE);
-  const [dialog, setDialog] = useState("");
+  const [introBanner, setIntroBanner] = useState<string | null>(null);
   const [shakeWho, setShakeWho] = useState<"player" | "enemy" | null>(null);
   const [floatDmg, setFloatDmg] = useState<{ who: "player" | "enemy"; n: number; super: boolean; speedy: boolean } | null>(null);
   const [bagOpen, setBagOpen] = useState(false);
@@ -151,11 +151,11 @@ function BattleMode({
     startBattle();
     if (isElite && eliteMember) {
       playSfx("elite_intro");
-      setDialog(`${eliteMember.title} ${eliteMember.name}: "${eliteMember.quote}"`);
+      setIntroBanner(`${eliteMember.title} ${eliteMember.name}: "${eliteMember.quote}"`);
       setTimeout(() => playCry(enemy.pokemon.id), 900);
-      setTimeout(() => setDialog(`${eliteMember.name} sent out ${enemy.pokemon.name}!`), 2200);
+      setTimeout(() => setIntroBanner(`${eliteMember.name} sent out ${enemy.pokemon.name}!`), 2200);
     } else {
-      setDialog(`${enemy.name} sent out ${enemy.pokemon.name}!`);
+      setIntroBanner(`${enemy.name} sent out ${enemy.pokemon.name}!`);
       playCry(enemy.pokemon.id);
     }
     if (enemy.isShiny) {
@@ -165,11 +165,11 @@ function BattleMode({
       });
     }
     const introDelay = isElite ? 3600 : 1500;
-    if (superEff) {
-      setTimeout(() => setDialog(`Go, ${player.name}! Type advantage!`), introDelay);
-    } else {
-      setTimeout(() => setDialog(`Go, ${player.name}!`), introDelay);
-    }
+    setTimeout(
+      () => setIntroBanner(`Go, ${player.name}!${superEff ? " Type advantage!" : ""}`),
+      introDelay,
+    );
+    setTimeout(() => setIntroBanner(null), introDelay + 1300);
     setTimeout(() => loadQuestion(0), introDelay + 1300);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -186,7 +186,6 @@ function BattleMode({
     setTrivia(data);
     setPhase("question");
     setTimer(TIMER_BASE + bonusTime);
-    setDialog(`Category: ${data.category}`);
     questionStart.current = Date.now();
     // scope reveal
     if (scopeRevealedThisBattle) {
@@ -247,7 +246,6 @@ function BattleMode({
       setEnemyHp(newEnemyHp);
       setShakeWho("enemy");
       setFloatDmg({ who: "enemy", n: dmg, super: superEff, speedy: speedBonus >= 3 });
-      setDialog(`${player.name} hit for ${dmg}!`);
       setStreak(newStreak);
       recordAnswer(true, elapsed, newStreak);
       playSfx("correct");
@@ -277,11 +275,6 @@ function BattleMode({
       lastStreakLabelRef.current = null;
       recordAnswer(false, elapsed, streak);
       playSfx("wrong");
-      setDialog(
-        idx === -1
-          ? `Out of time! ${player.name} took ${dmg}.`
-          : `Not quite — the answer was ${trivia.options[trivia.correct]}.`,
-      );
       setTimeout(() => setShakeWho(null), 500);
       setTimeout(() => setFloatDmg(null), 1000);
 
@@ -590,12 +583,22 @@ function BattleMode({
         </div>
       </div>
 
-      {/* dialog box */}
-      <div className="px-5 pt-3">
-        <div className="rounded-xl border-2 border-poke-dark bg-card p-3 text-sm font-medium text-foreground shadow-card">
-          {dialog || "..."}
-        </div>
-      </div>
+      {/* intro banner overlay */}
+      <AnimatePresence>
+        {introBanner && (
+          <motion.div
+            key={introBanner}
+            initial={{ y: -10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -10, opacity: 0 }}
+            className="pointer-events-none absolute inset-x-5 top-1/2 z-40 -translate-y-1/2"
+          >
+            <div className="rounded-2xl border-2 border-poke-dark bg-card/95 p-3 text-center text-sm font-semibold shadow-pop backdrop-blur">
+              {introBanner}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* question card */}
       <AnimatePresence mode="wait">
@@ -610,9 +613,6 @@ function BattleMode({
             <div className="rounded-3xl bg-card p-4 shadow-card">
               <div className="mb-3 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <div className="font-pixel text-[10px] uppercase text-muted-foreground">
-                    {trivia.category}
-                  </div>
                   {streak >= 2 && (
                     <div className="rounded-full bg-poke-yellow/30 px-2 py-0.5 font-pixel text-[9px] text-poke-dark">
                       🔥 {streak} · ×{streakMultiplier(streak)}

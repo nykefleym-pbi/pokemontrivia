@@ -153,7 +153,7 @@ function PokedexPage() {
                 <PokemonSprite
                   id={p.id}
                   alt={got ? p.name : "???"}
-                  className={`sprite h-14 w-14 ${got ? "" : "[filter:brightness(0)]"}`}
+                  className={`sprite h-14 w-14 ${got ? "" : "sprite-silhouette"}`}
                 />
                 <div className="mt-1 w-full truncate text-center text-[10px] font-semibold">
                   {got ? p.name : "???"}

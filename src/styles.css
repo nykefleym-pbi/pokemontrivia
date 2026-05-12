@@ -140,12 +140,21 @@
   * {
     border-color: var(--color-border);
   }
-  body {
+  html, body {
     background-color: var(--color-background);
+    min-height: 100%;
+    overscroll-behavior-y: none;
+  }
+  body {
     color: var(--color-foreground);
     font-family: var(--font-display);
     -webkit-font-smoothing: antialiased;
   }
+}
+
+/* Forces grayscale silhouette regardless of layered .sprite filters */
+.sprite-silhouette {
+  filter: brightness(0) !important;
 }
 
 /* Battle backgrounds */
