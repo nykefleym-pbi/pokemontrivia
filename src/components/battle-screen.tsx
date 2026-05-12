@@ -409,6 +409,24 @@ function BattleMode({
 
     let newStreak = streak;
     if (correct) {
+      wrongStreakRef.current = 0;
+
+      // Confused miss: 25% chance to do nothing
+      const isConfused = statuses.some((s) => s.kind === "confused");
+      if (isConfused && Math.random() < 0.25) {
+        toast.warning(`🌀 ${player.name} is confused — its attack missed!`);
+        setShakeWho("player");
+        setTimeout(() => setShakeWho(null), 500);
+        tickStatusCure("confused");
+        setStreak(0);
+        lastStreakLabelRef.current = null;
+        recordAnswer(true, elapsed, streak);
+        playSfx("wrong");
+        setPhase("feedback");
+        setTimeout(nextQuestion, 1500);
+        return;
+      }
+
       newStreak += 1;
       if (newStreak > maxStreakRef.current) maxStreakRef.current = newStreak;
 
@@ -426,6 +444,16 @@ function BattleMode({
         dmg += 20;
         consumeXAttack();
       }
+      // Tailwind: +20% dmg on first 3 questions
+      if (playerAbility.id === "tailwind" && questionIdx < 3) {
+        dmg = Math.round(dmg * 1.2);
+        triggerAbilityToast(playerAbility);
+      }
+      // Guts: +10% dmg if below 50% HP
+      if (playerAbility.id === "guts" && playerHp < playerMaxHp / 2) {
+        dmg = Math.round(dmg * 1.1);
+        triggerAbilityToast(playerAbility);
+      }
 
       const newEnemyHp = Math.max(0, enemyHp - dmg);
       setEnemyHp(newEnemyHp);
@@ -434,6 +462,24 @@ function BattleMode({
       setStreak(newStreak);
       recordAnswer(true, elapsed, newStreak);
       playSfx("correct");
+
+      // Leech Seed: heal 2
+      if (playerAbility.id === "leech-seed") {
+        setPlayerHp((hp) => Math.min(playerMaxHp, hp + 2));
+        triggerAbilityToast(playerAbility);
+      }
+      // Cursed Body: restore HP if pending within 5s
+      if (playerAbility.id === "cursed-body" && abilityStateRef.current.cursedBodyPending) {
+        const { hpBefore, appliedAt } = abilityStateRef.current.cursedBodyPending;
+        if (Date.now() - appliedAt <= 5000) {
+          setPlayerHp(hpBefore);
+          triggerAbilityToast(playerAbility);
+        }
+        abilityStateRef.current.cursedBodyPending = null;
+      }
+      // Status cure ticks
+      tickStatusCure("confused");
+      tickStatusCure("poisoned");
 
       const lbl = streakLabel(newStreak);
       if (lbl && lbl !== lastStreakLabelRef.current) {
@@ -451,12 +497,59 @@ function BattleMode({
         return;
       }
     } else {
+      wrongStreakRef.current += 1;
       // Matchup-aware wrong-answer damage
       let wrongDmg = 10;
       if (immune) wrongDmg = 5;
       else if (disadvantaged) wrongDmg = 15;
 
-      const newPlayerHp = Math.max(0, playerHp - wrongDmg);
+      // Ability modifiers (in spec order)
+      if (playerAbility.id === "multiscale" && playerHp === playerMaxHp) {
+        wrongDmg = Math.floor(wrongDmg / 2);
+        triggerAbilityToast(playerAbility);
+      }
+      if (playerAbility.id === "filter" && disadvantaged) {
+        wrongDmg = Math.floor(wrongDmg * 0.75);
+        triggerAbilityToast(playerAbility);
+      }
+      if (playerAbility.id === "static" && Math.random() < 0.15) {
+        wrongDmg = Math.floor(wrongDmg / 2);
+        triggerAbilityToast(playerAbility);
+      }
+      if (playerAbility.id === "snow-cloak" && !abilityStateRef.current.iceFirstWrongConsumed) {
+        wrongDmg = 0;
+        abilityStateRef.current.iceFirstWrongConsumed = true;
+        triggerAbilityToast(playerAbility);
+      }
+      if (playerAbility.id === "flame-body" && Math.random() < 0.10) {
+        wrongDmg = 0;
+        triggerAbilityToast(playerAbility);
+      }
+      if (playerAbility.id === "cute-charm" && Math.random() < 0.05) {
+        wrongDmg = 0;
+        triggerAbilityToast(playerAbility);
+      }
+
+      // Cursed Body: track HP before damage for potential heal-back
+      if (playerAbility.id === "cursed-body") {
+        abilityStateRef.current.cursedBodyPending = {
+          hpBefore: playerHp,
+          appliedAt: Date.now(),
+        };
+      }
+
+      let newPlayerHp = Math.max(0, playerHp - wrongDmg);
+      // Sturdy: revive at 1
+      if (
+        playerAbility.id === "sturdy" &&
+        newPlayerHp <= 0 &&
+        !abilityStateRef.current.sturdyUsed
+      ) {
+        newPlayerHp = 1;
+        abilityStateRef.current.sturdyUsed = true;
+        triggerAbilityToast(playerAbility);
+      }
+
       setPlayerHp(newPlayerHp);
       setShakeWho("player");
       setFloatDmg({ who: "player", n: wrongDmg, super: false, speedy: false });
@@ -466,6 +559,21 @@ function BattleMode({
       playSfx("wrong");
       setTimeout(() => setShakeWho(null), 500);
       setTimeout(() => setFloatDmg(null), 1000);
+
+      // Status thresholds
+      if (
+        wrongStreakRef.current === 2 &&
+        !statuses.some((s) => s.kind === "confused")
+      ) {
+        applyStatus("confused");
+      }
+      if (
+        wrongStreakRef.current === 5 &&
+        !statuses.some((s) => s.kind === "poisoned") &&
+        playerAbility.id !== "toxic"
+      ) {
+        applyStatus("poisoned");
+      }
 
       if (newPlayerHp <= 0) {
         setTimeout(() => finish(false), 1400);
