@@ -193,7 +193,7 @@ function PokedexPage() {
                   </DialogTitle>
                 </DialogHeader>
                 <div className="flex flex-col items-center gap-3">
-                  <img src={spriteUrl(p.id, { shiny: showS })} alt={p.name} className="sprite h-32 w-32" />
+                  <PokemonSprite id={p.id} shiny={!!showS} alt={p.name} className="sprite h-32 w-32" />
                   <div className="flex gap-1">{p.types.map((t) => <TypeBadge key={t} type={t} />)}</div>
                   {entry ? (
                     <div className="text-center text-xs text-muted-foreground">
