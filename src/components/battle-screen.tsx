@@ -784,14 +784,21 @@ function BattleMode({
 
   if (phase === "result") {
     return (
-      <ResultScreen
-        won={resultWon!}
-        xpEarned={xpEarned}
-        tpEarned={tpEarned}
-        partnerName={player.name}
-        streak={maxStreakRef.current}
-        onRebattle={() => onExit()}
-      />
+      <>
+        <ResultScreen
+          won={resultWon!}
+          xpEarned={xpEarned}
+          tpEarned={tpEarned}
+          partnerName={player.name}
+          streak={maxStreakRef.current}
+          onRebattle={() => onExit()}
+          canShare={!!shareData}
+          onShare={() => setShareOpen(true)}
+        />
+        {shareData && (
+          <ShareCardDialog open={shareOpen} onClose={() => setShareOpen(false)} data={shareData} />
+        )}
+      </>
     );
   }
 
