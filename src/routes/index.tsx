@@ -51,7 +51,7 @@ function SplashPage() {
             </h1>
             <div className="mt-2 font-pixel text-base text-primary">⚔️ BATTLE ⚔️</div>
             <p className="mt-5 max-w-xs text-sm text-poke-dark/70">
-              Battle gym leaders & champions with your knowledge. Earn XP, level up, collect items.
+              Test your Pokémon knowledge in trivia battles. Earn XP, climb leagues, collect items.
             </p>
             <div className="mt-10 flex w-full max-w-xs flex-col gap-3">
               <Button
@@ -70,7 +70,7 @@ function SplashPage() {
                   navigate({ to: "/battle", search: { autostart: 1 } as never });
                 }}
               >
-                Guest Mode
+                Play as Guest
               </Button>
             </div>
             <p className="mt-8 font-pixel text-[9px] text-poke-dark/50">v1.0 · GEN I</p>
