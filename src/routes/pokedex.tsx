@@ -153,9 +153,8 @@ function PokedexPage() {
                 <PokemonSprite
                   id={p.id}
                   alt={got ? p.name : "???"}
-                  className="sprite h-14 w-14"
+                  className={`sprite h-14 w-14 ${got ? "" : "[filter:brightness(0)]"}`}
                 />
-                {!got && <div className="absolute inset-0 rounded-2xl" style={{ backdropFilter: "brightness(0)" }} />}
                 <div className="mt-1 w-full truncate text-center text-[10px] font-semibold">
                   {got ? p.name : "???"}
                 </div>
