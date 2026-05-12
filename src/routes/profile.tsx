@@ -55,6 +55,7 @@ function ProfilePage() {
   const flags = useGameStore((s) => s.flags);
   const peakLevel = useGameStore((s) => s.peakLevel);
   const pokedex = useGameStore((s) => s.pokedex);
+  const abilityCodex = useGameStore((s) => s.abilityCodex);
   const unlocked = useMemo(() => {
     const ctx = { stats, flags, peakLevel, pokedex } as Parameters<typeof unlockedAchievements>[0];
     return new Set(unlockedAchievements(ctx));
