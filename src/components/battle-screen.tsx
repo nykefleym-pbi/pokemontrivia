@@ -1052,11 +1052,15 @@ function BattleMode({
 function ResultScreen({
   won,
   xpEarned,
+  tpEarned,
+  partnerName,
   streak,
   onRebattle,
 }: {
   won: boolean;
   xpEarned: number;
+  tpEarned: number;
+  partnerName: string;
   streak: number;
   onRebattle: () => void;
 }) {
@@ -1082,6 +1086,7 @@ function ResultScreen({
       <div className="mt-8 w-full max-w-xs space-y-3 rounded-3xl bg-card/95 p-5 shadow-pop backdrop-blur">
         <Row label="XP Gained" value={`+${xpEarned}`} accent />
         <Row label="Top Streak" value={String(streak)} />
+        <Row label={`TP · ${partnerName}`} value={`+${tpEarned}`} accent />
       </div>
       <Button
         size="lg"
