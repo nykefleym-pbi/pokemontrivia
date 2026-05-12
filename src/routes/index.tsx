@@ -252,11 +252,10 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                         : "border-transparent hover:border-poke-dark/20"
                     }`}
                   >
-                    <img
-                      src={spriteUrl(p.id)}
+                    <PokemonSprite
+                      id={p.id}
                       alt={p.name}
                       className="sprite h-16 w-16"
-                      loading="lazy"
                     />
                     <span className="mt-1 truncate text-[11px] font-semibold">{p.name}</span>
                     <div className="mt-1 flex flex-wrap justify-center gap-0.5">
