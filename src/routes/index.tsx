@@ -100,15 +100,17 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
   const [trainerQuery, setTrainerQuery] = useState("");
   const [query, setQuery] = useState("");
   const [pick, setPick] = useState<PokeEntry | null>(null);
+  const [brokenTrainerIds, setBrokenTrainerIds] = useState<Set<string>>(new Set());
   const setOnboarded = useGameStore((s) => s.setOnboarded);
   const navigate = useNavigate();
 
   const results = useMemo(() => searchPokemon(query, 9), [query]);
   const trainerResults = useMemo(() => {
     const q = trainerQuery.trim().toLowerCase();
-    if (!q) return TRAINER_SPRITES.slice(0, 9);
-    return TRAINER_SPRITES.filter((t) => t.id.toLowerCase().includes(q) || t.name.toLowerCase().includes(q)).slice(0, 30);
-  }, [trainerQuery]);
+    const pool = TRAINER_SPRITES.filter((t) => !brokenTrainerIds.has(t.id));
+    if (!q) return pool.slice(0, 30);
+    return pool.filter((t) => t.id.toLowerCase().includes(q) || t.name.toLowerCase().includes(q)).slice(0, 60);
+  }, [trainerQuery, brokenTrainerIds]);
 
   function start() {
     if (!name.trim() || !pick) return;
