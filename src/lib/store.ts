@@ -1,9 +1,10 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { ItemId } from "./game-data";
-import { ITEMS, levelFromTotalXp, TRAINER_SPRITES, EVOLUTION_TP_COST } from "./game-data";
+import { ITEMS, levelFromTotalXp, TRAINER_SPRITES, EVOLUTION_TP_COST, getWeekRangeUtc } from "./game-data";
 import type { PokeEntry } from "./pokemon-data";
 import { ALL_POKEMON } from "./pokemon-data";
+import { pickRandomGymLeader } from "./gym-leaders";
 
 const MAX_SEEN_HASHES = 500;
 const MAX_SEEN_TEXTS = 200;
@@ -66,6 +67,20 @@ export interface PokedexEntry {
   defeatCount: number;
 }
 
+export interface WeeklyLeagueState {
+  weekStartTs: number;
+  gymLeaderId: string;
+  status: "not_started" | "in_progress" | "won" | "lost";
+  attemptStartedAt: number | null;
+  questionsAnswered: number;
+}
+
+export interface WeeklyLeagueAttempt {
+  weekStartTs: number;
+  gymLeaderId: string;
+  won: boolean;
+}
+
 export interface GameState {
   // profile
   hasOnboarded: boolean;
@@ -114,6 +129,11 @@ export interface GameState {
 
   // Phase 3: per-partner Training Points
   trainingPoints: Record<number, number>;
+
+  // Phase 4: Weekly League
+  weeklyLeague: WeeklyLeagueState | null;
+  gymBadges: string[];
+  weeklyLeagueHistory: WeeklyLeagueAttempt[];
 
   // actions
   setOnboarded: (name: string, pokemon: PokeEntry, trainerSprite: string) => void;
