@@ -203,6 +203,57 @@ export const useGameStore = create<GameState>()(
       defeatedEliteRegions: [],
       defeatedElites: [],
       abilityCodex: [],
+      trainingPoints: {},
+
+      addTrainingPoints: (pokemonId, amount) => {
+        const s = get();
+        const current = s.trainingPoints[pokemonId] ?? 0;
+        set({
+          trainingPoints: { ...s.trainingPoints, [pokemonId]: current + amount },
+        });
+      },
+
+      spendTrainingPoints: (pokemonId, amount) => {
+        const s = get();
+        const current = s.trainingPoints[pokemonId] ?? 0;
+        if (current < amount) return false;
+        set({
+          trainingPoints: { ...s.trainingPoints, [pokemonId]: current - amount },
+        });
+        return true;
+      },
+
+      getPartnerTp: (pokemonId) => get().trainingPoints[pokemonId] ?? 0,
+
+      evolvePartner: (toPokemon) => {
+        const s = get();
+        if (!s.pokemon) return false;
+        const fromId = s.pokemon.id;
+        const stage = s.pokemon.evolutionStage;
+        if (stage !== 1 && stage !== 2) return false;
+        const cost = EVOLUTION_TP_COST[stage];
+        const currentTp = s.trainingPoints[fromId] ?? 0;
+        if (currentTp < cost) return false;
+        if (!s.pokemon.evolvesToIds.includes(toPokemon.id)) return false;
+        const remainingTp = currentTp - cost;
+        const newTpMap = { ...s.trainingPoints };
+        delete newTpMap[fromId];
+        newTpMap[toPokemon.id] = (newTpMap[toPokemon.id] ?? 0) + remainingTp;
+        set({
+          pokemon: toPokemon,
+          trainingPoints: newTpMap,
+          pokedex: {
+            ...s.pokedex,
+            [toPokemon.id]: {
+              pokemonId: toPokemon.id,
+              firstSeenAt: s.pokedex[toPokemon.id]?.firstSeenAt ?? Date.now(),
+              shinyUnlocked: s.pokedex[toPokemon.id]?.shinyUnlocked ?? false,
+              defeatCount: s.pokedex[toPokemon.id]?.defeatCount ?? 0,
+            },
+          },
+        });
+        return true;
+      },
 
       markQuestionsSeen: (texts) => {
         const s = get();
