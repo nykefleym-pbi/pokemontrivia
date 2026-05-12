@@ -32,6 +32,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ACHIEVEMENTS, unlockedAchievements } from "@/lib/achievements";
+import { GYM_LEADERS } from "@/lib/gym-leaders";
 import { isMuted, setMuted } from "@/lib/audio";
 
 
@@ -207,12 +208,13 @@ function ProfilePage() {
 
         {/* Tabs */}
         <Tabs defaultValue="stats" className="mt-4">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="stats" className="font-pixel text-[9px]">Stats</TabsTrigger>
-            <TabsTrigger value="trophies" className="font-pixel text-[9px]">Trophies</TabsTrigger>
-            <TabsTrigger value="abilities" className="font-pixel text-[9px]">Abilities</TabsTrigger>
-            <TabsTrigger value="battles" className="font-pixel text-[9px]">Battles</TabsTrigger>
-            <TabsTrigger value="settings" className="font-pixel text-[9px]">Settings</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="stats" className="font-pixel text-[8px]">Stats</TabsTrigger>
+            <TabsTrigger value="trophies" className="font-pixel text-[8px]">Trophies</TabsTrigger>
+            <TabsTrigger value="badges" className="font-pixel text-[8px]">Badges</TabsTrigger>
+            <TabsTrigger value="abilities" className="font-pixel text-[8px]">Abilities</TabsTrigger>
+            <TabsTrigger value="battles" className="font-pixel text-[8px]">Battles</TabsTrigger>
+            <TabsTrigger value="settings" className="font-pixel text-[8px]">Settings</TabsTrigger>
           </TabsList>
 
           <TabsContent value="stats" className="mt-3 space-y-3">
@@ -292,6 +294,10 @@ function ProfilePage() {
                 );
               })}
             </div>
+          </TabsContent>
+
+          <TabsContent value="badges" className="mt-3">
+            <BadgesTab />
           </TabsContent>
 
           <TabsContent value="abilities" className="mt-3">
@@ -544,6 +550,58 @@ function Stat({ label, value }: { label: string; value: number | string }) {
     <div className="rounded-2xl bg-card px-3 py-3 text-center shadow-sm">
       <div className="font-pixel text-base text-primary">{value}</div>
       <div className="text-[10px] uppercase text-muted-foreground">{label}</div>
+    </div>
+  );
+}
+
+function BadgesTab() {
+  const gymBadges = useGameStore((s) => s.gymBadges);
+  const owned = new Set(gymBadges);
+  const regions = ["Kanto", "Johto", "Hoenn", "Sinnoh", "Unova"] as const;
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="font-pixel text-[9px] uppercase text-muted-foreground">
+          {owned.size}/{GYM_LEADERS.length} badges
+        </span>
+        <span className="font-pixel text-[9px] text-primary">
+          {Math.round((owned.size / GYM_LEADERS.length) * 100)}%
+        </span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-muted">
+        <div
+          className="h-full bg-gradient-to-r from-poke-yellow to-primary"
+          style={{ width: `${(owned.size / GYM_LEADERS.length) * 100}%` }}
+        />
+      </div>
+      {regions.map((r) => {
+        const leaders = GYM_LEADERS.filter((g) => g.region === r);
+        return (
+          <div key={r} className="rounded-2xl bg-card p-3 shadow-sm">
+            <div className="mb-2 font-pixel text-[9px] uppercase text-muted-foreground">{r}</div>
+            <div className="grid grid-cols-4 gap-2">
+              {leaders.map((g) => {
+                const got = owned.has(g.id);
+                return (
+                  <div
+                    key={g.id}
+                    title={`${g.name} — ${g.badge}`}
+                    className={`flex flex-col items-center rounded-xl p-2 ${got ? "bg-poke-yellow/20" : "grayscale opacity-30"}`}
+                  >
+                    <div className="text-2xl">🎖</div>
+                    <div className="mt-1 truncate text-center text-[9px] font-semibold leading-tight">
+                      {g.name}
+                    </div>
+                    <div className="text-center text-[8px] leading-tight text-muted-foreground">
+                      {got ? g.badge.replace(" Badge", "") : "???"}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

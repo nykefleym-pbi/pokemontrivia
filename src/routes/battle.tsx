@@ -13,6 +13,9 @@ import { trainerSpriteUrl } from "@/lib/game-data";
 import { BattleScreen, type Trivia } from "@/components/battle-screen";
 import { Toaster } from "@/components/ui/sonner";
 import { nextPendingElite, type EliteMember } from "@/lib/elite-four";
+import { findGymLeader, type GymLeader } from "@/lib/gym-leaders";
+import { WeeklyLeagueCard, WeeklyLeagueResultCard } from "@/components/weekly-league-card";
+import { getWeekRangeUtc } from "@/lib/game-data";
 
 export const Route = createFileRoute("/battle")({
   component: BattlePage,
@@ -32,16 +35,25 @@ function BattlePage() {
   const markQuestionsSeen = useGameStore((s) => s.markQuestionsSeen);
   const navigate = useNavigate();
   const search = Route.useSearch();
-  const [phase, setPhase] = useState<"home" | "loading" | "fighting" | "daily" | "elite">("home");
+  const [phase, setPhase] = useState<"home" | "loading" | "fighting" | "daily" | "elite" | "weekly">("home");
   const [questions, setQuestions] = useState<Trivia[]>([]);
   const [eliteOpponent, setEliteOpponent] = useState<EliteMember | null>(null);
+  const [weeklyOpponent, setWeeklyOpponent] = useState<GymLeader | null>(null);
   const [battleKey, setBattleKey] = useState(0);
   const autoStartedRef = useRef(false);
   const dailyResult = useGameStore((s) => s.dailyResult);
   const today = new Date().toISOString().slice(0, 10);
   const dailyDone = dailyResult?.date === today;
 
+  const weeklyLeague = useGameStore((s) => s.weeklyLeague);
+  const initWeeklyLeague = useGameStore((s) => s.initWeeklyLeague);
+  const startWeeklyLeagueAttempt = useGameStore((s) => s.startWeeklyLeagueAttempt);
+
   const pendingElite = nextPendingElite(peakLevel, defeatedElites);
+
+  useEffect(() => {
+    initWeeklyLeague();
+  }, [initWeeklyLeague]);
 
   useEffect(() => {
     if (!hasOnboarded) navigate({ to: "/" });
@@ -146,10 +158,49 @@ function BattlePage() {
     }
   }
 
+  async function startWeekly() {
+    if (!weeklyLeague) return;
+    if (weeklyLeague.status === "won" || weeklyLeague.status === "lost") return;
+    const leader = findGymLeader(weeklyLeague.gymLeaderId);
+    if (!leader) return;
+    setPhase("loading");
+    try {
+      const resp = await fetch("/api/trivia-elite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: leader.type,
+          memberName: `Gym Leader ${leader.name}`,
+          seenHashes,
+          seenSamples: seenQuestions.slice(-80),
+          flowSeed: Math.floor(Math.random() * 1_000_000),
+        }),
+      });
+      if (resp.status === 429) { toast.error("Rate limited."); setPhase("home"); return; }
+      if (resp.status === 402) { toast.error("AI credits exhausted."); setPhase("home"); return; }
+      const data = (await resp.json()) as { questions: Trivia[] };
+      if (!data.questions?.length) {
+        toast.error("Couldn't prepare Weekly League.");
+        setPhase("home");
+        return;
+      }
+      markQuestionsSeen(data.questions.map((q) => q.question));
+      startWeeklyLeagueAttempt();
+      setWeeklyOpponent(leader);
+      setQuestions(data.questions);
+      setPhase("weekly");
+    } catch (e) {
+      console.error(e);
+      toast.error("Couldn't prepare Weekly League.");
+      setPhase("home");
+    }
+  }
+
   function exitBattle() {
     setPhase("home");
     setQuestions([]);
     setEliteOpponent(null);
+    setWeeklyOpponent(null);
     setBattleKey((k) => k + 1);
     useGameStore.getState().abortBattle();
   }
@@ -161,6 +212,8 @@ function BattlePage() {
         <BattleScreen key={battleKey} questions={questions} onExit={exitBattle} />
       ) : phase === "elite" && eliteOpponent ? (
         <BattleScreen key={battleKey} questions={questions} onExit={exitBattle} mode="elite" eliteMember={eliteOpponent} />
+      ) : phase === "weekly" && weeklyOpponent ? (
+        <BattleScreen key={battleKey} questions={questions} onExit={exitBattle} mode="weekly" gymLeader={weeklyOpponent} />
       ) : phase === "daily" ? (
         <BattleScreen key={battleKey} questions={questions} onExit={exitBattle} mode="daily" />
       ) : pendingElite ? (
@@ -173,6 +226,7 @@ function BattlePage() {
         <BattleHome
           onStart={startBattle}
           onStartDaily={startDaily}
+          onStartWeekly={startWeekly}
           loading={phase === "loading"}
           dailyDone={dailyDone}
           dailyResult={dailyDone ? dailyResult : null}
@@ -185,12 +239,14 @@ function BattlePage() {
 function BattleHome({
   onStart,
   onStartDaily,
+  onStartWeekly,
   loading,
   dailyDone,
   dailyResult,
 }: {
   onStart: () => void;
   onStartDaily: () => void;
+  onStartWeekly: () => void;
   loading: boolean;
   dailyDone: boolean;
   dailyResult: { correct: number; total: number; timeMs: number; pattern: DailyMark[]; date: string } | null;
@@ -201,7 +257,9 @@ function BattleHome({
   const level = useGameStore((s) => s.level);
   const xp = useGameStore((s) => s.xp);
   const trainingPoints = useGameStore((s) => s.trainingPoints);
+  const weeklyLeague = useGameStore((s) => s.weeklyLeague);
   const [tab, setTab] = useState<"battle" | "daily">("battle");
+  const weekRange = getWeekRangeUtc();
 
   if (!pokemon) return null;
 
@@ -326,6 +384,22 @@ function BattleHome({
             </div>
           )}
         </div>
+
+        {/* Weekly League */}
+        {weeklyLeague && (
+          <div className="mt-4">
+            {weeklyLeague.status === "won" || weeklyLeague.status === "lost" ? (
+              <WeeklyLeagueResultCard weeklyLeague={weeklyLeague} nextWeekStart={weekRange.end} />
+            ) : (
+              <WeeklyLeagueCard
+                weeklyLeague={weeklyLeague}
+                onStart={onStartWeekly}
+                resumeMode={weeklyLeague.status === "in_progress"}
+                loading={loading}
+              />
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

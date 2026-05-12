@@ -182,7 +182,11 @@ function BattleMode({
   const maxStreakRef = useRef(0);
   const lastStreakLabelRef = useRef<string | null>(null);
   const correctCountRef = useRef(0);
+  const topDmgRef = useRef(0);
   const [tpEarned, setTpEarned] = useState(0);
+  const [shareData, setShareData] = useState<ShareData | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
+  const trainerSpriteId = useGameStore((s) => s.trainerSprite);
 
   // Phase 2: ability + status state
   type StatusKind = "confused" | "poisoned";
@@ -499,6 +503,7 @@ function BattleMode({
       }
 
       const newEnemyHp = Math.max(0, enemyHp - dmg);
+      if (dmg > topDmgRef.current) topDmgRef.current = dmg;
       setEnemyHp(newEnemyHp);
       setShakeWho("enemy");
       setFloatDmg({ who: "enemy", n: dmg, super: superEff, speedy: speedBonus >= 3 });
@@ -696,6 +701,32 @@ function BattleMode({
       }
     }
 
+    // Weekly League: record result + prep share card
+    if (isWeekly && gymLeader) {
+      recordWeeklyLeagueResult(won);
+      if (won) {
+        setShareData({
+          type: "weekly",
+          trainerName,
+          trainerSpriteUrl: trainerSpriteUrl(trainerSpriteId),
+          partnerName: player.name,
+          partnerPokemonId: player.id,
+          partnerShiny: false,
+          opponentName: gymLeader.name,
+          opponentTitle: `Gym Leader · ${gymLeader.region}`,
+          opponentSpriteUrl: trainerSpriteUrl(gymLeader.trainerSpriteId),
+          signaturePokemonId: gymLeader.signaturePokemonId,
+          finalPlayerHp: playerHp,
+          maxPlayerHp: playerMaxHp,
+          topStreak: maxStreakRef.current,
+          topDamage: topDmgRef.current,
+          dateISO: new Date().toISOString().slice(0, 10),
+          badgeName: gymLeader.badge,
+        });
+        toast.success(`🎖 ${gymLeader.badge} earned!`, { duration: 4500 });
+      }
+    }
+
     // snapshot achievements before/after
     const before = new Set(unlockedAchievements(useGameStore.getState()));
     endBattle(won, total);
@@ -753,14 +784,21 @@ function BattleMode({
 
   if (phase === "result") {
     return (
-      <ResultScreen
-        won={resultWon!}
-        xpEarned={xpEarned}
-        tpEarned={tpEarned}
-        partnerName={player.name}
-        streak={maxStreakRef.current}
-        onRebattle={() => onExit()}
-      />
+      <>
+        <ResultScreen
+          won={resultWon!}
+          xpEarned={xpEarned}
+          tpEarned={tpEarned}
+          partnerName={player.name}
+          streak={maxStreakRef.current}
+          onRebattle={() => onExit()}
+          canShare={!!shareData}
+          onShare={() => setShareOpen(true)}
+        />
+        {shareData && (
+          <ShareCardDialog open={shareOpen} onClose={() => setShareOpen(false)} data={shareData} />
+        )}
+      </>
     );
   }
 
@@ -1086,6 +1124,8 @@ function ResultScreen({
   partnerName,
   streak,
   onRebattle,
+  canShare,
+  onShare,
 }: {
   won: boolean;
   xpEarned: number;
@@ -1093,6 +1133,8 @@ function ResultScreen({
   partnerName: string;
   streak: number;
   onRebattle: () => void;
+  canShare?: boolean;
+  onShare?: () => void;
 }) {
   return (
     <motion.div
@@ -1118,10 +1160,19 @@ function ResultScreen({
         <Row label="Top Streak" value={String(streak)} />
         <Row label={`TP · ${partnerName}`} value={`+${tpEarned}`} accent />
       </div>
+      {canShare && onShare && (
+        <Button
+          size="lg"
+          onClick={onShare}
+          className="mt-6 w-full max-w-xs rounded-full bg-poke-yellow py-6 font-pixel text-[11px] text-poke-dark shadow-pop hover:scale-105"
+        >
+          📸 Share Victory
+        </Button>
+      )}
       <Button
         size="lg"
         onClick={onRebattle}
-        className="mt-8 w-full max-w-xs rounded-full bg-card py-6 font-semibold text-foreground shadow-pop hover:scale-105"
+        className="mt-3 w-full max-w-xs rounded-full bg-card py-6 font-semibold text-foreground shadow-pop hover:scale-105"
       >
         Continue
       </Button>
