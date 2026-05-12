@@ -3,7 +3,9 @@ import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search } from "lucide-react";
 import { useGameStore } from "@/lib/store";
-import { searchPokemon, spriteUrl, type PokeEntry } from "@/lib/pokemon-data";
+import { searchPokemon, type PokeEntry } from "@/lib/pokemon-data";
+// (other imports below)
+import { PokeballSpinner, TypeBadge, PokemonSprite } from "@/components/game-ui";
 import { TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
 import { PokeballSpinner, TypeBadge } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
