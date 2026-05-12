@@ -35,16 +35,25 @@ function BattlePage() {
   const markQuestionsSeen = useGameStore((s) => s.markQuestionsSeen);
   const navigate = useNavigate();
   const search = Route.useSearch();
-  const [phase, setPhase] = useState<"home" | "loading" | "fighting" | "daily" | "elite">("home");
+  const [phase, setPhase] = useState<"home" | "loading" | "fighting" | "daily" | "elite" | "weekly">("home");
   const [questions, setQuestions] = useState<Trivia[]>([]);
   const [eliteOpponent, setEliteOpponent] = useState<EliteMember | null>(null);
+  const [weeklyOpponent, setWeeklyOpponent] = useState<GymLeader | null>(null);
   const [battleKey, setBattleKey] = useState(0);
   const autoStartedRef = useRef(false);
   const dailyResult = useGameStore((s) => s.dailyResult);
   const today = new Date().toISOString().slice(0, 10);
   const dailyDone = dailyResult?.date === today;
 
+  const weeklyLeague = useGameStore((s) => s.weeklyLeague);
+  const initWeeklyLeague = useGameStore((s) => s.initWeeklyLeague);
+  const startWeeklyLeagueAttempt = useGameStore((s) => s.startWeeklyLeagueAttempt);
+
   const pendingElite = nextPendingElite(peakLevel, defeatedElites);
+
+  useEffect(() => {
+    initWeeklyLeague();
+  }, [initWeeklyLeague]);
 
   useEffect(() => {
     if (!hasOnboarded) navigate({ to: "/" });
