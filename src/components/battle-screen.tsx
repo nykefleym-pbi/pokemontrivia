@@ -199,6 +199,7 @@ function BattleMode({
   // timer
   useEffect(() => {
     if (phase !== "question") return;
+    if (confirmExit) return;
     if (timer <= 0) {
       handleAnswer(-1);
       return;
@@ -206,7 +207,7 @@ function BattleMode({
     const t = setTimeout(() => setTimer((x) => x - 1), 1000);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, timer]);
+  }, [phase, timer, confirmExit]);
 
   function handleAnswer(idx: number) {
     if (phase !== "question" || !trivia) return;
