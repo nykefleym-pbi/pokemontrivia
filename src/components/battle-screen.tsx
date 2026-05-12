@@ -110,6 +110,10 @@ function BattleMode({
           slug: eliteMember.signaturePokemonName.toLowerCase(),
           name: eliteMember.signaturePokemonName,
           types: [eliteMember.type],
+          evolvesFromId: null,
+          evolvesToIds: [],
+          evolutionStage: 1,
+          isFullyEvolved: true,
         };
       return {
         name: eliteMember.name,
