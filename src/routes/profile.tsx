@@ -312,20 +312,6 @@ function ProfilePage() {
               <Switch checked={!muted} onCheckedChange={(v) => { setMuted(!v); setMutedState(!v); }} />
             </div>
 
-            <div className="rounded-2xl border-2 bg-card p-4 shadow-sm">
-              <div className="mb-2 flex items-center gap-3">
-                {theme === "dark" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-                <span className="font-medium">Theme</span>
-              </div>
-              <div className="grid grid-cols-3 gap-1 rounded-xl bg-muted/60 p-1">
-                {(["light", "dark", "system"] as Theme[]).map((t) => (
-                  <button key={t} onClick={() => changeTheme(t)}
-                    className={`rounded-lg py-1.5 font-pixel text-[9px] uppercase transition ${theme === t ? "bg-card shadow-sm" : "text-muted-foreground"}`}>
-                    {t}
-                  </button>
-                ))}
-              </div>
-            </div>
 
             <button
               onClick={() => setResetOpen(true)}
