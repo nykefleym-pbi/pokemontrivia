@@ -24,10 +24,20 @@ const typeColorMap: Record<PokeType, string> = {
   fairy: "bg-pink-400",
 };
 
-export const TypeBadge = React.memo(function TypeBadge({ type }: { type: PokeType }) {
+export const TypeBadge = React.memo(function TypeBadge({
+  type,
+  size = "md",
+}: {
+  type: PokeType;
+  size?: "sm" | "md";
+}) {
+  const sizeCls =
+    size === "sm"
+      ? "px-1.5 py-[1px] text-[7px] tracking-tight"
+      : "px-2.5 py-0.5 text-[9px] tracking-wide";
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 font-pixel text-[9px] uppercase tracking-wide text-white shadow-sm ${typeColorMap[type]}`}
+      className={`inline-flex items-center rounded-full font-pixel uppercase text-white shadow-sm ${sizeCls} ${typeColorMap[type]}`}
     >
       {type}
     </span>

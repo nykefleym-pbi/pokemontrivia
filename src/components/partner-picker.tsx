@@ -51,7 +51,7 @@ export function PartnerPicker({ onPick, selected, limit = 24 }: Props) {
               <div className="mt-1 truncate text-[11px] font-semibold">{p.name}</div>
               <div className="mt-0.5 flex flex-wrap justify-center gap-0.5">
                 {p.types.map((t) => (
-                  <TypeBadge key={t} type={t} />
+                  <TypeBadge key={t} type={t} size="sm" />
                 ))}
               </div>
               <div className="font-pixel text-[8px] text-primary">⚡ {getAbility(p.types).name}</div>

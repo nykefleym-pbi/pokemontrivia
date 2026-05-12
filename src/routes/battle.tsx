@@ -7,7 +7,7 @@ import { useGameStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppHeader, XpBar, PokeballSpinner, PokeballPattern, PokemonSprite, type DailyMark } from "@/components/game-ui";
-import { rankForLevel, xpProgressInLevel, difficultyForLevel } from "@/lib/game-data";
+import { rankForLevel, xpProgressInLevel, difficultyForLevel, getTpMultiplier } from "@/lib/game-data";
 import { getAbility } from "@/lib/abilities";
 import { trainerSpriteUrl } from "@/lib/game-data";
 import { BattleScreen, type Trivia } from "@/components/battle-screen";
@@ -200,12 +200,15 @@ function BattleHome({
   const pokemon = useGameStore((s) => s.pokemon);
   const level = useGameStore((s) => s.level);
   const xp = useGameStore((s) => s.xp);
+  const trainingPoints = useGameStore((s) => s.trainingPoints);
   const [tab, setTab] = useState<"battle" | "daily">("battle");
 
   if (!pokemon) return null;
 
   const rank = rankForLevel(level);
   const xpProg = xpProgressInLevel(xp);
+  const partnerTp = trainingPoints[pokemon.id] ?? 0;
+  const tpMult = getTpMultiplier(partnerTp);
 
   return (
     <div className="bg-poke-hero min-h-screen pb-24">
@@ -236,6 +239,9 @@ function BattleHome({
             />
             <div className="relative mt-1 font-pixel text-[8px] text-poke-dark/70">
               ⚡ {getAbility(pokemon.types).name}
+            </div>
+            <div className="relative mt-0.5 font-pixel text-[8px] text-primary">
+              TP {partnerTp} · ×{tpMult.toFixed(2)}
             </div>
           </div>
         </div>

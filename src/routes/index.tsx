@@ -245,7 +245,7 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
               />
             </div>
 
-            <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="mt-4 grid max-h-[55vh] grid-cols-3 gap-2 overflow-y-auto pr-1">
               {results.map((p) => {
                 const selected = pick?.id === p.id;
                 return (
@@ -266,7 +266,7 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                     <span className="mt-1 truncate text-[11px] font-semibold">{p.name}</span>
                     <div className="mt-1 flex flex-wrap justify-center gap-0.5">
                       {p.types.map((t) => (
-                        <TypeBadge key={t} type={t} />
+                        <TypeBadge key={t} type={t} size="sm" />
                       ))}
                     </div>
                     <div className="font-pixel text-[8px] text-primary">⚡ {getAbility(p.types).name}</div>

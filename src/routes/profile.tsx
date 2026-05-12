@@ -5,8 +5,10 @@ import { toast } from "sonner";
 import { Pencil, RotateCcw, Check, Search, Volume2, VolumeX } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { rankForLevel, xpProgressInLevel, ITEMS, TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
-import { ALL_POKEMON, isStartingPartner } from "@/lib/pokemon-data";
+import { ALL_POKEMON, isStartingPartner, canEvolve, getEvolutionTargets, type PokeEntry } from "@/lib/pokemon-data";
 import { ABILITIES, getAbility } from "@/lib/abilities";
+import { EVOLUTION_TP_COST, getTpMultiplier } from "@/lib/game-data";
+import { EvolutionScreen } from "@/components/evolution-screen";
 import { XpBar, TypeBadge, PokemonSprite } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,6 +58,8 @@ function ProfilePage() {
   const peakLevel = useGameStore((s) => s.peakLevel);
   const pokedex = useGameStore((s) => s.pokedex);
   const abilityCodex = useGameStore((s) => s.abilityCodex);
+  const trainingPoints = useGameStore((s) => s.trainingPoints);
+  const evolvePartner = useGameStore((s) => s.evolvePartner);
   const unlocked = useMemo(() => {
     const ctx = { stats, flags, peakLevel, pokedex } as Parameters<typeof unlockedAchievements>[0];
     return new Set(unlockedAchievements(ctx));
@@ -70,6 +74,8 @@ function ProfilePage() {
   const [resetOpen, setResetOpen] = useState(false);
   const [muted, setMutedState] = useState(false);
   const [brokenTrainerIds, setBrokenTrainerIds] = useState<Set<string>>(new Set());
+  const [evolvingFrom, setEvolvingFrom] = useState<PokeEntry | null>(null);
+  const [evolvingTo, setEvolvingTo] = useState<PokeEntry | null>(null);
 
   useEffect(() => {
     setMutedState(isMuted());
@@ -184,21 +190,20 @@ function ProfilePage() {
         </motion.div>
 
         {/* Partner card */}
-        <button
-          onClick={() => setPickerOpen(true)}
-          className="mt-3 flex w-full items-center gap-3 rounded-2xl bg-card p-3 text-left shadow-sm transition active:scale-95 hover:bg-muted/40"
-        >
-          <PokemonSprite id={pokemon.id} alt={pokemon.name} className="sprite h-14 w-14" />
-          <div className="flex-1">
-            <div className="font-pixel text-[9px] uppercase text-muted-foreground">Partner</div>
-            <div className="text-sm font-bold">{pokemon.name}</div>
-            <div className="mt-1 flex flex-wrap gap-1">
-              {pokemon.types.map((t) => <TypeBadge key={t} type={t} />)}
-            </div>
-            <div className="mt-1 font-pixel text-[9px] text-primary">⚡ {getAbility(pokemon.types).name}</div>
-          </div>
-          <Pencil className="h-4 w-4 text-muted-foreground" />
-        </button>
+        <PartnerCard
+          pokemon={pokemon}
+          tp={trainingPoints[pokemon.id] ?? 0}
+          onChange={() => setPickerOpen(true)}
+          onEvolve={(target) => {
+            const ok = evolvePartner(target);
+            if (ok) {
+              setEvolvingTo(target);
+              setEvolvingFrom(pokemon);
+            } else {
+              toast.error("Evolution failed.");
+            }
+          }}
+        />
 
         {/* Tabs */}
         <Tabs defaultValue="stats" className="mt-4">
@@ -410,6 +415,121 @@ function ProfilePage() {
                 <img src={trainerSpriteUrl(t.id)} alt={t.name} className="sprite h-16 w-16 object-contain" loading="lazy"
                   onError={() => setBrokenTrainerIds((s) => { const n = new Set(s); n.add(t.id); return n; })} />
                 <div className="text-[11px] font-semibold capitalize">{t.name}</div>
+              </button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {evolvingFrom && evolvingTo && (
+        <EvolutionScreen
+          from={evolvingFrom}
+          to={evolvingTo}
+          onComplete={() => {
+            setEvolvingFrom(null);
+            setEvolvingTo(null);
+            toast.success(`Evolved into ${evolvingTo.name}!`);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function PartnerCard({
+  pokemon,
+  tp,
+  onChange,
+  onEvolve,
+}: {
+  pokemon: PokeEntry;
+  tp: number;
+  onChange: () => void;
+  onEvolve: (target: PokeEntry) => void;
+}) {
+  const targets = useMemo(() => getEvolutionTargets(pokemon), [pokemon]);
+  const stage = pokemon.evolutionStage;
+  const cost = stage === 1 || stage === 2 ? EVOLUTION_TP_COST[stage] : null;
+  const eligible = canEvolve(pokemon) && cost !== null && tp >= cost;
+  const mult = getTpMultiplier(tp);
+  const [evoOpen, setEvoOpen] = useState(false);
+
+  function handleEvolveClick() {
+    if (!eligible) return;
+    if (targets.length === 1) {
+      onEvolve(targets[0]);
+    } else {
+      setEvoOpen(true);
+    }
+  }
+
+  return (
+    <div className="mt-3 rounded-2xl bg-card p-3 shadow-sm">
+      <div className="flex items-center gap-3">
+        <button onClick={onChange} className="shrink-0 transition active:scale-95">
+          <PokemonSprite id={pokemon.id} alt={pokemon.name} className="sprite h-14 w-14" />
+        </button>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between">
+            <div className="font-pixel text-[9px] uppercase text-muted-foreground">Partner</div>
+            <button onClick={onChange} className="text-muted-foreground hover:text-foreground">
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <div className="text-sm font-bold">{pokemon.name}</div>
+          <div className="mt-1 flex flex-wrap items-center gap-1">
+            {pokemon.types.map((t) => <TypeBadge key={t} type={t} size="sm" />)}
+            <span className="font-pixel text-[8px] text-primary">⚡ {getAbility(pokemon.types).name}</span>
+          </div>
+        </div>
+      </div>
+      <div className="mt-3 flex items-center gap-2 rounded-xl bg-muted/50 px-3 py-2">
+        <div className="flex-1">
+          <div className="flex items-center justify-between font-pixel text-[9px] text-muted-foreground">
+            <span>TRAINING POINTS</span>
+            <span>{tp}{cost ? ` / ${cost}` : ""}</span>
+          </div>
+          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-card">
+            <div
+              className="h-full bg-gradient-to-r from-poke-yellow to-primary"
+              style={{ width: `${cost ? Math.min(100, (tp / cost) * 100) : 100}%` }}
+            />
+          </div>
+        </div>
+        <span className="rounded-full bg-primary/15 px-2 py-0.5 font-pixel text-[9px] text-primary">
+          ×{mult.toFixed(2)}
+        </span>
+      </div>
+      {canEvolve(pokemon) && cost !== null && (
+        <Button
+          size="sm"
+          onClick={handleEvolveClick}
+          disabled={!eligible}
+          className="mt-2 w-full rounded-full bg-primary font-pixel text-[10px] shadow-pop disabled:opacity-50"
+        >
+          ✨ {eligible ? `Evolve (${cost} TP)` : `Evolve at ${cost} TP`}
+        </Button>
+      )}
+      {pokemon.isFullyEvolved && (
+        <div className="mt-2 rounded-full bg-poke-yellow/20 py-1 text-center font-pixel text-[9px] text-poke-dark">
+          ⭐ Fully evolved
+        </div>
+      )}
+      <Dialog open={evoOpen} onOpenChange={setEvoOpen}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader><DialogTitle>Choose evolution</DialogTitle></DialogHeader>
+          <div className="grid grid-cols-2 gap-2">
+            {targets.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => { setEvoOpen(false); onEvolve(t); }}
+                className="flex flex-col items-center rounded-2xl border-2 p-3 transition hover:border-primary active:scale-95"
+              >
+                <PokemonSprite id={t.id} alt={t.name} className="sprite h-16 w-16" />
+                <div className="mt-1 text-xs font-semibold">{t.name}</div>
+                <div className="mt-1 flex gap-0.5">
+                  {t.types.map((tt) => <TypeBadge key={tt} type={tt} size="sm" />)}
+                </div>
               </button>
             ))}
           </div>
