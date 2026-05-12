@@ -229,6 +229,60 @@ export const useGameStore = create<GameState>()(
       defeatedElites: [],
       abilityCodex: [],
       trainingPoints: {},
+      weeklyLeague: null,
+      gymBadges: [],
+      weeklyLeagueHistory: [],
+
+      initWeeklyLeague: () => {
+        const s = get();
+        const { start: weekStartTs } = getWeekRangeUtc();
+        if (s.weeklyLeague && s.weeklyLeague.weekStartTs === weekStartTs) return;
+        const leader = pickRandomGymLeader(s.gymBadges);
+        set({
+          weeklyLeague: {
+            weekStartTs,
+            gymLeaderId: leader.id,
+            status: "not_started",
+            attemptStartedAt: null,
+            questionsAnswered: 0,
+          },
+        });
+      },
+
+      startWeeklyLeagueAttempt: () => {
+        const s = get();
+        if (!s.weeklyLeague) return;
+        if (s.weeklyLeague.status !== "not_started" && s.weeklyLeague.status !== "in_progress") return;
+        set({
+          weeklyLeague: {
+            ...s.weeklyLeague,
+            status: "in_progress",
+            attemptStartedAt: s.weeklyLeague.attemptStartedAt ?? Date.now(),
+          },
+        });
+      },
+
+      recordWeeklyLeagueResult: (won) => {
+        const s = get();
+        if (!s.weeklyLeague) return;
+        const newHistory: WeeklyLeagueAttempt[] = [
+          ...s.weeklyLeagueHistory,
+          {
+            weekStartTs: s.weeklyLeague.weekStartTs,
+            gymLeaderId: s.weeklyLeague.gymLeaderId,
+            won,
+          },
+        ].slice(-8);
+        let newBadges = s.gymBadges;
+        if (won && !s.gymBadges.includes(s.weeklyLeague.gymLeaderId)) {
+          newBadges = [...s.gymBadges, s.weeklyLeague.gymLeaderId];
+        }
+        set({
+          weeklyLeague: { ...s.weeklyLeague, status: won ? "won" : "lost" },
+          gymBadges: newBadges,
+          weeklyLeagueHistory: newHistory,
+        });
+      },
 
       addTrainingPoints: (pokemonId, amount) => {
         const s = get();
