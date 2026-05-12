@@ -11,7 +11,8 @@ import {
   streakMultiplier,
   streakLabel,
 } from "@/lib/game-data";
-import { isSuperEffective, findPokemon, type PokeEntry } from "@/lib/pokemon-data";
+import { isSuperEffective, findPokemon, isPlayerDisadvantaged, isPlayerImmune, type PokeEntry } from "@/lib/pokemon-data";
+import { TutorialOverlay } from "@/components/tutorial-overlay";
 import { HpBar, TypeBadge, PokemonSprite, PokeballPattern, type DailyMark } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
 import {
@@ -143,6 +144,35 @@ function BattleMode({
   const lastStreakLabelRef = useRef<string | null>(null);
 
   const superEff = isSuperEffective(player, enemy.pokemon);
+  const disadvantaged = useMemo(
+    () => isPlayerDisadvantaged(player, enemy.pokemon),
+    [player, enemy.pokemon],
+  );
+  const immune = useMemo(
+    () => isPlayerImmune(player, enemy.pokemon),
+    [player, enemy.pokemon],
+  );
+
+  // Tutorial state — only in regular battles, never Elite
+  const flags = useGameStore((s) => s.flags);
+  const tutorialActive = useMemo(
+    () => !flags.includes("tutorial_done") && !eliteMember,
+    [flags, eliteMember],
+  );
+  const [tutorialStep, setTutorialStep] = useState<1 | 2 | 3 | null>(null);
+
+  function dismissTutorial() {
+    const wasStep3 = tutorialStep === 3;
+    setTutorialStep(null);
+    if (wasStep3) {
+      raiseFlag("tutorial_done");
+    }
+  }
+
+  function skipTutorial() {
+    setTutorialStep(null);
+    raiseFlag("tutorial_done");
+  }
 
   // start once
   useEffect(() => {
@@ -199,6 +229,7 @@ function BattleMode({
   useEffect(() => {
     if (phase !== "question") return;
     if (confirmExit) return;
+    if (tutorialStep !== null) return;
     if (timer <= 0) {
       handleAnswer(-1);
       return;
@@ -206,10 +237,20 @@ function BattleMode({
     const t = setTimeout(() => setTimer((x) => x - 1), 1000);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, timer, confirmExit]);
+  }, [phase, timer, confirmExit, tutorialStep]);
+
+  // Trigger tutorial on first 3 questions
+  useEffect(() => {
+    if (phase === "question" && tutorialActive && questionIdx <= 2) {
+      const id = (questionIdx + 1) as 1 | 2 | 3;
+      setTutorialStep(id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, questionIdx, tutorialActive]);
 
   function handleAnswer(idx: number) {
     if (phase !== "question" || !trivia) return;
+    if (tutorialStep !== null) return;
     if (typeof navigator !== "undefined" && "vibrate" in navigator) {
       try {
         navigator.vibrate(idx === trivia.correct ? 30 : [50, 30, 50]);
@@ -266,11 +307,15 @@ function BattleMode({
         return;
       }
     } else {
-      const dmg = 15;
-      const newPlayerHp = Math.max(0, playerHp - dmg);
+      // Matchup-aware wrong-answer damage
+      let wrongDmg = 10;
+      if (immune) wrongDmg = 5;
+      else if (disadvantaged) wrongDmg = 15;
+
+      const newPlayerHp = Math.max(0, playerHp - wrongDmg);
       setPlayerHp(newPlayerHp);
       setShakeWho("player");
-      setFloatDmg({ who: "player", n: dmg, super: false, speedy: false });
+      setFloatDmg({ who: "player", n: wrongDmg, super: false, speedy: false });
       setStreak(0);
       lastStreakLabelRef.current = null;
       recordAnswer(false, elapsed, streak);
@@ -578,6 +623,19 @@ function BattleMode({
                   <TypeBadge key={t} type={t} />
                 ))}
               </div>
+              {immune ? (
+                <div className="mt-1 flex justify-end">
+                  <span className="rounded-full bg-hp-good/20 px-2 py-0.5 font-pixel text-[9px] text-hp-good">
+                    🛡 Immune
+                  </span>
+                </div>
+              ) : disadvantaged ? (
+                <div className="mt-1 flex justify-end">
+                  <span className="rounded-full bg-destructive/20 px-2 py-0.5 font-pixel text-[9px] text-destructive">
+                    ⚠ Disadvantaged
+                  </span>
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
@@ -684,6 +742,7 @@ function BattleMode({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <TutorialOverlay step={tutorialStep} onDismiss={dismissTutorial} onSkip={skipTutorial} />
     </div>
   );
 }
