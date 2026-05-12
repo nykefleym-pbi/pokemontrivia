@@ -49,12 +49,14 @@ export interface BattleLogEntry {
   timestamp: number;
 }
 
+export type DailyMark = "correct" | "wrong" | "timeout";
+
 export interface DailyResult {
   date: string;
   correct: number;
   total: number;
   timeMs: number;
-  pattern: string;
+  pattern: DailyMark[];
 }
 
 export interface PokedexEntry {
@@ -121,6 +123,7 @@ export interface GameState {
 
   startBattle: () => void;
   endBattle: (won: boolean, xpGained: number) => void;
+  abortBattle: () => void;
   recordAnswer: (correct: boolean, timeMs: number, streak: number) => void;
   completeSet: () => void;
   consumeXAttack: () => void;
@@ -313,6 +316,15 @@ export const useGameStore = create<GameState>()(
           bonusTimeThisBattle: 0,
         }),
 
+      abortBattle: () =>
+        set({
+          inBattle: false,
+          luckyEggActive: false,
+          xAttackActive: false,
+          scopeRevealedThisBattle: false,
+          bonusTimeThisBattle: 0,
+        }),
+
       endBattle: (won, xpGained) => {
         const s = get();
         const finalXp = s.luckyEggActive ? xpGained * 2 : xpGained;
@@ -436,16 +448,28 @@ export const useGameStore = create<GameState>()(
         defeatedEliteRegions: s.defeatedEliteRegions,
         defeatedElites: s.defeatedElites,
       }),
-      merge: (persisted, current) => ({
-        ...current,
-        ...(persisted as Partial<GameState>),
-        flags: (persisted as Partial<GameState>)?.flags ?? [],
-        battleLog: (persisted as Partial<GameState>)?.battleLog ?? [],
-        dailyResult: (persisted as Partial<GameState>)?.dailyResult ?? null,
-        pokedex: (persisted as Partial<GameState>)?.pokedex ?? {},
-        defeatedEliteRegions: (persisted as Partial<GameState>)?.defeatedEliteRegions ?? [],
-        defeatedElites: (persisted as Partial<GameState>)?.defeatedElites ?? [],
-      }),
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<GameState>;
+        // Migrate legacy dailyResult.pattern (string) -> DailyMark[]
+        let dailyResult = p.dailyResult ?? null;
+        if (dailyResult && typeof (dailyResult as unknown as { pattern: unknown }).pattern === "string") {
+          const str = (dailyResult as unknown as { pattern: string }).pattern;
+          const marks: DailyMark[] = Array.from(str).map((c) =>
+            c === "🟩" ? "correct" : c === "🟥" ? "wrong" : "timeout",
+          );
+          dailyResult = { ...dailyResult, pattern: marks };
+        }
+        return {
+          ...current,
+          ...p,
+          flags: p.flags ?? [],
+          battleLog: p.battleLog ?? [],
+          dailyResult,
+          pokedex: p.pokedex ?? {},
+          defeatedEliteRegions: p.defeatedEliteRegions ?? [],
+          defeatedElites: p.defeatedElites ?? [],
+        };
+      },
     },
   ),
 );

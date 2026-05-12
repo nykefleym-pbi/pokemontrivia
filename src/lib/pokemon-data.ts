@@ -21,8 +21,7 @@ export function searchPokemon(query: string, limit = 9): PokeEntry[] {
   return ALL_POKEMON.filter((p) => p.name.toLowerCase().includes(q)).slice(0, limit);
 }
 
-// Sprite URL: pokemondb for front sprites; PokeAPI Showdown for backs.
-// Backward-compatible: spriteUrl(id, true) still works (= back sprite).
+// PokeAPI sprites mirror — single template covers all Gens 1–9.
 export function spriteUrl(
   id: number,
   optsOrBack?: boolean | { back?: boolean; shiny?: boolean },
@@ -31,18 +30,33 @@ export function spriteUrl(
     typeof optsOrBack === "boolean" ? { back: optsOrBack, shiny: false } : optsOrBack ?? {};
   const back = opts.back ?? false;
   const shiny = opts.shiny ?? false;
-  const p = findPokemon(id);
-  if (!p) return "";
   const variant = shiny ? "shiny/" : "";
   if (back) {
     return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/${variant}${id}.png`;
   }
-  if (shiny) {
-    return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${id}.png`;
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${variant}${id}.png`;
+}
+
+export function spriteFallbacks(id: number, shiny = false): string[] {
+  const variant = shiny ? "shiny/" : "";
+  const p = findPokemon(id);
+  const slug = p?.slug ?? "";
+
+  let dbPack = "black-white";
+  if (id >= 906) dbPack = "scarlet-violet";
+  else if (id >= 810) dbPack = "sword-shield";
+  else if (id >= 722) dbPack = "sun-moon";
+  else if (id >= 650) dbPack = "x-y";
+
+  const list = [
+    `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${variant}${id}.png`,
+    `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${variant}${id}.png`,
+  ];
+  if (slug) {
+    list.push(`https://img.pokemondb.net/sprites/${dbPack}/normal/${slug}.png`);
+    list.push(`https://img.pokemondb.net/sprites/home/normal/${slug}.png`);
   }
-  // pokemondb black-white pack covers Gen 1–5; scarlet-violet covers later.
-  const pack = id <= 649 ? "black-white" : "scarlet-violet";
-  return `https://img.pokemondb.net/sprites/${pack}/normal/${p.slug}.png`;
+  return list;
 }
 
 // Type effectiveness — attacker -> list of types it's super effective against (Gen 6+ chart, simplified).

@@ -151,6 +151,7 @@ function BattlePage() {
     setQuestions([]);
     setEliteOpponent(null);
     setBattleKey((k) => k + 1);
+    useGameStore.getState().abortBattle();
   }
 
   return (

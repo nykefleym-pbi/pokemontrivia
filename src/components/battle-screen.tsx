@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { ChevronLeft, Backpack, Clock, Share2, Sparkles, Crown } from "lucide-react";
+import { ChevronLeft, Backpack, Clock, Sparkles, Crown } from "lucide-react";
 import { useGameStore, getItemDef } from "@/lib/store";
 import {
   pickRandomEnemy,
@@ -11,8 +11,8 @@ import {
   streakMultiplier,
   streakLabel,
 } from "@/lib/game-data";
-import { isSuperEffective, spriteUrl, findPokemon, type PokeEntry } from "@/lib/pokemon-data";
-import { HpBar, TypeBadge } from "@/components/game-ui";
+import { isSuperEffective, findPokemon, type PokeEntry } from "@/lib/pokemon-data";
+import { HpBar, TypeBadge, PokemonSprite, PokeballPattern, type DailyMark } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -21,6 +21,16 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { ItemId } from "@/lib/game-data";
 import { ACHIEVEMENTS, unlockedAchievements } from "@/lib/achievements";
 import { playCry, playSfx } from "@/lib/audio";
@@ -71,6 +81,7 @@ function BattleMode({
 
   const startBattle = useGameStore((s) => s.startBattle);
   const endBattle = useGameStore((s) => s.endBattle);
+  const abortBattle = useGameStore((s) => s.abortBattle);
   const recordAnswer = useGameStore((s) => s.recordAnswer);
   const completeSet = useGameStore((s) => s.completeSet);
   const consumeXAttack = useGameStore((s) => s.consumeXAttack);
@@ -121,6 +132,7 @@ function BattleMode({
   const [shakeWho, setShakeWho] = useState<"player" | "enemy" | null>(null);
   const [floatDmg, setFloatDmg] = useState<{ who: "player" | "enemy"; n: number; super: boolean; speedy: boolean } | null>(null);
   const [bagOpen, setBagOpen] = useState(false);
+  const [confirmExit, setConfirmExit] = useState(false);
   const [resultWon, setResultWon] = useState<boolean | null>(null);
   const [xpEarned, setXpEarned] = useState(0);
   const [streakBanner, setStreakBanner] = useState<string | null>(null);
@@ -131,8 +143,6 @@ function BattleMode({
   const lastStreakLabelRef = useRef<string | null>(null);
 
   const superEff = isSuperEffective(player, enemy.pokemon);
-  const enemySprite = useMemo(() => spriteUrl(enemy.pokemon.id, { shiny: enemy.isShiny }), [enemy.pokemon.id, enemy.isShiny]);
-  const playerSprite = useMemo(() => spriteUrl(player.id, true), [player.id]);
 
   // start once
   useEffect(() => {
@@ -189,6 +199,7 @@ function BattleMode({
   // timer
   useEffect(() => {
     if (phase !== "question") return;
+    if (confirmExit) return;
     if (timer <= 0) {
       handleAnswer(-1);
       return;
@@ -196,7 +207,7 @@ function BattleMode({
     const t = setTimeout(() => setTimer((x) => x - 1), 1000);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, timer]);
+  }, [phase, timer, confirmExit]);
 
   function handleAnswer(idx: number) {
     if (phase !== "question" || !trivia) return;
@@ -383,6 +394,7 @@ function BattleMode({
     }
     if (id === "escape") {
       setBagOpen(false);
+      abortBattle();
       setTimeout(() => onExit(), 300);
     }
     setBagOpen(false);
@@ -432,7 +444,7 @@ function BattleMode({
       {/* top bar */}
       <div className="flex items-center justify-between px-4 pt-[calc(env(safe-area-inset-top)+0.5rem)]">
         <button
-          onClick={onExit}
+          onClick={() => setConfirmExit(true)}
           className="flex h-10 w-10 items-center justify-center rounded-full bg-card/80 backdrop-blur"
         >
           <ChevronLeft className="h-5 w-5" />
@@ -521,8 +533,9 @@ function BattleMode({
             initial={{ x: 80, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
           >
-            <img
-              src={enemySprite}
+            <PokemonSprite
+              id={enemy.pokemon.id}
+              shiny={enemy.isShiny}
               alt={enemy.pokemon.name}
               className={`sprite h-32 w-32 ${enemy.isShiny ? "shiny-glow" : ""}`}
             />
@@ -546,8 +559,9 @@ function BattleMode({
             initial={{ x: -80, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
           >
-            <img
-              src={playerSprite}
+            <PokemonSprite
+              id={player.id}
+              back
               alt={player.name}
               className={`sprite h-32 w-32 ${streak >= 5 ? "mega-glow" : ""}`}
             />
@@ -651,6 +665,25 @@ function BattleMode({
           </motion.div>
         )}
       </AnimatePresence>
+      <AlertDialog open={confirmExit} onOpenChange={setConfirmExit}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave battle?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your progress in this battle will be lost. You'll keep XP and trophies you've already earned.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Stay</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => { abortBattle(); onExit(); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Leave
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -716,7 +749,9 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
   const [idx, setIdx] = useState(0);
   const [phase, setPhase] = useState<"question" | "feedback" | "done">("question");
   const [chosen, setChosen] = useState<number | null>(null);
-  const [pattern, setPattern] = useState<string>("");
+  const [pattern, setPattern] = useState<DailyMark[]>([]);
+  const abortBattle = useGameStore((s) => s.abortBattle);
+  const [confirmExit, setConfirmExit] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [timer, setTimer] = useState(20);
   const startedAt = useRef(Date.now());
@@ -746,8 +781,8 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
     if (!trivia || phase !== "question") return;
     setChosen(picked);
     const correct = picked === trivia.correct;
-    const sym = picked === -1 ? "⬛" : correct ? "🟩" : "🟥";
-    const nextPattern = pattern + sym;
+    const sym: DailyMark = picked === -1 ? "timeout" : correct ? "correct" : "wrong";
+    const nextPattern: DailyMark[] = [...pattern, sym];
     setPattern(nextPattern);
     if (correct) setCorrectCount((c) => c + 1);
     if (typeof navigator !== "undefined" && "vibrate" in navigator) {
@@ -803,7 +838,7 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
         <motion.div className="h-full bg-poke-yellow" initial={false} animate={{ width: `${progressPct}%` }} />
       </div>
       <div className="flex items-center justify-between px-4 pt-[calc(env(safe-area-inset-top)+0.5rem)]">
-        <button onClick={onExit} className="flex h-10 w-10 items-center justify-center rounded-full bg-card/80 backdrop-blur">
+        <button onClick={() => setConfirmExit(true)} className="flex h-10 w-10 items-center justify-center rounded-full bg-card/80 backdrop-blur">
           <ChevronLeft className="h-5 w-5" />
         </button>
         <div className="rounded-full bg-poke-dark px-3 py-1 font-pixel text-[10px] text-poke-yellow">
@@ -811,6 +846,25 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
         </div>
         <div className="w-10" />
       </div>
+      <AlertDialog open={confirmExit} onOpenChange={setConfirmExit}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave the daily challenge?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Leaving will end today's challenge. You won't be able to retry until tomorrow.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Stay</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => { abortBattle(); onExit(); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Leave
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <div className="px-5 pt-6">
         <div className="rounded-3xl bg-card p-5 shadow-card">
@@ -852,7 +906,7 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
             <p className="mt-3 rounded-xl bg-muted p-2 text-xs text-muted-foreground">💡 {trivia.explanation}</p>
           )}
         </div>
-        <div className="mt-4 text-center font-pixel text-base tracking-widest">{pattern || "—"}</div>
+        <div className="mt-4 flex justify-center"><PokeballPattern marks={pattern} /></div>
       </div>
     </div>
   );
@@ -868,27 +922,11 @@ function DailyResultScreen({
   correct: number;
   total: number;
   timeMs: number;
-  pattern: string;
+  pattern: DailyMark[];
   onExit: () => void;
 }) {
   const date = new Date().toISOString().slice(0, 10);
   const seconds = Math.round(timeMs / 1000);
-  const shareText = `Pokémon Trivia · ${date}\n${correct}/${total} · ${seconds}s\n${pattern}\nplay → poketrivia.app`;
-
-  async function share() {
-    if (typeof navigator !== "undefined" && (navigator as Navigator & { share?: (d: ShareData) => Promise<void> }).share) {
-      try {
-        await (navigator as Navigator & { share: (d: ShareData) => Promise<void> }).share({ text: shareText });
-        return;
-      } catch { /* fall through to clipboard */ }
-    }
-    try {
-      await navigator.clipboard.writeText(shareText);
-      toast.success("Copied to clipboard!");
-    } catch {
-      toast.error("Couldn't copy. Long-press the text below.");
-    }
-  }
 
   return (
     <motion.div
@@ -902,12 +940,9 @@ function DailyResultScreen({
         <div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Date</span><span className="font-pixel text-sm">{date}</span></div>
         <div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Score</span><span className="font-pixel text-sm text-primary">{correct}/{total}</span></div>
         <div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Time</span><span className="font-pixel text-sm">{seconds}s</span></div>
-        <div className="text-center font-pixel text-lg tracking-widest">{pattern}</div>
+        <div className="pt-1"><PokeballPattern marks={pattern} /></div>
       </div>
-      <Button size="lg" onClick={share} className="mt-6 w-full max-w-xs rounded-full bg-primary py-6 font-semibold shadow-pop">
-        <Share2 className="mr-2 h-4 w-4" /> Share
-      </Button>
-      <Button size="lg" variant="outline" onClick={onExit} className="mt-3 w-full max-w-xs rounded-full border-2 py-6 font-semibold">
+      <Button size="lg" variant="outline" onClick={onExit} className="mt-6 w-full max-w-xs rounded-full border-2 py-6 font-semibold">
         Back
       </Button>
     </motion.div>
