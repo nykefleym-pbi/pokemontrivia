@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search } from "lucide-react";
 import { useGameStore } from "@/lib/store";
-import { searchPokemon, type PokeEntry } from "@/lib/pokemon-data";
+import { ALL_POKEMON, isStartingPartner, type PokeEntry } from "@/lib/pokemon-data";
 import { getAbility } from "@/lib/abilities";
 import { PokeballSpinner, TypeBadge, PokemonSprite } from "@/components/game-ui";
 import { TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
@@ -105,7 +105,12 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
   const setOnboarded = useGameStore((s) => s.setOnboarded);
   const navigate = useNavigate();
 
-  const results = useMemo(() => searchPokemon(query, 9), [query]);
+  const results = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return ALL_POKEMON.filter(isStartingPartner)
+      .filter((p) => (q ? p.name.toLowerCase().includes(q) : true))
+      .slice(0, 24);
+  }, [query]);
   const trainerResults = useMemo(() => {
     const q = trainerQuery.trim().toLowerCase();
     const pool = TRAINER_SPRITES.filter((t) => !brokenTrainerIds.has(t.id));
