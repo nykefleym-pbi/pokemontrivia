@@ -264,6 +264,7 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                         <TypeBadge key={t} type={t} />
                       ))}
                     </div>
+                    <div className="font-pixel text-[8px] text-primary">⚡ {getAbility(p.types).name}</div>
                   </button>
                 );
               })}
