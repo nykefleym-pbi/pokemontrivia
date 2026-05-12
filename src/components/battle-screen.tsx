@@ -336,7 +336,7 @@ function BattleMode({
     const before = new Set(unlockedAchievements(useGameStore.getState()));
     endBattle(won, total);
     pushBattleLog({
-      opponent: `${enemy.name}'s ${enemy.pokemon.name}`,
+      opponent: `${enemy.name} (${enemy.pokemon.name})`,
       won,
       xpGained: total,
       bestStreak: maxStreakRef.current,
