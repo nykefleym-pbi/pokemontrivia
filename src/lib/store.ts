@@ -167,6 +167,11 @@ export interface GameState {
   spendTrainingPoints: (pokemonId: number, amount: number) => boolean;
   getPartnerTp: (pokemonId: number) => number;
   evolvePartner: (toPokemon: PokeEntry) => boolean;
+
+  // Phase 4: Weekly League actions
+  initWeeklyLeague: () => void;
+  startWeeklyLeagueAttempt: () => void;
+  recordWeeklyLeagueResult: (won: boolean) => void;
 }
 
 const defaultStats: PlayerStats = {
