@@ -1160,10 +1160,19 @@ function ResultScreen({
         <Row label="Top Streak" value={String(streak)} />
         <Row label={`TP · ${partnerName}`} value={`+${tpEarned}`} accent />
       </div>
+      {canShare && onShare && (
+        <Button
+          size="lg"
+          onClick={onShare}
+          className="mt-6 w-full max-w-xs rounded-full bg-poke-yellow py-6 font-pixel text-[11px] text-poke-dark shadow-pop hover:scale-105"
+        >
+          📸 Share Victory
+        </Button>
+      )}
       <Button
         size="lg"
         onClick={onRebattle}
-        className="mt-8 w-full max-w-xs rounded-full bg-card py-6 font-semibold text-foreground shadow-pop hover:scale-105"
+        className="mt-3 w-full max-w-xs rounded-full bg-card py-6 font-semibold text-foreground shadow-pop hover:scale-105"
       >
         Continue
       </Button>
