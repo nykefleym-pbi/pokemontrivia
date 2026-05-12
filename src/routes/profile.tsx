@@ -67,12 +67,10 @@ function ProfilePage() {
   const [trainerQuery, setTrainerQuery] = useState("");
   const [resetOpen, setResetOpen] = useState(false);
   const [muted, setMutedState] = useState(false);
-  const [theme, setThemeState] = useState<Theme>("system");
   const [brokenTrainerIds, setBrokenTrainerIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setMutedState(isMuted());
-    setThemeState(getTheme());
   }, []);
 
   useEffect(() => {
