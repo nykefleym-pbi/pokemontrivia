@@ -1,6 +1,7 @@
 import * as React from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import type { PokeType } from "@/lib/pokemon-data";
+import { spriteFallbacks, type PokeType } from "@/lib/pokemon-data";
 
 const typeColorMap: Record<PokeType, string> = {
   normal: "bg-type-normal",
