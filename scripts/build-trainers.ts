@@ -18,31 +18,29 @@ const PREFIX_PRIORITY: Record<string, number> = {
 
 interface Raw { prefix: string; displayName: string; url: string; }
 
+function normalize(filename: string): string {
+  // Strip .png and normalize spaces → underscores so all subsequent checks are uniform.
+  return filename.replace(/\.png$/i, "").replace(/\s+/g, "_");
+}
+
 function shouldSkip(filename: string): boolean {
-  const base = filename.replace(/^Spr_/i, "").replace(/\.png$/i, "");
-  // Back sprites
+  const base = normalize(filename).replace(/^Spr_/i, "");
   if (/(^|_)back(_|$)/i.test(base)) return true;
-  // Hardware/cartridge IDs
   if (/_AGB-001(_|$)/i.test(base)) return true;
   if (/_DOL-\w+/i.test(base)) return true;
   if (/_NDS(_|$)/i.test(base)) return true;
   if (/_GBA(_|$)/i.test(base)) return true;
-  // Numeric pose variants
   if (/_\d+(_|$)/.test(base)) return true;
-  // Beta / prototype
   if (/(^|_)(beta|proto|prototype|old|unused)(_|$)/i.test(base)) return true;
-  // JP-only / regional
   if (/(^|_)JP(_|$)/i.test(base)) return true;
-  // Portraits / overworld
   if (/portrait/i.test(base)) return true;
   if (/(^|_)OD(_|$)/i.test(base)) return true;
-  // Alt/event variants
   if (/(^|_)(Alt|EX|Sygna|Holiday|Palentines|Anniversary|Special|Costume|Champion|Kimono|Academy)(_|$)/i.test(base)) return true;
   return false;
 }
 
 function parseSprite(filename: string): Raw | null {
-  let base = filename.replace(/^Spr_/i, "").replace(/\.png$/i, "");
+  let base = normalize(filename).replace(/^Spr_/i, "");
   const m = base.match(GAME_PREFIX_RE);
   let prefix = "";
   if (m) {
