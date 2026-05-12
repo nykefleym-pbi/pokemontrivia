@@ -686,8 +686,8 @@ function ResultScreen({
         <div className="mt-3 text-6xl">{won ? "🏆" : "💔"}</div>
       </motion.div>
       <div className="mt-8 w-full max-w-xs space-y-3 rounded-3xl bg-card/95 p-5 shadow-pop backdrop-blur">
-        <Row label="XP Earned" value={`+${xpEarned}`} accent />
-        <Row label="Best Streak" value={String(streak)} />
+        <Row label="XP Gained" value={`+${xpEarned}`} accent />
+        <Row label="Top Streak" value={String(streak)} />
       </div>
       <Button
         size="lg"
