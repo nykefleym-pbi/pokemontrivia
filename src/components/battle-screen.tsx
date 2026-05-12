@@ -623,6 +623,19 @@ function BattleMode({
                   <TypeBadge key={t} type={t} />
                 ))}
               </div>
+              {immune ? (
+                <div className="mt-1 flex justify-end">
+                  <span className="rounded-full bg-hp-good/20 px-2 py-0.5 font-pixel text-[9px] text-hp-good">
+                    🛡 Immune
+                  </span>
+                </div>
+              ) : disadvantaged ? (
+                <div className="mt-1 flex justify-end">
+                  <span className="rounded-full bg-destructive/20 px-2 py-0.5 font-pixel text-[9px] text-destructive">
+                    ⚠ Disadvantaged
+                  </span>
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
