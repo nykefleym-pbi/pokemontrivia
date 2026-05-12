@@ -3,9 +3,9 @@ import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search } from "lucide-react";
 import { useGameStore } from "@/lib/store";
-import { searchPokemon, spriteUrl, type PokeEntry } from "@/lib/pokemon-data";
+import { searchPokemon, type PokeEntry } from "@/lib/pokemon-data";
+import { PokeballSpinner, TypeBadge, PokemonSprite } from "@/components/game-ui";
 import { TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
-import { PokeballSpinner, TypeBadge } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -252,11 +252,10 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                         : "border-transparent hover:border-poke-dark/20"
                     }`}
                   >
-                    <img
-                      src={spriteUrl(p.id)}
+                    <PokemonSprite
+                      id={p.id}
                       alt={p.name}
                       className="sprite h-16 w-16"
-                      loading="lazy"
                     />
                     <span className="mt-1 truncate text-[11px] font-semibold">{p.name}</span>
                     <div className="mt-1 flex flex-wrap justify-center gap-0.5">

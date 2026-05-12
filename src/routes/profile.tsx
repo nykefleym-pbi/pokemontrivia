@@ -2,11 +2,11 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Pencil, RotateCcw, Check, Search, Volume2, VolumeX, Moon, Sun } from "lucide-react";
+import { Pencil, RotateCcw, Check, Search, Volume2, VolumeX } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { rankForLevel, xpProgressInLevel, ITEMS, TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
-import { searchPokemon, spriteUrl } from "@/lib/pokemon-data";
-import { XpBar, TypeBadge } from "@/components/game-ui";
+import { searchPokemon } from "@/lib/pokemon-data";
+import { XpBar, TypeBadge, PokemonSprite } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Toaster } from "@/components/ui/sonner";
@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ACHIEVEMENTS, unlockedAchievements } from "@/lib/achievements";
 import { isMuted, setMuted } from "@/lib/audio";
-import { getTheme, setTheme, type Theme } from "@/lib/theme";
+
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
@@ -67,12 +67,10 @@ function ProfilePage() {
   const [trainerQuery, setTrainerQuery] = useState("");
   const [resetOpen, setResetOpen] = useState(false);
   const [muted, setMutedState] = useState(false);
-  const [theme, setThemeState] = useState<Theme>("system");
   const [brokenTrainerIds, setBrokenTrainerIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setMutedState(isMuted());
-    setThemeState(getTheme());
   }, []);
 
   useEffect(() => {
@@ -123,11 +121,6 @@ function ProfilePage() {
   function doReset() {
     reset();
     navigate({ to: "/" });
-  }
-
-  function changeTheme(t: Theme) {
-    setTheme(t);
-    setThemeState(t);
   }
 
   return (
@@ -188,7 +181,7 @@ function ProfilePage() {
           onClick={() => setPickerOpen(true)}
           className="mt-3 flex w-full items-center gap-3 rounded-2xl bg-card p-3 text-left shadow-sm transition active:scale-95 hover:bg-muted/40"
         >
-          <img src={spriteUrl(pokemon.id)} alt={pokemon.name} className="sprite h-14 w-14" />
+          <PokemonSprite id={pokemon.id} alt={pokemon.name} className="sprite h-14 w-14" />
           <div className="flex-1">
             <div className="font-pixel text-[9px] uppercase text-muted-foreground">Partner</div>
             <div className="text-sm font-bold">{pokemon.name}</div>
@@ -312,20 +305,6 @@ function ProfilePage() {
               <Switch checked={!muted} onCheckedChange={(v) => { setMuted(!v); setMutedState(!v); }} />
             </div>
 
-            <div className="rounded-2xl border-2 bg-card p-4 shadow-sm">
-              <div className="mb-2 flex items-center gap-3">
-                {theme === "dark" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-                <span className="font-medium">Theme</span>
-              </div>
-              <div className="grid grid-cols-3 gap-1 rounded-xl bg-muted/60 p-1">
-                {(["light", "dark", "system"] as Theme[]).map((t) => (
-                  <button key={t} onClick={() => changeTheme(t)}
-                    className={`rounded-lg py-1.5 font-pixel text-[9px] uppercase transition ${theme === t ? "bg-card shadow-sm" : "text-muted-foreground"}`}>
-                    {t}
-                  </button>
-                ))}
-              </div>
-            </div>
 
             <button
               onClick={() => setResetOpen(true)}
@@ -370,7 +349,7 @@ function ProfilePage() {
               <button key={p.id}
                 onClick={() => { setPokemon(p); setPickerOpen(false); toast.success(`${p.name} chosen!`); }}
                 className="flex flex-col items-center rounded-2xl border-2 p-2 transition active:scale-95 hover:border-primary">
-                <img src={spriteUrl(p.id)} alt={p.name} className="sprite h-14 w-14" />
+                <PokemonSprite id={p.id} alt={p.name} className="sprite h-14 w-14" />
                 <div className="text-[11px] font-semibold">{p.name}</div>
               </button>
             ))}

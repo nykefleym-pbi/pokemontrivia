@@ -1,7 +1,5 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
-import { useEffect } from "react";
 import { BottomNav } from "@/components/bottom-nav";
-import { initTheme } from "@/lib/theme";
 
 import appCss from "../styles.css?url";
 
@@ -74,10 +72,6 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
-  useEffect(() => {
-    initTheme();
-  }, []);
-
   return (
     <div className="mx-auto min-h-screen w-full max-w-[480px] bg-background pb-20">
       <Outlet />

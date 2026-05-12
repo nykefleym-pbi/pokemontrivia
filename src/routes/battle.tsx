@@ -6,9 +6,8 @@ import { Sparkles, Crown, Flame, Swords } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AppHeader, XpBar, PokeballSpinner } from "@/components/game-ui";
+import { AppHeader, XpBar, PokeballSpinner, PokeballPattern, PokemonSprite, type DailyMark } from "@/components/game-ui";
 import { rankForLevel, xpProgressInLevel, difficultyForLevel } from "@/lib/game-data";
-import { spriteUrl } from "@/lib/pokemon-data";
 import { trainerSpriteUrl } from "@/lib/game-data";
 import { BattleScreen, type Trivia } from "@/components/battle-screen";
 import { Toaster } from "@/components/ui/sonner";
@@ -193,7 +192,7 @@ function BattleHome({
   onStartDaily: () => void;
   loading: boolean;
   dailyDone: boolean;
-  dailyResult: { correct: number; total: number; timeMs: number; pattern: string; date: string } | null;
+  dailyResult: { correct: number; total: number; timeMs: number; pattern: DailyMark[]; date: string } | null;
 }) {
   const trainerName = useGameStore((s) => s.trainerName);
   const trainerSprite = useGameStore((s) => s.trainerSprite);
@@ -229,8 +228,8 @@ function BattleHome({
           </div>
           <div className="relative shrink-0">
             <div className="absolute inset-0 -m-1 rounded-full bg-gradient-to-br from-poke-yellow/40 to-primary/30 blur-xl" />
-            <img
-              src={spriteUrl(pokemon.id)}
+            <PokemonSprite
+              id={pokemon.id}
               alt={pokemon.name}
               className="sprite relative h-20 w-20"
             />
@@ -296,22 +295,10 @@ function BattleHome({
                     </span>{" "}
                     · {Math.round(dailyResult.timeMs / 1000)}s
                   </div>
-                  <div className="mt-1 font-pixel text-base tracking-widest">{dailyResult.pattern}</div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="mt-3 w-full rounded-full"
-                    onClick={async () => {
-                      const text = `Pokémon Trivia · ${dailyResult.date}\n${dailyResult.correct}/${dailyResult.total} · ${Math.round(dailyResult.timeMs / 1000)}s\n${dailyResult.pattern}\nplay → poketrivia.app`;
-                      const nav = navigator as Navigator & { share?: (d: ShareData) => Promise<void> };
-                      if (nav.share) {
-                        try { await nav.share({ text }); return; } catch { /* fall */ }
-                      }
-                      try { await navigator.clipboard.writeText(text); toast.success("Copied!"); } catch { toast.error("Couldn't copy."); }
-                    }}
-                  >
-                    Share
-                  </Button>
+                  <div className="mt-2 flex justify-center">
+                    <PokeballPattern marks={dailyResult.pattern} />
+                  </div>
+                  <p className="mt-3 text-[10px] text-muted-foreground">Come back tomorrow for a new challenge.</p>
                 </>
               ) : (
                 <>

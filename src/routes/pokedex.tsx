@@ -3,10 +3,10 @@ import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Search, Sparkles } from "lucide-react";
 import { useGameStore } from "@/lib/store";
-import { ALL_POKEMON, spriteUrl, type PokeType } from "@/lib/pokemon-data";
+import { ALL_POKEMON, type PokeType } from "@/lib/pokemon-data";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { TypeBadge } from "@/components/game-ui";
+import { TypeBadge, PokemonSprite } from "@/components/game-ui";
 import {
   Dialog,
   DialogContent,
@@ -150,12 +150,10 @@ function PokedexPage() {
                   got ? "bg-card shadow-sm" : "bg-muted/30"
                 }`}
               >
-                <img
-                  src={spriteUrl(p.id)}
+                <PokemonSprite
+                  id={p.id}
                   alt={got ? p.name : "???"}
-                  loading="lazy"
-                  className="sprite h-14 w-14"
-                  style={got ? undefined : { filter: "brightness(0)" }}
+                  className={`sprite h-14 w-14 ${got ? "" : "[filter:brightness(0)]"}`}
                 />
                 <div className="mt-1 w-full truncate text-center text-[10px] font-semibold">
                   {got ? p.name : "???"}
@@ -195,7 +193,7 @@ function PokedexPage() {
                   </DialogTitle>
                 </DialogHeader>
                 <div className="flex flex-col items-center gap-3">
-                  <img src={spriteUrl(p.id, { shiny: showS })} alt={p.name} className="sprite h-32 w-32" />
+                  <PokemonSprite id={p.id} shiny={!!showS} alt={p.name} className="sprite h-32 w-32" />
                   <div className="flex gap-1">{p.types.map((t) => <TypeBadge key={t} type={t} />)}</div>
                   {entry ? (
                     <div className="text-center text-xs text-muted-foreground">
