@@ -417,6 +417,7 @@ function BattleMode({
 
     let newStreak = streak;
     if (correct) {
+      correctCountRef.current += 1;
       wrongStreakRef.current = 0;
 
       // Confused miss: 25% chance to do nothing
@@ -620,6 +621,18 @@ function BattleMode({
     const total = baseXp + bonus + eliteBonus;
     setXpEarned(total);
     setResultWon(won);
+
+    // Phase 3: Training Points
+    let tp = 0;
+    if (isElite) {
+      tp = won ? TP_REWARDS.eliteWin : TP_REWARDS.battleLoss;
+    } else if (won) {
+      tp = Math.min(20, correctCountRef.current * TP_REWARDS.battleWinPerCorrect);
+    } else {
+      tp = TP_REWARDS.battleLoss;
+    }
+    useGameStore.getState().addTrainingPoints(player.id, tp);
+    setTpEarned(tp);
 
     // comeback flag — won at low HP
     if (won && playerHp <= 10) {
