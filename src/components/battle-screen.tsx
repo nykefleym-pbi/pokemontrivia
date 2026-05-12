@@ -438,6 +438,10 @@ function BattleMode({
 
       // streak multiplier
       let dmg = Math.round(10 * streakMultiplier(newStreak));
+      // TP damage boost
+      const tpNow = useGameStore.getState().trainingPoints[player.id] ?? 0;
+      const tpMult = getTpMultiplier(tpNow);
+      if (tpMult > 1.0) dmg = Math.round(dmg * tpMult);
       // time bonus
       const elapsedSec = elapsed / 1000;
       const totalTime = TIMER_BASE + bonusTime;
