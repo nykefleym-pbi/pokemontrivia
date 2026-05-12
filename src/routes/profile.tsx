@@ -295,6 +295,10 @@ function ProfilePage() {
             </div>
           </TabsContent>
 
+          <TabsContent value="badges" className="mt-3">
+            <BadgesTab />
+          </TabsContent>
+
           <TabsContent value="abilities" className="mt-3">
             <div className="mb-2 flex items-center justify-between">
               <span className="font-pixel text-[9px] uppercase text-muted-foreground">
