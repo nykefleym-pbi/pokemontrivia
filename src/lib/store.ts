@@ -459,6 +459,7 @@ export const useGameStore = create<GameState>()(
         pokedex: s.pokedex,
         defeatedEliteRegions: s.defeatedEliteRegions,
         defeatedElites: s.defeatedElites,
+        abilityCodex: s.abilityCodex,
       }),
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<GameState>;
