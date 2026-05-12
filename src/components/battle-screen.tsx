@@ -11,7 +11,8 @@ import {
   streakMultiplier,
   streakLabel,
 } from "@/lib/game-data";
-import { isSuperEffective, findPokemon, type PokeEntry } from "@/lib/pokemon-data";
+import { isSuperEffective, findPokemon, isPlayerDisadvantaged, isPlayerImmune, type PokeEntry } from "@/lib/pokemon-data";
+import { TutorialOverlay } from "@/components/tutorial-overlay";
 import { HpBar, TypeBadge, PokemonSprite, PokeballPattern, type DailyMark } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
 import {
