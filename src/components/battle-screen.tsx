@@ -896,7 +896,7 @@ function DailyResultScreen({
       animate={{ opacity: 1 }}
       className="flex min-h-screen flex-col items-center justify-center bg-poke-hero px-6"
     >
-      <div className="font-pixel text-2xl text-poke-dark">DAILY DONE!</div>
+      <div className="font-pixel text-2xl text-poke-dark">ALL DONE!</div>
       <div className="mt-3 text-5xl">🏅</div>
       <div className="mt-6 w-full max-w-xs space-y-3 rounded-3xl bg-card/95 p-5 shadow-pop">
         <div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Date</span><span className="font-pixel text-sm">{date}</span></div>
