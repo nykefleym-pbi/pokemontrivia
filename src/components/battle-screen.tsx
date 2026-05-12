@@ -144,6 +144,35 @@ function BattleMode({
   const lastStreakLabelRef = useRef<string | null>(null);
 
   const superEff = isSuperEffective(player, enemy.pokemon);
+  const disadvantaged = useMemo(
+    () => isPlayerDisadvantaged(player, enemy.pokemon),
+    [player, enemy.pokemon],
+  );
+  const immune = useMemo(
+    () => isPlayerImmune(player, enemy.pokemon),
+    [player, enemy.pokemon],
+  );
+
+  // Tutorial state — only in regular battles, never Elite
+  const flags = useGameStore((s) => s.flags);
+  const tutorialActive = useMemo(
+    () => !flags.includes("tutorial_done") && !eliteMember,
+    [flags, eliteMember],
+  );
+  const [tutorialStep, setTutorialStep] = useState<1 | 2 | 3 | null>(null);
+
+  function dismissTutorial() {
+    const wasStep3 = tutorialStep === 3;
+    setTutorialStep(null);
+    if (wasStep3) {
+      raiseFlag("tutorial_done");
+    }
+  }
+
+  function skipTutorial() {
+    setTutorialStep(null);
+    raiseFlag("tutorial_done");
+  }
 
   // start once
   useEffect(() => {
