@@ -204,9 +204,9 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                     alt={t.name}
                     className="sprite h-20 w-20 object-contain"
                     loading="lazy"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).style.opacity = "0.3";
-                    }}
+                    onError={() =>
+                      setBrokenTrainerIds((s) => { const n = new Set(s); n.add(t.id); return n; })
+                    }
                   />
                   <span className="mt-1 truncate text-[11px] font-semibold capitalize">{t.name}</span>
                 </button>
