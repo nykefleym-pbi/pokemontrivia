@@ -349,7 +349,7 @@ function ProfilePage() {
               <button key={p.id}
                 onClick={() => { setPokemon(p); setPickerOpen(false); toast.success(`${p.name} chosen!`); }}
                 className="flex flex-col items-center rounded-2xl border-2 p-2 transition active:scale-95 hover:border-primary">
-                <img src={spriteUrl(p.id)} alt={p.name} className="sprite h-14 w-14" />
+                <PokemonSprite id={p.id} alt={p.name} className="sprite h-14 w-14" />
                 <div className="text-[11px] font-semibold">{p.name}</div>
               </button>
             ))}
