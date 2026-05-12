@@ -317,6 +317,7 @@ export const useGameStore = create<GameState>()(
           defeatedEliteRegions: [],
           defeatedElites: [],
           abilityCodex: [],
+          trainingPoints: {},
         }),
 
       setName: (name) => set({ trainerName: name }),
@@ -520,6 +521,7 @@ export const useGameStore = create<GameState>()(
         defeatedEliteRegions: s.defeatedEliteRegions,
         defeatedElites: s.defeatedElites,
         abilityCodex: s.abilityCodex,
+        trainingPoints: s.trainingPoints,
       }),
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<GameState>;
@@ -542,6 +544,7 @@ export const useGameStore = create<GameState>()(
           defeatedEliteRegions: p.defeatedEliteRegions ?? [],
           defeatedElites: p.defeatedElites ?? [],
           abilityCodex: p.abilityCodex ?? [],
+          trainingPoints: p.trainingPoints ?? {},
         };
       },
     },
