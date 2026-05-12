@@ -200,12 +200,15 @@ function BattleHome({
   const pokemon = useGameStore((s) => s.pokemon);
   const level = useGameStore((s) => s.level);
   const xp = useGameStore((s) => s.xp);
+  const trainingPoints = useGameStore((s) => s.trainingPoints);
   const [tab, setTab] = useState<"battle" | "daily">("battle");
 
   if (!pokemon) return null;
 
   const rank = rankForLevel(level);
   const xpProg = xpProgressInLevel(xp);
+  const partnerTp = trainingPoints[pokemon.id] ?? 0;
+  const tpMult = getTpMultiplier(partnerTp);
 
   return (
     <div className="bg-poke-hero min-h-screen pb-24">
