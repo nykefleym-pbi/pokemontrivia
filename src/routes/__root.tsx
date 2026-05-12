@@ -72,10 +72,6 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
-  useEffect(() => {
-    initTheme();
-  }, []);
-
   return (
     <div className="mx-auto min-h-screen w-full max-w-[480px] bg-background pb-20">
       <Outlet />
