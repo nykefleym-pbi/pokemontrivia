@@ -679,7 +679,7 @@ function BattleMode({
     }
     toast.success(`${def.emoji} Used ${def.name}!`);
     if (id === "potion") {
-      setPlayerHp((hp) => Math.min(100, hp + 30));
+      setPlayerHp((hp) => Math.min(playerMaxHp, hp + 30));
     }
     if (id === "revive" && playerHp <= 10) {
       setPlayerHp(50);
