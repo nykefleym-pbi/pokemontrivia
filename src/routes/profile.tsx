@@ -74,6 +74,8 @@ function ProfilePage() {
   const [resetOpen, setResetOpen] = useState(false);
   const [muted, setMutedState] = useState(false);
   const [brokenTrainerIds, setBrokenTrainerIds] = useState<Set<string>>(new Set());
+  const [evolvingFrom, setEvolvingFrom] = useState<PokeEntry | null>(null);
+  const [evolvingTo, setEvolvingTo] = useState<PokeEntry | null>(null);
 
   useEffect(() => {
     setMutedState(isMuted());
