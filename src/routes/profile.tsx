@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Pencil, RotateCcw, Check, Search, Volume2, VolumeX, Moon, Sun } from "lucide-react";
+import { Pencil, RotateCcw, Check, Search, Volume2, VolumeX } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { rankForLevel, xpProgressInLevel, ITEMS, TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
 import { searchPokemon, spriteUrl } from "@/lib/pokemon-data";
