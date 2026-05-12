@@ -239,12 +239,14 @@ function BattlePage() {
 function BattleHome({
   onStart,
   onStartDaily,
+  onStartWeekly,
   loading,
   dailyDone,
   dailyResult,
 }: {
   onStart: () => void;
   onStartDaily: () => void;
+  onStartWeekly: () => void;
   loading: boolean;
   dailyDone: boolean;
   dailyResult: { correct: number; total: number; timeMs: number; pattern: DailyMark[]; date: string } | null;
@@ -255,7 +257,9 @@ function BattleHome({
   const level = useGameStore((s) => s.level);
   const xp = useGameStore((s) => s.xp);
   const trainingPoints = useGameStore((s) => s.trainingPoints);
+  const weeklyLeague = useGameStore((s) => s.weeklyLeague);
   const [tab, setTab] = useState<"battle" | "daily">("battle");
+  const weekRange = getWeekRangeUtc();
 
   if (!pokemon) return null;
 
