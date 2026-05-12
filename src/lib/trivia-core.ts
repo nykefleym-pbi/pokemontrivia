@@ -149,8 +149,9 @@ export async function generateTrivia(opts: GenerateOpts): Promise<GenerateResult
   }
 
   const themeBlock = opts.themeNote ? `\n\nTHEME OVERRIDE: ${opts.themeNote}` : "";
-  const avoidBlock = opts.seenSamples.length
-    ? `\n\nAVOID these recent questions and any paraphrase of them (different wording but same answer/topic counts as a repeat):\n${opts.seenSamples.map((s, i) => `${i + 1}. ${s}`).join("\n")}`
+  const recentAvoid = opts.seenSamples.slice(-30);
+  const avoidBlock = recentAvoid.length
+    ? `\n\nAVOID these recent questions and any paraphrase of them (different wording but same answer/topic counts as a repeat):\n${recentAvoid.map((s, i) => `${i + 1}. ${s}`).join("\n")}`
     : "";
 
   const systemPrompt = `You are a Pokémon trivia question generator. Generate exactly ${BATCH} factually accurate multiple-choice questions about the Pokémon franchise (games, anime, manga, TCG, competitive).
