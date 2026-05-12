@@ -555,8 +555,9 @@ function BattleMode({
             initial={{ x: -80, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
           >
-            <img
-              src={playerSprite}
+            <PokemonSprite
+              id={player.id}
+              back
               alt={player.name}
               className={`sprite h-32 w-32 ${streak >= 5 ? "mega-glow" : ""}`}
             />
