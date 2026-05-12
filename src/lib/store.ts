@@ -256,6 +256,7 @@ export const useGameStore = create<GameState>()(
           pokedex: {},
           defeatedEliteRegions: [],
           defeatedElites: [],
+          abilityCodex: [],
         }),
 
       setName: (name) => set({ trainerName: name }),
