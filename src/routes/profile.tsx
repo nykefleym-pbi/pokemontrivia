@@ -420,6 +420,121 @@ function ProfilePage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {evolvingFrom && evolvingTo && (
+        <EvolutionScreen
+          from={evolvingFrom}
+          to={evolvingTo}
+          onComplete={() => {
+            setEvolvingFrom(null);
+            setEvolvingTo(null);
+            toast.success(`Evolved into ${evolvingTo.name}!`);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function PartnerCard({
+  pokemon,
+  tp,
+  onChange,
+  onEvolve,
+}: {
+  pokemon: PokeEntry;
+  tp: number;
+  onChange: () => void;
+  onEvolve: (target: PokeEntry) => void;
+}) {
+  const targets = useMemo(() => getEvolutionTargets(pokemon), [pokemon]);
+  const stage = pokemon.evolutionStage;
+  const cost = stage === 1 || stage === 2 ? EVOLUTION_TP_COST[stage] : null;
+  const eligible = canEvolve(pokemon) && cost !== null && tp >= cost;
+  const mult = getTpMultiplier(tp);
+  const [evoOpen, setEvoOpen] = useState(false);
+
+  function handleEvolveClick() {
+    if (!eligible) return;
+    if (targets.length === 1) {
+      onEvolve(targets[0]);
+    } else {
+      setEvoOpen(true);
+    }
+  }
+
+  return (
+    <div className="mt-3 rounded-2xl bg-card p-3 shadow-sm">
+      <div className="flex items-center gap-3">
+        <button onClick={onChange} className="shrink-0 transition active:scale-95">
+          <PokemonSprite id={pokemon.id} alt={pokemon.name} className="sprite h-14 w-14" />
+        </button>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between">
+            <div className="font-pixel text-[9px] uppercase text-muted-foreground">Partner</div>
+            <button onClick={onChange} className="text-muted-foreground hover:text-foreground">
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <div className="text-sm font-bold">{pokemon.name}</div>
+          <div className="mt-1 flex flex-wrap items-center gap-1">
+            {pokemon.types.map((t) => <TypeBadge key={t} type={t} size="sm" />)}
+            <span className="font-pixel text-[8px] text-primary">⚡ {getAbility(pokemon.types).name}</span>
+          </div>
+        </div>
+      </div>
+      <div className="mt-3 flex items-center gap-2 rounded-xl bg-muted/50 px-3 py-2">
+        <div className="flex-1">
+          <div className="flex items-center justify-between font-pixel text-[9px] text-muted-foreground">
+            <span>TRAINING POINTS</span>
+            <span>{tp}{cost ? ` / ${cost}` : ""}</span>
+          </div>
+          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-card">
+            <div
+              className="h-full bg-gradient-to-r from-poke-yellow to-primary"
+              style={{ width: `${cost ? Math.min(100, (tp / cost) * 100) : 100}%` }}
+            />
+          </div>
+        </div>
+        <span className="rounded-full bg-primary/15 px-2 py-0.5 font-pixel text-[9px] text-primary">
+          ×{mult.toFixed(2)}
+        </span>
+      </div>
+      {canEvolve(pokemon) && cost !== null && (
+        <Button
+          size="sm"
+          onClick={handleEvolveClick}
+          disabled={!eligible}
+          className="mt-2 w-full rounded-full bg-primary font-pixel text-[10px] shadow-pop disabled:opacity-50"
+        >
+          ✨ {eligible ? `Evolve (${cost} TP)` : `Evolve at ${cost} TP`}
+        </Button>
+      )}
+      {pokemon.isFullyEvolved && (
+        <div className="mt-2 rounded-full bg-poke-yellow/20 py-1 text-center font-pixel text-[9px] text-poke-dark">
+          ⭐ Fully evolved
+        </div>
+      )}
+      <Dialog open={evoOpen} onOpenChange={setEvoOpen}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader><DialogTitle>Choose evolution</DialogTitle></DialogHeader>
+          <div className="grid grid-cols-2 gap-2">
+            {targets.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => { setEvoOpen(false); onEvolve(t); }}
+                className="flex flex-col items-center rounded-2xl border-2 p-3 transition hover:border-primary active:scale-95"
+              >
+                <PokemonSprite id={t.id} alt={t.name} className="sprite h-16 w-16" />
+                <div className="mt-1 text-xs font-semibold">{t.name}</div>
+                <div className="mt-1 flex gap-0.5">
+                  {t.types.map((tt) => <TypeBadge key={tt} type={tt} size="sm" />)}
+                </div>
+              </button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
