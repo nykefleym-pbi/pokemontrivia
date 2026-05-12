@@ -128,7 +128,7 @@ function BattleMode({
   const [streak, setStreak] = useState(0);
   const [questionIdx, setQuestionIdx] = useState(0);
   const [timer, setTimer] = useState(TIMER_BASE);
-  const [dialog, setDialog] = useState("");
+  const [introBanner, setIntroBanner] = useState<string | null>(null);
   const [shakeWho, setShakeWho] = useState<"player" | "enemy" | null>(null);
   const [floatDmg, setFloatDmg] = useState<{ who: "player" | "enemy"; n: number; super: boolean; speedy: boolean } | null>(null);
   const [bagOpen, setBagOpen] = useState(false);
