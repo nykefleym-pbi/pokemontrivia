@@ -1172,6 +1172,15 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
             timeMs,
             pattern: nextPattern,
           });
+          // Phase 3: Daily TP
+          const partner = useGameStore.getState().pokemon;
+          if (partner) {
+            if (finalCorrect === total) {
+              useGameStore.getState().addTrainingPoints(partner.id, TP_REWARDS.dailyPerfect);
+            } else if (finalCorrect >= 5) {
+              useGameStore.getState().addTrainingPoints(partner.id, TP_REWARDS.dailyPartial);
+            }
+          }
         }
         playSfx("victory");
         setPhase("done");
