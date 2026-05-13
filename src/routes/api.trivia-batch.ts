@@ -41,7 +41,9 @@ export const Route = createFileRoute("/api/trivia-batch")({
           return Response.json({ error: aiResult.error, code: aiResult.status }, { status: aiResult.status });
         }
 
-        recordCuratedServed(curatedResult.servedIds).catch(() => {});
+        await recordCuratedServed(curatedResult.servedIds).catch(() => {
+          console.warn("Failed to record curated served (non-fatal).");
+        });
 
         const merged = [...aiResult.questions, ...curatedResult.questions];
         const shuffled = merged
