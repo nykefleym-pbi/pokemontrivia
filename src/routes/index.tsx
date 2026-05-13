@@ -46,7 +46,7 @@ function SplashPage() {
             exit={{ opacity: 0, y: -20 }}
             className="relative flex min-h-screen flex-col items-center justify-center px-6 text-center"
           >
-            <PokeballSpinner size={120} />
+            <PokeballSpinner size={120} spinning />
             <h1 className="mt-8 font-pixel text-2xl leading-relaxed text-poke-dark">
               POKéMON TRIVIA
             </h1>
