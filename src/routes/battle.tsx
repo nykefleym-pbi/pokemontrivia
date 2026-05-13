@@ -48,12 +48,22 @@ function BattlePage() {
   const weeklyLeague = useGameStore((s) => s.weeklyLeague);
   const initWeeklyLeague = useGameStore((s) => s.initWeeklyLeague);
   const startWeeklyLeagueAttempt = useGameStore((s) => s.startWeeklyLeagueAttempt);
+  const recordWeeklyLeagueResult = useGameStore((s) => s.recordWeeklyLeagueResult);
 
   const pendingElite = nextPendingElite(peakLevel, defeatedElites);
 
   useEffect(() => {
     initWeeklyLeague();
   }, [initWeeklyLeague]);
+
+  // On mount: if a weekly battle was left in_progress (app closed mid-fight), count it as loss
+  useEffect(() => {
+    if (useGameStore.getState().weeklyLeague?.status === "in_progress") {
+      recordWeeklyLeagueResult(false);
+      toast.error("Previous Weekly League attempt counted as a loss.");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!hasOnboarded) navigate({ to: "/" });

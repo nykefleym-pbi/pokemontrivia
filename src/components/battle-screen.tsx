@@ -659,7 +659,9 @@ function BattleMode({
 
     // Phase 3: Training Points
     let tp = 0;
-    if (isElite) {
+    if (isWeekly) {
+      tp = won ? TP_REWARDS.weeklyWin : TP_REWARDS.battleLoss;
+    } else if (isElite) {
       tp = won ? TP_REWARDS.eliteWin : TP_REWARDS.battleLoss;
     } else if (won) {
       tp = Math.min(20, correctCountRef.current * TP_REWARDS.battleWinPerCorrect);
@@ -758,6 +760,10 @@ function BattleMode({
 
   function tryUseItem(id: ItemId) {
     const def = getItemDef(id);
+    if (id === "escape" && isWeekly) {
+      toast.error("Escape Rope can't be used in the Weekly League.");
+      return;
+    }
     const ok = useItem(id);
     if (!ok) {
       toast.error(`Cannot use ${def.name} right now.`);
@@ -835,7 +841,13 @@ function BattleMode({
       {/* top bar */}
       <div className="flex items-center justify-between px-4 pt-[calc(env(safe-area-inset-top)+0.5rem)]">
         <button
-          onClick={() => setConfirmExit(true)}
+          onClick={() => {
+            if (isWeekly) {
+              toast.error("You cannot leave a Weekly League challenge.");
+              return;
+            }
+            setConfirmExit(true);
+          }}
           className="flex h-10 w-10 items-center justify-center rounded-full bg-card/80 backdrop-blur"
         >
           <ChevronLeft className="h-5 w-5" />
@@ -860,7 +872,7 @@ function BattleMode({
               {ITEMS.map((it) => {
                 const owned = inventory[it.id] ?? 0;
                 const cd = cooldowns[it.id] ?? 0;
-                const disabled = owned <= 0 || cd > 0;
+                const disabled = owned <= 0 || cd > 0 || (isWeekly && it.id === "escape");
                 return (
                   <button
                     key={it.id}

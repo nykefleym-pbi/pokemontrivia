@@ -479,13 +479,17 @@ export const useGameStore = create<GameState>()(
         const finalXp = s.luckyEggActive ? xpGained * 2 : xpGained;
         set({
           inBattle: false,
+          luckyEggActive: false,
+          xAttackActive: false,
+          scopeRevealedThisBattle: false,
+          bonusTimeThisBattle: 0,
+          potionsUsedThisBattle: 0,
           stats: {
             ...s.stats,
             battles: s.stats.battles + 1,
             wins: s.stats.wins + (won ? 1 : 0),
             losses: s.stats.losses + (won ? 0 : 1),
           },
-          luckyEggActive: false,
         });
         get().addXp(finalXp);
       },
