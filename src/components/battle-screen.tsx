@@ -203,17 +203,103 @@ function BattleMode({
     [player, enemy.pokemon],
   );
 
-  // Hooks: abilities (also owns abilityStateRef + triggerAbilityToast)
-  const { abilityStateRef, triggerAbilityToast } = useBattleAbilities({
-    playerAbility,
-    enemyMaxHp,
-    questionIdx,
-    trivia,
-    phase,
-    questionsPerSet: QUESTIONS_PER_SET,
-    setEnemyHp,
-    setRevealedWrong,
+  // Phase 2: ability + status state
+  type StatusKind = "confused" | "poisoned";
+  interface ActiveStatus { kind: StatusKind; curesRemaining: number; appliedAt: number }
+  const [statuses, setStatuses] = useState<ActiveStatus[]>([]);
+  const wrongStreakRef = useRef(0);
+  const poisonTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastAbilityToastRef = useRef<number>(0);
+  const abilityStateRef = useRef({
+    sturdyUsed: false,
+    iceFirstWrongConsumed: false,
+    hydrationUsed: false,
+    cursedBodyPending: null as { hpBefore: number; appliedAt: number } | null,
+    triggered: new Set<string>(),
   });
+  const [timer, setTimer] = useState(20);
+
+  function triggerAbilityToast(ability: Ability) {
+    const already = abilityStateRef.current.triggered.has(ability.id);
+    const now = Date.now();
+    const recentlyShown = now - lastAbilityToastRef.current < 1500;
+    if (!recentlyShown) {
+      toast.info(`✨ ${ability.name} activated!`, {
+        description: ability.description,
+        duration: 2200,
+      });
+      lastAbilityToastRef.current = now;
+    }
+    if (!already) {
+      abilityStateRef.current.triggered.add(ability.id);
+      useGameStore.getState().registerAbilityTriggered(ability.id);
+    }
+  }
+
+  function stopPoisonTick() {
+    if (poisonTimerRef.current) {
+      clearInterval(poisonTimerRef.current);
+      poisonTimerRef.current = null;
+    }
+  }
+
+  function startPoisonTick() {
+    stopPoisonTick();
+    poisonTimerRef.current = setInterval(() => {
+      setPlayerHp((hp) => {
+        const tick = Math.max(1, Math.floor(playerMaxHp * 0.02));
+        const next = Math.max(0, hp - tick);
+        setFloatDmg({ who: "player", n: tick, super: false, speedy: false });
+        setTimeout(() => setFloatDmg(null), 800);
+        if (next <= 0) {
+          stopPoisonTick();
+          setTimeout(() => finish(false), 800);
+        }
+        return next;
+      });
+    }, 2000);
+  }
+
+  function applyStatus(kind: StatusKind) {
+    if (
+      kind === "confused" &&
+      playerAbility.id === "hydration" &&
+      !abilityStateRef.current.hydrationUsed
+    ) {
+      abilityStateRef.current.hydrationUsed = true;
+      triggerAbilityToast(playerAbility);
+      return;
+    }
+    const cureNeeds = { confused: 2, poisoned: 3 } as const;
+    setStatuses((prev) => {
+      const without = prev.filter((s) => s.kind !== kind);
+      return [...without, { kind, curesRemaining: cureNeeds[kind], appliedAt: Date.now() }];
+    });
+    if (kind === "confused") {
+      toast.warning("🌀 Confused! Some correct answers may miss.");
+    } else {
+      toast.error("☠️ Poisoned! Losing HP over time.");
+      startPoisonTick();
+    }
+  }
+
+  function tickStatusCure(kind: StatusKind) {
+    setStatuses((prev) => {
+      const willClear = prev.some((s) => s.kind === kind && s.curesRemaining === 1);
+      const updated = prev
+        .map((s) => (s.kind === kind ? { ...s, curesRemaining: s.curesRemaining - 1 } : s))
+        .filter((s) => s.curesRemaining > 0);
+      if (willClear) {
+        if (kind === "confused") toast.success("Snapped out of confusion!");
+        if (kind === "poisoned") {
+          toast.success("Recovered from poison!");
+          stopPoisonTick();
+        }
+      }
+      return updated;
+    });
+  }
+
 
   // Tutorial state — only in regular battles, never Elite
   const flags = useGameStore((s) => s.flags);
