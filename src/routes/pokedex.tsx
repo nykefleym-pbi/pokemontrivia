@@ -98,42 +98,45 @@ function PokedexPage() {
 
       {/* Sticky filters */}
       <div className="sticky top-0 z-20 border-b border-border bg-card/95 px-5 py-2 backdrop-blur">
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search name..."
-              className="h-8 pl-9 text-xs"
-            />
-          </div>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search name..."
+            className="h-8 pl-9 text-xs"
+          />
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <select
+            value={gen}
+            onChange={(e) => setGen(Number(e.target.value))}
+            className="h-8 rounded-md border bg-background px-2 text-xs"
+          >
+            {GEN_RANGES.map((g) => (
+              <option key={g.gen} value={g.gen}>Gen {g.gen}</option>
+            ))}
+          </select>
           <select
             value={type}
             onChange={(e) => setType(e.target.value as "all" | PokeType)}
             className="h-8 rounded-md border bg-background px-2 text-xs"
           >
-            <option value="all">All</option>
+            <option value="all">All Types</option>
             {ALL_TYPES.map((t) => (
-              <option key={t} value={t}>{t}</option>
+              <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
             ))}
           </select>
-          <label className="flex items-center gap-1.5 text-[10px]">
-            <Switch checked={capturedOnly} onCheckedChange={setCapturedOnly} />
-          </label>
-        </div>
-        <div className="mt-2 -mx-5 flex gap-1 overflow-x-auto px-5 pb-1">
-          {GEN_RANGES.map((g) => (
-            <button
-              key={g.gen}
-              onClick={() => setGen(g.gen)}
-              className={`shrink-0 rounded-full px-3 py-1 font-pixel text-[9px] transition active:scale-95 ${
-                gen === g.gen ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-              }`}
-            >
-              GEN {g.gen}
-            </button>
-          ))}
+          <div className="ml-auto flex items-center gap-3">
+            <label className="flex items-center gap-1.5 text-[10px] font-pixel uppercase">
+              Caught
+              <Switch checked={capturedOnly} onCheckedChange={setCapturedOnly} />
+            </label>
+            <label className="flex items-center gap-1.5 text-[10px] font-pixel uppercase">
+              Shiny
+              <Switch checked={shinyOnly} onCheckedChange={setShinyOnly} />
+            </label>
+          </div>
         </div>
       </div>
 
