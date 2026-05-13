@@ -188,23 +188,37 @@ function PokedexPage() {
             const p = ALL_POKEMON.find((x) => x.id === detailId);
             const entry = pokedex[detailId];
             if (!p) return null;
+            const got = !!entry;
             const showS = showShiny && entry?.shinyUnlocked;
+            const displayName = got ? p.name : p.name.replace(/[a-zA-Z]/g, "*");
             return (
               <>
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
-                    <span>#{String(p.id).padStart(4, "0")} {p.name}</span>
+                    <span>#{String(p.id).padStart(4, "0")} {displayName}</span>
                     {entry?.shinyUnlocked && <Sparkles className="h-4 w-4 text-yellow-400" />}
                   </DialogTitle>
                 </DialogHeader>
                 <div className="flex flex-col items-center gap-3">
-                  <PokemonSprite id={p.id} shiny={!!showS} alt={p.name} className="sprite h-32 w-32" />
-                  <div className="flex gap-1">{p.types.map((t) => <TypeBadge key={t} type={t} />)}</div>
+                  <PokemonSprite
+                    id={p.id}
+                    shiny={!!showS}
+                    alt={displayName}
+                    className={`sprite h-32 w-32 ${got ? "" : "sprite-silhouette"}`}
+                  />
+                  <div className="flex gap-1">
+                    {got
+                      ? p.types.map((t) => <TypeBadge key={t} type={t} />)
+                      : <span className="font-pixel text-[10px] uppercase text-muted-foreground">??? type</span>}
+                  </div>
                   {entry ? (
-                    <div className="text-center text-xs text-muted-foreground">
-                      <div>Defeated {entry.defeatCount}×</div>
-                      <div>First seen {new Date(entry.firstSeenAt).toLocaleDateString()}</div>
-                    </div>
+                    <>
+                      <div className="text-center text-xs text-muted-foreground">
+                        <div>Defeated {entry.defeatCount}×</div>
+                        <div>First seen {new Date(entry.firstSeenAt).toLocaleDateString()}</div>
+                      </div>
+                      <PokedexFlavor pokemonId={p.id} />
+                    </>
                   ) : (
                     <div className="text-xs text-muted-foreground">Not yet captured</div>
                   )}
@@ -219,6 +233,48 @@ function PokedexPage() {
           })()}
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function PokedexFlavor({ pokemonId }: { pokemonId: number }) {
+  const [flavor, setFlavor] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setFlavor(null);
+    fetch(`https://pokeapi.co/api/v2/pokemon-species/${pokemonId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        const entries = data.flavor_text_entries ?? [];
+        const preferredVersions = ["scarlet", "violet", "sword", "shield", "ultra-sun", "sun", "x", "black-2", "platinum"];
+        let best: { flavor_text: string } | undefined;
+        for (const ver of preferredVersions) {
+          best = entries.find((e: { language: { name: string }; version: { name: string } }) => e.language.name === "en" && e.version.name === ver);
+          if (best) break;
+        }
+        if (!best) {
+          best = entries.find((e: { language: { name: string } }) => e.language.name === "en");
+        }
+        if (best) {
+          setFlavor(best.flavor_text.replace(/[\n\f]/g, " ").replace(/POKéMON/g, "Pokémon"));
+        }
+      })
+      .catch(() => { /* silent */ })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [pokemonId]);
+
+  if (loading) return null;
+  if (!flavor) return null;
+  return (
+    <div className="rounded-xl bg-muted/50 p-2 text-center text-[11px] italic leading-relaxed text-muted-foreground">
+      {flavor}
     </div>
   );
 }
