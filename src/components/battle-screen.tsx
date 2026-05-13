@@ -159,14 +159,10 @@ function BattleMode({
     }
     return pickRandomEnemy();
   });
-  const enemyMaxHp_unused = enemyMaxHp; void enemyMaxHp_unused;
-  // playerAbility provided by useBattleAbilities hook below
-  const _adaptableProbe = useMemo(
-    () => (player.types.includes("water") ? 105 : 100),
-    [player.types],
-  );
-  void _adaptableProbe;
-  const [playerHp, setPlayerHp] = useState(100);
+  const enemyMaxHp = isWeekly ? 250 : isElite ? 200 : enemyHpForLevel(level);
+  const playerAbility = useMemo(() => getAbilityFn(player.types), [player.types]);
+  const playerMaxHp = playerAbility.id === "adaptable" ? 105 : 100;
+  const [playerHp, setPlayerHp] = useState(playerMaxHp);
   const [enemyHp, setEnemyHp] = useState(enemyMaxHp);
   const [phase, setPhase] = useState<Phase>("intro");
   const [trivia, setTrivia] = useState<Trivia | null>(null);
