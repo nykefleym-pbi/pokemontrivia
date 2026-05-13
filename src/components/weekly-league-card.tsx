@@ -4,6 +4,7 @@ import type { WeeklyLeagueState } from "@/lib/store";
 import { findGymLeader } from "@/lib/gym-leaders";
 import { Button } from "@/components/ui/button";
 import { PokemonSprite, TypeBadge } from "@/components/game-ui";
+import { trainerSpriteUrl, getTrainerSprite } from "@/lib/game-data";
 
 interface Props {
   weeklyLeague: WeeklyLeagueState;
