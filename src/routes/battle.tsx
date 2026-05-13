@@ -305,17 +305,22 @@ function BattleHome({
               alt={pokemon.name}
               className="sprite relative h-20 w-20"
             />
-            <div className="relative mt-1 font-pixel text-[8px] text-poke-dark/70">
-              ⚡ {getAbility(pokemon.types).name}
-            </div>
-            <div className="relative mt-0.5 font-pixel text-[8px] text-primary">
-              TP {partnerTp} · ×{tpMult.toFixed(2)}
-            </div>
           </div>
         </div>
-        <div className="mt-2 flex items-center justify-between">
-          <span className="font-pixel text-[10px] text-poke-dark/70">LV {level}</span>
-          <span className="font-pixel text-[10px] text-poke-dark/60">✨ {xp} XP</span>
+        {/* Stat row — Level, XP, TP prominently shown */}
+        <div className="mt-2 grid grid-cols-3 gap-2">
+          <div className="rounded-xl bg-card/40 px-2 py-1 text-center">
+            <div className="font-pixel text-[8px] uppercase text-poke-dark/60">Level</div>
+            <div className="font-pixel text-sm text-poke-dark">{level}</div>
+          </div>
+          <div className="rounded-xl bg-card/40 px-2 py-1 text-center">
+            <div className="font-pixel text-[8px] uppercase text-poke-dark/60">XP</div>
+            <div className="font-pixel text-sm text-poke-dark">{xp}</div>
+          </div>
+          <div className="rounded-xl bg-card/40 px-2 py-1 text-center">
+            <div className="font-pixel text-[8px] uppercase text-poke-dark/60">TP · ×{tpMult.toFixed(2)}</div>
+            <div className="font-pixel text-sm text-primary">{partnerTp}</div>
+          </div>
         </div>
       </AppHeader>
 
