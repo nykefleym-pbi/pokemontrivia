@@ -348,13 +348,15 @@ function BattleHome({
 
           {tab === "battle" ? (
             <div className="flex flex-col items-center text-center">
-              <PokeballSpinner size={72} />
+              <PokeballSpinner size={72} spinning={loading} />
               <h3 className="mt-3 font-pixel text-sm text-foreground">
                 {loading ? "Setting up the battle..." : "Up for a battle?"}
               </h3>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {loading ? "Hang on, summoning a challenger..." : "A challenger has appeared!"}
-              </p>
+              {loading && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Hang on, summoning a challenger...
+                </p>
+              )}
               <Button
                 size="lg"
                 onClick={onStart}
@@ -367,7 +369,7 @@ function BattleHome({
             </div>
           ) : (
             <div className="flex flex-col items-center text-center">
-              {!dailyDone && <PokeballSpinner size={56} />}
+              {!dailyDone && <PokeballSpinner size={56} spinning={loading} />}
               <h3 className={`font-pixel text-sm text-foreground ${!dailyDone ? "mt-3" : ""}`}>🔥 DAILY CHALLENGE</h3>
               {dailyDone && dailyResult ? (
                 <>
