@@ -589,3 +589,32 @@ function BadgesTab() {
     </div>
   );
 }
+
+function BadgeCell({ leader, got }: { leader: GymLeader; got: boolean }) {
+  const [imgBroken, setImgBroken] = useState(false);
+  const showImage = got && !imgBroken;
+  return (
+    <div
+      title={`${leader.name} — ${leader.badge}`}
+      className={`flex flex-col items-center rounded-xl p-2 ${got ? "bg-poke-yellow/20" : "grayscale opacity-30"}`}
+    >
+      {showImage ? (
+        <img
+          src={leader.badgeIconUrl}
+          alt={leader.badge}
+          crossOrigin="anonymous"
+          className="h-9 w-9 object-contain"
+          onError={() => setImgBroken(true)}
+        />
+      ) : (
+        <div className="text-2xl">{got ? "🎖" : "❓"}</div>
+      )}
+      <div className="mt-1 truncate text-center text-[9px] font-semibold leading-tight">
+        {got ? leader.badge.replace(" Badge", "") : "???"}
+      </div>
+      <div className="truncate text-center text-[8px] leading-tight text-muted-foreground">
+        {leader.name}
+      </div>
+    </div>
+  );
+}
