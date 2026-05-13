@@ -88,7 +88,7 @@ function ProfilePage() {
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return ALL_POKEMON.filter(isStartingPartner)
+    return STARTING_PARTNERS
       .filter((p) => (q ? p.name.toLowerCase().includes(q) : true))
       .slice(0, 24);
   }, [query]);
