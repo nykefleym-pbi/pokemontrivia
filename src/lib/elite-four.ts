@@ -14,8 +14,7 @@ export interface EliteMember {
   quote: string;
 }
 
-const SPRITE = (slug: string) =>
-  `https://play.pokemonshowdown.com/sprites/trainers/${slug}.png`;
+const SPRITE = (slug: string) => `/trainers/elite/${slug}.png`;
 
 export const ELITE_FOUR: EliteMember[] = [
   { id: "lorelei", name: "Lorelei", title: "Elite Four", region: "Kanto", type: "ice", signaturePokemonId: 131, signaturePokemonName: "Lapras", trainerSpriteUrl: SPRITE("lorelei"), unlockLevel: 5, quote: "No one can best me when it comes to icy Pokémon!" },
