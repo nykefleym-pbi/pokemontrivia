@@ -16,7 +16,7 @@ export function PartnerPicker({ onPick, selected, limit = 24 }: Props) {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return STARTING_PARTNERS
-      .filter((p) => (q ? p.name.toLowerCase().includes(q) : true))
+      .filter((p) => (q ? p.name.toLowerCase().startsWith(q) : true))
       .slice(0, limit);
   }, [query, limit]);
 
