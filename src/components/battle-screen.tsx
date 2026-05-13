@@ -17,9 +17,7 @@ import { isSuperEffective, findPokemon, isPlayerDisadvantaged, isPlayerImmune, t
 import { getAbility as getAbilityFn, type Ability } from "@/lib/abilities";
 import { TutorialOverlay } from "@/components/tutorial-overlay";
 import { HpBar, TypeBadge, PokemonSprite, PokeballPattern, type DailyMark } from "@/components/game-ui";
-import { useBattleTimer } from "@/hooks/use-battle-timer";
-import { useBattleAbilities } from "@/hooks/use-battle-abilities";
-import { useBattleStatuses } from "@/hooks/use-battle-statuses";
+import { Button } from "@/components/ui/button";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
