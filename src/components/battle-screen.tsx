@@ -159,10 +159,14 @@ function BattleMode({
     }
     return pickRandomEnemy();
   });
-  const enemyMaxHp = isWeekly ? 250 : isElite ? 200 : enemyHpForLevel(level);
-  const playerAbility = useMemo(() => getAbility(player.types), [player.types]);
-  const playerMaxHp = playerAbility.id === "adaptable" ? 105 : 100;
-  const [playerHp, setPlayerHp] = useState(playerMaxHp);
+  const enemyMaxHp_unused = enemyMaxHp; void enemyMaxHp_unused;
+  // playerAbility provided by useBattleAbilities hook below
+  const _adaptableProbe = useMemo(
+    () => (player.types.includes("water") ? 105 : 100),
+    [player.types],
+  );
+  void _adaptableProbe;
+  const [playerHp, setPlayerHp] = useState(100);
   const [enemyHp, setEnemyHp] = useState(enemyMaxHp);
   const [phase, setPhase] = useState<Phase>("intro");
   const [trivia, setTrivia] = useState<Trivia | null>(null);
@@ -170,7 +174,6 @@ function BattleMode({
   const [revealedWrong, setRevealedWrong] = useState<number | null>(null);
   const [streak, setStreak] = useState(0);
   const [questionIdx, setQuestionIdx] = useState(0);
-  const [timer, setTimer] = useState(TIMER_BASE);
   const [introBanner, setIntroBanner] = useState<string | null>(null);
   const [shakeWho, setShakeWho] = useState<"player" | "enemy" | null>(null);
   const [floatDmg, setFloatDmg] = useState<{ who: "player" | "enemy"; n: number; super: boolean; speedy: boolean } | null>(null);
@@ -191,20 +194,8 @@ function BattleMode({
   const [shareOpen, setShareOpen] = useState(false);
   const trainerSpriteId = useGameStore((s) => s.trainerSprite);
 
-  // Phase 2: ability + status state
-  type StatusKind = "confused" | "poisoned";
-  interface ActiveStatus { kind: StatusKind; curesRemaining: number; appliedAt: number }
-  const [statuses, setStatuses] = useState<ActiveStatus[]>([]);
-  const wrongStreakRef = useRef(0);
-  const poisonTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const lastAbilityToastRef = useRef<number>(0);
-  const abilityStateRef = useRef({
-    sturdyUsed: false,
-    iceFirstWrongConsumed: false,
-    hydrationUsed: false,
-    cursedBodyPending: null as { hpBefore: number; appliedAt: number } | null,
-    triggered: new Set<string>(),
-  });
+  // finishRef gives hooks a stable handle to the latest finish() closure
+  const finishRef = useRef<(won: boolean) => void>(() => {});
 
   const superEff = isSuperEffective(player, enemy.pokemon);
   const disadvantaged = useMemo(
