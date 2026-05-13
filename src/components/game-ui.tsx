@@ -165,6 +165,7 @@ export function PokemonSprite({
       alt={alt ?? `Pokemon ${id}`}
       className={className}
       loading="lazy"
+      crossOrigin="anonymous"
       onError={() => {
         setIdx((i) => (i < sources.length - 1 ? i + 1 : i));
       }}
