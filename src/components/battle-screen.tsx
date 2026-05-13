@@ -354,8 +354,10 @@ function BattleMode({
     setRevealedWrong(null);
     const data = questions[idx];
     if (!data) {
-      // Out of questions — player outlasted the trainer
-      setTimeout(() => finish(true), 600);
+      // Out of questions — decide based on remaining HP.
+      // Player wins only if enemy HP is 0; otherwise the enemy outlasted them.
+      const won = enemyHp <= 0;
+      setTimeout(() => finish(won), 600);
       return;
     }
     setTrivia(data);

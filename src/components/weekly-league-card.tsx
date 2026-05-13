@@ -4,7 +4,6 @@ import type { WeeklyLeagueState } from "@/lib/store";
 import { findGymLeader } from "@/lib/gym-leaders";
 import { Button } from "@/components/ui/button";
 import { PokemonSprite, TypeBadge } from "@/components/game-ui";
-import { trainerSpriteUrl, getTrainerSprite } from "@/lib/game-data";
 
 interface Props {
   weeklyLeague: WeeklyLeagueState;
@@ -100,12 +99,11 @@ export function WeeklyLeagueResultCard({ weeklyLeague, nextWeekStart }: ResultPr
 
 function TrainerSprite({ trainerId }: { trainerId: string }) {
   const [broken, setBroken] = useState(false);
-  const sprite = getTrainerSprite(trainerId);
-  if (!sprite || broken) return null;
+  if (broken) return null;
   return (
     <img
-      src={trainerSpriteUrl(trainerId)}
-      alt={sprite.name}
+      src={`/trainers/gym/${trainerId}.png`}
+      alt={trainerId}
       crossOrigin="anonymous"
       className="sprite h-20 w-20 shrink-0 object-contain"
       onError={() => setBroken(true)}
