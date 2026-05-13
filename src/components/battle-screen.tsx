@@ -194,6 +194,7 @@ function BattleMode({
   const [statuses, setStatuses] = useState<ActiveStatus[]>([]);
   const wrongStreakRef = useRef(0);
   const poisonTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastAbilityToastRef = useRef<number>(0);
   const abilityStateRef = useRef({
     sturdyUsed: false,
     iceFirstWrongConsumed: false,
