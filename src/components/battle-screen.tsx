@@ -781,10 +781,6 @@ function BattleMode({
       setTimer((t) => t + 5);
     }
     if (id === "escape") {
-      if (isWeekly) {
-        toast.error("Escape Rope can't be used in the Weekly League.");
-        return;
-      }
       setBagOpen(false);
       abortBattle();
       setTimeout(() => onExit(), 300);
