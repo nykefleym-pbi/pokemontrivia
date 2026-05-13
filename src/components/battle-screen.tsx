@@ -18,7 +18,6 @@ import { getAbility as getAbilityFn, type Ability } from "@/lib/abilities";
 import { TutorialOverlay } from "@/components/tutorial-overlay";
 import { HpBar, TypeBadge, PokemonSprite, PokeballPattern, type DailyMark } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
-import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
