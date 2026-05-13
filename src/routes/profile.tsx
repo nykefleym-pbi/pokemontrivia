@@ -208,8 +208,9 @@ function ProfilePage() {
 
         {/* Tabs */}
         <Tabs defaultValue="stats" className="mt-4">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full h-auto auto-rows-fr grid-cols-4 gap-1">
             <TabsTrigger value="stats" className="font-pixel text-[8px]">Stats</TabsTrigger>
+            <TabsTrigger value="inventory" className="font-pixel text-[8px]">Inventory</TabsTrigger>
             <TabsTrigger value="trophies" className="font-pixel text-[8px]">Trophies</TabsTrigger>
             <TabsTrigger value="badges" className="font-pixel text-[8px]">Badges</TabsTrigger>
             <TabsTrigger value="abilities" className="font-pixel text-[8px]">Abilities</TabsTrigger>
