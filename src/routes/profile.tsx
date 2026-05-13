@@ -483,8 +483,10 @@ function PartnerCard({
             </button>
           </div>
           <div className="text-sm font-bold">{pokemon.name}</div>
-          <div className="mt-1 flex flex-wrap items-center gap-1">
-            {pokemon.types.map((t) => <TypeBadge key={t} type={t} size="sm" />)}
+          <div className="mt-1 flex items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-1">
+              {pokemon.types.map((t) => <TypeBadge key={t} type={t} size="sm" />)}
+            </div>
             <span className="font-pixel text-[8px] text-primary">⚡ {getAbility(pokemon.types).name}</span>
           </div>
         </div>
@@ -502,9 +504,12 @@ function PartnerCard({
             />
           </div>
         </div>
-        <span className="rounded-full bg-primary/15 px-2 py-0.5 font-pixel text-[9px] text-primary">
-          ×{mult.toFixed(2)}
-        </span>
+        <div className="flex flex-col items-center">
+          <span className="font-pixel text-[8px] uppercase text-muted-foreground">DMG ×</span>
+          <span className="rounded-full bg-primary/15 px-2 py-0.5 font-pixel text-[10px] text-primary">
+            {mult.toFixed(2)}
+          </span>
+        </div>
       </div>
       {canEvolve(pokemon) && cost !== null && (
         <Button
