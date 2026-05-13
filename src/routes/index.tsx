@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search } from "lucide-react";
 import { useGameStore } from "@/lib/store";
-import { ALL_POKEMON, isStartingPartner, type PokeEntry } from "@/lib/pokemon-data";
+import { STARTING_PARTNERS, type PokeEntry } from "@/lib/pokemon-data";
 import { getAbility } from "@/lib/abilities";
 import { PokeballSpinner, TypeBadge, PokemonSprite } from "@/components/game-ui";
 import { TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
