@@ -44,6 +44,7 @@ function PokedexPage() {
   const [query, setQuery] = useState("");
   const [type, setType] = useState<"all" | PokeType>("all");
   const [capturedOnly, setCapturedOnly] = useState(false);
+  const [shinyOnly, setShinyOnly] = useState(false);
   const [detailId, setDetailId] = useState<number | null>(null);
   const [showShiny, setShowShiny] = useState(false);
 
@@ -61,12 +62,13 @@ function PokedexPage() {
   const filtered = useMemo(() => {
     return ALL_POKEMON.filter((p) => {
       if (p.id < range.from || p.id > range.to) return false;
-      if (q && !p.name.toLowerCase().includes(q)) return false;
+      if (q && !p.name.toLowerCase().startsWith(q)) return false;
       if (type !== "all" && !p.types.includes(type)) return false;
       if (capturedOnly && !pokedex[p.id]) return false;
+      if (shinyOnly && !pokedex[p.id]?.shinyUnlocked) return false;
       return true;
     });
-  }, [range, q, type, capturedOnly, pokedex]);
+  }, [range, q, type, capturedOnly, shinyOnly, pokedex]);
 
   if (!hasOnboarded) return null;
 
