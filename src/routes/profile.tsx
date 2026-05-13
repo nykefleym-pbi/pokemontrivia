@@ -580,21 +580,7 @@ function BadgesTab() {
             <div className="grid grid-cols-4 gap-2">
               {leaders.map((g) => {
                 const got = owned.has(g.id);
-                return (
-                  <div
-                    key={g.id}
-                    title={`${g.name} — ${g.badge}`}
-                    className={`flex flex-col items-center rounded-xl p-2 ${got ? "bg-poke-yellow/20" : "grayscale opacity-30"}`}
-                  >
-                    <div className="text-2xl">🎖</div>
-                    <div className="mt-1 truncate text-center text-[9px] font-semibold leading-tight">
-                      {g.name}
-                    </div>
-                    <div className="text-center text-[8px] leading-tight text-muted-foreground">
-                      {got ? g.badge.replace(" Badge", "") : "???"}
-                    </div>
-                  </div>
-                );
+                return <BadgeCell key={g.id} leader={g} got={got} />;
               })}
             </div>
           </div>
