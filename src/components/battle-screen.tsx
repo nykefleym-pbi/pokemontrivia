@@ -14,9 +14,12 @@ import {
   getTpMultiplier,
 } from "@/lib/game-data";
 import { isSuperEffective, findPokemon, isPlayerDisadvantaged, isPlayerImmune, type PokeEntry } from "@/lib/pokemon-data";
-import { getAbility, type Ability } from "@/lib/abilities";
+import { type Ability } from "@/lib/abilities";
 import { TutorialOverlay } from "@/components/tutorial-overlay";
 import { HpBar, TypeBadge, PokemonSprite, PokeballPattern, type DailyMark } from "@/components/game-ui";
+import { useBattleTimer } from "@/hooks/use-battle-timer";
+import { useBattleAbilities } from "@/hooks/use-battle-abilities";
+import { useBattleStatuses } from "@/hooks/use-battle-statuses";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
