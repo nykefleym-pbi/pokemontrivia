@@ -58,7 +58,7 @@ function ProfilePage() {
   const flags = useGameStore((s) => s.flags);
   const peakLevel = useGameStore((s) => s.peakLevel);
   const pokedex = useGameStore((s) => s.pokedex);
-  const abilityCodex = useGameStore((s) => s.abilityCodex);
+  
   const trainingPoints = useGameStore((s) => s.trainingPoints);
   const evolvePartner = useGameStore((s) => s.evolvePartner);
   const unlocked = useMemo(() => {
