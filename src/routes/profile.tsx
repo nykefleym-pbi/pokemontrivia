@@ -250,18 +250,21 @@ function ProfilePage() {
                 })}
               </div>
             </div>
-            {/* inventory */}
-            <div>
+          </TabsContent>
+
+          <TabsContent value="inventory" className="mt-3">
+            <div className="rounded-2xl bg-card p-3 shadow-sm">
               <div className="mb-2 font-pixel text-[9px] uppercase text-muted-foreground">Inventory</div>
-              <div className="grid grid-cols-4 gap-2 rounded-2xl bg-card p-3 shadow-sm">
+              <div className="grid grid-cols-3 gap-2">
                 {ITEMS.map((it) => {
                   const n = inventory[it.id] ?? 0;
                   return (
                     <div key={it.id} className={`flex flex-col items-center rounded-xl p-2 ${n > 0 ? "bg-muted" : "opacity-30"}`} title={it.name}>
-                      <img src={it.iconUrl} alt={it.name} crossOrigin="anonymous" className="sprite h-9 w-9 object-contain" onError={(e) => {
+                      <img src={it.iconUrl} alt={it.name} crossOrigin="anonymous" className="sprite h-10 w-10 object-contain" onError={(e) => {
                         const el = e.currentTarget as HTMLImageElement;
                         el.replaceWith(Object.assign(document.createElement("span"), { textContent: it.emoji, className: "text-2xl" }));
                       }} />
+                      <div className="mt-1 text-center text-[10px] font-semibold leading-tight">{it.name}</div>
                       <div className="font-pixel text-[9px] text-primary">×{n}</div>
                     </div>
                   );
