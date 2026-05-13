@@ -14,9 +14,12 @@ import {
   getTpMultiplier,
 } from "@/lib/game-data";
 import { isSuperEffective, findPokemon, isPlayerDisadvantaged, isPlayerImmune, type PokeEntry } from "@/lib/pokemon-data";
-import { getAbility, type Ability } from "@/lib/abilities";
+import { getAbility as getAbilityFn, type Ability } from "@/lib/abilities";
 import { TutorialOverlay } from "@/components/tutorial-overlay";
 import { HpBar, TypeBadge, PokemonSprite, PokeballPattern, type DailyMark } from "@/components/game-ui";
+import { useBattleTimer } from "@/hooks/use-battle-timer";
+import { useBattleAbilities } from "@/hooks/use-battle-abilities";
+import { useBattleStatuses } from "@/hooks/use-battle-statuses";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -157,7 +160,7 @@ function BattleMode({
     return pickRandomEnemy();
   });
   const enemyMaxHp = isWeekly ? 250 : isElite ? 200 : enemyHpForLevel(level);
-  const playerAbility = useMemo(() => getAbility(player.types), [player.types]);
+  const playerAbility = useMemo(() => getAbilityFn(player.types), [player.types]);
   const playerMaxHp = playerAbility.id === "adaptable" ? 105 : 100;
   const [playerHp, setPlayerHp] = useState(playerMaxHp);
   const [enemyHp, setEnemyHp] = useState(enemyMaxHp);
@@ -167,7 +170,6 @@ function BattleMode({
   const [revealedWrong, setRevealedWrong] = useState<number | null>(null);
   const [streak, setStreak] = useState(0);
   const [questionIdx, setQuestionIdx] = useState(0);
-  const [timer, setTimer] = useState(TIMER_BASE);
   const [introBanner, setIntroBanner] = useState<string | null>(null);
   const [shakeWho, setShakeWho] = useState<"player" | "enemy" | null>(null);
   const [floatDmg, setFloatDmg] = useState<{ who: "player" | "enemy"; n: number; super: boolean; speedy: boolean } | null>(null);
@@ -188,6 +190,19 @@ function BattleMode({
   const [shareOpen, setShareOpen] = useState(false);
   const trainerSpriteId = useGameStore((s) => s.trainerSprite);
 
+  // finishRef gives hooks a stable handle to the latest finish() closure
+  const finishRef = useRef<(won: boolean) => void>(() => {});
+
+  const superEff = isSuperEffective(player, enemy.pokemon);
+  const disadvantaged = useMemo(
+    () => isPlayerDisadvantaged(player, enemy.pokemon),
+    [player, enemy.pokemon],
+  );
+  const immune = useMemo(
+    () => isPlayerImmune(player, enemy.pokemon),
+    [player, enemy.pokemon],
+  );
+
   // Phase 2: ability + status state
   type StatusKind = "confused" | "poisoned";
   interface ActiveStatus { kind: StatusKind; curesRemaining: number; appliedAt: number }
@@ -202,16 +217,7 @@ function BattleMode({
     cursedBodyPending: null as { hpBefore: number; appliedAt: number } | null,
     triggered: new Set<string>(),
   });
-
-  const superEff = isSuperEffective(player, enemy.pokemon);
-  const disadvantaged = useMemo(
-    () => isPlayerDisadvantaged(player, enemy.pokemon),
-    [player, enemy.pokemon],
-  );
-  const immune = useMemo(
-    () => isPlayerImmune(player, enemy.pokemon),
-    [player, enemy.pokemon],
-  );
+  const [timer, setTimer] = useState(20);
 
   function triggerAbilityToast(ability: Ability) {
     const already = abilityStateRef.current.triggered.has(ability.id);
