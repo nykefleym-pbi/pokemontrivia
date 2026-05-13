@@ -144,3 +144,7 @@ export function isPlayerImmune(playerPokemon: PokeEntry, enemyPokemon: PokeEntry
   }
   return true;
 }
+
+/** Pre-filtered list of strict-stage-1 Pokémon (those with evolvesFromId === null).
+ *  Use this directly instead of calling ALL_POKEMON.filter(isStartingPartner) at render time. */
+export const STARTING_PARTNERS: PokeEntry[] = ALL_POKEMON.filter(isStartingPartner);

@@ -539,7 +539,7 @@ export const useGameStore = create<GameState>()(
 
       pushBattleLog: (e) => {
         const s = get();
-        set({ battleLog: [e, ...s.battleLog].slice(0, 20) });
+        set({ battleLog: [e, ...s.battleLog].slice(0, 100) });
       },
 
       recordPokedexCapture: (pokemonId, isShiny) => {
