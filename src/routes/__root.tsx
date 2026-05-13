@@ -1,5 +1,6 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { BottomNav } from "@/components/bottom-nav";
+import { PwaRegister } from "@/components/pwa-register";
 
 import appCss from "../styles.css?url";
 
