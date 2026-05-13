@@ -26,8 +26,9 @@ export function WeeklyLeagueCard({ weeklyLeague, onStart, resumeMode = false, lo
           {leader.region}
         </div>
       </div>
-      <div className="mt-2 flex items-center gap-3">
-        <PokemonSprite id={leader.signaturePokemonId} className="sprite h-20 w-20" />
+      <div className="mt-2 flex items-center gap-2">
+        <TrainerSprite trainerId={leader.trainerSpriteId} />
+        <PokemonSprite id={leader.signaturePokemonId} className="sprite h-20 w-20 shrink-0" />
         <div className="min-w-0 flex-1">
           <div className="font-pixel text-sm text-foreground truncate">{leader.name}</div>
           <div className="mt-1 flex items-center gap-1">
