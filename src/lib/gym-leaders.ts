@@ -12,7 +12,7 @@ export interface GymLeader {
   trainerSpriteId: string;
 }
 
-const BADGE = (path: string) => `https://archives.bulbagarden.net/media/upload/${path}`;
+const BADGE = (slug: string) => `/badges/${slug}.png`;
 
 export const GYM_LEADERS: GymLeader[] = [
   // KANTO
