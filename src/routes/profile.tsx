@@ -89,14 +89,14 @@ function ProfilePage() {
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     return STARTING_PARTNERS
-      .filter((p) => (q ? p.name.toLowerCase().includes(q) : true))
+      .filter((p) => (q ? p.name.toLowerCase().startsWith(q) : true))
       .slice(0, 24);
   }, [query]);
   const trainerResults = useMemo(() => {
     const q = trainerQuery.trim().toLowerCase();
     const pool = TRAINER_SPRITES.filter((t) => !brokenTrainerIds.has(t.id));
     if (!q) return pool.slice(0, 30);
-    return pool.filter((t) => t.id.toLowerCase().includes(q) || t.name.toLowerCase().includes(q)).slice(0, 60);
+    return pool.filter((t) => t.name.toLowerCase().startsWith(q)).slice(0, 60);
   }, [trainerQuery, brokenTrainerIds]);
 
   // 7-day activity heatmap — must run BEFORE the conditional return
