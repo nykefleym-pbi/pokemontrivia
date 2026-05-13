@@ -215,10 +215,15 @@ function BattleMode({
 
   function triggerAbilityToast(ability: Ability) {
     const already = abilityStateRef.current.triggered.has(ability.id);
-    toast.info(`✨ ${ability.name} activated!`, {
-      description: ability.description,
-      duration: 2200,
-    });
+    const now = Date.now();
+    const recentlyShown = now - lastAbilityToastRef.current < 1500;
+    if (!recentlyShown) {
+      toast.info(`✨ ${ability.name} activated!`, {
+        description: ability.description,
+        duration: 2200,
+      });
+      lastAbilityToastRef.current = now;
+    }
     if (!already) {
       abilityStateRef.current.triggered.add(ability.id);
       useGameStore.getState().registerAbilityTriggered(ability.id);
