@@ -449,14 +449,16 @@ function ElitePendingTakeover({
         transition={{ delay: 0.1 }}
         className="relative mx-auto mt-6 flex max-w-xs flex-col items-center text-center"
       >
-        <div className="relative">
+        <div className="relative flex items-end justify-center gap-2">
           <div className="absolute inset-0 -m-4 rounded-full bg-poke-yellow/20 blur-2xl" />
           <img
             src={elite.trainerSpriteUrl}
             alt={elite.name}
+            crossOrigin="anonymous"
             className="sprite relative h-40 w-40 object-contain drop-shadow-2xl"
-            onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = "0.3"; }}
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
           />
+          <PokemonSprite id={elite.signaturePokemonId} alt={elite.signaturePokemonName} className="sprite relative h-28 w-28 object-contain drop-shadow-2xl" />
         </div>
         <p className="mt-3 font-pixel text-[10px] text-poke-yellow/80">{elite.title.toUpperCase()}</p>
         <h1 className="mt-1 font-pixel text-2xl text-poke-yellow">{elite.name}</h1>
