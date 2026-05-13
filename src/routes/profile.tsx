@@ -99,14 +99,7 @@ function ProfilePage() {
     return pool.filter((t) => t.id.toLowerCase().includes(q) || t.name.toLowerCase().includes(q)).slice(0, 60);
   }, [trainerQuery, brokenTrainerIds]);
 
-  if (!hasOnboarded || !pokemon) return null;
-
-  const rank = rankForLevel(level);
-  const xpProg = xpProgressInLevel(xp);
-  const accuracy = stats.answered > 0 ? Math.round((stats.correct / stats.answered) * 100) : 0;
-  const avgTime = stats.answered > 0 ? Math.round(stats.totalAnswerTime / stats.answered / 100) / 10 : 0;
-
-  // 7-day activity heatmap
+  // 7-day activity heatmap — must run BEFORE the conditional return
   const heatmap = useMemo(() => {
     const days: Array<{ date: string; count: number }> = [];
     const now = new Date();
@@ -123,6 +116,13 @@ function ProfilePage() {
     }
     return days;
   }, [battleLog]);
+
+  if (!hasOnboarded || !pokemon) return null;
+
+  const rank = rankForLevel(level);
+  const xpProg = xpProgressInLevel(xp);
+  const accuracy = stats.answered > 0 ? Math.round((stats.correct / stats.answered) * 100) : 0;
+  const avgTime = stats.answered > 0 ? Math.round(stats.totalAnswerTime / stats.answered / 100) / 10 : 0;
 
   function saveName() {
     if (nameDraft.trim()) {
