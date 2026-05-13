@@ -760,6 +760,10 @@ function BattleMode({
 
   function tryUseItem(id: ItemId) {
     const def = getItemDef(id);
+    if (id === "escape" && isWeekly) {
+      toast.error("Escape Rope can't be used in the Weekly League.");
+      return;
+    }
     const ok = useItem(id);
     if (!ok) {
       toast.error(`Cannot use ${def.name} right now.`);
