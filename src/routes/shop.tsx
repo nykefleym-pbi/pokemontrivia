@@ -106,7 +106,7 @@ function ShopPage() {
                   <span className="absolute -right-6 top-2 rotate-45 bg-poke-yellow px-6 py-0.5 font-pixel text-[8px] text-poke-dark">
                     DAILY
                   </span>
-                  <img src={item.iconUrl} alt={item.name} className="sprite h-10 w-10 object-contain" />
+                  <img src={item.iconUrl} alt={item.name} crossOrigin="anonymous" className="sprite h-10 w-10 object-contain" />
                   <div className="font-pixel text-[10px]">{item.name}</div>
                   <div className="text-[10px] text-muted-foreground">×{owned} owned</div>
                   <div className="mt-1 font-pixel text-[10px] text-primary">
@@ -194,7 +194,7 @@ function ShopPage() {
             <>
               <SheetHeader>
                 <div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
-                  <img src={confirmItem.iconUrl} alt={confirmItem.name} className="sprite h-12 w-12 object-contain" />
+                  <img src={confirmItem.iconUrl} alt={confirmItem.name} crossOrigin="anonymous" className="sprite h-12 w-12 object-contain" />
                 </div>
                 <SheetTitle className="text-center font-pixel text-sm">{confirmItem.name}</SheetTitle>
                 <SheetDescription className="text-center text-xs">

@@ -257,7 +257,7 @@ function ProfilePage() {
                   const n = inventory[it.id] ?? 0;
                   return (
                     <div key={it.id} className={`flex flex-col items-center rounded-xl p-2 ${n > 0 ? "bg-muted" : "opacity-30"}`} title={it.name}>
-                      <img src={it.iconUrl} alt={it.name} className="sprite h-9 w-9 object-contain" onError={(e) => {
+                      <img src={it.iconUrl} alt={it.name} crossOrigin="anonymous" className="sprite h-9 w-9 object-contain" onError={(e) => {
                         const el = e.currentTarget as HTMLImageElement;
                         el.replaceWith(Object.assign(document.createElement("span"), { textContent: it.emoji, className: "text-2xl" }));
                       }} />
@@ -418,7 +418,7 @@ function ProfilePage() {
               <button key={t.id}
                 onClick={() => { setTrainerSprite(t.id); setTrainerPickerOpen(false); toast.success("Trainer updated!"); }}
                 className="flex flex-col items-center rounded-2xl border-2 p-2 transition active:scale-95 hover:border-primary">
-                <img src={trainerSpriteUrl(t.id)} alt={t.name} className="sprite h-16 w-16 object-contain" loading="lazy"
+                <img src={trainerSpriteUrl(t.id)} alt={t.name} crossOrigin="anonymous" className="sprite h-16 w-16 object-contain" loading="lazy"
                   onError={() => setBrokenTrainerIds((s) => { const n = new Set(s); n.add(t.id); return n; })} />
                 <div className="text-[11px] font-semibold capitalize">{t.name}</div>
               </button>

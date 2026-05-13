@@ -189,7 +189,7 @@ export function PokeballPattern({ marks }: { marks: DailyMark[] }) {
             m === "correct" ? "" : m === "wrong" ? "opacity-40 grayscale" : "opacity-30 grayscale"
           }`}
         >
-          <img src={POKEBALL_SPRITE} alt={m} className="sprite h-full w-full object-contain" />
+          <img src={POKEBALL_SPRITE} alt={m} crossOrigin="anonymous" className="sprite h-full w-full object-contain" />
           {m === "wrong" && (
             <span className="pointer-events-none absolute inset-0 flex items-center justify-center font-pixel text-[10px] text-destructive">
               ✕
