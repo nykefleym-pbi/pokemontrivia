@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { ALL_POKEMON, isStartingPartner, type PokeEntry } from "@/lib/pokemon-data";
+import { STARTING_PARTNERS, type PokeEntry } from "@/lib/pokemon-data";
 import { getAbility } from "@/lib/abilities";
 import { PokemonSprite, TypeBadge } from "@/components/game-ui";
 
@@ -15,7 +15,7 @@ export function PartnerPicker({ onPick, selected, limit = 24 }: Props) {
   const [query, setQuery] = useState("");
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return ALL_POKEMON.filter(isStartingPartner)
+    return STARTING_PARTNERS
       .filter((p) => (q ? p.name.toLowerCase().includes(q) : true))
       .slice(0, limit);
   }, [query, limit]);
