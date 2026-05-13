@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useGameStore } from "@/lib/store";
-import { getAbility, type Ability } from "@/lib/abilities";
-import type { PokeEntry } from "@/lib/pokemon-data";
+import { type Ability } from "@/lib/abilities";
 
 export interface AbilityState {
   sturdyUsed: boolean;
@@ -21,7 +20,7 @@ interface Trivia {
 }
 
 interface Opts {
-  player: PokeEntry;
+  playerAbility: Ability;
   enemyMaxHp: number;
   questionIdx: number;
   trivia: Trivia | null;
@@ -32,7 +31,7 @@ interface Opts {
 }
 
 export function useBattleAbilities({
-  player,
+  playerAbility,
   enemyMaxHp,
   questionIdx,
   trivia,
@@ -41,7 +40,6 @@ export function useBattleAbilities({
   setEnemyHp,
   setRevealedWrong,
 }: Opts) {
-  const playerAbility = useMemo(() => getAbility(player.types), [player.types]);
   const abilityStateRef = useRef<AbilityState>({
     sturdyUsed: false,
     iceFirstWrongConsumed: false,
