@@ -872,7 +872,7 @@ function BattleMode({
               {ITEMS.map((it) => {
                 const owned = inventory[it.id] ?? 0;
                 const cd = cooldowns[it.id] ?? 0;
-                const disabled = owned <= 0 || cd > 0;
+                const disabled = owned <= 0 || cd > 0 || (isWeekly && it.id === "escape");
                 return (
                   <button
                     key={it.id}
