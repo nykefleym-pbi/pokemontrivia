@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Pencil, RotateCcw, Check, Search, Volume2, VolumeX } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { rankForLevel, xpProgressInLevel, ITEMS, TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
-import { ALL_POKEMON, isStartingPartner, canEvolve, getEvolutionTargets, type PokeEntry } from "@/lib/pokemon-data";
+import { STARTING_PARTNERS, canEvolve, getEvolutionTargets, type PokeEntry } from "@/lib/pokemon-data";
 import { ABILITIES, getAbility } from "@/lib/abilities";
 import { EVOLUTION_TP_COST, getTpMultiplier } from "@/lib/game-data";
 import { EvolutionScreen } from "@/components/evolution-screen";
