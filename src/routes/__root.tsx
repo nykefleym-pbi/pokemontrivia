@@ -86,6 +86,7 @@ function RootComponent() {
         <Outlet />
         <BottomNav />
       </div>
+      <PwaRegister />
     </div>
   );
 }
