@@ -97,3 +97,18 @@ export function WeeklyLeagueResultCard({ weeklyLeague, nextWeekStart }: ResultPr
     </div>
   );
 }
+
+function TrainerSprite({ trainerId }: { trainerId: string }) {
+  const [broken, setBroken] = useState(false);
+  const sprite = getTrainerSprite(trainerId);
+  if (!sprite || broken) return null;
+  return (
+    <img
+      src={trainerSpriteUrl(trainerId)}
+      alt={sprite.name}
+      crossOrigin="anonymous"
+      className="sprite h-20 w-20 shrink-0 object-contain"
+      onError={() => setBroken(true)}
+    />
+  );
+}
