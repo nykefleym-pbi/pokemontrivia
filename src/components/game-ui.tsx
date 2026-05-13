@@ -92,10 +92,16 @@ export const XpBar = React.memo(function XpBar({ xp, need }: { xp: number; need:
   );
 });
 
-export const PokeballSpinner = React.memo(function PokeballSpinner({ size = 64 }: { size?: number }) {
+export const PokeballSpinner = React.memo(function PokeballSpinner({
+  size = 64,
+  spinning = false,
+}: {
+  size?: number;
+  spinning?: boolean;
+}) {
   return (
     <div
-      className="animate-pokeball relative overflow-hidden rounded-full border-[3px] border-poke-dark shadow-pop"
+      className={`relative overflow-hidden rounded-full border-[3px] border-poke-dark ${spinning ? "animate-pokeball" : ""}`}
       style={{ width: size, height: size }}
     >
       {/* Top half — red */}

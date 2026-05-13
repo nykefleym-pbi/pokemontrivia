@@ -4,6 +4,7 @@ import type { WeeklyLeagueState } from "@/lib/store";
 import { findGymLeader } from "@/lib/gym-leaders";
 import { Button } from "@/components/ui/button";
 import { PokemonSprite, TypeBadge } from "@/components/game-ui";
+import { trainerSpriteUrl, getTrainerSprite } from "@/lib/game-data";
 
 interface Props {
   weeklyLeague: WeeklyLeagueState;
@@ -25,8 +26,9 @@ export function WeeklyLeagueCard({ weeklyLeague, onStart, resumeMode = false, lo
           {leader.region}
         </div>
       </div>
-      <div className="mt-2 flex items-center gap-3">
-        <PokemonSprite id={leader.signaturePokemonId} className="sprite h-20 w-20" />
+      <div className="mt-2 flex items-center gap-2">
+        <TrainerSprite trainerId={leader.trainerSpriteId} />
+        <PokemonSprite id={leader.signaturePokemonId} className="sprite h-20 w-20 shrink-0" />
         <div className="min-w-0 flex-1">
           <div className="font-pixel text-sm text-foreground truncate">{leader.name}</div>
           <div className="mt-1 flex items-center gap-1">
@@ -93,5 +95,20 @@ export function WeeklyLeagueResultCard({ weeklyLeague, nextWeekStart }: ResultPr
         </div>
       </div>
     </div>
+  );
+}
+
+function TrainerSprite({ trainerId }: { trainerId: string }) {
+  const [broken, setBroken] = useState(false);
+  const sprite = getTrainerSprite(trainerId);
+  if (!sprite || broken) return null;
+  return (
+    <img
+      src={trainerSpriteUrl(trainerId)}
+      alt={sprite.name}
+      crossOrigin="anonymous"
+      className="sprite h-20 w-20 shrink-0 object-contain"
+      onError={() => setBroken(true)}
+    />
   );
 }

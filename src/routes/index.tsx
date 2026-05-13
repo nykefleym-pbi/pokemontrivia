@@ -46,7 +46,7 @@ function SplashPage() {
             exit={{ opacity: 0, y: -20 }}
             className="relative flex min-h-screen flex-col items-center justify-center px-6 text-center"
           >
-            <PokeballSpinner size={120} />
+            <PokeballSpinner size={120} spinning />
             <h1 className="mt-8 font-pixel text-2xl leading-relaxed text-poke-dark">
               POKéMON TRIVIA
             </h1>
@@ -108,14 +108,14 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     return STARTING_PARTNERS
-      .filter((p) => (q ? p.name.toLowerCase().includes(q) : true))
+      .filter((p) => (q ? p.name.toLowerCase().startsWith(q) : true))
       .slice(0, 24);
   }, [query]);
   const trainerResults = useMemo(() => {
     const q = trainerQuery.trim().toLowerCase();
     const pool = TRAINER_SPRITES.filter((t) => !brokenTrainerIds.has(t.id));
     if (!q) return pool.slice(0, 30);
-    return pool.filter((t) => t.id.toLowerCase().includes(q) || t.name.toLowerCase().includes(q)).slice(0, 60);
+    return pool.filter((t) => t.name.toLowerCase().startsWith(q)).slice(0, 60);
   }, [trainerQuery, brokenTrainerIds]);
 
   function start() {

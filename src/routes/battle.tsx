@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppHeader, XpBar, PokeballSpinner, PokeballPattern, PokemonSprite, type DailyMark } from "@/components/game-ui";
 import { rankForLevel, xpProgressInLevel, difficultyForLevel, getTpMultiplier } from "@/lib/game-data";
-import { getAbility } from "@/lib/abilities";
+
 import { trainerSpriteUrl } from "@/lib/game-data";
 import { BattleScreen, type Trivia } from "@/components/battle-screen";
 import { Toaster } from "@/components/ui/sonner";
@@ -305,17 +305,22 @@ function BattleHome({
               alt={pokemon.name}
               className="sprite relative h-20 w-20"
             />
-            <div className="relative mt-1 font-pixel text-[8px] text-poke-dark/70">
-              ⚡ {getAbility(pokemon.types).name}
-            </div>
-            <div className="relative mt-0.5 font-pixel text-[8px] text-primary">
-              TP {partnerTp} · ×{tpMult.toFixed(2)}
-            </div>
           </div>
         </div>
-        <div className="mt-2 flex items-center justify-between">
-          <span className="font-pixel text-[10px] text-poke-dark/70">LV {level}</span>
-          <span className="font-pixel text-[10px] text-poke-dark/60">✨ {xp} XP</span>
+        {/* Stat row — Level, XP, TP prominently shown */}
+        <div className="mt-2 grid grid-cols-3 gap-2">
+          <div className="rounded-xl bg-card/40 px-2 py-1 text-center">
+            <div className="font-pixel text-[8px] uppercase text-poke-dark/60">Level</div>
+            <div className="font-pixel text-sm text-poke-dark">{level}</div>
+          </div>
+          <div className="rounded-xl bg-card/40 px-2 py-1 text-center">
+            <div className="font-pixel text-[8px] uppercase text-poke-dark/60">XP</div>
+            <div className="font-pixel text-sm text-poke-dark">{xp}</div>
+          </div>
+          <div className="rounded-xl bg-card/40 px-2 py-1 text-center">
+            <div className="font-pixel text-[8px] uppercase text-poke-dark/60">TP · ×{tpMult.toFixed(2)}</div>
+            <div className="font-pixel text-sm text-primary">{partnerTp}</div>
+          </div>
         </div>
       </AppHeader>
 
@@ -343,13 +348,15 @@ function BattleHome({
 
           {tab === "battle" ? (
             <div className="flex flex-col items-center text-center">
-              <PokeballSpinner size={72} />
+              <PokeballSpinner size={72} spinning={loading} />
               <h3 className="mt-3 font-pixel text-sm text-foreground">
                 {loading ? "Setting up the battle..." : "Up for a battle?"}
               </h3>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {loading ? "Hang on, summoning a challenger..." : "A challenger has appeared!"}
-              </p>
+              {loading && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Hang on, summoning a challenger...
+                </p>
+              )}
               <Button
                 size="lg"
                 onClick={onStart}
@@ -362,7 +369,7 @@ function BattleHome({
             </div>
           ) : (
             <div className="flex flex-col items-center text-center">
-              {!dailyDone && <PokeballSpinner size={56} />}
+              {!dailyDone && <PokeballSpinner size={56} spinning={loading} />}
               <h3 className={`font-pixel text-sm text-foreground ${!dailyDone ? "mt-3" : ""}`}>🔥 DAILY CHALLENGE</h3>
               {dailyDone && dailyResult ? (
                 <>
@@ -442,14 +449,16 @@ function ElitePendingTakeover({
         transition={{ delay: 0.1 }}
         className="relative mx-auto mt-6 flex max-w-xs flex-col items-center text-center"
       >
-        <div className="relative">
+        <div className="relative flex items-end justify-center gap-2">
           <div className="absolute inset-0 -m-4 rounded-full bg-poke-yellow/20 blur-2xl" />
           <img
             src={elite.trainerSpriteUrl}
             alt={elite.name}
+            crossOrigin="anonymous"
             className="sprite relative h-40 w-40 object-contain drop-shadow-2xl"
-            onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = "0.3"; }}
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
           />
+          <PokemonSprite id={elite.signaturePokemonId} alt={elite.signaturePokemonName} className="sprite relative h-28 w-28 object-contain drop-shadow-2xl" />
         </div>
         <p className="mt-3 font-pixel text-[10px] text-poke-yellow/80">{elite.title.toUpperCase()}</p>
         <h1 className="mt-1 font-pixel text-2xl text-poke-yellow">{elite.name}</h1>

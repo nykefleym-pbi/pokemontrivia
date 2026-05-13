@@ -32,7 +32,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ACHIEVEMENTS, unlockedAchievements } from "@/lib/achievements";
-import { GYM_LEADERS } from "@/lib/gym-leaders";
+import { GYM_LEADERS, type GymLeader } from "@/lib/gym-leaders";
 import { isMuted, setMuted } from "@/lib/audio";
 
 
@@ -58,7 +58,7 @@ function ProfilePage() {
   const flags = useGameStore((s) => s.flags);
   const peakLevel = useGameStore((s) => s.peakLevel);
   const pokedex = useGameStore((s) => s.pokedex);
-  const abilityCodex = useGameStore((s) => s.abilityCodex);
+  
   const trainingPoints = useGameStore((s) => s.trainingPoints);
   const evolvePartner = useGameStore((s) => s.evolvePartner);
   const unlocked = useMemo(() => {
@@ -89,14 +89,14 @@ function ProfilePage() {
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     return STARTING_PARTNERS
-      .filter((p) => (q ? p.name.toLowerCase().includes(q) : true))
+      .filter((p) => (q ? p.name.toLowerCase().startsWith(q) : true))
       .slice(0, 24);
   }, [query]);
   const trainerResults = useMemo(() => {
     const q = trainerQuery.trim().toLowerCase();
     const pool = TRAINER_SPRITES.filter((t) => !brokenTrainerIds.has(t.id));
     if (!q) return pool.slice(0, 30);
-    return pool.filter((t) => t.id.toLowerCase().includes(q) || t.name.toLowerCase().includes(q)).slice(0, 60);
+    return pool.filter((t) => t.name.toLowerCase().startsWith(q)).slice(0, 60);
   }, [trainerQuery, brokenTrainerIds]);
 
   // 7-day activity heatmap — must run BEFORE the conditional return
@@ -208,8 +208,9 @@ function ProfilePage() {
 
         {/* Tabs */}
         <Tabs defaultValue="stats" className="mt-4">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full h-auto auto-rows-fr grid-cols-4 gap-1">
             <TabsTrigger value="stats" className="font-pixel text-[8px]">Stats</TabsTrigger>
+            <TabsTrigger value="inventory" className="font-pixel text-[8px]">Inventory</TabsTrigger>
             <TabsTrigger value="trophies" className="font-pixel text-[8px]">Trophies</TabsTrigger>
             <TabsTrigger value="badges" className="font-pixel text-[8px]">Badges</TabsTrigger>
             <TabsTrigger value="abilities" className="font-pixel text-[8px]">Abilities</TabsTrigger>
@@ -249,18 +250,21 @@ function ProfilePage() {
                 })}
               </div>
             </div>
-            {/* inventory */}
-            <div>
+          </TabsContent>
+
+          <TabsContent value="inventory" className="mt-3">
+            <div className="rounded-2xl bg-card p-3 shadow-sm">
               <div className="mb-2 font-pixel text-[9px] uppercase text-muted-foreground">Inventory</div>
-              <div className="grid grid-cols-4 gap-2 rounded-2xl bg-card p-3 shadow-sm">
+              <div className="grid grid-cols-3 gap-2">
                 {ITEMS.map((it) => {
                   const n = inventory[it.id] ?? 0;
                   return (
                     <div key={it.id} className={`flex flex-col items-center rounded-xl p-2 ${n > 0 ? "bg-muted" : "opacity-30"}`} title={it.name}>
-                      <img src={it.iconUrl} alt={it.name} crossOrigin="anonymous" className="sprite h-9 w-9 object-contain" onError={(e) => {
+                      <img src={it.iconUrl} alt={it.name} crossOrigin="anonymous" className="sprite h-10 w-10 object-contain" onError={(e) => {
                         const el = e.currentTarget as HTMLImageElement;
                         el.replaceWith(Object.assign(document.createElement("span"), { textContent: it.emoji, className: "text-2xl" }));
                       }} />
+                      <div className="mt-1 text-center text-[10px] font-semibold leading-tight">{it.name}</div>
                       <div className="font-pixel text-[9px] text-primary">×{n}</div>
                     </div>
                   );
@@ -301,29 +305,18 @@ function ProfilePage() {
           </TabsContent>
 
           <TabsContent value="abilities" className="mt-3">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="font-pixel text-[9px] uppercase text-muted-foreground">
-                {abilityCodex.length}/{Object.keys(ABILITIES).length} discovered
-              </span>
-            </div>
             <div className="grid grid-cols-2 gap-2">
-              {Object.values(ABILITIES).map((ab) => {
-                const known = abilityCodex.includes(ab.id);
-                return (
-                  <div
-                    key={ab.id}
-                    className={`rounded-2xl bg-card p-3 shadow-sm ${known ? "" : "opacity-60"}`}
-                  >
-                    <div className="flex items-center justify-between gap-1">
-                      <div className="text-xs font-bold">{ab.name}</div>
-                      <TypeBadge type={ab.type} />
-                    </div>
-                    <div className="mt-1 text-[10px] leading-tight text-muted-foreground">
-                      {known ? ab.description : "???"}
-                    </div>
+              {Object.values(ABILITIES).map((ab) => (
+                <div key={ab.id} className="rounded-2xl bg-card p-3 shadow-sm">
+                  <div className="flex items-center justify-between gap-1">
+                    <div className="text-xs font-bold">{ab.name}</div>
+                    <TypeBadge type={ab.type} />
                   </div>
-                );
-              })}
+                  <div className="mt-1 text-[10px] leading-tight text-muted-foreground">
+                    {ab.description}
+                  </div>
+                </div>
+              ))}
             </div>
           </TabsContent>
 
@@ -483,8 +476,10 @@ function PartnerCard({
             </button>
           </div>
           <div className="text-sm font-bold">{pokemon.name}</div>
-          <div className="mt-1 flex flex-wrap items-center gap-1">
-            {pokemon.types.map((t) => <TypeBadge key={t} type={t} size="sm" />)}
+          <div className="mt-1 flex items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-1">
+              {pokemon.types.map((t) => <TypeBadge key={t} type={t} size="sm" />)}
+            </div>
             <span className="font-pixel text-[8px] text-primary">⚡ {getAbility(pokemon.types).name}</span>
           </div>
         </div>
@@ -502,9 +497,12 @@ function PartnerCard({
             />
           </div>
         </div>
-        <span className="rounded-full bg-primary/15 px-2 py-0.5 font-pixel text-[9px] text-primary">
-          ×{mult.toFixed(2)}
-        </span>
+        <div className="flex flex-col items-center">
+          <span className="font-pixel text-[8px] uppercase text-muted-foreground">DMG ×</span>
+          <span className="rounded-full bg-primary/15 px-2 py-0.5 font-pixel text-[10px] text-primary">
+            {mult.toFixed(2)}
+          </span>
+        </div>
       </div>
       {canEvolve(pokemon) && cost !== null && (
         <Button
@@ -582,26 +580,41 @@ function BadgesTab() {
             <div className="grid grid-cols-4 gap-2">
               {leaders.map((g) => {
                 const got = owned.has(g.id);
-                return (
-                  <div
-                    key={g.id}
-                    title={`${g.name} — ${g.badge}`}
-                    className={`flex flex-col items-center rounded-xl p-2 ${got ? "bg-poke-yellow/20" : "grayscale opacity-30"}`}
-                  >
-                    <div className="text-2xl">🎖</div>
-                    <div className="mt-1 truncate text-center text-[9px] font-semibold leading-tight">
-                      {g.name}
-                    </div>
-                    <div className="text-center text-[8px] leading-tight text-muted-foreground">
-                      {got ? g.badge.replace(" Badge", "") : "???"}
-                    </div>
-                  </div>
-                );
+                return <BadgeCell key={g.id} leader={g} got={got} />;
               })}
             </div>
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function BadgeCell({ leader, got }: { leader: GymLeader; got: boolean }) {
+  const [imgBroken, setImgBroken] = useState(false);
+  const showImage = got && !imgBroken;
+  return (
+    <div
+      title={`${leader.name} — ${leader.badge}`}
+      className={`flex flex-col items-center rounded-xl p-2 ${got ? "bg-poke-yellow/20" : "grayscale opacity-30"}`}
+    >
+      {showImage ? (
+        <img
+          src={leader.badgeIconUrl}
+          alt={leader.badge}
+          crossOrigin="anonymous"
+          className="h-9 w-9 object-contain"
+          onError={() => setImgBroken(true)}
+        />
+      ) : (
+        <div className="text-2xl">{got ? "🎖" : "❓"}</div>
+      )}
+      <div className="mt-1 truncate text-center text-[9px] font-semibold leading-tight">
+        {got ? leader.badge.replace(" Badge", "") : "???"}
+      </div>
+      <div className="truncate text-center text-[8px] leading-tight text-muted-foreground">
+        {leader.name}
+      </div>
     </div>
   );
 }

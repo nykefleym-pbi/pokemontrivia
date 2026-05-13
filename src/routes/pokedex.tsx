@@ -44,6 +44,7 @@ function PokedexPage() {
   const [query, setQuery] = useState("");
   const [type, setType] = useState<"all" | PokeType>("all");
   const [capturedOnly, setCapturedOnly] = useState(false);
+  const [shinyOnly, setShinyOnly] = useState(false);
   const [detailId, setDetailId] = useState<number | null>(null);
   const [showShiny, setShowShiny] = useState(false);
 
@@ -61,12 +62,13 @@ function PokedexPage() {
   const filtered = useMemo(() => {
     return ALL_POKEMON.filter((p) => {
       if (p.id < range.from || p.id > range.to) return false;
-      if (q && !p.name.toLowerCase().includes(q)) return false;
+      if (q && !p.name.toLowerCase().startsWith(q)) return false;
       if (type !== "all" && !p.types.includes(type)) return false;
       if (capturedOnly && !pokedex[p.id]) return false;
+      if (shinyOnly && !pokedex[p.id]?.shinyUnlocked) return false;
       return true;
     });
-  }, [range, q, type, capturedOnly, pokedex]);
+  }, [range, q, type, capturedOnly, shinyOnly, pokedex]);
 
   if (!hasOnboarded) return null;
 
@@ -96,42 +98,45 @@ function PokedexPage() {
 
       {/* Sticky filters */}
       <div className="sticky top-0 z-20 border-b border-border bg-card/95 px-5 py-2 backdrop-blur">
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search name..."
-              className="h-8 pl-9 text-xs"
-            />
-          </div>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search name..."
+            className="h-8 pl-9 text-xs"
+          />
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <select
+            value={gen}
+            onChange={(e) => setGen(Number(e.target.value))}
+            className="h-8 rounded-md border bg-background px-2 text-xs"
+          >
+            {GEN_RANGES.map((g) => (
+              <option key={g.gen} value={g.gen}>Gen {g.gen}</option>
+            ))}
+          </select>
           <select
             value={type}
             onChange={(e) => setType(e.target.value as "all" | PokeType)}
             className="h-8 rounded-md border bg-background px-2 text-xs"
           >
-            <option value="all">All</option>
+            <option value="all">All Types</option>
             {ALL_TYPES.map((t) => (
-              <option key={t} value={t}>{t}</option>
+              <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
             ))}
           </select>
-          <label className="flex items-center gap-1.5 text-[10px]">
-            <Switch checked={capturedOnly} onCheckedChange={setCapturedOnly} />
-          </label>
-        </div>
-        <div className="mt-2 -mx-5 flex gap-1 overflow-x-auto px-5 pb-1">
-          {GEN_RANGES.map((g) => (
-            <button
-              key={g.gen}
-              onClick={() => setGen(g.gen)}
-              className={`shrink-0 rounded-full px-3 py-1 font-pixel text-[9px] transition active:scale-95 ${
-                gen === g.gen ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-              }`}
-            >
-              GEN {g.gen}
-            </button>
-          ))}
+          <div className="ml-auto flex items-center gap-3">
+            <label className="flex items-center gap-1.5 text-[10px] font-pixel uppercase">
+              Caught
+              <Switch checked={capturedOnly} onCheckedChange={setCapturedOnly} />
+            </label>
+            <label className="flex items-center gap-1.5 text-[10px] font-pixel uppercase">
+              Shiny
+              <Switch checked={shinyOnly} onCheckedChange={setShinyOnly} />
+            </label>
+          </div>
         </div>
       </div>
 
@@ -183,23 +188,37 @@ function PokedexPage() {
             const p = ALL_POKEMON.find((x) => x.id === detailId);
             const entry = pokedex[detailId];
             if (!p) return null;
+            const got = !!entry;
             const showS = showShiny && entry?.shinyUnlocked;
+            const displayName = got ? p.name : p.name.replace(/[a-zA-Z]/g, "*");
             return (
               <>
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
-                    <span>#{String(p.id).padStart(4, "0")} {p.name}</span>
+                    <span>#{String(p.id).padStart(4, "0")} {displayName}</span>
                     {entry?.shinyUnlocked && <Sparkles className="h-4 w-4 text-yellow-400" />}
                   </DialogTitle>
                 </DialogHeader>
                 <div className="flex flex-col items-center gap-3">
-                  <PokemonSprite id={p.id} shiny={!!showS} alt={p.name} className="sprite h-32 w-32" />
-                  <div className="flex gap-1">{p.types.map((t) => <TypeBadge key={t} type={t} />)}</div>
+                  <PokemonSprite
+                    id={p.id}
+                    shiny={!!showS}
+                    alt={displayName}
+                    className={`sprite h-32 w-32 ${got ? "" : "sprite-silhouette"}`}
+                  />
+                  <div className="flex gap-1">
+                    {got
+                      ? p.types.map((t) => <TypeBadge key={t} type={t} />)
+                      : <span className="font-pixel text-[10px] uppercase text-muted-foreground">??? type</span>}
+                  </div>
                   {entry ? (
-                    <div className="text-center text-xs text-muted-foreground">
-                      <div>Defeated {entry.defeatCount}×</div>
-                      <div>First seen {new Date(entry.firstSeenAt).toLocaleDateString()}</div>
-                    </div>
+                    <>
+                      <div className="text-center text-xs text-muted-foreground">
+                        <div>Defeated {entry.defeatCount}×</div>
+                        <div>First seen {new Date(entry.firstSeenAt).toLocaleDateString()}</div>
+                      </div>
+                      <PokedexFlavor pokemonId={p.id} />
+                    </>
                   ) : (
                     <div className="text-xs text-muted-foreground">Not yet captured</div>
                   )}
@@ -214,6 +233,48 @@ function PokedexPage() {
           })()}
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function PokedexFlavor({ pokemonId }: { pokemonId: number }) {
+  const [flavor, setFlavor] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setFlavor(null);
+    fetch(`https://pokeapi.co/api/v2/pokemon-species/${pokemonId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        const entries = data.flavor_text_entries ?? [];
+        const preferredVersions = ["scarlet", "violet", "sword", "shield", "ultra-sun", "sun", "x", "black-2", "platinum"];
+        let best: { flavor_text: string } | undefined;
+        for (const ver of preferredVersions) {
+          best = entries.find((e: { language: { name: string }; version: { name: string } }) => e.language.name === "en" && e.version.name === ver);
+          if (best) break;
+        }
+        if (!best) {
+          best = entries.find((e: { language: { name: string } }) => e.language.name === "en");
+        }
+        if (best) {
+          setFlavor(best.flavor_text.replace(/[\n\f]/g, " ").replace(/POKéMON/g, "Pokémon"));
+        }
+      })
+      .catch(() => { /* silent */ })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [pokemonId]);
+
+  if (loading) return null;
+  if (!flavor) return null;
+  return (
+    <div className="rounded-xl bg-muted/50 p-2 text-center text-[11px] italic leading-relaxed text-muted-foreground">
+      {flavor}
     </div>
   );
 }

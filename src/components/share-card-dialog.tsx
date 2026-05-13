@@ -48,7 +48,7 @@ export function ShareCardDialog({ open, onClose, data }: Props) {
         </DialogHeader>
         {loading && (
           <div className="flex items-center justify-center py-12">
-            <PokeballSpinner size={48} />
+            <PokeballSpinner size={48} spinning />
           </div>
         )}
         {imageUrl && !loading && (
