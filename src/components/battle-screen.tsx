@@ -659,7 +659,9 @@ function BattleMode({
 
     // Phase 3: Training Points
     let tp = 0;
-    if (isElite) {
+    if (isWeekly) {
+      tp = won ? TP_REWARDS.weeklyWin : TP_REWARDS.battleLoss;
+    } else if (isElite) {
       tp = won ? TP_REWARDS.eliteWin : TP_REWARDS.battleLoss;
     } else if (won) {
       tp = Math.min(20, correctCountRef.current * TP_REWARDS.battleWinPerCorrect);
