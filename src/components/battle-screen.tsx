@@ -841,7 +841,13 @@ function BattleMode({
       {/* top bar */}
       <div className="flex items-center justify-between px-4 pt-[calc(env(safe-area-inset-top)+0.5rem)]">
         <button
-          onClick={() => setConfirmExit(true)}
+          onClick={() => {
+            if (isWeekly) {
+              toast.error("You cannot leave a Weekly League challenge.");
+              return;
+            }
+            setConfirmExit(true);
+          }}
           className="flex h-10 w-10 items-center justify-center rounded-full bg-card/80 backdrop-blur"
         >
           <ChevronLeft className="h-5 w-5" />
