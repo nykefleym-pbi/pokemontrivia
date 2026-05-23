@@ -1300,7 +1300,7 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
   const progressPct = ((idx) / total) * 100;
 
   return (
-    <div className="bg-poke-hero min-h-screen">
+    <div className="bg-poke-hero relative h-full w-full overflow-y-auto pb-[calc(env(safe-area-inset-bottom)+1rem)] safe-x">
       <div className="absolute left-0 right-0 top-0 z-40 h-1 bg-poke-dark/20">
         <motion.div className="h-full bg-poke-yellow" initial={false} animate={{ width: `${progressPct}%` }} />
       </div>
