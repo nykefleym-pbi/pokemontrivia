@@ -988,11 +988,12 @@ function BattleMode({
         </Sheet>
       </div>
 
-      {/* COMBAT ARENA — fixed compact panels, grass platforms */}
-      <div className="flex min-h-0 flex-1 flex-col justify-center gap-3 px-4 py-2 safe-x">
-        {/* ENEMY */}
-        <div className="flex items-end justify-between gap-2">
+      {/* COMBAT ARENA — FRLG diagonal layout */}
+      <div className="relative min-h-0 flex-1 px-3 py-2 safe-x">
+        {/* ENEMY ZONE: panel top-left, sprite top-right */}
+        <div className="flex items-start justify-between">
           <CombatPanel
+            align="left"
             trainerName={enemy.name}
             pokemonName={enemy.pokemon.name}
             types={enemy.pokemon.types}
@@ -1003,29 +1004,29 @@ function BattleMode({
             immune={false}
             disadvantaged={false}
           />
-          <div className="relative shrink-0">
+          <div className="relative mt-2 shrink-0">
             <img
               src="/grass/Basic_Grass.webp"
               alt=""
               aria-hidden="true"
-              className="pointer-events-none absolute bottom-0 left-1/2 w-28 -translate-x-1/2 select-none"
+              className="pointer-events-none absolute bottom-4 left-1/2 w-28 -translate-x-1/2 select-none"
             />
             <motion.div
               className={`relative ${shakeWho === "enemy" ? "animate-shake" : ""}`}
-              initial={{ x: 80, opacity: 0 }}
+              initial={{ x: 60, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
             >
               <PokemonSprite
                 id={enemy.pokemon.id}
                 shiny={enemy.isShiny}
                 alt={enemy.pokemon.name}
-                className={`sprite relative z-10 h-28 w-28 ${enemy.isShiny ? "shiny-glow" : ""}`}
+                className={`sprite relative z-10 h-36 w-36 ${enemy.isShiny ? "shiny-glow" : ""}`}
               />
               {enemy.isShiny && (
-                <Sparkles className="pointer-events-none absolute -right-1 -top-1 z-20 h-4 w-4 animate-pulse text-yellow-300 drop-shadow" />
+                <Sparkles className="pointer-events-none absolute right-2 top-2 z-20 h-4 w-4 animate-pulse text-yellow-300 drop-shadow" />
               )}
               {floatDmg?.who === "enemy" && (
-                <div className="animate-float-up pointer-events-none absolute -top-2 left-1/2 z-20 -translate-x-1/2 font-pixel text-base text-destructive">
+                <div className="animate-float-up pointer-events-none absolute top-4 left-1/2 z-20 -translate-x-1/2 font-pixel text-base text-destructive">
                   -{floatDmg.n}{floatDmg.super && " 💥"}{floatDmg.speedy && " ⚡"}
                 </div>
               )}
@@ -1033,34 +1034,35 @@ function BattleMode({
           </div>
         </div>
 
-        {/* PLAYER */}
-        <div className="flex items-end justify-between gap-2">
+        {/* PLAYER ZONE: sprite lower-left, panel mid-right */}
+        <div className="-mt-4 flex items-end justify-between">
           <div className="relative shrink-0">
             <img
               src="/grass/Basic_Grassback.webp"
               alt=""
               aria-hidden="true"
-              className="pointer-events-none absolute bottom-0 left-1/2 w-28 -translate-x-1/2 select-none"
+              className="pointer-events-none absolute bottom-4 left-1/2 w-32 -translate-x-1/2 select-none"
             />
             <motion.div
               className={`relative ${shakeWho === "player" ? "animate-shake" : ""}`}
-              initial={{ x: -80, opacity: 0 }}
+              initial={{ x: -60, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
             >
               <PokemonSprite
                 id={player.id}
                 back
                 alt={player.name}
-                className={`sprite relative z-10 h-28 w-28 ${streak >= 5 ? "mega-glow" : ""}`}
+                className={`sprite relative z-10 h-40 w-40 ${streak >= 5 ? "mega-glow" : ""}`}
               />
               {floatDmg?.who === "player" && (
-                <div className="animate-float-up pointer-events-none absolute -top-2 left-1/2 z-20 -translate-x-1/2 font-pixel text-base text-destructive">
+                <div className="animate-float-up pointer-events-none absolute top-4 left-1/2 z-20 -translate-x-1/2 font-pixel text-base text-destructive">
                   -{floatDmg.n}
                 </div>
               )}
             </motion.div>
           </div>
           <CombatPanel
+            align="right"
             trainerName={trainerName}
             pokemonName={player.name}
             types={player.types}
@@ -1073,6 +1075,7 @@ function BattleMode({
           />
         </div>
       </div>
+
 
 
       {/* intro banner overlay */}
