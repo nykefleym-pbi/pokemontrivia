@@ -61,6 +61,78 @@ const TIMER_BASE = 20;
 
 type Phase = "intro" | "question" | "feedback" | "result";
 
+function CombatPanel({
+  trainerName,
+  pokemonName,
+  types,
+  hp,
+  maxHp,
+  statuses,
+  abilityName,
+  immune,
+  disadvantaged,
+}: {
+  trainerName: string;
+  pokemonName: string;
+  types: PokeType[];
+  hp: number;
+  maxHp: number;
+  statuses: Array<{ kind: "confused" | "poisoned" }>;
+  abilityName: string | null;
+  immune: boolean;
+  disadvantaged: boolean;
+}) {
+  const pct = Math.max(0, Math.min(100, (hp / maxHp) * 100));
+  const barColor = pct > 50 ? "bg-hp-good" : pct > 20 ? "bg-hp-warn" : "bg-hp-low";
+
+  return (
+    <div className="min-w-0 flex-1 rounded-2xl bg-card/85 p-2 backdrop-blur shadow-card">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-wrap gap-0.5">
+          {immune && <span className="rounded-full bg-hp-good/20 px-1 py-[1px] font-pixel text-[7px] text-hp-good">🛡</span>}
+          {disadvantaged && !immune && <span className="rounded-full bg-destructive/20 px-1 py-[1px] font-pixel text-[7px] text-destructive">⚠</span>}
+          {statuses.map((s) => (
+            <span
+              key={s.kind}
+              className={`rounded-full px-1 py-[1px] font-pixel text-[7px] ${
+                s.kind === "confused" ? "bg-poke-yellow/30 text-poke-dark" : "bg-purple-500/20 text-purple-700"
+              }`}
+            >
+              {s.kind === "confused" ? "🌀" : "☠️"}
+            </span>
+          ))}
+        </div>
+        <div className="truncate text-right font-pixel text-[8px] uppercase text-muted-foreground">{trainerName}</div>
+      </div>
+
+      <div className="mt-0.5 flex items-center justify-between gap-2">
+        <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full border border-poke-dark/60 bg-poke-dark/20">
+          <motion.div
+            className={`h-full ${barColor}`}
+            initial={false}
+            animate={{ width: `${pct}%` }}
+            transition={{ type: "spring", stiffness: 100, damping: 18 }}
+          />
+        </div>
+        <div className="shrink-0 truncate text-right text-[clamp(0.7rem,3.2vw,0.85rem)] font-bold leading-tight">{pokemonName}</div>
+      </div>
+
+      <div className="mt-0.5 flex items-center justify-between gap-2">
+        <div className="shrink-0 font-pixel text-[8px] tabular-nums text-muted-foreground">{Math.round(hp)}/{maxHp}</div>
+        <div className="flex shrink-0 gap-0.5">
+          {types.map((t) => <TypeBadge key={t} type={t} size="sm" />)}
+        </div>
+      </div>
+
+      {abilityName && (
+        <div className="mt-0.5 text-right">
+          <span className="font-pixel text-[7px] text-primary">⚡ {abilityName}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface Props {
   questions: Trivia[];
   onExit: () => void;
