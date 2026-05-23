@@ -73,7 +73,7 @@ function PokedexPage() {
   if (!hasOnboarded) return null;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-full w-full overflow-y-auto bg-background pb-nav safe-x">
       {/* Hero stats strip */}
       <div className="bg-poke-hero px-5 pb-5 pt-[calc(env(safe-area-inset-top)+1rem)]">
         <h1 className="font-pixel text-base text-poke-dark">Pokédex</h1>
