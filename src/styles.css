@@ -157,6 +157,7 @@
   }
   .h-screen-safe { height: 100dvh; }
   .pb-nav { padding-bottom: var(--bottom-nav-total); }
+  .badge-silhouette { filter: brightness(0); opacity: 0.15; }
 }
 
 

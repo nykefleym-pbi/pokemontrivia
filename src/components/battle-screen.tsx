@@ -62,6 +62,7 @@ const TIMER_BASE = 20;
 type Phase = "intro" | "question" | "feedback" | "result";
 
 function CombatPanel({
+  align,
   trainerName,
   pokemonName,
   types,
@@ -72,6 +73,7 @@ function CombatPanel({
   immune,
   disadvantaged,
 }: {
+  align: "left" | "right";
   trainerName: string;
   pokemonName: string;
   types: PokeType[];
@@ -84,51 +86,42 @@ function CombatPanel({
 }) {
   const pct = Math.max(0, Math.min(100, (hp / maxHp) * 100));
   const barColor = pct > 50 ? "bg-hp-good" : pct > 20 ? "bg-hp-warn" : "bg-hp-low";
+  const alignCls = align === "right" ? "items-end text-right" : "items-start text-left";
+  const justifyCls = align === "right" ? "justify-end" : "justify-start";
 
   return (
-    <div className="min-w-0 flex-1 rounded-2xl bg-card/85 p-2 backdrop-blur shadow-card">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex min-w-0 flex-wrap gap-0.5">
-          {immune && <span className="rounded-full bg-hp-good/20 px-1 py-[1px] font-pixel text-[7px] text-hp-good">🛡</span>}
-          {disadvantaged && !immune && <span className="rounded-full bg-destructive/20 px-1 py-[1px] font-pixel text-[7px] text-destructive">⚠</span>}
-          {statuses.map((s) => (
-            <span
-              key={s.kind}
-              className={`rounded-full px-1 py-[1px] font-pixel text-[7px] ${
-                s.kind === "confused" ? "bg-poke-yellow/30 text-poke-dark" : "bg-purple-500/20 text-purple-700"
-              }`}
-            >
-              {s.kind === "confused" ? "🌀" : "☠️"}
-            </span>
-          ))}
-        </div>
-        <div className="truncate text-right font-pixel text-[8px] uppercase text-muted-foreground">{trainerName}</div>
-      </div>
-
-      <div className="mt-0.5 flex items-center justify-between gap-2">
-        <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full border border-poke-dark/60 bg-poke-dark/20">
-          <motion.div
-            className={`h-full ${barColor}`}
-            initial={false}
-            animate={{ width: `${pct}%` }}
-            transition={{ type: "spring", stiffness: 100, damping: 18 }}
-          />
-        </div>
-        <div className="shrink-0 truncate text-right text-[clamp(0.7rem,3.2vw,0.85rem)] font-bold leading-tight">{pokemonName}</div>
-      </div>
-
-      <div className="mt-0.5 flex items-center justify-between gap-2">
-        <div className="shrink-0 font-pixel text-[8px] tabular-nums text-muted-foreground">{Math.round(hp)}/{maxHp}</div>
-        <div className="flex shrink-0 gap-0.5">
+    <div className="w-[clamp(8.5rem,42vw,11rem)] shrink-0 rounded-xl bg-card/90 px-2.5 py-1.5 backdrop-blur shadow-card">
+      <div className={`flex flex-col ${alignCls}`}>
+        <div className="truncate font-pixel text-[8px] uppercase text-muted-foreground">{trainerName}</div>
+        <div className="w-full truncate text-sm font-bold leading-tight">{pokemonName}</div>
+        <div className={`mt-0.5 flex w-full gap-0.5 ${justifyCls}`}>
           {types.map((t) => <TypeBadge key={t} type={t} size="sm" />)}
         </div>
-      </div>
-
-      {abilityName && (
-        <div className="mt-0.5 text-right">
-          <span className="font-pixel text-[7px] text-primary">⚡ {abilityName}</span>
+        <div className="mt-1 flex w-full items-center gap-1">
+          <span className="font-pixel text-[7px] text-hp-good">HP</span>
+          <div className="h-2 flex-1 overflow-hidden rounded-full border border-poke-dark/60 bg-poke-dark/20">
+            <motion.div
+              className={`h-full ${barColor}`}
+              initial={false}
+              animate={{ width: `${pct}%` }}
+              transition={{ type: "spring", stiffness: 100, damping: 18 }}
+            />
+          </div>
         </div>
-      )}
+        <div className="mt-0.5 w-full font-pixel text-[8px] tabular-nums text-muted-foreground">{Math.round(hp)}/{maxHp}</div>
+        {(abilityName || immune || disadvantaged || statuses.length > 0) && (
+          <div className={`mt-0.5 flex w-full flex-wrap gap-0.5 ${justifyCls}`}>
+            {abilityName && <span className="rounded-full bg-primary/10 px-1 py-[1px] font-pixel text-[7px] text-primary">⚡ {abilityName}</span>}
+            {immune && <span className="rounded-full bg-hp-good/20 px-1 py-[1px] font-pixel text-[7px] text-hp-good">🛡</span>}
+            {disadvantaged && !immune && <span className="rounded-full bg-destructive/20 px-1 py-[1px] font-pixel text-[7px] text-destructive">⚠</span>}
+            {statuses.map((s) => (
+              <span key={s.kind} className={`rounded-full px-1 py-[1px] font-pixel text-[7px] ${s.kind === "confused" ? "bg-poke-yellow/30 text-poke-dark" : "bg-purple-500/20 text-purple-700"}`}>
+                {s.kind === "confused" ? "🌀" : "☠️"}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -995,11 +988,12 @@ function BattleMode({
         </Sheet>
       </div>
 
-      {/* COMBAT ARENA — fixed compact panels, grass platforms */}
-      <div className="flex min-h-0 flex-1 flex-col justify-center gap-3 px-4 py-2 safe-x">
-        {/* ENEMY */}
-        <div className="flex items-end justify-between gap-2">
+      {/* COMBAT ARENA — FRLG diagonal layout */}
+      <div className="relative min-h-0 flex-1 px-3 py-2 safe-x">
+        {/* ENEMY ZONE: panel top-left, sprite top-right */}
+        <div className="flex items-start justify-between">
           <CombatPanel
+            align="left"
             trainerName={enemy.name}
             pokemonName={enemy.pokemon.name}
             types={enemy.pokemon.types}
@@ -1010,29 +1004,29 @@ function BattleMode({
             immune={false}
             disadvantaged={false}
           />
-          <div className="relative shrink-0">
+          <div className="relative mt-2 shrink-0">
             <img
               src="/grass/Basic_Grass.webp"
               alt=""
               aria-hidden="true"
-              className="pointer-events-none absolute bottom-0 left-1/2 w-28 -translate-x-1/2 select-none"
+              className="pointer-events-none absolute bottom-4 left-1/2 w-28 -translate-x-1/2 select-none"
             />
             <motion.div
               className={`relative ${shakeWho === "enemy" ? "animate-shake" : ""}`}
-              initial={{ x: 80, opacity: 0 }}
+              initial={{ x: 60, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
             >
               <PokemonSprite
                 id={enemy.pokemon.id}
                 shiny={enemy.isShiny}
                 alt={enemy.pokemon.name}
-                className={`sprite relative z-10 h-28 w-28 ${enemy.isShiny ? "shiny-glow" : ""}`}
+                className={`sprite relative z-10 h-36 w-36 ${enemy.isShiny ? "shiny-glow" : ""}`}
               />
               {enemy.isShiny && (
-                <Sparkles className="pointer-events-none absolute -right-1 -top-1 z-20 h-4 w-4 animate-pulse text-yellow-300 drop-shadow" />
+                <Sparkles className="pointer-events-none absolute right-2 top-2 z-20 h-4 w-4 animate-pulse text-yellow-300 drop-shadow" />
               )}
               {floatDmg?.who === "enemy" && (
-                <div className="animate-float-up pointer-events-none absolute -top-2 left-1/2 z-20 -translate-x-1/2 font-pixel text-base text-destructive">
+                <div className="animate-float-up pointer-events-none absolute top-4 left-1/2 z-20 -translate-x-1/2 font-pixel text-base text-destructive">
                   -{floatDmg.n}{floatDmg.super && " 💥"}{floatDmg.speedy && " ⚡"}
                 </div>
               )}
@@ -1040,34 +1034,35 @@ function BattleMode({
           </div>
         </div>
 
-        {/* PLAYER */}
-        <div className="flex items-end justify-between gap-2">
+        {/* PLAYER ZONE: sprite lower-left, panel mid-right */}
+        <div className="-mt-4 flex items-end justify-between">
           <div className="relative shrink-0">
             <img
               src="/grass/Basic_Grassback.webp"
               alt=""
               aria-hidden="true"
-              className="pointer-events-none absolute bottom-0 left-1/2 w-28 -translate-x-1/2 select-none"
+              className="pointer-events-none absolute bottom-4 left-1/2 w-32 -translate-x-1/2 select-none"
             />
             <motion.div
               className={`relative ${shakeWho === "player" ? "animate-shake" : ""}`}
-              initial={{ x: -80, opacity: 0 }}
+              initial={{ x: -60, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
             >
               <PokemonSprite
                 id={player.id}
                 back
                 alt={player.name}
-                className={`sprite relative z-10 h-28 w-28 ${streak >= 5 ? "mega-glow" : ""}`}
+                className={`sprite relative z-10 h-40 w-40 ${streak >= 5 ? "mega-glow" : ""}`}
               />
               {floatDmg?.who === "player" && (
-                <div className="animate-float-up pointer-events-none absolute -top-2 left-1/2 z-20 -translate-x-1/2 font-pixel text-base text-destructive">
+                <div className="animate-float-up pointer-events-none absolute top-4 left-1/2 z-20 -translate-x-1/2 font-pixel text-base text-destructive">
                   -{floatDmg.n}
                 </div>
               )}
             </motion.div>
           </div>
           <CombatPanel
+            align="right"
             trainerName={trainerName}
             pokemonName={player.name}
             types={player.types}
@@ -1080,6 +1075,7 @@ function BattleMode({
           />
         </div>
       </div>
+
 
 
       {/* intro banner overlay */}
@@ -1100,7 +1096,7 @@ function BattleMode({
       </AnimatePresence>
 
       {/* QUESTION CARD — thumb zone, pinned bottom */}
-      <div className="shrink-0 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-1 safe-x">
+      <div className="shrink-0 px-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-2 safe-x">
         <AnimatePresence mode="wait">
           {phase !== "intro" && trivia && (
             <motion.div
