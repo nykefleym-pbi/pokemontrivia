@@ -62,6 +62,7 @@ const TIMER_BASE = 20;
 type Phase = "intro" | "question" | "feedback" | "result";
 
 function CombatPanel({
+  align,
   trainerName,
   pokemonName,
   types,
@@ -72,6 +73,7 @@ function CombatPanel({
   immune,
   disadvantaged,
 }: {
+  align: "left" | "right";
   trainerName: string;
   pokemonName: string;
   types: PokeType[];
@@ -84,51 +86,42 @@ function CombatPanel({
 }) {
   const pct = Math.max(0, Math.min(100, (hp / maxHp) * 100));
   const barColor = pct > 50 ? "bg-hp-good" : pct > 20 ? "bg-hp-warn" : "bg-hp-low";
+  const alignCls = align === "right" ? "items-end text-right" : "items-start text-left";
+  const justifyCls = align === "right" ? "justify-end" : "justify-start";
 
   return (
-    <div className="min-w-0 flex-1 rounded-2xl bg-card/85 p-2 backdrop-blur shadow-card">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex min-w-0 flex-wrap gap-0.5">
-          {immune && <span className="rounded-full bg-hp-good/20 px-1 py-[1px] font-pixel text-[7px] text-hp-good">🛡</span>}
-          {disadvantaged && !immune && <span className="rounded-full bg-destructive/20 px-1 py-[1px] font-pixel text-[7px] text-destructive">⚠</span>}
-          {statuses.map((s) => (
-            <span
-              key={s.kind}
-              className={`rounded-full px-1 py-[1px] font-pixel text-[7px] ${
-                s.kind === "confused" ? "bg-poke-yellow/30 text-poke-dark" : "bg-purple-500/20 text-purple-700"
-              }`}
-            >
-              {s.kind === "confused" ? "🌀" : "☠️"}
-            </span>
-          ))}
-        </div>
-        <div className="truncate text-right font-pixel text-[8px] uppercase text-muted-foreground">{trainerName}</div>
-      </div>
-
-      <div className="mt-0.5 flex items-center justify-between gap-2">
-        <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full border border-poke-dark/60 bg-poke-dark/20">
-          <motion.div
-            className={`h-full ${barColor}`}
-            initial={false}
-            animate={{ width: `${pct}%` }}
-            transition={{ type: "spring", stiffness: 100, damping: 18 }}
-          />
-        </div>
-        <div className="shrink-0 truncate text-right text-[clamp(0.7rem,3.2vw,0.85rem)] font-bold leading-tight">{pokemonName}</div>
-      </div>
-
-      <div className="mt-0.5 flex items-center justify-between gap-2">
-        <div className="shrink-0 font-pixel text-[8px] tabular-nums text-muted-foreground">{Math.round(hp)}/{maxHp}</div>
-        <div className="flex shrink-0 gap-0.5">
+    <div className="w-[clamp(8.5rem,42vw,11rem)] shrink-0 rounded-xl bg-card/90 px-2.5 py-1.5 backdrop-blur shadow-card">
+      <div className={`flex flex-col ${alignCls}`}>
+        <div className="truncate font-pixel text-[8px] uppercase text-muted-foreground">{trainerName}</div>
+        <div className="w-full truncate text-sm font-bold leading-tight">{pokemonName}</div>
+        <div className={`mt-0.5 flex w-full gap-0.5 ${justifyCls}`}>
           {types.map((t) => <TypeBadge key={t} type={t} size="sm" />)}
         </div>
-      </div>
-
-      {abilityName && (
-        <div className="mt-0.5 text-right">
-          <span className="font-pixel text-[7px] text-primary">⚡ {abilityName}</span>
+        <div className="mt-1 flex w-full items-center gap-1">
+          <span className="font-pixel text-[7px] text-hp-good">HP</span>
+          <div className="h-2 flex-1 overflow-hidden rounded-full border border-poke-dark/60 bg-poke-dark/20">
+            <motion.div
+              className={`h-full ${barColor}`}
+              initial={false}
+              animate={{ width: `${pct}%` }}
+              transition={{ type: "spring", stiffness: 100, damping: 18 }}
+            />
+          </div>
         </div>
-      )}
+        <div className="mt-0.5 w-full font-pixel text-[8px] tabular-nums text-muted-foreground">{Math.round(hp)}/{maxHp}</div>
+        {(abilityName || immune || disadvantaged || statuses.length > 0) && (
+          <div className={`mt-0.5 flex w-full flex-wrap gap-0.5 ${justifyCls}`}>
+            {abilityName && <span className="rounded-full bg-primary/10 px-1 py-[1px] font-pixel text-[7px] text-primary">⚡ {abilityName}</span>}
+            {immune && <span className="rounded-full bg-hp-good/20 px-1 py-[1px] font-pixel text-[7px] text-hp-good">🛡</span>}
+            {disadvantaged && !immune && <span className="rounded-full bg-destructive/20 px-1 py-[1px] font-pixel text-[7px] text-destructive">⚠</span>}
+            {statuses.map((s) => (
+              <span key={s.kind} className={`rounded-full px-1 py-[1px] font-pixel text-[7px] ${s.kind === "confused" ? "bg-poke-yellow/30 text-poke-dark" : "bg-purple-500/20 text-purple-700"}`}>
+                {s.kind === "confused" ? "🌀" : "☠️"}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
