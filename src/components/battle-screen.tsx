@@ -1291,7 +1291,7 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
 
   if (!trivia) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex h-full w-full items-center justify-center bg-background">
         <div className="font-pixel text-sm text-muted-foreground">No daily questions available.</div>
       </div>
     );
