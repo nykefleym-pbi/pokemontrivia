@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Anyone can update counters on verified rows" ON public.curated_questions;
