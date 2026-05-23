@@ -31,12 +31,17 @@ export const Route = createFileRoute("/api/trivia")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const VALID_DIFFICULTIES = ["easy", "medium", "hard", "expert", "master"];
         let difficulty = "easy";
         let category = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
         try {
           const body = (await request.json()) as { difficulty?: string; category?: string };
-          if (body.difficulty) difficulty = body.difficulty;
-          if (body.category) category = body.category;
+          if (body.difficulty && VALID_DIFFICULTIES.includes(body.difficulty)) {
+            difficulty = body.difficulty;
+          }
+          if (body.category && CATEGORIES.includes(body.category)) {
+            category = body.category;
+          }
         } catch {
           /* use defaults */
         }
