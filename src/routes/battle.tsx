@@ -269,7 +269,16 @@ function BattleHome({
   const xp = useGameStore((s) => s.xp);
   const trainingPoints = useGameStore((s) => s.trainingPoints);
   const weeklyLeague = useGameStore((s) => s.weeklyLeague);
-  const [tab, setTab] = useState<"battle" | "daily">("battle");
+  const [tab, setTab] = useState<"battle" | "daily" | "weekly">("battle");
+  const [rotomShaking, setRotomShaking] = useState(false);
+
+  function handleChallengeRotom() {
+    setRotomShaking(true);
+    setTimeout(() => {
+      setRotomShaking(false);
+      onStartDaily();
+    }, 500);
+  }
   const weekRange = getWeekRangeUtc();
 
   if (!pokemon) return null;
