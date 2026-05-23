@@ -57,7 +57,7 @@ interface ResultProps {
 }
 
 export function WeeklyLeagueResultCard({ weeklyLeague, nextWeekStart }: ResultProps) {
-  const leader = findGymLeader(weeklyLeague.gymLeagueId ?? weeklyLeague.gymLeaderId);
+  const leader = findGymLeader(weeklyLeague.gymLeaderId);
   const isWin = weeklyLeague.status === "won";
   const [timeLeft, setTimeLeft] = useState("");
 
