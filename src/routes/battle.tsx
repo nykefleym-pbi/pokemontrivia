@@ -435,7 +435,7 @@ function ElitePendingTakeover({
 }) {
   const [showInfo, setShowInfo] = useState(false);
   return (
-    <div className="bg-elite-arena relative min-h-screen overflow-hidden px-5 pb-24 pt-[calc(env(safe-area-inset-top)+1.5rem)]">
+    <div className="bg-elite-arena relative h-full w-full overflow-y-auto px-5 pb-nav pt-[calc(env(safe-area-inset-top)+1.5rem)] safe-x">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-poke-dark/40 via-transparent to-poke-dark/60" />
       <motion.div
         initial={{ opacity: 0, y: -10 }}
