@@ -280,7 +280,8 @@ function BattleHome({
   const tpMult = getTpMultiplier(partnerTp);
 
   return (
-    <div className="bg-poke-hero min-h-screen pb-24">
+    <div className="bg-poke-hero h-full w-full overflow-y-auto pb-nav safe-x">
+
       <AppHeader gradient>
         {/* Hero strip: trainer + xp/rank + partner */}
         <div className="flex items-center gap-3">
