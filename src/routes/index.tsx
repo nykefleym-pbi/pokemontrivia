@@ -82,7 +82,7 @@ function SplashPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="relative min-h-screen px-6 pb-20 pt-[calc(env(safe-area-inset-top)+2rem)]"
+            className="relative h-full w-full overflow-y-auto px-6 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-[calc(env(safe-area-inset-top)+2rem)]"
           >
             <TrainerCreate onBack={() => setStep("splash")} />
           </motion.div>
