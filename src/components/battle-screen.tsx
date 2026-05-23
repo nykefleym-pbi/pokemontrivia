@@ -1399,7 +1399,7 @@ function DailyResultScreen({
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex min-h-screen flex-col items-center justify-center bg-poke-hero px-6"
+      className="flex h-full w-full flex-col items-center justify-center overflow-y-auto bg-poke-hero px-6 py-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)] safe-x"
     >
       <div className="font-pixel text-2xl text-poke-dark">ALL DONE!</div>
       <div className="mt-3 text-5xl">🏅</div>
