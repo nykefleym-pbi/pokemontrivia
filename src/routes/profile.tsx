@@ -592,28 +592,27 @@ function BadgesTab() {
 
 function BadgeCell({ leader, got }: { leader: GymLeader; got: boolean }) {
   const [imgBroken, setImgBroken] = useState(false);
-  const showImage = got && !imgBroken;
   return (
     <div
-      title={`${leader.name} — ${leader.badge}`}
-      className={`flex flex-col items-center rounded-xl p-2 ${got ? "bg-poke-yellow/20" : "grayscale opacity-30"}`}
+      title={got ? `${leader.name} — ${leader.badge}` : "???"}
+      className={`flex flex-col items-center rounded-xl p-2 ${got ? "bg-poke-yellow/20" : ""}`}
     >
-      {showImage ? (
+      {!imgBroken ? (
         <img
           src={leader.badgeIconUrl}
-          alt={leader.badge}
+          alt={got ? leader.badge : "Locked badge"}
           crossOrigin="anonymous"
-          className="h-9 w-9 object-contain"
+          className={`h-9 w-9 object-contain ${got ? "" : "badge-silhouette"}`}
           onError={() => setImgBroken(true)}
         />
       ) : (
-        <div className="text-2xl">{got ? "🎖" : "❓"}</div>
+        <div className={`text-2xl ${got ? "" : "opacity-20 grayscale"}`}>🎖</div>
       )}
       <div className="mt-1 truncate text-center text-[9px] font-semibold leading-tight">
         {got ? leader.badge.replace(" Badge", "") : "???"}
       </div>
       <div className="truncate text-center text-[8px] leading-tight text-muted-foreground">
-        {leader.name}
+        {got ? leader.name : "???"}
       </div>
     </div>
   );
