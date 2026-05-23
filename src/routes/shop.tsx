@@ -74,7 +74,7 @@ function ShopPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="h-full w-full overflow-y-auto bg-background pb-nav safe-x">
       <Toaster position="top-center" />
       <AppHeader>
         <div className="flex items-end justify-between">
