@@ -175,7 +175,7 @@ function PokedexPage() {
             );
           })}
           {filtered.length === 0 && (
-            <div className="col-span-4 py-8 text-center text-xs text-muted-foreground">
+            <div className="col-span-3 py-8 text-center text-xs text-muted-foreground min-[400px]:col-span-4">
               No matches.
             </div>
           )}
