@@ -28,7 +28,7 @@ function SplashPage() {
   if (hasOnboarded) return null;
 
   return (
-    <div className="bg-poke-hero relative min-h-screen overflow-hidden">
+    <div className="bg-poke-hero relative flex h-full w-full flex-col overflow-hidden safe-x">
       {/* decorative pokeballs */}
       <div className="pointer-events-none absolute -right-10 -top-10 opacity-30">
         <PokeballSpinner size={140} />
