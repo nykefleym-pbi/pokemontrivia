@@ -269,7 +269,16 @@ function BattleHome({
   const xp = useGameStore((s) => s.xp);
   const trainingPoints = useGameStore((s) => s.trainingPoints);
   const weeklyLeague = useGameStore((s) => s.weeklyLeague);
-  const [tab, setTab] = useState<"battle" | "daily">("battle");
+  const [tab, setTab] = useState<"battle" | "daily" | "weekly">("battle");
+  const [rotomShaking, setRotomShaking] = useState(false);
+
+  function handleChallengeRotom() {
+    setRotomShaking(true);
+    setTimeout(() => {
+      setRotomShaking(false);
+      onStartDaily();
+    }, 500);
+  }
   const weekRange = getWeekRangeUtc();
 
   if (!pokemon) return null;
@@ -329,10 +338,10 @@ function BattleHome({
       <div className="px-5 pt-4">
         {/* Segmented action card */}
         <div className="rounded-3xl bg-card p-4 shadow-card">
-          <div className="mb-3 grid grid-cols-2 gap-1 rounded-full bg-muted p-1">
+          <div className="mb-3 grid grid-cols-3 gap-1 rounded-full bg-muted p-1">
             <button
               onClick={() => setTab("battle")}
-              className={`flex items-center justify-center gap-1.5 rounded-full py-2 font-pixel text-[10px] transition ${
+              className={`flex items-center justify-center gap-1 rounded-full py-2 font-pixel text-[9px] transition ${
                 tab === "battle" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
               }`}
             >
@@ -340,11 +349,19 @@ function BattleHome({
             </button>
             <button
               onClick={() => setTab("daily")}
-              className={`flex items-center justify-center gap-1.5 rounded-full py-2 font-pixel text-[10px] transition ${
+              className={`flex items-center justify-center gap-1 rounded-full py-2 font-pixel text-[9px] transition ${
                 tab === "daily" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
               }`}
             >
               <Flame className="h-3 w-3" /> DAILY {dailyDone && <span className="text-primary">✓</span>}
+            </button>
+            <button
+              onClick={() => setTab("weekly")}
+              className={`flex items-center justify-center gap-1 rounded-full py-2 font-pixel text-[9px] transition ${
+                tab === "weekly" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+              }`}
+            >
+              <Swords className="h-3 w-3" /> WEEKLY
             </button>
           </div>
 
@@ -369,12 +386,16 @@ function BattleHome({
               </Button>
               <p className="mt-2 text-[10px] text-muted-foreground">Difficulty scales with your level.</p>
             </div>
-          ) : (
+          ) : tab === "daily" ? (
             <div className="flex flex-col items-center text-center">
-              {!dailyDone && <PokeballSpinner size={56} spinning={loading} />}
-              <h3 className={`font-pixel text-sm text-foreground ${!dailyDone ? "mt-3" : ""}`}>🔥 DAILY CHALLENGE</h3>
+              <div className="rounded-full bg-poke-yellow px-3 py-0.5 font-pixel text-[9px] uppercase text-poke-dark">
+                ⚡ Rotom's Daily Quest
+              </div>
               {dailyDone && dailyResult ? (
                 <>
+                  <div className="mt-3">
+                    <PokemonSprite id={479} alt="Rotom" className="sprite h-20 w-20" />
+                  </div>
                   <div className="mt-2 text-sm">
                     Score:{" "}
                     <span className="font-pixel text-primary">
@@ -385,40 +406,37 @@ function BattleHome({
                   <div className="mt-2 flex justify-center">
                     <PokeballPattern marks={dailyResult.pattern} />
                   </div>
-                  <p className="mt-3 text-[10px] text-muted-foreground">Come back tomorrow for a new challenge.</p>
+                  <p className="mt-3 text-[10px] text-muted-foreground">Come back tomorrow for a new quest.</p>
                 </>
               ) : (
                 <>
-                  <p className="mt-1 text-xs text-muted-foreground">Same 10 hard questions for everyone today. One try only!</p>
+                  <div className={`mt-3 ${rotomShaking ? "animate-shake" : ""}`}>
+                    <PokemonSprite id={479} alt="Rotom" className="sprite h-24 w-24" />
+                  </div>
                   <Button
                     size="lg"
-                    className="mt-4 w-full rounded-full bg-poke-dark py-6 font-pixel text-[11px] text-poke-yellow"
-                    onClick={onStartDaily}
+                    className="mt-4 w-full rounded-full bg-gradient-to-r from-poke-yellow to-primary py-5 font-pixel text-[11px] shadow-pop"
+                    onClick={handleChallengeRotom}
                     disabled={loading}
                   >
-                    <Flame className="mr-2 h-4 w-4" /> Take the Challenge
+                    <Flame className="mr-2 h-4 w-4" /> {loading ? "Loading..." : "Challenge Rotom"}
                   </Button>
                 </>
               )}
             </div>
-          )}
-        </div>
-
-        {/* Weekly League */}
-        {weeklyLeague && (
-          <div className="mt-4">
-            {weeklyLeague.status === "won" || weeklyLeague.status === "lost" ? (
+          ) : (
+            weeklyLeague && (weeklyLeague.status === "won" || weeklyLeague.status === "lost") ? (
               <WeeklyLeagueResultCard weeklyLeague={weeklyLeague} nextWeekStart={weekRange.end} />
-            ) : (
+            ) : weeklyLeague ? (
               <WeeklyLeagueCard
                 weeklyLeague={weeklyLeague}
                 onStart={onStartWeekly}
                 resumeMode={weeklyLeague.status === "in_progress"}
                 loading={loading}
               />
-            )}
-          </div>
-        )}
+            ) : null
+          )}
+        </div>
       </div>
     </div>
   );
