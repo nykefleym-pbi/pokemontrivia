@@ -81,8 +81,8 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   return (
-    <div className="min-h-[100dvh] w-full bg-background">
-      <div className="mx-auto min-h-[100dvh] w-full max-w-[480px] bg-background pb-20">
+    <div className="h-[100dvh] w-full overflow-hidden bg-background">
+      <div className="mx-auto flex h-[100dvh] w-full max-w-[480px] flex-col overflow-hidden bg-background">
         <Outlet />
         <BottomNav />
       </div>
