@@ -73,7 +73,7 @@ function PokedexPage() {
   if (!hasOnboarded) return null;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-full w-full overflow-y-auto bg-background pb-nav safe-x">
       {/* Hero stats strip */}
       <div className="bg-poke-hero px-5 pb-5 pt-[calc(env(safe-area-inset-top)+1rem)]">
         <h1 className="font-pixel text-base text-poke-dark">Pokédex</h1>
@@ -142,7 +142,7 @@ function PokedexPage() {
 
       {/* Grid */}
       <div className="px-3 pb-8 pt-3">
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-3 gap-2 min-[400px]:grid-cols-4">
           {filtered.map((p) => {
             const e = pokedex[p.id];
             const got = !!e;
@@ -175,7 +175,7 @@ function PokedexPage() {
             );
           })}
           {filtered.length === 0 && (
-            <div className="col-span-4 py-8 text-center text-xs text-muted-foreground">
+            <div className="col-span-3 py-8 text-center text-xs text-muted-foreground min-[400px]:col-span-4">
               No matches.
             </div>
           )}

@@ -28,7 +28,7 @@ function SplashPage() {
   if (hasOnboarded) return null;
 
   return (
-    <div className="bg-poke-hero relative min-h-screen overflow-hidden">
+    <div className="bg-poke-hero relative flex h-full w-full flex-col overflow-hidden safe-x">
       {/* decorative pokeballs */}
       <div className="pointer-events-none absolute -right-10 -top-10 opacity-30">
         <PokeballSpinner size={140} />
@@ -44,7 +44,7 @@ function SplashPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="relative flex min-h-screen flex-col items-center justify-center px-6 text-center"
+            className="relative flex h-full w-full flex-col items-center justify-center overflow-y-auto px-6 py-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)] text-center"
           >
             <PokeballSpinner size={120} spinning />
             <h1 className="mt-8 font-pixel text-2xl leading-relaxed text-poke-dark">
@@ -82,7 +82,7 @@ function SplashPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="relative min-h-screen px-6 pb-20 pt-[calc(env(safe-area-inset-top)+2rem)]"
+            className="relative h-full w-full overflow-y-auto px-6 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-[calc(env(safe-area-inset-top)+2rem)]"
           >
             <TrainerCreate onBack={() => setStep("splash")} />
           </motion.div>

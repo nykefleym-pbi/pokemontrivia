@@ -823,7 +823,7 @@ function BattleMode({
   const progressPct = Math.min(100, (questionIdx / Math.max(1, totalQuestions)) * 100);
 
   return (
-    <div className="bg-battle-field relative min-h-screen overflow-hidden">
+    <div className="bg-battle-field relative flex h-full min-h-0 w-full flex-col overflow-hidden">
       {/* progress bar */}
       <div className="absolute left-0 right-0 top-0 z-40 h-1 bg-poke-dark/20">
         <motion.div
@@ -850,7 +850,7 @@ function BattleMode({
         )}
       </AnimatePresence>
       {/* top bar */}
-      <div className="flex items-center justify-between px-4 pt-[calc(env(safe-area-inset-top)+0.5rem)]">
+      <div className="flex shrink-0 items-center justify-between px-4 pt-[calc(env(safe-area-inset-top)+0.5rem)] safe-x">
         <button
           onClick={() => {
             if (isWeekly) {
@@ -923,27 +923,28 @@ function BattleMode({
         </Sheet>
       </div>
 
-      {/* enemy area */}
-      <div className="relative px-5 pt-4">
-        <div className="rounded-2xl bg-card/85 p-3 backdrop-blur shadow-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="font-pixel text-[10px] uppercase text-muted-foreground">{enemy.name}</div>
-              <div className="text-sm font-bold">{enemy.pokemon.name}</div>
-              <div className="mt-1 flex gap-1">
+      {/* COMBAT ARENA — compressed, fills remaining space above question card */}
+      <div className="flex min-h-0 flex-1 flex-col justify-center gap-2 px-4 py-2 safe-x">
+        {/* Enemy row: info left, sprite right */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0 flex-1 rounded-2xl bg-card/85 p-2 backdrop-blur shadow-card">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <div className="truncate font-pixel text-[9px] uppercase text-muted-foreground">{enemy.name}</div>
+                <div className="truncate text-[clamp(0.75rem,3.4vw,0.9rem)] font-bold leading-tight">{enemy.pokemon.name}</div>
+              </div>
+              <div className="flex shrink-0 gap-0.5">
                 {enemy.pokemon.types.map((t) => (
                   <TypeBadge key={t} type={t} />
                 ))}
               </div>
             </div>
-            <div className="w-32">
-              <HpBar hp={enemyHp} max={enemyMaxHp} label="HP" />
+            <div className="mt-1.5">
+              <HpBar hp={enemyHp} max={enemyMaxHp} compact />
             </div>
           </div>
-        </div>
-        <div className="mt-3 flex justify-end">
           <motion.div
-            className={`relative ${shakeWho === "enemy" ? "animate-shake" : ""}`}
+            className={`relative shrink-0 ${shakeWho === "enemy" ? "animate-shake" : ""}`}
             initial={{ x: 80, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
           >
@@ -951,10 +952,10 @@ function BattleMode({
               id={enemy.pokemon.id}
               shiny={enemy.isShiny}
               alt={enemy.pokemon.name}
-              className={`sprite h-32 w-32 ${enemy.isShiny ? "shiny-glow" : ""}`}
+              className={`sprite h-[clamp(4rem,18vw,7rem)] w-[clamp(4rem,18vw,7rem)] ${enemy.isShiny ? "shiny-glow" : ""}`}
             />
             {enemy.isShiny && (
-              <Sparkles className="pointer-events-none absolute -right-1 -top-1 h-5 w-5 animate-pulse text-yellow-300 drop-shadow" />
+              <Sparkles className="pointer-events-none absolute -right-1 -top-1 h-4 w-4 animate-pulse text-yellow-300 drop-shadow" />
             )}
             {floatDmg?.who === "enemy" && (
               <div className="animate-float-up pointer-events-none absolute -top-2 left-1/2 -translate-x-1/2 font-pixel text-base text-destructive">
@@ -963,13 +964,11 @@ function BattleMode({
             )}
           </motion.div>
         </div>
-      </div>
 
-      {/* player area */}
-      <div className="px-5 pt-2">
-        <div className="flex justify-start">
+        {/* Player row: sprite left, info right */}
+        <div className="flex items-center justify-between gap-2">
           <motion.div
-            className={`relative ${shakeWho === "player" ? "animate-shake" : ""}`}
+            className={`relative shrink-0 ${shakeWho === "player" ? "animate-shake" : ""}`}
             initial={{ x: -80, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
           >
@@ -977,7 +976,7 @@ function BattleMode({
               id={player.id}
               back
               alt={player.name}
-              className={`sprite h-32 w-32 ${streak >= 5 ? "mega-glow" : ""}`}
+              className={`sprite h-[clamp(4rem,18vw,7rem)] w-[clamp(4rem,18vw,7rem)] ${streak >= 5 ? "mega-glow" : ""}`}
             />
             {floatDmg?.who === "player" && (
               <div className="animate-float-up pointer-events-none absolute -top-2 left-1/2 -translate-x-1/2 font-pixel text-base text-destructive">
@@ -985,50 +984,37 @@ function BattleMode({
               </div>
             )}
           </motion.div>
-        </div>
-        <div className="mt-1 rounded-2xl bg-card/85 p-3 backdrop-blur shadow-card">
-          <div className="flex items-center justify-between">
-            <div className="w-32">
-              <HpBar hp={playerHp} max={playerMaxHp} label="HP" />
-            </div>
-            <div className="text-right">
-              <div className="font-pixel text-[10px] uppercase text-muted-foreground">{trainerName}</div>
-              <div className="text-sm font-bold">{player.name}</div>
-              <div className="font-pixel text-[9px] text-primary">⚡ {playerAbility.name}</div>
-              <div className="mt-1 flex justify-end gap-1">
+          <div className="min-w-0 flex-1 rounded-2xl bg-card/85 p-2 backdrop-blur shadow-card">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex shrink-0 gap-0.5">
                 {player.types.map((t) => (
                   <TypeBadge key={t} type={t} />
                 ))}
               </div>
-              {immune ? (
-                <div className="mt-1 flex justify-end">
-                  <span className="rounded-full bg-hp-good/20 px-2 py-0.5 font-pixel text-[9px] text-hp-good">
-                    🛡 Immune
-                  </span>
-                </div>
-              ) : disadvantaged ? (
-                <div className="mt-1 flex justify-end">
-                  <span className="rounded-full bg-destructive/20 px-2 py-0.5 font-pixel text-[9px] text-destructive">
-                    ⚠ Disadvantaged
-                  </span>
-                </div>
-              ) : null}
-              {statuses.length > 0 && (
-                <div className="mt-1 flex justify-end gap-1">
-                  {statuses.map((s) => (
-                    <span
-                      key={s.kind}
-                      className={`rounded-full px-2 py-0.5 font-pixel text-[9px] ${
-                        s.kind === "confused"
-                          ? "bg-poke-yellow/30 text-poke-dark"
-                          : "bg-purple-500/20 text-purple-700"
-                      }`}
-                    >
-                      {s.kind === "confused" ? "🌀 Confused" : "☠️ Poisoned"}
-                    </span>
-                  ))}
-                </div>
-              )}
+              <div className="min-w-0 text-right">
+                <div className="truncate font-pixel text-[9px] uppercase text-muted-foreground">{trainerName}</div>
+                <div className="truncate text-[clamp(0.75rem,3.4vw,0.9rem)] font-bold leading-tight">{player.name}</div>
+              </div>
+            </div>
+            <div className="mt-1.5">
+              <HpBar hp={playerHp} max={playerMaxHp} compact />
+            </div>
+            <div className="mt-1 flex flex-wrap justify-end gap-1">
+              <span className="rounded-full bg-primary/10 px-1.5 py-0.5 font-pixel text-[7px] text-primary">⚡ {playerAbility.name}</span>
+              {immune && <span className="rounded-full bg-hp-good/20 px-1.5 py-0.5 font-pixel text-[7px] text-hp-good">🛡 Immune</span>}
+              {disadvantaged && !immune && <span className="rounded-full bg-destructive/20 px-1.5 py-0.5 font-pixel text-[7px] text-destructive">⚠ Disadv.</span>}
+              {statuses.map((s) => (
+                <span
+                  key={s.kind}
+                  className={`rounded-full px-1.5 py-0.5 font-pixel text-[7px] ${
+                    s.kind === "confused"
+                      ? "bg-poke-yellow/30 text-poke-dark"
+                      : "bg-purple-500/20 text-purple-700"
+                  }`}
+                >
+                  {s.kind === "confused" ? "🌀" : "☠️"} {s.kind}
+                </span>
+              ))}
             </div>
           </div>
         </div>
@@ -1051,71 +1037,73 @@ function BattleMode({
         )}
       </AnimatePresence>
 
-      {/* question card */}
-      <AnimatePresence mode="wait">
-        {phase !== "intro" && trivia && (
-          <motion.div
-            key={questionIdx}
-            initial={{ y: 40, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -10, opacity: 0 }}
-            className="px-5 pb-6 pt-4"
-          >
-            <div className="rounded-3xl bg-card p-4 shadow-card">
-              <div className="mb-3 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  {streak >= 2 && (
-                    <div className="rounded-full bg-poke-yellow/30 px-2 py-0.5 font-pixel text-[9px] text-poke-dark">
-                      🔥 {streak} · ×{streakMultiplier(streak)}
-                    </div>
-                  )}
+      {/* QUESTION CARD — thumb zone, pinned bottom */}
+      <div className="shrink-0 px-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-1 safe-x">
+        <AnimatePresence mode="wait">
+          {phase !== "intro" && trivia && (
+            <motion.div
+              key={questionIdx}
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -10, opacity: 0 }}
+            >
+              <div className="rounded-2xl bg-card p-3 shadow-card">
+                <div className="mb-1.5 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    {streak >= 2 && (
+                      <div className="rounded-full bg-poke-yellow/30 px-2 py-0.5 font-pixel text-[9px] text-poke-dark">
+                        🔥 {streak} · ×{streakMultiplier(streak)}
+                      </div>
+                    )}
+                  </div>
+                  <div
+                    className={`flex items-center gap-1 rounded-full px-2 py-0.5 font-pixel text-[10px] ${
+                      timer <= 5 ? "bg-destructive text-destructive-foreground animate-pulse" : "bg-muted"
+                    }`}
+                  >
+                    <Clock className="h-3 w-3" /> {timer}s
+                  </div>
                 </div>
-                <div
-                  className={`flex items-center gap-1 rounded-full px-2 py-0.5 font-pixel text-[10px] ${
-                    timer <= 5 ? "bg-destructive text-destructive-foreground animate-pulse" : "bg-muted"
-                  }`}
-                >
-                  <Clock className="h-3 w-3" /> {timer}s
+                <p className="text-[clamp(0.85rem,3.6vw,1rem)] font-semibold leading-snug">{trivia.question}</p>
+                <div className="mt-2 grid grid-cols-1 gap-1.5">
+                  {trivia.options.map((opt, i) => {
+                    const isCorrect = phase === "feedback" && i === trivia.correct;
+                    const isWrong = phase === "feedback" && chosen === i && i !== trivia.correct;
+                    const isRevealed = revealedWrong === i;
+                    return (
+                      <button
+                        key={i}
+                        disabled={phase !== "question" || isRevealed}
+                        onClick={() => handleAnswer(i)}
+                        className={`flex min-h-[44px] items-center rounded-xl border-2 px-3 py-2.5 text-left text-[clamp(0.8rem,3.4vw,0.95rem)] font-medium transition active:scale-[0.98] ${
+                          isCorrect
+                            ? "border-hp-good bg-hp-good/20"
+                            : isWrong
+                              ? "border-destructive bg-destructive/15"
+                              : isRevealed
+                                ? "border-muted bg-muted/40 line-through opacity-50"
+                                : "border-border bg-card hover:border-primary hover:bg-primary/5"
+                        } disabled:cursor-not-allowed`}
+                      >
+                        <span className="mr-2 font-pixel text-[10px] text-primary">
+                          {String.fromCharCode(65 + i)}
+                        </span>
+                        <span className="min-w-0 flex-1">{opt}</span>
+                      </button>
+                    );
+                  })}
                 </div>
+                {phase === "feedback" && (
+                  <p className="mt-2 rounded-xl bg-muted p-2 text-[11px] leading-snug text-muted-foreground">
+                    💡 {trivia.explanation} · ⚡ {(lastElapsedMs / 1000).toFixed(1)}s
+                  </p>
+                )}
               </div>
-              <p className="text-base font-semibold leading-snug">{trivia.question}</p>
-              <div className="mt-4 grid grid-cols-1 gap-2">
-                {trivia.options.map((opt, i) => {
-                  const isCorrect = phase === "feedback" && i === trivia.correct;
-                  const isWrong = phase === "feedback" && chosen === i && i !== trivia.correct;
-                  const isRevealed = revealedWrong === i;
-                  return (
-                    <button
-                      key={i}
-                      disabled={phase !== "question" || isRevealed}
-                      onClick={() => handleAnswer(i)}
-                      className={`rounded-2xl border-2 px-4 py-3 text-left text-sm font-medium transition ${
-                        isCorrect
-                          ? "border-hp-good bg-hp-good/20"
-                          : isWrong
-                            ? "border-destructive bg-destructive/15"
-                            : isRevealed
-                              ? "border-muted bg-muted/40 line-through opacity-50"
-                              : "border-border bg-card hover:border-primary hover:bg-primary/5"
-                      } disabled:cursor-not-allowed`}
-                    >
-                      <span className="mr-2 font-pixel text-[10px] text-primary">
-                        {String.fromCharCode(65 + i)}
-                      </span>
-                      {opt}
-                    </button>
-                  );
-                })}
-              </div>
-              {phase === "feedback" && (
-                <p className="mt-3 rounded-xl bg-muted p-2 text-xs text-muted-foreground">
-                  💡 {trivia.explanation} · ⚡ {(lastElapsedMs / 1000).toFixed(1)}s
-                </p>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
       <AlertDialog open={confirmExit} onOpenChange={setConfirmExit}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -1163,7 +1151,7 @@ function ResultScreen({
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className={`flex min-h-screen flex-col items-center justify-center px-6 ${
+      className={`flex h-full w-full flex-col items-center justify-center overflow-y-auto px-6 py-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)] safe-x ${
         won ? "bg-victory" : "bg-defeat"
       }`}
     >
@@ -1303,7 +1291,7 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
 
   if (!trivia) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex h-full w-full items-center justify-center bg-background">
         <div className="font-pixel text-sm text-muted-foreground">No daily questions available.</div>
       </div>
     );
@@ -1312,7 +1300,7 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
   const progressPct = ((idx) / total) * 100;
 
   return (
-    <div className="bg-poke-hero min-h-screen">
+    <div className="bg-poke-hero relative h-full w-full overflow-y-auto pb-[calc(env(safe-area-inset-bottom)+1rem)] safe-x">
       <div className="absolute left-0 right-0 top-0 z-40 h-1 bg-poke-dark/20">
         <motion.div className="h-full bg-poke-yellow" initial={false} animate={{ width: `${progressPct}%` }} />
       </div>
@@ -1411,7 +1399,7 @@ function DailyResultScreen({
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex min-h-screen flex-col items-center justify-center bg-poke-hero px-6"
+      className="flex h-full w-full flex-col items-center justify-center overflow-y-auto bg-poke-hero px-6 py-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)] safe-x"
     >
       <div className="font-pixel text-2xl text-poke-dark">ALL DONE!</div>
       <div className="mt-3 text-5xl">🏅</div>

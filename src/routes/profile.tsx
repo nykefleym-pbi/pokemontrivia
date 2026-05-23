@@ -138,7 +138,7 @@ function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-full w-full overflow-y-auto bg-background pb-nav safe-x">
       <Toaster position="top-center" />
 
       <div className="px-5 pb-8 pt-[calc(env(safe-area-inset-top)+1rem)]">

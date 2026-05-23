@@ -44,10 +44,27 @@ export const TypeBadge = React.memo(function TypeBadge({
   );
 });
 
-export const HpBar = React.memo(function HpBar({ hp, max = 100, label }: { hp: number; max?: number; label?: string }) {
+export const HpBar = React.memo(function HpBar({ hp, max = 100, label, compact = false }: { hp: number; max?: number; label?: string; compact?: boolean }) {
   const pct = Math.max(0, Math.min(100, (hp / max) * 100));
   const color =
     pct > 50 ? "bg-hp-good" : pct > 20 ? "bg-hp-warn" : "bg-hp-low";
+  if (compact) {
+    return (
+      <div className="flex w-full items-center gap-1.5">
+        <div className="h-2 flex-1 overflow-hidden rounded-full border border-poke-dark/70 bg-poke-dark/20">
+          <motion.div
+            className={`h-full ${color}`}
+            initial={false}
+            animate={{ width: `${pct}%` }}
+            transition={{ type: "spring", stiffness: 100, damping: 18 }}
+          />
+        </div>
+        <span className="font-pixel text-[8px] tabular-nums">
+          {Math.round(hp)}/{max}
+        </span>
+      </div>
+    );
+  }
   return (
     <div className="w-full">
       {label && (
