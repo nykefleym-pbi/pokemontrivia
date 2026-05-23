@@ -142,7 +142,7 @@ function PokedexPage() {
 
       {/* Grid */}
       <div className="px-3 pb-8 pt-3">
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-3 gap-2 min-[400px]:grid-cols-4">
           {filtered.map((p) => {
             const e = pokedex[p.id];
             const got = !!e;
