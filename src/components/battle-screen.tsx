@@ -1096,7 +1096,7 @@ function BattleMode({
       </AnimatePresence>
 
       {/* QUESTION CARD — thumb zone, pinned bottom */}
-      <div className="shrink-0 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-1 safe-x">
+      <div className="shrink-0 px-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-2 safe-x">
         <AnimatePresence mode="wait">
           {phase !== "intro" && trivia && (
             <motion.div
