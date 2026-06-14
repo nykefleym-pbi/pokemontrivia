@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search } from "lucide-react";
+import { Search, ChevronLeft, Check } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { STARTING_PARTNERS, type PokeEntry } from "@/lib/pokemon-data";
 import { getAbility } from "@/lib/abilities";
