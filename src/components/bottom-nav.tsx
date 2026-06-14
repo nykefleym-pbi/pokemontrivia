@@ -1,11 +1,12 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { ShoppingBag, User, BookOpen } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 
-const SIDE_TABS = [
-  { to: "/pokedex", label: "Dex", icon: BookOpen },
-  { to: "/shop", label: "Shop", icon: ShoppingBag },
-  { to: "/profile", label: "Profile", icon: User },
+const LEFT_TABS = [
+  { to: "/shop", label: "Shop" },
+  { to: "/pokedex", label: "Dex" },
+] as const;
+const RIGHT_TABS = [
+  { to: "/profile", label: "Profile" },
 ] as const;
 
 export function BottomNav() {
@@ -25,9 +26,9 @@ export function BottomNav() {
       style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}
     >
       <div className="pointer-events-auto relative flex h-16 w-[min(440px,calc(100%-1.5rem))] items-center justify-around rounded-full border border-border/60 bg-card/95 px-4 shadow-[var(--shadow-float)] backdrop-blur-xl">
-        {/* left tabs: Dex, Shop */}
-        <NavCell tab={SIDE_TABS[0]} active={path.startsWith(SIDE_TABS[0].to)} />
-        <NavCell tab={SIDE_TABS[1]} active={path.startsWith(SIDE_TABS[1].to)} />
+        {LEFT_TABS.map((t) => (
+          <NavCell key={t.to} tab={t} active={path.startsWith(t.to)} />
+        ))}
 
         {/* elevated center Battle button */}
         <button
@@ -38,16 +39,12 @@ export function BottomNav() {
           }`}
         >
           <PokeballGlyph />
-          <span
-            className="absolute left-1/2 top-[calc(100%+4px)] -translate-x-1/2 font-pixel-xs text-primary"
-            aria-hidden
-          >
-            BATTLE
-          </span>
         </button>
 
-        <NavCell tab={SIDE_TABS[2]} active={path.startsWith(SIDE_TABS[2].to)} />
-        {/* spacer to balance with battle button visual weight on the right */}
+        {RIGHT_TABS.map((t) => (
+          <NavCell key={t.to} tab={t} active={path.startsWith(t.to)} />
+        ))}
+        {/* spacer to balance with elevated battle button */}
         <span className="w-6" aria-hidden />
       </div>
     </nav>
@@ -58,29 +55,23 @@ function NavCell({
   tab,
   active,
 }: {
-  tab: { to: string; label: string; icon: React.ComponentType<{ className?: string }> };
+  tab: { to: string; label: string };
   active: boolean;
 }) {
-  const Icon = tab.icon;
   return (
     <Link
       to={tab.to}
-      className="relative flex h-full w-14 flex-col items-center justify-center gap-0.5 transition active:scale-95"
+      className="relative flex h-full w-16 flex-col items-center justify-center transition active:scale-95"
     >
-      <Icon
-        className={`h-5 w-5 transition-transform ${
-          active ? "scale-110 text-primary" : "text-muted-foreground"
-        }`}
-      />
       <span
-        className={`font-pixel-xs ${
-          active ? "text-primary" : "text-muted-foreground"
+        className={`text-sm font-bold ${
+          active ? "text-poke-dark" : "text-poke-dark/60"
         }`}
       >
         {tab.label}
       </span>
       {active && (
-        <span className="absolute bottom-1 h-1 w-1 rounded-full bg-primary" />
+        <span className="absolute bottom-2 h-1 w-1 rounded-full bg-primary" />
       )}
     </Link>
   );

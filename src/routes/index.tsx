@@ -30,12 +30,12 @@ function SplashPage() {
 
   return (
     <div className="bg-poke-hero relative flex h-full w-full flex-col overflow-hidden safe-x">
-      {/* decorative pokeballs */}
-      <div className="pointer-events-none absolute -right-10 -top-10 opacity-30">
-        <PokeballSpinner size={140} />
+      {/* decorative pokeballs — subtle outlines */}
+      <div className="pointer-events-none absolute -right-16 -top-16 opacity-[0.12]">
+        <PokeballSpinner size={160} />
       </div>
-      <div className="pointer-events-none absolute -bottom-12 -left-10 opacity-20">
-        <PokeballSpinner size={180} />
+      <div className="pointer-events-none absolute -bottom-16 -left-16 opacity-[0.08]">
+        <PokeballSpinner size={200} />
       </div>
 
       <AnimatePresence mode="wait">
@@ -61,12 +61,12 @@ function SplashPage() {
                 Battle trainers with your knowledge. Earn XP, climb leagues, fill your Pokédex.
               </p>
 
-              <div className="mt-8 flex items-center justify-center gap-4">
+              <div className="mt-8 flex items-center justify-center gap-3">
                 {[1, 4, 7, 25].map((id, i) => (
                   <motion.div
                     key={id}
-                    className="flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-pop ring-1 ring-poke-dark/10"
-                    animate={{ y: [0, -12, 0] }}
+                    className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-pop ring-1 ring-poke-dark/10"
+                    animate={{ y: [0, -10, 0] }}
                     transition={{
                       duration: 1.6,
                       repeat: Infinity,
@@ -74,7 +74,7 @@ function SplashPage() {
                       delay: i * 0.4,
                     }}
                   >
-                    <PokemonSprite id={id} className="sprite h-14 w-14" />
+                    <PokemonSprite id={id} className="sprite h-12 w-12" />
                   </motion.div>
                 ))}
               </div>
@@ -325,7 +325,9 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                   <div className="font-pixel text-[11px] uppercase tracking-wider text-primary">
                     {selectedTrainer.name} · {trainerInfo.town}
                   </div>
-                  <p className="mt-1 text-sm leading-snug text-poke-dark/80">{trainerInfo.blurb}</p>
+                  <p className="mt-1 text-sm italic leading-snug text-poke-dark/80">
+                    &ldquo;{trainerInfo.blurb}&rdquo;
+                  </p>
                 </div>
               </div>
             )}
