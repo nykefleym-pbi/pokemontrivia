@@ -915,77 +915,86 @@ function BattleMode({
         )}
       </AnimatePresence>
       {/* top bar */}
-      <div className="flex shrink-0 items-center justify-between px-4 pt-[calc(env(safe-area-inset-top)+0.5rem)] safe-x">
-        <button
-          onClick={() => {
-            if (isWeekly) {
-              toast.error("You cannot leave a Weekly League challenge.");
-              return;
-            }
-            setConfirmExit(true);
-          }}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-card/80 backdrop-blur"
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </button>
-        <div className={`flex items-center gap-1 rounded-full px-3 py-1 font-pixel text-[10px] backdrop-blur ${isElite ? "bg-poke-dark text-poke-yellow shadow-pop" : "bg-card/80 text-foreground"}`}>
-          {isElite && <Crown className="h-3 w-3" />}
-          {isElite
-            ? `ELITE · ${eliteMember!.region}`
-            : `Set ${Math.floor(questionIdx / QUESTIONS_PER_SET) + 1} · Q${(questionIdx % QUESTIONS_PER_SET) + 1}/${QUESTIONS_PER_SET}`}
+      <div className="flex shrink-0 items-center justify-between gap-2 px-4 pt-[calc(env(safe-area-inset-top)+0.5rem)] safe-x">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              if (isWeekly) {
+                toast.error("You cannot leave a Weekly League challenge.");
+                return;
+              }
+              setConfirmExit(true);
+            }}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-card/90 backdrop-blur shadow-card"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <div className={`flex items-center gap-1 rounded-full px-3 py-1.5 font-pixel text-[10px] shadow-card backdrop-blur ${isElite ? "bg-poke-dark text-poke-yellow" : "bg-card/90 text-foreground"}`}>
+            {isElite && <Crown className="h-3 w-3" />}
+            {isElite
+              ? `ELITE · ${eliteMember!.region}`
+              : `ROUND ${Math.floor(questionIdx / QUESTIONS_PER_SET) + 1}/${Math.max(1, Math.ceil(questions.length / QUESTIONS_PER_SET))}`}
+          </div>
         </div>
-        <Sheet open={bagOpen} onOpenChange={setBagOpen}>
-          <SheetTrigger asChild>
-            <button className="flex h-10 w-10 items-center justify-center rounded-full bg-card/80 backdrop-blur">
-              <Backpack className="h-5 w-5" />
-            </button>
-          </SheetTrigger>
-          <SheetContent side="bottom" className="rounded-t-3xl">
-            <SheetHeader>
-              <SheetTitle>Item Bag</SheetTitle>
-            </SheetHeader>
-            <div className="mt-4 grid grid-cols-2 gap-2 pb-6">
-              {ITEMS.map((it) => {
-                const owned = inventory[it.id] ?? 0;
-                const cd = cooldowns[it.id] ?? 0;
-                const disabled = owned <= 0 || cd > 0 || (isWeekly && it.id === "escape");
-                return (
-                  <button
-                    key={it.id}
-                    disabled={disabled}
-                    onClick={() => tryUseItem(it.id)}
-                    className="flex items-start gap-3 rounded-2xl border-2 p-3 text-left transition disabled:opacity-40 enabled:hover:border-primary"
-                  >
-                    <img
-                      src={it.iconUrl}
-                      alt={it.name}
-                      className="sprite h-9 w-9 shrink-0 object-contain"
-                      onError={(e) => {
-                        const el = e.currentTarget as HTMLImageElement;
-                        el.replaceWith(
-                          Object.assign(document.createElement("span"), {
-                            textContent: it.emoji,
-                            className: "text-2xl",
-                          }),
-                        );
-                      }}
-                    />
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5 text-sm font-semibold">
-                        {it.name}
-                        <span className="font-pixel text-[9px] text-primary">×{owned}</span>
-                      </div>
-                      <div className="text-[10px] leading-tight text-muted-foreground">
-                        {it.desc}
-                      </div>
-                      {cd > 0 && <div className="text-[10px] text-destructive">Cooldown: {cd}</div>}
-                    </div>
-                  </button>
-                );
-              })}
+        <div className="flex items-center gap-2">
+          {streak >= 1 && (
+            <div className="rounded-full bg-primary px-3 py-1.5 font-pixel text-[10px] uppercase text-primary-foreground shadow-card">
+              Streak ×{streak}
             </div>
-          </SheetContent>
-        </Sheet>
+          )}
+          <Sheet open={bagOpen} onOpenChange={setBagOpen}>
+            <SheetTrigger asChild>
+              <button className="flex h-10 w-10 items-center justify-center rounded-full bg-card/90 backdrop-blur shadow-card">
+                <Backpack className="h-5 w-5" />
+              </button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="rounded-t-3xl">
+              <SheetHeader>
+                <SheetTitle>Item Bag</SheetTitle>
+              </SheetHeader>
+              <div className="mt-4 grid grid-cols-2 gap-2 pb-6">
+                {ITEMS.map((it) => {
+                  const owned = inventory[it.id] ?? 0;
+                  const cd = cooldowns[it.id] ?? 0;
+                  const disabled = owned <= 0 || cd > 0 || (isWeekly && it.id === "escape");
+                  return (
+                    <button
+                      key={it.id}
+                      disabled={disabled}
+                      onClick={() => tryUseItem(it.id)}
+                      className="flex items-start gap-3 rounded-2xl border-2 p-3 text-left transition disabled:opacity-40 enabled:hover:border-primary"
+                    >
+                      <img
+                        src={it.iconUrl}
+                        alt={it.name}
+                        className="sprite h-9 w-9 shrink-0 object-contain"
+                        onError={(e) => {
+                          const el = e.currentTarget as HTMLImageElement;
+                          el.replaceWith(
+                            Object.assign(document.createElement("span"), {
+                              textContent: it.emoji,
+                              className: "text-2xl",
+                            }),
+                          );
+                        }}
+                      />
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 text-sm font-semibold">
+                          {it.name}
+                          <span className="font-pixel text-[9px] text-primary">×{owned}</span>
+                        </div>
+                        <div className="text-[10px] leading-tight text-muted-foreground">
+                          {it.desc}
+                        </div>
+                        {cd > 0 && <div className="text-[10px] text-destructive">Cooldown: {cd}</div>}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
 
       {/* COMBAT ARENA — FRLG diagonal layout */}
