@@ -44,17 +44,43 @@ function SplashPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="relative flex h-full w-full flex-col items-center justify-center overflow-y-auto px-6 py-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)] text-center"
+            className="relative flex h-full w-full flex-col items-center justify-between overflow-y-auto px-6 pt-[calc(env(safe-area-inset-top)+2rem)] pb-[calc(env(safe-area-inset-bottom)+1.5rem)] text-center"
           >
-            <PokeballSpinner size={120} spinning />
-            <h1 className="mt-8 font-pixel text-2xl leading-relaxed text-poke-dark">
-              POKéMON TRIVIA
-            </h1>
-            <div className="mt-2 font-pixel text-base text-primary">⚔️ BATTLE ⚔️</div>
-            <p className="mt-5 max-w-xs text-sm text-poke-dark/70">
-              Test your Pokémon knowledge in trivia battles. Earn XP, climb leagues, collect items.
-            </p>
-            <div className="mt-10 flex w-full max-w-xs flex-col gap-3">
+            <div className="flex w-full flex-col items-center">
+              <PokeballSpinner size={110} spinning />
+              <img
+                src={pokemonLogo.url}
+                alt="Pokémon"
+                className="mt-6 h-auto w-48 select-none"
+                draggable={false}
+              />
+              <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-poke-dark">
+                Trivia Battle
+              </h1>
+              <p className="mt-3 max-w-xs text-sm text-poke-dark/70">
+                Battle trainers with your knowledge. Earn XP, climb leagues, fill your Pokédex.
+              </p>
+
+              <div className="mt-7 flex items-center justify-center gap-3">
+                {[1, 4, 7, 25].map((id, i) => (
+                  <motion.div
+                    key={id}
+                    className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-pop ring-1 ring-poke-dark/10"
+                    animate={{ y: [0, -10, 0] }}
+                    transition={{
+                      duration: 1.6,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      delay: i * 0.4,
+                    }}
+                  >
+                    <PokemonSprite id={id} className="sprite h-12 w-12" />
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-8 flex w-full max-w-xs flex-col gap-3">
               <Button
                 size="lg"
                 className="rounded-full bg-primary py-6 font-semibold shadow-pop hover:scale-105"
@@ -65,7 +91,7 @@ function SplashPage() {
               <Button
                 size="lg"
                 variant="outline"
-                className="rounded-full border-2 py-6 font-semibold"
+                className="rounded-full border-2 bg-white py-6 font-semibold"
                 onClick={() => {
                   useGameStore.getState().startGuestSession();
                   navigate({ to: "/battle", search: { autostart: 1 } as never });
@@ -74,7 +100,6 @@ function SplashPage() {
                 Play as Guest
               </Button>
             </div>
-            <p className="mt-8 font-pixel text-[9px] text-poke-dark/50">v1.0 · GEN I</p>
           </motion.div>
         ) : (
           <motion.div
