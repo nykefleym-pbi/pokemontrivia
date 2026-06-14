@@ -1,11 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Sparkles } from "lucide-react";
+import { Search, Sparkles, X } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { ALL_POKEMON, type PokeType } from "@/lib/pokemon-data";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { TypeBadge, PokemonSprite } from "@/components/game-ui";
 import {
   Dialog,
@@ -13,6 +12,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/pokedex")({
@@ -72,110 +76,167 @@ function PokedexPage() {
 
   if (!hasOnboarded) return null;
 
+  const ringCirc = 2 * Math.PI * 26;
+
   return (
     <div className="h-full w-full overflow-y-auto bg-background pb-nav safe-x">
-      {/* Hero stats strip */}
+      {/* Hero */}
       <div className="bg-poke-hero px-5 pb-5 pt-[calc(env(safe-area-inset-top)+1rem)]">
-        <h1 className="font-pixel text-base text-poke-dark">Pokédex</h1>
-        <div className="mt-3 flex items-end gap-4">
-          <div>
-            <div className="font-pixel text-2xl text-primary">{captured}</div>
-            <div className="font-pixel text-[9px] uppercase text-poke-dark/60">/ {total}</div>
+        <p className="font-pixel-xs text-primary">POKÉDEX</p>
+        <div className="mt-1 flex items-center justify-between gap-3">
+          <h1 className="font-display-xl text-poke-dark">Pokédex</h1>
+          <div className="relative h-16 w-16 shrink-0">
+            <svg viewBox="0 0 64 64" className="absolute inset-0 h-full w-full -rotate-90">
+              <circle cx="32" cy="32" r="26" fill="none" stroke="oklch(0.22 0.04 260 / 0.12)" strokeWidth="6" />
+              <circle
+                cx="32" cy="32" r="26" fill="none"
+                stroke="var(--color-primary)" strokeWidth="6" strokeLinecap="round"
+                strokeDasharray={ringCirc}
+                strokeDashoffset={ringCirc * (1 - pct / 100)}
+                style={{ transition: "stroke-dashoffset 0.5s ease" }}
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-sm font-extrabold text-poke-dark">{pct}%</span>
+            </div>
           </div>
-          <div className="flex items-end gap-1 text-yellow-500">
-            <Sparkles className="h-4 w-4" />
-            <span className="font-pixel text-lg">{shinies}</span>
-          </div>
-          <div className="ml-auto font-pixel text-[10px] text-poke-dark/70">{pct}%</div>
         </div>
-        <div className="mt-2 h-2 overflow-hidden rounded-full bg-poke-dark/15">
-          <div
-            className="h-full bg-gradient-to-r from-poke-yellow to-primary transition-all"
-            style={{ width: `${pct}%` }}
-          />
+        <div className="mt-3 flex gap-2">
+          <div className="flex flex-1 items-baseline gap-1.5 rounded-2xl bg-card px-3 py-2 shadow-card">
+            <span className="text-lg font-extrabold text-poke-dark">{captured}</span>
+            <span className="text-xs text-poke-dark/60">/ {total} caught</span>
+          </div>
+          <div className="flex items-center gap-1 rounded-2xl bg-card px-3 py-2 shadow-card">
+            <Sparkles className="h-4 w-4 text-poke-yellow" />
+            <span className="text-lg font-extrabold text-poke-dark">{shinies}</span>
+            <span className="text-xs text-poke-dark/60">shiny</span>
+          </div>
         </div>
       </div>
 
       {/* Sticky filters */}
-      <div className="sticky top-0 z-20 border-b border-border bg-card/95 px-5 py-2 backdrop-blur">
+      <div className="sticky top-0 z-20 border-b border-border/60 bg-background/95 px-5 py-3 backdrop-blur">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search name..."
-            className="h-8 pl-9 text-xs"
+            placeholder="Search name…"
+            className="h-11 rounded-full border-0 bg-card pl-11 text-sm shadow-card"
           />
         </div>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <select
-            value={gen}
-            onChange={(e) => setGen(Number(e.target.value))}
-            className="h-8 rounded-md border bg-background px-2 text-xs"
-          >
-            {GEN_RANGES.map((g) => (
-              <option key={g.gen} value={g.gen}>Gen {g.gen}</option>
-            ))}
-          </select>
-          <select
-            value={type}
-            onChange={(e) => setType(e.target.value as "all" | PokeType)}
-            className="h-8 rounded-md border bg-background px-2 text-xs"
-          >
-            <option value="all">All Types</option>
-            {ALL_TYPES.map((t) => (
-              <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
-            ))}
-          </select>
-          <div className="ml-auto flex items-center gap-3">
-            <label className="flex items-center gap-1.5 text-[10px] font-pixel uppercase">
-              Caught
-              <Switch checked={capturedOnly} onCheckedChange={setCapturedOnly} />
-            </label>
-            <label className="flex items-center gap-1.5 text-[10px] font-pixel uppercase">
-              Shiny
-              <Switch checked={shinyOnly} onCheckedChange={setShinyOnly} />
-            </label>
-          </div>
+        <div className="mt-3 -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
+          {GEN_RANGES.map((g) => {
+            const active = g.gen === gen;
+            return (
+              <button
+                key={g.gen}
+                onClick={() => setGen(g.gen)}
+                className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold transition ${
+                  active ? "bg-primary text-primary-foreground shadow-card" : "bg-card text-poke-dark/70 shadow-card"
+                }`}
+              >
+                Gen {g.gen}
+              </button>
+            );
+          })}
+        </div>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold capitalize shadow-card transition ${
+                  type === "all" ? "bg-card text-poke-dark/70" : "bg-primary text-primary-foreground"
+                }`}
+              >
+                {type === "all" ? "+ Type" : type}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 rounded-2xl p-2" align="start">
+              <div className="flex flex-wrap gap-1">
+                <button
+                  onClick={() => setType("all")}
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                    type === "all" ? "bg-primary text-primary-foreground" : "bg-muted text-poke-dark/70"
+                  }`}
+                >
+                  All
+                </button>
+                {ALL_TYPES.map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setType(t)}
+                    className="rounded-full px-2.5 py-1 text-[11px] font-bold capitalize text-white"
+                    style={{ background: `var(--color-type-${t})`, opacity: type === t ? 1 : 0.7 }}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          <ToggleChip active={capturedOnly} onToggle={() => setCapturedOnly((v) => !v)} label="Caught" />
+          <ToggleChip active={shinyOnly} onToggle={() => setShinyOnly((v) => !v)} label="Shiny" />
+          {(type !== "all" || capturedOnly || shinyOnly) && (
+            <button
+              onClick={() => { setType("all"); setCapturedOnly(false); setShinyOnly(false); }}
+              className="ml-auto flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-[11px] font-bold text-muted-foreground"
+            >
+              <X className="h-3 w-3" /> Clear
+            </button>
+          )}
         </div>
       </div>
 
       {/* Grid */}
       <div className="px-3 pb-8 pt-3">
-        <div className="grid grid-cols-3 gap-2 min-[400px]:grid-cols-4">
+        <div className="grid grid-cols-3 gap-2.5 min-[400px]:grid-cols-4">
           {filtered.map((p) => {
             const e = pokedex[p.id];
             const got = !!e;
+            const primaryType = p.types[0];
             return (
               <button
                 key={p.id}
                 onClick={() => { setDetailId(p.id); setShowShiny(false); }}
-                style={{ contentVisibility: "auto", containIntrinsicSize: "96px 96px" } as React.CSSProperties}
+                style={{
+                  contentVisibility: "auto",
+                  containIntrinsicSize: "112px 112px",
+                  ...(got
+                    ? { backgroundImage: `linear-gradient(135deg, color-mix(in oklab, var(--color-type-${primaryType}) 18%, transparent), var(--color-card))` }
+                    : {}),
+                } as React.CSSProperties}
                 className={`relative flex flex-col items-center rounded-2xl p-2 transition active:scale-95 ${
-                  got ? "bg-card shadow-sm" : "bg-muted/30"
+                  got ? "shadow-card" : "bg-muted/40"
                 }`}
               >
                 <PokemonSprite
                   id={p.id}
                   alt={got ? p.name : "???"}
-                  className={`sprite h-14 w-14 ${got ? "" : "sprite-silhouette"}`}
+                  className={`sprite h-16 w-16 ${got ? "" : "sprite-silhouette"}`}
                 />
-                <div className="mt-1 w-full truncate text-center text-[10px] font-semibold">
+                <div className="mt-1 w-full truncate text-center text-[11px] font-bold text-poke-dark">
                   {got ? p.name : "???"}
                 </div>
+                {got && (
+                  <div className="font-pixel-xs text-poke-dark/60">{primaryType}</div>
+                )}
                 {got && e.defeatCount > 1 && (
-                  <div className="absolute right-1 top-1 rounded bg-primary px-1 font-pixel text-[8px] text-primary-foreground">
+                  <div className="absolute right-1 top-1 rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-bold text-primary-foreground shadow-sm">
                     ×{e.defeatCount}
                   </div>
                 )}
                 {e?.shinyUnlocked && (
-                  <Sparkles className="absolute left-1 top-1 h-3 w-3 text-yellow-400" />
+                  <div className="absolute left-1 top-1 rounded-full bg-poke-yellow p-0.5 shadow-sm">
+                    <Sparkles className="h-2.5 w-2.5 text-poke-dark" />
+                  </div>
                 )}
               </button>
             );
           })}
           {filtered.length === 0 && (
-            <div className="col-span-3 py-8 text-center text-xs text-muted-foreground min-[400px]:col-span-4">
+            <div className="col-span-3 py-10 text-center text-xs text-muted-foreground min-[400px]:col-span-4">
               No matches.
             </div>
           )}
@@ -183,7 +244,7 @@ function PokedexPage() {
       </div>
 
       <Dialog open={detailId !== null} onOpenChange={(o) => !o && setDetailId(null)}>
-        <DialogContent className="max-w-xs">
+        <DialogContent className="max-w-sm rounded-3xl">
           {detailId !== null && (() => {
             const p = ALL_POKEMON.find((x) => x.id === detailId);
             const entry = pokedex[detailId];
@@ -191,41 +252,59 @@ function PokedexPage() {
             const got = !!entry;
             const showS = showShiny && entry?.shinyUnlocked;
             const displayName = got ? p.name : p.name.replace(/[a-zA-Z]/g, "*");
+            const primaryType = p.types[0];
             return (
               <>
                 <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <span>#{String(p.id).padStart(4, "0")} {displayName}</span>
-                    {entry?.shinyUnlocked && <Sparkles className="h-4 w-4 text-yellow-400" />}
+                  <p className="font-pixel-xs text-poke-dark/50">
+                    #{String(p.id).padStart(4, "0")}
+                  </p>
+                  <DialogTitle className="flex items-center gap-2 font-display-lg text-poke-dark">
+                    <span>{displayName}</span>
+                    {entry?.shinyUnlocked && <Sparkles className="h-4 w-4 text-poke-yellow" />}
                   </DialogTitle>
                 </DialogHeader>
                 <div className="flex flex-col items-center gap-3">
-                  <PokemonSprite
-                    id={p.id}
-                    shiny={!!showS}
-                    alt={displayName}
-                    className={`sprite h-32 w-32 ${got ? "" : "sprite-silhouette"}`}
-                  />
+                  <div
+                    className="flex h-44 w-44 items-center justify-center rounded-full"
+                    style={{
+                      background: `radial-gradient(circle at 50% 55%, color-mix(in oklab, var(--color-type-${primaryType}) 28%, transparent) 0%, transparent 70%)`,
+                    }}
+                  >
+                    <PokemonSprite
+                      id={p.id}
+                      shiny={!!showS}
+                      alt={displayName}
+                      className={`sprite h-40 w-40 ${got ? "" : "sprite-silhouette"}`}
+                    />
+                  </div>
                   <div className="flex gap-1">
                     {got
                       ? p.types.map((t) => <TypeBadge key={t} type={t} />)
-                      : <span className="font-pixel text-[10px] uppercase text-muted-foreground">??? type</span>}
+                      : <span className="font-pixel-xs text-muted-foreground">??? type</span>}
                   </div>
                   {entry ? (
                     <>
-                      <div className="text-center text-xs text-muted-foreground">
-                        <div>Defeated {entry.defeatCount}×</div>
-                        <div>First seen {new Date(entry.firstSeenAt).toLocaleDateString()}</div>
+                      <div className="grid w-full grid-cols-3 gap-2">
+                        <Stat label="Defeated" value={`×${entry.defeatCount}`} />
+                        <Stat label="First seen" value={new Date(entry.firstSeenAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })} />
+                        <Stat label="Shiny" value={entry.shinyUnlocked ? "✓" : "—"} />
                       </div>
                       <PokedexFlavor pokemonId={p.id} />
+                      {entry.shinyUnlocked && (
+                        <Button
+                          onClick={() => setShowShiny((v) => !v)}
+                          className="h-11 w-full rounded-full bg-primary text-sm font-bold"
+                        >
+                          Toggle {showS ? "Normal" : "Shiny"}
+                        </Button>
+                      )}
                     </>
                   ) : (
-                    <div className="text-xs text-muted-foreground">Not yet captured</div>
-                  )}
-                  {entry?.shinyUnlocked && (
-                    <Button size="sm" variant="outline" onClick={() => setShowShiny((v) => !v)}>
-                      Toggle {showS ? "Normal" : "Shiny"}
-                    </Button>
+                    <div className="w-full rounded-2xl bg-muted/50 p-4 text-center">
+                      <div className="text-sm font-semibold text-poke-dark/70">Not yet captured</div>
+                      <div className="mt-1 font-pixel-xs text-poke-dark/40">BATTLE TO UNCOVER</div>
+                    </div>
                   )}
                 </div>
               </>
@@ -233,6 +312,29 @@ function PokedexPage() {
           })()}
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function ToggleChip({ active, onToggle, label }: { active: boolean; onToggle: () => void; label: string }) {
+  return (
+    <button
+      aria-pressed={active}
+      onClick={onToggle}
+      className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold shadow-card transition ${
+        active ? "bg-primary text-primary-foreground" : "bg-card text-poke-dark/70"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-muted/40 px-2 py-2 text-center">
+      <div className="font-pixel-xs text-poke-dark/50">{label}</div>
+      <div className="mt-0.5 text-sm font-extrabold text-poke-dark">{value}</div>
     </div>
   );
 }
@@ -273,7 +375,7 @@ function PokedexFlavor({ pokemonId }: { pokemonId: number }) {
   if (loading) return null;
   if (!flavor) return null;
   return (
-    <div className="rounded-xl bg-muted/50 p-2 text-center text-[11px] italic leading-relaxed text-muted-foreground">
+    <div className="w-full rounded-2xl bg-poke-yellow/15 p-3 text-center text-[12px] italic leading-relaxed text-poke-dark/80">
       {flavor}
     </div>
   );
