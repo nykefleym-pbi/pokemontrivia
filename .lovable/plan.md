@@ -1,120 +1,78 @@
-# Pokémon Trivia Battle — Priority 1+2 UI Redesign
+# Collection screens redesign — Pokédex, Pokédex detail, Shop, Bag
 
-Goal: align the existing app to the attached HTML design comp for the Onboarding flow and the Core Battle loop, plus the global chrome (nav + design tokens) that those screens depend on. No gameplay, store, route, or backend changes.
+Polish-only pass aligning Pokédex/Shop to the design comp's GO-style cards, soft shadows, big Outfit headings, and pixel font as accents only. No store, route, or gameplay changes. Bag is already implemented as the Inventory tab in `/profile` and as the in-battle sheet — this pass restyles the existing Inventory surface; no new route.
 
 ## Files touched
 
-- `src/styles.css` — design tokens
-- `src/components/bottom-nav.tsx` — floating pill nav
-- `src/routes/__root.tsx` — bottom padding only if nav height changes
-- `src/routes/index.tsx` — Splash + Onboarding (Name → Avatar → Partner) polish to spec
-- `src/routes/battle.tsx` — Battle Home + Elite Four takeover polish
-- `src/components/battle-screen.tsx` — in-battle FRLG diagonal layout, Victory / Defeat result cards
+- `src/routes/pokedex.tsx` — hero, sticky filters, grid tiles, detail dialog
+- `src/routes/shop.tsx` — header, featured rail, segmented tabs, item cards, purchase sheet
+- `src/routes/profile.tsx` — Inventory tab visual only (header chrome + tab layout left for the Profile pass)
 
-Out of scope this pass: Pokédex, Pokédex detail, Shop, Bag, Purchase confirm, Profile tabs, Achievements, Trophies, Badges, Settings, Evolution, Share card, dark variants. Will return for those in a follow-up.
+## 1. Pokédex (`src/routes/pokedex.tsx`)
 
----
+Hero strip (`bg-poke-hero`):
+- `font-pixel-xs` `POKÉDEX` label, big `font-display-xl` `Pokédex` heading.
+- Two soft white stat chips inline: `Caught {n} / 1025` and `Shiny {s}` with sparkles. Right-aligned circular progress ring (GO-style) shows `{pct}%` inside.
+- XP-style gradient progress bar removed (replaced by ring).
 
-## 1. Global tokens (`src/styles.css`)
+Sticky filter bar:
+- Pill search input `h-11 rounded-full bg-card shadow-card` with magnifier icon.
+- Below search, horizontal scrollable chip row for generations (`Gen 1 … Gen 9`) — active chip is `bg-primary text-primary-foreground`, inactive `bg-card text-poke-dark/70 shadow-card`. Replaces the `<select>`.
+- Type filter becomes a single trailing chip `+ Type` that opens a small popover with the 18 type chips (use shadcn `Popover` or fall back to a `details/summary` if Popover not present — check before adding deps).
+- Caught / Shiny toggles move to the chip row as toggle chips (no `Switch`), using `aria-pressed`.
 
-- Soften `--shadow-card` to `0 10px 30px -12px oklch(0.5 0.15 250 / 0.18)` (comp uses a much softer drop than today).
-- Add `--shadow-float: 0 16px 40px -16px oklch(0.22 0.04 260 / 0.28)` for the floating nav and hero CTAs.
-- Add a `--radius-pill: 999px` alias and bump `--radius` default usage on hero cards toward `1.25rem` via utility classes (no token rename — just consistent class usage on the touched screens).
-- Add `.font-display-xl` (`Outfit`, 32px/1, weight 800, letter-spacing −0.03em), `.font-display-lg` (28px, 800, −0.02em), `.font-display-md` (22px, 700, −0.01em) utilities for headings.
-- Constrain pixel font to accent sizes: add `.font-pixel-xs` (8px) and `.font-pixel-sm` (10px); audit the touched screens to ensure `font-pixel` only appears at 7–10px.
-- Bump `--bottom-nav-height` to `4.5rem` and `--bottom-nav-total` accordingly so the new floating pill has clearance.
+Grid (3-col mobile, 4-col at min-width 400):
+- Tile bg: caught → `bg-card shadow-card` with subtle type-color gradient overlay using the primary type token (`bg-gradient-to-br from-type-{t}/15 to-card`). Uncaught → `bg-muted/40`.
+- Larger sprite (`h-16 w-16`) with `sprite-silhouette` if uncaught.
+- Name below, `text-[11px] font-bold`. `???` for uncaught.
+- Top-right: `×N` defeat count chip in primary; top-left: small ✨ if shiny — both restyled as soft pills.
+- Caught entries also show a tiny `font-pixel-xs` type label under name (primary type), GO style.
 
-No color token changes — existing `poke-*`, `hp-*`, type tokens stay.
+Detail dialog (`DialogContent` → `max-w-sm rounded-3xl`):
+- Header: `font-pixel-xs` `#0025` dex number, `font-display-lg` name (`****` masked for uncaught).
+- Big sprite centered (`h-40 w-40`) on a soft type-color radial gradient bg.
+- Type badges row.
+- Flavor text in a soft cream card (`bg-poke-yellow/10 rounded-2xl p-3 text-sm italic`).
+- For caught: 3-col stat strip (Defeated, First seen, Shiny status).
+- For uncaught: muted `Not yet captured` with a pixel hint `BATTLE TO UNCOVER`.
+- Toggle Shiny button restyled as a full-width pill, only shown when shiny unlocked.
 
-## 2. Floating pill bottom nav (`src/components/bottom-nav.tsx`)
+## 2. Shop (`src/routes/shop.tsx`)
 
-Replaces the current flat 4-tab bar.
+Header (replace `AppHeader`):
+- Match Pokédex hero pattern: `bg-poke-hero` strip, `font-pixel-xs` `POKÉMART`, `font-display-xl` `Shop`, and an XP balance pill `✨ {xp} XP` right-aligned (white pill, `shadow-card`).
 
-- Container: `fixed bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] left-1/2 -translate-x-1/2 w-[min(440px,calc(100%-1.5rem))]`, pill shape, white bg, `shadow-float`, 1px border `border-border/60`, `backdrop-blur-xl`, height 64px.
-- Layout: 4 evenly-spaced icon+label cells. The Battle cell is the visual center: rendered as an elevated 64×64 red Pokéball-style circle that floats `-translate-y-5` above the pill, with `bg-primary text-primary-foreground shadow-pop`, white inner ring, and a tiny pixel `BATTLE` cap below the pill (inside the bar).
-- Other 3 cells (Shop / Dex / Profile): icon top, `font-pixel-xs` label below, active state gets a primary-colored dot under the icon (no top underline bar anymore).
-- Hide rules unchanged: hidden on `/`, hidden in active battle on `/battle`.
-- Bottom padding utility `.pb-nav` keeps content above the floating pill via the updated `--bottom-nav-total`.
+Featured rail:
+- Horizontal snap rail (2 cards visible) instead of grid. Each card uses `rounded-3xl bg-gradient-to-br from-poke-yellow/30 to-card border border-poke-yellow/40 shadow-card`, larger icon (`h-14 w-14`) on a white circle, `font-display-md` name, descriptor line, owned count, and a price pill at the bottom-right. `DAILY` ribbon stays but restyled as a soft pill in the top-right.
 
-## 3. Splash (`src/routes/index.tsx`)
+Category tabs:
+- Same pill-segmented control style as Battle Home (`bg-poke-dark/10 p-1 rounded-full`), 4 segments, active = `bg-card text-poke-dark shadow-card`. Labels `Healing / Battle / Utility / Premium` (Title Case, not all caps pixel).
 
-Already close. Tighten to spec:
+Item grid:
+- 2-col, `rounded-3xl bg-card p-4 shadow-card`.
+- Icon in `h-14 w-14 rounded-2xl bg-muted` tile. Premium star ribbon moves to a small `★` chip in top-right.
+- `font-display-md` name, `text-xs text-muted-foreground` desc (one line truncated), `×{owned} owned` chip.
+- Bottom row: full-width pill button `Buy · ✨ {cost}` — primary if affordable, muted-disabled otherwise (replaces the bare price text; makes buy intent explicit).
 
-- Background: `bg-poke-hero`.
-- Center stack: bouncing Pokémon-sprite bubbles (kept), Pokémon logo (kept), oversized `TRIVIA BATTLE` `.font-display-xl` (already enlarged — keep).
-- Primary CTA `New Trainer` becomes a full-width pill `h-14 rounded-full bg-primary text-primary-foreground shadow-pop`, pinned in the thumb zone (`mb-[calc(env(safe-area-inset-bottom)+1.5rem)]`).
-- Secondary `Play as Guest` becomes a ghost text button under it.
-- Tiny pixel tagline `.font-pixel-xs` `POKÉMON TRIVIA · CATCH 'EM ALL` above the CTA stack.
+Purchase sheet:
+- Replace pixel title with `font-display-lg`. Icon tile larger (`h-20 w-20 rounded-3xl`). Stat strip cards (`You have / Cost / After`) become 3 soft pill cards. Buttons remain `Cancel` / `Confirm` as full-width pills.
 
-## 4. Onboarding — Name → Avatar → Partner (`src/routes/index.tsx`)
+## 3. Bag — Profile Inventory tab (`src/routes/profile.tsx`)
 
-Three-step flow (already implemented). Polish only:
+Spec lists Bag as a distinct screen but the app already shows inventory as a Profile tab and inside battle. Don't add a new route. Just restyle the Inventory tab content:
 
-- Header row: small `‹ Back` chevron left, stepper dots center (`● ● ○` etc.), step counter pixel cap right (`STEP 1/3`).
-- Name step: large display heading `What's your name, trainer?`, helper line, large rounded input (`h-14 rounded-2xl text-lg`), 16-char counter on the right inside the input.
-- Avatar step: same header pattern, 3-col grid of trainer tiles with soft cards (`rounded-2xl shadow-card`), selected tile gets primary ring + `Check` badge. Below the grid: cream flavor card showing hometown/blurb pulled from existing `TRAINER_BLURBS`.
-- Partner step: search input pinned under the header, scrollable 3-col Pokémon grid (only stage-1, already filtered), each tile shows sprite + name + single type badge. Selected pick reveals an ability flavor card using `getAbility(types)` with type-colored circle from existing `TYPE_BG`.
-- Bottom CTA on every step: full-width `h-14 rounded-full bg-primary` pinned in thumb zone, disabled until step is valid; copy: `Next` / `Next` / `Start Adventure`.
+- Replace the existing flat list with a 2-col grid of inventory cards mirroring the Shop item card style (`rounded-3xl bg-card p-4 shadow-card`, icon tile, name, count chip, short description).
+- Empty state: cream card with a Pokéball glyph, `Your bag is empty`, and a primary pill `Visit PokéMart` linking to `/shop`.
+- Leave the other 6 Profile tabs (Stats / Trophies / Badges / Abilities / Battles / Settings) untouched in this pass — they belong to the next Profile/Achievements batch.
 
-## 5. Battle Home (`src/routes/battle.tsx`)
+## Out of scope
 
-Replaces today's single-flat scroll with the spec's 3-tab segmented control + hero card.
-
-- Top: trainer hero card (white, soft shadow). Circular avatar with progress ring around it (XP-to-next via `xpProg`), name `.font-display-lg`, rank pixel cap, XP caption. Partner sprite floats right.
-- Stat strip below the hero card: 3 equal soft cards — Streak (flame), XP, TP×mult.
-- Segmented control (`bg-muted` pill, 3 segments): `Battle` / `Daily` / `Weekly`. State lifted into local `tab` — no store changes.
-- Content per segment:
-  - Battle: hero card with `PokeballSpinner`, headline `Up for a battle?`, sub copy, full-width red pill CTA `Find Match` (calls existing `onStart`).
-  - Daily: Rotom card (poke-yellow), `Beat Rotom`, `10 fast questions`, CTA `Start Daily Quest`. When `dailyDone`, shows `Done · {correct}/{total}` and disables.
-  - Weekly: existing `WeeklyLeagueCard` / `WeeklyLeagueResultCard` reused; entry tile restyled to match the soft-card pattern.
-
-## 6. Elite Four takeover (`src/routes/battle.tsx`, `ElitePendingTakeover`)
-
-Polish-only on existing component:
-
-- Dark `bg-elite-arena` background, crown pixel cap `ELITE FOUR` at top.
-- Sprite block: elite + signature Pokémon, no halo.
-- Pixel subtitle `{title}` in yellow, huge yellow display name, single muted-yellow line `{region} · {type} specialist · 200 HP boss`, italic quote.
-- 2 reward pills (`🏅 Region unlock`, `+1,000 XP`) centered.
-- Pinned bottom pill CTA `👑 Challenge {elite.name}` (yellow, `h-14`, `rounded-full`, thumb-zone). Caption `REGULAR BATTLES LOCKED UNTIL VICTORY` in `.font-pixel-xs`.
-- Remove the More info expander.
-
-## 7. Battle screen — FRLG diagonal (`src/components/battle-screen.tsx`)
-
-Restructure the combat arena to the spec's diagonal:
-
-- Background `bg-battle-field` (existing) with two grass platforms (existing ellipse style — keep).
-- Enemy panel: top-left, ~40% width, white soft card with name, single type badge, short HP bar, HP number. Enemy sprite positioned top-right on the upper grass platform. Floating `-{dmg}` red pill on hit.
-- Player sprite: lower-left on the lower grass platform. Player panel: mid-right, ~40% width, same card style with name, ability tag (`⚡ STATIC` etc.) in the top-right corner, type badge, HP bar with number.
-- Top chrome: `‹` back left, `ROUND {set}/5` white pill, `STREAK ×{streak}` red pill (when ≥1), Elite gets `ELITE · region` instead of round. Bag becomes a floating Backpack icon button anchored to the right edge of the question card.
-- Floating timer pill: circular SVG ring + `{timer}s`, white pill overlapping the top edge of the question card by ~50%. Pulses red when `timer ≤ 5`.
-- Question card pinned at the bottom of the safe area with 16px horizontal + bottom margin (not flush). White, `rounded-3xl`, `shadow-float`.
-  - Tiny pixel cap category line.
-  - Question text, `.font-display-md`.
-  - Answer pills: default `bg-muted`, correct → `border-2 border-hp-good text-hp-good` + check, user-wrong → `border-2 border-destructive text-destructive` + `YOUR PICK` chip, revealed-wrong (Scope) muted+strikethrough.
-  - Bottom row: 3 quick-item bubbles (top 3 from inventory) with count badges; existing `tryUseItem` handler. Full Bag still opens from the floating button.
-
-All existing state, gameplay, audio, tutorial overlay, banners, refs untouched.
-
-## 8. Victory / Defeat result screens (`src/components/battle-screen.tsx`)
-
-Polish the existing post-battle states:
-
-- Victory: `bg-victory` (existing). Big display heading `VICTORY!`, summary card with correct/total, XP gained, TP gained, items dropped, then full-width pill `Continue` + secondary `Share` (opens existing share dialog). Elite/Weekly wins additionally show a `Share milestone` highlighted CTA.
-- Defeat: `bg-defeat`. `OOPS!` heading, summary card with what tripped you up + suggested item, primary `Try Again` pill + secondary `Back to Battle Home`.
-
-No new logic; reuses existing state machine results and the existing `share-card-dialog`.
-
----
+- Profile header redesign (ring avatar, 7-tab 2-row layout) — saved for the next pass.
+- Pokédex search popover for Type filter: if shadcn Popover isn't already in the project, use a simple inline `<details>` to avoid new deps. Verify in `src/components/ui/` first.
+- No new components; no changes to `STARTING_PARTNERS`, `ITEMS`, store, or any route definitions.
 
 ## Verification
 
-- `tsc --noEmit` clean (build runs automatically).
-- Visual pass at 390×844: Splash, all 3 onboarding steps, Battle Home (all 3 tabs), in-battle (round 1 with timer, after a correct answer, after a wrong answer), Elite takeover, Victory, Defeat.
-- Nav: hidden on `/`, hidden in active battle, visible elsewhere, center Battle button elevated and routes to `/battle`.
-- `font-pixel` only appears at 7–10px on the touched screens (grep check).
-- No store, route table, server function, or schema changes.
-
-## Follow-up (not in this pass)
-
-Priority 3–5: Pokédex, Pokédex detail, Shop, Purchase confirm, Bag, Profile tabs, Achievements, Trophies, Badges, Settings, Evolution, Share card visual refresh, dark Battle Home variant.
+- `tsc --noEmit` clean.
+- Visual pass at 390×844 for: Pokédex (empty filter, gen switch, caught toggle, detail open for caught + uncaught), Shop (each category tab + featured + purchase sheet for affordable/unaffordable), Profile Inventory tab (with items and empty).
+- `font-pixel` only used at 7–10px (via `.font-pixel-xs` / `.font-pixel-sm`) on the touched screens.
