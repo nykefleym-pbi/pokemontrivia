@@ -135,9 +135,44 @@
   --sidebar-border: oklch(0.9 0.02 250);
   --sidebar-ring: oklch(0.62 0.22 25);
 
-  --bottom-nav-height: 4rem;
-  --bottom-nav-total: calc(4rem + env(safe-area-inset-bottom));
+  --bottom-nav-height: 4.5rem;
+  --bottom-nav-total: calc(4.5rem + env(safe-area-inset-bottom) + 0.75rem);
 }
+
+@utility font-display-xl {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+@utility font-display-lg {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  line-height: 1.05;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+@utility font-display-md {
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+@utility font-pixel-xs {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+@utility font-pixel-sm {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 
 @layer utilities {
   .safe-top { padding-top: env(safe-area-inset-top); }
