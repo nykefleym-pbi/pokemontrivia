@@ -14,12 +14,29 @@ export function isStartingPartner(p: PokeEntry): boolean {
   return p.evolvesFromId === null;
 }
 
-export function getEvolutionTargets(p: PokeEntry): PokeEntry[] {
-  return p.evolvesToIds.map((id) => findPokemon(id)).filter(Boolean) as PokeEntry[];
+export function getEvolutionTargets(p: PokeEntry | null | undefined): PokeEntry[] {
+  return (p?.evolvesToIds ?? [])
+    .map((id) => findPokemon(id))
+    .filter(Boolean) as PokeEntry[];
 }
 
-export function canEvolve(p: PokeEntry): boolean {
-  return p.evolvesToIds.length > 0;
+export function canEvolve(p: PokeEntry | null | undefined): boolean {
+  return (p?.evolvesToIds?.length ?? 0) > 0;
+}
+
+/** Re-sync a persisted partner with the current ALL_POKEMON entry so legacy
+ *  saves pick up new fields (evolvesToIds, evolvesFromId, evolutionStage). */
+export function rehydratePokemon(p: PokeEntry | null | undefined): PokeEntry | null {
+  if (!p) return null;
+  const fresh = findPokemon(p.id);
+  if (fresh) return { ...fresh };
+  return {
+    ...p,
+    types: p.types ?? [],
+    evolvesFromId: p.evolvesFromId ?? null,
+    evolvesToIds: p.evolvesToIds ?? [],
+    evolutionStage: p.evolutionStage ?? 1,
+  } as PokeEntry;
 }
 
 export function findPokemonByName(name: string): PokeEntry | undefined {
