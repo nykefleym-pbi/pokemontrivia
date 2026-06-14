@@ -407,7 +407,7 @@ function BattleHome({
                   ? "Try next week"
                   : weeklyLeague?.status === "in_progress"
                     ? "Resume"
-                    : `Resets ${weekRange.end.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`}
+                    : `Resets ${new Date(weekRange.end).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`}
             </div>
             {weeklyLeader && (
               <div className="absolute -right-1 -bottom-1">
