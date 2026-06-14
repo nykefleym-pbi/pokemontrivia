@@ -1,70 +1,42 @@
-## Root cause
+## Onboarding redesign
 
-The previous turn diagnosed the crash but never actually applied the code fix — only `.env`/`package.json`/`bun.lockb` were touched. So users with a partner saved under the old schema (no `evolvesToIds`, `evolvesFromId`, `evolutionStage` fields) still hit `pokemon.evolvesToIds.map(...)` in `getEvolutionTargets`, which throws on the Profile page.
+Rework the `TrainerCreate` flow in `src/routes/index.tsx` to match the three reference screens. No iOS frame, no new routes, no logic changes — only layout/visual changes to the existing 3 substeps (`name`, `trainer`, `pokemon`).
 
-The "tabs return to Battle" symptom is a knock-on effect: Profile crashes → the router's `DefaultErrorComponent` renders with a "Go home" link to `/` → `src/routes/index.tsx` redirects onboarded users to `/battle`. Shop and Pokédex don't actually crash, but if the user lands on the error screen first they'll be bounced.
+### Shared screen shell
 
-## Fix (3 small edits, no schema bump, no gameplay change)
+- Full-height column with `safe-area` top + bottom padding.
+- **Top bar**: circular white back button (left) with `<` chevron, and `STEP n/3` label (right) in small pixel font.
+- **Progress**: 3 equal-width segments under the top bar; completed = primary red, current = primary red, future = muted gray. (Replaces current thin track.)
+- **Sticky bottom CTA**: full-width pill button pinned in the thumb zone (`mt-auto`, `pb-[calc(env(safe-area-inset-bottom)+1rem)]`), `h-14`, large label. Disabled state stays.
+- Replace the small "← back" text link with the circular back button.
 
-### 1. `src/lib/pokemon-data.ts` — defensive helpers
+### Step 1 — "What should we call you?"
 
-Make the evolution helpers tolerate partial/legacy entries, and add a one-shot rehydrator that re-syncs a persisted partner against the current `ALL_POKEMON` table.
+- Large centered headline `text-3xl font-extrabold` wrapping to 2 lines.
+- Centered trainer sprite (~96px) of the currently selected avatar (defaults to Red) above a white speech-style card.
+- Speech card: white rounded-2xl, soft shadow, contains "PROF. OAK" tag (red, uppercase, pixel font) and welcome line "Welcome, challenger! Every great trainer's story starts with a name."
+- "TRAINER NAME" uppercase label, then existing `Input` styled as red-bordered rounded pill.
+- Helper text under input: "Max 16 characters · shown to opponents".
+- CTA: **Next: Choose Avatar** (disabled until name).
 
-```ts
-export function getEvolutionTargets(p: PokeEntry): PokeEntry[] {
-  return (p?.evolvesToIds ?? [])
-    .map((id) => findPokemon(id))
-    .filter(Boolean) as PokeEntry[];
-}
+### Step 2 — "Pick your avatar"
 
-export function canEvolve(p: PokeEntry): boolean {
-  return (p?.evolvesToIds?.length ?? 0) > 0;
-}
+- Headline `Pick your avatar` + subline `Tap a trainer to read their story.`
+- Remove search input (not in reference). Show the existing trainer grid as 3-col cards, white rounded with sprite + name; selected card gets red border + small red check badge top-right.
+- Below grid: a peach/cream info card showing selected trainer's name + hometown tag + a short flavor blurb. Use a static map of blurbs for the trainers we have (Red, Lyra, Ethan, May, Brendan, Dawn, …); fallback line for others.
+- CTA: **Next: Choose Pokémon**.
 
-/** Re-sync a persisted partner with the current ALL_POKEMON entry so
- *  legacy saves pick up new fields (evolvesToIds, evolvesFromId,
- *  evolutionStage, etc.). Falls back to safe defaults if the id is gone. */
-export function rehydratePokemon(p: PokeEntry | null): PokeEntry | null {
-  if (!p) return p;
-  const fresh = findPokemon(p.id);
-  if (fresh) return { ...fresh };
-  return {
-    ...p,
-    types: p.types ?? [],
-    evolvesFromId: p.evolvesFromId ?? null,
-    evolvesToIds: p.evolvesToIds ?? [],
-    evolutionStage: p.evolutionStage ?? 1,
-  };
-}
-```
+### Step 3 — "Choose your partner"
 
-### 2. `src/lib/store.ts` — upgrade legacy saves once on load
+- Headline `Choose your partner` + subline `Your partner's type grants a battle ability.`
+- Keep search input, restyled as rounded white pill with leading magnifier.
+- 3-col grid of partner cards: sprite, name, single type badge under name (use first type). Selected card has red border + red check badge.
+- Below grid: peach ability card showing the selected Pokémon's ability icon (circle with type color), ability name, and description from `getAbility(p.types)`.
+- CTA: **Start Adventure** (disabled until pick).
 
-In the `persist` config's `merge`, run the restored partner through `rehydratePokemon` so old payloads are corrected on first load (no version bump, no localStorage rewrite needed — Zustand will rewrite on next set).
+### Implementation notes
 
-```ts
-import { rehydratePokemon } from "./pokemon-data";
-// ...
-return {
-  ...current,
-  ...p,
-  pokemon: rehydratePokemon(p.pokemon ?? null),
-  flags: p.flags ?? [],
-  // ...rest unchanged
-};
-```
-
-### 3. `src/routes/profile.tsx` — belt-and-braces guard
-
-Already calls `getEvolutionTargets(pokemon)` via `useMemo`. After fix 1 it's safe, but also guard the inline `pokemon.types.map(...)` reads with `(pokemon.types ?? []).map(...)` so a malformed entry can't crash the render path either.
-
-## Out of scope
-
-- No store schema/version bump
-- No gameplay, data, or visual changes
-- No changes to Shop / Pokédex / Battle screen
-- No changes to error boundary or index redirect (the tab-rebound symptom disappears once Profile stops crashing)
-
-## Verification
-
-After applying, load Profile with the existing stale localStorage. It should render the partner card, the evolution targets section, and tabs to Shop / Dex / Profile should all work normally without bouncing back to Battle.
+- All changes scoped to `src/routes/index.tsx`. No data, store, or route changes.
+- Add small local `TRAINER_BLURBS` record and an `AbilityCard` helper inside the file.
+- Reuse existing tokens (`bg-poke-hero`, `text-poke-dark`, `shadow-pop`, primary red). No new colors needed; the peach info card uses `bg-primary/10`.
+- Sticky CTA achieved by making each substep a flex column with `flex-1` scroll area + `mt-auto` button wrapper.
