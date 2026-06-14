@@ -173,6 +173,9 @@
   line-height: 1;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+
 
 @layer utilities {
   .safe-top { padding-top: env(safe-area-inset-top); }
