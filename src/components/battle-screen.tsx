@@ -90,16 +90,15 @@ function CombatPanel({
   const justifyCls = align === "right" ? "justify-end" : "justify-start";
 
   return (
-    <div className="w-[clamp(8.5rem,42vw,11rem)] shrink-0 rounded-xl bg-card/90 px-2.5 py-1.5 backdrop-blur shadow-card">
+    <div className="w-[clamp(8.5rem,42vw,11rem)] shrink-0 rounded-2xl bg-card px-3 py-2 backdrop-blur shadow-card">
       <div className={`flex flex-col ${alignCls}`}>
-        <div className="truncate font-pixel text-[8px] uppercase text-muted-foreground">{trainerName}</div>
+        <div className="truncate font-pixel-xs text-muted-foreground">{trainerName}</div>
         <div className="w-full truncate text-sm font-bold leading-tight">{pokemonName}</div>
-        <div className={`mt-0.5 flex w-full gap-0.5 ${justifyCls}`}>
+        <div className={`mt-1 flex w-full gap-1 ${justifyCls}`}>
           {types.map((t) => <TypeBadge key={t} type={t} size="sm" />)}
         </div>
-        <div className="mt-1 flex w-full items-center gap-1">
-          <span className="font-pixel text-[7px] text-hp-good">HP</span>
-          <div className="h-2 flex-1 overflow-hidden rounded-full border border-poke-dark/60 bg-poke-dark/20">
+        <div className="mt-1.5 flex w-full items-center gap-2">
+          <div className="h-2 flex-1 overflow-hidden rounded-full bg-poke-dark/15">
             <motion.div
               className={`h-full ${barColor}`}
               initial={false}
@@ -107,15 +106,15 @@ function CombatPanel({
               transition={{ type: "spring", stiffness: 100, damping: 18 }}
             />
           </div>
+          <span className="text-[11px] font-bold tabular-nums text-poke-dark">{Math.round(hp)}</span>
         </div>
-        <div className="mt-0.5 w-full font-pixel text-[8px] tabular-nums text-muted-foreground">{Math.round(hp)}/{maxHp}</div>
         {(abilityName || immune || disadvantaged || statuses.length > 0) && (
-          <div className={`mt-0.5 flex w-full flex-wrap gap-0.5 ${justifyCls}`}>
-            {abilityName && <span className="rounded-full bg-primary/10 px-1 py-[1px] font-pixel text-[7px] text-primary">⚡ {abilityName}</span>}
-            {immune && <span className="rounded-full bg-hp-good/20 px-1 py-[1px] font-pixel text-[7px] text-hp-good">🛡</span>}
-            {disadvantaged && !immune && <span className="rounded-full bg-destructive/20 px-1 py-[1px] font-pixel text-[7px] text-destructive">⚠</span>}
+          <div className={`mt-1 flex w-full flex-wrap gap-0.5 ${justifyCls}`}>
+            {abilityName && <span className="rounded-full bg-primary/10 px-1.5 py-[1px] font-pixel-xs text-primary">⚡ {abilityName}</span>}
+            {immune && <span className="rounded-full bg-hp-good/20 px-1.5 py-[1px] font-pixel-xs text-hp-good">🛡</span>}
+            {disadvantaged && !immune && <span className="rounded-full bg-destructive/20 px-1.5 py-[1px] font-pixel-xs text-destructive">⚠</span>}
             {statuses.map((s) => (
-              <span key={s.kind} className={`rounded-full px-1 py-[1px] font-pixel text-[7px] ${s.kind === "confused" ? "bg-poke-yellow/30 text-poke-dark" : "bg-purple-500/20 text-purple-700"}`}>
+              <span key={s.kind} className={`rounded-full px-1.5 py-[1px] font-pixel-xs ${s.kind === "confused" ? "bg-poke-yellow/30 text-poke-dark" : "bg-purple-500/20 text-purple-700"}`}>
                 {s.kind === "confused" ? "🌀" : "☠️"}
               </span>
             ))}
@@ -1105,7 +1104,7 @@ function BattleMode({
       </AnimatePresence>
 
       {/* QUESTION CARD — thumb zone, pinned bottom */}
-      <div className="relative shrink-0 px-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-2 safe-x">
+      <div className="relative shrink-0 px-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-14 safe-x">
         <AnimatePresence mode="wait">
           {phase !== "intro" && trivia && (
             <motion.div
@@ -1115,32 +1114,36 @@ function BattleMode({
               exit={{ y: -10, opacity: 0 }}
               className="relative"
             >
-              {/* Floating timer pill */}
-              <div className="pointer-events-none absolute left-1/2 -top-5 z-10 -translate-x-1/2">
+              {/* Floating timer pill + category label */}
+              <div className="pointer-events-none absolute left-1/2 -top-12 z-10 flex -translate-x-1/2 flex-col items-center">
                 <div
-                  className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 font-pixel text-[11px] shadow-card ${
+                  className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold shadow-card ${
                     timer <= 5
                       ? "animate-pulse bg-destructive text-destructive-foreground"
                       : "bg-card text-foreground"
                   }`}
                 >
-                  <span
-                    className={`inline-block h-3 w-3 rounded-full border-2 ${
-                      timer <= 5 ? "border-destructive-foreground" : "border-hp-good"
-                    }`}
-                    style={{
-                      background: `conic-gradient(currentColor ${(timer / (TIMER_BASE + bonusTime)) * 360}deg, transparent 0deg)`,
-                    }}
-                  />
+                  <svg viewBox="0 0 24 24" className="h-4 w-4">
+                    <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeOpacity="0.2" strokeWidth="3" />
+                    <circle
+                      cx="12" cy="12" r="9" fill="none"
+                      stroke={timer <= 5 ? "currentColor" : "var(--color-hp-good)"}
+                      strokeWidth="3" strokeLinecap="round"
+                      strokeDasharray={2 * Math.PI * 9}
+                      strokeDashoffset={2 * Math.PI * 9 * (1 - timer / (TIMER_BASE + bonusTime))}
+                      transform="rotate(-90 12 12)"
+                      style={{ transition: "stroke-dashoffset 0.5s linear" }}
+                    />
+                  </svg>
                   {timer}s
                 </div>
-              </div>
-
-              <div className="rounded-3xl bg-card p-4 pt-5 shadow-card">
-                <p className="text-center font-pixel text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
+                <p className="mt-1.5 font-pixel-xs text-poke-dark/70">
                   {trivia.category}
                 </p>
-                <p className="mt-2 text-center text-[clamp(0.95rem,4vw,1.125rem)] font-bold leading-snug">
+              </div>
+
+              <div className="rounded-3xl bg-card p-4 pt-3 shadow-card">
+                <p className="text-center text-[clamp(0.95rem,4vw,1.125rem)] font-bold leading-snug">
                   {trivia.question}
                 </p>
                 <div className="mt-3 grid grid-cols-1 gap-2">
@@ -1153,14 +1156,14 @@ function BattleMode({
                         key={i}
                         disabled={phase !== "question" || isRevealed}
                         onClick={() => handleAnswer(i)}
-                        className={`flex min-h-[48px] items-center justify-between rounded-2xl border-2 px-4 py-2.5 text-left text-[clamp(0.875rem,3.6vw,0.95rem)] font-semibold transition active:scale-[0.98] ${
+                        className={`flex min-h-[48px] items-center justify-between rounded-2xl border-2 bg-card px-4 py-2.5 text-left text-[clamp(0.875rem,3.6vw,0.95rem)] font-semibold transition active:scale-[0.98] ${
                           isCorrect
-                            ? "border-hp-good bg-hp-good/10 text-hp-good"
+                            ? "border-hp-good bg-hp-good/5 text-hp-good"
                             : isWrong
-                              ? "border-destructive bg-destructive/10 text-destructive"
+                              ? "border-destructive bg-destructive/5 text-destructive"
                               : isRevealed
-                                ? "border-transparent bg-muted/60 line-through opacity-50"
-                                : "border-transparent bg-muted text-foreground hover:bg-muted/70"
+                                ? "border-border/60 line-through opacity-50"
+                                : "border-border/60 text-foreground hover:border-primary/50"
                         } disabled:cursor-not-allowed`}
                       >
                         <span className="min-w-0 flex-1 truncate">{opt}</span>
@@ -1170,7 +1173,7 @@ function BattleMode({
                           </span>
                         )}
                         {isWrong && (
-                          <span className="ml-2 inline-flex shrink-0 items-center gap-1 rounded-full bg-destructive/15 px-2 py-0.5 font-pixel text-[8px] uppercase text-destructive">
+                          <span className="ml-2 shrink-0 text-[10px] font-bold uppercase tracking-wide text-destructive">
                             Your Pick ×
                           </span>
                         )}
@@ -1455,18 +1458,21 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="px-5 pt-6">
-        <div className="rounded-3xl bg-card p-5 shadow-card">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="font-pixel text-[10px] uppercase text-muted-foreground">{trivia.category}</div>
-            <div
-              className={`flex items-center gap-1 rounded-full px-2 py-0.5 font-pixel text-[10px] ${
-                timer <= 5 ? "bg-destructive text-destructive-foreground animate-pulse" : "bg-muted"
-              }`}
-            >
-              <Clock className="h-3 w-3" /> {timer}s
-            </div>
+      <div className="relative px-5 pt-16">
+        {/* Floating timer pill + category */}
+        <div className="pointer-events-none absolute left-1/2 top-2 z-10 flex -translate-x-1/2 flex-col items-center">
+          <div
+            className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold shadow-card ${
+              timer <= 5 ? "animate-pulse bg-destructive text-destructive-foreground" : "bg-card text-foreground"
+            }`}
+          >
+            <Clock className="h-4 w-4" />
+            {timer}s
           </div>
+          <p className="mt-1.5 font-pixel-xs text-poke-dark/70">{trivia.category}</p>
+        </div>
+
+        <div className="rounded-3xl bg-card p-5 shadow-card">
           <p className="text-base font-semibold leading-snug">{trivia.question}</p>
           <div className="mt-4 grid grid-cols-1 gap-2">
             {trivia.options.map((opt, i) => {
@@ -1477,16 +1483,21 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
                   key={i}
                   disabled={phase !== "question"}
                   onClick={() => handleAnswer(i)}
-                  className={`rounded-2xl border-2 px-4 py-3 text-left text-sm font-medium transition ${
+                  className={`flex items-center justify-between rounded-2xl border-2 bg-card px-4 py-3 text-left text-sm font-semibold transition active:scale-[0.98] ${
                     isCorrect
-                      ? "border-hp-good bg-hp-good/20"
+                      ? "border-hp-good bg-hp-good/5 text-hp-good"
                       : isWrong
-                        ? "border-destructive bg-destructive/15"
-                        : "border-border bg-card hover:border-primary hover:bg-primary/5"
+                        ? "border-destructive bg-destructive/5 text-destructive"
+                        : "border-border/60 text-foreground hover:border-primary/50"
                   } disabled:cursor-not-allowed`}
                 >
-                  <span className="mr-2 font-pixel text-[10px] text-primary">{String.fromCharCode(65 + i)}</span>
-                  {opt}
+                  <span className="min-w-0 flex-1 truncate">{opt}</span>
+                  {isCorrect && (
+                    <span className="ml-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-hp-good text-[12px] text-white">✓</span>
+                  )}
+                  {isWrong && (
+                    <span className="ml-2 shrink-0 text-[10px] font-bold uppercase tracking-wide text-destructive">Your Pick ×</span>
+                  )}
                 </button>
               );
             })}
