@@ -1,42 +1,95 @@
-## Onboarding redesign
+# Battle / In-Battle / Elite Four UI Refresh
 
-Rework the `TrainerCreate` flow in `src/routes/index.tsx` to match the three reference screens. No iOS frame, no new routes, no logic changes — only layout/visual changes to the existing 3 substeps (`name`, `trainer`, `pokemon`).
+Pure presentational changes. No gameplay, store, route, or data changes. All three screens already exist; this redesigns their layout to match the attached references.
 
-### Shared screen shell
+Files touched:
+- `src/routes/battle.tsx` — `BattleHome` + `ElitePendingTakeover`
+- `src/components/battle-screen.tsx` — `BattleMode` (top bar, combat arena chrome, question card)
 
-- Full-height column with `safe-area` top + bottom padding.
-- **Top bar**: circular white back button (left) with `<` chevron, and `STEP n/3` label (right) in small pixel font.
-- **Progress**: 3 equal-width segments under the top bar; completed = primary red, current = primary red, future = muted gray. (Replaces current thin track.)
-- **Sticky bottom CTA**: full-width pill button pinned in the thumb zone (`mt-auto`, `pb-[calc(env(safe-area-inset-bottom)+1rem)]`), `h-14`, large label. Disabled state stays.
-- Replace the small "← back" text link with the circular back button.
+---
 
-### Step 1 — "What should we call you?"
+## 1. Battle Home (image 1)
 
-- Large centered headline `text-3xl font-extrabold` wrapping to 2 lines.
-- Centered trainer sprite (~96px) of the currently selected avatar (defaults to Red) above a white speech-style card.
-- Speech card: white rounded-2xl, soft shadow, contains "PROF. OAK" tag (red, uppercase, pixel font) and welcome line "Welcome, challenger! Every great trainer's story starts with a name."
-- "TRAINER NAME" uppercase label, then existing `Input` styled as red-bordered rounded pill.
-- Helper text under input: "Max 16 characters · shown to opponents".
-- CTA: **Next: Choose Avatar** (disabled until name).
+Replace the 3-tab segmented control with a flat, scrollable layout.
 
-### Step 2 — "Pick your avatar"
+**Header (cream `bg-poke-hero`)**
+- Left: circular framed trainer sprite with red ring + small "LV 23" pill badge at the bottom.
+- Middle: small red pixel label `POKé MANIAC` (rank), large bold name `Ash`, XP bar (`xpProg.current / xpProg.need`), thin caption `2,140 / 3,300 XP to Lv 24`.
+- Right: partner Pokémon sprite floating (no halo card).
 
-- Headline `Pick your avatar` + subline `Tap a trainer to read their story.`
-- Remove search input (not in reference). Show the existing trainer grid as 3-col cards, white rounded with sprite + name; selected card gets red border + small red check badge top-right.
-- Below grid: a peach/cream info card showing selected trainer's name + hometown tag + a short flavor blurb. Use a static map of blurbs for the trainers we have (Red, Lyra, Ethan, May, Brendan, Dawn, …); fallback line for others.
-- CTA: **Next: Choose Pokémon**.
+**Stat row** — 3 equal white rounded cards with soft shadow:
+- `STREAK` (pixel label) · big number + flame emoji
+- `XP` · big bold number (uses `xp`)
+- `TP ×{mult}` · big bold blue number (uses `partnerTp`)
 
-### Step 3 — "Choose your partner"
+**Primary action card** (white, large rounded, `shadow-card`)
+- Left: Pokeball icon (static, ~56px). When `loading`, swap for `PokeballSpinner spinning`.
+- Right column: `Up for a battle?` headline, sub-line `20 questions · difficulty scales with your level`.
+- Full-width red pill button below: ★ `Find Match` (calls `onStart`). Shows `Summoning…` while loading.
 
-- Headline `Choose your partner` + subline `Your partner's type grants a battle ability.`
-- Keep search input, restyled as rounded white pill with leading magnifier.
-- 3-col grid of partner cards: sprite, name, single type badge under name (use first type). Selected card has red border + red check badge.
-- Below grid: peach ability card showing the selected Pokémon's ability icon (circle with type color), ability name, and description from `getAbility(p.types)`.
-- CTA: **Start Adventure** (disabled until pick).
+**Secondary row** — 2 cards side-by-side:
+- `DAILY QUEST` card (poke-yellow): `Beat Rotom`, `10 fast questions`, small Rotom sprite. Tap → `onStartDaily`. When `dailyDone`, swap copy to `Done · {correct}/{total}` and disable.
+- `WEEKLY LEAGUE` card (blue): `Gym: {leader.name}`, small leader/Pokémon sprite. Tap → `onStartWeekly`. When status is `won/lost`, route through existing `WeeklyLeagueResultCard` inside a sheet/modal-less inline swap (reuse current component when expanded — same behavior, only the entry tile changes).
 
-### Implementation notes
+Remove `tab` state, segmented control, and `rotomShaking` shake (tap the card directly). Keep all existing handlers and gating (`pendingElite` takeover, weekly init, etc.).
 
-- All changes scoped to `src/routes/index.tsx`. No data, store, or route changes.
-- Add small local `TRAINER_BLURBS` record and an `AbilityCard` helper inside the file.
-- Reuse existing tokens (`bg-poke-hero`, `text-poke-dark`, `shadow-pop`, primary red). No new colors needed; the peach info card uses `bg-primary/10`.
-- Sticky CTA achieved by making each substep a flex column with `flex-1` scroll area + `mt-auto` button wrapper.
+---
+
+## 2. In-Battle Screen (image 2)
+
+Edits inside `BattleMode` render only.
+
+**Top bar**
+- Left: existing back button (unchanged).
+- Center → move to left: white pill `ROUND {set}/5` (replaces the `Set X · Qy/5` chip).
+- Right: red pill `STREAK ×{streak}` when `streak >= 1`; otherwise show nothing. Elite keeps the existing `ELITE · region` pill in place of round.
+- Bag button moves to a small floating button at the right edge of the question card header (Backpack icon) — still opens the existing Sheet with no behavior change.
+
+**Combat arena** — keep diagonal layout, restyle panels:
+- Enemy panel (top-left): trainer title in tiny pixel caps, bold enemy name, single type badge under name, thin HP bar with numeric HP on the right. White card with soft shadow.
+- A red `-{dmg}` chip floats above the enemy sprite on hit (already exists as `floatDmg`; restyle as solid red rounded pill).
+- Player panel (mid-right): bold partner name + ability tag (e.g. `⚡ STATIC`) in the top-right corner of the card, type badge, HP bar with HP number. Same card style as enemy.
+- Grass platforms remain.
+
+**Timer pill** — circular SVG ring + `{timer}s` text inside a white pill, floated centered just above the question card (overlapping the top edge by ~50%). Color shifts red and pulses when `timer <= 5`.
+
+**Question card** (white sheet pinned to bottom, no change to height logic)
+- Tiny pixel caps category line (`trivia.category`, e.g. `TYPE MATCH-UPS`).
+- Question text — larger, semibold.
+- Answer buttons:
+  - Default: light gray pill, no border.
+  - Correct (feedback): green border + green text + check icon on the right.
+  - User's wrong pick: red border + red text + small `YOUR PICK ×` chip on the right.
+  - Revealed-wrong (Scope): muted + strikethrough (current behavior).
+- Bottom row inside the card: 3 item shortcut bubbles (top 3 owned items from `inventory`) with count badge in upper-right. Tapping calls existing `tryUseItem`. Bag button still available for the full list.
+
+Keep explanation banner, streak banner, intro banner, tutorial overlay, and all state/logic untouched.
+
+---
+
+## 3. Elite Four Takeover (image 3)
+
+Edits to `ElitePendingTakeover` only.
+
+- Keep dark gradient background and crown header `ELITE FOUR`.
+- Sprite block: elite trainer + signature Pokémon side-by-side (already in place), drop the yellow halo radius slightly.
+- Below sprites:
+  - Pixel caps subtitle `{title.toUpperCase()}` (e.g. `DRAGON MASTER`) in yellow.
+  - Huge yellow display name `{elite.name}`.
+  - Single line in muted yellow: `{region} · {type} specialist · 200 HP boss`.
+  - Italic quote `"{elite.quote}"`.
+  - Reward pills row (centered, 2 dark pills with yellow border):
+    - `🏅 Region unlock`
+    - `+1,000 XP`
+- Remove the "More info" toggle and the expandable info box.
+- Bottom: large yellow pill `👑 Challenge {elite.name}` pinned with `mt-auto` for thumb reach. Loading state shows existing Skeleton.
+- Caption below button: `REGULAR BATTLES LOCKED UNTIL VICTORY` in tiny pixel font (kept).
+
+---
+
+## Technical notes
+
+- All colors via existing tokens (`bg-poke-hero`, `poke-yellow`, `poke-dark`, `primary`, `hp-good`, `destructive`, `card`, `muted`). No new tokens.
+- Reuse `PokeballSpinner`, `XpBar`, `PokemonSprite`, `TypeBadge`, `HpBar`, `WeeklyLeagueCard`, `WeeklyLeagueResultCard`, `Sheet`, `AlertDialog` — no new dependencies.
+- No changes to `src/lib/store.ts`, route definitions, server functions, or trivia/elite logic.
+- Verify after build: `/battle` home renders without tabs; starting a battle still works; Elite takeover button still triggers `startElite`; daily and weekly entries still gate on `dailyDone` / weekly status.
