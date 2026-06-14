@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { Sparkles, Star } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { ITEMS, type ItemDef, type ItemId } from "@/lib/game-data";
-import { AppHeader } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import {
@@ -34,7 +33,32 @@ const CATEGORY_OF: Record<ItemId, Category> = {
   luckyegg: "PREMIUM",
 };
 
-const CATEGORIES: Category[] = ["HEALING", "BATTLE", "UTILITY", "PREMIUM"];
+const CATEGORIES: Array<{ id: Category; label: string }> = [
+  { id: "HEALING", label: "Healing" },
+  { id: "BATTLE", label: "Battle" },
+  { id: "UTILITY", label: "Utility" },
+  { id: "PREMIUM", label: "Premium" },
+];
+
+function ItemIcon({ item, className }: { item: ItemDef; className: string }) {
+  return (
+    <img
+      src={item.iconUrl}
+      alt={item.name}
+      crossOrigin="anonymous"
+      className={`sprite object-contain ${className}`}
+      onError={(e) => {
+        const el = e.currentTarget as HTMLImageElement;
+        el.replaceWith(
+          Object.assign(document.createElement("span"), {
+            textContent: item.emoji,
+            className: "text-3xl",
+          }),
+        );
+      }}
+    />
+  );
+}
 
 function ShopPage() {
   const hasOnboarded = useGameStore((s) => s.hasOnboarded);
@@ -46,7 +70,6 @@ function ShopPage() {
   const [tab, setTab] = useState<Category>("HEALING");
   const [confirmItem, setConfirmItem] = useState<ItemDef | null>(null);
 
-  // Daily featured: rotate by UTC date
   const featured = useMemo(() => {
     const day = Math.floor(Date.now() / 86_400_000);
     const a = ITEMS[day % ITEMS.length];
@@ -76,55 +99,51 @@ function ShopPage() {
   return (
     <div className="h-full w-full overflow-y-auto bg-background pb-nav safe-x">
       <Toaster position="top-center" />
-      <AppHeader>
-        <div className="flex items-end justify-between">
-          <div>
-            <p className="font-pixel text-[10px] uppercase text-muted-foreground">Shop</p>
-            <h1 className="font-pixel text-base text-foreground">PokéMart</h1>
-          </div>
-          <div className="rounded-full bg-poke-yellow px-3 py-1 font-pixel text-[11px] text-poke-dark shadow-sm">
-            ✨ {xp} XP
+      {/* Hero */}
+      <div className="bg-poke-hero px-5 pb-5 pt-[calc(env(safe-area-inset-top)+1rem)]">
+        <p className="font-pixel-xs text-primary">POKÉMART</p>
+        <div className="mt-1 flex items-center justify-between gap-3">
+          <h1 className="font-display-xl text-poke-dark">Shop</h1>
+          <div className="flex items-center gap-1.5 rounded-full bg-card px-3.5 py-2 shadow-card">
+            <Sparkles className="h-4 w-4 text-poke-yellow" />
+            <span className="text-sm font-extrabold text-poke-dark">{xp.toLocaleString()}</span>
+            <span className="font-pixel-xs text-poke-dark/60">XP</span>
           </div>
         </div>
-      </AppHeader>
+      </div>
 
-      <div className="px-5 pb-8 pt-2">
-        {/* Daily featured */}
-        <div className="mb-4">
-          <div className="mb-2 flex items-center gap-1.5 font-pixel text-[10px] uppercase text-muted-foreground">
-            <Star className="h-3 w-3 text-poke-yellow" /> Today's Featured
+      <div className="px-5 pb-8 pt-4">
+        {/* Featured rail */}
+        <div className="mb-5">
+          <div className="mb-2 flex items-center gap-1.5">
+            <Star className="h-3.5 w-3.5 text-poke-yellow" />
+            <span className="font-pixel-xs text-poke-dark/60">Today's Featured</span>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="-mx-5 flex gap-3 overflow-x-auto px-5 pb-1 snap-x snap-mandatory">
             {featured.map((item) => {
               const owned = inventory[item.id] ?? 0;
+              const canAfford = xp >= item.cost;
               return (
                 <button
                   key={`feat-${item.id}`}
                   onClick={() => setConfirmItem(item)}
-                  className="relative flex flex-col items-start gap-1 overflow-hidden rounded-2xl border-2 border-poke-yellow bg-gradient-to-br from-poke-yellow/15 to-card p-3 text-left shadow-pop"
+                  className="relative flex w-[78%] shrink-0 snap-start flex-col items-start gap-2 overflow-hidden rounded-3xl border border-poke-yellow/40 bg-gradient-to-br from-poke-yellow/30 to-card p-4 text-left shadow-card"
                 >
-                  <span className="absolute -right-6 top-2 rotate-45 bg-poke-yellow px-6 py-0.5 font-pixel text-[8px] text-poke-dark">
+                  <span className="absolute right-3 top-3 rounded-full bg-poke-yellow px-2 py-0.5 font-pixel-xs text-poke-dark shadow-sm">
                     DAILY
                   </span>
-                  <img
-                    src={item.iconUrl}
-                    alt={item.name}
-                    crossOrigin="anonymous"
-                    className="sprite h-10 w-10 object-contain"
-                    onError={(e) => {
-                      const el = e.currentTarget as HTMLImageElement;
-                      el.replaceWith(
-                        Object.assign(document.createElement("span"), {
-                          textContent: item.emoji,
-                          className: "text-3xl",
-                        }),
-                      );
-                    }}
-                  />
-                  <div className="font-pixel text-[10px]">{item.name}</div>
-                  <div className="text-[10px] text-muted-foreground">×{owned} owned</div>
-                  <div className="mt-1 font-pixel text-[10px] text-primary">
-                    <Sparkles className="mr-0.5 inline h-2.5 w-2.5" /> {item.cost}
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-card shadow-sm">
+                    <ItemIcon item={item} className="h-10 w-10" />
+                  </div>
+                  <div className="font-display-md text-poke-dark">{item.name}</div>
+                  <div className="line-clamp-2 text-xs text-poke-dark/60">{item.desc}</div>
+                  <div className="mt-1 flex w-full items-center justify-between">
+                    <span className="text-[11px] text-poke-dark/60">×{owned} owned</span>
+                    <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold ${
+                      canAfford ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                    }`}>
+                      <Sparkles className="h-3 w-3" /> {item.cost}
+                    </span>
                   </div>
                 </button>
               );
@@ -133,69 +152,62 @@ function ShopPage() {
         </div>
 
         {/* Category tabs */}
-        <div className="mb-3 flex gap-1 overflow-x-auto rounded-full bg-muted p-1">
+        <div className="mb-4 grid grid-cols-4 gap-1 rounded-full bg-poke-dark/10 p-1">
           {CATEGORIES.map((c) => (
             <button
-              key={c}
-              onClick={() => setTab(c)}
-              className={`flex-1 whitespace-nowrap rounded-full px-3 py-2 font-pixel text-[9px] transition ${
-                tab === c ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+              key={c.id}
+              onClick={() => setTab(c.id)}
+              className={`h-9 rounded-full text-xs font-bold transition ${
+                tab === c.id ? "bg-card text-poke-dark shadow-card" : "text-poke-dark/60"
               }`}
             >
-              {c}
+              {c.label}
             </button>
           ))}
         </div>
 
         {items.length === 0 ? (
-          <div className="rounded-2xl border-2 border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+          <div className="rounded-3xl border-2 border-dashed border-border p-8 text-center text-sm text-muted-foreground">
             Stocked trainer! Nothing else here.
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-3">
             {items.map((item, i) => {
               const owned = inventory[item.id] ?? 0;
               const canAfford = xp >= item.cost;
               return (
-                <motion.button
+                <motion.div
                   key={item.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.04 }}
-                  onClick={() => setConfirmItem(item)}
-                  className={`relative flex flex-col items-start gap-1.5 rounded-2xl border-2 bg-card p-3 text-left shadow-sm transition ${
-                    canAfford ? "border-border" : "border-border opacity-60"
-                  }`}
+                  className="relative flex flex-col gap-2 rounded-3xl bg-card p-4 shadow-card"
                 >
                   {item.premium && (
-                    <div className="absolute -top-1.5 right-2 flex items-center gap-0.5 rounded-full bg-poke-yellow px-1.5 py-0.5 font-pixel text-[8px] text-poke-dark shadow-sm">
-                      <Star className="h-2 w-2" />
+                    <div className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-poke-yellow text-poke-dark shadow-sm">
+                      <Star className="h-3 w-3" fill="currentColor" />
                     </div>
                   )}
-                  <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-muted">
-                    <img
-                      src={item.iconUrl}
-                      alt={item.name}
-                      className="sprite h-9 w-9 object-contain"
-                      onError={(e) => {
-                        const el = e.currentTarget as HTMLImageElement;
-                        el.replaceWith(
-                          Object.assign(document.createElement("span"), {
-                            textContent: item.emoji,
-                            className: "text-2xl",
-                          }),
-                        );
-                      }}
-                    />
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
+                    <ItemIcon item={item} className="h-10 w-10" />
                   </div>
-                  <div className="font-pixel text-[10px] leading-tight">{item.name}</div>
-                  <div className="text-[10px] text-muted-foreground">×{owned} owned</div>
-                  <div className="mt-auto flex w-full items-center justify-between pt-1">
-                    <span className="font-pixel text-[10px] text-primary">
-                      <Sparkles className="mr-0.5 inline h-2.5 w-2.5" /> {item.cost}
+                  <div className="font-display-md text-poke-dark leading-tight">{item.name}</div>
+                  <div className="line-clamp-2 text-[11px] text-muted-foreground">{item.desc}</div>
+                  <div className="mt-auto flex items-center justify-between pt-1">
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-poke-dark/70">
+                      ×{owned}
                     </span>
                   </div>
-                </motion.button>
+                  <Button
+                    onClick={() => setConfirmItem(item)}
+                    disabled={!canAfford}
+                    className={`h-10 w-full rounded-full text-xs font-bold ${
+                      canAfford ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    <Sparkles className="mr-1 h-3 w-3" /> Buy · {item.cost}
+                  </Button>
+                </motion.div>
               );
             })}
           </div>
@@ -207,53 +219,32 @@ function ShopPage() {
           {confirmItem && (
             <>
               <SheetHeader>
-                <div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
-                  <img
-                    src={confirmItem.iconUrl}
-                    alt={confirmItem.name}
-                    crossOrigin="anonymous"
-                    className="sprite h-12 w-12 object-contain"
-                    onError={(e) => {
-                      const el = e.currentTarget as HTMLImageElement;
-                      el.replaceWith(
-                        Object.assign(document.createElement("span"), {
-                          textContent: confirmItem.emoji,
-                          className: "text-4xl",
-                        }),
-                      );
-                    }}
-                  />
+                <div className="mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-3xl bg-muted">
+                  <ItemIcon item={confirmItem} className="h-14 w-14" />
                 </div>
-                <SheetTitle className="text-center font-pixel text-sm">{confirmItem.name}</SheetTitle>
-                <SheetDescription className="text-center text-xs">
+                <SheetTitle className="text-center font-display-lg text-poke-dark">
+                  {confirmItem.name}
+                </SheetTitle>
+                <SheetDescription className="text-center text-sm">
                   {confirmItem.desc}
                 </SheetDescription>
               </SheetHeader>
-              <div className="my-4 flex items-center justify-around text-center text-xs">
-                <div>
-                  <div className="text-muted-foreground">You have</div>
-                  <div className="font-pixel text-base text-foreground">✨ {xp}</div>
-                </div>
-                <div>
-                  <div className="text-muted-foreground">Cost</div>
-                  <div className="font-pixel text-base text-primary">{confirmItem.cost}</div>
-                </div>
-                <div>
-                  <div className="text-muted-foreground">After</div>
-                  <div className="font-pixel text-base text-foreground">{Math.max(0, xp - confirmItem.cost)}</div>
-                </div>
+              <div className="my-4 grid grid-cols-3 gap-2">
+                <Stat label="You have" value={`✨ ${xp}`} tone="default" />
+                <Stat label="Cost" value={String(confirmItem.cost)} tone="primary" />
+                <Stat label="After" value={String(Math.max(0, xp - confirmItem.cost))} tone="default" />
               </div>
               <SheetFooter className="flex-row gap-2">
                 <Button
                   variant="outline"
-                  className="flex-1 rounded-full"
+                  className="h-12 flex-1 rounded-full text-sm font-bold"
                   onClick={() => setConfirmItem(null)}
                 >
                   Cancel
                 </Button>
                 <Button
                   disabled={xp < confirmItem.cost}
-                  className="flex-1 rounded-full bg-primary disabled:opacity-50"
+                  className="h-12 flex-1 rounded-full bg-primary text-sm font-bold shadow-pop disabled:opacity-50"
                   onClick={confirmPurchase}
                 >
                   Confirm
@@ -263,6 +254,17 @@ function ShopPage() {
           )}
         </SheetContent>
       </Sheet>
+    </div>
+  );
+}
+
+function Stat({ label, value, tone }: { label: string; value: string; tone: "default" | "primary" }) {
+  return (
+    <div className="rounded-2xl bg-muted/40 px-2 py-2 text-center">
+      <div className="font-pixel-xs text-poke-dark/50">{label}</div>
+      <div className={`mt-0.5 text-base font-extrabold ${tone === "primary" ? "text-primary" : "text-poke-dark"}`}>
+        {value}
+      </div>
     </div>
   );
 }
