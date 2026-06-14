@@ -63,7 +63,8 @@
   --font-pixel: "Press Start 2P", monospace;
   --font-display: "Outfit", sans-serif;
 
-  --shadow-card: 0 8px 24px -8px oklch(0.5 0.15 250 / 0.25);
+  --shadow-card: 0 10px 30px -12px oklch(0.5 0.15 250 / 0.18);
+  --shadow-float: 0 16px 40px -16px oklch(0.22 0.04 260 / 0.28);
   --shadow-pop: 0 12px 40px -10px oklch(0.65 0.25 25 / 0.45);
 }
 
