@@ -9,6 +9,7 @@ import { PokeballSpinner, TypeBadge, PokemonSprite } from "@/components/game-ui"
 import { TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import pokemonLogo from "@/assets/pokemon-logo.png.asset.json";
 
 export const Route = createFileRoute("/")({
   component: SplashPage,
