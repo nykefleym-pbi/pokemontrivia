@@ -48,26 +48,25 @@ function SplashPage() {
             className="relative flex h-full w-full flex-col items-center justify-between overflow-y-auto px-6 pt-[calc(env(safe-area-inset-top)+2rem)] pb-[calc(env(safe-area-inset-bottom)+1.5rem)] text-center"
           >
             <div className="flex w-full flex-col items-center">
-              <PokeballSpinner size={110} spinning />
               <img
                 src={pokemonLogo.url}
                 alt="Pokémon"
-                className="mt-6 h-auto w-48 select-none"
+                className="mt-4 h-auto w-48 select-none"
                 draggable={false}
               />
-              <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-poke-dark">
+              <h1 className="mt-3 text-[2.75rem] font-extrabold leading-none tracking-tight text-poke-dark">
                 Trivia Battle
               </h1>
-              <p className="mt-3 max-w-xs text-sm text-poke-dark/70">
+              <p className="mt-3 max-w-[16rem] text-sm leading-relaxed text-poke-dark/70">
                 Battle trainers with your knowledge. Earn XP, climb leagues, fill your Pokédex.
               </p>
 
-              <div className="mt-7 flex items-center justify-center gap-3">
+              <div className="mt-8 flex items-center justify-center gap-4">
                 {[1, 4, 7, 25].map((id, i) => (
                   <motion.div
                     key={id}
-                    className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-pop ring-1 ring-poke-dark/10"
-                    animate={{ y: [0, -10, 0] }}
+                    className="flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-pop ring-1 ring-poke-dark/10"
+                    animate={{ y: [0, -12, 0] }}
                     transition={{
                       duration: 1.6,
                       repeat: Infinity,
@@ -75,16 +74,20 @@ function SplashPage() {
                       delay: i * 0.4,
                     }}
                   >
-                    <PokemonSprite id={id} className="sprite h-12 w-12" />
+                    <PokemonSprite id={id} className="sprite h-14 w-14" />
                   </motion.div>
                 ))}
               </div>
+
+              <div className="mt-5">
+                <PokeballSpinner size={64} spinning />
+              </div>
             </div>
 
-            <div className="mt-8 flex w-full max-w-xs flex-col gap-3">
+            <div className="mt-auto flex w-full max-w-xs flex-col gap-4 pb-2">
               <Button
                 size="lg"
-                className="rounded-full bg-primary py-6 font-semibold shadow-pop hover:scale-105"
+                className="h-14 rounded-full bg-primary text-lg font-semibold shadow-pop active:scale-95"
                 onClick={() => setStep("create")}
               >
                 New Trainer
@@ -92,7 +95,7 @@ function SplashPage() {
               <Button
                 size="lg"
                 variant="outline"
-                className="rounded-full border-2 bg-white py-6 font-semibold"
+                className="h-14 rounded-full border-2 bg-white text-lg font-semibold active:scale-95"
                 onClick={() => {
                   useGameStore.getState().startGuestSession();
                   navigate({ to: "/battle", search: { autostart: 1 } as never });
