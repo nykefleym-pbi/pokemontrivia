@@ -253,25 +253,56 @@ function ProfilePage() {
           </TabsContent>
 
           <TabsContent value="inventory" className="mt-3">
-            <div className="rounded-2xl bg-card p-3 shadow-sm">
-              <div className="mb-2 font-pixel text-[9px] uppercase text-muted-foreground">Inventory</div>
-              <div className="grid grid-cols-3 gap-2">
-                {ITEMS.map((it) => {
-                  const n = inventory[it.id] ?? 0;
-                  return (
-                    <div key={it.id} className={`flex flex-col items-center rounded-xl p-2 ${n > 0 ? "bg-muted" : "opacity-30"}`} title={it.name}>
-                      <img src={it.iconUrl} alt={it.name} crossOrigin="anonymous" className="sprite h-10 w-10 object-contain" onError={(e) => {
-                        const el = e.currentTarget as HTMLImageElement;
-                        el.replaceWith(Object.assign(document.createElement("span"), { textContent: it.emoji, className: "text-2xl" }));
-                      }} />
-                      <div className="mt-1 text-center text-[10px] font-semibold leading-tight">{it.name}</div>
-                      <div className="font-pixel text-[9px] text-primary">×{n}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            {(() => {
+              const owned = ITEMS.filter((it) => (inventory[it.id] ?? 0) > 0);
+              if (owned.length === 0) {
+                return (
+                  <div className="rounded-3xl bg-poke-yellow/15 p-6 text-center shadow-card">
+                    <div className="mx-auto mb-3 text-4xl">🎒</div>
+                    <div className="font-display-md text-poke-dark">Your bag is empty</div>
+                    <p className="mt-1 text-xs text-poke-dark/60">
+                      Stock up on potions, scopes and lucky eggs.
+                    </p>
+                    <Button
+                      onClick={() => navigate({ to: "/shop" })}
+                      className="mt-4 h-11 w-full rounded-full bg-primary text-sm font-bold shadow-pop"
+                    >
+                      Visit PokéMart
+                    </Button>
+                  </div>
+                );
+              }
+              return (
+                <div className="grid grid-cols-2 gap-3">
+                  {owned.map((it) => {
+                    const n = inventory[it.id] ?? 0;
+                    return (
+                      <div key={it.id} className="relative flex flex-col gap-2 rounded-3xl bg-card p-4 shadow-card">
+                        <div className="absolute right-3 top-3 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground shadow-sm">
+                          ×{n}
+                        </div>
+                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
+                          <img
+                            src={it.iconUrl}
+                            alt={it.name}
+                            crossOrigin="anonymous"
+                            className="sprite h-10 w-10 object-contain"
+                            onError={(e) => {
+                              const el = e.currentTarget as HTMLImageElement;
+                              el.replaceWith(Object.assign(document.createElement("span"), { textContent: it.emoji, className: "text-3xl" }));
+                            }}
+                          />
+                        </div>
+                        <div className="font-display-md leading-tight text-poke-dark">{it.name}</div>
+                        <div className="line-clamp-2 text-[11px] text-muted-foreground">{it.desc}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </TabsContent>
+
 
           <TabsContent value="trophies" className="mt-3">
             <div className="mb-2 flex items-center justify-between">
