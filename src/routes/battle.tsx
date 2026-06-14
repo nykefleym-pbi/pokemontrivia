@@ -2,11 +2,11 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Sparkles, Crown, Flame, Swords } from "lucide-react";
+import { Sparkles, Crown } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AppHeader, XpBar, PokeballSpinner, PokeballPattern, PokemonSprite, type DailyMark } from "@/components/game-ui";
+import { PokeballSpinner, PokemonSprite, type DailyMark } from "@/components/game-ui";
 import { rankForLevel, xpProgressInLevel, difficultyForLevel, getTpMultiplier } from "@/lib/game-data";
 
 import { trainerSpriteUrl } from "@/lib/game-data";
