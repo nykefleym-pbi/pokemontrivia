@@ -6,7 +6,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { PokeballSpinner } from "@/components/game-ui";
@@ -42,33 +41,53 @@ export function ShareCardDialog({ open, onClose, data }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Share Your Victory!</DialogTitle>
+      <DialogContent className="max-w-md gap-0 rounded-3xl bg-card p-5">
+        <DialogHeader className="space-y-1.5 text-left">
+          <span className="inline-flex w-fit rounded-full bg-poke-yellow/40 px-2.5 py-0.5 font-pixel-xs uppercase text-poke-dark">
+            Share Your Victory
+          </span>
+          <DialogTitle className="font-display-md text-poke-dark">
+            Show off your run
+          </DialogTitle>
         </DialogHeader>
-        {loading && (
-          <div className="flex items-center justify-center py-12">
-            <PokeballSpinner size={48} spinning />
-          </div>
-        )}
-        {imageUrl && !loading && (
-          <>
-            <img src={imageUrl} alt="Battle result" className="w-full rounded-xl shadow-pop" />
-            <div className="mt-3 rounded-xl bg-muted/50 p-3 text-xs text-muted-foreground">
-              <p className="font-medium text-foreground">How to save:</p>
-              <ul className="mt-1 space-y-0.5">
-                <li>📱 <strong>iOS:</strong> Long-press the image → "Save to Photos"</li>
-                <li>🤖 <strong>Android / Desktop:</strong> Tap "Save Image" below</li>
-              </ul>
+        <div className="mt-4">
+          {loading && (
+            <div className="flex min-h-[300px] items-center justify-center rounded-2xl bg-poke-hero/40">
+              <PokeballSpinner size={64} spinning />
             </div>
-            <DialogFooter className="mt-3">
-              <Button variant="outline" onClick={onClose}>Close</Button>
-              <Button onClick={handleSave}>
-                <Download className="mr-2 h-4 w-4" /> Save Image
-              </Button>
-            </DialogFooter>
-          </>
-        )}
+          )}
+          {imageUrl && !loading && (
+            <>
+              <img
+                src={imageUrl}
+                alt="Battle result"
+                className="w-full rounded-2xl shadow-card"
+              />
+              <div className="mt-3 rounded-2xl bg-poke-hero/50 p-3 text-xs text-muted-foreground">
+                <p className="font-bold text-poke-dark">How to save</p>
+                <ul className="mt-1 space-y-0.5">
+                  <li>📱 <strong>iOS:</strong> long-press → "Save to Photos"</li>
+                  <li>🤖 <strong>Android / Desktop:</strong> tap "Save Image" below</li>
+                </ul>
+              </div>
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                <Button
+                  variant="outline"
+                  onClick={onClose}
+                  className="h-12 flex-1 rounded-full border-2 bg-card font-bold text-poke-dark"
+                >
+                  Close
+                </Button>
+                <Button
+                  onClick={handleSave}
+                  className="h-12 flex-1 rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
+                >
+                  <Download className="mr-2 h-4 w-4" /> Save Image
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );

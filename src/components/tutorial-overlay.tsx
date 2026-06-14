@@ -53,31 +53,45 @@ export function TutorialOverlay({ step, onDismiss, onSkip }: Props) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-[80] bg-poke-dark/70 backdrop-blur-sm"
           />
           <motion.div
             key={`tut-card-${current.id}`}
-            initial={{ scale: 0.85, opacity: 0, y: 10 }}
+            initial={{ scale: 0.9, opacity: 0, y: 10 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.9, opacity: 0 }}
+            exit={{ scale: 0.92, opacity: 0 }}
             transition={{ type: "spring", stiffness: 220, damping: 18 }}
             className="fixed inset-0 z-[81] flex items-center justify-center px-6"
           >
-            <div className="w-full max-w-sm rounded-3xl border-2 border-poke-dark bg-card p-5 shadow-pop">
-              <div className="mb-2 font-pixel text-[10px] uppercase text-primary">
-                Tutorial · {current.id}/3
+            <div className="w-full max-w-sm rounded-3xl bg-card p-6 shadow-pop">
+              <div className="mb-3 flex items-center gap-1.5">
+                {STEPS.map((s) => (
+                  <span
+                    key={s.id}
+                    className={`h-2 rounded-full transition-all ${
+                      s.id === current.id
+                        ? "w-6 bg-primary"
+                        : s.id < current.id
+                          ? "w-2 bg-primary/50"
+                          : "w-2 bg-poke-dark/15"
+                    }`}
+                  />
+                ))}
               </div>
-              <h3 className="text-lg font-bold">{current.title}</h3>
+              <h3 className="font-display-md text-poke-dark">{current.title}</h3>
               <p className="mt-2 text-sm leading-snug text-muted-foreground">{current.body}</p>
-              <div className="mt-5 flex items-center justify-between">
+              <div className="mt-6 flex items-center justify-between gap-3">
                 <button
                   onClick={onSkip}
-                  className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+                  className="text-xs font-medium text-muted-foreground underline-offset-2 hover:underline"
                 >
                   Skip tutorial
                 </button>
-                <Button onClick={onDismiss} size="sm" className="rounded-full px-5">
-                  Got it
+                <Button
+                  onClick={onDismiss}
+                  className="h-11 rounded-full bg-primary px-6 font-bold text-primary-foreground shadow-pop"
+                >
+                  {current.id === 3 ? "Start battling" : "Got it"}
                 </Button>
               </div>
             </div>

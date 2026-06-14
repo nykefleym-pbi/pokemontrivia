@@ -45,7 +45,13 @@ export function EvolutionScreen({ from, to, onComplete }: Props) {
   const showTo = phase === "reveal" || phase === "done";
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-poke-dark/95 px-6 backdrop-blur">
+    <div
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-center px-6"
+      style={{
+        background:
+          "radial-gradient(circle at center, var(--color-poke-blue) 0%, var(--color-poke-dark) 75%)",
+      }}
+    >
       <AnimatePresence mode="wait">
         {phase === "intro" && (
           <motion.div
@@ -53,21 +59,25 @@ export function EvolutionScreen({ from, to, onComplete }: Props) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="text-center font-pixel text-base text-poke-yellow"
+            className="text-center"
           >
-            What? {from.name} is evolving!
+            <div className="font-pixel-xs uppercase tracking-wide text-poke-yellow/80">
+              Evolution
+            </div>
+            <div className="mt-1 font-display-md text-poke-yellow">
+              What? <span className="italic">{from.name} is evolving!</span>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
       <div className="relative mt-8 flex h-48 w-48 items-center justify-center">
-        {/* Glow halo */}
         {(phase === "glow" || isMorphing) && (
           <motion.div
             initial={{ scale: 0.6, opacity: 0 }}
-            animate={{ scale: [0.8, 1.4, 1.0], opacity: [0.3, 0.95, 0.6] }}
+            animate={{ scale: [0.8, 1.5, 1.0], opacity: [0.3, 1, 0.7] }}
             transition={{ duration: 2.5, repeat: Infinity }}
-            className="absolute inset-0 rounded-full bg-gradient-to-br from-poke-yellow via-white to-primary blur-2xl"
+            className="absolute inset-0 rounded-full bg-gradient-to-br from-white via-poke-yellow to-poke-yellow blur-3xl"
           />
         )}
 
@@ -86,7 +96,7 @@ export function EvolutionScreen({ from, to, onComplete }: Props) {
             transition={{ type: "spring", stiffness: 120 }}
             className="relative"
           >
-            <div className="absolute inset-0 -m-4 rounded-full bg-poke-yellow/40 blur-xl" />
+            <div className="absolute inset-0 -m-4 rounded-full bg-poke-yellow/50 blur-2xl" />
             <PokemonSprite id={to.id} alt={to.name} className="sprite relative h-40 w-40" />
           </motion.div>
         )}
@@ -96,17 +106,19 @@ export function EvolutionScreen({ from, to, onComplete }: Props) {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-8 w-full max-w-xs rounded-3xl bg-card/95 p-5 text-center shadow-pop"
+          className="mt-8 w-full max-w-xs rounded-3xl bg-card p-5 text-center shadow-pop"
         >
-          <div className="font-pixel text-sm text-poke-dark">Congratulations!</div>
-          <div className="mt-2 text-sm text-muted-foreground">
+          <div className="inline-flex rounded-full bg-poke-yellow/40 px-2.5 py-0.5 font-pixel-xs uppercase text-poke-dark">
+            Evolution Complete
+          </div>
+          <div className="mt-3 text-sm text-muted-foreground">
             Your {from.name} evolved into
           </div>
-          <div className="mt-1 font-pixel text-lg text-primary">{to.name}!</div>
+          <div className="mt-1 font-display-lg text-primary">{to.name}!</div>
           <Button
             size="lg"
             onClick={onComplete}
-            className="mt-5 w-full rounded-full bg-primary py-5 font-semibold shadow-pop"
+            className="mt-5 h-12 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
           >
             Continue
           </Button>
