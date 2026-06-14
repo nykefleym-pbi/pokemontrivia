@@ -1,78 +1,89 @@
-# Collection screens redesign — Pokédex, Pokédex detail, Shop, Bag
+# Profile hub redesign (Profile + Achievements + Trophies + Badges + Settings)
 
-Polish-only pass aligning Pokédex/Shop to the design comp's GO-style cards, soft shadows, big Outfit headings, and pixel font as accents only. No store, route, or gameplay changes. Bag is already implemented as the Inventory tab in `/profile` and as the in-battle sheet — this pass restyles the existing Inventory surface; no new route.
+Bring `/profile` in line with the Pokédex/Shop GO-style: cream hero strip, `font-display-xl` title, soft pill chrome, `font-pixel-xs` only as accent labels. Visual-only — no store, route, or gameplay changes.
+
+## Audit of prior passes
+
+- Pokédex: hero + ring + sticky filters + type popover + detail flavor — all applied ✓
+- Shop: hero + featured rail + segmented tabs + buy pill + purchase sheet — all applied ✓
+- Profile → Inventory tab: 2-col cards + empty-state "Visit PokéMart" — applied ✓
+- Gap: Profile header still uses `font-pixel text-base` title; tabs are a 4-col grid of 7 pixel triggers (overflows / wraps weirdly); Trophies/Badges/Settings still pre-redesign. Address below.
 
 ## Files touched
 
-- `src/routes/pokedex.tsx` — hero, sticky filters, grid tiles, detail dialog
-- `src/routes/shop.tsx` — header, featured rail, segmented tabs, item cards, purchase sheet
-- `src/routes/profile.tsx` — Inventory tab visual only (header chrome + tab layout left for the Profile pass)
+- `src/routes/profile.tsx` — header, partner card chrome, tabs strip, Trophies/Badges/Abilities/Battles/Settings tab content, Stat helper restyle, BadgeCell silhouette polish.
 
-## 1. Pokédex (`src/routes/pokedex.tsx`)
+## 1. Hero strip (replaces current `<h1>` + gradient card)
 
-Hero strip (`bg-poke-hero`):
-- `font-pixel-xs` `POKÉDEX` label, big `font-display-xl` `Pokédex` heading.
-- Two soft white stat chips inline: `Caught {n} / 1025` and `Shiny {s}` with sparkles. Right-aligned circular progress ring (GO-style) shows `{pct}%` inside.
-- XP-style gradient progress bar removed (replaced by ring).
+- `bg-poke-hero` strip matching Pokédex/Shop. `font-pixel-xs` `TRAINER` label, `font-display-xl` `Profile`.
+- Avatar: 88px white circular tile with `shadow-pop`, edit pencil chip bottom-right; tappable to open trainer picker.
+- Right side: progress ring (same SVG pattern as Pokédex) showing XP-in-level `%`, with `LV {n}` text inside.
+- Below: two soft white pill chips — name (editable, pencil affordance) and rank line `{rank}` in `font-pixel-xs`.
+- XP bar kept under the chips as a thin pill (`h-1.5 rounded-full`) — gradient yellow→primary.
 
-Sticky filter bar:
-- Pill search input `h-11 rounded-full bg-card shadow-card` with magnifier icon.
-- Below search, horizontal scrollable chip row for generations (`Gen 1 … Gen 9`) — active chip is `bg-primary text-primary-foreground`, inactive `bg-card text-poke-dark/70 shadow-card`. Replaces the `<select>`.
-- Type filter becomes a single trailing chip `+ Type` that opens a small popover with the 18 type chips (use shadcn `Popover` or fall back to a `details/summary` if Popover not present — check before adding deps).
-- Caught / Shiny toggles move to the chip row as toggle chips (no `Switch`), using `aria-pressed`.
+## 2. Partner card
 
-Grid (3-col mobile, 4-col at min-width 400):
-- Tile bg: caught → `bg-card shadow-card` with subtle type-color gradient overlay using the primary type token (`bg-gradient-to-br from-type-{t}/15 to-card`). Uncaught → `bg-muted/40`.
-- Larger sprite (`h-16 w-16`) with `sprite-silhouette` if uncaught.
-- Name below, `text-[11px] font-bold`. `???` for uncaught.
-- Top-right: `×N` defeat count chip in primary; top-left: small ✨ if shiny — both restyled as soft pills.
-- Caught entries also show a tiny `font-pixel-xs` type label under name (primary type), GO style.
+- Keep `PartnerCard` logic; restyle shell to `rounded-3xl bg-card p-4 shadow-card`.
+- Replace `font-pixel text-[9px] PARTNER` with `font-pixel-xs PARTNER`.
+- TP bar wrapper becomes soft cream pill (`bg-poke-yellow/10 rounded-2xl`).
+- Evolve button: full-width pill, no pixel font — `font-semibold text-sm`, sparkle icon.
+- "Fully evolved" becomes a small `bg-poke-yellow/20` pill, `font-pixel-xs`.
 
-Detail dialog (`DialogContent` → `max-w-sm rounded-3xl`):
-- Header: `font-pixel-xs` `#0025` dex number, `font-display-lg` name (`****` masked for uncaught).
-- Big sprite centered (`h-40 w-40`) on a soft type-color radial gradient bg.
-- Type badges row.
-- Flavor text in a soft cream card (`bg-poke-yellow/10 rounded-2xl p-3 text-sm italic`).
-- For caught: 3-col stat strip (Defeated, First seen, Shiny status).
-- For uncaught: muted `Not yet captured` with a pixel hint `BATTLE TO UNCOVER`.
-- Toggle Shiny button restyled as a full-width pill, only shown when shiny unlocked.
+## 3. Tabs
 
-## 2. Shop (`src/routes/shop.tsx`)
+Current: 7 triggers in a 4-col grid → wraps 4+3 with cramped pixel labels.
 
-Header (replace `AppHeader`):
-- Match Pokédex hero pattern: `bg-poke-hero` strip, `font-pixel-xs` `POKÉMART`, `font-display-xl` `Shop`, and an XP balance pill `✨ {xp} XP` right-aligned (white pill, `shadow-card`).
+New: 2-row segmented pill, 4+3 layout but visually intentional. Each `TabsTrigger` is a `rounded-full` chip, `font-semibold text-xs` (not pixel), active = `bg-card text-poke-dark shadow-card`, inactive = `text-poke-dark/60`. Container: `bg-poke-dark/10 p-1 rounded-3xl`. Two rows wrapped manually:
 
-Featured rail:
-- Horizontal snap rail (2 cards visible) instead of grid. Each card uses `rounded-3xl bg-gradient-to-br from-poke-yellow/30 to-card border border-poke-yellow/40 shadow-card`, larger icon (`h-14 w-14`) on a white circle, `font-display-md` name, descriptor line, owned count, and a price pill at the bottom-right. `DAILY` ribbon stays but restyled as a soft pill in the top-right.
+```text
+[ Stats ] [ Inventory ] [ Trophies ] [ Badges ]
+[ Abilities ] [ Battles ] [ Settings ]
+```
 
-Category tabs:
-- Same pill-segmented control style as Battle Home (`bg-poke-dark/10 p-1 rounded-full`), 4 segments, active = `bg-card text-poke-dark shadow-card`. Labels `Healing / Battle / Utility / Premium` (Title Case, not all caps pixel).
+Use two `TabsList` rows sharing one `Tabs` parent (shadcn allows multiple TabsLists).
 
-Item grid:
-- 2-col, `rounded-3xl bg-card p-4 shadow-card`.
-- Icon in `h-14 w-14 rounded-2xl bg-muted` tile. Premium star ribbon moves to a small `★` chip in top-right.
-- `font-display-md` name, `text-xs text-muted-foreground` desc (one line truncated), `×{owned} owned` chip.
-- Bottom row: full-width pill button `Buy · ✨ {cost}` — primary if affordable, muted-disabled otherwise (replaces the bare price text; makes buy intent explicit).
+## 4. Stats tab
 
-Purchase sheet:
-- Replace pixel title with `font-display-lg`. Icon tile larger (`h-20 w-20 rounded-3xl`). Stat strip cards (`You have / Cost / After`) become 3 soft pill cards. Buttons remain `Cancel` / `Confirm` as full-width pills.
+Mostly fine. Touch-ups:
+- Restyle `Stat` to `rounded-2xl bg-card p-3 shadow-card`, value in `text-xl font-extrabold text-poke-dark` (drop pixel font on numbers), label `font-pixel-xs text-poke-dark/50`.
+- Heatmap header label → `font-pixel-xs`.
 
-## 3. Bag — Profile Inventory tab (`src/routes/profile.tsx`)
+## 5. Trophies tab
 
-Spec lists Bag as a distinct screen but the app already shows inventory as a Profile tab and inside battle. Don't add a new route. Just restyle the Inventory tab content:
+- Header row → `font-pixel-xs` labels, `text-poke-dark/60` muted.
+- Progress bar wrapped in a `rounded-3xl bg-card p-3 shadow-card` container with the bar inside.
+- Trophy grid: cards inside cream `bg-poke-yellow/10` for unlocked, `bg-muted/40` for locked. Larger emoji (`text-3xl`), name on 2 lines max, `text-[10px] font-semibold`. Locked uses `opacity-40 grayscale`.
 
-- Replace the existing flat list with a 2-col grid of inventory cards mirroring the Shop item card style (`rounded-3xl bg-card p-4 shadow-card`, icon tile, name, count chip, short description).
-- Empty state: cream card with a Pokéball glyph, `Your bag is empty`, and a primary pill `Visit PokéMart` linking to `/shop`.
-- Leave the other 6 Profile tabs (Stats / Trophies / Badges / Abilities / Battles / Settings) untouched in this pass — they belong to the next Profile/Achievements batch.
+## 6. Badges tab
+
+- Header pill row + progress bar matched to Trophies.
+- Per-region card: `rounded-3xl bg-card p-3 shadow-card`, region title `font-pixel-xs text-poke-dark/60`.
+- `BadgeCell`: bigger badge (`h-12 w-12`), unearned uses `badge-silhouette` (CSS filter on existing img), no extra silhouette work. Name `text-[10px] font-semibold`, sub-line removed for owned/locked to reduce noise; show only the leader name for owned, `???` for locked.
+
+## 7. Abilities tab
+
+- 2-col `rounded-3xl bg-card p-3 shadow-card` cards. Name `font-display-md`, type badge top-right, description `text-[11px] text-poke-dark/60 leading-snug`.
+
+## 8. Battles tab
+
+- Empty: cream card with Pokéball glyph + "No battles yet" + pill button `Start a battle` → navigates to `/battle`.
+- List: each entry becomes a `rounded-2xl bg-card px-3 py-2 shadow-card flex` row. WIN/LOSS chip pill (`bg-hp-good/15` / `bg-destructive/15`), opponent name normal weight, `+{xp}` pill in primary.
+
+## 9. Settings tab
+
+- Sound row → `rounded-3xl bg-card p-4 shadow-card` (drop `border-2`).
+- Add a sub-label `font-pixel-xs SOUND` and supporting text `Toggle SFX & music`.
+- Reset row → `rounded-3xl bg-card p-4 shadow-card text-destructive` with destructive icon tile (`h-10 w-10 rounded-2xl bg-destructive/10`).
 
 ## Out of scope
 
-- Profile header redesign (ring avatar, 7-tab 2-row layout) — saved for the next pass.
-- Pokédex search popover for Type filter: if shadcn Popover isn't already in the project, use a simple inline `<details>` to avoid new deps. Verify in `src/components/ui/` first.
-- No new components; no changes to `STARTING_PARTNERS`, `ITEMS`, store, or any route definitions.
+- 7-tab single-row layout (not feasible at 390px). Two-row segmented pill is the chosen pattern.
+- No new sprite assets for badges — using `.badge-silhouette` CSS filter on the already-wired `leader.badgeIconUrl`.
+- Picker dialogs (`Change partner`, `Change trainer`) untouched in this pass.
+- Evolution screen, share card — separate passes.
 
 ## Verification
 
 - `tsc --noEmit` clean.
-- Visual pass at 390×844 for: Pokédex (empty filter, gen switch, caught toggle, detail open for caught + uncaught), Shop (each category tab + featured + purchase sheet for affordable/unaffordable), Profile Inventory tab (with items and empty).
-- `font-pixel` only used at 7–10px (via `.font-pixel-xs` / `.font-pixel-sm`) on the touched screens.
+- Visual pass at 390×844: hero ring fills with XP progress; each tab renders without horizontal scroll; locked badges silhouette correctly; empty Battles shows CTA; Reset confirm still works.
+- `font-pixel-xs` only on accent labels (7–10px); no `font-pixel` at base size anywhere on the screen.
