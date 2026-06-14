@@ -1458,18 +1458,21 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="px-5 pt-6">
-        <div className="rounded-3xl bg-card p-5 shadow-card">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="font-pixel text-[10px] uppercase text-muted-foreground">{trivia.category}</div>
-            <div
-              className={`flex items-center gap-1 rounded-full px-2 py-0.5 font-pixel text-[10px] ${
-                timer <= 5 ? "bg-destructive text-destructive-foreground animate-pulse" : "bg-muted"
-              }`}
-            >
-              <Clock className="h-3 w-3" /> {timer}s
-            </div>
+      <div className="relative px-5 pt-16">
+        {/* Floating timer pill + category */}
+        <div className="pointer-events-none absolute left-1/2 top-2 z-10 flex -translate-x-1/2 flex-col items-center">
+          <div
+            className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold shadow-card ${
+              timer <= 5 ? "animate-pulse bg-destructive text-destructive-foreground" : "bg-card text-foreground"
+            }`}
+          >
+            <Clock className="h-4 w-4" />
+            {timer}s
           </div>
+          <p className="mt-1.5 font-pixel-xs text-poke-dark/70">{trivia.category}</p>
+        </div>
+
+        <div className="rounded-3xl bg-card p-5 shadow-card">
           <p className="text-base font-semibold leading-snug">{trivia.question}</p>
           <div className="mt-4 grid grid-cols-1 gap-2">
             {trivia.options.map((opt, i) => {
@@ -1480,16 +1483,21 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
                   key={i}
                   disabled={phase !== "question"}
                   onClick={() => handleAnswer(i)}
-                  className={`rounded-2xl border-2 px-4 py-3 text-left text-sm font-medium transition ${
+                  className={`flex items-center justify-between rounded-2xl border-2 bg-card px-4 py-3 text-left text-sm font-semibold transition active:scale-[0.98] ${
                     isCorrect
-                      ? "border-hp-good bg-hp-good/20"
+                      ? "border-hp-good bg-hp-good/5 text-hp-good"
                       : isWrong
-                        ? "border-destructive bg-destructive/15"
-                        : "border-border bg-card hover:border-primary hover:bg-primary/5"
+                        ? "border-destructive bg-destructive/5 text-destructive"
+                        : "border-border/60 text-foreground hover:border-primary/50"
                   } disabled:cursor-not-allowed`}
                 >
-                  <span className="mr-2 font-pixel text-[10px] text-primary">{String.fromCharCode(65 + i)}</span>
-                  {opt}
+                  <span className="min-w-0 flex-1 truncate">{opt}</span>
+                  {isCorrect && (
+                    <span className="ml-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-hp-good text-[12px] text-white">✓</span>
+                  )}
+                  {isWrong && (
+                    <span className="ml-2 shrink-0 text-[10px] font-bold uppercase tracking-wide text-destructive">Your Pick ×</span>
+                  )}
                 </button>
               );
             })}
