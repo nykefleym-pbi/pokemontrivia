@@ -619,11 +619,22 @@ function PartnerCard({
   );
 }
 
+function PillTab({ value, children }: { value: string; children: React.ReactNode }) {
+  return (
+    <TabsTrigger
+      value={value}
+      className="h-9 rounded-full text-xs font-bold text-poke-dark/60 data-[state=active]:bg-card data-[state=active]:text-poke-dark data-[state=active]:shadow-card"
+    >
+      {children}
+    </TabsTrigger>
+  );
+}
+
 function Stat({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="rounded-2xl bg-card px-3 py-3 text-center shadow-sm">
-      <div className="font-pixel text-base text-primary">{value}</div>
-      <div className="text-[10px] uppercase text-muted-foreground">{label}</div>
+    <div className="rounded-2xl bg-card px-3 py-3 text-center shadow-card">
+      <div className="text-xl font-extrabold text-poke-dark">{value}</div>
+      <div className="mt-0.5 font-pixel-xs text-poke-dark/50">{label}</div>
     </div>
   );
 }
@@ -634,25 +645,27 @@ function BadgesTab() {
   const regions = ["Kanto", "Johto", "Hoenn", "Sinnoh", "Unova"] as const;
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <span className="font-pixel text-[9px] uppercase text-muted-foreground">
-          {owned.size}/{GYM_LEADERS.length} badges
-        </span>
-        <span className="font-pixel text-[9px] text-primary">
-          {Math.round((owned.size / GYM_LEADERS.length) * 100)}%
-        </span>
-      </div>
-      <div className="h-2 overflow-hidden rounded-full bg-muted">
-        <div
-          className="h-full bg-gradient-to-r from-poke-yellow to-primary"
-          style={{ width: `${(owned.size / GYM_LEADERS.length) * 100}%` }}
-        />
+      <div className="rounded-3xl bg-card p-3 shadow-card">
+        <div className="mb-2 flex items-center justify-between">
+          <span className="font-pixel-xs text-poke-dark/60">
+            {owned.size} / {GYM_LEADERS.length} BADGES
+          </span>
+          <span className="font-pixel-xs text-primary">
+            {Math.round((owned.size / GYM_LEADERS.length) * 100)}%
+          </span>
+        </div>
+        <div className="h-2 overflow-hidden rounded-full bg-muted">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-poke-yellow to-primary"
+            style={{ width: `${(owned.size / GYM_LEADERS.length) * 100}%` }}
+          />
+        </div>
       </div>
       {regions.map((r) => {
         const leaders = GYM_LEADERS.filter((g) => g.region === r);
         return (
-          <div key={r} className="rounded-2xl bg-card p-3 shadow-sm">
-            <div className="mb-2 font-pixel text-[9px] uppercase text-muted-foreground">{r}</div>
+          <div key={r} className="rounded-3xl bg-card p-3 shadow-card">
+            <div className="mb-2 font-pixel-xs text-poke-dark/60">{r.toUpperCase()}</div>
             <div className="grid grid-cols-4 gap-2">
               {leaders.map((g) => {
                 const got = owned.has(g.id);
@@ -671,25 +684,23 @@ function BadgeCell({ leader, got }: { leader: GymLeader; got: boolean }) {
   return (
     <div
       title={got ? `${leader.name} — ${leader.badge}` : "???"}
-      className={`flex flex-col items-center rounded-xl p-2 ${got ? "bg-poke-yellow/20" : ""}`}
+      className={`flex flex-col items-center rounded-2xl p-2 ${got ? "bg-poke-yellow/20" : "bg-muted/40"}`}
     >
       {!imgBroken ? (
         <img
           src={leader.badgeIconUrl}
           alt={got ? leader.badge : "Locked badge"}
           crossOrigin="anonymous"
-          className={`h-9 w-9 object-contain ${got ? "" : "badge-silhouette"}`}
+          className={`h-12 w-12 object-contain ${got ? "" : "badge-silhouette"}`}
           onError={() => setImgBroken(true)}
         />
       ) : (
-        <div className={`text-2xl ${got ? "" : "opacity-20 grayscale"}`}>🎖</div>
+        <div className={`text-3xl ${got ? "" : "opacity-20 grayscale"}`}>🎖</div>
       )}
-      <div className="mt-1 truncate text-center text-[9px] font-semibold leading-tight">
-        {got ? leader.badge.replace(" Badge", "") : "???"}
-      </div>
-      <div className="truncate text-center text-[8px] leading-tight text-muted-foreground">
+      <div className="mt-1 truncate text-center text-[10px] font-semibold leading-tight text-poke-dark">
         {got ? leader.name : "???"}
       </div>
     </div>
   );
 }
+
