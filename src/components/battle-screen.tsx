@@ -915,77 +915,86 @@ function BattleMode({
         )}
       </AnimatePresence>
       {/* top bar */}
-      <div className="flex shrink-0 items-center justify-between px-4 pt-[calc(env(safe-area-inset-top)+0.5rem)] safe-x">
-        <button
-          onClick={() => {
-            if (isWeekly) {
-              toast.error("You cannot leave a Weekly League challenge.");
-              return;
-            }
-            setConfirmExit(true);
-          }}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-card/80 backdrop-blur"
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </button>
-        <div className={`flex items-center gap-1 rounded-full px-3 py-1 font-pixel text-[10px] backdrop-blur ${isElite ? "bg-poke-dark text-poke-yellow shadow-pop" : "bg-card/80 text-foreground"}`}>
-          {isElite && <Crown className="h-3 w-3" />}
-          {isElite
-            ? `ELITE · ${eliteMember!.region}`
-            : `Set ${Math.floor(questionIdx / QUESTIONS_PER_SET) + 1} · Q${(questionIdx % QUESTIONS_PER_SET) + 1}/${QUESTIONS_PER_SET}`}
+      <div className="flex shrink-0 items-center justify-between gap-2 px-4 pt-[calc(env(safe-area-inset-top)+0.5rem)] safe-x">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              if (isWeekly) {
+                toast.error("You cannot leave a Weekly League challenge.");
+                return;
+              }
+              setConfirmExit(true);
+            }}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-card/90 backdrop-blur shadow-card"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <div className={`flex items-center gap-1 rounded-full px-3 py-1.5 font-pixel text-[10px] shadow-card backdrop-blur ${isElite ? "bg-poke-dark text-poke-yellow" : "bg-card/90 text-foreground"}`}>
+            {isElite && <Crown className="h-3 w-3" />}
+            {isElite
+              ? `ELITE · ${eliteMember!.region}`
+              : `ROUND ${Math.floor(questionIdx / QUESTIONS_PER_SET) + 1}/${Math.max(1, Math.ceil(questions.length / QUESTIONS_PER_SET))}`}
+          </div>
         </div>
-        <Sheet open={bagOpen} onOpenChange={setBagOpen}>
-          <SheetTrigger asChild>
-            <button className="flex h-10 w-10 items-center justify-center rounded-full bg-card/80 backdrop-blur">
-              <Backpack className="h-5 w-5" />
-            </button>
-          </SheetTrigger>
-          <SheetContent side="bottom" className="rounded-t-3xl">
-            <SheetHeader>
-              <SheetTitle>Item Bag</SheetTitle>
-            </SheetHeader>
-            <div className="mt-4 grid grid-cols-2 gap-2 pb-6">
-              {ITEMS.map((it) => {
-                const owned = inventory[it.id] ?? 0;
-                const cd = cooldowns[it.id] ?? 0;
-                const disabled = owned <= 0 || cd > 0 || (isWeekly && it.id === "escape");
-                return (
-                  <button
-                    key={it.id}
-                    disabled={disabled}
-                    onClick={() => tryUseItem(it.id)}
-                    className="flex items-start gap-3 rounded-2xl border-2 p-3 text-left transition disabled:opacity-40 enabled:hover:border-primary"
-                  >
-                    <img
-                      src={it.iconUrl}
-                      alt={it.name}
-                      className="sprite h-9 w-9 shrink-0 object-contain"
-                      onError={(e) => {
-                        const el = e.currentTarget as HTMLImageElement;
-                        el.replaceWith(
-                          Object.assign(document.createElement("span"), {
-                            textContent: it.emoji,
-                            className: "text-2xl",
-                          }),
-                        );
-                      }}
-                    />
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5 text-sm font-semibold">
-                        {it.name}
-                        <span className="font-pixel text-[9px] text-primary">×{owned}</span>
-                      </div>
-                      <div className="text-[10px] leading-tight text-muted-foreground">
-                        {it.desc}
-                      </div>
-                      {cd > 0 && <div className="text-[10px] text-destructive">Cooldown: {cd}</div>}
-                    </div>
-                  </button>
-                );
-              })}
+        <div className="flex items-center gap-2">
+          {streak >= 1 && (
+            <div className="rounded-full bg-primary px-3 py-1.5 font-pixel text-[10px] uppercase text-primary-foreground shadow-card">
+              Streak ×{streak}
             </div>
-          </SheetContent>
-        </Sheet>
+          )}
+          <Sheet open={bagOpen} onOpenChange={setBagOpen}>
+            <SheetTrigger asChild>
+              <button className="flex h-10 w-10 items-center justify-center rounded-full bg-card/90 backdrop-blur shadow-card">
+                <Backpack className="h-5 w-5" />
+              </button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="rounded-t-3xl">
+              <SheetHeader>
+                <SheetTitle>Item Bag</SheetTitle>
+              </SheetHeader>
+              <div className="mt-4 grid grid-cols-2 gap-2 pb-6">
+                {ITEMS.map((it) => {
+                  const owned = inventory[it.id] ?? 0;
+                  const cd = cooldowns[it.id] ?? 0;
+                  const disabled = owned <= 0 || cd > 0 || (isWeekly && it.id === "escape");
+                  return (
+                    <button
+                      key={it.id}
+                      disabled={disabled}
+                      onClick={() => tryUseItem(it.id)}
+                      className="flex items-start gap-3 rounded-2xl border-2 p-3 text-left transition disabled:opacity-40 enabled:hover:border-primary"
+                    >
+                      <img
+                        src={it.iconUrl}
+                        alt={it.name}
+                        className="sprite h-9 w-9 shrink-0 object-contain"
+                        onError={(e) => {
+                          const el = e.currentTarget as HTMLImageElement;
+                          el.replaceWith(
+                            Object.assign(document.createElement("span"), {
+                              textContent: it.emoji,
+                              className: "text-2xl",
+                            }),
+                          );
+                        }}
+                      />
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 text-sm font-semibold">
+                          {it.name}
+                          <span className="font-pixel text-[9px] text-primary">×{owned}</span>
+                        </div>
+                        <div className="text-[10px] leading-tight text-muted-foreground">
+                          {it.desc}
+                        </div>
+                        {cd > 0 && <div className="text-[10px] text-destructive">Cooldown: {cd}</div>}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
 
       {/* COMBAT ARENA — FRLG diagonal layout */}
@@ -1096,7 +1105,7 @@ function BattleMode({
       </AnimatePresence>
 
       {/* QUESTION CARD — thumb zone, pinned bottom */}
-      <div className="shrink-0 px-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-2 safe-x">
+      <div className="relative shrink-0 px-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-2 safe-x">
         <AnimatePresence mode="wait">
           {phase !== "intro" && trivia && (
             <motion.div
@@ -1104,26 +1113,37 @@ function BattleMode({
               initial={{ y: 40, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: -10, opacity: 0 }}
+              className="relative"
             >
-              <div className="rounded-2xl bg-card p-3 shadow-card">
-                <div className="mb-1.5 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    {streak >= 2 && (
-                      <div className="rounded-full bg-poke-yellow/30 px-2 py-0.5 font-pixel text-[9px] text-poke-dark">
-                        🔥 {streak} · ×{streakMultiplier(streak)}
-                      </div>
-                    )}
-                  </div>
-                  <div
-                    className={`flex items-center gap-1 rounded-full px-2 py-0.5 font-pixel text-[10px] ${
-                      timer <= 5 ? "bg-destructive text-destructive-foreground animate-pulse" : "bg-muted"
+              {/* Floating timer pill */}
+              <div className="pointer-events-none absolute left-1/2 -top-5 z-10 -translate-x-1/2">
+                <div
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 font-pixel text-[11px] shadow-card ${
+                    timer <= 5
+                      ? "animate-pulse bg-destructive text-destructive-foreground"
+                      : "bg-card text-foreground"
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-3 w-3 rounded-full border-2 ${
+                      timer <= 5 ? "border-destructive-foreground" : "border-hp-good"
                     }`}
-                  >
-                    <Clock className="h-3 w-3" /> {timer}s
-                  </div>
+                    style={{
+                      background: `conic-gradient(currentColor ${(timer / (TIMER_BASE + bonusTime)) * 360}deg, transparent 0deg)`,
+                    }}
+                  />
+                  {timer}s
                 </div>
-                <p className="text-[clamp(0.85rem,3.6vw,1rem)] font-semibold leading-snug">{trivia.question}</p>
-                <div className="mt-2 grid grid-cols-1 gap-1.5">
+              </div>
+
+              <div className="rounded-3xl bg-card p-4 pt-5 shadow-card">
+                <p className="text-center font-pixel text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
+                  {trivia.category}
+                </p>
+                <p className="mt-2 text-center text-[clamp(0.95rem,4vw,1.125rem)] font-bold leading-snug">
+                  {trivia.question}
+                </p>
+                <div className="mt-3 grid grid-cols-1 gap-2">
                   {trivia.options.map((opt, i) => {
                     const isCorrect = phase === "feedback" && i === trivia.correct;
                     const isWrong = phase === "feedback" && chosen === i && i !== trivia.correct;
@@ -1133,20 +1153,27 @@ function BattleMode({
                         key={i}
                         disabled={phase !== "question" || isRevealed}
                         onClick={() => handleAnswer(i)}
-                        className={`flex min-h-[44px] items-center rounded-xl border-2 px-3 py-2.5 text-left text-[clamp(0.8rem,3.4vw,0.95rem)] font-medium transition active:scale-[0.98] ${
+                        className={`flex min-h-[48px] items-center justify-between rounded-2xl border-2 px-4 py-2.5 text-left text-[clamp(0.875rem,3.6vw,0.95rem)] font-semibold transition active:scale-[0.98] ${
                           isCorrect
-                            ? "border-hp-good bg-hp-good/20"
+                            ? "border-hp-good bg-hp-good/10 text-hp-good"
                             : isWrong
-                              ? "border-destructive bg-destructive/15"
+                              ? "border-destructive bg-destructive/10 text-destructive"
                               : isRevealed
-                                ? "border-muted bg-muted/40 line-through opacity-50"
-                                : "border-border bg-card hover:border-primary hover:bg-primary/5"
+                                ? "border-transparent bg-muted/60 line-through opacity-50"
+                                : "border-transparent bg-muted text-foreground hover:bg-muted/70"
                         } disabled:cursor-not-allowed`}
                       >
-                        <span className="mr-2 font-pixel text-[10px] text-primary">
-                          {String.fromCharCode(65 + i)}
-                        </span>
-                        <span className="min-w-0 flex-1">{opt}</span>
+                        <span className="min-w-0 flex-1 truncate">{opt}</span>
+                        {isCorrect && (
+                          <span className="ml-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-hp-good text-[12px] text-white">
+                            ✓
+                          </span>
+                        )}
+                        {isWrong && (
+                          <span className="ml-2 inline-flex shrink-0 items-center gap-1 rounded-full bg-destructive/15 px-2 py-0.5 font-pixel text-[8px] uppercase text-destructive">
+                            Your Pick ×
+                          </span>
+                        )}
                       </button>
                     );
                   })}
@@ -1156,6 +1183,43 @@ function BattleMode({
                     💡 {trivia.explanation} · ⚡ {(lastElapsedMs / 1000).toFixed(1)}s
                   </p>
                 )}
+
+                {/* Item shortcuts row */}
+                <div className="mt-3 flex items-center justify-center gap-3">
+                  {ITEMS.filter((it) => (inventory[it.id] ?? 0) > 0)
+                    .slice(0, 3)
+                    .map((it) => {
+                      const owned = inventory[it.id] ?? 0;
+                      const cd = cooldowns[it.id] ?? 0;
+                      const disabled = cd > 0 || (isWeekly && it.id === "escape");
+                      return (
+                        <button
+                          key={it.id}
+                          disabled={disabled}
+                          onClick={() => tryUseItem(it.id)}
+                          className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition active:scale-95 disabled:opacity-40"
+                        >
+                          <img
+                            src={it.iconUrl}
+                            alt={it.name}
+                            className="sprite h-8 w-8 object-contain"
+                            onError={(e) => {
+                              const el = e.currentTarget as HTMLImageElement;
+                              el.replaceWith(
+                                Object.assign(document.createElement("span"), {
+                                  textContent: it.emoji,
+                                  className: "text-2xl",
+                                }),
+                              );
+                            }}
+                          />
+                          <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-poke-dark px-1 font-pixel text-[9px] text-white">
+                            {owned}
+                          </span>
+                        </button>
+                      );
+                    })}
+                </div>
               </div>
             </motion.div>
           )}

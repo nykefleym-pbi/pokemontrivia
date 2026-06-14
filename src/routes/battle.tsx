@@ -2,11 +2,11 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Sparkles, Crown, Flame, Swords } from "lucide-react";
+import { Sparkles, Crown } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AppHeader, XpBar, PokeballSpinner, PokeballPattern, PokemonSprite, type DailyMark } from "@/components/game-ui";
+import { PokeballSpinner, PokemonSprite, type DailyMark } from "@/components/game-ui";
 import { rankForLevel, xpProgressInLevel, difficultyForLevel, getTpMultiplier } from "@/lib/game-data";
 
 import { trainerSpriteUrl } from "@/lib/game-data";
@@ -14,7 +14,7 @@ import { BattleScreen, type Trivia } from "@/components/battle-screen";
 import { Toaster } from "@/components/ui/sonner";
 import { nextPendingElite, type EliteMember } from "@/lib/elite-four";
 import { findGymLeader, type GymLeader } from "@/lib/gym-leaders";
-import { WeeklyLeagueCard, WeeklyLeagueResultCard } from "@/components/weekly-league-card";
+import { WeeklyLeagueResultCard } from "@/components/weekly-league-card";
 import { getWeekRangeUtc } from "@/lib/game-data";
 
 export const Route = createFileRoute("/battle")({
@@ -269,16 +269,7 @@ function BattleHome({
   const xp = useGameStore((s) => s.xp);
   const trainingPoints = useGameStore((s) => s.trainingPoints);
   const weeklyLeague = useGameStore((s) => s.weeklyLeague);
-  const [tab, setTab] = useState<"battle" | "daily" | "weekly">("battle");
-  const [rotomShaking, setRotomShaking] = useState(false);
-
-  function handleChallengeRotom() {
-    setRotomShaking(true);
-    setTimeout(() => {
-      setRotomShaking(false);
-      onStartDaily();
-    }, 500);
-  }
+  const bestStreak = useGameStore((s) => s.stats.bestStreak);
   const weekRange = getWeekRangeUtc();
 
   if (!pokemon) return null;
@@ -287,156 +278,150 @@ function BattleHome({
   const xpProg = xpProgressInLevel(xp);
   const partnerTp = trainingPoints[pokemon.id] ?? 0;
   const tpMult = getTpMultiplier(partnerTp);
+  const weeklyLeader = weeklyLeague ? findGymLeader(weeklyLeague.gymLeaderId) : null;
+  const weeklyFinished = weeklyLeague?.status === "won" || weeklyLeague?.status === "lost";
 
   return (
     <div className="bg-poke-hero h-full w-full overflow-y-auto pb-nav safe-x">
-
-      <AppHeader gradient>
-        {/* Hero strip: trainer + xp/rank + partner */}
+      {/* Header */}
+      <div className="px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-3">
         <div className="flex items-center gap-3">
-          <img
-            src={trainerSpriteUrl(trainerSprite)}
-            alt={trainerSprite}
-            className="sprite h-14 w-14 shrink-0 object-contain"
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).style.opacity = "0.3";
-            }}
-          />
-          <div className="min-w-0 flex-1">
-            <p className="font-pixel text-[9px] uppercase text-poke-dark/60">{rank}</p>
-            <h1 className="truncate font-pixel text-sm text-poke-dark">{trainerName}</h1>
-            <div className="mt-1.5">
-              <XpBar xp={xpProg.current} need={xpProg.need} />
-            </div>
-          </div>
-          <div className="relative shrink-0 text-center">
-            <div className="absolute inset-0 -m-1 rounded-full bg-gradient-to-br from-poke-yellow/40 to-primary/30 blur-xl" />
-            <PokemonSprite
-              id={pokemon.id}
-              alt={pokemon.name}
-              className="sprite relative h-20 w-20"
-            />
-          </div>
-        </div>
-        {/* Stat row — Level, XP, TP prominently shown */}
-        <div className="mt-2 grid grid-cols-3 gap-2">
-          <div className="rounded-xl bg-card/40 px-2 py-1 text-center">
-            <div className="font-pixel text-[8px] uppercase text-poke-dark/60">Level</div>
-            <div className="font-pixel text-sm text-poke-dark">{level}</div>
-          </div>
-          <div className="rounded-xl bg-card/40 px-2 py-1 text-center">
-            <div className="font-pixel text-[8px] uppercase text-poke-dark/60">XP</div>
-            <div className="font-pixel text-sm text-poke-dark">{xp}</div>
-          </div>
-          <div className="rounded-xl bg-card/40 px-2 py-1 text-center">
-            <div className="font-pixel text-[8px] uppercase text-poke-dark/60">TP · ×{tpMult.toFixed(2)}</div>
-            <div className="font-pixel text-sm text-primary">{partnerTp}</div>
-          </div>
-        </div>
-      </AppHeader>
-
-      <div className="px-5 pt-4">
-        {/* Segmented action card */}
-        <div className="rounded-3xl bg-card p-4 shadow-card">
-          <div className="mb-3 grid grid-cols-3 gap-1 rounded-full bg-muted p-1">
-            <button
-              onClick={() => setTab("battle")}
-              className={`flex items-center justify-center gap-1 rounded-full py-2 font-pixel text-[9px] transition ${
-                tab === "battle" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
-              }`}
-            >
-              <Swords className="h-3 w-3" /> BATTLE
-            </button>
-            <button
-              onClick={() => setTab("daily")}
-              className={`flex items-center justify-center gap-1 rounded-full py-2 font-pixel text-[9px] transition ${
-                tab === "daily" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
-              }`}
-            >
-              <Flame className="h-3 w-3" /> DAILY {dailyDone && <span className="text-primary">✓</span>}
-            </button>
-            <button
-              onClick={() => setTab("weekly")}
-              className={`flex items-center justify-center gap-1 rounded-full py-2 font-pixel text-[9px] transition ${
-                tab === "weekly" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
-              }`}
-            >
-              <Swords className="h-3 w-3" /> WEEKLY
-            </button>
-          </div>
-
-          {tab === "battle" ? (
-            <div className="flex flex-col items-center text-center">
-              <PokeballSpinner size={72} spinning={loading} />
-              <h3 className="mt-3 font-pixel text-sm text-foreground">
-                {loading ? "Setting up the battle..." : "Up for a battle?"}
-              </h3>
-              {loading && (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Hang on, summoning a challenger...
-                </p>
-              )}
-              <Button
-                size="lg"
-                onClick={onStart}
-                disabled={loading}
-                className="mt-4 w-full rounded-full bg-primary py-6 font-semibold shadow-pop disabled:opacity-60"
-              >
-                <Sparkles className="mr-2 h-4 w-4" /> {loading ? "Summoning..." : "Find Match"}
-              </Button>
-              <p className="mt-2 text-[10px] text-muted-foreground">Difficulty scales with your level.</p>
-            </div>
-          ) : tab === "daily" ? (
-            <div className="flex flex-col items-center text-center">
-              <div className="rounded-full bg-poke-yellow px-3 py-0.5 font-pixel text-[9px] uppercase text-poke-dark">
-                ⚡ Rotom's Daily Quest
-              </div>
-              {dailyDone && dailyResult ? (
-                <>
-                  <div className="mt-3">
-                    <PokemonSprite id={479} alt="Rotom" className="sprite h-20 w-20" />
-                  </div>
-                  <div className="mt-2 text-sm">
-                    Score:{" "}
-                    <span className="font-pixel text-primary">
-                      {dailyResult.correct}/{dailyResult.total}
-                    </span>{" "}
-                    · {Math.round(dailyResult.timeMs / 1000)}s
-                  </div>
-                  <div className="mt-2 flex justify-center">
-                    <PokeballPattern marks={dailyResult.pattern} />
-                  </div>
-                  <p className="mt-3 text-[10px] text-muted-foreground">Come back tomorrow for a new quest.</p>
-                </>
-              ) : (
-                <>
-                  <div className={`mt-3 ${rotomShaking ? "animate-shake" : ""}`}>
-                    <PokemonSprite id={479} alt="Rotom" className="sprite h-24 w-24" />
-                  </div>
-                  <Button
-                    size="lg"
-                    className="mt-4 w-full rounded-full bg-gradient-to-r from-poke-yellow to-primary py-5 font-pixel text-[11px] shadow-pop"
-                    onClick={handleChallengeRotom}
-                    disabled={loading}
-                  >
-                    <Flame className="mr-2 h-4 w-4" /> {loading ? "Loading..." : "Challenge Rotom"}
-                  </Button>
-                </>
-              )}
-            </div>
-          ) : (
-            weeklyLeague && (weeklyLeague.status === "won" || weeklyLeague.status === "lost") ? (
-              <WeeklyLeagueResultCard weeklyLeague={weeklyLeague} nextWeekStart={weekRange.end} />
-            ) : weeklyLeague ? (
-              <WeeklyLeagueCard
-                weeklyLeague={weeklyLeague}
-                onStart={onStartWeekly}
-                resumeMode={weeklyLeague.status === "in_progress"}
-                loading={loading}
+          <div className="relative shrink-0">
+            <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-[3px] border-primary bg-card">
+              <img
+                src={trainerSpriteUrl(trainerSprite)}
+                alt={trainerSprite}
+                className="sprite h-14 w-14 object-contain"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.opacity = "0.3";
+                }}
               />
-            ) : null
-          )}
+            </div>
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-poke-dark px-1.5 py-[1px] font-pixel text-[7px] text-poke-yellow shadow-sm">
+              LV {level}
+            </div>
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-pixel text-[9px] uppercase text-primary">{rank}</p>
+            <h1 className="truncate text-2xl font-extrabold leading-tight text-poke-dark">{trainerName}</h1>
+            <div className="mt-1.5">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-poke-dark/15">
+                <div
+                  className="h-full bg-gradient-to-r from-poke-yellow to-primary transition-all"
+                  style={{ width: `${Math.min(100, (xpProg.current / xpProg.need) * 100)}%` }}
+                />
+              </div>
+              <p className="mt-1 text-[10px] text-poke-dark/60">
+                {xpProg.current.toLocaleString()} / {xpProg.need.toLocaleString()} XP to Lv {level + 1}
+              </p>
+            </div>
+          </div>
+          <PokemonSprite
+            id={pokemon.id}
+            alt={pokemon.name}
+            className="sprite h-16 w-16 shrink-0"
+          />
         </div>
+
+        {/* Stat row */}
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          <div className="rounded-2xl bg-card px-2 py-2 text-center shadow-card">
+            <div className="font-pixel text-[8px] uppercase text-poke-dark/60">Streak</div>
+            <div className="text-lg font-extrabold text-poke-dark">
+              {bestStreak} <span className="text-base">🔥</span>
+            </div>
+          </div>
+          <div className="rounded-2xl bg-card px-2 py-2 text-center shadow-card">
+            <div className="font-pixel text-[8px] uppercase text-poke-dark/60">XP</div>
+            <div className="text-lg font-extrabold text-poke-dark">{xp.toLocaleString()}</div>
+          </div>
+          <div className="rounded-2xl bg-card px-2 py-2 text-center shadow-card">
+            <div className="font-pixel text-[8px] uppercase text-poke-dark/60">TP ×{tpMult.toFixed(2)}</div>
+            <div className="text-lg font-extrabold text-primary">{partnerTp}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Primary action card */}
+      <div className="px-5 pt-2">
+        <div className="relative overflow-hidden rounded-3xl bg-card p-5 shadow-card">
+          <div className="pointer-events-none absolute -right-8 -bottom-8 opacity-[0.06]">
+            <PokeballSpinner size={180} />
+          </div>
+          <div className="relative flex items-center gap-4">
+            <PokeballSpinner size={64} spinning={loading} />
+            <div className="min-w-0 flex-1">
+              <h3 className="text-xl font-extrabold leading-tight text-foreground">
+                {loading ? "Summoning..." : "Up for a battle?"}
+              </h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                20 questions · difficulty scales with your level
+              </p>
+            </div>
+          </div>
+          <Button
+            size="lg"
+            onClick={onStart}
+            disabled={loading}
+            className="relative mt-4 h-14 w-full rounded-full bg-primary text-base font-bold shadow-pop disabled:opacity-60"
+          >
+            <Sparkles className="mr-2 h-4 w-4" />
+            {loading ? "Summoning..." : "Find Match"}
+          </Button>
+        </div>
+
+        {/* Secondary row */}
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <button
+            onClick={onStartDaily}
+            disabled={dailyDone || loading}
+            className="relative overflow-hidden rounded-2xl bg-poke-yellow p-3 text-left shadow-card transition active:scale-[0.98] disabled:opacity-80"
+          >
+            <div className="font-pixel text-[8px] uppercase text-poke-dark/70">Daily Quest</div>
+            <div className="mt-1 text-base font-extrabold leading-tight text-poke-dark">
+              {dailyDone ? "Done" : "Beat Rotom"}
+            </div>
+            <div className="mt-0.5 text-[10px] text-poke-dark/70">
+              {dailyDone && dailyResult
+                ? `${dailyResult.correct}/${dailyResult.total} · ${Math.round(dailyResult.timeMs / 1000)}s`
+                : "10 fast questions"}
+            </div>
+            <div className="absolute -right-1 -bottom-1">
+              <PokemonSprite id={479} alt="Rotom" className="sprite h-14 w-14" />
+            </div>
+          </button>
+
+          <button
+            onClick={onStartWeekly}
+            disabled={loading || weeklyFinished}
+            className="relative overflow-hidden rounded-2xl bg-[hsl(220_70%_50%)] p-3 text-left text-white shadow-card transition active:scale-[0.98] disabled:opacity-80"
+          >
+            <div className="font-pixel text-[8px] uppercase text-white/80">Weekly League</div>
+            <div className="mt-1 truncate text-base font-extrabold leading-tight">
+              {weeklyLeader ? `Gym: ${weeklyLeader.name}` : "Loading..."}
+            </div>
+            <div className="mt-0.5 text-[10px] text-white/80">
+              {weeklyLeague?.status === "won"
+                ? "Victory!"
+                : weeklyLeague?.status === "lost"
+                  ? "Try next week"
+                  : weeklyLeague?.status === "in_progress"
+                    ? "Resume"
+                    : `Resets ${new Date(weekRange.end).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`}
+            </div>
+            {weeklyLeader && (
+              <div className="absolute -right-1 -bottom-1">
+                <PokemonSprite id={weeklyLeader.signaturePokemonId} alt={weeklyLeader.name} className="sprite h-14 w-14" />
+              </div>
+            )}
+          </button>
+        </div>
+
+        {weeklyLeague && weeklyFinished && (
+          <div className="mt-3">
+            <WeeklyLeagueResultCard weeklyLeague={weeklyLeague} nextWeekStart={weekRange.end} />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -451,26 +436,26 @@ function ElitePendingTakeover({
   onStart: () => void;
   loading: boolean;
 }) {
-  const [showInfo, setShowInfo] = useState(false);
   return (
-    <div className="bg-elite-arena relative h-full w-full overflow-y-auto px-5 pb-nav pt-[calc(env(safe-area-inset-top)+1.5rem)] safe-x">
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-poke-dark/40 via-transparent to-poke-dark/60" />
+    <div className="bg-elite-arena relative flex h-full w-full flex-col overflow-y-auto px-5 pb-[calc(env(safe-area-inset-bottom)+5rem)] pt-[calc(env(safe-area-inset-top)+1.5rem)] safe-x">
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-poke-dark/40 via-transparent to-poke-dark/70" />
+
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative flex items-center justify-center gap-2 font-pixel text-[10px] tracking-widest text-poke-yellow"
+        className="relative flex items-center justify-center gap-2 font-pixel text-[10px] tracking-[0.3em] text-poke-yellow"
       >
-        <Crown className="h-3 w-3" /> ELITE FOUR CHALLENGE
+        <Crown className="h-3 w-3" /> ELITE FOUR <Crown className="h-3 w-3" />
       </motion.div>
 
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
+        initial={{ opacity: 0, scale: 0.92 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.1 }}
-        className="relative mx-auto mt-6 flex max-w-xs flex-col items-center text-center"
+        className="relative mx-auto mt-6 flex w-full max-w-xs flex-col items-center text-center"
       >
         <div className="relative flex items-end justify-center gap-2">
-          <div className="absolute inset-0 -m-4 rounded-full bg-poke-yellow/20 blur-2xl" />
+          <div className="absolute inset-0 -m-6 rounded-full bg-poke-yellow/15 blur-3xl" />
           <img
             src={elite.trainerSpriteUrl}
             alt={elite.name}
@@ -478,23 +463,40 @@ function ElitePendingTakeover({
             className="sprite relative h-40 w-40 object-contain drop-shadow-2xl"
             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
           />
-          <PokemonSprite id={elite.signaturePokemonId} alt={elite.signaturePokemonName} className="sprite relative h-28 w-28 object-contain drop-shadow-2xl" />
+          <PokemonSprite
+            id={elite.signaturePokemonId}
+            alt={elite.signaturePokemonName}
+            className="sprite relative h-28 w-28 object-contain drop-shadow-2xl"
+          />
         </div>
-        <p className="mt-3 font-pixel text-[10px] text-poke-yellow/80">{elite.title.toUpperCase()}</p>
-        <h1 className="mt-1 font-pixel text-2xl text-poke-yellow">{elite.name}</h1>
-        <p className="mt-1 text-xs text-poke-yellow/70">
-          {elite.region} · {elite.type.toUpperCase()} specialist
+        <p className="mt-3 font-pixel text-[10px] tracking-[0.25em] text-poke-yellow/80">
+          {elite.title.toUpperCase()}
+        </p>
+        <h1 className="mt-2 text-5xl font-extrabold leading-none text-poke-yellow drop-shadow">
+          {elite.name}
+        </h1>
+        <p className="mt-3 text-xs text-poke-yellow/70">
+          {elite.region} · {elite.type.toUpperCase()} specialist · 200 HP boss
         </p>
         <p className="mt-4 text-sm italic leading-relaxed text-poke-yellow/85">
           "{elite.quote}"
         </p>
+
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+          <span className="inline-flex items-center gap-1 rounded-full border border-poke-yellow/40 bg-poke-dark/50 px-3 py-1 text-[11px] font-semibold text-poke-yellow">
+            🏅 Region unlock
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full border border-poke-yellow/40 bg-poke-dark/50 px-3 py-1 text-[11px] font-semibold text-poke-yellow">
+            +1,000 XP
+          </span>
+        </div>
       </motion.div>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.25 }}
-        className="relative mx-auto mt-8 flex max-w-xs flex-col gap-3"
+        className="relative mx-auto mt-auto flex w-full max-w-xs flex-col gap-2 pt-8"
       >
         {loading ? (
           <Skeleton className="h-14 w-full rounded-full" />
@@ -502,28 +504,13 @@ function ElitePendingTakeover({
           <Button
             size="lg"
             onClick={onStart}
-            className="w-full rounded-full bg-poke-yellow py-6 font-pixel text-[11px] text-poke-dark shadow-pop hover:bg-poke-yellow/90"
+            className="h-14 w-full rounded-full bg-poke-yellow text-base font-bold text-poke-dark shadow-pop hover:bg-poke-yellow/90"
           >
-            <Crown className="mr-2 h-4 w-4" /> Challenge {elite.name}
+            <Crown className="mr-2 h-5 w-5" /> Challenge {elite.name}
           </Button>
         )}
-        <button
-          onClick={() => setShowInfo((v) => !v)}
-          className="text-center font-pixel text-[10px] text-poke-yellow/70 underline-offset-4 hover:underline"
-        >
-          {showInfo ? "Hide info" : "More info"}
-        </button>
-        {showInfo && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            className="rounded-2xl bg-poke-dark/60 p-3 text-xs text-poke-yellow/80"
-          >
-            <p>200 HP boss battle. Themed trivia favors {elite.type.toUpperCase()}-type Pokémon. Victory unlocks rare rewards and the next region. Regular battles are locked until you win.</p>
-          </motion.div>
-        )}
-        <p className="text-center font-pixel text-[9px] text-poke-yellow/50">
-          Regular battles locked until victory.
+        <p className="text-center font-pixel text-[9px] tracking-[0.2em] text-poke-yellow/50">
+          REGULAR BATTLES LOCKED UNTIL VICTORY
         </p>
       </motion.div>
     </div>
