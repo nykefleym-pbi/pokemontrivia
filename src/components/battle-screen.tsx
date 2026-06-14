@@ -871,6 +871,7 @@ function BattleMode({
           xpEarned={xpEarned}
           tpEarned={tpEarned}
           partnerName={player.name}
+          partnerId={player.id}
           streak={maxStreakRef.current}
           onRebattle={() => onExit()}
           canShare={!!shareData}
@@ -1258,6 +1259,7 @@ function ResultScreen({
   xpEarned,
   tpEarned,
   partnerName,
+  partnerId,
   streak,
   onRebattle,
   canShare,
@@ -1267,6 +1269,7 @@ function ResultScreen({
   xpEarned: number;
   tpEarned: number;
   partnerName: string;
+  partnerId: number;
   streak: number;
   onRebattle: () => void;
   canShare?: boolean;
@@ -1277,50 +1280,82 @@ function ResultScreen({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className={`flex h-full w-full flex-col items-center justify-center overflow-y-auto px-6 py-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)] safe-x ${
-        won ? "bg-victory" : "bg-defeat"
+        won ? "bg-victory" : "bg-poke-dark/85"
       }`}
     >
       <motion.div
-        initial={{ scale: 0.5, opacity: 0 }}
+        initial={{ scale: 0.6, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: "spring", stiffness: 120 }}
-        className="text-center"
+        className="flex flex-col items-center text-center"
       >
-        <div className="font-pixel text-3xl text-white drop-shadow-lg">
-          {won ? "VICTORY!" : "DEFEAT"}
+        <div
+          className={`rounded-full px-3 py-1 font-pixel-xs uppercase ${
+            won ? "bg-poke-yellow text-poke-dark" : "bg-destructive text-white"
+          }`}
+        >
+          {won ? "Victory" : "Defeat"}
         </div>
-        <div className="mt-3 text-6xl">{won ? "🏆" : "💔"}</div>
+        <div className="mt-3 font-display-xl text-white drop-shadow-lg">
+          {won ? "Champion!" : "So close…"}
+        </div>
+        <div className="relative mt-4 flex h-32 w-32 items-center justify-center">
+          <div
+            className={`absolute inset-0 rounded-full blur-2xl ${
+              won ? "bg-poke-yellow/60" : "bg-destructive/40"
+            }`}
+          />
+          <motion.div
+            animate={won ? { y: [0, -8, 0] } : { rotate: [0, -4, 4, 0] }}
+            transition={{ duration: won ? 1.4 : 2, repeat: Infinity }}
+            className="relative"
+          >
+            <PokemonSprite
+              id={partnerId}
+              alt={partnerName}
+              className={`sprite h-28 w-28 ${won ? "" : "opacity-80 grayscale"}`}
+            />
+          </motion.div>
+        </div>
       </motion.div>
-      <div className="mt-8 w-full max-w-xs space-y-3 rounded-3xl bg-card/95 p-5 shadow-pop backdrop-blur">
-        <Row label="XP Gained" value={`+${xpEarned}`} accent />
-        <Row label="Top Streak" value={String(streak)} />
-        <Row label={`TP · ${partnerName}`} value={`+${tpEarned}`} accent />
+
+      <div className="mt-6 grid w-full max-w-xs grid-cols-3 gap-2">
+        <StatTile label="XP" value={`+${xpEarned}`} accent />
+        <StatTile label="Streak" value={String(streak)} />
+        <StatTile label={`TP · ${partnerName.slice(0, 6)}`} value={`+${tpEarned}`} accent />
       </div>
-      {canShare && onShare && (
+
+      <div className="mt-6 w-full max-w-xs space-y-2">
+        {canShare && onShare && won && (
+          <Button
+            size="lg"
+            onClick={onShare}
+            className="h-12 w-full rounded-full border-2 border-white/40 bg-white/10 font-bold text-white backdrop-blur hover:bg-white/20"
+          >
+            Share Victory
+          </Button>
+        )}
         <Button
           size="lg"
-          onClick={onShare}
-          className="mt-6 w-full max-w-xs rounded-full bg-poke-yellow py-6 font-pixel text-[11px] text-poke-dark shadow-pop hover:scale-105"
+          onClick={onRebattle}
+          className="h-12 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
         >
-          📸 Share Victory
+          Continue
         </Button>
-      )}
-      <Button
-        size="lg"
-        onClick={onRebattle}
-        className="mt-3 w-full max-w-xs rounded-full bg-card py-6 font-semibold text-foreground shadow-pop hover:scale-105"
-      >
-        Continue
-      </Button>
+      </div>
     </motion.div>
   );
 }
 
-function Row({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+function StatTile({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
-    <div className="flex items-center justify-between">
-      <span className="text-sm text-muted-foreground">{label}</span>
-      <span className={`font-pixel text-sm ${accent ? "text-primary" : ""}`}>{value}</span>
+    <div className="rounded-2xl bg-card/95 px-2 py-3 text-center shadow-card backdrop-blur">
+      <div className={`font-display-md ${accent ? "text-primary" : "text-poke-dark"}`}>
+        {value}
+      </div>
+      <div className="mt-0.5 truncate text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </div>
     </div>
   );
 }
@@ -1534,17 +1569,58 @@ function DailyResultScreen({
       animate={{ opacity: 1 }}
       className="flex h-full w-full flex-col items-center justify-center overflow-y-auto bg-poke-hero px-6 py-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)] safe-x"
     >
-      <div className="font-pixel text-2xl text-poke-dark">ALL DONE!</div>
-      <div className="mt-3 text-5xl">🏅</div>
-      <div className="mt-6 w-full max-w-xs space-y-3 rounded-3xl bg-card/95 p-5 shadow-pop">
-        <div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Date</span><span className="font-pixel text-sm">{date}</span></div>
-        <div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Score</span><span className="font-pixel text-sm text-primary">{correct}/{total}</span></div>
-        <div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Time</span><span className="font-pixel text-sm">{seconds}s</span></div>
-        <div className="pt-1"><PokeballPattern marks={pattern} /></div>
+      <div className="rounded-full bg-poke-yellow px-3 py-1 font-pixel-xs uppercase text-poke-dark">
+        Daily Challenge · {date}
       </div>
-      <Button size="lg" variant="outline" onClick={onExit} className="mt-6 w-full max-w-xs rounded-full border-2 py-6 font-semibold">
+      <motion.div
+        initial={{ scale: 0.6, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 140 }}
+        className="relative mt-4 flex h-24 w-24 items-center justify-center"
+      >
+        <div className="absolute inset-0 rounded-full bg-poke-yellow/50 blur-xl" />
+        <svg viewBox="0 0 64 64" className="relative h-20 w-20">
+          <circle cx="32" cy="26" r="20" fill="var(--color-poke-yellow)" stroke="var(--color-poke-dark)" strokeWidth="2.5" />
+          <path d="M12 26 H52" stroke="var(--color-poke-dark)" strokeWidth="2.5" />
+          <circle cx="32" cy="26" r="5" fill="white" stroke="var(--color-poke-dark)" strokeWidth="2" />
+          <path d="M22 44 L18 60 L26 54 L32 60 L38 54 L46 60 L42 44 Z" fill="var(--color-primary)" stroke="var(--color-poke-dark)" strokeWidth="2" strokeLinejoin="round" />
+        </svg>
+      </motion.div>
+      <div className="mt-3 font-display-xl text-poke-dark">All done!</div>
+
+      <div className="mt-5 grid w-full max-w-xs grid-cols-3 gap-2">
+        <DailyTile label="Score" value={`${correct}/${total}`} accent />
+        <DailyTile label="Time" value={`${seconds}s`} />
+        <DailyTile label="Streak" value={String(correct)} />
+      </div>
+
+      <div className="mt-4 w-full max-w-xs rounded-2xl bg-card p-4 shadow-card">
+        <div className="font-pixel-xs uppercase text-muted-foreground">Today's Pattern</div>
+        <div className="mt-3 flex justify-center">
+          <PokeballPattern marks={pattern} />
+        </div>
+      </div>
+
+      <Button
+        size="lg"
+        onClick={onExit}
+        className="mt-5 h-12 w-full max-w-xs rounded-full border-2 border-poke-dark/20 bg-card font-bold text-poke-dark shadow-card hover:bg-card/80"
+      >
         Back
       </Button>
     </motion.div>
+  );
+}
+
+function DailyTile({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+  return (
+    <div className="rounded-2xl bg-card px-2 py-3 text-center shadow-card">
+      <div className={`font-display-md ${accent ? "text-primary" : "text-poke-dark"}`}>
+        {value}
+      </div>
+      <div className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </div>
+    </div>
   );
 }
