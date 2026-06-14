@@ -391,7 +391,7 @@ function ProfilePage() {
                 className="flex flex-col items-center rounded-2xl border-2 p-2 transition active:scale-95 hover:border-primary">
                 <PokemonSprite id={p.id} alt={p.name} className="sprite h-14 w-14" />
                 <div className="text-[11px] font-semibold">{p.name}</div>
-                <div className="font-pixel text-[8px] text-primary">⚡ {getAbility(p.types).name}</div>
+                <div className="font-pixel text-[8px] text-primary">⚡ {getAbility(p.types ?? []).name}</div>
               </button>
             ))}
           </div>
@@ -478,9 +478,9 @@ function PartnerCard({
           <div className="text-sm font-bold">{pokemon.name}</div>
           <div className="mt-1 flex items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-1">
-              {pokemon.types.map((t) => <TypeBadge key={t} type={t} size="sm" />)}
+              {(pokemon.types ?? []).map((t) => <TypeBadge key={t} type={t} size="sm" />)}
             </div>
-            <span className="font-pixel text-[8px] text-primary">⚡ {getAbility(pokemon.types).name}</span>
+            <span className="font-pixel text-[8px] text-primary">⚡ {getAbility(pokemon.types ?? []).name}</span>
           </div>
         </div>
       </div>

@@ -3,7 +3,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import type { ItemId } from "./game-data";
 import { ITEMS, levelFromTotalXp, TRAINER_SPRITES, EVOLUTION_TP_COST, getWeekRangeUtc } from "./game-data";
 import type { PokeEntry } from "./pokemon-data";
-import { ALL_POKEMON } from "./pokemon-data";
+import { ALL_POKEMON, rehydratePokemon } from "./pokemon-data";
 import { pickRandomGymLeader } from "./gym-leaders";
 
 const MAX_SEEN_HASHES = 500;
@@ -626,6 +626,7 @@ export const useGameStore = create<GameState>()(
         return {
           ...current,
           ...p,
+          pokemon: rehydratePokemon(p.pokemon ?? null),
           flags: p.flags ?? [],
           battleLog: p.battleLog ?? [],
           dailyResult,
