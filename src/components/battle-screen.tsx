@@ -90,16 +90,15 @@ function CombatPanel({
   const justifyCls = align === "right" ? "justify-end" : "justify-start";
 
   return (
-    <div className="w-[clamp(8.5rem,42vw,11rem)] shrink-0 rounded-xl bg-card/90 px-2.5 py-1.5 backdrop-blur shadow-card">
+    <div className="w-[clamp(8.5rem,42vw,11rem)] shrink-0 rounded-2xl bg-card px-3 py-2 backdrop-blur shadow-card">
       <div className={`flex flex-col ${alignCls}`}>
-        <div className="truncate font-pixel text-[8px] uppercase text-muted-foreground">{trainerName}</div>
+        <div className="truncate font-pixel-xs text-muted-foreground">{trainerName}</div>
         <div className="w-full truncate text-sm font-bold leading-tight">{pokemonName}</div>
-        <div className={`mt-0.5 flex w-full gap-0.5 ${justifyCls}`}>
+        <div className={`mt-1 flex w-full gap-1 ${justifyCls}`}>
           {types.map((t) => <TypeBadge key={t} type={t} size="sm" />)}
         </div>
-        <div className="mt-1 flex w-full items-center gap-1">
-          <span className="font-pixel text-[7px] text-hp-good">HP</span>
-          <div className="h-2 flex-1 overflow-hidden rounded-full border border-poke-dark/60 bg-poke-dark/20">
+        <div className="mt-1.5 flex w-full items-center gap-2">
+          <div className="h-2 flex-1 overflow-hidden rounded-full bg-poke-dark/15">
             <motion.div
               className={`h-full ${barColor}`}
               initial={false}
@@ -107,15 +106,15 @@ function CombatPanel({
               transition={{ type: "spring", stiffness: 100, damping: 18 }}
             />
           </div>
+          <span className="text-[11px] font-bold tabular-nums text-poke-dark">{Math.round(hp)}</span>
         </div>
-        <div className="mt-0.5 w-full font-pixel text-[8px] tabular-nums text-muted-foreground">{Math.round(hp)}/{maxHp}</div>
         {(abilityName || immune || disadvantaged || statuses.length > 0) && (
-          <div className={`mt-0.5 flex w-full flex-wrap gap-0.5 ${justifyCls}`}>
-            {abilityName && <span className="rounded-full bg-primary/10 px-1 py-[1px] font-pixel text-[7px] text-primary">⚡ {abilityName}</span>}
-            {immune && <span className="rounded-full bg-hp-good/20 px-1 py-[1px] font-pixel text-[7px] text-hp-good">🛡</span>}
-            {disadvantaged && !immune && <span className="rounded-full bg-destructive/20 px-1 py-[1px] font-pixel text-[7px] text-destructive">⚠</span>}
+          <div className={`mt-1 flex w-full flex-wrap gap-0.5 ${justifyCls}`}>
+            {abilityName && <span className="rounded-full bg-primary/10 px-1.5 py-[1px] font-pixel-xs text-primary">⚡ {abilityName}</span>}
+            {immune && <span className="rounded-full bg-hp-good/20 px-1.5 py-[1px] font-pixel-xs text-hp-good">🛡</span>}
+            {disadvantaged && !immune && <span className="rounded-full bg-destructive/20 px-1.5 py-[1px] font-pixel-xs text-destructive">⚠</span>}
             {statuses.map((s) => (
-              <span key={s.kind} className={`rounded-full px-1 py-[1px] font-pixel text-[7px] ${s.kind === "confused" ? "bg-poke-yellow/30 text-poke-dark" : "bg-purple-500/20 text-purple-700"}`}>
+              <span key={s.kind} className={`rounded-full px-1.5 py-[1px] font-pixel-xs ${s.kind === "confused" ? "bg-poke-yellow/30 text-poke-dark" : "bg-purple-500/20 text-purple-700"}`}>
                 {s.kind === "confused" ? "🌀" : "☠️"}
               </span>
             ))}
