@@ -271,6 +271,7 @@ function BattleHome({
   const weeklyLeague = useGameStore((s) => s.weeklyLeague);
   const bestStreak = useGameStore((s) => s.stats.bestStreak);
   const weekRange = getWeekRangeUtc();
+  const [tab, setTab] = useState<"battle" | "daily" | "weekly">("battle");
 
   if (!pokemon) return null;
 
@@ -280,144 +281,170 @@ function BattleHome({
   const tpMult = getTpMultiplier(partnerTp);
   const weeklyLeader = weeklyLeague ? findGymLeader(weeklyLeague.gymLeaderId) : null;
   const weeklyFinished = weeklyLeague?.status === "won" || weeklyLeague?.status === "lost";
+  const xpPct = Math.min(100, (xpProg.current / xpProg.need) * 100);
+
+  // Avatar with progress ring (GO-style)
+  const ring = (
+    <div className="relative h-20 w-20 shrink-0">
+      <svg viewBox="0 0 80 80" className="absolute inset-0 h-full w-full -rotate-90">
+        <circle cx="40" cy="40" r="35" fill="none" stroke="oklch(0.22 0.04 260 / 0.12)" strokeWidth="5" />
+        <circle
+          cx="40" cy="40" r="35" fill="none"
+          stroke="var(--color-primary)" strokeWidth="5" strokeLinecap="round"
+          strokeDasharray={2 * Math.PI * 35}
+          strokeDashoffset={2 * Math.PI * 35 * (1 - xpPct / 100)}
+          style={{ transition: "stroke-dashoffset 0.5s ease" }}
+        />
+      </svg>
+      <div className="absolute inset-[6px] flex items-center justify-center overflow-hidden rounded-full bg-card">
+        <img
+          src={trainerSpriteUrl(trainerSprite)}
+          alt={trainerSprite}
+          className="sprite h-14 w-14 object-contain"
+          onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = "0.3"; }}
+        />
+      </div>
+      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-poke-dark px-2 py-[2px] font-pixel-xs text-poke-yellow shadow-sm">
+        LV {level}
+      </div>
+    </div>
+  );
 
   return (
     <div className="bg-poke-hero h-full w-full overflow-y-auto pb-nav safe-x">
-      {/* Header */}
+      {/* Hero */}
       <div className="px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-3">
-        <div className="flex items-center gap-3">
-          <div className="relative shrink-0">
-            <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-[3px] border-primary bg-card">
-              <img
-                src={trainerSpriteUrl(trainerSprite)}
-                alt={trainerSprite}
-                className="sprite h-14 w-14 object-contain"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).style.opacity = "0.3";
-                }}
-              />
-            </div>
-            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-poke-dark px-1.5 py-[1px] font-pixel text-[7px] text-poke-yellow shadow-sm">
-              LV {level}
-            </div>
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="font-pixel text-[9px] uppercase text-primary">{rank}</p>
-            <h1 className="truncate text-2xl font-extrabold leading-tight text-poke-dark">{trainerName}</h1>
-            <div className="mt-1.5">
-              <div className="h-2 w-full overflow-hidden rounded-full bg-poke-dark/15">
-                <div
-                  className="h-full bg-gradient-to-r from-poke-yellow to-primary transition-all"
-                  style={{ width: `${Math.min(100, (xpProg.current / xpProg.need) * 100)}%` }}
-                />
-              </div>
+        <div className="rounded-3xl bg-card p-4 shadow-card">
+          <div className="flex items-center gap-3">
+            {ring}
+            <div className="min-w-0 flex-1">
+              <p className="font-pixel-xs text-primary">{rank}</p>
+              <h1 className="truncate font-display-lg text-poke-dark">{trainerName}</h1>
               <p className="mt-1 text-[10px] text-poke-dark/60">
                 {xpProg.current.toLocaleString()} / {xpProg.need.toLocaleString()} XP to Lv {level + 1}
               </p>
             </div>
+            <PokemonSprite id={pokemon.id} alt={pokemon.name} className="sprite h-16 w-16 shrink-0" />
           </div>
-          <PokemonSprite
-            id={pokemon.id}
-            alt={pokemon.name}
-            className="sprite h-16 w-16 shrink-0"
-          />
         </div>
 
         {/* Stat row */}
-        <div className="mt-4 grid grid-cols-3 gap-2">
+        <div className="mt-3 grid grid-cols-3 gap-2">
           <div className="rounded-2xl bg-card px-2 py-2 text-center shadow-card">
-            <div className="font-pixel text-[8px] uppercase text-poke-dark/60">Streak</div>
-            <div className="text-lg font-extrabold text-poke-dark">
-              {bestStreak} <span className="text-base">🔥</span>
-            </div>
+            <div className="font-pixel-xs text-poke-dark/60">Streak</div>
+            <div className="text-lg font-extrabold text-poke-dark">{bestStreak} <span className="text-base">🔥</span></div>
           </div>
           <div className="rounded-2xl bg-card px-2 py-2 text-center shadow-card">
-            <div className="font-pixel text-[8px] uppercase text-poke-dark/60">XP</div>
+            <div className="font-pixel-xs text-poke-dark/60">XP</div>
             <div className="text-lg font-extrabold text-poke-dark">{xp.toLocaleString()}</div>
           </div>
           <div className="rounded-2xl bg-card px-2 py-2 text-center shadow-card">
-            <div className="font-pixel text-[8px] uppercase text-poke-dark/60">TP ×{tpMult.toFixed(2)}</div>
+            <div className="font-pixel-xs text-poke-dark/60">TP ×{tpMult.toFixed(2)}</div>
             <div className="text-lg font-extrabold text-primary">{partnerTp}</div>
           </div>
         </div>
+
+        {/* Segmented control */}
+        <div className="mt-4 grid grid-cols-3 gap-1 rounded-full bg-poke-dark/10 p-1">
+          {(["battle", "daily", "weekly"] as const).map((k) => (
+            <button
+              key={k}
+              onClick={() => setTab(k)}
+              className={`h-9 rounded-full text-xs font-bold capitalize transition ${
+                tab === k ? "bg-card text-poke-dark shadow-card" : "text-poke-dark/60"
+              }`}
+            >
+              {k === "battle" ? "Battle" : k === "daily" ? "Daily" : "Weekly"}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Primary action card */}
+      {/* Tab content */}
       <div className="px-5 pt-2">
-        <div className="relative overflow-hidden rounded-3xl bg-card p-5 shadow-card">
-          <div className="pointer-events-none absolute -right-8 -bottom-8 opacity-[0.06]">
-            <PokeballSpinner size={180} />
-          </div>
-          <div className="relative flex items-center gap-4">
-            <PokeballSpinner size={64} spinning={loading} />
-            <div className="min-w-0 flex-1">
-              <h3 className="text-xl font-extrabold leading-tight text-foreground">
-                {loading ? "Summoning..." : "Up for a battle?"}
-              </h3>
-              <p className="mt-1 text-xs text-muted-foreground">
-                20 questions · difficulty scales with your level
-              </p>
+        {tab === "battle" && (
+          <div className="relative overflow-hidden rounded-3xl bg-card p-5 shadow-card">
+            <div className="pointer-events-none absolute -right-8 -bottom-8 opacity-[0.06]">
+              <PokeballSpinner size={180} />
             </div>
+            <div className="relative flex items-center gap-4">
+              <PokeballSpinner size={64} spinning={loading} />
+              <div className="min-w-0 flex-1">
+                <h3 className="font-display-md text-foreground">
+                  {loading ? "Summoning..." : "Up for a battle?"}
+                </h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  20 questions · difficulty scales with your level
+                </p>
+              </div>
+            </div>
+            <Button
+              size="lg"
+              onClick={onStart}
+              disabled={loading}
+              className="relative mt-4 h-14 w-full rounded-full bg-primary text-base font-bold shadow-pop disabled:opacity-60"
+            >
+              <Sparkles className="mr-2 h-4 w-4" />
+              {loading ? "Summoning..." : "Find Match"}
+            </Button>
           </div>
-          <Button
-            size="lg"
-            onClick={onStart}
-            disabled={loading}
-            className="relative mt-4 h-14 w-full rounded-full bg-primary text-base font-bold shadow-pop disabled:opacity-60"
-          >
-            <Sparkles className="mr-2 h-4 w-4" />
-            {loading ? "Summoning..." : "Find Match"}
-          </Button>
-        </div>
+        )}
 
-        {/* Secondary row */}
-        <div className="mt-3 grid grid-cols-2 gap-3">
+        {tab === "daily" && (
           <button
             onClick={onStartDaily}
             disabled={dailyDone || loading}
-            className="relative overflow-hidden rounded-2xl bg-poke-yellow p-3 text-left shadow-card transition active:scale-[0.98] disabled:opacity-80"
+            className="relative w-full overflow-hidden rounded-3xl bg-poke-yellow p-5 text-left shadow-card transition active:scale-[0.98] disabled:opacity-80"
           >
-            <div className="font-pixel text-[8px] uppercase text-poke-dark/70">Daily Quest</div>
-            <div className="mt-1 text-base font-extrabold leading-tight text-poke-dark">
-              {dailyDone ? "Done" : "Beat Rotom"}
-            </div>
-            <div className="mt-0.5 text-[10px] text-poke-dark/70">
+            <div className="font-pixel-xs text-poke-dark/70">Rotom's Daily Quest</div>
+            <h3 className="mt-1 font-display-md text-poke-dark">
+              {dailyDone ? "Done for today" : "Beat Rotom"}
+            </h3>
+            <p className="mt-1 text-xs text-poke-dark/70">
               {dailyDone && dailyResult
                 ? `${dailyResult.correct}/${dailyResult.total} · ${Math.round(dailyResult.timeMs / 1000)}s`
-                : "10 fast questions"}
+                : "10 fast questions · come back tomorrow"}
+            </p>
+            <div className="mt-4 inline-flex h-12 items-center rounded-full bg-poke-dark px-5 text-sm font-bold text-poke-yellow shadow-pop">
+              {dailyDone ? "Completed" : "Start Daily"}
             </div>
-            <div className="absolute -right-1 -bottom-1">
-              <PokemonSprite id={479} alt="Rotom" className="sprite h-14 w-14" />
+            <div className="absolute -right-2 -bottom-2">
+              <PokemonSprite id={479} alt="Rotom" className="sprite h-24 w-24" />
             </div>
           </button>
+        )}
 
+        {tab === "weekly" && (
           <button
             onClick={onStartWeekly}
             disabled={loading || weeklyFinished}
-            className="relative overflow-hidden rounded-2xl bg-[hsl(220_70%_50%)] p-3 text-left text-white shadow-card transition active:scale-[0.98] disabled:opacity-80"
+            className="relative w-full overflow-hidden rounded-3xl bg-[hsl(220_70%_50%)] p-5 text-left text-white shadow-card transition active:scale-[0.98] disabled:opacity-80"
           >
-            <div className="font-pixel text-[8px] uppercase text-white/80">Weekly League</div>
-            <div className="mt-1 truncate text-base font-extrabold leading-tight">
+            <div className="font-pixel-xs text-white/80">Weekly League</div>
+            <h3 className="mt-1 truncate font-display-md">
               {weeklyLeader ? `Gym: ${weeklyLeader.name}` : "Loading..."}
-            </div>
-            <div className="mt-0.5 text-[10px] text-white/80">
+            </h3>
+            <p className="mt-1 text-xs text-white/80">
               {weeklyLeague?.status === "won"
                 ? "Victory!"
                 : weeklyLeague?.status === "lost"
                   ? "Try next week"
                   : weeklyLeague?.status === "in_progress"
-                    ? "Resume"
+                    ? "Resume your run"
                     : `Resets ${new Date(weekRange.end).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`}
+            </p>
+            <div className="mt-4 inline-flex h-12 items-center rounded-full bg-white px-5 text-sm font-bold text-[hsl(220_70%_50%)] shadow-pop">
+              {weeklyFinished ? "Closed" : "Enter League"}
             </div>
             {weeklyLeader && (
-              <div className="absolute -right-1 -bottom-1">
-                <PokemonSprite id={weeklyLeader.signaturePokemonId} alt={weeklyLeader.name} className="sprite h-14 w-14" />
+              <div className="absolute -right-2 -bottom-2">
+                <PokemonSprite id={weeklyLeader.signaturePokemonId} alt={weeklyLeader.name} className="sprite h-24 w-24" />
               </div>
             )}
           </button>
-        </div>
+        )}
 
-        {weeklyLeague && weeklyFinished && (
+        {tab === "weekly" && weeklyLeague && weeklyFinished && (
           <div className="mt-3">
             <WeeklyLeagueResultCard weeklyLeague={weeklyLeague} nextWeekStart={weekRange.end} />
           </div>
@@ -426,6 +453,7 @@ function BattleHome({
     </div>
   );
 }
+
 
 function ElitePendingTakeover({
   elite,
