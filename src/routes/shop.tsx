@@ -280,54 +280,106 @@ function ShopPage() {
         <SheetContent side="bottom" className="rounded-t-3xl">
           {confirmState && (
             <>
-              <SheetHeader>
-                <div className="mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-3xl bg-muted">
-                  <ItemIcon item={confirmState.item} className="h-14 w-14" />
+              {/* Top row: icon + name + desc (left-aligned) */}
+              <div className="flex items-center gap-4 pt-2">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-poke-yellow/20">
+                  <ItemIcon item={confirmState.item} className="h-11 w-11" />
                 </div>
-                <SheetTitle className="text-center font-display-lg text-poke-dark">
-                  {confirmState.item.name}
-                </SheetTitle>
-                <SheetDescription className="text-center text-sm">
-                  {confirmState.item.desc}
-                </SheetDescription>
-                {confirmState.featured && (
-                  <div className="mx-auto mt-2 inline-flex items-center gap-2 self-center rounded-full bg-poke-yellow px-3 py-1 font-pixel-xs uppercase text-poke-dark">
-                    Discounted! {confirmState.featured.discountPct}% off
-                  </div>
-                )}
-                {confirmState.featured && (
-                  <div className="mt-2 text-center text-xs text-poke-dark/60">
-                    <span className="line-through">{confirmState.featured.originalCost} XP</span>
-                    <span className="mx-2">→</span>
-                    <span className="font-extrabold text-primary">{confirmState.cost} XP</span>
-                  </div>
-                )}
-              </SheetHeader>
-              <div className="my-4 grid grid-cols-3 gap-2">
-                <Stat label="You have" value={`✨ ${xp}`} tone="default" />
-                <Stat label="Cost" value={String(confirmState.cost)} tone="primary" />
-                <Stat
-                  label="After"
-                  value={String(Math.max(0, xp - confirmState.cost))}
-                  tone="default"
-                />
+                <div className="min-w-0">
+                  <div className="font-display-lg text-poke-dark">{confirmState.item.name}</div>
+                  <div className="mt-0.5 text-sm text-muted-foreground">{confirmState.item.desc}</div>
+                </div>
               </div>
-              <SheetFooter className="flex-row gap-2">
-                <Button
-                  variant="outline"
-                  className="h-12 flex-1 rounded-full text-sm font-bold"
-                  onClick={() => setConfirmState(null)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  disabled={xp < confirmState.cost}
-                  className="h-12 flex-1 rounded-full bg-primary text-sm font-bold shadow-pop disabled:opacity-50"
-                  onClick={confirmPurchase}
-                >
-                  <Sparkles className="mr-1 h-3 w-3" /> Confirm
-                </Button>
-              </SheetFooter>
+
+              {/* Featured discount note (only for featured) */}
+              {confirmState.featured && (
+                <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-poke-yellow px-3 py-1 font-pixel-xs uppercase text-poke-dark">
+                  Discounted {confirmState.featured.discountPct}% off
+                </div>
+              )}
+
+              {/* Quantity stepper */}
+              {(() => {
+                const unitCost = confirmState.cost;
+                const maxQty = unitCost > 0 ? Math.max(1, Math.floor(xp / unitCost)) : 1;
+                return (
+                  <div className="mt-4 flex items-center justify-between rounded-2xl bg-poke-blue/10 px-4 py-3">
+                    <span className="font-bold text-poke-dark">Quantity</span>
+                    <div className="flex items-center gap-4">
+                      <button
+                        onClick={() => setQty((q) => Math.max(1, q - 1))}
+                        disabled={qty <= 1}
+                        className="flex h-9 w-9 items-center justify-center rounded-full bg-card text-poke-dark shadow-card disabled:opacity-40"
+                        aria-label="Decrease quantity"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </button>
+                      <span className="w-6 text-center text-lg font-extrabold tabular-nums text-poke-dark">{qty}</span>
+                      <button
+                        onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
+                        disabled={qty >= maxQty}
+                        className="flex h-9 w-9 items-center justify-center rounded-full bg-poke-dark text-white shadow-card disabled:opacity-40"
+                        aria-label="Increase quantity"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Cost breakdown rows */}
+              {(() => {
+                const unitCost = confirmState.cost;
+                const totalCost = unitCost * qty;
+                const balanceAfter = xp - totalCost;
+                const canAfford = balanceAfter >= 0;
+                return (
+                  <div className="mt-4 space-y-2.5">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Your XP</span>
+                      <span className="font-bold text-poke-dark tabular-nums">{xp.toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Cost</span>
+                      <span className="font-bold text-primary tabular-nums">−{totalCost.toLocaleString()}</span>
+                    </div>
+                    <div className="border-t border-dashed border-border pt-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-poke-dark">Balance after</span>
+                        <span className={`font-extrabold tabular-nums ${canAfford ? "text-hp-good" : "text-destructive"}`}>
+                          {balanceAfter.toLocaleString()} XP
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Confirm + Cancel */}
+              {(() => {
+                const unitCost = confirmState.cost;
+                const totalCost = unitCost * qty;
+                const balanceAfter = xp - totalCost;
+                const canAfford = balanceAfter >= 0;
+                return (
+                  <div className="mt-5 space-y-2">
+                    <Button
+                      disabled={!canAfford}
+                      onClick={confirmPurchase}
+                      className="h-13 w-full rounded-full bg-primary py-6 text-base font-bold text-primary-foreground shadow-pop disabled:opacity-50"
+                    >
+                      Confirm — {totalCost.toLocaleString()} XP
+                    </Button>
+                    <button
+                      onClick={() => setConfirmState(null)}
+                      className="w-full py-2 text-center text-sm font-bold text-muted-foreground"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                );
+              })()}
             </>
           )}
         </SheetContent>
