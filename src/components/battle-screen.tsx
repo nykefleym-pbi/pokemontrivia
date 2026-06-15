@@ -1696,7 +1696,21 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="flex-1 min-h-0 flex items-center justify-center px-4">
+      <div className="relative flex-1 min-h-0 flex items-center justify-center px-4">
+        <motion.div
+          className="pointer-events-none absolute left-1/2 top-[18%] z-10 -translate-x-1/2"
+          animate={{
+            x: [0, 24, -18, 12, 0],
+            y: [0, -16, 10, -8, 0],
+            rotate: [0, 4, -3, 2, 0],
+          }}
+          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <div className="relative">
+            <div className="absolute inset-0 -z-10 rounded-full bg-destructive/50 blur-2xl" />
+            <PokemonSprite id={479} alt="Rotom" className="sprite h-24 w-24 drop-shadow-[0_0_18px_oklch(0.62_0.22_25/0.7)]" />
+          </div>
+        </motion.div>
         <PokeballPattern marks={pattern} />
       </div>
 
