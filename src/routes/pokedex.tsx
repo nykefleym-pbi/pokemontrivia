@@ -1,7 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Sparkles, X } from "lucide-react";
+import { Search, Sparkles, X, ArrowRight, Volume2 } from "lucide-react";
+import { Fragment } from "react";
+import { playCry } from "@/lib/audio";
 import { useGameStore } from "@/lib/store";
 import { ALL_POKEMON, type PokeType } from "@/lib/pokemon-data";
 import { Input } from "@/components/ui/input";
@@ -251,8 +253,10 @@ function PokedexPage() {
             if (!p) return null;
             const got = !!entry;
             const showS = showShiny && entry?.shinyUnlocked;
-            const displayName = got ? p.name : p.name.replace(/[a-zA-Z]/g, "*");
+            const displayName = got ? p.name : "???";
             const primaryType = p.types[0];
+            const columns = buildEvolutionTree(p);
+            const hasEvolution = !(columns.length <= 1 && (columns[0]?.length ?? 0) <= 1);
             return (
               <>
                 <DialogHeader>
@@ -278,33 +282,90 @@ function PokedexPage() {
                       className={`sprite h-40 w-40 ${got ? "" : "sprite-silhouette"}`}
                     />
                   </div>
-                  <div className="flex gap-1">
-                    {got
-                      ? p.types.map((t) => <TypeBadge key={t} type={t} />)
-                      : <span className="font-pixel-xs text-muted-foreground">??? type</span>}
+                  <div className="flex flex-wrap items-center justify-center gap-1.5">
+                    {p.types.map((t) => <TypeBadge key={t} type={t} />)}
+                    <button
+                      onClick={() => playCry(p.id)}
+                      className="flex items-center gap-1 rounded-full bg-card px-2.5 py-1 text-[11px] font-bold text-poke-dark/80 shadow-card active:scale-95"
+                      aria-label="Play cry"
+                    >
+                      <Volume2 className="h-3 w-3" /> Cry
+                    </button>
                   </div>
-                  {entry ? (
-                    <>
-                      <div className="grid w-full grid-cols-3 gap-2">
-                        <Stat label="Defeated" value={`×${entry.defeatCount}`} />
-                        <Stat label="First seen" value={new Date(entry.firstSeenAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })} />
-                        <Stat label="Shiny" value={entry.shinyUnlocked ? "✓" : "—"} />
-                      </div>
-                      <PokedexFlavor pokemonId={p.id} />
-                      {entry.shinyUnlocked && (
-                        <Button
-                          onClick={() => setShowShiny((v) => !v)}
-                          className="h-11 w-full rounded-full bg-primary text-sm font-bold"
-                        >
-                          Toggle {showS ? "Normal" : "Shiny"}
-                        </Button>
-                      )}
-                    </>
-                  ) : (
-                    <div className="w-full rounded-2xl bg-muted/50 p-4 text-center">
-                      <div className="text-sm font-semibold text-poke-dark/70">Not yet captured</div>
-                      <div className="mt-1 font-pixel-xs text-poke-dark/40">BATTLE TO UNCOVER</div>
+                  {entry && (
+                    <div className="grid w-full grid-cols-3 gap-2">
+                      <Stat label="Defeated" value={`×${entry.defeatCount}`} />
+                      <Stat label="First seen" value={new Date(entry.firstSeenAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })} />
+                      <Stat label="Shiny" value={entry.shinyUnlocked ? "✓" : "—"} />
                     </div>
+                  )}
+                  <div className="w-full">
+                    <div className="font-pixel-xs mb-1 text-poke-dark/50">POKÉDEX ENTRY</div>
+                    {got ? (
+                      <PokedexFlavor pokemonId={p.id} />
+                    ) : (
+                      <div className="rounded-2xl bg-muted/50 p-3 text-center text-[12px] italic text-poke-dark/60">
+                        Catch this Pokémon to read its Pokédex entry.
+                      </div>
+                    )}
+                  </div>
+                  <div className="w-full">
+                    <div className="font-pixel-xs mb-1 text-poke-dark/50">EVOLUTION</div>
+                    {!hasEvolution ? (
+                      <div className="rounded-2xl bg-muted/40 p-3 text-center text-xs text-poke-dark/60">
+                        This Pokémon doesn't evolve.
+                      </div>
+                    ) : (
+                      <div className="flex items-start gap-1 overflow-x-auto rounded-2xl bg-muted/30 p-2">
+                        {columns.map((col, ci) => (
+                          <Fragment key={ci}>
+                            {ci > 0 && (
+                              <div className="flex h-20 items-center pt-1">
+                                <ArrowRight className="h-4 w-4 text-poke-dark/40" />
+                              </div>
+                            )}
+                            <div
+                              className={
+                                col.length > 4
+                                  ? "grid grid-cols-2 gap-1"
+                                  : "flex flex-col gap-1"
+                              }
+                            >
+                              {col.map((stage) => {
+                                const stageCaught = !!pokedex[stage.id];
+                                const isCurrent = stage.id === p.id;
+                                return (
+                                  <button
+                                    key={stage.id}
+                                    onClick={() => setDetailId(stage.id)}
+                                    className={`flex w-20 flex-col items-center rounded-2xl p-1.5 transition ${
+                                      isCurrent ? "bg-primary/10 ring-2 ring-primary/40" : "hover:bg-muted/50"
+                                    }`}
+                                  >
+                                    <PokemonSprite
+                                      id={stage.id}
+                                      alt={stageCaught ? stage.name : "???"}
+                                      className={`sprite h-12 w-12 ${stageCaught ? "" : "sprite-silhouette"}`}
+                                    />
+                                    <div className="mt-0.5 w-full truncate text-center text-[10px] font-bold text-poke-dark">
+                                      {stageCaught ? stage.name : "???"}
+                                    </div>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </Fragment>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {entry?.shinyUnlocked && (
+                    <Button
+                      onClick={() => setShowShiny((v) => !v)}
+                      className="h-11 w-full rounded-full bg-primary text-sm font-bold"
+                    >
+                      Toggle {showS ? "Normal" : "Shiny"}
+                    </Button>
                   )}
                 </div>
               </>
@@ -379,4 +440,34 @@ function PokedexFlavor({ pokemonId }: { pokemonId: number }) {
       {flavor}
     </div>
   );
+}
+
+function buildEvolutionTree(p: import("@/lib/pokemon-data").PokeEntry): import("@/lib/pokemon-data").PokeEntry[][] {
+  const byId = (id: number) => ALL_POKEMON.find((x) => x.id === id);
+  let root = p;
+  const seen = new Set<number>();
+  while (root.evolvesFromId != null && !seen.has(root.evolvesFromId)) {
+    seen.add(root.id);
+    const prev = byId(root.evolvesFromId);
+    if (!prev) break;
+    root = prev;
+  }
+  const columns: import("@/lib/pokemon-data").PokeEntry[][] = [];
+  let frontier = [root];
+  const visited = new Set<number>();
+  while (frontier.length > 0) {
+    const col = frontier.filter((e) => e && !visited.has(e.id));
+    if (col.length === 0) break;
+    col.forEach((e) => visited.add(e.id));
+    columns.push(col);
+    const next: import("@/lib/pokemon-data").PokeEntry[] = [];
+    for (const node of col) {
+      for (const cid of node.evolvesToIds) {
+        const child = byId(cid);
+        if (child && !visited.has(child.id)) next.push(child);
+      }
+    }
+    frontier = next;
+  }
+  return columns;
 }
