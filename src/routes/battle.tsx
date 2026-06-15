@@ -310,7 +310,8 @@ function BattleHome({
   );
 
   return (
-    <div className="bg-poke-hero h-full w-full overflow-y-auto pb-nav safe-x">
+    <div className="bg-poke-cream h-full w-full overflow-y-auto pb-nav safe-x">
+
       {/* Hero — sits directly on yellow gradient, no white card */}
       <div className="relative px-5 pt-[calc(env(safe-area-inset-top)+1.25rem)] pb-2">
         <div className="flex items-center gap-3">
