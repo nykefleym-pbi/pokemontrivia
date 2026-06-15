@@ -391,7 +391,7 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                 />
                 <div className="min-w-0">
                   <div className="font-pixel text-[10px] uppercase tracking-wider text-primary">
-                    {selectedTrainer.name} · {trainerInfo.town}
+                    {selectedTrainer.name}
                   </div>
                   <p className="mt-1.5 text-sm italic leading-snug text-poke-dark/80">
                     {selectedTrainer.name} is now ready for battle.
