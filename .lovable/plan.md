@@ -1,43 +1,31 @@
-# Onboarding 2/3 — Pick Your Avatar Redesign
+# Local-host trainer sprites + remove town from blurb
 
-Scope: only the `substep === "trainer"` block inside `TrainerCreate` in `src/routes/index.tsx`. No changes to step 1, step 3, store, navigation, background, or trainer data.
+## 1. Remove town from avatar blurb
 
-## Changes
+In `src/routes/index.tsx` (substep "trainer" blurb card), change the pixel header from `{name} · {town}` to just `{name}`. `TRAINER_BLURBS` / `trainerInfo.town` references become unused there — leave the data file untouched (used nowhere else risky).
 
-1. **All sprites pickable**
-   - Replace the current `.slice(0, 6)` cap. Source = full `TRAINER_SPRITES` (minus `brokenTrainerIds`), sorted alphabetically by `name`.
+## 2. Download all 294 trainer sprites into the repo
 
-2. **Search bar (starts-with filter)**
-   - Add a rounded search input above the grid, styled to match step 3's search (pill, `Search` icon left, `bg-card`, `shadow-pop`).
-   - Reuse local state (rename existing `query` use — currently only used in step 3 — to a step-scoped `trainerQuery` to avoid collision).
-   - Filter: `t.name.toLowerCase().startsWith(query.trim().toLowerCase())`.
+The reference GitHub path `public/trainers/avatar` doesn't exist yet — we'll create it in this project (it then syncs to GitHub through the normal Lovable→GitHub sync).
 
-3. **Initial list = 9 sprites alphabetically**
-   - When search is empty → show first 9 alphabetically.
-   - When search has text → show all matches (also alphabetical), so users can find any trainer.
+Steps:
+- `mkdir -p public/trainers/avatar`
+- Write a small Node/bun script that reads `src/lib/trainer-data.generated.json`, downloads each `url` to `public/trainers/avatar/{id}.png` (skip if already present, small concurrency, polite delay), and reports any failures.
+- Run it once. Expected: 294 PNGs, ~a few MB total (bulbagarden sprites are tiny).
+- Update `src/lib/trainer-data.generated.json` so each entry's `url` becomes `/trainers/avatar/{id}.png`. Also update `scripts/build-trainers.ts` so future regenerations emit local URLs (write the same local path instead of the remote bulbagarden URL — keep remote fetch logic only for the download step, not for the emitted URL).
+- `trainerSpriteUrl()` in `src/lib/game-data.ts` stays as-is — it already returns the `url` field, which now points locally.
 
-4. **Grid cards (match reference)**
-   - 3-col grid, `gap-2.5`, cards: `rounded-[20px] bg-card p-2.5`, `shadow-pop`, sprite `h-16 w-16`, name `text-[13px] font-bold`.
-   - Selected: `border-[2.5px] border-primary`; unselected: `border-2 border-transparent`.
-   - Selected check badge: `-top-2 -right-2 h-[26px] w-[26px] rounded-full bg-primary` with white `Check`.
+Any sprite that fails to download is reported and left out of the JSON (so the existing `brokenTrainerIds` UI path still hides it cleanly).
 
-5. **Blurb card**
-   - Replace the trainer's quote/blurb with a single line: `"{Name} is now ready for battle."` (italic, same styled card).
-   - Keep header line: `RED · PALLET TOWN` style (`font-pixel text-[10px] uppercase text-primary`). Town still pulled from `TRAINER_BLURBS` (fallback "Unknown Town").
-   - Card style: `rounded-[20px] bg-primary/[0.07] border-[1.5px] border-primary/25 p-3.5`, sprite `h-[58px] w-[58px]`.
+## 3. Notes / out of scope
 
-6. **Heading + progress**
-   - Heading already matches (`text-3xl font-extrabold` → adjust to `text-[30px] font-extrabold tracking-tight`), subtitle unchanged.
-   - Progress bars already styled in step 1 work; no change needed.
-
-7. **Bottom button**
-   - Keep "Next: Choose Pokémon", restyle to `h-[58px] rounded-full bg-primary text-[17px] font-bold shadow-pop`.
-
-## Out of scope
-
-- Trainer data file, sprite URLs, `TRAINER_BLURBS` entries.
-- Steps 1 and 3, splash, store/navigation.
+- Not migrating to Lovable CDN assets — user explicitly asked for `public/trainers/avatar/` paths so they live in the git repo.
+- `public/trainers/avatar/*.png` will be committed alongside code.
+- No changes to step 1, step 3, store, or layout.
+- No changes to `TRAINER_BLURBS` data — just stop rendering the town.
 
 ## Verification
 
-`tsc --noEmit`; visual check at 390×844 of step 2 — search filters correctly, 9 sprites shown initially, selecting updates blurb text.
+- `tsc --noEmit`
+- Spot-check a couple of sprite URLs (curl `/trainers/avatar/red.png`, `/trainers/avatar/oak.png`) in the preview.
+- Open step 2 in the preview: grid loads from local paths, blurb shows just the name (no town).
