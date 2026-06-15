@@ -13,6 +13,7 @@ import {
   TP_REWARDS,
   getTpMultiplier,
   xpProgressInLevel,
+  rankForLevel,
 } from "@/lib/game-data";
 
 import { isSuperEffective, findPokemon, isPlayerDisadvantaged, isPlayerImmune, type PokeEntry, type PokeType } from "@/lib/pokemon-data";
@@ -279,6 +280,8 @@ function BattleMode({
   const lastStreakLabelRef = useRef<string | null>(null);
   const correctCountRef = useRef(0);
   const topDmgRef = useRef(0);
+  const totalElapsedMsRef = useRef(0);
+  const answeredCountRef = useRef(0);
   const [tpEarned, setTpEarned] = useState(0);
   const [shareData, setShareData] = useState<ShareData | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
@@ -560,6 +563,9 @@ function BattleMode({
     const correct = idx === trivia.correct;
     const elapsed = Date.now() - questionStart.current;
     setLastElapsedMs(elapsed);
+    totalElapsedMsRef.current += elapsed;
+    answeredCountRef.current += 1;
+
 
     let newStreak = streak;
     if (correct) {
@@ -845,6 +851,14 @@ function BattleMode({
           topDamage: topDmgRef.current,
           dateISO: new Date().toISOString().slice(0, 10),
           badgeName: gymLeader.badge,
+          correctCount: correctCountRef.current,
+          totalQuestions: questions.length,
+          xpEarned: total,
+          avgTimeMs: answeredCountRef.current
+            ? totalElapsedMsRef.current / answeredCountRef.current
+            : undefined,
+          level,
+          rank: rankForLevel(level),
         });
         shareSet = true;
         toast.success(`🎖 ${gymLeader.badge} earned!`, { duration: 4500 });
@@ -854,7 +868,7 @@ function BattleMode({
     // Ensure every victory has a share card (regular + elite fallback)
     if (won && !shareSet) {
       setShareData({
-        type: "battle",
+        type: isElite ? "elite" : "battle",
         trainerName,
         trainerSpriteUrl: trainerSpriteUrl(trainerSpriteId),
         partnerName: player.name,
@@ -871,6 +885,11 @@ function BattleMode({
         correctCount: correctCountRef.current,
         totalQuestions: questions.length,
         xpEarned: total,
+        avgTimeMs: answeredCountRef.current
+          ? totalElapsedMsRef.current / answeredCountRef.current
+          : undefined,
+        level,
+        rank: rankForLevel(level),
         dateISO: new Date().toISOString().slice(0, 10),
       });
     }

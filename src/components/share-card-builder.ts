@@ -21,164 +21,263 @@ export interface ShareData {
   totalQuestions?: number;
   xpEarned?: number;
   avgTimeMs?: number;
+  level?: number;
+  rank?: string;
 }
 
 const CARD_SIZE = 1080;
 const SYSTEM_FONT =
   "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
-const MONO_FONT =
-  "ui-monospace, SFMono-Regular, 'Cascadia Mono', Menlo, monospace";
 
 export async function buildShareCard(data: ShareData): Promise<string> {
+  const W = CARD_SIZE;
+  const H = CARD_SIZE;
   const canvas = document.createElement("canvas");
-  canvas.width = CARD_SIZE;
-  canvas.height = CARD_SIZE;
+  canvas.width = W;
+  canvas.height = H;
   const ctx = canvas.getContext("2d")!;
 
-  // Background gradient
-  const bgGrad = ctx.createLinearGradient(0, 0, 0, CARD_SIZE);
-  if (data.type === "elite") {
-    bgGrad.addColorStop(0, "#7c3aed");
-    bgGrad.addColorStop(1, "#1e1b4b");
-  } else if (data.type === "weekly") {
-    bgGrad.addColorStop(0, "#fbbf24");
-    bgGrad.addColorStop(1, "#b45309");
-  } else if (data.type === "battle") {
-    bgGrad.addColorStop(0, "#ef4444");
-    bgGrad.addColorStop(1, "#7f1d1d");
-  } else {
-    bgGrad.addColorStop(0, "#3b82f6");
-    bgGrad.addColorStop(1, "#1e3a8a");
-  }
-  ctx.fillStyle = bgGrad;
-  ctx.fillRect(0, 0, CARD_SIZE, CARD_SIZE);
+  // Clip whole canvas as a rounded card
+  ctx.save();
+  roundRectPath(ctx, 0, 0, W, H, 56);
+  ctx.clip();
 
-  // Title
+  // ----- TOP: red gradient header -----
+  const headerH = Math.round(H * 0.42); // ~454
+  const grad = ctx.createLinearGradient(0, 0, W, headerH);
+  grad.addColorStop(0, "#e23b2e");
+  grad.addColorStop(1, "#b5341f");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, headerH);
+
+  // faint radial glow behind partner sprite (right side)
+  const rg = ctx.createRadialGradient(
+    W * 0.74,
+    headerH * 0.6,
+    20,
+    W * 0.74,
+    headerH * 0.6,
+    320,
+  );
+  rg.addColorStop(0, "rgba(255,255,255,0.14)");
+  rg.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = rg;
+  ctx.fillRect(0, 0, W, headerH);
+
+  // Top labels
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
   ctx.fillStyle = "#ffffff";
-  ctx.font = `bold 72px ${SYSTEM_FONT}`;
-  ctx.textAlign = "center";
-  const title =
-    data.type === "elite"
-      ? "ELITE FOUR DEFEATED"
-      : data.type === "weekly"
-        ? "GYM LEADER DEFEATED"
-        : data.type === "battle"
-          ? "★ VICTORY ★"
-          : "DAILY CHALLENGE PERFECT";
-  ctx.fillText(title, CARD_SIZE / 2, 120);
+  ctx.font = `700 28px ${SYSTEM_FONT}`;
+  drawTrackedText(ctx, "POKÉMON TRIVIA BATTLE", 60, 78, 2);
 
-  ctx.font = `40px ${SYSTEM_FONT}`;
-  ctx.fillStyle = "rgba(255,255,255,0.85)";
-  ctx.fillText(data.badgeName ?? data.dateISO, CARD_SIZE / 2, 180);
+  ctx.textAlign = "right";
+  ctx.fillStyle = "#f2d64e";
+  ctx.font = `800 28px ${SYSTEM_FONT}`;
+  drawTrackedText(ctx, "★ VICTORY", W - 60, 78, 2, "right");
 
-  // Player side (left)
-  await drawTrainer(ctx, data.trainerSpriteUrl, data.trainerName, 80, 280, "left");
-  if (!isNaN(data.partnerPokemonId)) {
-    await drawPokemon(
-      ctx,
-      data.partnerPokemonId,
-      data.partnerName,
-      data.partnerShiny,
-      80,
-      480,
-      "left",
-    );
-  }
+  // Trainer avatar (circular)
+  const avatarD = 150;
+  const avatarCX = 60 + avatarD / 2;
+  const avatarCY = 230;
+  await drawCircleImage(ctx, data.trainerSpriteUrl, avatarCX, avatarCY, avatarD);
 
-  // VS
-  ctx.fillStyle = "#fbbf24";
-  ctx.font = `bold 96px ${MONO_FONT}`;
-  ctx.textAlign = "center";
-  ctx.fillText("VS", CARD_SIZE / 2, 600);
+  // Trainer name + level/rank
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#ffffff";
+  ctx.font = `800 60px ${SYSTEM_FONT}`;
+  ctx.fillText(truncate(data.trainerName, 14), avatarCX + avatarD / 2 + 30, 220);
 
-  // Opponent side (right)
-  if (data.opponentSpriteUrl) {
-    await drawTrainer(ctx, data.opponentSpriteUrl, data.opponentName, CARD_SIZE - 80, 280, "right");
-  }
-  if (data.signaturePokemonId !== null) {
-    const sigName = findPokemon(data.signaturePokemonId)?.name ?? "Pokémon";
-    await drawPokemon(ctx, data.signaturePokemonId, sigName, false, CARD_SIZE - 80, 480, "right");
-  } else if (data.type === "daily-perfect") {
-    ctx.fillStyle = "rgba(255,255,255,0.4)";
-    ctx.font = `200px ${SYSTEM_FONT}`;
-    ctx.fillText("🎯", CARD_SIZE * 0.75, 470);
-  }
+  ctx.fillStyle = "rgba(255,255,255,0.8)";
+  ctx.font = `700 28px ${SYSTEM_FONT}`;
+  drawTrackedText(
+    ctx,
+    `LV ${data.level ?? 1} · ${(data.rank ?? "Trainer").toUpperCase()}`,
+    avatarCX + avatarD / 2 + 30,
+    266,
+    1.5,
+  );
 
-  // Stats footer
-  const statsY = 820;
-  ctx.fillStyle = "rgba(0,0,0,0.4)";
-  ctx.fillRect(0, statsY, CARD_SIZE, 180);
+  // Partner sprite (large, lower-right of header)
+  const spriteSize = 300;
+  await drawPokemonSprite(
+    ctx,
+    data.partnerPokemonId,
+    data.partnerShiny,
+    W - spriteSize - 30,
+    headerH - spriteSize + 30,
+    spriteSize,
+  );
 
-  const stats = [
-    { label: "Final HP", value: `${data.finalPlayerHp}/${data.maxPlayerHp}` },
-    { label: "Top Streak", value: `${data.topStreak}×` },
-    { label: "Top Damage", value: `${data.topDamage}` },
+  // ----- BOTTOM: white body -----
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, headerH, W, H - headerH);
+
+  let y = headerH + 90;
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#23252f";
+  ctx.font = `800 52px ${SYSTEM_FONT}`;
+  ctx.fillText(`defeated ${truncate(data.opponentName, 18)}`, 60, y);
+
+  y += 46;
+  ctx.fillStyle = "#6f7280";
+  ctx.font = `500 28px ${SYSTEM_FONT}`;
+  const ctxLabel =
+    data.type === "weekly"
+      ? `${data.badgeName ? data.badgeName.replace(" Badge", "") + " circuit" : "Gym circuit"}`
+      : data.type === "elite"
+        ? "Elite Four"
+        : data.type === "daily-perfect"
+          ? "Daily challenge"
+          : "Trainer battle";
+  ctx.fillText(`${ctxLabel} · ${formatDate(data.dateISO)}`, 60, y);
+
+  // Stat chips
+  y += 50;
+  const chipGap = 20;
+  const chipW = (W - 120 - chipGap * 3) / 4;
+  const chipH = 140;
+  const chips = [
+    {
+      val: `${data.correctCount ?? 0}/${data.totalQuestions ?? 0}`,
+      label: "CORRECT",
+      color: "#3f9d5a",
+    },
+    {
+      val:
+        data.avgTimeMs && data.avgTimeMs > 0
+          ? `${(data.avgTimeMs / 1000).toFixed(1)}s`
+          : "—s",
+      label: "AVG TIME",
+      color: "#23252f",
+    },
+    { val: `+${data.xpEarned ?? 0}`, label: "XP", color: "#e23b2e" },
+    { val: `${data.topStreak}🔥`, label: "STREAK", color: "#23252f" },
   ];
-  stats.forEach((stat, i) => {
-    const cx = (CARD_SIZE / 3) * i + CARD_SIZE / 6;
-    ctx.fillStyle = "rgba(255,255,255,0.6)";
-    ctx.font = `28px ${SYSTEM_FONT}`;
+  chips.forEach((chip, i) => {
+    const cx = 60 + i * (chipW + chipGap);
+    ctx.fillStyle = "#f1f2f5";
+    roundRectPath(ctx, cx, y, chipW, chipH, 18);
+    ctx.fill();
+
     ctx.textAlign = "center";
-    ctx.fillText(stat.label, cx, statsY + 60);
-    ctx.fillStyle = "#ffffff";
-    ctx.font = `bold 64px ${MONO_FONT}`;
-    ctx.fillText(stat.value, cx, statsY + 130);
+    ctx.fillStyle = chip.color;
+    ctx.font = `800 42px ${SYSTEM_FONT}`;
+    ctx.fillText(chip.val, cx + chipW / 2, y + 68);
+
+    ctx.fillStyle = "#7d7f8a";
+    ctx.font = `700 20px ${SYSTEM_FONT}`;
+    drawTrackedText(ctx, chip.label, cx + chipW / 2, y + 108, 1.5, "center");
   });
 
-  // Watermark
-  ctx.fillStyle = "rgba(255,255,255,0.5)";
-  ctx.font = `28px ${SYSTEM_FONT}`;
-  ctx.textAlign = "center";
-  ctx.fillText("Pokémon Trivia Battle", CARD_SIZE / 2, CARD_SIZE - 30);
+  // Footer
+  y += chipH + 50;
+  ctx.strokeStyle = "#e6e8ec";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(60, y);
+  ctx.lineTo(W - 60, y);
+  ctx.stroke();
 
+  y += 50;
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#6f7280";
+  ctx.font = `700 24px ${SYSTEM_FONT}`;
+  drawTrackedText(ctx, "◓ PLAY.POKETRIVIA.APP", 60, y, 1.5);
+
+  ctx.textAlign = "right";
+  ctx.fillStyle = "#e23b2e";
+  ctx.font = `800 24px ${SYSTEM_FONT}`;
+  drawTrackedText(ctx, "BEAT MY SCORE ›", W - 60, y, 1.5, "right");
+
+  ctx.restore();
   return canvas.toDataURL("image/png");
 }
 
-async function drawTrainer(
+// ---------- helpers ----------
+
+function roundRectPath(
   ctx: CanvasRenderingContext2D,
-  url: string,
-  name: string,
   x: number,
   y: number,
-  align: "left" | "right",
+  w: number,
+  h: number,
+  r: number,
 ) {
+  const rr = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.lineTo(x + w - rr, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
+  ctx.lineTo(x + w, y + h - rr);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+  ctx.lineTo(x + rr, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - rr);
+  ctx.lineTo(x, y + rr);
+  ctx.quadraticCurveTo(x, y, x + rr, y);
+  ctx.closePath();
+}
+
+async function drawCircleImage(
+  ctx: CanvasRenderingContext2D,
+  url: string,
+  cx: number,
+  cy: number,
+  d: number,
+) {
+  const r = d / 2;
+  // white ring
+  ctx.save();
+  ctx.fillStyle = "rgba(255,255,255,0.95)";
+  ctx.beginPath();
+  ctx.arc(cx, cy, r + 6, 0, Math.PI * 2);
+  ctx.fill();
+  // background fill in case image fails
+  ctx.fillStyle = "rgba(0,0,0,0.18)";
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fill();
   try {
     const img = await loadImage(url);
-    const size = 140;
-    const drawX = align === "left" ? x : x - size;
-    ctx.drawImage(img, drawX, y, size, size);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(img, cx - r, cy - r, d, d);
+    ctx.restore();
   } catch {
     /* skip */
   }
-  ctx.fillStyle = "#ffffff";
-  ctx.font = `bold 32px system-ui, sans-serif`;
-  ctx.textAlign = align === "left" ? "left" : "right";
-  ctx.fillText(name, x, y + 140 + 30);
+  ctx.restore();
 }
 
-async function drawPokemon(
+async function drawPokemonSprite(
   ctx: CanvasRenderingContext2D,
   id: number,
-  name: string,
   shiny: boolean,
   x: number,
   y: number,
-  align: "left" | "right",
+  size: number,
 ) {
+  if (isNaN(id)) return;
   const variant = shiny ? "shiny/" : "";
-  const url = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${variant}${id}.png`;
+  const url = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${variant}${id}.png`;
   try {
     const img = await loadImage(url);
-    const size = 160;
-    const drawX = align === "left" ? x : x - size;
-    ctx.drawImage(img, drawX, y, size, size);
+    ctx.drawImage(img, x, y, size, size);
+    return;
+  } catch {
+    /* fall through */
+  }
+  try {
+    const fallback = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${variant}${id}.png`;
+    const img = await loadImage(fallback);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(img, x, y, size, size);
+    ctx.imageSmoothingEnabled = true;
   } catch {
     /* skip */
   }
-  ctx.fillStyle = "#ffffff";
-  ctx.font = `bold 28px system-ui, sans-serif`;
-  ctx.textAlign = align === "left" ? "left" : "right";
-  ctx.fillText(name, x, y + 160 + 25);
 }
 
 function loadImage(url: string): Promise<HTMLImageElement> {
@@ -190,3 +289,51 @@ function loadImage(url: string): Promise<HTMLImageElement> {
     img.src = url;
   });
 }
+
+function formatDate(iso: string): string {
+  try {
+    const d = new Date(iso.length === 10 ? `${iso}T00:00:00` : iso);
+    return d.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+  } catch {
+    return iso;
+  }
+}
+
+function truncate(s: string, max: number): string {
+  return s.length > max ? s.slice(0, max - 1) + "…" : s;
+}
+
+// Manual letter-spacing (canvas has no native letter-spacing on older browsers)
+function drawTrackedText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  tracking: number,
+  align: "left" | "right" | "center" = "left",
+) {
+  if (!text) return;
+  const chars = [...text];
+  const widths = chars.map((c) => ctx.measureText(c).width);
+  const total =
+    widths.reduce((a, b) => a + b, 0) + tracking * (chars.length - 1);
+  let startX = x;
+  if (align === "right") startX = x - total;
+  else if (align === "center") startX = x - total / 2;
+
+  const prevAlign = ctx.textAlign;
+  ctx.textAlign = "left";
+  let cursor = startX;
+  for (let i = 0; i < chars.length; i++) {
+    ctx.fillText(chars[i], cursor, y);
+    cursor += widths[i] + tracking;
+  }
+  ctx.textAlign = prevAlign;
+}
+
+// Keep findPokemon import used (helps with consistent name lookups in future)
+void findPokemon;
