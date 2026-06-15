@@ -79,9 +79,9 @@ function PokedexPage() {
   const ringCirc = 2 * Math.PI * 26;
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-background pb-nav safe-x">
+    <div className="bg-poke-cream h-full w-full overflow-y-auto pb-nav safe-x">
       {/* Hero */}
-      <div className="bg-poke-hero px-5 pb-5 pt-[calc(env(safe-area-inset-top)+1rem)]">
+      <div className="px-5 pb-5 pt-[calc(env(safe-area-inset-top)+1rem)]">
         <p className="font-pixel-xs text-primary">POKÉDEX</p>
         <div className="mt-1 flex items-center justify-between gap-3">
           <h1 className="font-display-xl text-poke-dark">Pokédex</h1>
