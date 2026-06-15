@@ -1430,18 +1430,6 @@ function ResultScreen({
               valueClass="text-hp-good"
             />
           )}
-          {newTrophies.map((t) => (
-            <Row
-              key={t.name}
-              label={
-                <span className="flex items-center gap-1.5">
-                  <span>{t.icon}</span> Trophy
-                </span>
-              }
-              value={t.name}
-              valueClass="text-poke-yellow"
-            />
-          ))}
           <div className="my-3 border-t border-dashed border-poke-dark/15" />
           <div className="flex items-center gap-2">
             <span className="font-pixel-xs text-poke-dark/70">Lv {currentLevel} · {Math.round(levelProgressPct)}%</span>
