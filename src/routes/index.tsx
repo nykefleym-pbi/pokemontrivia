@@ -333,23 +333,33 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
 
         {substep === "trainer" && (
           <div className="flex flex-1 flex-col">
-            <h2 className="text-3xl font-extrabold leading-tight text-poke-dark">Pick your avatar</h2>
-            <p className="mt-1 text-sm text-poke-dark/60">Tap a trainer to read their story.</p>
+            <h2 className="text-[30px] font-extrabold leading-tight tracking-tight text-poke-dark">Pick your avatar</h2>
+            <p className="mt-1.5 text-sm text-poke-dark/60">Tap a trainer to read their story.</p>
 
-            <div className="mt-4 grid grid-cols-3 gap-3">
-              {trainerResults.slice(0, 6).map((t) => {
+            <div className="relative mt-4">
+              <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-poke-dark/50" />
+              <Input
+                value={trainerQuery}
+                onChange={(e) => setTrainerQuery(e.target.value)}
+                placeholder="Search trainers..."
+                className="h-12 rounded-full border-0 bg-card pl-11 text-sm shadow-pop"
+              />
+            </div>
+
+            <div className="mt-4 grid grid-cols-3 gap-2.5">
+              {trainerResults.map((t) => {
                 const selected = trainerSprite === t.id;
                 return (
                   <button
                     key={t.id}
                     onClick={() => setTrainerSprite(t.id)}
-                    className={`relative flex flex-col items-center rounded-2xl border-2 bg-white p-3 shadow-pop transition ${
-                      selected ? "border-primary" : "border-transparent"
+                    className={`relative flex flex-col items-center gap-1 rounded-[20px] bg-card px-1.5 py-2.5 shadow-pop transition ${
+                      selected ? "border-[2.5px] border-primary" : "border-2 border-transparent"
                     }`}
                   >
                     {selected && (
-                      <span className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white shadow">
-                        <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                      <span className="absolute -right-2 -top-2 flex h-[26px] w-[26px] items-center justify-center rounded-full bg-primary text-white shadow">
+                        <Check className="h-3 w-3" strokeWidth={3} />
                       </span>
                     )}
                     <img
@@ -361,35 +371,40 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                         setBrokenTrainerIds((s) => { const n = new Set(s); n.add(t.id); return n; })
                       }
                     />
-                    <span className="mt-1 truncate text-xs font-bold capitalize text-poke-dark">{t.name}</span>
+                    <span className="truncate text-[13px] font-bold capitalize text-poke-dark">{t.name}</span>
                   </button>
                 );
               })}
+              {trainerResults.length === 0 && (
+                <div className="col-span-3 py-4 text-center text-sm text-poke-dark/60">
+                  No trainers match &ldquo;{trainerQuery}&rdquo;.
+                </div>
+              )}
             </div>
 
             {selectedTrainer && (
-              <div className="mt-5 flex gap-3 rounded-2xl bg-primary/10 p-3">
+              <div className="mt-3.5 flex items-center gap-3.5 rounded-[20px] border-[1.5px] border-primary/25 bg-primary/[0.07] p-3.5">
                 <img
                   src={trainerSpriteUrl(selectedTrainer.id)}
                   alt={selectedTrainer.name}
-                  className="sprite h-14 w-14 shrink-0 object-contain"
+                  className="sprite h-[58px] w-[58px] shrink-0 object-contain"
                 />
                 <div className="min-w-0">
-                  <div className="font-pixel text-[11px] uppercase tracking-wider text-primary">
+                  <div className="font-pixel text-[10px] uppercase tracking-wider text-primary">
                     {selectedTrainer.name} · {trainerInfo.town}
                   </div>
-                  <p className="mt-1 text-sm italic leading-snug text-poke-dark/80">
-                    &ldquo;{trainerInfo.blurb}&rdquo;
+                  <p className="mt-1.5 text-sm italic leading-snug text-poke-dark/80">
+                    {selectedTrainer.name} is now ready for battle.
                   </p>
                 </div>
               </div>
             )}
 
-            <div className="mt-auto pt-6">
+            <div className="mt-auto px-1 pb-2 pt-6">
               <Button
                 size="lg"
                 onClick={() => setSubstep("pokemon")}
-                className="h-14 w-full rounded-full bg-primary text-base font-semibold shadow-pop active:scale-95"
+                className="h-[58px] w-full rounded-full bg-primary text-[17px] font-bold shadow-pop active:scale-95"
               >
                 Next: Choose Pokémon
               </Button>
