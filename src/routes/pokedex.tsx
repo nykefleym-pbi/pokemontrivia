@@ -1,25 +1,19 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Sparkles, X, ArrowRight, Volume2 } from "lucide-react";
+import { Search, Sparkles, X, ArrowRight, Volume2, ChevronLeft } from "lucide-react";
 import { Fragment } from "react";
 import { playCry } from "@/lib/audio";
 import { useGameStore } from "@/lib/store";
 import { ALL_POKEMON, type PokeType } from "@/lib/pokemon-data";
 import { Input } from "@/components/ui/input";
-import { TypeBadge, PokemonSprite } from "@/components/game-ui";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { PokemonSprite } from "@/components/game-ui";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
+
 
 export const Route = createFileRoute("/pokedex")({
   component: PokedexPage,
@@ -87,7 +81,13 @@ function PokedexPage() {
       {/* Hero */}
       <div className="px-5 pb-5 pt-[calc(env(safe-area-inset-top)+1rem)]">
         <div className="flex items-center justify-between gap-3">
-          <h1 className="font-display-xl text-poke-dark">{trainerName ? `${trainerName}'s Pokédex` : "Pokédex"}</h1>
+          <div className="min-w-0">
+            {trainerName && (
+              <p className="truncate font-pixel-xs uppercase text-primary">{trainerName}'s</p>
+            )}
+            <h1 className="font-display-xl text-poke-dark">Pokédex</h1>
+          </div>
+
           <div className="relative h-16 w-16 shrink-0">
             <svg viewBox="0 0 64 64" className="absolute inset-0 h-full w-full -rotate-90">
               <circle cx="32" cy="32" r="26" fill="none" stroke="oklch(0.22 0.04 260 / 0.12)" strokeWidth="6" />
@@ -241,135 +241,126 @@ function PokedexPage() {
         </div>
       </div>
 
-      <Dialog open={detailId !== null} onOpenChange={(o) => !o && setDetailId(null)}>
-        <DialogContent className="max-w-sm rounded-3xl">
-          {detailId !== null && (() => {
-            const p = ALL_POKEMON.find((x) => x.id === detailId);
-            const entry = pokedex[detailId];
-            if (!p) return null;
-            const got = !!entry;
-            const showS = showShiny && entry?.shinyUnlocked;
-            const displayName = got ? p.name : "???";
-            const primaryType = p.types[0];
-            const columns = buildEvolutionTree(p);
-            const hasEvolution = !(columns.length <= 1 && (columns[0]?.length ?? 0) <= 1);
-            return (
-              <>
-                <DialogHeader>
-                  <p className="font-pixel-xs text-poke-dark/50">
-                    #{String(p.id).padStart(4, "0")}
-                  </p>
-                  <DialogTitle className="flex items-center gap-2 font-display-lg text-poke-dark">
-                    <span>{displayName}</span>
-                    {entry?.shinyUnlocked && <Sparkles className="h-4 w-4 text-poke-yellow" />}
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="flex flex-col items-center gap-3">
-                  <div
-                    className="flex h-44 w-44 items-center justify-center rounded-full"
-                    style={{
-                      background: `radial-gradient(circle at 50% 55%, color-mix(in oklab, var(--color-type-${primaryType}) 28%, transparent) 0%, transparent 70%)`,
-                    }}
-                  >
-                    <PokemonSprite
-                      id={p.id}
-                      shiny={!!showS}
-                      alt={displayName}
-                      className={`sprite h-40 w-40 ${got ? "" : "sprite-silhouette"}`}
-                    />
-                  </div>
-                  <div className="flex flex-wrap items-center justify-center gap-1.5">
-                    {p.types.map((t) => <TypeBadge key={t} type={t} />)}
-                    <button
-                      onClick={() => playCry(p.id)}
-                      className="flex items-center gap-1 rounded-full bg-card px-2.5 py-1 text-[11px] font-bold text-poke-dark/80 shadow-card active:scale-95"
-                      aria-label="Play cry"
-                    >
-                      <Volume2 className="h-3 w-3" /> Cry
-                    </button>
-                  </div>
-                  {entry && (
-                    <div className="grid w-full grid-cols-3 gap-2">
-                      <Stat label="Defeated" value={`×${entry.defeatCount}`} />
-                      <Stat label="First seen" value={new Date(entry.firstSeenAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })} />
-                      <Stat label="Shiny" value={entry.shinyUnlocked ? "✓" : "—"} />
-                    </div>
-                  )}
-                  <div className="w-full">
-                    <div className="font-pixel-xs mb-1 text-poke-dark/50">POKÉDEX ENTRY</div>
-                    {got ? (
-                      <PokedexFlavor pokemonId={p.id} />
-                    ) : (
-                      <div className="rounded-2xl bg-muted/50 p-3 text-center text-[12px] italic text-poke-dark/60">
-                        Catch this Pokémon to read its Pokédex entry.
-                      </div>
-                    )}
-                  </div>
-                  <div className="w-full">
-                    <div className="font-pixel-xs mb-1 text-poke-dark/50">EVOLUTION</div>
-                    {!hasEvolution ? (
-                      <div className="rounded-2xl bg-muted/40 p-3 text-center text-xs text-poke-dark/60">
-                        This Pokémon doesn't evolve.
-                      </div>
-                    ) : (
-                      <div className="flex items-start gap-1 overflow-x-auto rounded-2xl bg-muted/30 p-2">
-                        {columns.map((col, ci) => (
-                          <Fragment key={ci}>
-                            {ci > 0 && (
-                              <div className="flex h-20 items-center pt-1">
-                                <ArrowRight className="h-4 w-4 text-poke-dark/40" />
-                              </div>
-                            )}
-                            <div
-                              className={
-                                col.length > 4
-                                  ? "grid grid-cols-2 gap-1"
-                                  : "flex flex-col gap-1"
-                              }
-                            >
-                              {col.map((stage) => {
-                                const stageCaught = !!pokedex[stage.id];
-                                const isCurrent = stage.id === p.id;
-                                return (
-                                  <button
-                                    key={stage.id}
-                                    onClick={() => setDetailId(stage.id)}
-                                    className={`flex w-20 flex-col items-center rounded-2xl p-1.5 transition ${
-                                      isCurrent ? "bg-primary/10 ring-2 ring-primary/40" : "hover:bg-muted/50"
-                                    }`}
-                                  >
-                                    <PokemonSprite
-                                      id={stage.id}
-                                      alt={stageCaught ? stage.name : "???"}
-                                      className={`sprite h-12 w-12 ${stageCaught ? "" : "sprite-silhouette"}`}
-                                    />
-                                    <div className="mt-0.5 w-full truncate text-center text-[10px] font-bold text-poke-dark">
-                                      {stageCaught ? stage.name : "???"}
-                                    </div>
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </Fragment>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  {entry?.shinyUnlocked && (
-                    <Button
-                      onClick={() => setShowShiny((v) => !v)}
-                      className="h-11 w-full rounded-full bg-primary text-sm font-bold"
-                    >
-                      Toggle {showS ? "Normal" : "Shiny"}
-                    </Button>
-                  )}
+      {detailId !== null && (() => {
+        const p = ALL_POKEMON.find((x) => x.id === detailId);
+        if (!p) return null;
+        const entry = pokedex[detailId];
+        const got = !!entry;
+        const showS = showShiny && entry?.shinyUnlocked;
+        const displayName = got ? p.name : "???";
+        const primaryType = p.types[0];
+        const columns = buildEvolutionTree(p);
+        const hasEvolution = !(columns.length <= 1 && (columns[0]?.length ?? 0) <= 1);
+        return (
+          <div className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-poke-cream">
+            <div
+              className="relative shrink-0 px-5 pb-10 pt-[calc(env(safe-area-inset-top)+1rem)]"
+              style={{
+                background: `linear-gradient(160deg, var(--color-type-${primaryType}) 0%, color-mix(in oklab, var(--color-type-${primaryType}) 62%, #000) 100%)`,
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => setDetailId(null)}
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/25 text-white backdrop-blur active:scale-95"
+                  aria-label="Back"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <span className="font-pixel-xs text-white/90">#{String(p.id).padStart(4, "0")}</span>
+              </div>
+              <h2 className="mt-4 font-display-xl text-white drop-shadow-sm">{displayName}</h2>
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                {p.types.map((t) => (
+                  <span key={t} className="rounded-full bg-white/25 px-3 py-1 font-pixel-xs uppercase text-white backdrop-blur">
+                    {t}
+                  </span>
+                ))}
+              </div>
+              <div className="mt-4 flex items-center justify-center">
+                <div className="flex h-56 w-56 items-center justify-center rounded-full bg-white/10">
+                  <PokemonSprite
+                    id={p.id}
+                    shiny={!!showS}
+                    alt={displayName}
+                    className={`sprite h-44 w-44 ${got ? "" : "sprite-silhouette"}`}
+                  />
                 </div>
-              </>
-            );
-          })()}
-        </DialogContent>
-      </Dialog>
+              </div>
+            </div>
+            <div className="flex-1 space-y-4 px-5 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-5">
+              <div className="rounded-3xl bg-card p-5 shadow-card">
+                <div className="font-pixel-xs mb-2 text-primary">POKÉDEX ENTRY</div>
+                {got ? (
+                  <PokedexFlavor pokemonId={p.id} />
+                ) : (
+                  <p className="text-sm italic leading-relaxed text-poke-dark/55">
+                    Catch this Pokémon to read its Pokédex entry.
+                  </p>
+                )}
+                <button
+                  onClick={() => playCry(p.id)}
+                  className="mt-4 inline-flex items-center gap-2 rounded-full border border-primary/30 px-4 py-2 text-sm font-bold text-primary active:scale-95"
+                >
+                  <Volume2 className="h-4 w-4" /> Play cry
+                </button>
+                {entry?.shinyUnlocked && (
+                  <button
+                    onClick={() => setShowShiny((v) => !v)}
+                    className="ml-2 mt-4 inline-flex items-center gap-2 rounded-full border border-poke-yellow/50 px-4 py-2 text-sm font-bold text-poke-dark active:scale-95"
+                  >
+                    <Sparkles className="h-4 w-4 text-poke-yellow" /> {showS ? "Normal" : "Shiny"}
+                  </button>
+                )}
+              </div>
+              <div className="rounded-3xl bg-card p-5 shadow-card">
+                <div className="font-pixel-xs mb-3 text-primary">EVOLUTION LINE</div>
+                {!hasEvolution ? (
+                  <p className="text-center text-xs text-poke-dark/55">This Pokémon doesn't evolve.</p>
+                ) : (
+                  <div className="flex items-start gap-1 overflow-x-auto">
+                    {columns.map((col, ci) => (
+                      <Fragment key={ci}>
+                        {ci > 0 && (
+                          <div className="flex h-[72px] items-center px-0.5">
+                            <ArrowRight className="h-4 w-4 text-poke-dark/40" />
+                          </div>
+                        )}
+                        <div className={col.length > 4 ? "grid grid-cols-2 gap-1" : "flex flex-col gap-1"}>
+                          {col.map((stage) => {
+                            const stageCaught = !!pokedex[stage.id];
+                            const isCurrent = stage.id === p.id;
+                            return (
+                              <button
+                                key={stage.id}
+                                onClick={() => { setDetailId(stage.id); setShowShiny(false); }}
+                                className={`flex w-[72px] shrink-0 flex-col items-center rounded-2xl p-1.5 transition ${
+                                  isCurrent ? "bg-primary/10 ring-2 ring-primary/30" : "active:bg-muted/50"
+                                }`}
+                              >
+                                <PokemonSprite
+                                  id={stage.id}
+                                  alt={stageCaught ? stage.name : "???"}
+                                  className={`sprite h-11 w-11 ${stageCaught ? "" : "sprite-silhouette"}`}
+                                />
+                                <span className="mt-0.5 w-full truncate text-center text-[10px] font-bold text-poke-dark">
+                                  {stageCaught ? stage.name : "???"}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </Fragment>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
+
   );
 }
 
@@ -387,14 +378,6 @@ function ToggleChip({ active, onToggle, label }: { active: boolean; onToggle: ()
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl bg-muted/40 px-2 py-2 text-center">
-      <div className="font-pixel-xs text-poke-dark/50">{label}</div>
-      <div className="mt-0.5 text-sm font-extrabold text-poke-dark">{value}</div>
-    </div>
-  );
-}
 
 function PokedexFlavor({ pokemonId }: { pokemonId: number }) {
   const [flavor, setFlavor] = useState<string | null>(null);
