@@ -868,7 +868,7 @@ function BattleMode({
     // Ensure every victory has a share card (regular + elite fallback)
     if (won && !shareSet) {
       setShareData({
-        type: "battle",
+        type: isElite ? "elite" : "battle",
         trainerName,
         trainerSpriteUrl: trainerSpriteUrl(trainerSpriteId),
         partnerName: player.name,
@@ -885,6 +885,11 @@ function BattleMode({
         correctCount: correctCountRef.current,
         totalQuestions: questions.length,
         xpEarned: total,
+        avgTimeMs: answeredCountRef.current
+          ? totalElapsedMsRef.current / answeredCountRef.current
+          : undefined,
+        level,
+        rank: rankForLevel(level),
         dateISO: new Date().toISOString().slice(0, 10),
       });
     }
