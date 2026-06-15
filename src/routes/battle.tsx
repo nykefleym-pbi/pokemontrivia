@@ -14,7 +14,6 @@ import { BattleScreen, type Trivia } from "@/components/battle-screen";
 import { Toaster } from "@/components/ui/sonner";
 import { nextPendingElite, type EliteMember } from "@/lib/elite-four";
 import { findGymLeader, type GymLeader } from "@/lib/gym-leaders";
-import { WeeklyLeagueResultCard } from "@/components/weekly-league-card";
 import { getWeekRangeUtc } from "@/lib/game-data";
 
 export const Route = createFileRoute("/battle")({
@@ -278,14 +277,30 @@ function BattleHome({
   const bestStreak = useGameStore((s) => s.stats.bestStreak);
   const weekRange = getWeekRangeUtc();
 
+  const weeklyLeader = weeklyLeague ? findGymLeader(weeklyLeague.gymLeaderId) : null;
+  const weeklyFinished = weeklyLeague?.status === "won" || weeklyLeague?.status === "lost";
+
+  const [weeklyTimeLeft, setWeeklyTimeLeft] = useState("");
+  useEffect(() => {
+    if (!weeklyFinished) return;
+    const tick = () => {
+      const ms = weekRange.end - Date.now();
+      if (ms <= 0) { setWeeklyTimeLeft("Refreshing..."); return; }
+      const days = Math.floor(ms / (24 * 60 * 60 * 1000));
+      const hours = Math.floor((ms % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+      setWeeklyTimeLeft(`${days}d ${hours}h`);
+    };
+    tick();
+    const i = setInterval(tick, 60000);
+    return () => clearInterval(i);
+  }, [weekRange.end, weeklyFinished]);
+
   if (!pokemon) return null;
 
   const rank = rankForLevel(level);
   const xpProg = xpProgressInLevel(xp);
   const partnerTp = trainingPoints[pokemon.id] ?? 0;
   const tpMult = getTpMultiplier(partnerTp);
-  const weeklyLeader = weeklyLeague ? findGymLeader(weeklyLeague.gymLeaderId) : null;
-  const weeklyFinished = weeklyLeague?.status === "won" || weeklyLeague?.status === "lost";
   const xpPct = Math.min(100, (xpProg.current / xpProg.need) * 100);
 
   // Avatar with progress ring (GO-style)
@@ -427,7 +442,7 @@ function BattleHome({
               {weeklyLeague?.status === "won"
                 ? "Victory!"
                 : weeklyLeague?.status === "lost"
-                  ? "Try next week"
+                  ? `Try again in ${weeklyTimeLeft}`
                   : weeklyLeague?.status === "in_progress"
                     ? "Resume your run"
                     : `Resets ${new Date(weekRange.end).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`}
@@ -438,12 +453,6 @@ function BattleHome({
           )}
         </button>
       </div>
-
-      {weeklyLeague && weeklyFinished && (
-        <div className="px-5 pt-3">
-          <WeeklyLeagueResultCard weeklyLeague={weeklyLeague} nextWeekStart={weekRange.end} />
-        </div>
-      )}
     </div>
   );
 }
