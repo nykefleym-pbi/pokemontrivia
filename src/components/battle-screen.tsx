@@ -913,7 +913,7 @@ function BattleMode({
         )}
       </AnimatePresence>
       {/* top bar */}
-      <div className="flex shrink-0 items-center justify-between gap-2 px-4 pt-[calc(env(safe-area-inset-top)+0.5rem)] safe-x">
+      <div className="flex shrink-0 items-center justify-between gap-2 pt-[calc(env(safe-area-inset-top)+1rem)] pb-1 px-[max(1.25rem,env(safe-area-inset-left))]">
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
@@ -941,63 +941,11 @@ function BattleMode({
             </div>
           )}
 
-          <Sheet open={bagOpen} onOpenChange={setBagOpen}>
-            <SheetTrigger asChild>
-              <button className="flex h-9 w-9 items-center justify-center rounded-full bg-card/90 backdrop-blur shadow-card">
-                <Backpack className="h-5 w-5" />
-              </button>
-            </SheetTrigger>
-            <SheetContent side="bottom" className="rounded-t-3xl">
-              <SheetHeader>
-                <SheetTitle>Item Bag</SheetTitle>
-              </SheetHeader>
-              <div className="mt-4 grid grid-cols-2 gap-2 pb-6">
-                {ITEMS.map((it) => {
-                  const owned = inventory[it.id] ?? 0;
-                  const cd = cooldowns[it.id] ?? 0;
-                  const disabled = owned <= 0 || cd > 0 || (isWeekly && it.id === "escape");
-                  return (
-                    <button
-                      key={it.id}
-                      disabled={disabled}
-                      onClick={() => tryUseItem(it.id)}
-                      className="flex items-start gap-3 rounded-2xl border-2 p-3 text-left transition disabled:opacity-40 enabled:hover:border-primary"
-                    >
-                      <img
-                        src={it.iconUrl}
-                        alt={it.name}
-                        className="sprite h-9 w-9 shrink-0 object-contain"
-                        onError={(e) => {
-                          const el = e.currentTarget as HTMLImageElement;
-                          el.replaceWith(
-                            Object.assign(document.createElement("span"), {
-                              textContent: it.emoji,
-                              className: "text-2xl",
-                            }),
-                          );
-                        }}
-                      />
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5 text-sm font-semibold">
-                          {it.name}
-                          <span className="font-pixel text-[9px] text-primary">×{owned}</span>
-                        </div>
-                        <div className="text-[10px] leading-tight text-muted-foreground">
-                          {it.desc}
-                        </div>
-                        {cd > 0 && <div className="text-[10px] text-destructive">Cooldown: {cd}</div>}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </SheetContent>
-          </Sheet>
         </div>
       </div>
 
       {/* COMBAT ARENA — FRLG diagonal layout */}
-      <div className="relative min-h-0 flex-1 px-5 py-2 safe-x">
+      <div className="relative min-h-0 flex-1 py-2 px-[max(1.5rem,env(safe-area-inset-left))]">
         {/* ENEMY ZONE: panel top-left, sprite top-right */}
         <div className="flex items-start justify-between">
           <CombatPanel
@@ -1109,7 +1057,7 @@ function BattleMode({
       </AnimatePresence>
 
       {/* QUESTION CARD — thumb zone, pinned bottom */}
-      <div className="relative shrink-0 px-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-14 safe-x">
+      <div className="relative shrink-0 rounded-t-[28px] bg-card pt-14 px-[max(1rem,env(safe-area-inset-left))] pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-[0_-8px_30px_-12px_oklch(0.3_0.05_260/0.25)]">
         <AnimatePresence mode="wait">
           {phase !== "intro" && trivia && (
             <motion.div
@@ -1147,7 +1095,7 @@ function BattleMode({
                 </p>
               </div>
 
-              <div className="rounded-3xl bg-card p-4 pt-3 shadow-card">
+              <div className="pt-1">
                 <p className="text-center text-[clamp(0.95rem,4vw,1.125rem)] font-bold leading-snug">
                   {trivia.question}
                 </p>
@@ -1194,6 +1142,58 @@ function BattleMode({
 
                 {/* Item shortcuts row */}
                 <div className="mt-3 flex items-center justify-center gap-3">
+                  <Sheet open={bagOpen} onOpenChange={setBagOpen}>
+                    <SheetTrigger asChild>
+                      <button className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition active:scale-95">
+                        <Backpack className="h-6 w-6 text-muted-foreground" />
+                      </button>
+                    </SheetTrigger>
+                    <SheetContent side="bottom" className="rounded-t-3xl">
+                      <SheetHeader>
+                        <SheetTitle>Item Bag</SheetTitle>
+                      </SheetHeader>
+                      <div className="mt-4 grid grid-cols-2 gap-2 pb-6">
+                        {ITEMS.map((it) => {
+                          const owned = inventory[it.id] ?? 0;
+                          const cd = cooldowns[it.id] ?? 0;
+                          const disabled = owned <= 0 || cd > 0 || (isWeekly && it.id === "escape");
+                          return (
+                            <button
+                              key={it.id}
+                              disabled={disabled}
+                              onClick={() => tryUseItem(it.id)}
+                              className="flex items-start gap-3 rounded-2xl border-2 p-3 text-left transition disabled:opacity-40 enabled:hover:border-primary"
+                            >
+                              <img
+                                src={it.iconUrl}
+                                alt={it.name}
+                                className="sprite h-9 w-9 shrink-0 object-contain"
+                                onError={(e) => {
+                                  const el = e.currentTarget as HTMLImageElement;
+                                  el.replaceWith(
+                                    Object.assign(document.createElement("span"), {
+                                      textContent: it.emoji,
+                                      className: "text-2xl",
+                                    }),
+                                  );
+                                }}
+                              />
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5 text-sm font-semibold">
+                                  {it.name}
+                                  <span className="font-pixel text-[9px] text-primary">×{owned}</span>
+                                </div>
+                                <div className="text-[10px] leading-tight text-muted-foreground">
+                                  {it.desc}
+                                </div>
+                                {cd > 0 && <div className="text-[10px] text-destructive">Cooldown: {cd}</div>}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </SheetContent>
+                  </Sheet>
                   {ITEMS.filter((it) => (inventory[it.id] ?? 0) > 0)
                     .slice(0, 3)
                     .map((it) => {

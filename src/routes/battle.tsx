@@ -443,7 +443,7 @@ function BattleHome({
               {weeklyLeague?.status === "won"
                 ? "Victory!"
                 : weeklyLeague?.status === "lost"
-                  ? `New league Monday · ${weeklyTimeLeft}`
+                  ? weeklyTimeLeft
                   : weeklyLeague?.status === "in_progress"
                     ? "Resume your run"
                     : "Resets Monday 00:00 UTC"}
