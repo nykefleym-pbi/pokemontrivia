@@ -45,6 +45,7 @@ const GEN_RANGES: Array<{ gen: number; from: number; to: number }> = [
 function PokedexPage() {
   const hasOnboarded = useGameStore((s) => s.hasOnboarded);
   const pokedex = useGameStore((s) => s.pokedex);
+  const trainerName = useGameStore((s) => s.trainerName);
   const navigate = useNavigate();
   const [gen, setGen] = useState(1);
   const [query, setQuery] = useState("");
