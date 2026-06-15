@@ -1372,6 +1372,7 @@ function ResultScreen({
   missed: Array<{ question: string; correctAnswer: string; explanation: string }>;
   onRebattle: () => void;
   onBackHome: () => void;
+  onRematch?: () => void;
   canShare?: boolean;
   onShare?: () => void;
 }) {
