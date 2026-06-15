@@ -906,16 +906,31 @@ function BattleMode({
   }
 
   if (phase === "result") {
+    const stateNow = useGameStore.getState();
+    const prog = xpProgressInLevel(stateNow.xp);
+    const pct = Math.min(100, (prog.current / Math.max(1, prog.need)) * 100);
     return (
       <>
         <ResultScreen
           won={resultWon!}
+          opponentName={enemy.name}
+          correctCount={correctCountRef.current}
+          totalQuestions={questions.length}
           xpEarned={xpEarned}
           tpEarned={tpEarned}
+          speedBonus={speedBonusTotalRef.current}
           partnerName={player.name}
           partnerId={player.id}
           streak={maxStreakRef.current}
+          streakKept={maxStreakRef.current > 0}
+          currentLevel={prog.level}
+          xpIntoLevel={prog.current}
+          xpForThisLevel={prog.need}
+          levelProgressPct={pct}
+          newTrophies={newTrophiesRef.current}
+          missed={missedRef.current}
           onRebattle={() => onExit()}
+          onBackHome={() => onExit()}
           canShare={!!shareData}
           onShare={() => setShareOpen(true)}
         />
@@ -925,6 +940,7 @@ function BattleMode({
       </>
     );
   }
+
 
   const totalQuestions = questions.length;
   const progressPct = Math.min(100, (questionIdx / Math.max(1, totalQuestions)) * 100);
