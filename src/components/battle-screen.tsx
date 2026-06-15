@@ -185,6 +185,11 @@ function BattleMode({
   const startBattle = useGameStore((s) => s.startBattle);
   const endBattle = useGameStore((s) => s.endBattle);
   const abortBattle = useGameStore((s) => s.abortBattle);
+  const setBattleScreenActive = useGameStore((s) => s.setBattleScreenActive);
+  useEffect(() => {
+    setBattleScreenActive(true);
+    return () => setBattleScreenActive(false);
+  }, [setBattleScreenActive]);
   const recordAnswer = useGameStore((s) => s.recordAnswer);
   const completeSet = useGameStore((s) => s.completeSet);
   const consumeXAttack = useGameStore((s) => s.consumeXAttack);
@@ -1343,12 +1348,16 @@ function ResultScreen({
 }) {
   if (won) {
     const confetti = [
-      { c: "bg-primary", s: "h-3 w-3 rounded-sm rotate-12", t: "8%", l: "12%" },
-      { c: "bg-poke-yellow", s: "h-2 w-2 rounded-full", t: "18%", l: "78%" },
-      { c: "bg-poke-blue", s: "h-2.5 w-2.5 rounded-full", t: "14%", l: "88%" },
-      { c: "bg-hp-good", s: "h-3 w-3 rounded-sm -rotate-6", t: "30%", l: "70%" },
-      { c: "bg-poke-yellow", s: "h-2 w-2 rounded-full", t: "38%", l: "8%" },
-      { c: "bg-primary", s: "h-2 w-2 rounded-full", t: "46%", l: "92%" },
+      { c: "bg-primary", s: "h-3 w-3 rounded-sm", l: "8%" },
+      { c: "bg-poke-yellow", s: "h-2 w-2 rounded-full", l: "20%" },
+      { c: "bg-poke-blue", s: "h-2.5 w-2.5 rounded-full", l: "32%" },
+      { c: "bg-hp-good", s: "h-3 w-3 rounded-sm", l: "44%" },
+      { c: "bg-poke-yellow", s: "h-2 w-2 rounded-full", l: "56%" },
+      { c: "bg-primary", s: "h-2 w-2 rounded-full", l: "68%" },
+      { c: "bg-destructive", s: "h-2.5 w-2.5 rounded-sm", l: "80%" },
+      { c: "bg-poke-blue", s: "h-2 w-2 rounded-full", l: "92%" },
+      { c: "bg-poke-yellow", s: "h-3 w-3 rounded-sm", l: "14%" },
+      { c: "bg-hp-good", s: "h-2 w-2 rounded-full", l: "74%" },
     ];
     return (
       <motion.div
@@ -1357,10 +1366,23 @@ function ResultScreen({
         className="relative flex h-full w-full flex-col overflow-y-auto bg-victory px-6 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
       >
         {confetti.map((d, i) => (
-          <span
+          <motion.span
             key={i}
-            className={`pointer-events-none absolute ${d.s} ${d.c} opacity-80`}
-            style={{ top: d.t, left: d.l }}
+            className={`pointer-events-none absolute ${d.s} ${d.c}`}
+            style={{ left: d.l, top: "-5%" }}
+            initial={{ y: 0, opacity: 0 }}
+            animate={{
+              y: ["-5%", "115%"],
+              x: [0, i % 2 === 0 ? 20 : -20, 0],
+              rotate: [0, 360],
+              opacity: [0, 1, 1, 0.8, 0],
+            }}
+            transition={{
+              duration: 3.5 + (i % 4) * 0.6,
+              repeat: Infinity,
+              delay: i * 0.4,
+              ease: "easeIn",
+            }}
           />
         ))}
 
@@ -1408,18 +1430,6 @@ function ResultScreen({
               valueClass="text-hp-good"
             />
           )}
-          {newTrophies.map((t) => (
-            <Row
-              key={t.name}
-              label={
-                <span className="flex items-center gap-1.5">
-                  <span>{t.icon}</span> Trophy
-                </span>
-              }
-              value={t.name}
-              valueClass="text-poke-yellow"
-            />
-          ))}
           <div className="my-3 border-t border-dashed border-poke-dark/15" />
           <div className="flex items-center gap-2">
             <span className="font-pixel-xs text-poke-dark/70">Lv {currentLevel} · {Math.round(levelProgressPct)}%</span>
@@ -1562,6 +1572,11 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
   const [chosen, setChosen] = useState<number | null>(null);
   const [pattern, setPattern] = useState<DailyMark[]>([]);
   const abortBattle = useGameStore((s) => s.abortBattle);
+  const setBattleScreenActive = useGameStore((s) => s.setBattleScreenActive);
+  useEffect(() => {
+    setBattleScreenActive(true);
+    return () => setBattleScreenActive(false);
+  }, [setBattleScreenActive]);
   const [confirmExit, setConfirmExit] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [timer, setTimer] = useState(20);
@@ -1686,7 +1701,21 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="flex-1 min-h-0 flex items-center justify-center px-4">
+      <div className="relative flex-1 min-h-0 flex items-center justify-center px-4">
+        <motion.div
+          className="pointer-events-none absolute left-1/2 top-[18%] z-10 -translate-x-1/2"
+          animate={{
+            x: [0, 24, -18, 12, 0],
+            y: [0, -16, 10, -8, 0],
+            rotate: [0, 4, -3, 2, 0],
+          }}
+          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <div className="relative">
+            <div className="absolute inset-0 -z-10 rounded-full bg-destructive/50 blur-2xl" />
+            <PokemonSprite id={479} alt="Rotom" className="sprite h-24 w-24 drop-shadow-[0_0_18px_oklch(0.62_0.22_25/0.7)]" />
+          </div>
+        </motion.div>
         <PokeballPattern marks={pattern} />
       </div>
 

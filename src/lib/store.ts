@@ -99,6 +99,7 @@ export interface GameState {
 
   // battle ephemeral state
   inBattle: boolean;
+  battleScreenActive: boolean;
   setsThisBattle: number;
   potionsUsedThisBattle: number;
   xAttackActive: boolean;
@@ -150,6 +151,7 @@ export interface GameState {
   startBattle: () => void;
   endBattle: (won: boolean, xpGained: number) => void;
   abortBattle: () => void;
+  setBattleScreenActive: (v: boolean) => void;
   recordAnswer: (correct: boolean, timeMs: number, streak: number) => void;
   completeSet: () => void;
   consumeXAttack: () => void;
@@ -211,6 +213,8 @@ export const useGameStore = create<GameState>()(
       itemCooldowns: {},
 
       inBattle: false,
+      battleScreenActive: false,
+      setBattleScreenActive: (v) => set({ battleScreenActive: v }),
       setsThisBattle: 0,
       potionsUsedThisBattle: 0,
       xAttackActive: false,
