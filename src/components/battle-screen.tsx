@@ -1350,6 +1350,7 @@ function ResultScreen({
   missed,
   onRebattle,
   onBackHome,
+  onRematch,
   canShare,
   onShare,
 }: {
