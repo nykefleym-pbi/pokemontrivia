@@ -393,12 +393,12 @@ function BattleHome({
         <button
           onClick={handleDaily}
           disabled={dailyDone || loading}
-          className={`relative flex h-[112px] items-center gap-2 overflow-hidden rounded-3xl bg-gradient-to-br from-[oklch(0.9_0.13_95)] to-[oklch(0.85_0.17_80)] p-4 text-left shadow-card disabled:opacity-80 ${
+          className={`relative flex h-[112px] items-center gap-1 overflow-hidden rounded-3xl bg-gradient-to-br from-[oklch(0.9_0.13_95)] to-[oklch(0.85_0.17_80)] p-3 text-left shadow-card disabled:opacity-80 ${
             pending === "daily" ? "animate-pulse ring-2 ring-[oklch(0.35_0.06_80)]/40" : ""
           }`}
         >
           <div className="min-w-0 flex-1">
-            <div className="font-pixel text-[7px] leading-none text-[oklch(0.35_0.06_80)]">DAILY QUEST</div>
+            <div className="whitespace-nowrap font-pixel text-[7px] leading-none text-[oklch(0.35_0.06_80)]">DAILY QUEST</div>
             <h3 className="mt-1.5 text-base font-extrabold leading-tight text-[oklch(0.25_0.05_80)]">
               {dailyDone ? "Done" : "Beat Rotom"}
             </h3>
@@ -408,19 +408,19 @@ function BattleHome({
                 : "10 fast questions"}
             </p>
           </div>
-          <PokemonSprite id={479} alt="Rotom" className="sprite h-[60px] w-[60px] shrink-0" />
+          <PokemonSprite id={479} alt="Rotom" className="sprite -mr-1 h-[52px] w-[52px] shrink-0" />
         </button>
 
         <button
           onClick={handleWeekly}
           disabled={loading || weeklyFinished}
-          className={`relative flex h-[112px] items-center gap-2 overflow-hidden rounded-3xl bg-gradient-to-br from-[oklch(0.62_0.16_250)] to-[oklch(0.5_0.18_270)] p-4 text-left text-white shadow-card disabled:opacity-80 ${
+          className={`relative flex h-[112px] items-center gap-1 overflow-hidden rounded-3xl bg-gradient-to-br from-[oklch(0.62_0.16_250)] to-[oklch(0.5_0.18_270)] p-3 text-left text-white shadow-card disabled:opacity-80 ${
             pending === "weekly" ? "animate-pulse ring-2 ring-white/60" : ""
           }`}
         >
           <div className="min-w-0 flex-1">
-            <div className="font-pixel text-[7px] leading-none text-white/85">WEEKLY LEAGUE</div>
-            <h3 className="mt-1.5 truncate text-base font-extrabold leading-tight">
+            <div className="whitespace-nowrap font-pixel text-[7px] leading-none text-white/85">WEEKLY LEAGUE</div>
+            <h3 className="mt-1.5 text-base font-extrabold leading-tight">
               {weeklyLeader ? `Gym: ${weeklyLeader.name}` : "Loading..."}
             </h3>
             <p className="mt-0.5 text-[11px] font-semibold leading-tight text-white/85">
@@ -434,7 +434,7 @@ function BattleHome({
             </p>
           </div>
           {weeklyLeader && (
-            <PokemonSprite id={weeklyLeader.signaturePokemonId} alt={weeklyLeader.name} className="sprite h-[60px] w-[60px] shrink-0" />
+            <PokemonSprite id={weeklyLeader.signaturePokemonId} alt={weeklyLeader.name} className="sprite -mr-1 h-[52px] w-[52px] shrink-0" />
           )}
         </button>
       </div>
