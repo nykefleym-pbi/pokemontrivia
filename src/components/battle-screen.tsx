@@ -49,6 +49,7 @@ import {
 import type { GymLeader } from "@/lib/gym-leaders";
 import { ShareCardDialog } from "@/components/share-card-dialog";
 import type { ShareData } from "@/components/share-card-builder";
+import { trainerSpriteUrl } from "@/lib/game-data";
 import shareIcon from "@/assets/share-icon-dark.png.asset.json";
 
 export interface Trivia {
