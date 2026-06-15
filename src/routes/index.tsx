@@ -66,7 +66,6 @@ function SplashPage() {
 
               <SpriteFloatRow />
             </div>
-            </div>
 
             {/* buttons */}
             <div className="relative z-10 flex w-full flex-col gap-3 px-7 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-7">
