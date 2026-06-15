@@ -824,6 +824,7 @@ function BattleMode({
     }
 
     // Weekly League: record result + prep share card
+    let shareSet = false;
     if (isWeekly && gymLeader) {
       recordWeeklyLeagueResult(won);
       if (won) {
@@ -845,8 +846,33 @@ function BattleMode({
           dateISO: new Date().toISOString().slice(0, 10),
           badgeName: gymLeader.badge,
         });
+        shareSet = true;
         toast.success(`🎖 ${gymLeader.badge} earned!`, { duration: 4500 });
       }
+    }
+
+    // Ensure every victory has a share card (regular + elite fallback)
+    if (won && !shareSet) {
+      setShareData({
+        type: "battle",
+        trainerName,
+        trainerSpriteUrl: trainerSpriteUrl(trainerSpriteId),
+        partnerName: player.name,
+        partnerPokemonId: player.id,
+        partnerShiny: false,
+        opponentName: enemy.name,
+        opponentTitle: isElite ? "Elite Four" : "Trainer",
+        opponentSpriteUrl: null,
+        signaturePokemonId: enemy.pokemon.id,
+        finalPlayerHp: playerHp,
+        maxPlayerHp: playerMaxHp,
+        topStreak: maxStreakRef.current,
+        topDamage: topDmgRef.current,
+        correctCount: correctCountRef.current,
+        totalQuestions: questions.length,
+        xpEarned: total,
+        dateISO: new Date().toISOString().slice(0, 10),
+      });
     }
 
     // snapshot achievements before/after
