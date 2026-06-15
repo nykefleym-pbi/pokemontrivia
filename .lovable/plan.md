@@ -1,35 +1,47 @@
-# Splash micro-animations & spacing tweak
+# Onboarding 1/3 (Trainer Name) — match reference layout
 
-Targeted polish in `src/routes/index.tsx` only — no other files touched.
+Update only the `substep === "name"` branch inside `TrainerCreate` in `src/routes/index.tsx`. Other substeps and global header stay as-is structurally, but the header layout for this step needs tightening to match.
 
 ## Changes
 
-### 1. Tighter logo → heading gap
-`<h1>Trivia Battle</h1>` currently has `mt-3` (12px) under a `w-[168px]` Pokémon logo. Reduce to `mt-1` (≈4px) so the wordmark sits just above "Trivia Battle" without touching — matches the reference proportions more closely.
+### 1. Always use Oak as the Professor sprite
+The current screen renders the *selected* trainer sprite as the speaker. Replace with the hardcoded Oak sprite via `trainerSpriteUrl("oak")` so this step always shows Prof. Oak regardless of the avatar pick (avatar pick happens in step 2).
 
-### 2. Sprite bubbles — random float
-Wrap each of the 4 sprite circles in a `motion.div` with a continuous bobbing animation. Per-bubble random parameters generated once with `useMemo`:
-- `duration`: 2.4–4.0s
-- `delay`: 0–1.2s
-- `amplitude`: 6–14px up/down
-- `drift`: ±3px horizontal sway
+### 2. Heading: centered, bold, tighter
+Replace `text-3xl font-extrabold` with `text-[30px] font-extrabold tracking-tight text-center` matching the reference proportions (two-line "What should we call you?"). Move it above the Oak sprite (heading first, then sprite + speech card), mirroring the reference order.
 
-Keeps the existing static `-translate-y-3` zig-zag as the base offset (applied via Tailwind class) and layers motion on top via `animate={{ y: [...], x: [...] }}` with `ease: "easeInOut"`, `repeat: Infinity`, `repeatType: "mirror"`. Each bubble feels independently buoyant, never in lockstep.
+### 3. Speech card with notch
+- Oak sprite: `h-[132px] w-[132px] object-contain` centered, sits just above the speech card with negative overlap (`-mt-1` on the card).
+- Speech card: `rounded-2xl bg-card px-4 py-3.5 shadow-card text-center` with a 14×14 white square rotated 45° as a notch absolutely positioned at `top:-7px left:1/2`.
+- Eyebrow: `font-pixel-xs uppercase text-primary` reading "PROF. OAK".
+- Body: `text-sm leading-snug text-poke-dark/80`.
 
-### 3. Pokéball emblem — occasional spin
-`PokeballEmblem` becomes a `motion.div` that rotates a full 360° every ~6 seconds, sits still for ~4 seconds, then spins again. Implemented via keyframe rotation:
-- `animate={{ rotate: [0, 0, 360, 360] }}`
-- `times: [0, 0.4, 0.7, 1]`
-- `duration: 6`
-- `ease: "easeInOut"`
-- `repeat: Infinity`
+### 4. Input field — pill with red border
+Already pill-shaped, but tighten to match:
+- `h-[54px] rounded-full border-[2.5px] border-primary bg-card px-5 text-[17px] font-bold`
+- Label above: `font-pixel-xs uppercase text-poke-dark/55`, `mb-2`.
+- Helper below: `mt-2 text-xs text-poke-dark/55`, copy unchanged.
+- Keep `maxLength={16}`, `autoFocus`.
 
-Hold → spin → hold cadence reads as "spins from time to time" rather than constant motion. No interaction needed.
+### 5. Bottom button strip
+Float the "Next: Choose Avatar" button in a fixed bottom padding block (`px-6 pb-11 pt-4`) so it sits flush near the safe-area, not pushed by `mt-auto` inside the scroller. Same red pill style (`h-[58px] rounded-full bg-primary text-[17px] font-bold shadow-pop`).
+
+### 6. Header (back chip + STEP label + progress bars)
+Slight tightening so this step matches the ref:
+- Top row spacing: `pt-[calc(env(safe-area-inset-top)+1.5rem)]` (slightly more top breathing room).
+- STEP label uses `font-pixel-xs` (already does, just sizing tweak).
+- Progress bar bumped to `h-[6px]` and `gap-1.5`.
+
+These header tweaks live on the parent `TrainerCreate` shell, so they affect steps 2 and 3 too — which is desirable for consistency.
 
 ## Out of scope
-- Background gradient, decorative rings, buttons, blurb, layout structure — unchanged.
-- TrainerCreate flow — unchanged.
+
+- Substep 2 (Pick your avatar) and substep 3 (Pick your partner) — content unchanged.
+- TRAINER_BLURBS and trainer selection logic — untouched.
+- Background, store, navigation — untouched.
 
 ## Verification
+
 - `tsc --noEmit` clean.
-- At 390×844: gap between logo and heading visibly tightens; the 4 sprite bubbles drift on independent timings; the emblem rotates once every ~6s with a clear pause between spins.
+- 390×844 name step: heading → Oak sprite → speech card with notch → label → red-bordered pill input → helper text → bottom red pill button. Oak is always Oak.
+- Confirm avatar step still uses selected trainer for its own pickers (independent of the Oak hardcode in name step).
