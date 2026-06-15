@@ -651,7 +651,13 @@ function BattleMode({
       }
     } else {
       wrongStreakRef.current += 1;
+      missedRef.current.push({
+        question: trivia.question,
+        correctAnswer: trivia.options[trivia.correct],
+        explanation: trivia.explanation,
+      });
       // Matchup-aware wrong-answer damage
+
       let wrongDmg = 10;
       if (immune) wrongDmg = 5;
       else if (disadvantaged) wrongDmg = 15;
