@@ -12,10 +12,10 @@ const TABS = [
 export function BottomNav() {
   const loc = useLocation();
   const path = loc.pathname;
-  const inBattle = useGameStore((s) => s.inBattle);
+  const battleScreenActive = useGameStore((s) => s.battleScreenActive);
 
   if (path === "/" || path === "") return null;
-  if (inBattle && path.startsWith("/battle")) return null;
+  if (battleScreenActive) return null;
 
   return (
     <nav
