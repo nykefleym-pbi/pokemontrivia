@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Download, Share2, X, Image as ImageIcon } from "lucide-react";
+import { Share2, X, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
