@@ -255,11 +255,11 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
       </div>
 
       {/* Progress segments */}
-      <div className="mt-4 flex items-center gap-2">
+      <div className="mt-[18px] flex items-center gap-1.5">
         {STEPS.map((s, i) => (
           <div
             key={s}
-            className={`h-1.5 flex-1 rounded-full ${
+            className={`h-[6px] flex-1 rounded-full ${
               i <= stepIndex ? "bg-primary" : "bg-poke-dark/15"
             } ${i < stepIndex ? "opacity-60" : ""}`}
           />
@@ -270,28 +270,29 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
       <div className="mt-5 flex flex-1 flex-col overflow-y-auto">
         {substep === "name" && (
           <div className="flex flex-1 flex-col">
-            <h2 className="text-center text-3xl font-extrabold leading-tight text-poke-dark">
+            <h2 className="text-center text-[30px] font-extrabold leading-tight tracking-tight text-poke-dark">
               What should we call you?
             </h2>
 
-            <div className="mt-6 flex flex-col items-center">
+            <div className="mt-[18px] flex flex-col items-center">
               <img
-                src={trainerSpriteUrl(trainerSprite)}
-                alt="trainer"
-                className="sprite h-24 w-24 object-contain"
+                src={trainerSpriteUrl("oak")}
+                alt="Professor Oak"
+                className="sprite h-[132px] w-[132px] object-contain"
               />
-              <div className="mt-3 w-full rounded-2xl bg-white p-4 text-center shadow-pop">
-                <div className="font-pixel text-[11px] uppercase tracking-wider text-primary">
+              <div className="relative -mt-1.5 w-full rounded-2xl bg-card px-[18px] py-3.5 text-center shadow-pop">
+                <div className="absolute left-1/2 top-[-7px] h-3.5 w-3.5 -translate-x-1/2 rotate-45 bg-card" />
+                <div className="relative font-pixel text-[10px] uppercase tracking-wider text-primary">
                   Prof. Oak
                 </div>
-                <p className="mt-1 text-sm text-poke-dark/80">
+                <p className="relative mt-1.5 text-sm leading-snug text-poke-dark/80">
                   Welcome, challenger! Every great trainer's story starts with a name.
                 </p>
               </div>
             </div>
 
-            <div className="mt-6">
-              <label className="mb-2 block font-pixel text-[11px] uppercase tracking-wider text-poke-dark/70">
+            <div className="mt-[18px]">
+              <label className="mb-2 block font-pixel text-[10px] uppercase tracking-wider text-poke-dark/55">
                 Trainer name
               </label>
               <Input
@@ -299,20 +300,20 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Ash"
                 maxLength={16}
-                className="h-14 rounded-full border-2 border-primary bg-white px-5 text-base font-semibold"
+                className="h-[54px] rounded-full border-[2.5px] border-primary bg-card px-5 text-[17px] font-bold"
                 autoFocus
               />
-              <p className="mt-2 text-xs text-poke-dark/60">
+              <p className="mt-2 text-xs text-poke-dark/55">
                 Max 16 characters · shown to opponents
               </p>
             </div>
 
-            <div className="mt-auto pt-6">
+            <div className="mt-auto px-1 pb-2 pt-6">
               <Button
                 size="lg"
                 disabled={!name.trim()}
                 onClick={() => setSubstep("trainer")}
-                className="h-14 w-full rounded-full bg-primary text-base font-semibold shadow-pop active:scale-95 disabled:opacity-50"
+                className="h-[58px] w-full rounded-full bg-primary text-[17px] font-bold shadow-pop active:scale-95 disabled:opacity-50"
               >
                 Next: Choose Avatar
               </Button>
