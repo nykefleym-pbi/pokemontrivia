@@ -303,7 +303,7 @@ function BattleHome({
           onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = "0.3"; }}
         />
       </div>
-      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-poke-dark px-2 py-[2px] font-pixel-xs text-poke-yellow shadow-sm">
+      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-poke-dark px-2 py-[2px] font-pixel text-[7px] leading-none text-poke-yellow shadow-sm">
         LV {level}
       </div>
     </div>
