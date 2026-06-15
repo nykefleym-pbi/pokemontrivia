@@ -14,7 +14,6 @@ import { BattleScreen, type Trivia } from "@/components/battle-screen";
 import { Toaster } from "@/components/ui/sonner";
 import { nextPendingElite, type EliteMember } from "@/lib/elite-four";
 import { findGymLeader, type GymLeader } from "@/lib/gym-leaders";
-import { WeeklyLeagueResultCard } from "@/components/weekly-league-card";
 import { getWeekRangeUtc } from "@/lib/game-data";
 
 export const Route = createFileRoute("/battle")({
