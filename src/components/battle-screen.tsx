@@ -964,6 +964,7 @@ function BattleMode({
           missed={missedRef.current}
           onRebattle={() => onExit()}
           onBackHome={() => onExit()}
+          onRematch={onRematch}
           canShare={!!shareData}
           onShare={() => setShareOpen(true)}
         />
