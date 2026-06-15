@@ -378,14 +378,6 @@ function ToggleChip({ active, onToggle, label }: { active: boolean; onToggle: ()
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl bg-muted/40 px-2 py-2 text-center">
-      <div className="font-pixel-xs text-poke-dark/50">{label}</div>
-      <div className="mt-0.5 text-sm font-extrabold text-poke-dark">{value}</div>
-    </div>
-  );
-}
 
 function PokedexFlavor({ pokemonId }: { pokemonId: number }) {
   const [flavor, setFlavor] = useState<string | null>(null);
