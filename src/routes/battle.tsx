@@ -366,10 +366,10 @@ function BattleHome({
             <PokeballSpinner size={180} />
           </div>
           <div className="relative flex items-center gap-4">
-            <PokeballSpinner size={56} spinning={loading} />
+            <PokeballSpinner size={56} spinning={loading && pending === null} />
             <div className="min-w-0 flex-1">
               <h3 className="font-display-md text-foreground">
-                {loading ? "Summoning..." : "Up for a battle?"}
+                {loading && pending === null ? "Summoning..." : "Up for a battle?"}
               </h3>
               <p className="mt-1 text-xs text-muted-foreground">
                 20 questions · difficulty scales with your level
