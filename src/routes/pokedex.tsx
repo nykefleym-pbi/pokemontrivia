@@ -188,6 +188,7 @@ function PokedexPage() {
           {filtered.map((p) => {
             const e = pokedex[p.id];
             const got = !!e;
+            const shiny = !!e?.shinyUnlocked;
             const primaryType = p.types[0];
             return (
               <button
@@ -196,14 +197,23 @@ function PokedexPage() {
                 style={{
                   contentVisibility: "auto",
                   containIntrinsicSize: "112px 112px",
-                  ...(got
-                    ? { backgroundImage: `linear-gradient(135deg, color-mix(in oklab, var(--color-type-${primaryType}) 18%, transparent), var(--color-card))` }
-                    : {}),
+                  ...(shiny
+                    ? { backgroundImage: "linear-gradient(135deg, color-mix(in oklab, var(--color-poke-yellow) 35%, var(--color-card)), var(--color-card))" }
+                    : got
+                      ? { backgroundImage: `linear-gradient(135deg, color-mix(in oklab, var(--color-type-${primaryType}) 18%, transparent), var(--color-card))` }
+                      : {}),
                 } as React.CSSProperties}
                 className={`relative flex flex-col items-center rounded-2xl p-2 transition active:scale-95 ${
-                  got ? "shadow-card" : "bg-muted/40"
+                  shiny
+                    ? "border-2 border-poke-yellow shadow-card"
+                    : got
+                      ? "shadow-card"
+                      : "bg-muted/40"
                 }`}
               >
+                <div className="absolute left-1.5 top-1.5 font-pixel-xs text-poke-dark/40">
+                  #{String(p.id).padStart(3, "0")}
+                </div>
                 <PokemonSprite
                   id={p.id}
                   alt={got ? p.name : "???"}
@@ -218,11 +228,6 @@ function PokedexPage() {
                 {got && e.defeatCount > 1 && (
                   <div className="absolute right-1 top-1 rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-bold text-primary-foreground shadow-sm">
                     ×{e.defeatCount}
-                  </div>
-                )}
-                {e?.shinyUnlocked && (
-                  <div className="absolute left-1 top-1 rounded-full bg-poke-yellow p-0.5 shadow-sm">
-                    <Sparkles className="h-2.5 w-2.5 text-poke-dark" />
                   </div>
                 )}
               </button>
