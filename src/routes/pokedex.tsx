@@ -441,3 +441,33 @@ function PokedexFlavor({ pokemonId }: { pokemonId: number }) {
     </div>
   );
 }
+
+function buildEvolutionTree(p: import("@/lib/pokemon-data").PokeEntry): import("@/lib/pokemon-data").PokeEntry[][] {
+  const byId = (id: number) => ALL_POKEMON.find((x) => x.id === id);
+  let root = p;
+  const seen = new Set<number>();
+  while (root.evolvesFromId != null && !seen.has(root.evolvesFromId)) {
+    seen.add(root.id);
+    const prev = byId(root.evolvesFromId);
+    if (!prev) break;
+    root = prev;
+  }
+  const columns: import("@/lib/pokemon-data").PokeEntry[][] = [];
+  let frontier = [root];
+  const visited = new Set<number>();
+  while (frontier.length > 0) {
+    const col = frontier.filter((e) => e && !visited.has(e.id));
+    if (col.length === 0) break;
+    col.forEach((e) => visited.add(e.id));
+    columns.push(col);
+    const next: import("@/lib/pokemon-data").PokeEntry[] = [];
+    for (const node of col) {
+      for (const cid of node.evolvesToIds) {
+        const child = byId(cid);
+        if (child && !visited.has(child.id)) next.push(child);
+      }
+    }
+    frontier = next;
+  }
+  return columns;
+}
