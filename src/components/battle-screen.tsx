@@ -1129,31 +1129,12 @@ function BattleMode({
             >
               {/* Floating timer pill + category label */}
               <div className="pointer-events-none absolute left-1/2 -top-12 z-10 flex -translate-x-1/2 flex-col items-center">
-                <div
-                  className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold shadow-card ${
-                    timer <= 5
-                      ? "animate-pulse bg-destructive text-destructive-foreground"
-                      : "bg-card text-foreground"
-                  }`}
-                >
-                  <svg viewBox="0 0 24 24" className="h-4 w-4">
-                    <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeOpacity="0.2" strokeWidth="3" />
-                    <circle
-                      cx="12" cy="12" r="9" fill="none"
-                      stroke={timer <= 5 ? "currentColor" : "var(--color-hp-good)"}
-                      strokeWidth="3" strokeLinecap="round"
-                      strokeDasharray={2 * Math.PI * 9}
-                      strokeDashoffset={2 * Math.PI * 9 * (1 - timer / (TIMER_BASE + bonusTime))}
-                      transform="rotate(-90 12 12)"
-                      style={{ transition: "stroke-dashoffset 0.5s linear" }}
-                    />
-                  </svg>
-                  {timer}s
-                </div>
+                <TimerRing timer={timer} maxTime={TIMER_BASE + bonusTime} />
                 <p className="mt-1.5 font-pixel-xs text-poke-dark/70">
                   {trivia.category}
                 </p>
               </div>
+
 
               <div className="pt-1">
                 <p className="text-center text-[clamp(0.95rem,4vw,1.125rem)] font-bold leading-snug">
