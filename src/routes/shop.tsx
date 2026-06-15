@@ -40,6 +40,21 @@ const CATEGORIES: Array<{ id: Category; label: string }> = [
   { id: "PREMIUM", label: "Premium" },
 ];
 
+const BAG_SHORT_DESC: Record<string, string> = {
+  potion: "Restore 30 HP",
+  revive: "Revive to 50 HP",
+  xattack: "2× damage next answer",
+  scope: "Remove one wrong answer",
+  candy: "+50 TP for your partner",
+  escape: "Bail out, no XP lost",
+  xaccuracy: "+5 seconds to your timer",
+  luckyegg: "Double XP this battle",
+};
+
+function bagDesc(it: ItemDef): string {
+  return BAG_SHORT_DESC[it.id] ?? it.desc;
+}
+
 function ItemIcon({ item, className }: { item: ItemDef; className: string }) {
   return (
     <img
@@ -153,7 +168,7 @@ function ShopPage() {
               },
             })
           }
-          className="relative mb-5 flex w-full items-center gap-4 overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-[#b5341f] p-4 text-left shadow-card"
+          className="relative mb-5 flex w-full items-center gap-5 overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-[#b5341f] p-6 pt-9 text-left shadow-card"
         >
           <span className="absolute left-1/2 top-3 -translate-x-1/2 rounded-full bg-poke-yellow px-3 py-0.5 font-pixel-xs uppercase text-poke-dark shadow-sm">
             Discounted {featured.discountPct}% off
@@ -162,12 +177,12 @@ function ShopPage() {
             aria-hidden
             className="pointer-events-none absolute -right-6 top-1/2 h-40 w-40 -translate-y-1/2 rounded-full bg-white/10"
           />
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/15">
-            <ItemIcon item={featured.item} className="h-11 w-11" />
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-white/15">
+            <ItemIcon item={featured.item} className="h-14 w-14" />
           </div>
           <div className="min-w-0 flex-1 pt-2">
-            <div className="font-display-md text-white">{featured.item.name}</div>
-            <div className="mt-0.5 line-clamp-2 text-xs text-white/80">{featured.item.desc}</div>
+            <div className="font-display-lg text-white">{featured.item.name}</div>
+            <div className="mt-1.5 text-sm leading-snug text-white/85">{featured.item.desc}</div>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1.5">
             <span className="rounded-full bg-white px-3.5 py-1.5 text-sm font-extrabold text-primary">
@@ -210,26 +225,26 @@ function ShopPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.04 }}
                   onClick={() => setConfirmState({ item, cost: item.cost })}
-                  className="relative flex w-full items-center gap-3 rounded-3xl bg-card p-3 text-left shadow-card"
+                  className="relative flex w-full items-center gap-4 rounded-3xl bg-card p-5 text-left shadow-card"
                 >
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-poke-yellow/20">
-                    <ItemIcon item={item} className="h-10 w-10" />
+                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-poke-yellow/20">
+                    <ItemIcon item={item} className="h-12 w-12" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <div className="font-display-md leading-tight text-poke-dark">
                         {item.name}
                       </div>
-                      {owned > 0 && (
-                        <span className="rounded-full bg-poke-dark/10 px-2 py-0.5 font-pixel-xs text-poke-dark/70">
-                          OWNED ×{owned}
-                        </span>
-                      )}
                       {item.premium && (
                         <Star className="h-3.5 w-3.5 text-poke-yellow" fill="currentColor" />
                       )}
                     </div>
-                    <div className="mt-0.5 line-clamp-2 text-[11px] text-muted-foreground">
+                    {owned > 0 && (
+                      <span className="mt-1 inline-flex w-fit rounded-full bg-poke-dark/10 px-2 py-0.5 font-pixel-xs text-poke-dark/70">
+                        OWNED ×{owned}
+                      </span>
+                    )}
+                    <div className="mt-1.5 text-xs leading-snug text-muted-foreground">
                       {item.desc}
                     </div>
                   </div>
@@ -320,42 +335,65 @@ function ShopPage() {
                 : "Stock up on items to use in battle"}
             </SheetDescription>
           </SheetHeader>
-          <div className="my-4 max-h-[60vh] overflow-y-auto">
-            {ownedInBag.length === 0 ? (
-              <div className="rounded-3xl bg-poke-yellow/15 p-6 text-center">
-                <div className="mx-auto mb-2 text-4xl">🎒</div>
-                <div className="font-display-md text-poke-dark">Your bag is empty</div>
-                <p className="mt-1 text-xs text-poke-dark/60">
-                  Buy potions, scopes and lucky eggs below.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-3">
-                {ownedInBag.map((it) => {
-                  const n = inventory[it.id] ?? 0;
-                  return (
-                    <div
-                      key={it.id}
-                      className="relative flex flex-col gap-2 rounded-3xl bg-card p-4 shadow-card"
-                    >
-                      <div className="absolute right-3 top-3 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground shadow-sm">
-                        ×{n}
+          {(() => {
+            const bagGroups = CATEGORIES
+              .map((cat) => ({
+                ...cat,
+                items: ITEMS.filter(
+                  (it) => CATEGORY_OF[it.id] === cat.id && (inventory[it.id] ?? 0) > 0
+                ),
+              }))
+              .filter((g) => g.items.length > 0);
+            return (
+              <div className="my-4 max-h-[65vh] overflow-y-auto">
+                {ownedInBag.length === 0 ? (
+                  <div className="rounded-3xl bg-poke-yellow/15 p-6 text-center">
+                    <div className="mx-auto mb-2 text-4xl">🎒</div>
+                    <div className="font-display-md text-poke-dark">Your bag is empty</div>
+                    <p className="mt-1 text-xs text-poke-dark/60">Buy items below to stock up.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {bagGroups.map((group) => (
+                      <div key={group.id}>
+                        <div className="mb-2 font-pixel-xs uppercase tracking-wider text-poke-dark/45">
+                          {group.label}
+                        </div>
+                        <div className="flex flex-col gap-2.5">
+                          {group.items.map((it) => {
+                            const n = inventory[it.id] ?? 0;
+                            return (
+                              <div
+                                key={it.id}
+                                className="flex items-center gap-3.5 rounded-[20px] bg-card px-4 py-3 shadow-card"
+                              >
+                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-primary/[0.08]">
+                                  <ItemIcon item={it} className="h-9 w-9" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="font-bold leading-tight text-poke-dark">
+                                    {it.name}
+                                  </div>
+                                  <div className="mt-0.5 truncate text-xs text-poke-dark/55">
+                                    {BAG_SHORT_DESC[it.id] ?? it.desc}
+                                  </div>
+                                </div>
+                                <div className="shrink-0 font-pixel-xs text-poke-dark">×{n}</div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
-                        <ItemIcon item={it} className="h-10 w-10" />
-                      </div>
-                      <div className="font-display-md leading-tight text-poke-dark">
-                        {it.name}
-                      </div>
-                      <div className="line-clamp-2 text-[11px] text-muted-foreground">
-                        {it.desc}
-                      </div>
+                    ))}
+                    <div className="rounded-2xl bg-poke-blue/10 px-4 py-3 text-xs leading-snug text-poke-dark/70">
+                      💡 Battle items appear in your item dock during a match. Tap one before
+                      answering to activate it.
                     </div>
-                  );
-                })}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            );
+          })()}
         </SheetContent>
       </Sheet>
     </div>
