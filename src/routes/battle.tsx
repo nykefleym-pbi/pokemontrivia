@@ -393,7 +393,7 @@ function BattleHome({
         <button
           onClick={handleDaily}
           disabled={dailyDone || loading}
-          className={`relative flex h-[112px] items-center gap-1 overflow-hidden rounded-3xl bg-gradient-to-br from-[oklch(0.9_0.13_95)] to-[oklch(0.85_0.17_80)] p-3 text-left shadow-card disabled:opacity-80 ${
+          className={`relative flex h-[96px] items-center gap-1 overflow-hidden rounded-[18px] bg-gradient-to-br from-[oklch(0.9_0.13_95)] to-[oklch(0.85_0.17_80)] p-3 text-left shadow-card disabled:opacity-80 ${
             pending === "daily" ? "animate-pulse ring-2 ring-[oklch(0.35_0.06_80)]/40" : ""
           }`}
         >
@@ -414,7 +414,7 @@ function BattleHome({
         <button
           onClick={handleWeekly}
           disabled={loading || weeklyFinished}
-          className={`relative flex h-[112px] items-center gap-1 overflow-hidden rounded-3xl bg-gradient-to-br from-[oklch(0.62_0.16_250)] to-[oklch(0.5_0.18_270)] p-3 text-left text-white shadow-card disabled:opacity-80 ${
+          className={`relative flex h-[96px] items-center gap-1 overflow-hidden rounded-[18px] bg-gradient-to-br from-[oklch(0.62_0.16_250)] to-[oklch(0.5_0.18_270)] p-3 text-left text-white shadow-card disabled:opacity-80 ${
             pending === "weekly" ? "animate-pulse ring-2 ring-white/60" : ""
           }`}
         >
