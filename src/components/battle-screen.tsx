@@ -50,6 +50,7 @@ import type { GymLeader } from "@/lib/gym-leaders";
 import { ShareCardDialog } from "@/components/share-card-dialog";
 import type { ShareData } from "@/components/share-card-builder";
 import { trainerSpriteUrl } from "@/lib/game-data";
+import shareIcon from "@/assets/share-icon-dark.png.asset.json";
 
 export interface Trivia {
   question: string;
@@ -1508,7 +1509,17 @@ function ResultScreen({
               onClick={onShare}
               className="h-14 w-full rounded-full border-2 border-poke-dark/15 bg-card font-bold text-poke-dark hover:bg-card/80"
             >
-              ⬆ Share result
+              <span className="flex items-center gap-2">
+                <img
+                  src={shareIcon.url}
+                  alt=""
+                  className="h-5 w-5"
+                  loading="lazy"
+                  width={20}
+                  height={20}
+                />
+                Share result
+              </span>
             </Button>
           )}
         </div>
