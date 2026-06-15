@@ -1,50 +1,40 @@
-# Battle home + nav + background polish
+## Battle Home + Bottom Nav Polish
 
-## 1. Battle home (`src/routes/battle.tsx` — `BattleHome`)
-Bring layout in line with the reference mock:
+### 1. Bottom nav — Battle tab matches Shop/Dex/Profile
+File: `src/components/bottom-nav.tsx`
 
-- **Level pill**: switch from `font-pixel-xs` (which can wrap "LV 23" awkwardly on narrow screens) to a fixed pixel-size pill with `whitespace-nowrap`, `text-[8px]`, tighter padding (`px-2 py-[2px]`). Keep dark background / yellow text.
-- **Hero spacing**: reduce hero card padding so it isn't dominated by the Find Match card. Use `rounded-3xl` battle card with `p-5` (already) but tighten the section above (Hero ring + stats). Keep current overall structure.
-- **Daily Quest / Weekly League tiles**: shrink the two action tiles to match the mock.
-  - Container height: `h-[112px]` (currently `h-32` = 128px) and `p-4` padding.
-  - Use gradients matching mock:
-    - Daily: `bg-gradient-to-br from-[oklch(0.9_0.13_95)] to-[oklch(0.85_0.17_80)]`
-    - Weekly: `bg-gradient-to-br from-[oklch(0.62_0.16_250)] to-[oklch(0.5_0.18_270)]`
-  - Title row: pixel label `text-[9px]`, then `font-display-md` (~16px) heading, then small subtitle `text-[11px]`.
-  - Sprites: shrink from `h-20 w-20` to `h-[60px] w-[60px]`, position `bottom-1 right-1`.
-  - Remove the "10 fast questions" / reset-date second line only if it doesn't fit at the smaller height — keep one line of subtitle.
+- Remove the elevated `-mt-8` pokéball treatment.
+- Make Battle a 4th `NavCell` using the same active/inactive pattern as Shop/Dex/Profile.
+  - Active → red circle (`bg-primary`) with a small pokéball icon (`h-[18px] w-[18px]`) inside, matching the other tabs' visual weight.
+  - Inactive → bold "Battle" text (`text-[13px] text-poke-dark/60`).
+- Keep the `PokeballGlyph` SVG, just resize it to fit inside the 36×36 circle.
+- Drop the special-case `battleActive` block and the centered grid slot; collapse to a single `TABS.map` with Battle as the first entry.
 
-## 2. Bottom nav (`src/components/bottom-nav.tsx`)
-Make it a true 4-tab pill: **Battle, Shop, Dex, Profile** with the Battle slot using the elevated pokéball button (no extra spacer):
+### 2. Sprite alignment in Daily Quest / Weekly League
+File: `src/routes/battle.tsx` (lines 386–429)
 
-- Use `grid-cols-4` instead of the current asymmetric flex with right spacer.
-- Tab order left→right: Battle (elevated center-style button in slot 1, raised with `-mt-8`), Shop, Dex, Profile.
-- Each text tab shows **label text when inactive** and **icon when active**:
-  - Shop → `ShoppingBag` (lucide)
-  - Dex → `BookOpen`
-  - Profile → `User`
-- Active icon: red circle background (`bg-primary text-primary-foreground`), `h-9 w-9 rounded-full`, with subtle shadow. Inactive label uses current `text-poke-dark/60 font-bold text-[13px]`.
-- Remove the bottom dot indicator (icon swap replaces it).
-- Keep the floating pill styling (`rounded-full`, `bg-card/95`, blur, shadow).
+Per reference screenshot, Rotom and the weekly Pokémon sit on the right side **vertically centered with the headline row**, not anchored bottom-right.
 
-Note: design mock places Battle button on the left of the pill (matching the iOS reference). Implement exactly that order.
+- Change each tile from `relative h-[112px] p-4 text-left` to a flex layout:
+  - Wrap text block (`DAILY QUEST` label, headline, subtext) in a `flex-1 min-w-0` column.
+  - Wrap sprite in a `shrink-0 self-center` container.
+  - Outer button: `flex items-center gap-2`.
+- Remove the absolute-positioned sprite wrappers (`absolute -right-0.5 -bottom-0.5`).
+- Sprite size stays `h-[60px] w-[60px]`.
 
-## 3. Cream background for the four main screens
-Reference mock uses a soft cream radial:
-```
-background:
-  radial-gradient(circle at 80% 0%, oklch(0.9 0.12 95 / 0.5) 0%, transparent 38%),
-  oklch(0.985 0.012 95);
-```
+### 3. Press feedback — pulse pressed tile, freeze the rest
+Files: `src/routes/battle.tsx`, optionally `src/styles.css`
 
-- Add a new utility class `.bg-poke-cream` in `src/styles.css` with the above.
-- Replace `bg-poke-hero` on the top wrappers of:
-  - `src/routes/battle.tsx` (`BattleHome` outer div)
-  - `src/routes/shop.tsx` (line 103 outer hero wrapper — and the page root if needed so it extends behind list)
-  - `src/routes/pokedex.tsx` (line 84)
-  - `src/routes/profile.tsx` (line 149)
-- Ensure the cream extends behind the scroll content (apply to the page root, not just the header band).
+Current behavior: while `loading` is true (after pressing Daily/Weekly), the Find Match button gets `disabled:opacity-60` and the daily/weekly buttons use `active:scale-[0.98]`. The user wants:
 
-## Out of scope
-- No changes to onboarding, battle screen, evolution, or any business logic.
-- No changes to existing card/stat styling beyond the items listed above.
+- The Battle card / Find Match button must **not** change visual state when a quest is pressed.
+  - Remove the `disabled` prop dependency on `loading` for Find Match? No — keep functional disable but remove the `disabled:opacity-60` visual change so it looks stationary. Use a local `dailyPending` / `weeklyPending` state in `BattleHome` to distinguish which button triggered loading.
+  - Replace `disabled={loading}` on Find Match with `disabled={loading && !dailyPending && !weeklyPending}` style logic, and drop `disabled:opacity-60` on it.
+- Remove `active:scale-[0.98]` from the daily/weekly buttons.
+- When a quest button is pressed (its own pending flag true), apply an animated pulse:
+  - Tailwind: `animate-pulse` plus a subtle ring (`ring-2 ring-white/60` for weekly, `ring-2 ring-[oklch(0.35_0.06_80)]/40` for daily).
+  - Or a custom `@keyframes` `quest-pulse` in `src/styles.css` scaling opacity 1 → 0.85 → 1 over 900ms infinite, applied via `animate-[quest-pulse_900ms_ease-in-out_infinite]`.
+- Wrap the `onStartDaily` / `onStartWeekly` handlers passed in so they set the local pending flag before delegating, and clear it on phase change back to `home` (reset via `useEffect` on `loading`).
+
+### Out of scope
+No changes to battle logic, routing, or other screens.
