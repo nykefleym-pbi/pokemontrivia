@@ -851,6 +851,14 @@ function BattleMode({
           topDamage: topDmgRef.current,
           dateISO: new Date().toISOString().slice(0, 10),
           badgeName: gymLeader.badge,
+          correctCount: correctCountRef.current,
+          totalQuestions: questions.length,
+          xpEarned: total,
+          avgTimeMs: answeredCountRef.current
+            ? totalElapsedMsRef.current / answeredCountRef.current
+            : undefined,
+          level,
+          rank: rankForLevel(level),
         });
         shareSet = true;
         toast.success(`🎖 ${gymLeader.badge} earned!`, { duration: 4500 });
