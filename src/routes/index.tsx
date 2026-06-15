@@ -443,7 +443,7 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                         <Check className="h-3.5 w-3.5" strokeWidth={3} />
                       </span>
                     )}
-                    <PokemonSprite id={p.id} alt={p.name} className="sprite h-14 w-14" />
+                    <PokemonSprite id={p.id} alt={p.name} className="sprite h-[76px] w-[76px]" />
                     <span className="mt-1 truncate text-xs font-bold text-poke-dark">{p.name}</span>
                     <div className="mt-1">
                       <TypeBadge type={p.types[0]} size="sm" />
@@ -461,7 +461,7 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                     <span className="text-lg">●</span>
                   </div>
                   <div className="min-w-0">
-                    <div className="text-sm font-bold text-poke-dark">{ability.name} ability</div>
+                    <div className="text-sm font-bold text-poke-dark">{ability.name}</div>
                     <p className="text-xs leading-snug text-poke-dark/70">{ability.description}</p>
                   </div>
                 </div>
