@@ -288,10 +288,11 @@ function BattleHome({
       if (ms <= 0) { setWeeklyTimeLeft("Refreshing..."); return; }
       const days = Math.floor(ms / (24 * 60 * 60 * 1000));
       const hours = Math.floor((ms % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
-      setWeeklyTimeLeft(`${days}d ${hours}h`);
+      const minutes = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
+      setWeeklyTimeLeft(`${days}d ${hours}h ${minutes}m`);
     };
     tick();
-    const i = setInterval(tick, 60000);
+    const i = setInterval(tick, 1000);
     return () => clearInterval(i);
   }, [weekRange.end, weeklyFinished]);
 
