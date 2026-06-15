@@ -1348,12 +1348,16 @@ function ResultScreen({
 }) {
   if (won) {
     const confetti = [
-      { c: "bg-primary", s: "h-3 w-3 rounded-sm rotate-12", t: "8%", l: "12%" },
-      { c: "bg-poke-yellow", s: "h-2 w-2 rounded-full", t: "18%", l: "78%" },
-      { c: "bg-poke-blue", s: "h-2.5 w-2.5 rounded-full", t: "14%", l: "88%" },
-      { c: "bg-hp-good", s: "h-3 w-3 rounded-sm -rotate-6", t: "30%", l: "70%" },
-      { c: "bg-poke-yellow", s: "h-2 w-2 rounded-full", t: "38%", l: "8%" },
-      { c: "bg-primary", s: "h-2 w-2 rounded-full", t: "46%", l: "92%" },
+      { c: "bg-primary", s: "h-3 w-3 rounded-sm", l: "8%" },
+      { c: "bg-poke-yellow", s: "h-2 w-2 rounded-full", l: "20%" },
+      { c: "bg-poke-blue", s: "h-2.5 w-2.5 rounded-full", l: "32%" },
+      { c: "bg-hp-good", s: "h-3 w-3 rounded-sm", l: "44%" },
+      { c: "bg-poke-yellow", s: "h-2 w-2 rounded-full", l: "56%" },
+      { c: "bg-primary", s: "h-2 w-2 rounded-full", l: "68%" },
+      { c: "bg-destructive", s: "h-2.5 w-2.5 rounded-sm", l: "80%" },
+      { c: "bg-poke-blue", s: "h-2 w-2 rounded-full", l: "92%" },
+      { c: "bg-poke-yellow", s: "h-3 w-3 rounded-sm", l: "14%" },
+      { c: "bg-hp-good", s: "h-2 w-2 rounded-full", l: "74%" },
     ];
     return (
       <motion.div
@@ -1362,10 +1366,23 @@ function ResultScreen({
         className="relative flex h-full w-full flex-col overflow-y-auto bg-victory px-6 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
       >
         {confetti.map((d, i) => (
-          <span
+          <motion.span
             key={i}
-            className={`pointer-events-none absolute ${d.s} ${d.c} opacity-80`}
-            style={{ top: d.t, left: d.l }}
+            className={`pointer-events-none absolute ${d.s} ${d.c}`}
+            style={{ left: d.l, top: "-5%" }}
+            initial={{ y: 0, opacity: 0 }}
+            animate={{
+              y: ["-5%", "115%"],
+              x: [0, i % 2 === 0 ? 20 : -20, 0],
+              rotate: [0, 360],
+              opacity: [0, 1, 1, 0.8, 0],
+            }}
+            transition={{
+              duration: 3.5 + (i % 4) * 0.6,
+              repeat: Infinity,
+              delay: i * 0.4,
+              ease: "easeIn",
+            }}
           />
         ))}
 
