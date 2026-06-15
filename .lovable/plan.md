@@ -1,47 +1,43 @@
-# Onboarding 1/3 (Trainer Name) — match reference layout
+# Onboarding 2/3 — Pick Your Avatar Redesign
 
-Update only the `substep === "name"` branch inside `TrainerCreate` in `src/routes/index.tsx`. Other substeps and global header stay as-is structurally, but the header layout for this step needs tightening to match.
+Scope: only the `substep === "trainer"` block inside `TrainerCreate` in `src/routes/index.tsx`. No changes to step 1, step 3, store, navigation, background, or trainer data.
 
 ## Changes
 
-### 1. Always use Oak as the Professor sprite
-The current screen renders the *selected* trainer sprite as the speaker. Replace with the hardcoded Oak sprite via `trainerSpriteUrl("oak")` so this step always shows Prof. Oak regardless of the avatar pick (avatar pick happens in step 2).
+1. **All sprites pickable**
+   - Replace the current `.slice(0, 6)` cap. Source = full `TRAINER_SPRITES` (minus `brokenTrainerIds`), sorted alphabetically by `name`.
 
-### 2. Heading: centered, bold, tighter
-Replace `text-3xl font-extrabold` with `text-[30px] font-extrabold tracking-tight text-center` matching the reference proportions (two-line "What should we call you?"). Move it above the Oak sprite (heading first, then sprite + speech card), mirroring the reference order.
+2. **Search bar (starts-with filter)**
+   - Add a rounded search input above the grid, styled to match step 3's search (pill, `Search` icon left, `bg-card`, `shadow-pop`).
+   - Reuse local state (rename existing `query` use — currently only used in step 3 — to a step-scoped `trainerQuery` to avoid collision).
+   - Filter: `t.name.toLowerCase().startsWith(query.trim().toLowerCase())`.
 
-### 3. Speech card with notch
-- Oak sprite: `h-[132px] w-[132px] object-contain` centered, sits just above the speech card with negative overlap (`-mt-1` on the card).
-- Speech card: `rounded-2xl bg-card px-4 py-3.5 shadow-card text-center` with a 14×14 white square rotated 45° as a notch absolutely positioned at `top:-7px left:1/2`.
-- Eyebrow: `font-pixel-xs uppercase text-primary` reading "PROF. OAK".
-- Body: `text-sm leading-snug text-poke-dark/80`.
+3. **Initial list = 9 sprites alphabetically**
+   - When search is empty → show first 9 alphabetically.
+   - When search has text → show all matches (also alphabetical), so users can find any trainer.
 
-### 4. Input field — pill with red border
-Already pill-shaped, but tighten to match:
-- `h-[54px] rounded-full border-[2.5px] border-primary bg-card px-5 text-[17px] font-bold`
-- Label above: `font-pixel-xs uppercase text-poke-dark/55`, `mb-2`.
-- Helper below: `mt-2 text-xs text-poke-dark/55`, copy unchanged.
-- Keep `maxLength={16}`, `autoFocus`.
+4. **Grid cards (match reference)**
+   - 3-col grid, `gap-2.5`, cards: `rounded-[20px] bg-card p-2.5`, `shadow-pop`, sprite `h-16 w-16`, name `text-[13px] font-bold`.
+   - Selected: `border-[2.5px] border-primary`; unselected: `border-2 border-transparent`.
+   - Selected check badge: `-top-2 -right-2 h-[26px] w-[26px] rounded-full bg-primary` with white `Check`.
 
-### 5. Bottom button strip
-Float the "Next: Choose Avatar" button in a fixed bottom padding block (`px-6 pb-11 pt-4`) so it sits flush near the safe-area, not pushed by `mt-auto` inside the scroller. Same red pill style (`h-[58px] rounded-full bg-primary text-[17px] font-bold shadow-pop`).
+5. **Blurb card**
+   - Replace the trainer's quote/blurb with a single line: `"{Name} is now ready for battle."` (italic, same styled card).
+   - Keep header line: `RED · PALLET TOWN` style (`font-pixel text-[10px] uppercase text-primary`). Town still pulled from `TRAINER_BLURBS` (fallback "Unknown Town").
+   - Card style: `rounded-[20px] bg-primary/[0.07] border-[1.5px] border-primary/25 p-3.5`, sprite `h-[58px] w-[58px]`.
 
-### 6. Header (back chip + STEP label + progress bars)
-Slight tightening so this step matches the ref:
-- Top row spacing: `pt-[calc(env(safe-area-inset-top)+1.5rem)]` (slightly more top breathing room).
-- STEP label uses `font-pixel-xs` (already does, just sizing tweak).
-- Progress bar bumped to `h-[6px]` and `gap-1.5`.
+6. **Heading + progress**
+   - Heading already matches (`text-3xl font-extrabold` → adjust to `text-[30px] font-extrabold tracking-tight`), subtitle unchanged.
+   - Progress bars already styled in step 1 work; no change needed.
 
-These header tweaks live on the parent `TrainerCreate` shell, so they affect steps 2 and 3 too — which is desirable for consistency.
+7. **Bottom button**
+   - Keep "Next: Choose Pokémon", restyle to `h-[58px] rounded-full bg-primary text-[17px] font-bold shadow-pop`.
 
 ## Out of scope
 
-- Substep 2 (Pick your avatar) and substep 3 (Pick your partner) — content unchanged.
-- TRAINER_BLURBS and trainer selection logic — untouched.
-- Background, store, navigation — untouched.
+- Trainer data file, sprite URLs, `TRAINER_BLURBS` entries.
+- Steps 1 and 3, splash, store/navigation.
 
 ## Verification
 
-- `tsc --noEmit` clean.
-- 390×844 name step: heading → Oak sprite → speech card with notch → label → red-bordered pill input → helper text → bottom red pill button. Oak is always Oak.
-- Confirm avatar step still uses selected trainer for its own pickers (independent of the Oak hardcode in name step).
+`tsc --noEmit`; visual check at 390×844 of step 2 — search filters correctly, 9 sprites shown initially, selecting updates blurb text.
