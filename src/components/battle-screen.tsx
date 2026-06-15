@@ -1653,18 +1653,18 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
   const progressPct = ((idx) / total) * 100;
 
   return (
-    <div className="bg-poke-hero relative h-full w-full overflow-y-auto pb-[calc(env(safe-area-inset-bottom)+1rem)] safe-x">
+    <div className="bg-battle-field relative flex h-full w-full flex-col overflow-hidden">
       <div className="absolute left-0 right-0 top-0 z-40 h-1 bg-poke-dark/20">
         <motion.div className="h-full bg-poke-yellow" initial={false} animate={{ width: `${progressPct}%` }} />
       </div>
-      <div className="flex items-center justify-between px-4 pt-[calc(env(safe-area-inset-top)+0.5rem)]">
-        <button onClick={() => setConfirmExit(true)} className="flex h-10 w-10 items-center justify-center rounded-full bg-card/80 backdrop-blur">
+      <div className="flex shrink-0 items-center justify-between pt-[calc(env(safe-area-inset-top)+1rem)] pb-1 px-[max(1.25rem,env(safe-area-inset-left))]">
+        <button onClick={() => setConfirmExit(true)} className="flex h-9 w-9 items-center justify-center rounded-full bg-card/90 backdrop-blur shadow-card">
           <ChevronLeft className="h-5 w-5" />
         </button>
-        <div className="rounded-full bg-poke-dark px-3 py-1 font-pixel text-[10px] text-poke-yellow">
+        <div className="rounded-full bg-poke-dark px-2.5 py-1 font-pixel text-[9px] text-poke-yellow shadow-card">
           🔥 DAILY · {idx + 1}/{total}
         </div>
-        <div className="w-10" />
+        <div className="w-9" />
       </div>
       <AlertDialog open={confirmExit} onOpenChange={setConfirmExit}>
         <AlertDialogContent>
@@ -1686,59 +1686,53 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="relative px-5 pt-16">
-        {/* Floating timer pill + category */}
-        <div className="pointer-events-none absolute left-1/2 top-2 z-10 flex -translate-x-1/2 flex-col items-center">
-          <div
-            className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold shadow-card ${
-              timer <= 5 ? "animate-pulse bg-destructive text-destructive-foreground" : "bg-card text-foreground"
-            }`}
-          >
-            <Clock className="h-4 w-4" />
-            {timer}s
-          </div>
+      <div className="flex-1 min-h-0 flex items-center justify-center px-4">
+        <PokeballPattern marks={pattern} />
+      </div>
+
+      <div className="relative shrink-0 rounded-t-[28px] bg-card pt-14 px-[max(1rem,env(safe-area-inset-left))] pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-[0_-8px_30px_-12px_oklch(0.3_0.05_260/0.25)]">
+        <div className="pointer-events-none absolute left-1/2 -top-12 z-10 flex -translate-x-1/2 flex-col items-center">
+          <TimerRing timer={timer} maxTime={20} />
           <p className="mt-1.5 font-pixel-xs text-poke-dark/70">{trivia.category}</p>
         </div>
 
-        <div className="rounded-3xl bg-card p-5 shadow-card">
-          <p className="text-base font-semibold leading-snug">{trivia.question}</p>
-          <div className="mt-4 grid grid-cols-1 gap-2">
-            {trivia.options.map((opt, i) => {
-              const isCorrect = phase === "feedback" && i === trivia.correct;
-              const isWrong = phase === "feedback" && chosen === i && i !== trivia.correct;
-              return (
-                <button
-                  key={i}
-                  disabled={phase !== "question"}
-                  onClick={() => handleAnswer(i)}
-                  className={`flex items-center justify-between rounded-2xl border-2 bg-card px-4 py-3 text-left text-sm font-semibold transition active:scale-[0.98] ${
-                    isCorrect
-                      ? "border-hp-good bg-hp-good/5 text-hp-good"
-                      : isWrong
-                        ? "border-destructive bg-destructive/5 text-destructive"
-                        : "border-border/60 text-foreground hover:border-primary/50"
-                  } disabled:cursor-not-allowed`}
-                >
-                  <span className="min-w-0 flex-1 truncate">{opt}</span>
-                  {isCorrect && (
-                    <span className="ml-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-hp-good text-[12px] text-white">✓</span>
-                  )}
-                  {isWrong && (
-                    <span className="ml-2 shrink-0 text-[10px] font-bold uppercase tracking-wide text-destructive">Your Pick ×</span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-          {phase === "feedback" && (
-            <p className="mt-3 rounded-xl bg-muted p-2 text-xs text-muted-foreground">💡 {trivia.explanation}</p>
-          )}
+        <p className="text-center text-[clamp(0.95rem,4vw,1.125rem)] font-bold leading-snug">{trivia.question}</p>
+        <div className="mt-3 grid grid-cols-1 gap-2">
+          {trivia.options.map((opt, i) => {
+            const isCorrect = phase === "feedback" && i === trivia.correct;
+            const isWrong = phase === "feedback" && chosen === i && i !== trivia.correct;
+            return (
+              <button
+                key={i}
+                disabled={phase !== "question"}
+                onClick={() => handleAnswer(i)}
+                className={`flex min-h-[48px] items-center justify-between rounded-2xl border-2 bg-card px-4 py-2.5 text-left text-[clamp(0.875rem,3.6vw,0.95rem)] font-semibold transition active:scale-[0.98] ${
+                  isCorrect
+                    ? "border-hp-good bg-hp-good/5 text-hp-good"
+                    : isWrong
+                      ? "border-destructive bg-destructive/5 text-destructive"
+                      : "border-border/60 text-foreground hover:border-primary/50"
+                } disabled:cursor-not-allowed`}
+              >
+                <span className="min-w-0 flex-1 truncate">{opt}</span>
+                {isCorrect && (
+                  <span className="ml-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-hp-good text-[12px] text-white">✓</span>
+                )}
+                {isWrong && (
+                  <span className="ml-2 shrink-0 text-[10px] font-bold uppercase tracking-wide text-destructive">Your Pick ×</span>
+                )}
+              </button>
+            );
+          })}
         </div>
-        <div className="mt-4 flex justify-center"><PokeballPattern marks={pattern} /></div>
+        {phase === "feedback" && (
+          <p className="mt-2 rounded-xl bg-muted p-2 text-[11px] leading-snug text-muted-foreground">💡 {trivia.explanation}</p>
+        )}
       </div>
     </div>
   );
 }
+
 
 function DailyResultScreen({
   correct,
