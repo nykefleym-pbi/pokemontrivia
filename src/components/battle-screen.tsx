@@ -587,7 +587,9 @@ function BattleMode({
       const totalTime = TIMER_BASE + bonusTime;
       const speedRatio = Math.max(0, (totalTime - elapsedSec) / totalTime);
       const speedBonus = Math.round(5 * speedRatio);
+      speedBonusTotalRef.current += speedBonus;
       dmg += speedBonus;
+
       // type effectiveness AFTER multiplier
       if (superEff) dmg *= 2;
       if (xAttackActive) {
