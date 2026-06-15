@@ -7,6 +7,7 @@ import { STARTING_PARTNERS, type PokeEntry } from "@/lib/pokemon-data";
 import { getAbility } from "@/lib/abilities";
 import { PokeballSpinner, TypeBadge, PokemonSprite } from "@/components/game-ui";
 import { TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
+import { trainerQuote } from "@/lib/trainer-quotes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import pokemonLogo from "@/assets/pokemon-logo.png.asset.json";
@@ -290,7 +291,7 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                 alt="Professor Oak"
                 className="sprite h-[132px] w-[132px] object-contain"
               />
-              <div className="relative -mt-1.5 w-full rounded-2xl bg-card px-[18px] py-3.5 text-center shadow-pop">
+              <div className="relative -mt-1.5 w-full rounded-2xl bg-card px-[18px] py-3.5 text-center shadow-card">
                 <div className="absolute left-1/2 top-[-7px] h-3.5 w-3.5 -translate-x-1/2 rotate-45 bg-card" />
                 <div className="relative font-pixel text-[10px] uppercase tracking-wider text-primary">
                   Prof. Oak
@@ -314,7 +315,7 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                 autoFocus
               />
               <p className="mt-2 text-xs text-poke-dark/55">
-                Max 16 characters · shown to opponents
+                Max 16 characters
               </p>
             </div>
 
@@ -394,7 +395,7 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                     {selectedTrainer.name}
                   </div>
                   <p className="mt-1.5 text-sm italic leading-snug text-poke-dark/80">
-                    {selectedTrainer.name} is now ready for battle.
+                    {trainerQuote(selectedTrainer.id, selectedTrainer.name)}
                   </p>
                 </div>
               </div>
@@ -434,7 +435,7 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                   <button
                     key={p.id}
                     onClick={() => setPick(p)}
-                    className={`relative flex flex-col items-center rounded-2xl border-2 bg-white p-3 shadow-pop transition ${
+                    className={`relative flex flex-col items-center rounded-2xl border-2 bg-white p-3 shadow-card transition ${
                       selected ? "border-primary" : "border-transparent"
                     }`}
                   >
