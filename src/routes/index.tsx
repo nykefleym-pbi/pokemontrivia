@@ -205,6 +205,7 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
   const [name, setName] = useState("");
   const [trainerSprite, setTrainerSprite] = useState<string>("red");
   const [query, setQuery] = useState("");
+  const [trainerQuery, setTrainerQuery] = useState("");
   const [pick, setPick] = useState<PokeEntry | null>(null);
   const [brokenTrainerIds, setBrokenTrainerIds] = useState<Set<string>>(new Set());
   const setOnboarded = useGameStore((s) => s.setOnboarded);
@@ -217,10 +218,15 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
       .slice(0, 24);
   }, [query]);
 
-  const trainerResults = useMemo(
-    () => TRAINER_SPRITES.filter((t) => !brokenTrainerIds.has(t.id)).slice(0, 30),
-    [brokenTrainerIds],
-  );
+  const trainerResults = useMemo(() => {
+    const all = TRAINER_SPRITES
+      .filter((t) => !brokenTrainerIds.has(t.id))
+      .slice()
+      .sort((a, b) => a.name.localeCompare(b.name));
+    const q = trainerQuery.trim().toLowerCase();
+    if (!q) return all.slice(0, 9);
+    return all.filter((t) => t.name.toLowerCase().startsWith(q));
+  }, [brokenTrainerIds, trainerQuery]);
 
   const stepIndex = STEPS.indexOf(substep);
 
