@@ -943,7 +943,7 @@ function BattleMode({
 
           <Sheet open={bagOpen} onOpenChange={setBagOpen}>
             <SheetTrigger asChild>
-              <button className="flex h-10 w-10 items-center justify-center rounded-full bg-card/90 backdrop-blur shadow-card">
+              <button className="flex h-9 w-9 items-center justify-center rounded-full bg-card/90 backdrop-blur shadow-card">
                 <Backpack className="h-5 w-5" />
               </button>
             </SheetTrigger>
