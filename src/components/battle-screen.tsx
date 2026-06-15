@@ -1543,7 +1543,7 @@ function ResultScreen({
   );
 }
 
-function Row({ label, value, valueClass }: { label: React.ReactNode; value: React.ReactNode; valueClass?: string }) {
+function Row({ label, value, valueClass }: { label: ReactNode; value: ReactNode; valueClass?: string }) {
   return (
     <div className="flex items-center justify-between py-1.5 text-sm">
       <div className="font-semibold text-poke-dark">{label}</div>
