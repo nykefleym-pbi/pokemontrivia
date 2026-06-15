@@ -1301,109 +1301,257 @@ function BattleMode({
 
 function ResultScreen({
   won,
+  opponentName,
+  correctCount,
+  totalQuestions,
   xpEarned,
   tpEarned,
+  speedBonus,
   partnerName,
   partnerId,
-  streak,
+  streakKept,
+  currentLevel,
+  levelProgressPct,
+  newTrophies,
+  missed,
   onRebattle,
+  onBackHome,
   canShare,
   onShare,
 }: {
   won: boolean;
+  opponentName: string;
+  correctCount: number;
+  totalQuestions: number;
   xpEarned: number;
   tpEarned: number;
+  speedBonus: number;
   partnerName: string;
   partnerId: number;
   streak: number;
+  streakKept: boolean;
+  currentLevel: number;
+  xpIntoLevel: number;
+  xpForThisLevel: number;
+  levelProgressPct: number;
+  newTrophies: Array<{ icon: string; name: string }>;
+  missed: Array<{ question: string; correctAnswer: string; explanation: string }>;
   onRebattle: () => void;
+  onBackHome: () => void;
   canShare?: boolean;
   onShare?: () => void;
 }) {
+  if (won) {
+    const confetti = [
+      { c: "bg-primary", s: "h-3 w-3 rounded-sm rotate-12", t: "8%", l: "12%" },
+      { c: "bg-poke-yellow", s: "h-2 w-2 rounded-full", t: "18%", l: "78%" },
+      { c: "bg-poke-blue", s: "h-2.5 w-2.5 rounded-full", t: "14%", l: "88%" },
+      { c: "bg-hp-good", s: "h-3 w-3 rounded-sm -rotate-6", t: "30%", l: "70%" },
+      { c: "bg-poke-yellow", s: "h-2 w-2 rounded-full", t: "38%", l: "8%" },
+      { c: "bg-primary", s: "h-2 w-2 rounded-full", t: "46%", l: "92%" },
+    ];
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="relative flex h-full w-full flex-col overflow-y-auto bg-victory px-6 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
+      >
+        {confetti.map((d, i) => (
+          <span
+            key={i}
+            className={`pointer-events-none absolute ${d.s} ${d.c} opacity-80`}
+            style={{ top: d.t, left: d.l }}
+          />
+        ))}
+
+        <div className="flex flex-col items-center text-center">
+          <div className="font-pixel-xs uppercase tracking-[0.25em] text-primary">
+            ★ Battle Won ★
+          </div>
+          <h1 className="mt-2 font-display-xl text-poke-dark">Victory!</h1>
+          <p className="mt-1 text-sm text-poke-dark/70">
+            {opponentName} defeated · {correctCount}/{totalQuestions} correct
+          </p>
+
+          <div className="relative mt-6 flex h-36 w-44 items-end justify-center">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute bottom-2 left-1/2 h-10 w-32 -translate-x-1/2 rounded-[50%]"
+              style={{
+                background:
+                  "radial-gradient(ellipse at 50% 35%, oklch(0.88 0.16 145) 0%, oklch(0.72 0.18 145) 55%, oklch(0.55 0.16 150) 100%)",
+                boxShadow: "0 8px 14px -6px oklch(0.3 0.1 150 / 0.35), inset 0 1px 0 oklch(1 0 0 / 0.35)",
+              }}
+            />
+            <motion.div
+              animate={{ y: [0, -8, 0] }}
+              transition={{ duration: 1.4, repeat: Infinity }}
+              className="relative z-10"
+            >
+              <PokemonSprite id={partnerId} alt={partnerName} className="sprite h-28 w-28" />
+            </motion.div>
+          </div>
+        </div>
+
+        <div className="mx-auto mt-6 w-full max-w-sm rounded-2xl bg-card p-4 shadow-card">
+          <Row label="XP earned" value={`+${xpEarned}`} valueClass="text-primary" />
+          <Row label={`${partnerName} TP`} value={`+${tpEarned}`} valueClass="text-poke-blue" />
+          {speedBonus > 0 && (
+            <Row
+              label={
+                <>
+                  Speed bonus{" "}
+                  <span className="font-pixel text-[8px] text-hp-good">UNDER 5S AVG</span>
+                </>
+              }
+              value={`+${speedBonus}`}
+              valueClass="text-hp-good"
+            />
+          )}
+          {newTrophies.map((t) => (
+            <Row
+              key={t.name}
+              label={
+                <span className="flex items-center gap-1.5">
+                  <span>{t.icon}</span> Trophy
+                </span>
+              }
+              value={t.name}
+              valueClass="text-poke-yellow"
+            />
+          ))}
+          <div className="my-3 border-t border-dashed border-poke-dark/15" />
+          <div className="flex items-center gap-2">
+            <span className="font-pixel-xs text-poke-dark/70">Lv {currentLevel} · {Math.round(levelProgressPct)}%</span>
+            <div className="h-2 flex-1 overflow-hidden rounded-full bg-poke-dark/10">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-poke-yellow via-primary to-destructive transition-[width] duration-700"
+                style={{ width: `${levelProgressPct}%` }}
+              />
+            </div>
+            <span className="font-pixel-xs text-poke-dark/70">Lv {currentLevel + 1}</span>
+          </div>
+        </div>
+
+        <div className="mx-auto mt-auto w-full max-w-sm space-y-2 pt-8">
+          <Button
+            size="lg"
+            onClick={onRebattle}
+            className="h-14 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
+          >
+            Next Battle
+          </Button>
+          {canShare && onShare && (
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={onShare}
+              className="h-14 w-full rounded-full border-2 border-poke-dark/15 bg-card font-bold text-poke-dark hover:bg-card/80"
+            >
+              ⬆ Share result
+            </Button>
+          )}
+        </div>
+      </motion.div>
+    );
+  }
+
+  // DEFEAT
+  const shown = missed.slice(0, 5);
+  const more = Math.max(0, missed.length - shown.length);
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className={`flex h-full w-full flex-col items-center justify-center overflow-y-auto px-6 py-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)] safe-x ${
-        won ? "bg-victory" : "bg-poke-dark/85"
-      }`}
+      className="relative flex h-full w-full flex-col overflow-y-auto bg-defeat px-6 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
     >
-      <motion.div
-        initial={{ scale: 0.6, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 120 }}
-        className="flex flex-col items-center text-center"
-      >
-        <div
-          className={`rounded-full px-3 py-1 font-pixel-xs uppercase ${
-            won ? "bg-poke-yellow text-poke-dark" : "bg-destructive text-white"
-          }`}
-        >
-          {won ? "Victory" : "Defeat"}
+      <div className="flex flex-col items-center text-center">
+        <div className="font-pixel-xs uppercase tracking-[0.25em] text-poke-blue/80">
+          Battle Lost
         </div>
-        <div className="mt-3 font-display-xl text-white drop-shadow-lg">
-          {won ? "Champion!" : "So close…"}
-        </div>
-        <div className="relative mt-4 flex h-32 w-32 items-center justify-center">
+        <h1 className="mt-2 font-display-xl text-white">So close!</h1>
+        <p className="mt-1 text-sm text-white/60">
+          {opponentName} wins · {correctCount}/{totalQuestions} correct
+        </p>
+
+        <div className="relative mt-6 flex h-32 w-40 items-end justify-center">
           <div
-            className={`absolute inset-0 rounded-full blur-2xl ${
-              won ? "bg-poke-yellow/60" : "bg-destructive/40"
-            }`}
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-2 left-1/2 h-8 w-28 -translate-x-1/2 rounded-[50%] bg-black/40 blur-[2px]"
           />
           <motion.div
-            animate={won ? { y: [0, -8, 0] } : { rotate: [0, -4, 4, 0] }}
-            transition={{ duration: won ? 1.4 : 2, repeat: Infinity }}
-            className="relative"
+            animate={{ rotate: [0, -3, 3, 0] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="relative z-10"
           >
-            <PokemonSprite
-              id={partnerId}
-              alt={partnerName}
-              className={`sprite h-28 w-28 ${won ? "" : "opacity-80 grayscale"}`}
-            />
+            <PokemonSprite id={partnerId} alt={partnerName} className="sprite h-24 w-24 opacity-80 grayscale" />
           </motion.div>
         </div>
-      </motion.div>
-
-      <div className="mt-6 grid w-full max-w-xs grid-cols-3 gap-2">
-        <StatTile label="XP" value={`+${xpEarned}`} accent />
-        <StatTile label="Streak" value={String(streak)} />
-        <StatTile label={`TP · ${partnerName.slice(0, 6)}`} value={`+${tpEarned}`} accent />
       </div>
 
-      <div className="mt-6 w-full max-w-xs space-y-2">
-        {canShare && onShare && won && (
-          <Button
-            size="lg"
-            onClick={onShare}
-            className="h-12 w-full rounded-full border-2 border-white/40 bg-white/10 font-bold text-white backdrop-blur hover:bg-white/20"
-          >
-            Share Victory
-          </Button>
-        )}
+      <div className="mx-auto mt-6 w-full max-w-sm rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+        <div className="font-pixel-xs uppercase tracking-wider text-white/60">
+          Review · {missed.length} Missed
+        </div>
+        <div className="mt-3 space-y-2.5">
+          {shown.length === 0 ? (
+            <p className="text-sm text-white/70">No wrong answers — the clock got you!</p>
+          ) : (
+            shown.map((m, i) => (
+              <div key={i} className="flex items-start gap-2.5">
+                <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-destructive/80 text-[10px] font-bold text-white">
+                  ✕
+                </span>
+                <p className="line-clamp-2 text-[13px] leading-snug text-white/90">
+                  <span className="font-semibold">{m.correctAnswer}</span>
+                  {m.explanation ? <span className="text-white/60"> — {m.explanation}</span> : null}
+                </p>
+              </div>
+            ))
+          )}
+          {more > 0 && (
+            <p className="text-xs italic text-white/45">and {more} more…</p>
+          )}
+        </div>
+        <div className="my-3 border-t border-dashed border-white/10" />
+        <p className="text-xs text-white/70">
+          Consolation:{" "}
+          <span className="font-bold text-poke-yellow">+{xpEarned} XP</span>
+          {" · "}
+          {streakKept ? "streak kept 🔥" : "streak reset"}
+        </p>
+      </div>
+
+      <div className="mx-auto mt-auto w-full max-w-sm space-y-2 pt-8">
         <Button
           size="lg"
           onClick={onRebattle}
-          className="h-12 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
+          className="h-14 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
         >
-          Continue
+          Rematch
+        </Button>
+        <Button
+          size="lg"
+          variant="outline"
+          onClick={onBackHome}
+          className="h-14 w-full rounded-full border-2 border-white/20 bg-white/[0.04] font-bold text-white hover:bg-white/10"
+        >
+          Back home
         </Button>
       </div>
     </motion.div>
   );
 }
 
-function StatTile({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+function Row({ label, value, valueClass }: { label: React.ReactNode; value: React.ReactNode; valueClass?: string }) {
   return (
-    <div className="rounded-2xl bg-card/95 px-2 py-3 text-center shadow-card backdrop-blur">
-      <div className={`font-display-md ${accent ? "text-primary" : "text-poke-dark"}`}>
-        {value}
-      </div>
-      <div className="mt-0.5 truncate text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-        {label}
-      </div>
+    <div className="flex items-center justify-between py-1.5 text-sm">
+      <div className="font-semibold text-poke-dark">{label}</div>
+      <div className={`font-display-md ${valueClass ?? "text-poke-dark"}`}>{value}</div>
     </div>
   );
 }
+
 
 // ----------------------------- Daily Challenge Mode -----------------------------
 
