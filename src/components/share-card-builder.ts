@@ -1,7 +1,7 @@
 import { findPokemon } from "@/lib/pokemon-data";
 
 export interface ShareData {
-  type: "elite" | "weekly" | "daily-perfect";
+  type: "elite" | "weekly" | "daily-perfect" | "battle";
   trainerName: string;
   trainerSpriteUrl: string;
   partnerName: string;
@@ -17,6 +17,10 @@ export interface ShareData {
   topDamage: number;
   dateISO: string;
   badgeName?: string;
+  correctCount?: number;
+  totalQuestions?: number;
+  xpEarned?: number;
+  avgTimeMs?: number;
 }
 
 const CARD_SIZE = 1080;
