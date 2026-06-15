@@ -277,6 +277,21 @@ function BattleHome({
   const bestStreak = useGameStore((s) => s.stats.bestStreak);
   const weekRange = getWeekRangeUtc();
 
+  const [weeklyTimeLeft, setWeeklyTimeLeft] = useState("");
+  useEffect(() => {
+    if (!weeklyFinished) return;
+    const tick = () => {
+      const ms = weekRange.end - Date.now();
+      if (ms <= 0) { setWeeklyTimeLeft("Refreshing..."); return; }
+      const days = Math.floor(ms / (24 * 60 * 60 * 1000));
+      const hours = Math.floor((ms % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+      setWeeklyTimeLeft(`${days}d ${hours}h`);
+    };
+    tick();
+    const i = setInterval(tick, 60000);
+    return () => clearInterval(i);
+  }, [weekRange.end, weeklyFinished]);
+
   if (!pokemon) return null;
 
   const rank = rankForLevel(level);
