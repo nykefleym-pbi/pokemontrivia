@@ -45,6 +45,7 @@ const GEN_RANGES: Array<{ gen: number; from: number; to: number }> = [
 function PokedexPage() {
   const hasOnboarded = useGameStore((s) => s.hasOnboarded);
   const pokedex = useGameStore((s) => s.pokedex);
+  const trainerName = useGameStore((s) => s.trainerName);
   const navigate = useNavigate();
   const [gen, setGen] = useState(1);
   const [query, setQuery] = useState("");
@@ -58,12 +59,13 @@ function PokedexPage() {
     if (!hasOnboarded) navigate({ to: "/" });
   }, [hasOnboarded, navigate]);
 
-  const total = ALL_POKEMON.length;
-  const captured = Object.keys(pokedex).length;
-  const shinies = Object.values(pokedex).filter((e) => e.shinyUnlocked).length;
-  const pct = Math.round((captured / total) * 100);
-
   const range = GEN_RANGES.find((g) => g.gen === gen)!;
+  const regionTotal = range.to - range.from + 1;
+  const regionCaught = ALL_POKEMON.filter(
+    (p) => p.id >= range.from && p.id <= range.to && pokedex[p.id],
+  ).length;
+  const regionPct = regionTotal > 0 ? regionCaught / regionTotal : 0;
+
   const q = query.trim().toLowerCase();
   const filtered = useMemo(() => {
     return ALL_POKEMON.filter((p) => {
@@ -84,9 +86,8 @@ function PokedexPage() {
     <div className="bg-poke-cream h-full w-full overflow-y-auto pb-nav safe-x">
       {/* Hero */}
       <div className="px-5 pb-5 pt-[calc(env(safe-area-inset-top)+1rem)]">
-        <p className="font-pixel-xs text-primary">POKÉDEX</p>
-        <div className="mt-1 flex items-center justify-between gap-3">
-          <h1 className="font-display-xl text-poke-dark">Pokédex</h1>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="font-display-xl text-poke-dark">{trainerName ? `${trainerName}'s Pokédex` : "Pokédex"}</h1>
           <div className="relative h-16 w-16 shrink-0">
             <svg viewBox="0 0 64 64" className="absolute inset-0 h-full w-full -rotate-90">
               <circle cx="32" cy="32" r="26" fill="none" stroke="oklch(0.22 0.04 260 / 0.12)" strokeWidth="6" />
@@ -94,56 +95,17 @@ function PokedexPage() {
                 cx="32" cy="32" r="26" fill="none"
                 stroke="var(--color-primary)" strokeWidth="6" strokeLinecap="round"
                 strokeDasharray={ringCirc}
-                strokeDashoffset={ringCirc * (1 - pct / 100)}
+                strokeDashoffset={ringCirc * (1 - regionPct)}
                 style={{ transition: "stroke-dashoffset 0.5s ease" }}
               />
             </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-sm font-extrabold text-poke-dark">{pct}%</span>
+            <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
+              <span className="text-base font-extrabold text-poke-dark">{regionCaught}</span>
+              <span className="text-[10px] text-poke-dark/55">/ {regionTotal}</span>
             </div>
           </div>
         </div>
-        <div className="mt-3 flex gap-2">
-          <div className="flex flex-1 items-baseline gap-1.5 rounded-2xl bg-card px-3 py-2 shadow-card">
-            <span className="text-lg font-extrabold text-poke-dark">{captured}</span>
-            <span className="text-xs text-poke-dark/60">/ {total} caught</span>
-          </div>
-          <div className="flex items-center gap-1 rounded-2xl bg-card px-3 py-2 shadow-card">
-            <Sparkles className="h-4 w-4 text-poke-yellow" />
-            <span className="text-lg font-extrabold text-poke-dark">{shinies}</span>
-            <span className="text-xs text-poke-dark/60">shiny</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Sticky filters */}
-      <div className="sticky top-0 z-20 border-b border-border/60 bg-background/95 px-5 py-3 backdrop-blur">
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search name…"
-            className="h-11 rounded-full border-0 bg-card pl-11 text-sm shadow-card"
-          />
-        </div>
-        <div className="mt-3 -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
-          {GEN_RANGES.map((g) => {
-            const active = g.gen === gen;
-            return (
-              <button
-                key={g.gen}
-                onClick={() => setGen(g.gen)}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold transition ${
-                  active ? "bg-primary text-primary-foreground shadow-card" : "bg-card text-poke-dark/70 shadow-card"
-                }`}
-              >
-                Gen {g.gen}
-              </button>
-            );
-          })}
-        </div>
-        <div className="mt-2 flex flex-wrap gap-1.5">
+        <div className="mt-3 flex flex-wrap gap-1.5">
           <Popover>
             <PopoverTrigger asChild>
               <button
@@ -191,12 +153,42 @@ function PokedexPage() {
         </div>
       </div>
 
+      {/* Sticky filters */}
+      <div className="sticky top-0 z-20 border-b border-border/60 bg-background/95 px-5 py-3 backdrop-blur">
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search name…"
+            className="h-11 rounded-full border-0 bg-card pl-11 text-sm shadow-card"
+          />
+        </div>
+        <div className="mt-3 -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
+          {GEN_RANGES.map((g) => {
+            const active = g.gen === gen;
+            return (
+              <button
+                key={g.gen}
+                onClick={() => setGen(g.gen)}
+                className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold transition ${
+                  active ? "bg-primary text-primary-foreground shadow-card" : "bg-card text-poke-dark/70 shadow-card"
+                }`}
+              >
+                Gen {g.gen}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Grid */}
       <div className="px-3 pb-8 pt-3">
         <div className="grid grid-cols-3 gap-2.5 min-[400px]:grid-cols-4">
           {filtered.map((p) => {
             const e = pokedex[p.id];
             const got = !!e;
+            const shiny = !!e?.shinyUnlocked;
             const primaryType = p.types[0];
             return (
               <button
@@ -205,14 +197,23 @@ function PokedexPage() {
                 style={{
                   contentVisibility: "auto",
                   containIntrinsicSize: "112px 112px",
-                  ...(got
-                    ? { backgroundImage: `linear-gradient(135deg, color-mix(in oklab, var(--color-type-${primaryType}) 18%, transparent), var(--color-card))` }
-                    : {}),
+                  ...(shiny
+                    ? { backgroundImage: "linear-gradient(135deg, color-mix(in oklab, var(--color-poke-yellow) 35%, var(--color-card)), var(--color-card))" }
+                    : got
+                      ? { backgroundImage: `linear-gradient(135deg, color-mix(in oklab, var(--color-type-${primaryType}) 18%, transparent), var(--color-card))` }
+                      : {}),
                 } as React.CSSProperties}
                 className={`relative flex flex-col items-center rounded-2xl p-2 transition active:scale-95 ${
-                  got ? "shadow-card" : "bg-muted/40"
+                  shiny
+                    ? "border-2 border-poke-yellow shadow-card"
+                    : got
+                      ? "shadow-card"
+                      : "bg-muted/40"
                 }`}
               >
+                <div className="absolute left-1.5 top-1.5 font-pixel-xs text-poke-dark/40">
+                  #{String(p.id).padStart(3, "0")}
+                </div>
                 <PokemonSprite
                   id={p.id}
                   alt={got ? p.name : "???"}
@@ -227,11 +228,6 @@ function PokedexPage() {
                 {got && e.defeatCount > 1 && (
                   <div className="absolute right-1 top-1 rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-bold text-primary-foreground shadow-sm">
                     ×{e.defeatCount}
-                  </div>
-                )}
-                {e?.shinyUnlocked && (
-                  <div className="absolute left-1 top-1 rounded-full bg-poke-yellow p-0.5 shadow-sm">
-                    <Sparkles className="h-2.5 w-2.5 text-poke-dark" />
                   </div>
                 )}
               </button>
