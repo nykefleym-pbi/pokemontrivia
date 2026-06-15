@@ -1567,8 +1567,7 @@ function ResultScreen({
         <Button
           size="lg"
           onClick={() => (onRematch ? onRematch() : onRebattle())}
-          disabled={!onRematch}
-          className="h-14 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop disabled:opacity-50"
+          className="h-14 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
         >
           Rematch
         </Button>
