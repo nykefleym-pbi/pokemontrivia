@@ -99,6 +99,7 @@ export interface GameState {
 
   // battle ephemeral state
   inBattle: boolean;
+  battleScreenActive: boolean;
   setsThisBattle: number;
   potionsUsedThisBattle: number;
   xAttackActive: boolean;
