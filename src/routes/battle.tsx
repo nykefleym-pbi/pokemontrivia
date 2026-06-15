@@ -442,7 +442,7 @@ function BattleHome({
               {weeklyLeague?.status === "won"
                 ? "Victory!"
                 : weeklyLeague?.status === "lost"
-                  ? "Try next week"
+                  ? `Try again in ${weeklyTimeLeft}`
                   : weeklyLeague?.status === "in_progress"
                     ? "Resume your run"
                     : `Resets ${new Date(weekRange.end).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`}
