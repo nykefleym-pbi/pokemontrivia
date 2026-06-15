@@ -280,6 +280,8 @@ function BattleMode({
   const lastStreakLabelRef = useRef<string | null>(null);
   const correctCountRef = useRef(0);
   const topDmgRef = useRef(0);
+  const totalElapsedMsRef = useRef(0);
+  const answeredCountRef = useRef(0);
   const [tpEarned, setTpEarned] = useState(0);
   const [shareData, setShareData] = useState<ShareData | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
