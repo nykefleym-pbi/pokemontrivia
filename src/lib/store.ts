@@ -213,6 +213,8 @@ export const useGameStore = create<GameState>()(
       itemCooldowns: {},
 
       inBattle: false,
+      battleScreenActive: false,
+      setBattleScreenActive: (v) => set({ battleScreenActive: v }),
       setsThisBattle: 0,
       potionsUsedThisBattle: 0,
       xAttackActive: false,
