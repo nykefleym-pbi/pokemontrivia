@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { ChevronLeft, Backpack, Clock, Sparkles, Crown } from "lucide-react";
+import { ChevronLeft, Backpack, Sparkles, Crown } from "lucide-react";
 import { useGameStore, getItemDef } from "@/lib/store";
 import {
   pickRandomEnemy,
@@ -12,7 +12,9 @@ import {
   streakLabel,
   TP_REWARDS,
   getTpMultiplier,
+  xpProgressInLevel,
 } from "@/lib/game-data";
+
 import { isSuperEffective, findPokemon, isPlayerDisadvantaged, isPlayerImmune, type PokeEntry, type PokeType } from "@/lib/pokemon-data";
 import { getAbility as getAbilityFn, type Ability } from "@/lib/abilities";
 import { TutorialOverlay } from "@/components/tutorial-overlay";
@@ -122,6 +124,32 @@ function CombatPanel({
     </div>
   );
 }
+
+function TimerRing({ timer, maxTime }: { timer: number; maxTime: number }) {
+  return (
+    <div
+      className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold shadow-card ${
+        timer <= 5 ? "animate-pulse bg-destructive text-destructive-foreground" : "bg-card text-foreground"
+      }`}
+    >
+      <svg viewBox="0 0 24 24" className="h-4 w-4">
+        <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeOpacity="0.2" strokeWidth="3" />
+        <circle
+          cx="12" cy="12" r="9" fill="none"
+          stroke={timer <= 5 ? "currentColor" : "var(--color-hp-good)"}
+          strokeWidth="3" strokeLinecap="round"
+          strokeDasharray={2 * Math.PI * 9}
+          strokeDashoffset={2 * Math.PI * 9 * (1 - timer / Math.max(1, maxTime))}
+          transform="rotate(-90 12 12)"
+          style={{ transition: "stroke-dashoffset 0.5s linear" }}
+        />
+      </svg>
+      {timer}s
+    </div>
+  );
+}
+
+
 
 interface Props {
   questions: Trivia[];
@@ -267,6 +295,10 @@ function BattleMode({
   interface ActiveStatus { kind: StatusKind; curesRemaining: number; appliedAt: number }
   const [statuses, setStatuses] = useState<ActiveStatus[]>([]);
   const wrongStreakRef = useRef(0);
+  const missedRef = useRef<Array<{ question: string; correctAnswer: string; explanation: string }>>([]);
+  const newTrophiesRef = useRef<Array<{ icon: string; name: string }>>([]);
+  const speedBonusTotalRef = useRef(0);
+
   const poisonTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastAbilityToastRef = useRef<number>(0);
   const abilityStateRef = useRef({
@@ -557,7 +589,9 @@ function BattleMode({
       const totalTime = TIMER_BASE + bonusTime;
       const speedRatio = Math.max(0, (totalTime - elapsedSec) / totalTime);
       const speedBonus = Math.round(5 * speedRatio);
+      speedBonusTotalRef.current += speedBonus;
       dmg += speedBonus;
+
       // type effectiveness AFTER multiplier
       if (superEff) dmg *= 2;
       if (xAttackActive) {
@@ -619,7 +653,13 @@ function BattleMode({
       }
     } else {
       wrongStreakRef.current += 1;
+      missedRef.current.push({
+        question: trivia.question,
+        correctAnswer: trivia.options[trivia.correct],
+        explanation: trivia.explanation,
+      });
       // Matchup-aware wrong-answer damage
+
       let wrongDmg = 10;
       if (immune) wrongDmg = 5;
       else if (disadvantaged) wrongDmg = 15;
@@ -813,14 +853,18 @@ function BattleMode({
       timestamp: Date.now(),
     });
     const after = unlockedAchievements(useGameStore.getState());
+    const unlocked: Array<{ icon: string; name: string }> = [];
     for (const id of after) {
       if (!before.has(id)) {
         const a = ACHIEVEMENTS.find((x) => x.id === id);
         if (a) {
+          unlocked.push({ icon: a.icon, name: a.name });
           toast.success(`${a.icon} ${a.name}`, { description: a.desc, duration: 4000 });
         }
       }
     }
+    newTrophiesRef.current = unlocked;
+
 
     playSfx(won ? "victory" : "defeat");
     if (won) {
@@ -862,16 +906,31 @@ function BattleMode({
   }
 
   if (phase === "result") {
+    const stateNow = useGameStore.getState();
+    const prog = xpProgressInLevel(stateNow.xp);
+    const pct = Math.min(100, (prog.current / Math.max(1, prog.need)) * 100);
     return (
       <>
         <ResultScreen
           won={resultWon!}
+          opponentName={enemy.name}
+          correctCount={correctCountRef.current}
+          totalQuestions={questions.length}
           xpEarned={xpEarned}
           tpEarned={tpEarned}
+          speedBonus={speedBonusTotalRef.current}
           partnerName={player.name}
           partnerId={player.id}
           streak={maxStreakRef.current}
+          streakKept={maxStreakRef.current > 0}
+          currentLevel={prog.level}
+          xpIntoLevel={prog.current}
+          xpForThisLevel={prog.need}
+          levelProgressPct={pct}
+          newTrophies={newTrophiesRef.current}
+          missed={missedRef.current}
           onRebattle={() => onExit()}
+          onBackHome={() => onExit()}
           canShare={!!shareData}
           onShare={() => setShareOpen(true)}
         />
@@ -881,6 +940,7 @@ function BattleMode({
       </>
     );
   }
+
 
   const totalQuestions = questions.length;
   const progressPct = Math.min(100, (questionIdx / Math.max(1, totalQuestions)) * 100);
@@ -1069,31 +1129,12 @@ function BattleMode({
             >
               {/* Floating timer pill + category label */}
               <div className="pointer-events-none absolute left-1/2 -top-12 z-10 flex -translate-x-1/2 flex-col items-center">
-                <div
-                  className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold shadow-card ${
-                    timer <= 5
-                      ? "animate-pulse bg-destructive text-destructive-foreground"
-                      : "bg-card text-foreground"
-                  }`}
-                >
-                  <svg viewBox="0 0 24 24" className="h-4 w-4">
-                    <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeOpacity="0.2" strokeWidth="3" />
-                    <circle
-                      cx="12" cy="12" r="9" fill="none"
-                      stroke={timer <= 5 ? "currentColor" : "var(--color-hp-good)"}
-                      strokeWidth="3" strokeLinecap="round"
-                      strokeDasharray={2 * Math.PI * 9}
-                      strokeDashoffset={2 * Math.PI * 9 * (1 - timer / (TIMER_BASE + bonusTime))}
-                      transform="rotate(-90 12 12)"
-                      style={{ transition: "stroke-dashoffset 0.5s linear" }}
-                    />
-                  </svg>
-                  {timer}s
-                </div>
+                <TimerRing timer={timer} maxTime={TIMER_BASE + bonusTime} />
                 <p className="mt-1.5 font-pixel-xs text-poke-dark/70">
                   {trivia.category}
                 </p>
               </div>
+
 
               <div className="pt-1">
                 <p className="text-center text-[clamp(0.95rem,4vw,1.125rem)] font-bold leading-snug">
@@ -1260,109 +1301,257 @@ function BattleMode({
 
 function ResultScreen({
   won,
+  opponentName,
+  correctCount,
+  totalQuestions,
   xpEarned,
   tpEarned,
+  speedBonus,
   partnerName,
   partnerId,
-  streak,
+  streakKept,
+  currentLevel,
+  levelProgressPct,
+  newTrophies,
+  missed,
   onRebattle,
+  onBackHome,
   canShare,
   onShare,
 }: {
   won: boolean;
+  opponentName: string;
+  correctCount: number;
+  totalQuestions: number;
   xpEarned: number;
   tpEarned: number;
+  speedBonus: number;
   partnerName: string;
   partnerId: number;
   streak: number;
+  streakKept: boolean;
+  currentLevel: number;
+  xpIntoLevel: number;
+  xpForThisLevel: number;
+  levelProgressPct: number;
+  newTrophies: Array<{ icon: string; name: string }>;
+  missed: Array<{ question: string; correctAnswer: string; explanation: string }>;
   onRebattle: () => void;
+  onBackHome: () => void;
   canShare?: boolean;
   onShare?: () => void;
 }) {
+  if (won) {
+    const confetti = [
+      { c: "bg-primary", s: "h-3 w-3 rounded-sm rotate-12", t: "8%", l: "12%" },
+      { c: "bg-poke-yellow", s: "h-2 w-2 rounded-full", t: "18%", l: "78%" },
+      { c: "bg-poke-blue", s: "h-2.5 w-2.5 rounded-full", t: "14%", l: "88%" },
+      { c: "bg-hp-good", s: "h-3 w-3 rounded-sm -rotate-6", t: "30%", l: "70%" },
+      { c: "bg-poke-yellow", s: "h-2 w-2 rounded-full", t: "38%", l: "8%" },
+      { c: "bg-primary", s: "h-2 w-2 rounded-full", t: "46%", l: "92%" },
+    ];
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="relative flex h-full w-full flex-col overflow-y-auto bg-victory px-6 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
+      >
+        {confetti.map((d, i) => (
+          <span
+            key={i}
+            className={`pointer-events-none absolute ${d.s} ${d.c} opacity-80`}
+            style={{ top: d.t, left: d.l }}
+          />
+        ))}
+
+        <div className="flex flex-col items-center text-center">
+          <div className="font-pixel-xs uppercase tracking-[0.25em] text-primary">
+            ★ Battle Won ★
+          </div>
+          <h1 className="mt-2 font-display-xl text-poke-dark">Victory!</h1>
+          <p className="mt-1 text-sm text-poke-dark/70">
+            {opponentName} defeated · {correctCount}/{totalQuestions} correct
+          </p>
+
+          <div className="relative mt-6 flex h-36 w-44 items-end justify-center">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute bottom-2 left-1/2 h-10 w-32 -translate-x-1/2 rounded-[50%]"
+              style={{
+                background:
+                  "radial-gradient(ellipse at 50% 35%, oklch(0.88 0.16 145) 0%, oklch(0.72 0.18 145) 55%, oklch(0.55 0.16 150) 100%)",
+                boxShadow: "0 8px 14px -6px oklch(0.3 0.1 150 / 0.35), inset 0 1px 0 oklch(1 0 0 / 0.35)",
+              }}
+            />
+            <motion.div
+              animate={{ y: [0, -8, 0] }}
+              transition={{ duration: 1.4, repeat: Infinity }}
+              className="relative z-10"
+            >
+              <PokemonSprite id={partnerId} alt={partnerName} className="sprite h-28 w-28" />
+            </motion.div>
+          </div>
+        </div>
+
+        <div className="mx-auto mt-6 w-full max-w-sm rounded-2xl bg-card p-4 shadow-card">
+          <Row label="XP earned" value={`+${xpEarned}`} valueClass="text-primary" />
+          <Row label={`${partnerName} TP`} value={`+${tpEarned}`} valueClass="text-poke-blue" />
+          {speedBonus > 0 && (
+            <Row
+              label={
+                <>
+                  Speed bonus{" "}
+                  <span className="font-pixel text-[8px] text-hp-good">UNDER 5S AVG</span>
+                </>
+              }
+              value={`+${speedBonus}`}
+              valueClass="text-hp-good"
+            />
+          )}
+          {newTrophies.map((t) => (
+            <Row
+              key={t.name}
+              label={
+                <span className="flex items-center gap-1.5">
+                  <span>{t.icon}</span> Trophy
+                </span>
+              }
+              value={t.name}
+              valueClass="text-poke-yellow"
+            />
+          ))}
+          <div className="my-3 border-t border-dashed border-poke-dark/15" />
+          <div className="flex items-center gap-2">
+            <span className="font-pixel-xs text-poke-dark/70">Lv {currentLevel} · {Math.round(levelProgressPct)}%</span>
+            <div className="h-2 flex-1 overflow-hidden rounded-full bg-poke-dark/10">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-poke-yellow via-primary to-destructive transition-[width] duration-700"
+                style={{ width: `${levelProgressPct}%` }}
+              />
+            </div>
+            <span className="font-pixel-xs text-poke-dark/70">Lv {currentLevel + 1}</span>
+          </div>
+        </div>
+
+        <div className="mx-auto mt-auto w-full max-w-sm space-y-2 pt-8">
+          <Button
+            size="lg"
+            onClick={onRebattle}
+            className="h-14 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
+          >
+            Next Battle
+          </Button>
+          {canShare && onShare && (
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={onShare}
+              className="h-14 w-full rounded-full border-2 border-poke-dark/15 bg-card font-bold text-poke-dark hover:bg-card/80"
+            >
+              ⬆ Share result
+            </Button>
+          )}
+        </div>
+      </motion.div>
+    );
+  }
+
+  // DEFEAT
+  const shown = missed.slice(0, 5);
+  const more = Math.max(0, missed.length - shown.length);
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className={`flex h-full w-full flex-col items-center justify-center overflow-y-auto px-6 py-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)] safe-x ${
-        won ? "bg-victory" : "bg-poke-dark/85"
-      }`}
+      className="relative flex h-full w-full flex-col overflow-y-auto bg-defeat px-6 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
     >
-      <motion.div
-        initial={{ scale: 0.6, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 120 }}
-        className="flex flex-col items-center text-center"
-      >
-        <div
-          className={`rounded-full px-3 py-1 font-pixel-xs uppercase ${
-            won ? "bg-poke-yellow text-poke-dark" : "bg-destructive text-white"
-          }`}
-        >
-          {won ? "Victory" : "Defeat"}
+      <div className="flex flex-col items-center text-center">
+        <div className="font-pixel-xs uppercase tracking-[0.25em] text-poke-blue/80">
+          Battle Lost
         </div>
-        <div className="mt-3 font-display-xl text-white drop-shadow-lg">
-          {won ? "Champion!" : "So close…"}
-        </div>
-        <div className="relative mt-4 flex h-32 w-32 items-center justify-center">
+        <h1 className="mt-2 font-display-xl text-white">So close!</h1>
+        <p className="mt-1 text-sm text-white/60">
+          {opponentName} wins · {correctCount}/{totalQuestions} correct
+        </p>
+
+        <div className="relative mt-6 flex h-32 w-40 items-end justify-center">
           <div
-            className={`absolute inset-0 rounded-full blur-2xl ${
-              won ? "bg-poke-yellow/60" : "bg-destructive/40"
-            }`}
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-2 left-1/2 h-8 w-28 -translate-x-1/2 rounded-[50%] bg-black/40 blur-[2px]"
           />
           <motion.div
-            animate={won ? { y: [0, -8, 0] } : { rotate: [0, -4, 4, 0] }}
-            transition={{ duration: won ? 1.4 : 2, repeat: Infinity }}
-            className="relative"
+            animate={{ rotate: [0, -3, 3, 0] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="relative z-10"
           >
-            <PokemonSprite
-              id={partnerId}
-              alt={partnerName}
-              className={`sprite h-28 w-28 ${won ? "" : "opacity-80 grayscale"}`}
-            />
+            <PokemonSprite id={partnerId} alt={partnerName} className="sprite h-24 w-24 opacity-80 grayscale" />
           </motion.div>
         </div>
-      </motion.div>
-
-      <div className="mt-6 grid w-full max-w-xs grid-cols-3 gap-2">
-        <StatTile label="XP" value={`+${xpEarned}`} accent />
-        <StatTile label="Streak" value={String(streak)} />
-        <StatTile label={`TP · ${partnerName.slice(0, 6)}`} value={`+${tpEarned}`} accent />
       </div>
 
-      <div className="mt-6 w-full max-w-xs space-y-2">
-        {canShare && onShare && won && (
-          <Button
-            size="lg"
-            onClick={onShare}
-            className="h-12 w-full rounded-full border-2 border-white/40 bg-white/10 font-bold text-white backdrop-blur hover:bg-white/20"
-          >
-            Share Victory
-          </Button>
-        )}
+      <div className="mx-auto mt-6 w-full max-w-sm rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+        <div className="font-pixel-xs uppercase tracking-wider text-white/60">
+          Review · {missed.length} Missed
+        </div>
+        <div className="mt-3 space-y-2.5">
+          {shown.length === 0 ? (
+            <p className="text-sm text-white/70">No wrong answers — the clock got you!</p>
+          ) : (
+            shown.map((m, i) => (
+              <div key={i} className="flex items-start gap-2.5">
+                <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-destructive/80 text-[10px] font-bold text-white">
+                  ✕
+                </span>
+                <p className="line-clamp-2 text-[13px] leading-snug text-white/90">
+                  <span className="font-semibold">{m.correctAnswer}</span>
+                  {m.explanation ? <span className="text-white/60"> — {m.explanation}</span> : null}
+                </p>
+              </div>
+            ))
+          )}
+          {more > 0 && (
+            <p className="text-xs italic text-white/45">and {more} more…</p>
+          )}
+        </div>
+        <div className="my-3 border-t border-dashed border-white/10" />
+        <p className="text-xs text-white/70">
+          Consolation:{" "}
+          <span className="font-bold text-poke-yellow">+{xpEarned} XP</span>
+          {" · "}
+          {streakKept ? "streak kept 🔥" : "streak reset"}
+        </p>
+      </div>
+
+      <div className="mx-auto mt-auto w-full max-w-sm space-y-2 pt-8">
         <Button
           size="lg"
           onClick={onRebattle}
-          className="h-12 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
+          className="h-14 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
         >
-          Continue
+          Rematch
+        </Button>
+        <Button
+          size="lg"
+          variant="outline"
+          onClick={onBackHome}
+          className="h-14 w-full rounded-full border-2 border-white/20 bg-white/[0.04] font-bold text-white hover:bg-white/10"
+        >
+          Back home
         </Button>
       </div>
     </motion.div>
   );
 }
 
-function StatTile({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+function Row({ label, value, valueClass }: { label: ReactNode; value: ReactNode; valueClass?: string }) {
   return (
-    <div className="rounded-2xl bg-card/95 px-2 py-3 text-center shadow-card backdrop-blur">
-      <div className={`font-display-md ${accent ? "text-primary" : "text-poke-dark"}`}>
-        {value}
-      </div>
-      <div className="mt-0.5 truncate text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-        {label}
-      </div>
+    <div className="flex items-center justify-between py-1.5 text-sm">
+      <div className="font-semibold text-poke-dark">{label}</div>
+      <div className={`font-display-md ${valueClass ?? "text-poke-dark"}`}>{value}</div>
     </div>
   );
 }
+
 
 // ----------------------------- Daily Challenge Mode -----------------------------
 
@@ -1464,18 +1653,18 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
   const progressPct = ((idx) / total) * 100;
 
   return (
-    <div className="bg-poke-hero relative h-full w-full overflow-y-auto pb-[calc(env(safe-area-inset-bottom)+1rem)] safe-x">
+    <div className="bg-battle-field relative flex h-full w-full flex-col overflow-hidden">
       <div className="absolute left-0 right-0 top-0 z-40 h-1 bg-poke-dark/20">
         <motion.div className="h-full bg-poke-yellow" initial={false} animate={{ width: `${progressPct}%` }} />
       </div>
-      <div className="flex items-center justify-between px-4 pt-[calc(env(safe-area-inset-top)+0.5rem)]">
-        <button onClick={() => setConfirmExit(true)} className="flex h-10 w-10 items-center justify-center rounded-full bg-card/80 backdrop-blur">
+      <div className="flex shrink-0 items-center justify-between pt-[calc(env(safe-area-inset-top)+1rem)] pb-1 px-[max(1.25rem,env(safe-area-inset-left))]">
+        <button onClick={() => setConfirmExit(true)} className="flex h-9 w-9 items-center justify-center rounded-full bg-card/90 backdrop-blur shadow-card">
           <ChevronLeft className="h-5 w-5" />
         </button>
-        <div className="rounded-full bg-poke-dark px-3 py-1 font-pixel text-[10px] text-poke-yellow">
+        <div className="rounded-full bg-poke-dark px-2.5 py-1 font-pixel text-[9px] text-poke-yellow shadow-card">
           🔥 DAILY · {idx + 1}/{total}
         </div>
-        <div className="w-10" />
+        <div className="w-9" />
       </div>
       <AlertDialog open={confirmExit} onOpenChange={setConfirmExit}>
         <AlertDialogContent>
@@ -1497,59 +1686,53 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="relative px-5 pt-16">
-        {/* Floating timer pill + category */}
-        <div className="pointer-events-none absolute left-1/2 top-2 z-10 flex -translate-x-1/2 flex-col items-center">
-          <div
-            className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold shadow-card ${
-              timer <= 5 ? "animate-pulse bg-destructive text-destructive-foreground" : "bg-card text-foreground"
-            }`}
-          >
-            <Clock className="h-4 w-4" />
-            {timer}s
-          </div>
+      <div className="flex-1 min-h-0 flex items-center justify-center px-4">
+        <PokeballPattern marks={pattern} />
+      </div>
+
+      <div className="relative shrink-0 rounded-t-[28px] bg-card pt-14 px-[max(1rem,env(safe-area-inset-left))] pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-[0_-8px_30px_-12px_oklch(0.3_0.05_260/0.25)]">
+        <div className="pointer-events-none absolute left-1/2 -top-12 z-10 flex -translate-x-1/2 flex-col items-center">
+          <TimerRing timer={timer} maxTime={20} />
           <p className="mt-1.5 font-pixel-xs text-poke-dark/70">{trivia.category}</p>
         </div>
 
-        <div className="rounded-3xl bg-card p-5 shadow-card">
-          <p className="text-base font-semibold leading-snug">{trivia.question}</p>
-          <div className="mt-4 grid grid-cols-1 gap-2">
-            {trivia.options.map((opt, i) => {
-              const isCorrect = phase === "feedback" && i === trivia.correct;
-              const isWrong = phase === "feedback" && chosen === i && i !== trivia.correct;
-              return (
-                <button
-                  key={i}
-                  disabled={phase !== "question"}
-                  onClick={() => handleAnswer(i)}
-                  className={`flex items-center justify-between rounded-2xl border-2 bg-card px-4 py-3 text-left text-sm font-semibold transition active:scale-[0.98] ${
-                    isCorrect
-                      ? "border-hp-good bg-hp-good/5 text-hp-good"
-                      : isWrong
-                        ? "border-destructive bg-destructive/5 text-destructive"
-                        : "border-border/60 text-foreground hover:border-primary/50"
-                  } disabled:cursor-not-allowed`}
-                >
-                  <span className="min-w-0 flex-1 truncate">{opt}</span>
-                  {isCorrect && (
-                    <span className="ml-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-hp-good text-[12px] text-white">✓</span>
-                  )}
-                  {isWrong && (
-                    <span className="ml-2 shrink-0 text-[10px] font-bold uppercase tracking-wide text-destructive">Your Pick ×</span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-          {phase === "feedback" && (
-            <p className="mt-3 rounded-xl bg-muted p-2 text-xs text-muted-foreground">💡 {trivia.explanation}</p>
-          )}
+        <p className="text-center text-[clamp(0.95rem,4vw,1.125rem)] font-bold leading-snug">{trivia.question}</p>
+        <div className="mt-3 grid grid-cols-1 gap-2">
+          {trivia.options.map((opt, i) => {
+            const isCorrect = phase === "feedback" && i === trivia.correct;
+            const isWrong = phase === "feedback" && chosen === i && i !== trivia.correct;
+            return (
+              <button
+                key={i}
+                disabled={phase !== "question"}
+                onClick={() => handleAnswer(i)}
+                className={`flex min-h-[48px] items-center justify-between rounded-2xl border-2 bg-card px-4 py-2.5 text-left text-[clamp(0.875rem,3.6vw,0.95rem)] font-semibold transition active:scale-[0.98] ${
+                  isCorrect
+                    ? "border-hp-good bg-hp-good/5 text-hp-good"
+                    : isWrong
+                      ? "border-destructive bg-destructive/5 text-destructive"
+                      : "border-border/60 text-foreground hover:border-primary/50"
+                } disabled:cursor-not-allowed`}
+              >
+                <span className="min-w-0 flex-1 truncate">{opt}</span>
+                {isCorrect && (
+                  <span className="ml-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-hp-good text-[12px] text-white">✓</span>
+                )}
+                {isWrong && (
+                  <span className="ml-2 shrink-0 text-[10px] font-bold uppercase tracking-wide text-destructive">Your Pick ×</span>
+                )}
+              </button>
+            );
+          })}
         </div>
-        <div className="mt-4 flex justify-center"><PokeballPattern marks={pattern} /></div>
+        {phase === "feedback" && (
+          <p className="mt-2 rounded-xl bg-muted p-2 text-[11px] leading-snug text-muted-foreground">💡 {trivia.explanation}</p>
+        )}
       </div>
     </div>
   );
 }
+
 
 function DailyResultScreen({
   correct,
