@@ -1,7 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Sparkles, X } from "lucide-react";
+import { Search, Sparkles, X, ArrowRight, Volume2 } from "lucide-react";
+import { Fragment } from "react";
+import { playCry } from "@/lib/audio";
 import { useGameStore } from "@/lib/store";
 import { ALL_POKEMON, type PokeType } from "@/lib/pokemon-data";
 import { Input } from "@/components/ui/input";
