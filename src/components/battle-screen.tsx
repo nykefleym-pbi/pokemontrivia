@@ -1142,6 +1142,58 @@ function BattleMode({
 
                 {/* Item shortcuts row */}
                 <div className="mt-3 flex items-center justify-center gap-3">
+                  <Sheet open={bagOpen} onOpenChange={setBagOpen}>
+                    <SheetTrigger asChild>
+                      <button className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition active:scale-95">
+                        <Backpack className="h-6 w-6 text-muted-foreground" />
+                      </button>
+                    </SheetTrigger>
+                    <SheetContent side="bottom" className="rounded-t-3xl">
+                      <SheetHeader>
+                        <SheetTitle>Item Bag</SheetTitle>
+                      </SheetHeader>
+                      <div className="mt-4 grid grid-cols-2 gap-2 pb-6">
+                        {ITEMS.map((it) => {
+                          const owned = inventory[it.id] ?? 0;
+                          const cd = cooldowns[it.id] ?? 0;
+                          const disabled = owned <= 0 || cd > 0 || (isWeekly && it.id === "escape");
+                          return (
+                            <button
+                              key={it.id}
+                              disabled={disabled}
+                              onClick={() => tryUseItem(it.id)}
+                              className="flex items-start gap-3 rounded-2xl border-2 p-3 text-left transition disabled:opacity-40 enabled:hover:border-primary"
+                            >
+                              <img
+                                src={it.iconUrl}
+                                alt={it.name}
+                                className="sprite h-9 w-9 shrink-0 object-contain"
+                                onError={(e) => {
+                                  const el = e.currentTarget as HTMLImageElement;
+                                  el.replaceWith(
+                                    Object.assign(document.createElement("span"), {
+                                      textContent: it.emoji,
+                                      className: "text-2xl",
+                                    }),
+                                  );
+                                }}
+                              />
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5 text-sm font-semibold">
+                                  {it.name}
+                                  <span className="font-pixel text-[9px] text-primary">×{owned}</span>
+                                </div>
+                                <div className="text-[10px] leading-tight text-muted-foreground">
+                                  {it.desc}
+                                </div>
+                                {cd > 0 && <div className="text-[10px] text-destructive">Cooldown: {cd}</div>}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </SheetContent>
+                  </Sheet>
                   {ITEMS.filter((it) => (inventory[it.id] ?? 0) > 0)
                     .slice(0, 3)
                     .map((it) => {
