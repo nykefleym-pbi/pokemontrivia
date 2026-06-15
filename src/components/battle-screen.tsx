@@ -913,7 +913,7 @@ function BattleMode({
         )}
       </AnimatePresence>
       {/* top bar */}
-      <div className="flex shrink-0 items-center justify-between gap-2 px-4 pt-[calc(env(safe-area-inset-top)+0.5rem)] safe-x">
+      <div className="flex shrink-0 items-center justify-between gap-2 pt-[calc(env(safe-area-inset-top)+1rem)] pb-1 px-[max(1.25rem,env(safe-area-inset-left))]">
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
