@@ -13,6 +13,7 @@ import {
   TP_REWARDS,
   getTpMultiplier,
   xpProgressInLevel,
+  rankForLevel,
 } from "@/lib/game-data";
 
 import { isSuperEffective, findPokemon, isPlayerDisadvantaged, isPlayerImmune, type PokeEntry, type PokeType } from "@/lib/pokemon-data";
