@@ -219,9 +219,21 @@ function BattlePage() {
     <>
       <Toaster position="top-center" />
       {phase === "fighting" ? (
-        <BattleScreen key={battleKey} questions={questions} onExit={exitBattle} />
+        <BattleScreen
+          key={battleKey}
+          questions={questions}
+          onExit={exitBattle}
+          onRematch={() => { setBattleKey((k) => k + 1); startBattle(); }}
+        />
       ) : phase === "elite" && eliteOpponent ? (
-        <BattleScreen key={battleKey} questions={questions} onExit={exitBattle} mode="elite" eliteMember={eliteOpponent} />
+        <BattleScreen
+          key={battleKey}
+          questions={questions}
+          onExit={exitBattle}
+          onRematch={() => { setBattleKey((k) => k + 1); startElite(); }}
+          mode="elite"
+          eliteMember={eliteOpponent}
+        />
       ) : phase === "weekly" && weeklyOpponent ? (
         <BattleScreen key={battleKey} questions={questions} onExit={exitBattle} mode="weekly" gymLeader={weeklyOpponent} />
       ) : phase === "daily" ? (
