@@ -29,15 +29,7 @@ function SplashPage() {
   if (hasOnboarded) return null;
 
   return (
-    <div className="bg-poke-hero relative flex h-full w-full flex-col overflow-hidden safe-x">
-      {/* decorative pokeballs — subtle outlines */}
-      <div className="pointer-events-none absolute -right-16 -top-16 opacity-[0.12]">
-        <PokeballSpinner size={160} />
-      </div>
-      <div className="pointer-events-none absolute -bottom-16 -left-16 opacity-[0.08]">
-        <PokeballSpinner size={200} />
-      </div>
-
+    <div className="relative flex h-full w-full flex-col overflow-hidden safe-x">
       <AnimatePresence mode="wait">
         {step === "splash" ? (
           <motion.div
@@ -45,49 +37,52 @@ function SplashPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="relative flex h-full w-full flex-col items-center justify-between overflow-y-auto px-6 pt-[calc(env(safe-area-inset-top)+2rem)] pb-[calc(env(safe-area-inset-bottom)+1.5rem)] text-center"
+            className="relative flex h-full w-full flex-col items-center overflow-hidden"
+            style={{
+              background:
+                "radial-gradient(circle at 15% 12%, oklch(0.9 0.13 95 / 0.55) 0%, transparent 42%), radial-gradient(circle at 88% 90%, oklch(0.62 0.22 25 / 0.16) 0%, transparent 48%), linear-gradient(168deg, oklch(0.975 0.025 95) 0%, oklch(0.93 0.05 230) 100%)",
+            }}
           >
-            <div className="flex w-full flex-col items-center">
+            {/* decorative ring outlines */}
+            <div className="pointer-events-none absolute -right-[120px] -top-20 h-80 w-80 rounded-full border-[26px] border-poke-dark/5" />
+            <div className="pointer-events-none absolute right-3 top-[54px] h-[52px] w-[52px] rounded-full border-[12px] border-poke-dark/5" />
+            <div className="pointer-events-none absolute -left-[90px] bottom-[90px] h-60 w-60 rounded-full border-[22px] border-poke-dark/5" />
+
+            {/* hero block */}
+            <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-7 pt-[calc(env(safe-area-inset-top)+2rem)] text-center">
+              <PokeballEmblem />
               <img
                 src={pokemonLogo.url}
                 alt="Pokémon"
-                className="mt-4 h-auto w-48 select-none"
+                className="mt-6 h-auto w-[168px] select-none"
                 draggable={false}
               />
-              <h1 className="mt-3 text-[2.75rem] font-extrabold leading-none tracking-tight text-poke-dark">
+              <h1 className="mt-3 text-[2.625rem] font-black leading-none tracking-tight text-poke-dark">
                 Trivia Battle
               </h1>
-              <p className="mt-3 max-w-[16rem] text-sm leading-relaxed text-poke-dark/70">
+              <p className="mt-4 max-w-[17rem] text-[15px] leading-relaxed text-poke-dark/65">
                 Battle trainers with your knowledge. Earn XP, climb leagues, fill your Pokédex.
               </p>
 
-              <div className="mt-8 flex items-center justify-center gap-3">
+              <div className="mt-7 flex items-center justify-center gap-3.5">
                 {[1, 4, 7, 25].map((id, i) => (
-                  <motion.div
+                  <div
                     key={id}
-                    className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-pop ring-1 ring-poke-dark/10"
-                    animate={{ y: [0, -10, 0] }}
-                    transition={{
-                      duration: 1.6,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                      delay: i * 0.4,
-                    }}
+                    className={`flex h-16 w-16 items-center justify-center rounded-full bg-card shadow-card ${
+                      i % 2 === 1 ? "-translate-y-3" : ""
+                    }`}
                   >
-                    <PokemonSprite id={id} className="sprite h-12 w-12" />
-                  </motion.div>
+                    <PokemonSprite id={id} className="sprite h-[54px] w-[54px]" />
+                  </div>
                 ))}
-              </div>
-
-              <div className="mt-5">
-                <PokeballSpinner size={64} spinning />
               </div>
             </div>
 
-            <div className="mt-auto flex w-full max-w-xs flex-col gap-4 pb-2">
+            {/* buttons */}
+            <div className="relative z-10 flex w-full flex-col gap-3 px-7 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-7">
               <Button
                 size="lg"
-                className="h-14 rounded-full bg-primary text-lg font-semibold shadow-pop active:scale-95"
+                className="h-[58px] w-full rounded-full bg-primary text-[17px] font-bold text-primary-foreground shadow-pop active:scale-95"
                 onClick={() => setStep("create")}
               >
                 New Trainer
@@ -95,7 +90,7 @@ function SplashPage() {
               <Button
                 size="lg"
                 variant="outline"
-                className="h-14 rounded-full border-2 bg-white text-lg font-semibold active:scale-95"
+                className="h-[58px] w-full rounded-full border-2 border-poke-dark/10 bg-card text-[17px] font-bold text-poke-dark active:scale-95"
                 onClick={() => {
                   useGameStore.getState().startGuestSession();
                   navigate({ to: "/battle", search: { autostart: 1 } as never });
