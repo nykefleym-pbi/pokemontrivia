@@ -563,6 +563,9 @@ function BattleMode({
     const correct = idx === trivia.correct;
     const elapsed = Date.now() - questionStart.current;
     setLastElapsedMs(elapsed);
+    totalElapsedMsRef.current += elapsed;
+    answeredCountRef.current += 1;
+
 
     let newStreak = streak;
     if (correct) {
