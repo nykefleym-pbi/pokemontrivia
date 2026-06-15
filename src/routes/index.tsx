@@ -57,25 +57,15 @@ function SplashPage() {
                 className="mt-6 h-auto w-[168px] select-none"
                 draggable={false}
               />
-              <h1 className="mt-3 text-[2.625rem] font-black leading-none tracking-tight text-poke-dark">
+              <h1 className="mt-1 text-[2.625rem] font-black leading-none tracking-tight text-poke-dark">
                 Trivia Battle
               </h1>
               <p className="mt-4 max-w-[17rem] text-[15px] leading-relaxed text-poke-dark/65">
                 Battle trainers with your knowledge. Earn XP, climb leagues, fill your Pokédex.
               </p>
 
-              <div className="mt-7 flex items-center justify-center gap-3.5">
-                {[1, 4, 7, 25].map((id, i) => (
-                  <div
-                    key={id}
-                    className={`flex h-16 w-16 items-center justify-center rounded-full bg-card shadow-card ${
-                      i % 2 === 1 ? "-translate-y-3" : ""
-                    }`}
-                  >
-                    <PokemonSprite id={id} className="sprite h-[54px] w-[54px]" />
-                  </div>
-                ))}
-              </div>
+              <SpriteFloatRow />
+            </div>
             </div>
 
             {/* buttons */}
