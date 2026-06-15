@@ -63,7 +63,6 @@ type Phase = "intro" | "question" | "feedback" | "result";
 
 function CombatPanel({
   align,
-  trainerName,
   pokemonName,
   types,
   hp,
@@ -74,7 +73,6 @@ function CombatPanel({
   disadvantaged,
 }: {
   align: "left" | "right";
-  trainerName: string;
   pokemonName: string;
   types: PokeType[];
   hp: number;
@@ -90,10 +88,10 @@ function CombatPanel({
   const justifyCls = align === "right" ? "justify-end" : "justify-start";
 
   return (
-    <div className="w-[clamp(8.5rem,42vw,11rem)] shrink-0 rounded-2xl bg-card px-3 py-2 backdrop-blur shadow-card">
+    <div className="w-[clamp(8rem,38vw,10.5rem)] shrink-0 rounded-2xl bg-card px-3 py-2 backdrop-blur shadow-card">
       <div className={`flex flex-col ${alignCls}`}>
-        <div className="truncate font-pixel-xs text-muted-foreground">{trainerName}</div>
         <div className="w-full truncate text-sm font-bold leading-tight">{pokemonName}</div>
+
         <div className={`mt-1 flex w-full gap-1 ${justifyCls}`}>
           {types.map((t) => <TypeBadge key={t} type={t} size="sm" />)}
         </div>
@@ -925,11 +923,11 @@ function BattleMode({
               }
               setConfirmExit(true);
             }}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-card/90 backdrop-blur shadow-card"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-card/90 backdrop-blur shadow-card"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
-          <div className={`flex items-center gap-1 rounded-full px-3 py-1.5 font-pixel text-[10px] shadow-card backdrop-blur ${isElite ? "bg-poke-dark text-poke-yellow" : "bg-card/90 text-foreground"}`}>
+          <div className={`flex items-center gap-1 rounded-full px-2.5 py-1 font-pixel text-[9px] shadow-card backdrop-blur ${isElite ? "bg-poke-dark text-poke-yellow" : "bg-card/90 text-foreground"}`}>
             {isElite && <Crown className="h-3 w-3" />}
             {isElite
               ? `ELITE · ${eliteMember!.region}`
@@ -938,13 +936,14 @@ function BattleMode({
         </div>
         <div className="flex items-center gap-2">
           {streak >= 1 && (
-            <div className="rounded-full bg-primary px-3 py-1.5 font-pixel text-[10px] uppercase text-primary-foreground shadow-card">
+            <div className="rounded-full bg-primary px-2.5 py-1 font-pixel text-[9px] uppercase text-primary-foreground shadow-card">
               Streak ×{streak}
             </div>
           )}
+
           <Sheet open={bagOpen} onOpenChange={setBagOpen}>
             <SheetTrigger asChild>
-              <button className="flex h-10 w-10 items-center justify-center rounded-full bg-card/90 backdrop-blur shadow-card">
+              <button className="flex h-9 w-9 items-center justify-center rounded-full bg-card/90 backdrop-blur shadow-card">
                 <Backpack className="h-5 w-5" />
               </button>
             </SheetTrigger>
@@ -1003,7 +1002,6 @@ function BattleMode({
         <div className="flex items-start justify-between">
           <CombatPanel
             align="left"
-            trainerName={enemy.name}
             pokemonName={enemy.pokemon.name}
             types={enemy.pokemon.types}
             hp={enemyHp}
@@ -1014,11 +1012,14 @@ function BattleMode({
             disadvantaged={false}
           />
           <div className="relative mt-2 shrink-0">
-            <img
-              src="/grass/Basic_Grass.webp"
-              alt=""
+            <div
               aria-hidden="true"
-              className="pointer-events-none absolute bottom-4 left-1/2 w-28 -translate-x-1/2 select-none"
+              className="pointer-events-none absolute bottom-3 left-1/2 h-7 w-28 -translate-x-1/2 rounded-[50%]"
+              style={{
+                background:
+                  "radial-gradient(ellipse at 50% 35%, oklch(0.88 0.16 145) 0%, oklch(0.72 0.18 145) 55%, oklch(0.55 0.16 150) 100%)",
+                boxShadow: "0 8px 14px -6px oklch(0.3 0.1 150 / 0.35), inset 0 1px 0 oklch(1 0 0 / 0.35)",
+              }}
             />
             <motion.div
               className={`relative ${shakeWho === "enemy" ? "animate-shake" : ""}`}
@@ -1046,11 +1047,14 @@ function BattleMode({
         {/* PLAYER ZONE: sprite lower-left, panel mid-right */}
         <div className="-mt-4 flex items-end justify-between">
           <div className="relative shrink-0">
-            <img
-              src="/grass/Basic_Grassback.webp"
-              alt=""
+            <div
               aria-hidden="true"
-              className="pointer-events-none absolute bottom-4 left-1/2 w-32 -translate-x-1/2 select-none"
+              className="pointer-events-none absolute bottom-3 left-1/2 h-9 w-32 -translate-x-1/2 rounded-[50%]"
+              style={{
+                background:
+                  "radial-gradient(ellipse at 50% 35%, oklch(0.88 0.16 145) 0%, oklch(0.72 0.18 145) 55%, oklch(0.55 0.16 150) 100%)",
+                boxShadow: "0 8px 14px -6px oklch(0.3 0.1 150 / 0.35), inset 0 1px 0 oklch(1 0 0 / 0.35)",
+              }}
             />
             <motion.div
               className={`relative ${shakeWho === "player" ? "animate-shake" : ""}`}
@@ -1072,7 +1076,6 @@ function BattleMode({
           </div>
           <CombatPanel
             align="right"
-            trainerName={trainerName}
             pokemonName={player.name}
             types={player.types}
             hp={playerHp}
@@ -1084,6 +1087,7 @@ function BattleMode({
           />
         </div>
       </div>
+
 
 
 
