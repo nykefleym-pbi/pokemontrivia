@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Sparkles, X, ArrowRight, Volume2 } from "lucide-react";
+import { Search, Sparkles, X, ArrowRight, Volume2, ChevronLeft } from "lucide-react";
 import { Fragment } from "react";
 import { playCry } from "@/lib/audio";
 import { useGameStore } from "@/lib/store";
@@ -9,17 +9,11 @@ import { ALL_POKEMON, type PokeType } from "@/lib/pokemon-data";
 import { Input } from "@/components/ui/input";
 import { TypeBadge, PokemonSprite } from "@/components/game-ui";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
+
 
 export const Route = createFileRoute("/pokedex")({
   component: PokedexPage,
