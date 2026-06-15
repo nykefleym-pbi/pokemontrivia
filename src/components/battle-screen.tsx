@@ -293,6 +293,10 @@ function BattleMode({
   interface ActiveStatus { kind: StatusKind; curesRemaining: number; appliedAt: number }
   const [statuses, setStatuses] = useState<ActiveStatus[]>([]);
   const wrongStreakRef = useRef(0);
+  const missedRef = useRef<Array<{ question: string; correctAnswer: string; explanation: string }>>([]);
+  const newTrophiesRef = useRef<Array<{ icon: string; name: string }>>([]);
+  const speedBonusTotalRef = useRef(0);
+
   const poisonTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastAbilityToastRef = useRef<number>(0);
   const abilityStateRef = useRef({
