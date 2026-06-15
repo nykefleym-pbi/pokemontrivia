@@ -95,7 +95,11 @@ function SplashPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="bg-poke-hero relative h-full w-full"
+            className="relative h-full w-full"
+            style={{
+              background:
+                "radial-gradient(circle at 15% 12%, oklch(0.9 0.13 95 / 0.55) 0%, transparent 42%), radial-gradient(circle at 88% 90%, oklch(0.62 0.22 25 / 0.16) 0%, transparent 48%), linear-gradient(168deg, oklch(0.975 0.025 95) 0%, oklch(0.93 0.05 230) 100%)",
+            }}
           >
             <TrainerCreate onBack={() => setStep("splash")} />
           </motion.div>
