@@ -63,7 +63,6 @@ type Phase = "intro" | "question" | "feedback" | "result";
 
 function CombatPanel({
   align,
-  trainerName,
   pokemonName,
   types,
   hp,
@@ -74,7 +73,6 @@ function CombatPanel({
   disadvantaged,
 }: {
   align: "left" | "right";
-  trainerName: string;
   pokemonName: string;
   types: PokeType[];
   hp: number;
@@ -90,10 +88,10 @@ function CombatPanel({
   const justifyCls = align === "right" ? "justify-end" : "justify-start";
 
   return (
-    <div className="w-[clamp(8.5rem,42vw,11rem)] shrink-0 rounded-2xl bg-card px-3 py-2 backdrop-blur shadow-card">
+    <div className="w-[clamp(8rem,38vw,10.5rem)] shrink-0 rounded-2xl bg-card px-3 py-2 backdrop-blur shadow-card">
       <div className={`flex flex-col ${alignCls}`}>
-        <div className="truncate font-pixel-xs text-muted-foreground">{trainerName}</div>
         <div className="w-full truncate text-sm font-bold leading-tight">{pokemonName}</div>
+
         <div className={`mt-1 flex w-full gap-1 ${justifyCls}`}>
           {types.map((t) => <TypeBadge key={t} type={t} size="sm" />)}
         </div>
