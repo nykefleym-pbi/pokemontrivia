@@ -7,7 +7,7 @@ import { playCry } from "@/lib/audio";
 import { useGameStore } from "@/lib/store";
 import { ALL_POKEMON, type PokeType } from "@/lib/pokemon-data";
 import { Input } from "@/components/ui/input";
-import { TypeBadge, PokemonSprite } from "@/components/game-ui";
+import { PokemonSprite } from "@/components/game-ui";
 import {
   Popover,
   PopoverContent,
