@@ -383,36 +383,36 @@ function BattleHome({
       </div>
 
       {/* Daily + Weekly row */}
-      <div className="grid grid-cols-2 gap-3 px-5 pt-3">
+      <div className="grid grid-cols-2 gap-2.5 px-5 pt-3">
         <button
           onClick={onStartDaily}
           disabled={dailyDone || loading}
-          className="relative h-32 overflow-hidden rounded-3xl bg-poke-yellow p-3 text-left shadow-card transition active:scale-[0.98] disabled:opacity-80"
+          className="relative h-[112px] overflow-hidden rounded-3xl bg-gradient-to-br from-[oklch(0.9_0.13_95)] to-[oklch(0.85_0.17_80)] p-4 text-left shadow-card transition active:scale-[0.98] disabled:opacity-80"
         >
-          <div className="font-pixel-xs text-poke-dark/70">Daily Quest</div>
-          <h3 className="mt-1 font-display-md leading-tight text-poke-dark">
+          <div className="font-pixel text-[7px] leading-none text-[oklch(0.35_0.06_80)]">DAILY QUEST</div>
+          <h3 className="mt-1.5 text-base font-extrabold leading-tight text-[oklch(0.25_0.05_80)]">
             {dailyDone ? "Done" : "Beat Rotom"}
           </h3>
-          <p className="mt-0.5 text-[10px] leading-tight text-poke-dark/70">
+          <p className="mt-0.5 text-[11px] font-semibold leading-tight text-[oklch(0.35_0.06_80/0.8)]">
             {dailyDone && dailyResult
               ? `${dailyResult.correct}/${dailyResult.total} · ${Math.round(dailyResult.timeMs / 1000)}s`
               : "10 fast questions"}
           </p>
-          <div className="pointer-events-none absolute -right-2 -bottom-2">
-            <PokemonSprite id={479} alt="Rotom" className="sprite h-20 w-20" />
+          <div className="pointer-events-none absolute -right-0.5 -bottom-0.5">
+            <PokemonSprite id={479} alt="Rotom" className="sprite h-[60px] w-[60px]" />
           </div>
         </button>
 
         <button
           onClick={onStartWeekly}
           disabled={loading || weeklyFinished}
-          className="relative h-32 overflow-hidden rounded-3xl bg-[hsl(220_70%_50%)] p-3 text-left text-white shadow-card transition active:scale-[0.98] disabled:opacity-80"
+          className="relative h-[112px] overflow-hidden rounded-3xl bg-gradient-to-br from-[oklch(0.62_0.16_250)] to-[oklch(0.5_0.18_270)] p-4 text-left text-white shadow-card transition active:scale-[0.98] disabled:opacity-80"
         >
-          <div className="font-pixel-xs text-white/85">Weekly League</div>
-          <h3 className="mt-1 truncate font-display-md leading-tight">
+          <div className="font-pixel text-[7px] leading-none text-white/85">WEEKLY LEAGUE</div>
+          <h3 className="mt-1.5 truncate text-base font-extrabold leading-tight">
             {weeklyLeader ? `Gym: ${weeklyLeader.name}` : "Loading..."}
           </h3>
-          <p className="mt-0.5 text-[10px] leading-tight text-white/85">
+          <p className="mt-0.5 text-[11px] font-semibold leading-tight text-white/85">
             {weeklyLeague?.status === "won"
               ? "Victory!"
               : weeklyLeague?.status === "lost"
@@ -422,8 +422,8 @@ function BattleHome({
                   : `Resets ${new Date(weekRange.end).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`}
           </p>
           {weeklyLeader && (
-            <div className="pointer-events-none absolute -right-2 -bottom-2">
-              <PokemonSprite id={weeklyLeader.signaturePokemonId} alt={weeklyLeader.name} className="sprite h-20 w-20" />
+            <div className="pointer-events-none absolute -right-0.5 -bottom-0.5">
+              <PokemonSprite id={weeklyLeader.signaturePokemonId} alt={weeklyLeader.name} className="sprite h-[60px] w-[60px]" />
             </div>
           )}
         </button>
