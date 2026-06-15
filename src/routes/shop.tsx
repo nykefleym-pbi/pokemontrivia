@@ -463,25 +463,3 @@ function ShopPage() {
   );
 }
 
-function Stat({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone: "default" | "primary";
-}) {
-  return (
-    <div className="rounded-2xl bg-muted/40 px-2 py-2 text-center">
-      <div className="font-pixel-xs text-poke-dark/50">{label}</div>
-      <div
-        className={`mt-0.5 text-base font-extrabold ${
-          tone === "primary" ? "text-primary" : "text-poke-dark"
-        }`}
-      >
-        {value}
-      </div>
-    </div>
-  );
-}
