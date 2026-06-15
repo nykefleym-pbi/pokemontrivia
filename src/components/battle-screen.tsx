@@ -12,7 +12,9 @@ import {
   streakLabel,
   TP_REWARDS,
   getTpMultiplier,
+  xpProgressInLevel,
 } from "@/lib/game-data";
+
 import { isSuperEffective, findPokemon, isPlayerDisadvantaged, isPlayerImmune, type PokeEntry, type PokeType } from "@/lib/pokemon-data";
 import { getAbility as getAbilityFn, type Ability } from "@/lib/abilities";
 import { TutorialOverlay } from "@/components/tutorial-overlay";
