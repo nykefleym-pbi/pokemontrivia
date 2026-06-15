@@ -284,7 +284,7 @@ function BattleHome({
   useEffect(() => {
     if (!weeklyFinished) return;
     const tick = () => {
-      const ms = weekRange.end - Date.now();
+      const ms = weekRange.nextStart - Date.now();
       if (ms <= 0) { setWeeklyTimeLeft("Refreshing..."); return; }
       const days = Math.floor(ms / (24 * 60 * 60 * 1000));
       const hours = Math.floor((ms % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
@@ -294,7 +294,7 @@ function BattleHome({
     tick();
     const i = setInterval(tick, 1000);
     return () => clearInterval(i);
-  }, [weekRange.end, weeklyFinished]);
+  }, [weekRange.nextStart, weeklyFinished]);
 
   if (!pokemon) return null;
 
@@ -443,10 +443,10 @@ function BattleHome({
               {weeklyLeague?.status === "won"
                 ? "Victory!"
                 : weeklyLeague?.status === "lost"
-                  ? `Try again in ${weeklyTimeLeft}`
+                  ? `New league Monday · ${weeklyTimeLeft}`
                   : weeklyLeague?.status === "in_progress"
                     ? "Resume your run"
-                    : `Resets ${new Date(weekRange.end).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`}
+                    : "Resets Monday 00:00 UTC"}
             </p>
           </div>
           {weeklyLeader && (
