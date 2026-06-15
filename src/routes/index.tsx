@@ -277,7 +277,7 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
       </div>
 
       {/* Body */}
-      <div className="mt-5 flex flex-1 flex-col overflow-y-auto">
+      <div className="mt-5 flex flex-1 flex-col overflow-y-auto overflow-x-hidden">
         {substep === "name" && (
           <div className="flex flex-1 flex-col">
             <h2 className="text-center text-[30px] font-extrabold leading-tight tracking-tight text-poke-dark">
@@ -346,7 +346,7 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
               />
             </div>
 
-            <div className="mt-4 grid grid-cols-3 gap-2.5">
+            <div className="mt-4 grid grid-cols-3 gap-2">
               {trainerResults.map((t) => {
                 const selected = trainerSprite === t.id;
                 return (
@@ -358,7 +358,7 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                     }`}
                   >
                     {selected && (
-                      <span className="absolute -right-2 -top-2 flex h-[26px] w-[26px] items-center justify-center rounded-full bg-primary text-white shadow">
+                      <span className="absolute right-1 top-1 flex h-[22px] w-[22px] items-center justify-center rounded-full bg-primary text-white shadow">
                         <Check className="h-3 w-3" strokeWidth={3} />
                       </span>
                     )}
@@ -427,7 +427,7 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
               />
             </div>
 
-            <div className="mt-4 grid grid-cols-3 gap-3">
+            <div className="mt-4 grid grid-cols-3 gap-2">
               {results.slice(0, 6).map((p) => {
                 const selected = pick?.id === p.id;
                 return (
@@ -439,7 +439,7 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                     }`}
                   >
                     {selected && (
-                      <span className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white shadow">
+                      <span className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white shadow">
                         <Check className="h-3.5 w-3.5" strokeWidth={3} />
                       </span>
                     )}
