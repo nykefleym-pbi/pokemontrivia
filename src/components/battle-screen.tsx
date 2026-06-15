@@ -923,11 +923,11 @@ function BattleMode({
               }
               setConfirmExit(true);
             }}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-card/90 backdrop-blur shadow-card"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-card/90 backdrop-blur shadow-card"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
-          <div className={`flex items-center gap-1 rounded-full px-3 py-1.5 font-pixel text-[10px] shadow-card backdrop-blur ${isElite ? "bg-poke-dark text-poke-yellow" : "bg-card/90 text-foreground"}`}>
+          <div className={`flex items-center gap-1 rounded-full px-2.5 py-1 font-pixel text-[9px] shadow-card backdrop-blur ${isElite ? "bg-poke-dark text-poke-yellow" : "bg-card/90 text-foreground"}`}>
             {isElite && <Crown className="h-3 w-3" />}
             {isElite
               ? `ELITE · ${eliteMember!.region}`
@@ -936,10 +936,11 @@ function BattleMode({
         </div>
         <div className="flex items-center gap-2">
           {streak >= 1 && (
-            <div className="rounded-full bg-primary px-3 py-1.5 font-pixel text-[10px] uppercase text-primary-foreground shadow-card">
+            <div className="rounded-full bg-primary px-2.5 py-1 font-pixel text-[9px] uppercase text-primary-foreground shadow-card">
               Streak ×{streak}
             </div>
           )}
+
           <Sheet open={bagOpen} onOpenChange={setBagOpen}>
             <SheetTrigger asChild>
               <button className="flex h-10 w-10 items-center justify-center rounded-full bg-card/90 backdrop-blur shadow-card">
