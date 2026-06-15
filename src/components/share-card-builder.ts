@@ -1,7 +1,7 @@
 import { findPokemon } from "@/lib/pokemon-data";
 
 export interface ShareData {
-  type: "elite" | "weekly" | "daily-perfect";
+  type: "elite" | "weekly" | "daily-perfect" | "battle";
   trainerName: string;
   trainerSpriteUrl: string;
   partnerName: string;
@@ -17,6 +17,10 @@ export interface ShareData {
   topDamage: number;
   dateISO: string;
   badgeName?: string;
+  correctCount?: number;
+  totalQuestions?: number;
+  xpEarned?: number;
+  avgTimeMs?: number;
 }
 
 const CARD_SIZE = 1080;
@@ -39,6 +43,9 @@ export async function buildShareCard(data: ShareData): Promise<string> {
   } else if (data.type === "weekly") {
     bgGrad.addColorStop(0, "#fbbf24");
     bgGrad.addColorStop(1, "#b45309");
+  } else if (data.type === "battle") {
+    bgGrad.addColorStop(0, "#ef4444");
+    bgGrad.addColorStop(1, "#7f1d1d");
   } else {
     bgGrad.addColorStop(0, "#3b82f6");
     bgGrad.addColorStop(1, "#1e3a8a");
@@ -55,7 +62,9 @@ export async function buildShareCard(data: ShareData): Promise<string> {
       ? "ELITE FOUR DEFEATED"
       : data.type === "weekly"
         ? "GYM LEADER DEFEATED"
-        : "DAILY CHALLENGE PERFECT";
+        : data.type === "battle"
+          ? "★ VICTORY ★"
+          : "DAILY CHALLENGE PERFECT";
   ctx.fillText(title, CARD_SIZE / 2, 120);
 
   ctx.font = `40px ${SYSTEM_FONT}`;

@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import { Download } from "lucide-react";
+import { Share2, X, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -39,54 +38,78 @@ export function ShareCardDialog({ open, onClose, data }: Props) {
     toast.success("Image saved!");
   }
 
+  async function handleShare() {
+    if (!imageUrl) return;
+    try {
+      const blob = await (await fetch(imageUrl)).blob();
+      const file = new File([blob], `poketrivia-${data.dateISO}.png`, { type: "image/png" });
+      const nav = navigator as Navigator & {
+        canShare?: (d: { files: File[] }) => boolean;
+        share?: (d: { files?: File[]; title?: string; text?: string }) => Promise<void>;
+      };
+      if (nav.canShare && nav.share && nav.canShare({ files: [file] })) {
+        await nav.share({ files: [file], title: "Pokémon Trivia Battle", text: "Beat my score!" });
+      } else {
+        handleSave();
+        toast.info("Sharing not supported here — image saved instead.");
+      }
+    } catch {
+      /* user cancelled — no-op */
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md gap-0 rounded-3xl bg-card p-5">
-        <DialogHeader className="space-y-1.5 text-left">
-          <span className="inline-flex w-fit rounded-full bg-poke-yellow/40 px-2.5 py-0.5 font-pixel-xs uppercase text-poke-dark">
-            Share Your Victory
+      <DialogContent className="flex h-[100dvh] w-screen max-w-none flex-col gap-0 rounded-none border-0 bg-poke-dark p-0 sm:rounded-none">
+        <DialogTitle className="sr-only">Share Result</DialogTitle>
+        {/* Header */}
+        <div className="flex shrink-0 items-center justify-between px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3">
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <span className="font-pixel text-[11px] uppercase tracking-[0.25em] text-poke-yellow">
+            Share Result
           </span>
-          <DialogTitle className="font-display-md text-poke-dark">
-            Show off your run
-          </DialogTitle>
-        </DialogHeader>
-        <div className="mt-4">
+          <div className="h-10 w-10" />
+        </div>
+
+        {/* Card preview */}
+        <div className="flex flex-1 items-center justify-center overflow-y-auto px-5 py-2">
           {loading && (
-            <div className="flex min-h-[300px] items-center justify-center rounded-2xl bg-poke-hero/40">
+            <div className="flex aspect-square w-full max-w-sm items-center justify-center rounded-3xl bg-white/5">
               <PokeballSpinner size={64} spinning />
             </div>
           )}
           {imageUrl && !loading && (
-            <>
-              <img
-                src={imageUrl}
-                alt="Battle result"
-                className="w-full rounded-2xl shadow-card"
-              />
-              <div className="mt-3 rounded-2xl bg-poke-hero/50 p-3 text-xs text-muted-foreground">
-                <p className="font-bold text-poke-dark">How to save</p>
-                <ul className="mt-1 space-y-0.5">
-                  <li>📱 <strong>iOS:</strong> long-press → "Save to Photos"</li>
-                  <li>🤖 <strong>Android / Desktop:</strong> tap "Save Image" below</li>
-                </ul>
-              </div>
-              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-                <Button
-                  variant="outline"
-                  onClick={onClose}
-                  className="h-12 flex-1 rounded-full border-2 bg-card font-bold text-poke-dark"
-                >
-                  Close
-                </Button>
-                <Button
-                  onClick={handleSave}
-                  className="h-12 flex-1 rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
-                >
-                  <Download className="mr-2 h-4 w-4" /> Save Image
-                </Button>
-              </div>
-            </>
+            <img
+              src={imageUrl}
+              alt="Battle result"
+              className="w-full max-w-sm rounded-3xl shadow-2xl"
+            />
           )}
+        </div>
+
+        {/* Action bar */}
+        <div className="flex shrink-0 gap-3 px-5 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+          <Button
+            onClick={handleShare}
+            disabled={!imageUrl}
+            className="h-14 flex-1 rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
+          >
+            <Share2 className="mr-2 h-5 w-5" /> Share
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={!imageUrl}
+            variant="outline"
+            className="h-14 flex-1 rounded-full border-2 border-white/20 bg-white font-bold text-poke-dark hover:bg-white/90"
+          >
+            <ImageIcon className="mr-2 h-5 w-5" /> Save image
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

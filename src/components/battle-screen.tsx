@@ -154,30 +154,32 @@ function TimerRing({ timer, maxTime }: { timer: number; maxTime: number }) {
 interface Props {
   questions: Trivia[];
   onExit: () => void;
+  onRematch?: () => void;
   mode?: "battle" | "daily" | "elite" | "weekly";
   eliteMember?: EliteMember;
   gymLeader?: GymLeader | null;
 }
 
-export function BattleScreen({ questions, onExit, mode = "battle", eliteMember, gymLeader }: Props) {
+export function BattleScreen({ questions, onExit, onRematch, mode = "battle", eliteMember, gymLeader }: Props) {
   if (mode === "daily") {
     return <DailyScreen questions={questions} onExit={onExit} />;
   }
   if (mode === "elite" && eliteMember) {
-    return <BattleMode questions={questions} onExit={onExit} eliteMember={eliteMember} />;
+    return <BattleMode questions={questions} onExit={onExit} onRematch={onRematch} eliteMember={eliteMember} />;
   }
   if (mode === "weekly" && gymLeader) {
-    return <BattleMode questions={questions} onExit={onExit} gymLeader={gymLeader} />;
+    return <BattleMode questions={questions} onExit={onExit} onRematch={onRematch} gymLeader={gymLeader} />;
   }
-  return <BattleMode questions={questions} onExit={onExit} />;
+  return <BattleMode questions={questions} onExit={onExit} onRematch={onRematch} />;
 }
 
 function BattleMode({
   questions,
   onExit,
+  onRematch,
   eliteMember,
   gymLeader,
-}: Pick<Props, "questions" | "onExit"> & { eliteMember?: EliteMember; gymLeader?: GymLeader }) {
+}: Pick<Props, "questions" | "onExit" | "onRematch"> & { eliteMember?: EliteMember; gymLeader?: GymLeader }) {
   const player = useGameStore((s) => s.pokemon)!;
   const level = useGameStore((s) => s.level);
   const trainerName = useGameStore((s) => s.trainerName);
@@ -822,6 +824,7 @@ function BattleMode({
     }
 
     // Weekly League: record result + prep share card
+    let shareSet = false;
     if (isWeekly && gymLeader) {
       recordWeeklyLeagueResult(won);
       if (won) {
@@ -843,8 +846,33 @@ function BattleMode({
           dateISO: new Date().toISOString().slice(0, 10),
           badgeName: gymLeader.badge,
         });
+        shareSet = true;
         toast.success(`🎖 ${gymLeader.badge} earned!`, { duration: 4500 });
       }
+    }
+
+    // Ensure every victory has a share card (regular + elite fallback)
+    if (won && !shareSet) {
+      setShareData({
+        type: "battle",
+        trainerName,
+        trainerSpriteUrl: trainerSpriteUrl(trainerSpriteId),
+        partnerName: player.name,
+        partnerPokemonId: player.id,
+        partnerShiny: false,
+        opponentName: enemy.name,
+        opponentTitle: isElite ? "Elite Four" : "Trainer",
+        opponentSpriteUrl: null,
+        signaturePokemonId: enemy.pokemon.id,
+        finalPlayerHp: playerHp,
+        maxPlayerHp: playerMaxHp,
+        topStreak: maxStreakRef.current,
+        topDamage: topDmgRef.current,
+        correctCount: correctCountRef.current,
+        totalQuestions: questions.length,
+        xpEarned: total,
+        dateISO: new Date().toISOString().slice(0, 10),
+      });
     }
 
     // snapshot achievements before/after
@@ -936,6 +964,7 @@ function BattleMode({
           missed={missedRef.current}
           onRebattle={() => onExit()}
           onBackHome={() => onExit()}
+          onRematch={onRematch}
           canShare={!!shareData}
           onShare={() => setShareOpen(true)}
         />
@@ -1321,6 +1350,7 @@ function ResultScreen({
   missed,
   onRebattle,
   onBackHome,
+  onRematch,
   canShare,
   onShare,
 }: {
@@ -1343,6 +1373,7 @@ function ResultScreen({
   missed: Array<{ question: string; correctAnswer: string; explanation: string }>;
   onRebattle: () => void;
   onBackHome: () => void;
+  onRematch?: () => void;
   canShare?: boolean;
   onShare?: () => void;
 }) {
@@ -1535,7 +1566,7 @@ function ResultScreen({
       <div className="mx-auto mt-auto w-full max-w-sm space-y-2 pt-8">
         <Button
           size="lg"
-          onClick={onRebattle}
+          onClick={() => (onRematch ? onRematch() : onRebattle())}
           className="h-14 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
         >
           Rematch
@@ -1705,19 +1736,20 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
         <motion.div
           className="pointer-events-none absolute left-1/2 top-[18%] z-10 -translate-x-1/2"
           animate={{
-            x: [0, 24, -18, 12, 0],
-            y: [0, -16, 10, -8, 0],
+            x: [0, 14, -10, 8, 0],
+            y: [0, -10, 6, -5, 0],
             rotate: [0, 4, -3, 2, 0],
           }}
           transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
         >
           <div className="relative">
-            <div className="absolute inset-0 -z-10 rounded-full bg-destructive/50 blur-2xl" />
-            <PokemonSprite id={479} alt="Rotom" className="sprite h-24 w-24 drop-shadow-[0_0_18px_oklch(0.62_0.22_25/0.7)]" />
+            <div className="absolute inset-0 -z-10 rounded-full bg-destructive/50 blur-3xl" />
+            <PokemonSprite id={479} alt="Rotom" className="sprite h-64 w-64 sm:h-72 sm:w-72 drop-shadow-[0_0_40px_oklch(0.62_0.22_25/0.85)]" />
           </div>
         </motion.div>
         <PokeballPattern marks={pattern} />
       </div>
+
 
       <div className="relative shrink-0 rounded-t-[28px] bg-card pt-14 px-[max(1rem,env(safe-area-inset-left))] pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-[0_-8px_30px_-12px_oklch(0.3_0.05_260/0.25)]">
         <div className="pointer-events-none absolute left-1/2 -top-12 z-10 flex -translate-x-1/2 flex-col items-center">
