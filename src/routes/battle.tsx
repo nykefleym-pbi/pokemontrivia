@@ -262,6 +262,12 @@ function BattleHome({
   dailyDone: boolean;
   dailyResult: { correct: number; total: number; timeMs: number; pattern: DailyMark[]; date: string } | null;
 }) {
+  const [pending, setPending] = useState<null | "daily" | "weekly">(null);
+  useEffect(() => {
+    if (!loading) setPending(null);
+  }, [loading]);
+  const handleDaily = () => { setPending("daily"); onStartDaily(); };
+  const handleWeekly = () => { setPending("weekly"); onStartWeekly(); };
   const trainerName = useGameStore((s) => s.trainerName);
   const trainerSprite = useGameStore((s) => s.trainerSprite);
   const pokemon = useGameStore((s) => s.pokemon);
@@ -373,11 +379,11 @@ function BattleHome({
           <Button
             size="lg"
             onClick={onStart}
-            disabled={loading}
-            className="relative mt-4 h-14 w-full rounded-full bg-primary text-base font-bold shadow-pop disabled:opacity-60"
+            disabled={loading && pending === null}
+            className="relative mt-4 h-14 w-full rounded-full bg-primary text-base font-bold shadow-pop"
           >
             <Sparkles className="mr-2 h-4 w-4" />
-            {loading ? "Summoning..." : "Find Match"}
+            {loading && pending === null ? "Summoning..." : "Find Match"}
           </Button>
         </div>
       </div>
@@ -385,46 +391,50 @@ function BattleHome({
       {/* Daily + Weekly row */}
       <div className="grid grid-cols-2 gap-2.5 px-5 pt-3">
         <button
-          onClick={onStartDaily}
+          onClick={handleDaily}
           disabled={dailyDone || loading}
-          className="relative h-[112px] overflow-hidden rounded-3xl bg-gradient-to-br from-[oklch(0.9_0.13_95)] to-[oklch(0.85_0.17_80)] p-4 text-left shadow-card transition active:scale-[0.98] disabled:opacity-80"
+          className={`relative flex h-[112px] items-center gap-2 overflow-hidden rounded-3xl bg-gradient-to-br from-[oklch(0.9_0.13_95)] to-[oklch(0.85_0.17_80)] p-4 text-left shadow-card disabled:opacity-80 ${
+            pending === "daily" ? "animate-pulse ring-2 ring-[oklch(0.35_0.06_80)]/40" : ""
+          }`}
         >
-          <div className="font-pixel text-[7px] leading-none text-[oklch(0.35_0.06_80)]">DAILY QUEST</div>
-          <h3 className="mt-1.5 text-base font-extrabold leading-tight text-[oklch(0.25_0.05_80)]">
-            {dailyDone ? "Done" : "Beat Rotom"}
-          </h3>
-          <p className="mt-0.5 text-[11px] font-semibold leading-tight text-[oklch(0.35_0.06_80/0.8)]">
-            {dailyDone && dailyResult
-              ? `${dailyResult.correct}/${dailyResult.total} · ${Math.round(dailyResult.timeMs / 1000)}s`
-              : "10 fast questions"}
-          </p>
-          <div className="pointer-events-none absolute -right-0.5 -bottom-0.5">
-            <PokemonSprite id={479} alt="Rotom" className="sprite h-[60px] w-[60px]" />
+          <div className="min-w-0 flex-1">
+            <div className="font-pixel text-[7px] leading-none text-[oklch(0.35_0.06_80)]">DAILY QUEST</div>
+            <h3 className="mt-1.5 text-base font-extrabold leading-tight text-[oklch(0.25_0.05_80)]">
+              {dailyDone ? "Done" : "Beat Rotom"}
+            </h3>
+            <p className="mt-0.5 text-[11px] font-semibold leading-tight text-[oklch(0.35_0.06_80/0.8)]">
+              {dailyDone && dailyResult
+                ? `${dailyResult.correct}/${dailyResult.total} · ${Math.round(dailyResult.timeMs / 1000)}s`
+                : "10 fast questions"}
+            </p>
           </div>
+          <PokemonSprite id={479} alt="Rotom" className="sprite h-[60px] w-[60px] shrink-0" />
         </button>
 
         <button
-          onClick={onStartWeekly}
+          onClick={handleWeekly}
           disabled={loading || weeklyFinished}
-          className="relative h-[112px] overflow-hidden rounded-3xl bg-gradient-to-br from-[oklch(0.62_0.16_250)] to-[oklch(0.5_0.18_270)] p-4 text-left text-white shadow-card transition active:scale-[0.98] disabled:opacity-80"
+          className={`relative flex h-[112px] items-center gap-2 overflow-hidden rounded-3xl bg-gradient-to-br from-[oklch(0.62_0.16_250)] to-[oklch(0.5_0.18_270)] p-4 text-left text-white shadow-card disabled:opacity-80 ${
+            pending === "weekly" ? "animate-pulse ring-2 ring-white/60" : ""
+          }`}
         >
-          <div className="font-pixel text-[7px] leading-none text-white/85">WEEKLY LEAGUE</div>
-          <h3 className="mt-1.5 truncate text-base font-extrabold leading-tight">
-            {weeklyLeader ? `Gym: ${weeklyLeader.name}` : "Loading..."}
-          </h3>
-          <p className="mt-0.5 text-[11px] font-semibold leading-tight text-white/85">
-            {weeklyLeague?.status === "won"
-              ? "Victory!"
-              : weeklyLeague?.status === "lost"
-                ? "Try next week"
-                : weeklyLeague?.status === "in_progress"
-                  ? "Resume your run"
-                  : `Resets ${new Date(weekRange.end).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`}
-          </p>
+          <div className="min-w-0 flex-1">
+            <div className="font-pixel text-[7px] leading-none text-white/85">WEEKLY LEAGUE</div>
+            <h3 className="mt-1.5 truncate text-base font-extrabold leading-tight">
+              {weeklyLeader ? `Gym: ${weeklyLeader.name}` : "Loading..."}
+            </h3>
+            <p className="mt-0.5 text-[11px] font-semibold leading-tight text-white/85">
+              {weeklyLeague?.status === "won"
+                ? "Victory!"
+                : weeklyLeague?.status === "lost"
+                  ? "Try next week"
+                  : weeklyLeague?.status === "in_progress"
+                    ? "Resume your run"
+                    : `Resets ${new Date(weekRange.end).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`}
+            </p>
+          </div>
           {weeklyLeader && (
-            <div className="pointer-events-none absolute -right-0.5 -bottom-0.5">
-              <PokemonSprite id={weeklyLeader.signaturePokemonId} alt={weeklyLeader.name} className="sprite h-[60px] w-[60px]" />
-            </div>
+            <PokemonSprite id={weeklyLeader.signaturePokemonId} alt={weeklyLeader.name} className="sprite h-[60px] w-[60px] shrink-0" />
           )}
         </button>
       </div>
