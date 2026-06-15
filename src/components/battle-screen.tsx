@@ -1567,6 +1567,11 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
   const [chosen, setChosen] = useState<number | null>(null);
   const [pattern, setPattern] = useState<DailyMark[]>([]);
   const abortBattle = useGameStore((s) => s.abortBattle);
+  const setBattleScreenActive = useGameStore((s) => s.setBattleScreenActive);
+  useEffect(() => {
+    setBattleScreenActive(true);
+    return () => setBattleScreenActive(false);
+  }, [setBattleScreenActive]);
   const [confirmExit, setConfirmExit] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [timer, setTimer] = useState(20);
