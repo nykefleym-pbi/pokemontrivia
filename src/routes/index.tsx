@@ -57,25 +57,14 @@ function SplashPage() {
                 className="mt-6 h-auto w-[168px] select-none"
                 draggable={false}
               />
-              <h1 className="mt-3 text-[2.625rem] font-black leading-none tracking-tight text-poke-dark">
+              <h1 className="mt-1 text-[2.625rem] font-black leading-none tracking-tight text-poke-dark">
                 Trivia Battle
               </h1>
               <p className="mt-4 max-w-[17rem] text-[15px] leading-relaxed text-poke-dark/65">
                 Battle trainers with your knowledge. Earn XP, climb leagues, fill your Pokédex.
               </p>
 
-              <div className="mt-7 flex items-center justify-center gap-3.5">
-                {[1, 4, 7, 25].map((id, i) => (
-                  <div
-                    key={id}
-                    className={`flex h-16 w-16 items-center justify-center rounded-full bg-card shadow-card ${
-                      i % 2 === 1 ? "-translate-y-3" : ""
-                    }`}
-                  >
-                    <PokemonSprite id={id} className="sprite h-[54px] w-[54px]" />
-                  </div>
-                ))}
-              </div>
+              <SpriteFloatRow />
             </div>
 
             {/* buttons */}
@@ -118,11 +107,58 @@ function SplashPage() {
 
 function PokeballEmblem() {
   return (
-    <div className="relative h-[108px] w-[108px] overflow-hidden rounded-full border-[5px] border-poke-dark">
+    <motion.div
+      className="relative h-[108px] w-[108px] overflow-hidden rounded-full border-[5px] border-poke-dark"
+      animate={{ rotate: [0, 0, 360, 360] }}
+      transition={{
+        duration: 6,
+        times: [0, 0.4, 0.7, 1],
+        ease: "easeInOut",
+        repeat: Infinity,
+      }}
+    >
       <div className="absolute inset-x-0 top-0 h-1/2 bg-primary" />
       <div className="absolute inset-x-0 bottom-0 h-1/2 bg-white" />
       <div className="absolute inset-x-0 top-1/2 h-3 -translate-y-1/2 bg-poke-dark" />
       <div className="absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full border-[5px] border-poke-dark bg-white" />
+    </motion.div>
+  );
+}
+
+function SpriteFloatRow() {
+  const bubbles = useMemo(
+    () =>
+      [1, 4, 7, 25].map((id, i) => ({
+        id,
+        baseY: i % 2 === 1 ? -12 : 0,
+        amp: 6 + Math.random() * 8,
+        drift: (Math.random() * 2 - 1) * 3,
+        duration: 2.4 + Math.random() * 1.6,
+        delay: Math.random() * 1.2,
+      })),
+    [],
+  );
+  return (
+    <div className="mt-7 flex items-center justify-center gap-3.5">
+      {bubbles.map((b) => (
+        <motion.div
+          key={b.id}
+          className="flex h-16 w-16 items-center justify-center rounded-full bg-card shadow-card"
+          animate={{
+            y: [b.baseY, b.baseY - b.amp, b.baseY + b.amp * 0.4, b.baseY],
+            x: [0, b.drift, -b.drift, 0],
+          }}
+          transition={{
+            duration: b.duration,
+            delay: b.delay,
+            ease: "easeInOut",
+            repeat: Infinity,
+            repeatType: "mirror",
+          }}
+        >
+          <PokemonSprite id={b.id} className="sprite h-[54px] w-[54px]" />
+        </motion.div>
+      ))}
     </div>
   );
 }

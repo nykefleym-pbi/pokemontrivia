@@ -1,52 +1,35 @@
-# Splash screen — match reference placement exactly
+# Splash micro-animations & spacing tweak
 
-Reference: an iconic hand-drawn Pokéball sits ABOVE the Pokémon logo (centered hero), followed by the "Trivia Battle" heading, blurb, and a 4-sprite row with alternating vertical offsets. Three decorative ring-outline pokéballs float in the background. Buttons pinned at the bottom.
+Targeted polish in `src/routes/index.tsx` only — no other files touched.
 
-The current implementation is close but misses key placement: it has no pokéball above the logo (it shows a spinning pokéball BELOW the sprite row instead), the decorative outlines are full pokéballs not ring outlines, and the sprite row bounces instead of holding a static zig-zag.
+## Changes
 
-## Changes to `src/routes/index.tsx → SplashPage`
+### 1. Tighter logo → heading gap
+`<h1>Trivia Battle</h1>` currently has `mt-3` (12px) under a `w-[168px]` Pokémon logo. Reduce to `mt-1` (≈4px) so the wordmark sits just above "Trivia Battle" without touching — matches the reference proportions more closely.
 
-### 1. Background — exact gradient stack
-Replace `bg-poke-hero` on the splash container with an inline style matching the reference:
-```text
-radial(15% 12%, yellow 0%, transparent 42%)
-+ radial(88% 90%, red/16% 0%, transparent 48%)
-+ linear(168deg, cream → soft-blue)
-```
-Uses existing `--poke-yellow`, `--poke-red`, `--background` tokens. Other onboarding steps keep `bg-poke-hero`.
+### 2. Sprite bubbles — random float
+Wrap each of the 4 sprite circles in a `motion.div` with a continuous bobbing animation. Per-bubble random parameters generated once with `useMemo`:
+- `duration`: 2.4–4.0s
+- `delay`: 0–1.2s
+- `amplitude`: 6–14px up/down
+- `drift`: ±3px horizontal sway
 
-### 2. Decorative outlines — three ring-only pokéballs
-Drop the two `<PokeballSpinner>` decorations. Render three `rounded-full border-[20-26px] border-poke-dark/5` divs:
-- Top-right large: `-right-[120px] -top-[80px] h-80 w-80 border-[26px]`
-- Top-right small: `right-3 top-[54px] h-[52px] w-[52px] border-[12px]`
-- Bottom-left: `-left-[90px] bottom-[90px] h-60 w-60 border-[22px]`
+Keeps the existing static `-translate-y-3` zig-zag as the base offset (applied via Tailwind class) and layers motion on top via `animate={{ y: [...], x: [...] }}` with `ease: "easeInOut"`, `repeat: Infinity`, `repeatType: "mirror"`. Each bubble feels independently buoyant, never in lockstep.
 
-These are pure outline circles — no fill, no band — so they read as faint pokéball silhouettes.
+### 3. Pokéball emblem — occasional spin
+`PokeballEmblem` becomes a `motion.div` that rotates a full 360° every ~6 seconds, sits still for ~4 seconds, then spins again. Implemented via keyframe rotation:
+- `animate={{ rotate: [0, 0, 360, 360] }}`
+- `times: [0, 0.4, 0.7, 1]`
+- `duration: 6`
+- `ease: "easeInOut"`
+- `repeat: Infinity`
 
-### 3. Hero pokéball — new component above the logo
-Build a static SVG/divs Pokéball (108×108) and place it above the Pokémon logo:
-- Outer circle `border-[5px] border-poke-dark` clipping a red top half + white bottom half
-- Horizontal `bg-poke-dark` band (12px) across the middle
-- 32×32 white center circle with `border-[5px] border-poke-dark`
-
-Will live as a small helper `PokeballEmblem` inside `index.tsx` (no new file — keeps the screen self-contained).
-
-### 4. Sprite row — static alternating offset
-Replace the animated bounce loop. Render 4 white circles (`h-16 w-16 rounded-full bg-card shadow-card`) with sprites 1/4/7/25; the 2nd and 4th circles get `-translate-y-3` to produce the zig-zag in the reference. No motion.
-
-### 5. Remove the standalone spinner under the sprites
-Delete the `<PokeballSpinner size={64} spinning />` block — the new hero emblem replaces it visually.
-
-### 6. Stack order, spacing, typography
-- Container becomes `flex flex-col items-center` with the hero block vertically centered (`justify-center`) and buttons in a bottom strip (`mt-auto`), matching the ref's split.
-- Spacing: `Emblem → mt-6 logo (w-42) → mt-3 "Trivia Battle" (text-[2.625rem] font-black tracking-tight) → mt-4 blurb (max-w-[17rem] text-[15px]) → mt-7 sprite row`.
-- Buttons: keep "New Trainer" (primary red pill, `h-[58px]`) + "Play as Guest" (white pill, `border-2 border-poke-dark/10`), gap 3.
+Hold → spin → hold cadence reads as "spins from time to time" rather than constant motion. No interaction needed.
 
 ## Out of scope
-- TrainerCreate (`step === "create"`) and its three substeps stay as-is.
-- No logic, navigation, or store changes.
+- Background gradient, decorative rings, buttons, blurb, layout structure — unchanged.
+- TrainerCreate flow — unchanged.
 
 ## Verification
 - `tsc --noEmit` clean.
-- 390×844: emblem above logo, three faint ring outlines visible in corners, sprite row holds zig-zag without animation, gradient transitions yellow→sky-blue from top-left to bottom-right.
-- No bottom spinner. Buttons unchanged in behavior.
+- At 390×844: gap between logo and heading visibly tightens; the 4 sprite bubbles drift on independent timings; the emblem rotates once every ~6s with a clear pause between spins.
