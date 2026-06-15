@@ -262,6 +262,12 @@ function BattleHome({
   dailyDone: boolean;
   dailyResult: { correct: number; total: number; timeMs: number; pattern: DailyMark[]; date: string } | null;
 }) {
+  const [pending, setPending] = useState<null | "daily" | "weekly">(null);
+  useEffect(() => {
+    if (!loading) setPending(null);
+  }, [loading]);
+  const handleDaily = () => { setPending("daily"); onStartDaily(); };
+  const handleWeekly = () => { setPending("weekly"); onStartWeekly(); };
   const trainerName = useGameStore((s) => s.trainerName);
   const trainerSprite = useGameStore((s) => s.trainerSprite);
   const pokemon = useGameStore((s) => s.pokemon);
