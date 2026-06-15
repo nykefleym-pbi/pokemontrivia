@@ -225,7 +225,7 @@
 
 /* Forces grayscale silhouette regardless of layered .sprite filters */
 .sprite-silhouette {
-  filter: brightness(0) !important;
+  filter: brightness(0) opacity(0.32) !important;
 }
 
 /* White silhouette used by the evolution animation morph */
