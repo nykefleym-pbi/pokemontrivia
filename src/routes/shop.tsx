@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Sparkles, Star, ShoppingBag } from "lucide-react";
+import { Star, ShoppingBag, Minus, Plus } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { ITEMS, type ItemDef, type ItemId } from "@/lib/game-data";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,6 @@ import {
   SheetHeader,
   SheetTitle,
   SheetDescription,
-  SheetFooter,
 } from "@/components/ui/sheet";
 
 export const Route = createFileRoute("/shop")({
