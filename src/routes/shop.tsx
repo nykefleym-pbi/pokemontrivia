@@ -88,6 +88,7 @@ function ShopPage() {
   const [tab, setTab] = useState<Category>("HEALING");
   const [confirmState, setConfirmState] = useState<ConfirmState>(null);
   const [bagOpen, setBagOpen] = useState(false);
+  const [qty, setQty] = useState(1);
 
   const totalItems = useMemo(
     () => Object.values(inventory).reduce((a, b) => a + (b ?? 0), 0),
@@ -107,6 +108,10 @@ function ShopPage() {
     if (!hasOnboarded) navigate({ to: "/" });
   }, [hasOnboarded, navigate]);
 
+  useEffect(() => {
+    if (confirmState) setQty(1);
+  }, [confirmState]);
+
   if (!hasOnboarded) return null;
 
   const items = ITEMS.filter((it) => CATEGORY_OF[it.id] === tab);
@@ -114,11 +119,18 @@ function ShopPage() {
   function confirmPurchase() {
     if (!confirmState) return;
     const { item, cost } = confirmState;
-    const ok = buyItem(item.id as never, cost);
-    if (!ok) {
-      toast.error(`Need ${cost} XP to buy ${item.name}.`);
+    let bought = 0;
+    for (let i = 0; i < qty; i++) {
+      const ok = buyItem(item.id as never, cost);
+      if (!ok) break;
+      bought++;
+    }
+    if (bought === 0) {
+      toast.error(`Need ${cost * qty} XP to buy ${qty}× ${item.name}.`);
+    } else if (bought < qty) {
+      toast.success(`Bought ${bought}× ${item.name} (ran out of XP).`);
     } else {
-      toast.success(`Bought ${item.name}!`);
+      toast.success(`Bought ${qty}× ${item.name}!`);
     }
     setConfirmState(null);
   }
