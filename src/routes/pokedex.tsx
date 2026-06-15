@@ -81,7 +81,13 @@ function PokedexPage() {
       {/* Hero */}
       <div className="px-5 pb-5 pt-[calc(env(safe-area-inset-top)+1rem)]">
         <div className="flex items-center justify-between gap-3">
-          <h1 className="font-display-xl text-poke-dark">{trainerName ? `${trainerName}'s Pokédex` : "Pokédex"}</h1>
+          <div className="min-w-0">
+            {trainerName && (
+              <p className="truncate font-pixel-xs uppercase text-primary">{trainerName}'s</p>
+            )}
+            <h1 className="font-display-xl text-poke-dark">Pokédex</h1>
+          </div>
+
           <div className="relative h-16 w-16 shrink-0">
             <svg viewBox="0 0 64 64" className="absolute inset-0 h-full w-full -rotate-90">
               <circle cx="32" cy="32" r="26" fill="none" stroke="oklch(0.22 0.04 260 / 0.12)" strokeWidth="6" />
