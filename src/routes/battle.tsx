@@ -437,12 +437,6 @@ function BattleHome({
           )}
         </button>
       </div>
-
-      {weeklyLeague && weeklyFinished && (
-        <div className="px-5 pt-3">
-          <WeeklyLeagueResultCard weeklyLeague={weeklyLeague} nextWeekStart={weekRange.end} />
-        </div>
-      )}
     </div>
   );
 }
