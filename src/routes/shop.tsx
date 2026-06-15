@@ -40,6 +40,21 @@ const CATEGORIES: Array<{ id: Category; label: string }> = [
   { id: "PREMIUM", label: "Premium" },
 ];
 
+const BAG_SHORT_DESC: Record<string, string> = {
+  potion: "Restore 30 HP",
+  revive: "Revive to 50 HP",
+  xattack: "2× damage next answer",
+  scope: "Remove one wrong answer",
+  candy: "+50 TP for your partner",
+  escape: "Bail out, no XP lost",
+  xaccuracy: "+5 seconds to your timer",
+  luckyegg: "Double XP this battle",
+};
+
+function bagDesc(it: ItemDef): string {
+  return BAG_SHORT_DESC[it.id] ?? it.desc;
+}
+
 function ItemIcon({ item, className }: { item: ItemDef; className: string }) {
   return (
     <img
