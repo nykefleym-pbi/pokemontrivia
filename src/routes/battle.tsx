@@ -277,6 +277,9 @@ function BattleHome({
   const bestStreak = useGameStore((s) => s.stats.bestStreak);
   const weekRange = getWeekRangeUtc();
 
+  const weeklyLeader = weeklyLeague ? findGymLeader(weeklyLeague.gymLeaderId) : null;
+  const weeklyFinished = weeklyLeague?.status === "won" || weeklyLeague?.status === "lost";
+
   const [weeklyTimeLeft, setWeeklyTimeLeft] = useState("");
   useEffect(() => {
     if (!weeklyFinished) return;
@@ -298,8 +301,6 @@ function BattleHome({
   const xpProg = xpProgressInLevel(xp);
   const partnerTp = trainingPoints[pokemon.id] ?? 0;
   const tpMult = getTpMultiplier(partnerTp);
-  const weeklyLeader = weeklyLeague ? findGymLeader(weeklyLeague.gymLeaderId) : null;
-  const weeklyFinished = weeklyLeague?.status === "won" || weeklyLeague?.status === "lost";
   const xpPct = Math.min(100, (xpProg.current / xpProg.need) * 100);
 
   // Avatar with progress ring (GO-style)
