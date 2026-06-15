@@ -851,14 +851,18 @@ function BattleMode({
       timestamp: Date.now(),
     });
     const after = unlockedAchievements(useGameStore.getState());
+    const unlocked: Array<{ icon: string; name: string }> = [];
     for (const id of after) {
       if (!before.has(id)) {
         const a = ACHIEVEMENTS.find((x) => x.id === id);
         if (a) {
+          unlocked.push({ icon: a.icon, name: a.name });
           toast.success(`${a.icon} ${a.name}`, { description: a.desc, duration: 4000 });
         }
       }
     }
+    newTrophiesRef.current = unlocked;
+
 
     playSfx(won ? "victory" : "defeat");
     if (won) {
