@@ -1,7 +1,10 @@
 // Scrape Bulbagarden trainer sprite categories (Gen III/IV/V only).
 // One pass: fetch + filter + dedupe + write.
 // Run with: bun scripts/build-trainers.ts
-import { writeFileSync } from "node:fs";
+import { writeFileSync, existsSync, mkdirSync, statSync } from "node:fs";
+import { join } from "node:path";
+
+const AVATAR_DIR = "public/trainers/avatar";
 
 const CATEGORIES: { url: string; gen: 3 | 4 | 5 }[] = [
   { url: "https://archives.bulbagarden.net/wiki/Category:Generation_III_Trainer_sprites", gen: 3 },
