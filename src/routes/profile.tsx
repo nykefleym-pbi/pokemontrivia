@@ -85,6 +85,7 @@ function ProfilePage() {
   const [query, setQuery] = useState("");
   const [trainerQuery, setTrainerQuery] = useState("");
   const [resetOpen, setResetOpen] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
   const [muted, setMutedState] = useState(false);
   // TODO: dark theme not yet implemented
   const [darkMode, setDarkMode] = useState(false);
