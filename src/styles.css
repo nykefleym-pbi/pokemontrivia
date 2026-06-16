@@ -139,6 +139,47 @@
   --bottom-nav-total: calc(4.5rem + env(safe-area-inset-bottom) + 0.75rem);
 }
 
+.dark {
+  --background: oklch(0.19 0.05 275);
+  --foreground: oklch(0.95 0.01 250);
+
+  --card: oklch(0.24 0.05 265);
+  --card-foreground: oklch(0.95 0.01 250);
+
+  --popover: oklch(0.24 0.05 265);
+  --popover-foreground: oklch(0.95 0.01 250);
+
+  --primary: oklch(0.62 0.22 25);
+  --primary-foreground: oklch(0.99 0 0);
+
+  --secondary: oklch(0.3 0.05 265);
+  --secondary-foreground: oklch(0.95 0.01 250);
+
+  --muted: oklch(0.3 0.04 265);
+  --muted-foreground: oklch(0.7 0.03 255);
+
+  --accent: oklch(0.4 0.12 280);
+  --accent-foreground: oklch(0.95 0.01 250);
+
+  --destructive: oklch(0.62 0.24 27);
+  --destructive-foreground: oklch(0.99 0 0);
+
+  --border: oklch(0.35 0.04 265);
+  --input: oklch(0.35 0.04 265);
+  --ring: oklch(0.62 0.22 25);
+
+  --poke-red: oklch(0.62 0.22 25);
+  --poke-yellow: oklch(0.85 0.17 90);
+  --poke-blue: oklch(0.6 0.18 245);
+  /* --poke-dark intentionally unchanged (used as dark element bg) */
+
+  --sidebar: oklch(0.22 0.05 270);
+  --sidebar-foreground: oklch(0.95 0.01 250);
+  --sidebar-border: oklch(0.35 0.04 265);
+}
+
+
+
 @utility font-display-xl {
   font-family: var(--font-display);
   font-size: 2rem;
