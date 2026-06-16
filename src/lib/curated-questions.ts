@@ -12,8 +12,10 @@ interface CuratedRow {
   type_theme: string | null;
 }
 
+type CuratedDifficulty = "easy" | "medium" | "hard" | "expert";
+
 interface FetchCuratedOpts {
-  difficulty: "easy" | "medium" | "hard" | "expert";
+  difficulty: CuratedDifficulty | CuratedDifficulty[];
   count: number;
   typeTheme?: string;
   excludeIds?: string[];
