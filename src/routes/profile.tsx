@@ -247,15 +247,14 @@ function ProfilePage() {
               const played = d.count > 0;
               const isToday = d.date === todayKey;
               return (
-                <div key={d.date} className="flex flex-1 flex-col items-center gap-1">
+                <div key={d.date} className="flex flex-1 flex-col items-center gap-1.5">
                   <div
-                    className={`relative h-9 w-9 rounded-full border-2 ${
-                      played ? "bg-primary border-primary" : "bg-muted border-muted"
-                    } ${isToday ? "ring-2 ring-offset-2 ring-poke-yellow" : ""}`}
+                    className={`flex h-10 w-10 items-center justify-center rounded-full ${isToday ? "ring-2 ring-primary ring-offset-1" : ""}`}
                     title={`${d.date}: ${d.count}`}
                   >
-                    <div className="absolute left-1/2 top-1/2 h-1.5 w-full -translate-x-1/2 -translate-y-1/2 bg-card/80" />
-                    <div className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-card bg-card" />
+                    <PokeballIcon
+                      className={`h-8 w-8 text-primary ${played ? "" : "opacity-30 grayscale"}`}
+                    />
                   </div>
                   <div className="font-pixel-xs text-poke-dark/50 uppercase">
                     {new Date(d.date)
@@ -266,6 +265,7 @@ function ProfilePage() {
               );
             })}
           </div>
+
         </div>
 
         {/* Trophies / Badges / Settings buttons */}
