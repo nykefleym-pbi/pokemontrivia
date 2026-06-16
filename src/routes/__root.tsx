@@ -1,8 +1,11 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { BottomNav } from "@/components/bottom-nav";
 import { PwaRegister } from "@/components/pwa-register";
+import { useGameStore } from "@/lib/store";
 
 import appCss from "../styles.css?url";
+
 
 function NotFoundComponent() {
   return (
