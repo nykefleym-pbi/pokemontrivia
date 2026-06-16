@@ -36,8 +36,13 @@ export async function fetchCuratedQuestions(opts: FetchCuratedOpts): Promise<{
     let query = supabase
       .from("curated_questions")
       .select("id, question, options, correct_index, explanation, category, difficulty, type_theme")
-      .eq("verified", true)
-      .eq("difficulty", difficulty);
+      .eq("verified", true);
+
+    query = Array.isArray(difficulty)
+      ? query.in("difficulty", difficulty)
+      : query.eq("difficulty", difficulty);
+
+
 
     if (typeTheme) {
       query = query.eq("type_theme", typeTheme);
