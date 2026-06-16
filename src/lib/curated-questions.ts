@@ -12,8 +12,10 @@ interface CuratedRow {
   type_theme: string | null;
 }
 
+type CuratedDifficulty = "easy" | "medium" | "hard" | "expert";
+
 interface FetchCuratedOpts {
-  difficulty: "easy" | "medium" | "hard" | "expert";
+  difficulty: CuratedDifficulty | CuratedDifficulty[];
   count: number;
   typeTheme?: string;
   excludeIds?: string[];
@@ -34,8 +36,13 @@ export async function fetchCuratedQuestions(opts: FetchCuratedOpts): Promise<{
     let query = supabase
       .from("curated_questions")
       .select("id, question, options, correct_index, explanation, category, difficulty, type_theme")
-      .eq("verified", true)
-      .eq("difficulty", difficulty);
+      .eq("verified", true);
+
+    query = Array.isArray(difficulty)
+      ? query.in("difficulty", difficulty)
+      : query.eq("difficulty", difficulty);
+
+
 
     if (typeTheme) {
       query = query.eq("type_theme", typeTheme);
