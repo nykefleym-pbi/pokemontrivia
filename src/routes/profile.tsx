@@ -3,7 +3,7 @@ import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Pencil, RotateCcw, Check, Search, Volume2, VolumeX } from "lucide-react";
+import { RotateCcw, Check, Search, Volume2, VolumeX, ChevronRight, Moon } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import {
   rankForLevel,
@@ -85,7 +85,10 @@ function ProfilePage() {
   const [query, setQuery] = useState("");
   const [trainerQuery, setTrainerQuery] = useState("");
   const [resetOpen, setResetOpen] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
   const [muted, setMutedState] = useState(false);
+  // TODO: dark theme not yet implemented
+  const [darkMode, setDarkMode] = useState(false);
   const [brokenTrainerIds, setBrokenTrainerIds] = useState<Set<string>>(new Set());
   const [evolvingFrom, setEvolvingFrom] = useState<PokeEntry | null>(null);
   const [evolvingTo, setEvolvingTo] = useState<PokeEntry | null>(null);
@@ -171,43 +174,10 @@ function ProfilePage() {
 
       {/* Hero strip */}
       <div className="px-5 pb-5 pt-[calc(env(safe-area-inset-top)+1rem)]">
-        <p className="font-pixel-xs text-primary">TRAINER</p>
-        <div className="mt-1 flex items-center justify-between gap-3">
-          <h1 className="font-display-xl text-poke-dark">Profile</h1>
-          <div className="relative h-[72px] w-[72px] shrink-0">
-            <svg viewBox="0 0 72 72" className="absolute inset-0 h-full w-full -rotate-90">
-              <circle
-                cx="36"
-                cy="36"
-                r="30"
-                fill="none"
-                stroke="oklch(0.22 0.04 260 / 0.12)"
-                strokeWidth="6"
-              />
-              <circle
-                cx="36"
-                cy="36"
-                r="30"
-                fill="none"
-                stroke="var(--color-primary)"
-                strokeWidth="6"
-                strokeLinecap="round"
-                strokeDasharray={ringCirc}
-                strokeDashoffset={ringCirc * (1 - xpPct / 100)}
-                style={{ transition: "stroke-dashoffset 0.5s ease" }}
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="font-pixel-xs text-poke-dark/50 leading-none">LV</span>
-              <span className="text-base font-extrabold text-poke-dark leading-none">{level}</span>
-            </div>
-          </div>
-        </div>
-
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-3 flex items-center gap-4"
+          className="flex items-center gap-4"
         >
           <button
             onClick={() => setTrainerPickerOpen(true)}
@@ -218,50 +188,21 @@ function ProfilePage() {
               alt={trainerSprite}
               className="sprite h-20 w-20 rounded-full object-contain"
             />
-            <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
-              <Pencil className="h-3 w-3" />
-            </div>
           </button>
           <div className="min-w-0 flex-1">
             <p className="font-pixel-xs text-primary uppercase truncate">
               {rank} · LV {level}
             </p>
-            {editingName ? (
-              <div className="mt-1 flex gap-2">
-                <Input
-                  value={nameDraft}
-                  onChange={(e) => setNameDraft(e.target.value)}
-                  maxLength={16}
-                  className="h-9 rounded-full"
-                  autoFocus
-                />
-                <Button size="sm" onClick={saveName} className="rounded-full">
-                  <Check className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
-              <button
-                onClick={() => {
-                  setNameDraft(trainerName);
-                  setEditingName(true);
-                }}
-                className="mt-0.5 flex items-center gap-1.5 text-left transition active:scale-95"
-              >
-                <h2 className="font-display-lg text-2xl font-extrabold text-poke-dark truncate">
-                  {trainerName}
-                </h2>
-                <Pencil className="h-3.5 w-3.5 text-poke-dark/40" />
-              </button>
-            )}
+            <h2 className="font-display-lg text-2xl font-extrabold text-poke-dark truncate">
+              {trainerName}
+            </h2>
             <p className="mt-0.5 text-xs text-poke-dark/55 truncate">
               Trainer since {trainerSince}
             </p>
-            <div className="mt-2">
-              <XpBar xp={xpProg.current} need={xpProg.need} />
-            </div>
           </div>
         </motion.div>
       </div>
+
 
       <div className="px-5 pb-8 pt-4">
         {/* Partner card */}
@@ -306,15 +247,14 @@ function ProfilePage() {
               const played = d.count > 0;
               const isToday = d.date === todayKey;
               return (
-                <div key={d.date} className="flex flex-1 flex-col items-center gap-1">
+                <div key={d.date} className="flex flex-1 flex-col items-center gap-1.5">
                   <div
-                    className={`relative h-9 w-9 rounded-full border-2 ${
-                      played ? "bg-primary border-primary" : "bg-muted border-muted"
-                    } ${isToday ? "ring-2 ring-offset-2 ring-poke-yellow" : ""}`}
+                    className={`flex h-10 w-10 items-center justify-center rounded-full ${isToday ? "ring-2 ring-primary ring-offset-1" : ""}`}
                     title={`${d.date}: ${d.count}`}
                   >
-                    <div className="absolute left-1/2 top-1/2 h-1.5 w-full -translate-x-1/2 -translate-y-1/2 bg-card/80" />
-                    <div className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-card bg-card" />
+                    <PokeballIcon
+                      className={`h-8 w-8 text-primary ${played ? "" : "opacity-30 grayscale"}`}
+                    />
                   </div>
                   <div className="font-pixel-xs text-poke-dark/50 uppercase">
                     {new Date(d.date)
@@ -325,6 +265,7 @@ function ProfilePage() {
               );
             })}
           </div>
+
         </div>
 
         {/* Trophies / Badges / Settings buttons */}
@@ -373,43 +314,38 @@ function ProfilePage() {
           className="rounded-t-3xl bg-poke-cream max-h-[85vh] overflow-y-auto"
         >
           <SheetHeader>
-            <SheetTitle>Trophies</SheetTitle>
-          </SheetHeader>
-          <div className="mt-3 space-y-3">
-            <div className="rounded-3xl bg-card p-3 shadow-card">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="font-pixel-xs text-poke-dark/60">
-                  {unlocked.size} / {ACHIEVEMENTS.length} UNLOCKED
-                </span>
-                <span className="font-pixel-xs text-primary">
-                  {Math.round((unlocked.size / ACHIEVEMENTS.length) * 100)}%
-                </span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-poke-yellow to-primary"
-                  style={{ width: `${(unlocked.size / ACHIEVEMENTS.length) * 100}%` }}
-                />
-              </div>
+            <div className="font-pixel-xs text-primary">
+              {unlocked.size} OF {ACHIEVEMENTS.length} EARNED
             </div>
-            <div className="grid grid-cols-4 gap-2">
-              {ACHIEVEMENTS.map((a) => {
-                const got = unlocked.has(a.id);
-                return (
+            <SheetTitle className="font-display-xl text-poke-dark">Trophies</SheetTitle>
+          </SheetHeader>
+          <div className="mt-3 space-y-2.5">
+            {ACHIEVEMENTS.map((a) => {
+              const got = unlocked.has(a.id);
+              return (
+                <div
+                  key={a.id}
+                  className={`flex items-center gap-3 rounded-3xl p-4 shadow-card ${got ? "bg-card" : "bg-card/60"}`}
+                >
                   <div
-                    key={a.id}
-                    title={`${a.name} — ${a.desc}`}
-                    className={`flex flex-col items-center rounded-2xl p-2 shadow-card ${got ? "bg-poke-yellow/20" : "bg-muted/40 opacity-40 grayscale"}`}
+                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl ${got ? "bg-poke-yellow/25" : "bg-muted"}`}
                   >
-                    <div className="text-3xl">{a.icon}</div>
-                    <div className="mt-1 line-clamp-2 text-center text-[10px] font-semibold leading-tight text-poke-dark">
+                    {got ? a.icon : "🔒"}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div
+                      className={`font-display-md ${got ? "text-poke-dark" : "text-poke-dark/50"}`}
+                    >
                       {a.name}
                     </div>
+                    <div className="text-xs text-poke-dark/55">{a.desc}</div>
                   </div>
-                );
-              })}
-            </div>
+                  {got && <Check className="h-5 w-5 shrink-0 text-hp-good" />}
+                </div>
+              );
+            })}
           </div>
+
         </SheetContent>
       </Sheet>
 
@@ -420,7 +356,10 @@ function ProfilePage() {
           className="rounded-t-3xl bg-poke-cream max-h-[85vh] overflow-y-auto"
         >
           <SheetHeader>
-            <SheetTitle>Badges</SheetTitle>
+            <div className="font-pixel-xs text-primary">
+              {gymBadges.length} OF {GYM_LEADERS.length} EARNED
+            </div>
+            <SheetTitle className="font-display-xl text-poke-dark">Badge case</SheetTitle>
           </SheetHeader>
           <div className="mt-3">
             <BadgesTab />
@@ -437,46 +376,148 @@ function ProfilePage() {
           <SheetHeader>
             <SheetTitle>Settings</SheetTitle>
           </SheetHeader>
-          <div className="mt-3 space-y-2">
-            <div className="flex items-center justify-between rounded-3xl bg-card p-4 shadow-card">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
-                  {muted ? (
-                    <VolumeX className="h-5 w-5 text-poke-dark" />
-                  ) : (
-                    <Volume2 className="h-5 w-5 text-poke-dark" />
-                  )}
+          <div className="mt-3 space-y-5">
+            <section>
+              <div className="mb-2 font-pixel-xs uppercase text-poke-dark/45">General</div>
+              <div className="overflow-hidden rounded-3xl bg-card shadow-card divide-y divide-border">
+                <div className="flex items-center justify-between p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
+                      {muted ? (
+                        <VolumeX className="h-5 w-5 text-poke-dark" />
+                      ) : (
+                        <Volume2 className="h-5 w-5 text-poke-dark" />
+                      )}
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-poke-dark">Sounds & music</div>
+                      <div className="text-xs text-poke-dark/55">Battle cries, SFX, BGM</div>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={!muted}
+                    onCheckedChange={(v) => {
+                      setMuted(!v);
+                      setMutedState(!v);
+                    }}
+                  />
                 </div>
-                <div>
-                  <div className="font-pixel-xs text-poke-dark/60">SOUND</div>
-                  <div className="text-sm font-semibold text-poke-dark">Toggle SFX & music</div>
+                <div className="flex items-center justify-between p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
+                      <Moon className="h-5 w-5 text-poke-dark" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-poke-dark">Dark mode</div>
+                      <div className="text-xs text-poke-dark/55">Easier on the eyes at night</div>
+                    </div>
+                  </div>
+                  {/* TODO: dark theme not yet implemented */}
+                  <Switch checked={darkMode} onCheckedChange={setDarkMode} />
                 </div>
               </div>
-              <Switch
-                checked={!muted}
-                onCheckedChange={(v) => {
-                  setMuted(!v);
-                  setMutedState(!v);
-                }}
-              />
-            </div>
-            <button
-              onClick={() => setResetOpen(true)}
-              className="flex w-full items-center justify-between rounded-3xl bg-card p-4 shadow-card transition active:scale-95"
-            >
-              <div className="flex items-center gap-3">
+            </section>
+
+            <section>
+              <div className="mb-2 font-pixel-xs uppercase text-poke-dark/45">Trainer</div>
+              <div className="overflow-hidden rounded-3xl bg-card shadow-card divide-y divide-border">
+                <button
+                  onClick={() => {
+                    setNameDraft(trainerName);
+                    setRenameOpen(true);
+                  }}
+                  className="flex w-full items-center justify-between p-4 text-left transition active:scale-[0.98]"
+                >
+                  <div>
+                    <div className="text-sm font-semibold text-poke-dark">Rename trainer</div>
+                    <div className="text-xs text-poke-dark/55 truncate">
+                      Currently: {trainerName}
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-poke-dark/40" />
+                </button>
+                <button
+                  onClick={() => {
+                    setSettingsOpen(false);
+                    setTrainerPickerOpen(true);
+                  }}
+                  className="flex w-full items-center justify-between p-4 text-left transition active:scale-[0.98]"
+                >
+                  <div>
+                    <div className="text-sm font-semibold text-poke-dark">Repick avatar</div>
+                    <div className="text-xs text-poke-dark/55 truncate">
+                      Currently: {trainerSprite}
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-poke-dark/40" />
+                </button>
+                <button
+                  onClick={() => {
+                    setSettingsOpen(false);
+                    setPickerOpen(true);
+                  }}
+                  className="flex w-full items-center justify-between p-4 text-left transition active:scale-[0.98]"
+                >
+                  <div>
+                    <div className="text-sm font-semibold text-poke-dark">Repick partner</div>
+                    <div className="text-xs text-poke-dark/55 truncate">
+                      Currently: {pokemon.name}
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-poke-dark/40" />
+                </button>
+              </div>
+            </section>
+
+            <section>
+              <div className="mb-2 font-pixel-xs uppercase text-destructive/70">Danger zone</div>
+              <button
+                onClick={() => setResetOpen(true)}
+                className="flex w-full items-center gap-3 rounded-3xl bg-card p-4 shadow-card transition active:scale-95"
+              >
                 <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-destructive/10">
                   <RotateCcw className="h-5 w-5 text-destructive" />
                 </div>
                 <div className="text-left">
-                  <div className="font-pixel-xs text-destructive/70">DANGER</div>
                   <div className="text-sm font-semibold text-destructive">Reset progress</div>
+                  <div className="text-xs text-poke-dark/55">Wipes XP, badges & Pokédex</div>
                 </div>
-              </div>
-            </button>
+              </button>
+            </section>
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Rename trainer dialog */}
+      <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle>Rename trainer</DialogTitle>
+          </DialogHeader>
+          <div className="flex gap-2">
+            <Input
+              value={nameDraft}
+              onChange={(e) => setNameDraft(e.target.value)}
+              maxLength={16}
+              className="h-10 rounded-full"
+              autoFocus
+            />
+            <Button
+              onClick={() => {
+                if (nameDraft.trim()) {
+                  setName(nameDraft.trim());
+                  setRenameOpen(false);
+                  toast.success("Trainer name updated!");
+                }
+              }}
+              className="rounded-full"
+            >
+              <Check className="h-4 w-4" />
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
 
       <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
         <AlertDialogContent>
@@ -625,69 +666,54 @@ function PartnerCard({
   }
 
   return (
-    <div className="mt-3 rounded-2xl bg-card p-3 shadow-sm">
-      <div className="flex items-center gap-3">
+    <div className="mt-3 rounded-3xl bg-card p-4 shadow-card">
+      <div className="flex items-center gap-4">
         <button onClick={onChange} className="shrink-0 transition active:scale-95">
-          <PokemonSprite id={pokemon.id} alt={pokemon.name} className="sprite h-14 w-14" />
+          <PokemonSprite id={pokemon.id} alt={pokemon.name} className="sprite h-20 w-20" />
         </button>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between">
-            <div className="font-pixel text-[9px] uppercase text-muted-foreground">Partner</div>
-            <button onClick={onChange} className="text-muted-foreground hover:text-foreground">
-              <Pencil className="h-3.5 w-3.5" />
-            </button>
-          </div>
-          <div className="text-sm font-bold">{pokemon.name}</div>
-          <div className="mt-1 flex items-center justify-between gap-2">
-            <div className="flex flex-wrap items-center gap-1">
-              {(pokemon.types ?? []).map((t) => (
-                <TypeBadge key={t} type={t} size="sm" />
-              ))}
-            </div>
-            <span className="font-pixel text-[8px] text-primary">
-              ⚡ {getAbility(pokemon.types ?? []).name}
+          <div className="flex items-center gap-2">
+            <span className="font-display-lg text-xl font-extrabold text-poke-dark truncate">
+              {pokemon.name}
             </span>
+            {(pokemon.types ?? []).slice(0, 1).map((t) => (
+              <TypeBadge key={t} type={t} size="sm" />
+            ))}
           </div>
-        </div>
-      </div>
-      <div className="mt-3 flex items-center gap-2 rounded-xl bg-muted/50 px-3 py-2">
-        <div className="flex-1">
-          <div className="flex items-center justify-between font-pixel text-[9px] text-muted-foreground">
-            <span>TRAINING POINTS</span>
-            <span>
-              {tp}
-              {cost ? ` / ${cost}` : ""}
-            </span>
-          </div>
-          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-card">
+          <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full bg-gradient-to-r from-poke-yellow to-primary"
+              className="h-full rounded-full bg-gradient-to-r from-poke-blue to-primary"
               style={{ width: `${cost ? Math.min(100, (tp / cost) * 100) : 100}%` }}
             />
           </div>
-        </div>
-        <div className="flex flex-col items-center">
-          <span className="font-pixel text-[8px] uppercase text-muted-foreground">DMG ×</span>
-          <span className="rounded-full bg-primary/15 px-2 py-0.5 font-pixel text-[10px] text-primary">
-            {mult.toFixed(2)}
-          </span>
+          <div className="mt-1 text-xs font-semibold text-poke-dark/60">
+            TP {tp}
+            {cost ? ` · ×${mult.toFixed(2)}` : ""}
+          </div>
         </div>
       </div>
       {canEvolve(pokemon) && cost !== null && (
-        <Button
-          size="sm"
-          onClick={handleEvolveClick}
-          disabled={!eligible}
-          className="mt-2 w-full rounded-full bg-primary font-pixel text-[10px] shadow-pop disabled:opacity-50"
-        >
-          ✨ {eligible ? `Evolve (${cost} TP)` : `Evolve at ${cost} TP`}
-        </Button>
+        <div className="mt-4 flex items-center gap-3">
+          <Button
+            onClick={handleEvolveClick}
+            disabled={!eligible}
+            className="h-12 flex-1 rounded-full bg-gradient-to-r from-poke-yellow to-primary font-bold text-white shadow-pop disabled:opacity-60"
+          >
+            ✦ Evolve
+          </Button>
+          {!eligible && (
+            <span className="shrink-0 text-xs font-semibold text-poke-dark/55">
+              {Math.max(0, cost - tp)} TP to go
+            </span>
+          )}
+        </div>
       )}
       {pokemon.isFullyEvolved && (
-        <div className="mt-2 rounded-full bg-poke-yellow/20 py-1 text-center font-pixel text-[9px] text-poke-dark">
+        <div className="mt-4 rounded-full bg-muted py-2 text-center text-xs font-bold text-poke-dark/60">
           ⭐ Fully evolved
         </div>
       )}
+
       <Dialog open={evoOpen} onOpenChange={setEvoOpen}>
         <DialogContent className="max-w-xs">
           <DialogHeader>
@@ -739,32 +765,24 @@ function Stat({ label, value }: { label: string; value: number | string }) {
   );
 }
 
+const REGION_TINT: Record<string, string> = {
+  Kanto: "bg-primary/10",
+  Johto: "bg-poke-yellow/15",
+  Hoenn: "bg-hp-good/12",
+  Sinnoh: "bg-poke-blue/12",
+  Unova: "bg-purple-500/10",
+};
+
 function BadgesTab() {
   const gymBadges = useGameStore((s) => s.gymBadges);
   const owned = new Set(gymBadges);
   const regions = ["Kanto", "Johto", "Hoenn", "Sinnoh", "Unova"] as const;
   return (
     <div className="space-y-3">
-      <div className="rounded-3xl bg-card p-3 shadow-card">
-        <div className="mb-2 flex items-center justify-between">
-          <span className="font-pixel-xs text-poke-dark/60">
-            {owned.size} / {GYM_LEADERS.length} BADGES
-          </span>
-          <span className="font-pixel-xs text-primary">
-            {Math.round((owned.size / GYM_LEADERS.length) * 100)}%
-          </span>
-        </div>
-        <div className="h-2 overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-poke-yellow to-primary"
-            style={{ width: `${(owned.size / GYM_LEADERS.length) * 100}%` }}
-          />
-        </div>
-      </div>
       {regions.map((r) => {
         const leaders = GYM_LEADERS.filter((g) => g.region === r);
         return (
-          <div key={r} className="rounded-3xl bg-card p-3 shadow-card">
+          <div key={r} className={`rounded-3xl p-3 shadow-card ${REGION_TINT[r] ?? "bg-card"}`}>
             <div className="mb-2 font-pixel-xs text-poke-dark/60">{r.toUpperCase()}</div>
             <div className="grid grid-cols-4 gap-2">
               {leaders.map((g) => {
@@ -778,6 +796,18 @@ function BadgesTab() {
     </div>
   );
 }
+
+function PokeballIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 32 32" className={className} aria-hidden>
+      <circle cx="16" cy="16" r="14" fill="#fff" stroke="#1b1d2b" strokeWidth="2.5" />
+      <path d="M2 16 a14 14 0 0 1 28 0 Z" fill="currentColor" stroke="#1b1d2b" strokeWidth="2.5" />
+      <rect x="2" y="14.5" width="28" height="3" fill="#1b1d2b" />
+      <circle cx="16" cy="16" r="4" fill="#fff" stroke="#1b1d2b" strokeWidth="2.5" />
+    </svg>
+  );
+}
+
 
 function BadgeCell({ leader, got }: { leader: GymLeader; got: boolean }) {
   const [imgBroken, setImgBroken] = useState(false);
