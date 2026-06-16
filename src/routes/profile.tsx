@@ -193,37 +193,38 @@ function ProfilePage() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-3 flex items-center gap-3 rounded-3xl bg-card p-3 shadow-card"
+          className="mt-3 flex items-center gap-4"
         >
           <button
             onClick={() => setTrainerPickerOpen(true)}
-            className="relative shrink-0 rounded-full bg-white p-1.5 shadow-pop transition active:scale-95"
+            className="relative shrink-0 rounded-full bg-white p-1 ring-4 ring-primary shadow-pop transition active:scale-95"
           >
             <img
               src={trainerSpriteUrl(trainerSprite)}
               alt={trainerSprite}
-              className="sprite h-16 w-16 object-contain"
+              className="sprite h-20 w-20 rounded-full object-contain"
             />
             <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
               <Pencil className="h-3 w-3" />
             </div>
           </button>
           <div className="min-w-0 flex-1">
+            <p className="font-pixel-xs text-primary uppercase truncate">{rank} · LV {level}</p>
             {editingName ? (
-              <div className="flex gap-2">
+              <div className="mt-1 flex gap-2">
                 <Input value={nameDraft} onChange={(e) => setNameDraft(e.target.value)} maxLength={16} className="h-9 rounded-full" autoFocus />
                 <Button size="sm" onClick={saveName} className="rounded-full"><Check className="h-4 w-4" /></Button>
               </div>
             ) : (
               <button
                 onClick={() => { setNameDraft(trainerName); setEditingName(true); }}
-                className="flex items-center gap-1.5 text-left transition active:scale-95"
+                className="mt-0.5 flex items-center gap-1.5 text-left transition active:scale-95"
               >
-                <h2 className="text-lg font-extrabold text-poke-dark truncate">{trainerName}</h2>
-                <Pencil className="h-3 w-3 text-poke-dark/40" />
+                <h2 className="font-display-lg text-2xl font-extrabold text-poke-dark truncate">{trainerName}</h2>
+                <Pencil className="h-3.5 w-3.5 text-poke-dark/40" />
               </button>
             )}
-            <p className="mt-0.5 font-pixel-xs text-poke-dark/60 truncate">{rank}</p>
+            <p className="mt-0.5 text-xs text-poke-dark/55 truncate">Trainer since {trainerSince}</p>
             <div className="mt-2"><XpBar xp={xpProg.current} need={xpProg.need} /></div>
           </div>
         </motion.div>
