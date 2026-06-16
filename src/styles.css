@@ -59,6 +59,10 @@
   --color-type-rock: var(--type-rock);
   --color-type-ghost: var(--type-ghost);
   --color-type-dragon: var(--type-dragon);
+  --color-type-dark: var(--type-dark);
+  --color-type-steel: var(--type-steel);
+  --color-type-fairy: var(--type-fairy);
+
 
   --font-pixel: "Press Start 2P", monospace;
   --font-display: "Outfit", sans-serif;
@@ -125,6 +129,10 @@
   --type-rock: oklch(0.55 0.06 80);
   --type-ghost: oklch(0.45 0.12 290);
   --type-dragon: oklch(0.5 0.2 280);
+  --type-dark: oklch(0.35 0.04 280);
+  --type-steel: oklch(0.6 0.03 250);
+  --type-fairy: oklch(0.8 0.12 350);
+
 
   --sidebar: oklch(0.98 0.01 95);
   --sidebar-foreground: oklch(0.22 0.04 260);
