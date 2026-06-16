@@ -178,7 +178,11 @@ export interface GameState {
   initWeeklyLeague: () => void;
   startWeeklyLeagueAttempt: () => void;
   recordWeeklyLeagueResult: (won: boolean) => void;
+
+  // preferences actions
+  setDarkMode: (v: boolean) => void;
 }
+
 
 const defaultStats: PlayerStats = {
   battles: 0,
