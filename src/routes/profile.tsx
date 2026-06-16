@@ -18,7 +18,7 @@ import {
   getEvolutionTargets,
   type PokeEntry,
 } from "@/lib/pokemon-data";
-import { ABILITIES, getAbility } from "@/lib/abilities";
+import { ABILITIES } from "@/lib/abilities";
 import { EVOLUTION_TP_COST, getTpMultiplier } from "@/lib/game-data";
 import { EvolutionScreen } from "@/components/evolution-screen";
 import { XpBar, TypeBadge, PokemonSprite } from "@/components/game-ui";
@@ -77,6 +77,7 @@ function ProfilePage() {
   const [trophiesOpen, setTrophiesOpen] = useState(false);
   const [badgesOpen, setBadgesOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(false);
 
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(trainerName);
@@ -105,14 +106,14 @@ function ProfilePage() {
     const q = query.trim().toLowerCase();
     return STARTING_PARTNERS.filter((p) => (q ? p.name.toLowerCase().startsWith(q) : true)).slice(
       0,
-      24,
+      9,
     );
   }, [query]);
   const trainerResults = useMemo(() => {
     const q = trainerQuery.trim().toLowerCase();
     const pool = TRAINER_SPRITES.filter((t) => !brokenTrainerIds.has(t.id));
-    if (!q) return pool.slice(0, 30);
-    return pool.filter((t) => t.name.toLowerCase().startsWith(q)).slice(0, 60);
+    if (!q) return pool.slice(0, 9);
+    return pool.filter((t) => t.name.toLowerCase().startsWith(q)).slice(0, 9);
   }, [trainerQuery, brokenTrainerIds]);
 
   // 7-day activity heatmap — must run BEFORE the conditional return
@@ -208,11 +209,14 @@ function ProfilePage() {
         {/* Partner card */}
         {/* Stat cards */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-3xl bg-card p-4 shadow-card">
+          <button
+            onClick={() => setStatsOpen(true)}
+            className="rounded-3xl bg-card p-4 text-left shadow-card transition active:scale-95"
+          >
             <div className="font-pixel-xs text-poke-dark/55">BATTLES WON</div>
             <div className="mt-1 text-3xl font-extrabold text-poke-dark">{stats.wins}</div>
             <div className="mt-1 text-xs font-semibold text-hp-good">{winRate}% win rate</div>
-          </div>
+          </button>
           <div className="rounded-3xl bg-card p-4 shadow-card">
             <div className="font-pixel-xs text-poke-dark/55">BEST STREAK</div>
             <div className="mt-1 text-3xl font-extrabold text-primary">{stats.bestStreak}</div>
@@ -438,30 +442,38 @@ function ProfilePage() {
                 </button>
                 <button
                   onClick={() => {
-                    setSettingsOpen(false);
                     setTrainerPickerOpen(true);
                   }}
                   className="flex w-full items-center justify-between p-4 text-left transition active:scale-[0.98]"
                 >
-                  <div>
-                    <div className="text-sm font-semibold text-poke-dark">Repick avatar</div>
-                    <div className="text-xs text-poke-dark/55 truncate">
-                      Currently: {trainerSprite}
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted">
+                      <img src={trainerSpriteUrl(trainerSprite)} alt="" className="sprite h-8 w-8 object-contain" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-poke-dark">Repick avatar</div>
+                      <div className="text-xs text-poke-dark/55 truncate">
+                        Currently: {trainerSprite}
+                      </div>
                     </div>
                   </div>
                   <ChevronRight className="h-5 w-5 text-poke-dark/40" />
                 </button>
                 <button
                   onClick={() => {
-                    setSettingsOpen(false);
                     setPickerOpen(true);
                   }}
                   className="flex w-full items-center justify-between p-4 text-left transition active:scale-[0.98]"
                 >
-                  <div>
-                    <div className="text-sm font-semibold text-poke-dark">Repick partner</div>
-                    <div className="text-xs text-poke-dark/55 truncate">
-                      Currently: {pokemon.name}
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted">
+                      <PokemonSprite id={pokemon.id} alt="" className="sprite h-8 w-8" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-poke-dark">Repick partner</div>
+                      <div className="text-xs text-poke-dark/55 truncate">
+                        Currently: {pokemon.name}
+                      </div>
                     </div>
                   </div>
                   <ChevronRight className="h-5 w-5 text-poke-dark/40" />
@@ -567,9 +579,6 @@ function ProfilePage() {
               >
                 <PokemonSprite id={p.id} alt={p.name} className="sprite h-14 w-14" />
                 <div className="text-[11px] font-semibold">{p.name}</div>
-                <div className="font-pixel text-[8px] text-primary">
-                  ⚡ {getAbility(p.types ?? []).name}
-                </div>
               </button>
             ))}
           </div>
@@ -783,7 +792,7 @@ function BadgesTab() {
         const leaders = GYM_LEADERS.filter((g) => g.region === r);
         return (
           <div key={r} className={`rounded-3xl p-3 shadow-card ${REGION_TINT[r] ?? "bg-card"}`}>
-            <div className="mb-2 font-pixel-xs text-poke-dark/60">{r.toUpperCase()}</div>
+            <div className="mb-2 text-center font-pixel-xs text-poke-dark/60">{r.toUpperCase()}</div>
             <div className="grid grid-cols-4 gap-2">
               {leaders.map((g) => {
                 const got = owned.has(g.id);
@@ -827,9 +836,11 @@ function BadgeCell({ leader, got }: { leader: GymLeader; got: boolean }) {
       ) : (
         <div className={`text-3xl ${got ? "" : "opacity-20 grayscale"}`}>🎖</div>
       )}
-      <div className="mt-1 truncate text-center text-[10px] font-semibold leading-tight text-poke-dark">
-        {got ? leader.name : "???"}
-      </div>
+      {got && (
+        <div className="mt-1 truncate text-center text-[10px] font-semibold leading-tight text-poke-dark">
+          {leader.name}
+        </div>
+      )}
     </div>
   );
 }
