@@ -86,6 +86,8 @@ function ProfilePage() {
   const [trainerQuery, setTrainerQuery] = useState("");
   const [resetOpen, setResetOpen] = useState(false);
   const [muted, setMutedState] = useState(false);
+  // TODO: dark theme not yet implemented
+  const [darkMode, setDarkMode] = useState(false);
   const [brokenTrainerIds, setBrokenTrainerIds] = useState<Set<string>>(new Set());
   const [evolvingFrom, setEvolvingFrom] = useState<PokeEntry | null>(null);
   const [evolvingTo, setEvolvingTo] = useState<PokeEntry | null>(null);
