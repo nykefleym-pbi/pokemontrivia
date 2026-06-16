@@ -68,10 +68,15 @@ function ProfilePage() {
   
   const trainingPoints = useGameStore((s) => s.trainingPoints);
   const evolvePartner = useGameStore((s) => s.evolvePartner);
+  const gymBadges = useGameStore((s) => s.gymBadges);
   const unlocked = useMemo(() => {
     const ctx = { stats, flags, peakLevel, pokedex } as Parameters<typeof unlockedAchievements>[0];
     return new Set(unlockedAchievements(ctx));
   }, [stats, flags, peakLevel, pokedex]);
+
+  const [trophiesOpen, setTrophiesOpen] = useState(false);
+  const [badgesOpen, setBadgesOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(trainerName);
