@@ -314,43 +314,38 @@ function ProfilePage() {
           className="rounded-t-3xl bg-poke-cream max-h-[85vh] overflow-y-auto"
         >
           <SheetHeader>
-            <SheetTitle>Trophies</SheetTitle>
-          </SheetHeader>
-          <div className="mt-3 space-y-3">
-            <div className="rounded-3xl bg-card p-3 shadow-card">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="font-pixel-xs text-poke-dark/60">
-                  {unlocked.size} / {ACHIEVEMENTS.length} UNLOCKED
-                </span>
-                <span className="font-pixel-xs text-primary">
-                  {Math.round((unlocked.size / ACHIEVEMENTS.length) * 100)}%
-                </span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-poke-yellow to-primary"
-                  style={{ width: `${(unlocked.size / ACHIEVEMENTS.length) * 100}%` }}
-                />
-              </div>
+            <div className="font-pixel-xs text-primary">
+              {unlocked.size} OF {ACHIEVEMENTS.length} EARNED
             </div>
-            <div className="grid grid-cols-4 gap-2">
-              {ACHIEVEMENTS.map((a) => {
-                const got = unlocked.has(a.id);
-                return (
+            <SheetTitle className="font-display-xl text-poke-dark">Trophies</SheetTitle>
+          </SheetHeader>
+          <div className="mt-3 space-y-2.5">
+            {ACHIEVEMENTS.map((a) => {
+              const got = unlocked.has(a.id);
+              return (
+                <div
+                  key={a.id}
+                  className={`flex items-center gap-3 rounded-3xl p-4 shadow-card ${got ? "bg-card" : "bg-card/60"}`}
+                >
                   <div
-                    key={a.id}
-                    title={`${a.name} — ${a.desc}`}
-                    className={`flex flex-col items-center rounded-2xl p-2 shadow-card ${got ? "bg-poke-yellow/20" : "bg-muted/40 opacity-40 grayscale"}`}
+                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl ${got ? "bg-poke-yellow/25" : "bg-muted"}`}
                   >
-                    <div className="text-3xl">{a.icon}</div>
-                    <div className="mt-1 line-clamp-2 text-center text-[10px] font-semibold leading-tight text-poke-dark">
+                    {got ? a.icon : "🔒"}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div
+                      className={`font-display-md ${got ? "text-poke-dark" : "text-poke-dark/50"}`}
+                    >
                       {a.name}
                     </div>
+                    <div className="text-xs text-poke-dark/55">{a.desc}</div>
                   </div>
-                );
-              })}
-            </div>
+                  {got && <Check className="h-5 w-5 shrink-0 text-hp-good" />}
+                </div>
+              );
+            })}
           </div>
+
         </SheetContent>
       </Sheet>
 
