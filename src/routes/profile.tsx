@@ -183,7 +183,7 @@ function ProfilePage() {
         >
           <button
             onClick={() => setTrainerPickerOpen(true)}
-            className="relative shrink-0 rounded-full bg-white p-1 ring-4 ring-primary shadow-pop transition active:scale-95"
+            className="relative shrink-0 rounded-full bg-card p-1 ring-4 ring-primary shadow-pop transition active:scale-95"
           >
             <img
               src={trainerSpriteUrl(trainerSprite)}

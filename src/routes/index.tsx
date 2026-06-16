@@ -256,7 +256,7 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
         <button
           onClick={goBack}
           aria-label="Back"
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-pop active:scale-95"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-card shadow-pop active:scale-95"
         >
           <ChevronLeft className="h-5 w-5 text-foreground" />
         </button>
@@ -424,7 +424,7 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search..."
-                className="h-12 rounded-full border-0 bg-white pl-11 text-sm shadow-pop"
+                className="h-12 rounded-full border-0 bg-card pl-11 text-sm shadow-pop"
               />
             </div>
 
@@ -435,7 +435,7 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                   <button
                     key={p.id}
                     onClick={() => setPick(p)}
-                    className={`relative flex flex-col items-center rounded-2xl border-2 bg-white p-3 shadow-card transition ${
+                    className={`relative flex flex-col items-center rounded-2xl border-2 bg-card p-3 shadow-card transition ${
                       selected ? "border-primary" : "border-transparent"
                     }`}
                   >
