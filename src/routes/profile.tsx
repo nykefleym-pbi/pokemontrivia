@@ -376,46 +376,148 @@ function ProfilePage() {
           <SheetHeader>
             <SheetTitle>Settings</SheetTitle>
           </SheetHeader>
-          <div className="mt-3 space-y-2">
-            <div className="flex items-center justify-between rounded-3xl bg-card p-4 shadow-card">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
-                  {muted ? (
-                    <VolumeX className="h-5 w-5 text-poke-dark" />
-                  ) : (
-                    <Volume2 className="h-5 w-5 text-poke-dark" />
-                  )}
+          <div className="mt-3 space-y-5">
+            <section>
+              <div className="mb-2 font-pixel-xs uppercase text-poke-dark/45">General</div>
+              <div className="overflow-hidden rounded-3xl bg-card shadow-card divide-y divide-border">
+                <div className="flex items-center justify-between p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
+                      {muted ? (
+                        <VolumeX className="h-5 w-5 text-poke-dark" />
+                      ) : (
+                        <Volume2 className="h-5 w-5 text-poke-dark" />
+                      )}
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-poke-dark">Sounds & music</div>
+                      <div className="text-xs text-poke-dark/55">Battle cries, SFX, BGM</div>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={!muted}
+                    onCheckedChange={(v) => {
+                      setMuted(!v);
+                      setMutedState(!v);
+                    }}
+                  />
                 </div>
-                <div>
-                  <div className="font-pixel-xs text-poke-dark/60">SOUND</div>
-                  <div className="text-sm font-semibold text-poke-dark">Toggle SFX & music</div>
+                <div className="flex items-center justify-between p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
+                      <Moon className="h-5 w-5 text-poke-dark" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-poke-dark">Dark mode</div>
+                      <div className="text-xs text-poke-dark/55">Easier on the eyes at night</div>
+                    </div>
+                  </div>
+                  {/* TODO: dark theme not yet implemented */}
+                  <Switch checked={darkMode} onCheckedChange={setDarkMode} />
                 </div>
               </div>
-              <Switch
-                checked={!muted}
-                onCheckedChange={(v) => {
-                  setMuted(!v);
-                  setMutedState(!v);
-                }}
-              />
-            </div>
-            <button
-              onClick={() => setResetOpen(true)}
-              className="flex w-full items-center justify-between rounded-3xl bg-card p-4 shadow-card transition active:scale-95"
-            >
-              <div className="flex items-center gap-3">
+            </section>
+
+            <section>
+              <div className="mb-2 font-pixel-xs uppercase text-poke-dark/45">Trainer</div>
+              <div className="overflow-hidden rounded-3xl bg-card shadow-card divide-y divide-border">
+                <button
+                  onClick={() => {
+                    setNameDraft(trainerName);
+                    setRenameOpen(true);
+                  }}
+                  className="flex w-full items-center justify-between p-4 text-left transition active:scale-[0.98]"
+                >
+                  <div>
+                    <div className="text-sm font-semibold text-poke-dark">Rename trainer</div>
+                    <div className="text-xs text-poke-dark/55 truncate">
+                      Currently: {trainerName}
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-poke-dark/40" />
+                </button>
+                <button
+                  onClick={() => {
+                    setSettingsOpen(false);
+                    setTrainerPickerOpen(true);
+                  }}
+                  className="flex w-full items-center justify-between p-4 text-left transition active:scale-[0.98]"
+                >
+                  <div>
+                    <div className="text-sm font-semibold text-poke-dark">Repick avatar</div>
+                    <div className="text-xs text-poke-dark/55 truncate">
+                      Currently: {trainerSprite}
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-poke-dark/40" />
+                </button>
+                <button
+                  onClick={() => {
+                    setSettingsOpen(false);
+                    setPickerOpen(true);
+                  }}
+                  className="flex w-full items-center justify-between p-4 text-left transition active:scale-[0.98]"
+                >
+                  <div>
+                    <div className="text-sm font-semibold text-poke-dark">Repick partner</div>
+                    <div className="text-xs text-poke-dark/55 truncate">
+                      Currently: {pokemon.name}
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-poke-dark/40" />
+                </button>
+              </div>
+            </section>
+
+            <section>
+              <div className="mb-2 font-pixel-xs uppercase text-destructive/70">Danger zone</div>
+              <button
+                onClick={() => setResetOpen(true)}
+                className="flex w-full items-center gap-3 rounded-3xl bg-card p-4 shadow-card transition active:scale-95"
+              >
                 <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-destructive/10">
                   <RotateCcw className="h-5 w-5 text-destructive" />
                 </div>
                 <div className="text-left">
-                  <div className="font-pixel-xs text-destructive/70">DANGER</div>
                   <div className="text-sm font-semibold text-destructive">Reset progress</div>
+                  <div className="text-xs text-poke-dark/55">Wipes XP, badges & Pokédex</div>
                 </div>
-              </div>
-            </button>
+              </button>
+            </section>
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Rename trainer dialog */}
+      <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle>Rename trainer</DialogTitle>
+          </DialogHeader>
+          <div className="flex gap-2">
+            <Input
+              value={nameDraft}
+              onChange={(e) => setNameDraft(e.target.value)}
+              maxLength={16}
+              className="h-10 rounded-full"
+              autoFocus
+            />
+            <Button
+              onClick={() => {
+                if (nameDraft.trim()) {
+                  setName(nameDraft.trim());
+                  setRenameOpen(false);
+                  toast.success("Trainer name updated!");
+                }
+              }}
+              className="rounded-full"
+            >
+              <Check className="h-4 w-4" />
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
 
       <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
         <AlertDialogContent>
