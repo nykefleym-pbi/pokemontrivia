@@ -123,6 +123,9 @@ function BattlePage() {
         body: JSON.stringify({
           type: pendingElite.type,
           memberName: `${pendingElite.title} ${pendingElite.name}`,
+          difficultyTiers: ["hard", "expert"],
+          curatedTarget: 36,
+          aiCount: 4,
           seenHashes,
           seenSamples: seenQuestions.slice(-80),
           flowSeed: Math.floor(Math.random() * 1_000_000),
