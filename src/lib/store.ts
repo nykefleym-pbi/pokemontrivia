@@ -626,6 +626,8 @@ export const useGameStore = create<GameState>()(
         weeklyLeague: s.weeklyLeague,
         gymBadges: s.gymBadges,
         weeklyLeagueHistory: s.weeklyLeagueHistory,
+        darkMode: s.darkMode,
+
       }),
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<GameState>;
