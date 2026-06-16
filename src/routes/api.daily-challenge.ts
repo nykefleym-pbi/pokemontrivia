@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { generateTrivia, type TriviaPayload } from "@/lib/trivia-core";
-import { supabase } from "@/integrations/supabase/client";
+import { curatedSupabase as supabase } from "@/lib/curated-client";
 
 // daily_questions table + insert_daily_if_absent RPC are not in the generated
 // Supabase types yet, so use an untyped handle for those two calls.
