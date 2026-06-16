@@ -765,32 +765,24 @@ function Stat({ label, value }: { label: string; value: number | string }) {
   );
 }
 
+const REGION_TINT: Record<string, string> = {
+  Kanto: "bg-primary/10",
+  Johto: "bg-poke-yellow/15",
+  Hoenn: "bg-hp-good/12",
+  Sinnoh: "bg-poke-blue/12",
+  Unova: "bg-purple-500/10",
+};
+
 function BadgesTab() {
   const gymBadges = useGameStore((s) => s.gymBadges);
   const owned = new Set(gymBadges);
   const regions = ["Kanto", "Johto", "Hoenn", "Sinnoh", "Unova"] as const;
   return (
     <div className="space-y-3">
-      <div className="rounded-3xl bg-card p-3 shadow-card">
-        <div className="mb-2 flex items-center justify-between">
-          <span className="font-pixel-xs text-poke-dark/60">
-            {owned.size} / {GYM_LEADERS.length} BADGES
-          </span>
-          <span className="font-pixel-xs text-primary">
-            {Math.round((owned.size / GYM_LEADERS.length) * 100)}%
-          </span>
-        </div>
-        <div className="h-2 overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-poke-yellow to-primary"
-            style={{ width: `${(owned.size / GYM_LEADERS.length) * 100}%` }}
-          />
-        </div>
-      </div>
       {regions.map((r) => {
         const leaders = GYM_LEADERS.filter((g) => g.region === r);
         return (
-          <div key={r} className="rounded-3xl bg-card p-3 shadow-card">
+          <div key={r} className={`rounded-3xl p-3 shadow-card ${REGION_TINT[r] ?? "bg-card"}`}>
             <div className="mb-2 font-pixel-xs text-poke-dark/60">{r.toUpperCase()}</div>
             <div className="grid grid-cols-4 gap-2">
               {leaders.map((g) => {
@@ -804,6 +796,18 @@ function BadgesTab() {
     </div>
   );
 }
+
+function PokeballIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 32 32" className={className} aria-hidden>
+      <circle cx="16" cy="16" r="14" fill="#fff" stroke="#1b1d2b" strokeWidth="2.5" />
+      <path d="M2 16 a14 14 0 0 1 28 0 Z" fill="currentColor" stroke="#1b1d2b" strokeWidth="2.5" />
+      <rect x="2" y="14.5" width="28" height="3" fill="#1b1d2b" />
+      <circle cx="16" cy="16" r="4" fill="#fff" stroke="#1b1d2b" strokeWidth="2.5" />
+    </svg>
+  );
+}
+
 
 function BadgeCell({ leader, got }: { leader: GymLeader; got: boolean }) {
   const [imgBroken, setImgBroken] = useState(false);
