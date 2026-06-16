@@ -29,21 +29,41 @@ export const Route = createFileRoute("/api/trivia-batch")({
           /* defaults */
         }
 
-        const CURATED_COUNT = 2;
-        const AI_COUNT = 18;
+        const TOTAL = 20;
+        const CURATED_TARGET = 18;
 
-        const [curatedResult, aiResult] = await Promise.all([
-          fetchCuratedQuestions({ difficulty, count: CURATED_COUNT }),
-          generateTrivia({ difficulty, flowSeed, seenHashes, seenSamples, batchSize: AI_COUNT }),
-        ]);
+        const curatedResult = await fetchCuratedQuestions({
+          difficulty,
+          count: CURATED_TARGET,
+        });
 
-        if (aiResult.status) {
-          return Response.json({ error: aiResult.error, code: aiResult.status }, { status: aiResult.status });
-        }
+        const aiCount = Math.max(0, TOTAL - curatedResult.questions.length);
+        const aiResult = await generateTrivia({
+          difficulty,
+          flowSeed,
+          seenHashes,
+          seenSamples,
+          batchSize: aiCount,
+        });
 
         await recordCuratedServed(curatedResult.servedIds).catch(() => {
           console.warn("Failed to record curated served (non-fatal).");
         });
+
+        if (aiResult.status) {
+          if (curatedResult.questions.length >= 5) {
+            const onlyCurated = curatedResult.questions
+              .map((q) => ({ q, sort: Math.random() }))
+              .sort((a, b) => a.sort - b.sort)
+              .map(({ q }) => q);
+            return Response.json({
+              questions: onlyCurated,
+              source: `curated-only-${curatedResult.questions.length}`,
+              curatedCount: curatedResult.questions.length,
+            });
+          }
+          return Response.json({ error: aiResult.error, code: aiResult.status }, { status: aiResult.status });
+        }
 
         const merged = [...aiResult.questions, ...curatedResult.questions];
         const shuffled = merged
