@@ -314,6 +314,24 @@
     linear-gradient(180deg, oklch(0.88 0.08 215) 0%, oklch(0.92 0.1 130) 60%, oklch(0.85 0.14 130) 100%);
 }
 
+.dark .bg-poke-cream {
+  background:
+    radial-gradient(circle at 80% 0%, oklch(0.28 0.08 280 / 0.35) 0%, transparent 38%),
+    linear-gradient(160deg, oklch(0.2 0.05 270) 0%, oklch(0.16 0.04 265) 100%);
+}
+.dark .bg-poke-hero {
+  background:
+    radial-gradient(ellipse at top, oklch(0.3 0.08 265) 0%, transparent 55%),
+    linear-gradient(160deg, oklch(0.22 0.05 270) 0%, oklch(0.18 0.06 280) 100%);
+}
+.dark .bg-battle-field {
+  background:
+    radial-gradient(ellipse at top, oklch(0.28 0.06 250) 0%, transparent 60%),
+    linear-gradient(180deg, oklch(0.22 0.05 260) 0%, oklch(0.18 0.05 265) 60%, oklch(0.2 0.06 150) 100%);
+}
+
+
+
 /* Sprite styling */
 .sprite {
   image-rendering: pixelated;
