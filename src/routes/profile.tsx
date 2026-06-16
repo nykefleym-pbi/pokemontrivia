@@ -5,8 +5,19 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Pencil, RotateCcw, Check, Search, Volume2, VolumeX } from "lucide-react";
 import { useGameStore } from "@/lib/store";
-import { rankForLevel, xpProgressInLevel, ITEMS, TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
-import { STARTING_PARTNERS, canEvolve, getEvolutionTargets, type PokeEntry } from "@/lib/pokemon-data";
+import {
+  rankForLevel,
+  xpProgressInLevel,
+  ITEMS,
+  TRAINER_SPRITES,
+  trainerSpriteUrl,
+} from "@/lib/game-data";
+import {
+  STARTING_PARTNERS,
+  canEvolve,
+  getEvolutionTargets,
+  type PokeEntry,
+} from "@/lib/pokemon-data";
 import { ABILITIES, getAbility } from "@/lib/abilities";
 import { EVOLUTION_TP_COST, getTpMultiplier } from "@/lib/game-data";
 import { EvolutionScreen } from "@/components/evolution-screen";
@@ -16,18 +27,8 @@ import { Input } from "@/components/ui/input";
 import { Toaster } from "@/components/ui/sonner";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,7 +42,6 @@ import {
 import { ACHIEVEMENTS, unlockedAchievements } from "@/lib/achievements";
 import { GYM_LEADERS, type GymLeader } from "@/lib/gym-leaders";
 import { isMuted, setMuted } from "@/lib/audio";
-
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
@@ -65,7 +65,7 @@ function ProfilePage() {
   const flags = useGameStore((s) => s.flags);
   const peakLevel = useGameStore((s) => s.peakLevel);
   const pokedex = useGameStore((s) => s.pokedex);
-  
+
   const trainingPoints = useGameStore((s) => s.trainingPoints);
   const evolvePartner = useGameStore((s) => s.evolvePartner);
   const gymBadges = useGameStore((s) => s.gymBadges);
@@ -100,9 +100,10 @@ function ProfilePage() {
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return STARTING_PARTNERS
-      .filter((p) => (q ? p.name.toLowerCase().startsWith(q) : true))
-      .slice(0, 24);
+    return STARTING_PARTNERS.filter((p) => (q ? p.name.toLowerCase().startsWith(q) : true)).slice(
+      0,
+      24,
+    );
   }, [query]);
   const trainerResults = useMemo(() => {
     const q = trainerQuery.trim().toLowerCase();
@@ -134,7 +135,8 @@ function ProfilePage() {
   const rank = rankForLevel(level);
   const xpProg = xpProgressInLevel(xp);
   const accuracy = stats.answered > 0 ? Math.round((stats.correct / stats.answered) * 100) : 0;
-  const avgTime = stats.answered > 0 ? Math.round(stats.totalAnswerTime / stats.answered / 100) / 10 : 0;
+  const avgTime =
+    stats.answered > 0 ? Math.round(stats.totalAnswerTime / stats.answered / 100) / 10 : 0;
 
   function saveName() {
     if (nameDraft.trim()) {
@@ -174,10 +176,22 @@ function ProfilePage() {
           <h1 className="font-display-xl text-poke-dark">Profile</h1>
           <div className="relative h-[72px] w-[72px] shrink-0">
             <svg viewBox="0 0 72 72" className="absolute inset-0 h-full w-full -rotate-90">
-              <circle cx="36" cy="36" r="30" fill="none" stroke="oklch(0.22 0.04 260 / 0.12)" strokeWidth="6" />
               <circle
-                cx="36" cy="36" r="30" fill="none"
-                stroke="var(--color-primary)" strokeWidth="6" strokeLinecap="round"
+                cx="36"
+                cy="36"
+                r="30"
+                fill="none"
+                stroke="oklch(0.22 0.04 260 / 0.12)"
+                strokeWidth="6"
+              />
+              <circle
+                cx="36"
+                cy="36"
+                r="30"
+                fill="none"
+                stroke="var(--color-primary)"
+                strokeWidth="6"
+                strokeLinecap="round"
                 strokeDasharray={ringCirc}
                 strokeDashoffset={ringCirc * (1 - xpPct / 100)}
                 style={{ transition: "stroke-dashoffset 0.5s ease" }}
@@ -209,23 +223,42 @@ function ProfilePage() {
             </div>
           </button>
           <div className="min-w-0 flex-1">
-            <p className="font-pixel-xs text-primary uppercase truncate">{rank} · LV {level}</p>
+            <p className="font-pixel-xs text-primary uppercase truncate">
+              {rank} · LV {level}
+            </p>
             {editingName ? (
               <div className="mt-1 flex gap-2">
-                <Input value={nameDraft} onChange={(e) => setNameDraft(e.target.value)} maxLength={16} className="h-9 rounded-full" autoFocus />
-                <Button size="sm" onClick={saveName} className="rounded-full"><Check className="h-4 w-4" /></Button>
+                <Input
+                  value={nameDraft}
+                  onChange={(e) => setNameDraft(e.target.value)}
+                  maxLength={16}
+                  className="h-9 rounded-full"
+                  autoFocus
+                />
+                <Button size="sm" onClick={saveName} className="rounded-full">
+                  <Check className="h-4 w-4" />
+                </Button>
               </div>
             ) : (
               <button
-                onClick={() => { setNameDraft(trainerName); setEditingName(true); }}
+                onClick={() => {
+                  setNameDraft(trainerName);
+                  setEditingName(true);
+                }}
                 className="mt-0.5 flex items-center gap-1.5 text-left transition active:scale-95"
               >
-                <h2 className="font-display-lg text-2xl font-extrabold text-poke-dark truncate">{trainerName}</h2>
+                <h2 className="font-display-lg text-2xl font-extrabold text-poke-dark truncate">
+                  {trainerName}
+                </h2>
                 <Pencil className="h-3.5 w-3.5 text-poke-dark/40" />
               </button>
             )}
-            <p className="mt-0.5 text-xs text-poke-dark/55 truncate">Trainer since {trainerSince}</p>
-            <div className="mt-2"><XpBar xp={xpProg.current} need={xpProg.need} /></div>
+            <p className="mt-0.5 text-xs text-poke-dark/55 truncate">
+              Trainer since {trainerSince}
+            </p>
+            <div className="mt-2">
+              <XpBar xp={xpProg.current} need={xpProg.need} />
+            </div>
           </div>
         </motion.div>
       </div>
@@ -284,7 +317,9 @@ function ProfilePage() {
                     <div className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-card bg-card" />
                   </div>
                   <div className="font-pixel-xs text-poke-dark/50 uppercase">
-                    {new Date(d.date).toLocaleDateString(undefined, { weekday: "short" }).slice(0, 3)}
+                    {new Date(d.date)
+                      .toLocaleDateString(undefined, { weekday: "short" })
+                      .slice(0, 3)}
                   </div>
                 </div>
               );
@@ -298,23 +333,33 @@ function ProfilePage() {
             onClick={() => setTrophiesOpen(true)}
             className="flex flex-col items-center gap-1 rounded-3xl bg-card p-4 shadow-card transition active:scale-95"
           >
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-poke-yellow/20 text-2xl">🏆</div>
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-poke-yellow/20 text-2xl">
+              🏆
+            </div>
             <span className="font-display-md text-poke-dark">Trophies</span>
-            <span className="font-pixel-xs text-poke-dark/50">{unlocked.size}/{ACHIEVEMENTS.length}</span>
+            <span className="font-pixel-xs text-poke-dark/50">
+              {unlocked.size}/{ACHIEVEMENTS.length}
+            </span>
           </button>
           <button
             onClick={() => setBadgesOpen(true)}
             className="flex flex-col items-center gap-1 rounded-3xl bg-card p-4 shadow-card transition active:scale-95"
           >
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-2xl">🎖</div>
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-2xl">
+              🎖
+            </div>
             <span className="font-display-md text-poke-dark">Badges</span>
-            <span className="font-pixel-xs text-poke-dark/50">{gymBadges.length}/{GYM_LEADERS.length}</span>
+            <span className="font-pixel-xs text-poke-dark/50">
+              {gymBadges.length}/{GYM_LEADERS.length}
+            </span>
           </button>
           <button
             onClick={() => setSettingsOpen(true)}
             className="flex flex-col items-center gap-1 rounded-3xl bg-card p-4 shadow-card transition active:scale-95"
           >
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-muted text-2xl">⚙️</div>
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-muted text-2xl">
+              ⚙️
+            </div>
             <span className="font-display-md text-poke-dark">Settings</span>
             <span className="font-pixel-xs text-poke-dark/50">&nbsp;</span>
           </button>
@@ -323,8 +368,13 @@ function ProfilePage() {
 
       {/* Trophies sheet */}
       <Sheet open={trophiesOpen} onOpenChange={setTrophiesOpen}>
-        <SheetContent side="bottom" className="rounded-t-3xl bg-poke-cream max-h-[85vh] overflow-y-auto">
-          <SheetHeader><SheetTitle>Trophies</SheetTitle></SheetHeader>
+        <SheetContent
+          side="bottom"
+          className="rounded-t-3xl bg-poke-cream max-h-[85vh] overflow-y-auto"
+        >
+          <SheetHeader>
+            <SheetTitle>Trophies</SheetTitle>
+          </SheetHeader>
           <div className="mt-3 space-y-3">
             <div className="rounded-3xl bg-card p-3 shadow-card">
               <div className="mb-2 flex items-center justify-between">
@@ -336,18 +386,25 @@ function ProfilePage() {
                 </span>
               </div>
               <div className="h-2 overflow-hidden rounded-full bg-muted">
-                <div className="h-full rounded-full bg-gradient-to-r from-poke-yellow to-primary"
-                  style={{ width: `${(unlocked.size / ACHIEVEMENTS.length) * 100}%` }} />
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-poke-yellow to-primary"
+                  style={{ width: `${(unlocked.size / ACHIEVEMENTS.length) * 100}%` }}
+                />
               </div>
             </div>
             <div className="grid grid-cols-4 gap-2">
               {ACHIEVEMENTS.map((a) => {
                 const got = unlocked.has(a.id);
                 return (
-                  <div key={a.id} title={`${a.name} — ${a.desc}`}
-                    className={`flex flex-col items-center rounded-2xl p-2 shadow-card ${got ? "bg-poke-yellow/20" : "bg-muted/40 opacity-40 grayscale"}`}>
+                  <div
+                    key={a.id}
+                    title={`${a.name} — ${a.desc}`}
+                    className={`flex flex-col items-center rounded-2xl p-2 shadow-card ${got ? "bg-poke-yellow/20" : "bg-muted/40 opacity-40 grayscale"}`}
+                  >
                     <div className="text-3xl">{a.icon}</div>
-                    <div className="mt-1 line-clamp-2 text-center text-[10px] font-semibold leading-tight text-poke-dark">{a.name}</div>
+                    <div className="mt-1 line-clamp-2 text-center text-[10px] font-semibold leading-tight text-poke-dark">
+                      {a.name}
+                    </div>
                   </div>
                 );
               })}
@@ -358,28 +415,50 @@ function ProfilePage() {
 
       {/* Badges sheet */}
       <Sheet open={badgesOpen} onOpenChange={setBadgesOpen}>
-        <SheetContent side="bottom" className="rounded-t-3xl bg-poke-cream max-h-[85vh] overflow-y-auto">
-          <SheetHeader><SheetTitle>Badges</SheetTitle></SheetHeader>
-          <div className="mt-3"><BadgesTab /></div>
+        <SheetContent
+          side="bottom"
+          className="rounded-t-3xl bg-poke-cream max-h-[85vh] overflow-y-auto"
+        >
+          <SheetHeader>
+            <SheetTitle>Badges</SheetTitle>
+          </SheetHeader>
+          <div className="mt-3">
+            <BadgesTab />
+          </div>
         </SheetContent>
       </Sheet>
 
       {/* Settings sheet */}
       <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <SheetContent side="bottom" className="rounded-t-3xl bg-poke-cream max-h-[85vh] overflow-y-auto">
-          <SheetHeader><SheetTitle>Settings</SheetTitle></SheetHeader>
+        <SheetContent
+          side="bottom"
+          className="rounded-t-3xl bg-poke-cream max-h-[85vh] overflow-y-auto"
+        >
+          <SheetHeader>
+            <SheetTitle>Settings</SheetTitle>
+          </SheetHeader>
           <div className="mt-3 space-y-2">
             <div className="flex items-center justify-between rounded-3xl bg-card p-4 shadow-card">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
-                  {muted ? <VolumeX className="h-5 w-5 text-poke-dark" /> : <Volume2 className="h-5 w-5 text-poke-dark" />}
+                  {muted ? (
+                    <VolumeX className="h-5 w-5 text-poke-dark" />
+                  ) : (
+                    <Volume2 className="h-5 w-5 text-poke-dark" />
+                  )}
                 </div>
                 <div>
                   <div className="font-pixel-xs text-poke-dark/60">SOUND</div>
                   <div className="text-sm font-semibold text-poke-dark">Toggle SFX & music</div>
                 </div>
               </div>
-              <Switch checked={!muted} onCheckedChange={(v) => { setMuted(!v); setMutedState(!v); }} />
+              <Switch
+                checked={!muted}
+                onCheckedChange={(v) => {
+                  setMuted(!v);
+                  setMutedState(!v);
+                }}
+              />
             </div>
             <button
               onClick={() => setResetOpen(true)}
@@ -399,7 +478,6 @@ function ProfilePage() {
         </SheetContent>
       </Sheet>
 
-
       <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -410,7 +488,10 @@ function ProfilePage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={doReset} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={doReset}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Reset
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -420,19 +501,34 @@ function ProfilePage() {
       {/* Pokémon picker */}
       <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
         <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Change partner</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Change partner</DialogTitle>
+          </DialogHeader>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search..." className="pl-10" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search..."
+              className="pl-10"
+            />
           </div>
           <div className="grid grid-cols-3 gap-2">
             {results.map((p) => (
-              <button key={p.id}
-                onClick={() => { setPokemon(p); setPickerOpen(false); toast.success(`${p.name} chosen!`); }}
-                className="flex flex-col items-center rounded-2xl border-2 p-2 transition active:scale-95 hover:border-primary">
+              <button
+                key={p.id}
+                onClick={() => {
+                  setPokemon(p);
+                  setPickerOpen(false);
+                  toast.success(`${p.name} chosen!`);
+                }}
+                className="flex flex-col items-center rounded-2xl border-2 p-2 transition active:scale-95 hover:border-primary"
+              >
                 <PokemonSprite id={p.id} alt={p.name} className="sprite h-14 w-14" />
                 <div className="text-[11px] font-semibold">{p.name}</div>
-                <div className="font-pixel text-[8px] text-primary">⚡ {getAbility(p.types ?? []).name}</div>
+                <div className="font-pixel text-[8px] text-primary">
+                  ⚡ {getAbility(p.types ?? []).name}
+                </div>
               </button>
             ))}
           </div>
@@ -442,18 +538,43 @@ function ProfilePage() {
       {/* Trainer picker */}
       <Dialog open={trainerPickerOpen} onOpenChange={setTrainerPickerOpen}>
         <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Change trainer</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Change trainer</DialogTitle>
+          </DialogHeader>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={trainerQuery} onChange={(e) => setTrainerQuery(e.target.value)} placeholder="Search trainers..." className="pl-10" />
+            <Input
+              value={trainerQuery}
+              onChange={(e) => setTrainerQuery(e.target.value)}
+              placeholder="Search trainers..."
+              className="pl-10"
+            />
           </div>
           <div className="grid max-h-[60vh] grid-cols-3 gap-2 overflow-y-auto">
             {trainerResults.map((t) => (
-              <button key={t.id}
-                onClick={() => { setTrainerSprite(t.id); setTrainerPickerOpen(false); toast.success("Trainer updated!"); }}
-                className="flex flex-col items-center rounded-2xl border-2 p-2 transition active:scale-95 hover:border-primary">
-                <img src={trainerSpriteUrl(t.id)} alt={t.name} crossOrigin="anonymous" className="sprite h-16 w-16 object-contain" loading="lazy"
-                  onError={() => setBrokenTrainerIds((s) => { const n = new Set(s); n.add(t.id); return n; })} />
+              <button
+                key={t.id}
+                onClick={() => {
+                  setTrainerSprite(t.id);
+                  setTrainerPickerOpen(false);
+                  toast.success("Trainer updated!");
+                }}
+                className="flex flex-col items-center rounded-2xl border-2 p-2 transition active:scale-95 hover:border-primary"
+              >
+                <img
+                  src={trainerSpriteUrl(t.id)}
+                  alt={t.name}
+                  crossOrigin="anonymous"
+                  className="sprite h-16 w-16 object-contain"
+                  loading="lazy"
+                  onError={() =>
+                    setBrokenTrainerIds((s) => {
+                      const n = new Set(s);
+                      n.add(t.id);
+                      return n;
+                    })
+                  }
+                />
                 <div className="text-[11px] font-semibold capitalize">{t.name}</div>
               </button>
             ))}
@@ -519,9 +640,13 @@ function PartnerCard({
           <div className="text-sm font-bold">{pokemon.name}</div>
           <div className="mt-1 flex items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-1">
-              {(pokemon.types ?? []).map((t) => <TypeBadge key={t} type={t} size="sm" />)}
+              {(pokemon.types ?? []).map((t) => (
+                <TypeBadge key={t} type={t} size="sm" />
+              ))}
             </div>
-            <span className="font-pixel text-[8px] text-primary">⚡ {getAbility(pokemon.types ?? []).name}</span>
+            <span className="font-pixel text-[8px] text-primary">
+              ⚡ {getAbility(pokemon.types ?? []).name}
+            </span>
           </div>
         </div>
       </div>
@@ -529,7 +654,10 @@ function PartnerCard({
         <div className="flex-1">
           <div className="flex items-center justify-between font-pixel text-[9px] text-muted-foreground">
             <span>TRAINING POINTS</span>
-            <span>{tp}{cost ? ` / ${cost}` : ""}</span>
+            <span>
+              {tp}
+              {cost ? ` / ${cost}` : ""}
+            </span>
           </div>
           <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-card">
             <div
@@ -562,18 +690,25 @@ function PartnerCard({
       )}
       <Dialog open={evoOpen} onOpenChange={setEvoOpen}>
         <DialogContent className="max-w-xs">
-          <DialogHeader><DialogTitle>Choose evolution</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Choose evolution</DialogTitle>
+          </DialogHeader>
           <div className="grid grid-cols-2 gap-2">
             {targets.map((t) => (
               <button
                 key={t.id}
-                onClick={() => { setEvoOpen(false); onEvolve(t); }}
+                onClick={() => {
+                  setEvoOpen(false);
+                  onEvolve(t);
+                }}
                 className="flex flex-col items-center rounded-2xl border-2 p-3 transition hover:border-primary active:scale-95"
               >
                 <PokemonSprite id={t.id} alt={t.name} className="sprite h-16 w-16" />
                 <div className="mt-1 text-xs font-semibold">{t.name}</div>
                 <div className="mt-1 flex gap-0.5">
-                  {t.types.map((tt) => <TypeBadge key={tt} type={tt} size="sm" />)}
+                  {t.types.map((tt) => (
+                    <TypeBadge key={tt} type={tt} size="sm" />
+                  ))}
                 </div>
               </button>
             ))}
@@ -668,4 +803,3 @@ function BadgeCell({ leader, got }: { leader: GymLeader; got: boolean }) {
     </div>
   );
 }
-
