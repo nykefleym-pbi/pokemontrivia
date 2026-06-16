@@ -136,6 +136,10 @@ export interface GameState {
   gymBadges: string[];
   weeklyLeagueHistory: WeeklyLeagueAttempt[];
 
+  // preferences
+  darkMode: boolean;
+
+
   // actions
   setOnboarded: (name: string, pokemon: PokeEntry, trainerSprite: string) => void;
   startGuestSession: () => void;
@@ -174,7 +178,11 @@ export interface GameState {
   initWeeklyLeague: () => void;
   startWeeklyLeagueAttempt: () => void;
   recordWeeklyLeagueResult: (won: boolean) => void;
+
+  // preferences actions
+  setDarkMode: (v: boolean) => void;
 }
+
 
 const defaultStats: PlayerStats = {
   battles: 0,
@@ -236,6 +244,9 @@ export const useGameStore = create<GameState>()(
       weeklyLeague: null,
       gymBadges: [],
       weeklyLeagueHistory: [],
+      darkMode: false,
+      setDarkMode: (v) => set({ darkMode: v }),
+
 
       initWeeklyLeague: () => {
         const s = get();
@@ -615,6 +626,8 @@ export const useGameStore = create<GameState>()(
         weeklyLeague: s.weeklyLeague,
         gymBadges: s.gymBadges,
         weeklyLeagueHistory: s.weeklyLeagueHistory,
+        darkMode: s.darkMode,
+
       }),
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<GameState>;

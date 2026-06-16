@@ -49,7 +49,7 @@ function NavCell({
           <Icon className="h-[18px] w-[18px]" />
         </span>
       ) : (
-        <span className="text-[15px] font-bold text-poke-dark/60">{label}</span>
+        <span className="text-[15px] font-bold text-foreground/60">{label}</span>
       )}
     </Link>
   );

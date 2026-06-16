@@ -85,7 +85,7 @@ function PokedexPage() {
             {trainerName && (
               <p className="truncate font-pixel-xs uppercase text-primary">{trainerName}'s</p>
             )}
-            <h1 className="font-display-xl text-poke-dark">Pokédex</h1>
+            <h1 className="font-display-xl text-foreground">Pokédex</h1>
           </div>
 
           <div className="relative h-16 w-16 shrink-0">
@@ -100,8 +100,8 @@ function PokedexPage() {
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
-              <span className="text-base font-extrabold text-poke-dark">{regionCaught}</span>
-              <span className="text-[10px] text-poke-dark/55">/ {regionTotal}</span>
+              <span className="text-base font-extrabold text-foreground">{regionCaught}</span>
+              <span className="text-[10px] text-foreground/55">/ {regionTotal}</span>
             </div>
           </div>
         </div>
@@ -110,7 +110,7 @@ function PokedexPage() {
             <PopoverTrigger asChild>
               <button
                 className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold capitalize shadow-card transition ${
-                  type === "all" ? "bg-card text-poke-dark/70" : "bg-primary text-primary-foreground"
+                  type === "all" ? "bg-card text-foreground/70" : "bg-primary text-primary-foreground"
                 }`}
               >
                 {type === "all" ? "+ Type" : type}
@@ -121,7 +121,7 @@ function PokedexPage() {
                 <button
                   onClick={() => setType("all")}
                   className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
-                    type === "all" ? "bg-primary text-primary-foreground" : "bg-muted text-poke-dark/70"
+                    type === "all" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground/70"
                   }`}
                 >
                   All
@@ -172,7 +172,7 @@ function PokedexPage() {
                 key={g.gen}
                 onClick={() => setGen(g.gen)}
                 className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold transition ${
-                  active ? "bg-primary text-primary-foreground shadow-card" : "bg-card text-poke-dark/70 shadow-card"
+                  active ? "bg-primary text-primary-foreground shadow-card" : "bg-card text-foreground/70 shadow-card"
                 }`}
               >
                 Gen {g.gen}
@@ -216,11 +216,11 @@ function PokedexPage() {
                   alt={got ? p.name : "???"}
                   className={`sprite h-16 w-16 ${got ? "" : "sprite-silhouette"}`}
                 />
-                <div className="mt-1 w-full truncate text-center text-[11px] font-bold text-poke-dark">
+                <div className="mt-1 w-full truncate text-center text-[11px] font-bold text-foreground">
                   {got ? p.name : "???"}
                 </div>
                 {got && (
-                  <div className="font-pixel-xs text-poke-dark/60">{primaryType}</div>
+                  <div className="font-pixel-xs text-foreground/60">{primaryType}</div>
                 )}
                 {got && e.defeatCount > 1 && (
                   <div className="absolute right-1 top-1 rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-bold text-primary-foreground shadow-sm">
@@ -291,7 +291,7 @@ function PokedexPage() {
                 {got ? (
                   <PokedexFlavor pokemonId={p.id} />
                 ) : (
-                  <p className="text-sm italic leading-relaxed text-poke-dark/55">
+                  <p className="text-sm italic leading-relaxed text-foreground/55">
                     Catch this Pokémon to read its Pokédex entry.
                   </p>
                 )}
@@ -304,7 +304,7 @@ function PokedexPage() {
                 {entry?.shinyUnlocked && (
                   <button
                     onClick={() => setShowShiny((v) => !v)}
-                    className="ml-2 mt-4 inline-flex items-center gap-2 rounded-full border border-poke-yellow/50 px-4 py-2 text-sm font-bold text-poke-dark active:scale-95"
+                    className="ml-2 mt-4 inline-flex items-center gap-2 rounded-full border border-poke-yellow/50 px-4 py-2 text-sm font-bold text-foreground active:scale-95"
                   >
                     <Sparkles className="h-4 w-4 text-poke-yellow" /> {showS ? "Normal" : "Shiny"}
                   </button>
@@ -313,14 +313,14 @@ function PokedexPage() {
               <div className="rounded-3xl bg-card p-5 shadow-card">
                 <div className="font-pixel-xs mb-3 text-primary">EVOLUTION LINE</div>
                 {!hasEvolution ? (
-                  <p className="text-center text-xs text-poke-dark/55">This Pokémon doesn't evolve.</p>
+                  <p className="text-center text-xs text-foreground/55">This Pokémon doesn't evolve.</p>
                 ) : (
                   <div className="flex items-start gap-1 overflow-x-auto">
                     {columns.map((col, ci) => (
                       <Fragment key={ci}>
                         {ci > 0 && (
                           <div className="flex h-[72px] items-center px-0.5">
-                            <ArrowRight className="h-4 w-4 text-poke-dark/40" />
+                            <ArrowRight className="h-4 w-4 text-foreground/40" />
                           </div>
                         )}
                         <div className={col.length > 4 ? "grid grid-cols-2 gap-1" : "flex flex-col gap-1"}>
@@ -337,7 +337,7 @@ function PokedexPage() {
                                   alt={stageCaught ? stage.name : "???"}
                                   className={`sprite h-11 w-11 ${stageCaught ? "" : "sprite-silhouette"}`}
                                 />
-                                <span className="mt-0.5 w-full truncate text-center text-[10px] font-bold text-poke-dark">
+                                <span className="mt-0.5 w-full truncate text-center text-[10px] font-bold text-foreground">
                                   {stageCaught ? stage.name : "???"}
                                 </span>
                               </button>
@@ -364,7 +364,7 @@ function ToggleChip({ active, onToggle, label }: { active: boolean; onToggle: ()
       aria-pressed={active}
       onClick={onToggle}
       className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold shadow-card transition ${
-        active ? "bg-primary text-primary-foreground" : "bg-card text-poke-dark/70"
+        active ? "bg-primary text-primary-foreground" : "bg-card text-foreground/70"
       }`}
     >
       {label}
@@ -409,7 +409,7 @@ function PokedexFlavor({ pokemonId }: { pokemonId: number }) {
   if (loading) return null;
   if (!flavor) return null;
   return (
-    <p className="text-sm italic leading-relaxed text-poke-dark/75">
+    <p className="text-sm italic leading-relaxed text-foreground/75">
       {flavor}
     </p>
   );

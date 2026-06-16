@@ -23,8 +23,8 @@ function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => vo
             />
           </svg>
         </div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-poke-dark">Something went wrong</h1>
-        <p className="mt-2 text-sm text-poke-dark/60">
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Something went wrong</h1>
+        <p className="mt-2 text-sm text-foreground/60">
           An unexpected error occurred. Please try again.
         </p>
         {error.message && (
@@ -44,7 +44,7 @@ function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => vo
           </button>
           <a
             href="/"
-            className="inline-flex h-12 flex-1 items-center justify-center rounded-full border-2 bg-card px-5 text-sm font-bold text-poke-dark transition active:scale-95"
+            className="inline-flex h-12 flex-1 items-center justify-center rounded-full border-2 bg-card px-5 text-sm font-bold text-foreground transition active:scale-95"
           >
             Go home
           </a>

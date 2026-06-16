@@ -88,8 +88,9 @@ function ProfilePage() {
   const [resetOpen, setResetOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
   const [muted, setMutedState] = useState(false);
-  // TODO: dark theme not yet implemented
-  const [darkMode, setDarkMode] = useState(false);
+  const darkMode = useGameStore((s) => s.darkMode);
+  const setDarkMode = useGameStore((s) => s.setDarkMode);
+
   const [brokenTrainerIds, setBrokenTrainerIds] = useState<Set<string>>(new Set());
   const [evolvingFrom, setEvolvingFrom] = useState<PokeEntry | null>(null);
   const [evolvingTo, setEvolvingTo] = useState<PokeEntry | null>(null);
@@ -194,10 +195,10 @@ function ProfilePage() {
             <p className="font-pixel-xs text-primary uppercase truncate">
               {rank} · LV {level}
             </p>
-            <h2 className="font-display-lg text-2xl font-extrabold text-poke-dark truncate">
+            <h2 className="font-display-lg text-2xl font-extrabold text-foreground truncate">
               {trainerName}
             </h2>
-            <p className="mt-0.5 text-xs text-poke-dark/55 truncate">
+            <p className="mt-0.5 text-xs text-foreground/55 truncate">
               Trainer since {trainerSince}
             </p>
           </div>
@@ -213,14 +214,14 @@ function ProfilePage() {
             onClick={() => setStatsOpen(true)}
             className="rounded-3xl bg-card p-4 text-left shadow-card transition active:scale-95"
           >
-            <div className="font-pixel-xs text-poke-dark/55">BATTLES WON</div>
-            <div className="mt-1 text-3xl font-extrabold text-poke-dark">{stats.wins}</div>
+            <div className="font-pixel-xs text-foreground/55">BATTLES WON</div>
+            <div className="mt-1 text-3xl font-extrabold text-foreground">{stats.wins}</div>
             <div className="mt-1 text-xs font-semibold text-hp-good">{winRate}% win rate</div>
           </button>
           <div className="rounded-3xl bg-card p-4 shadow-card">
-            <div className="font-pixel-xs text-poke-dark/55">BEST STREAK</div>
+            <div className="font-pixel-xs text-foreground/55">BEST STREAK</div>
             <div className="mt-1 text-3xl font-extrabold text-primary">{stats.bestStreak}</div>
-            <div className="mt-1 text-xs text-poke-dark/60">correct in a row</div>
+            <div className="mt-1 text-xs text-foreground/60">correct in a row</div>
           </div>
         </div>
 
@@ -243,7 +244,7 @@ function ProfilePage() {
         {/* This week */}
         <div className="mt-3 rounded-3xl bg-card p-4 shadow-card">
           <div className="flex items-center justify-between">
-            <div className="font-display-md text-poke-dark">This week</div>
+            <div className="font-display-md text-foreground">This week</div>
             <div className="font-pixel-xs text-primary">{weekStreak}-DAY STREAK 🔥</div>
           </div>
           <div className="mt-3 flex justify-between gap-1">
@@ -260,7 +261,7 @@ function ProfilePage() {
                       className={`h-8 w-8 text-primary ${played ? "" : "opacity-30 grayscale"}`}
                     />
                   </div>
-                  <div className="font-pixel-xs text-poke-dark/50 uppercase">
+                  <div className="font-pixel-xs text-foreground/50 uppercase">
                     {new Date(d.date)
                       .toLocaleDateString(undefined, { weekday: "short" })
                       .slice(0, 3)}
@@ -281,8 +282,8 @@ function ProfilePage() {
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-poke-yellow/20 text-2xl">
               🏆
             </div>
-            <span className="font-display-md text-poke-dark">Trophies</span>
-            <span className="font-pixel-xs text-poke-dark/50">
+            <span className="font-display-md text-foreground">Trophies</span>
+            <span className="font-pixel-xs text-foreground/50">
               {unlocked.size}/{ACHIEVEMENTS.length}
             </span>
           </button>
@@ -293,8 +294,8 @@ function ProfilePage() {
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-2xl">
               🎖
             </div>
-            <span className="font-display-md text-poke-dark">Badges</span>
-            <span className="font-pixel-xs text-poke-dark/50">
+            <span className="font-display-md text-foreground">Badges</span>
+            <span className="font-pixel-xs text-foreground/50">
               {gymBadges.length}/{GYM_LEADERS.length}
             </span>
           </button>
@@ -305,8 +306,8 @@ function ProfilePage() {
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-muted text-2xl">
               ⚙️
             </div>
-            <span className="font-display-md text-poke-dark">Settings</span>
-            <span className="font-pixel-xs text-poke-dark/50">&nbsp;</span>
+            <span className="font-display-md text-foreground">Settings</span>
+            <span className="font-pixel-xs text-foreground/50">&nbsp;</span>
           </button>
         </div>
       </div>
@@ -321,7 +322,7 @@ function ProfilePage() {
             <div className="font-pixel-xs text-primary">
               {unlocked.size} OF {ACHIEVEMENTS.length} EARNED
             </div>
-            <SheetTitle className="font-display-xl text-poke-dark">Trophies</SheetTitle>
+            <SheetTitle className="font-display-xl text-foreground">Trophies</SheetTitle>
           </SheetHeader>
           <div className="mt-3 space-y-2.5">
             {ACHIEVEMENTS.map((a) => {
@@ -338,11 +339,11 @@ function ProfilePage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div
-                      className={`font-display-md ${got ? "text-poke-dark" : "text-poke-dark/50"}`}
+                      className={`font-display-md ${got ? "text-foreground" : "text-foreground/50"}`}
                     >
                       {a.name}
                     </div>
-                    <div className="text-xs text-poke-dark/55">{a.desc}</div>
+                    <div className="text-xs text-foreground/55">{a.desc}</div>
                   </div>
                   {got && <Check className="h-5 w-5 shrink-0 text-hp-good" />}
                 </div>
@@ -363,7 +364,7 @@ function ProfilePage() {
             <div className="font-pixel-xs text-primary">
               {gymBadges.length} OF {GYM_LEADERS.length} EARNED
             </div>
-            <SheetTitle className="font-display-xl text-poke-dark">Badge case</SheetTitle>
+            <SheetTitle className="font-display-xl text-foreground">Badge case</SheetTitle>
           </SheetHeader>
           <div className="mt-3">
             <BadgesTab />
@@ -382,20 +383,20 @@ function ProfilePage() {
           </SheetHeader>
           <div className="mt-3 space-y-5">
             <section>
-              <div className="mb-2 font-pixel-xs uppercase text-poke-dark/45">General</div>
+              <div className="mb-2 font-pixel-xs uppercase text-foreground/45">General</div>
               <div className="overflow-hidden rounded-3xl bg-card shadow-card divide-y divide-border">
                 <div className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
                       {muted ? (
-                        <VolumeX className="h-5 w-5 text-poke-dark" />
+                        <VolumeX className="h-5 w-5 text-foreground" />
                       ) : (
-                        <Volume2 className="h-5 w-5 text-poke-dark" />
+                        <Volume2 className="h-5 w-5 text-foreground" />
                       )}
                     </div>
                     <div>
-                      <div className="text-sm font-semibold text-poke-dark">Sounds & music</div>
-                      <div className="text-xs text-poke-dark/55">Battle cries, SFX, BGM</div>
+                      <div className="text-sm font-semibold text-foreground">Sounds & music</div>
+                      <div className="text-xs text-foreground/55">Battle cries, SFX, BGM</div>
                     </div>
                   </div>
                   <Switch
@@ -409,11 +410,11 @@ function ProfilePage() {
                 <div className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
-                      <Moon className="h-5 w-5 text-poke-dark" />
+                      <Moon className="h-5 w-5 text-foreground" />
                     </div>
                     <div>
-                      <div className="text-sm font-semibold text-poke-dark">Dark mode</div>
-                      <div className="text-xs text-poke-dark/55">Easier on the eyes at night</div>
+                      <div className="text-sm font-semibold text-foreground">Dark mode</div>
+                      <div className="text-xs text-foreground/55">Easier on the eyes at night</div>
                     </div>
                   </div>
                   {/* TODO: dark theme not yet implemented */}
@@ -423,7 +424,7 @@ function ProfilePage() {
             </section>
 
             <section>
-              <div className="mb-2 font-pixel-xs uppercase text-poke-dark/45">Trainer</div>
+              <div className="mb-2 font-pixel-xs uppercase text-foreground/45">Trainer</div>
               <div className="overflow-hidden rounded-3xl bg-card shadow-card divide-y divide-border">
                 <button
                   onClick={() => {
@@ -433,12 +434,12 @@ function ProfilePage() {
                   className="flex w-full items-center justify-between p-4 text-left transition active:scale-[0.98]"
                 >
                   <div>
-                    <div className="text-sm font-semibold text-poke-dark">Rename trainer</div>
-                    <div className="text-xs text-poke-dark/55 truncate">
+                    <div className="text-sm font-semibold text-foreground">Rename trainer</div>
+                    <div className="text-xs text-foreground/55 truncate">
                       Currently: {trainerName}
                     </div>
                   </div>
-                  <ChevronRight className="h-5 w-5 text-poke-dark/40" />
+                  <ChevronRight className="h-5 w-5 text-foreground/40" />
                 </button>
                 <button
                   onClick={() => {
@@ -451,13 +452,13 @@ function ProfilePage() {
                       <img src={trainerSpriteUrl(trainerSprite)} alt="" className="sprite h-8 w-8 object-contain" />
                     </div>
                     <div>
-                      <div className="text-sm font-semibold text-poke-dark">Repick avatar</div>
-                      <div className="text-xs text-poke-dark/55 truncate">
+                      <div className="text-sm font-semibold text-foreground">Repick avatar</div>
+                      <div className="text-xs text-foreground/55 truncate">
                         Currently: {trainerSprite}
                       </div>
                     </div>
                   </div>
-                  <ChevronRight className="h-5 w-5 text-poke-dark/40" />
+                  <ChevronRight className="h-5 w-5 text-foreground/40" />
                 </button>
                 <button
                   onClick={() => {
@@ -470,13 +471,13 @@ function ProfilePage() {
                       <PokemonSprite id={pokemon.id} alt="" className="sprite h-8 w-8" />
                     </div>
                     <div>
-                      <div className="text-sm font-semibold text-poke-dark">Repick partner</div>
-                      <div className="text-xs text-poke-dark/55 truncate">
+                      <div className="text-sm font-semibold text-foreground">Repick partner</div>
+                      <div className="text-xs text-foreground/55 truncate">
                         Currently: {pokemon.name}
                       </div>
                     </div>
                   </div>
-                  <ChevronRight className="h-5 w-5 text-poke-dark/40" />
+                  <ChevronRight className="h-5 w-5 text-foreground/40" />
                 </button>
               </div>
             </section>
@@ -492,7 +493,7 @@ function ProfilePage() {
                 </div>
                 <div className="text-left">
                   <div className="text-sm font-semibold text-destructive">Reset progress</div>
-                  <div className="text-xs text-poke-dark/55">Wipes XP, badges & Pokédex</div>
+                  <div className="text-xs text-foreground/55">Wipes XP, badges & Pokédex</div>
                 </div>
               </button>
             </section>
@@ -508,7 +509,7 @@ function ProfilePage() {
         >
           <SheetHeader>
             <div className="font-pixel-xs text-primary">CAREER STATS</div>
-            <SheetTitle className="font-display-xl text-poke-dark">All stats</SheetTitle>
+            <SheetTitle className="font-display-xl text-foreground">All stats</SheetTitle>
           </SheetHeader>
           <div className="mt-3 grid grid-cols-2 gap-3">
             <StatBox label="Battles" value={stats.battles} />
@@ -706,7 +707,7 @@ function PartnerCard({
         </button>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="font-display-lg text-xl font-extrabold text-poke-dark truncate">
+            <span className="font-display-lg text-xl font-extrabold text-foreground truncate">
               {pokemon.name}
             </span>
             {(pokemon.types ?? []).slice(0, 1).map((t) => (
@@ -719,7 +720,7 @@ function PartnerCard({
               style={{ width: `${cost ? Math.min(100, (tp / cost) * 100) : 100}%` }}
             />
           </div>
-          <div className="mt-1 text-xs font-semibold text-poke-dark/60">
+          <div className="mt-1 text-xs font-semibold text-foreground/60">
             TP {tp}
             {cost ? ` · ×${mult.toFixed(2)}` : ""}
           </div>
@@ -735,14 +736,14 @@ function PartnerCard({
             ✦ Evolve
           </Button>
           {!eligible && (
-            <span className="shrink-0 text-xs font-semibold text-poke-dark/55">
+            <span className="shrink-0 text-xs font-semibold text-foreground/55">
               {Math.max(0, cost - tp)} TP to go
             </span>
           )}
         </div>
       )}
       {pokemon.isFullyEvolved && (
-        <div className="mt-4 rounded-full bg-muted py-2 text-center text-xs font-bold text-poke-dark/60">
+        <div className="mt-4 rounded-full bg-muted py-2 text-center text-xs font-bold text-foreground/60">
           ⭐ Fully evolved
         </div>
       )}
@@ -782,7 +783,7 @@ function PillTab({ value, children }: { value: string; children: React.ReactNode
   return (
     <TabsTrigger
       value={value}
-      className="h-9 rounded-full text-xs font-bold text-poke-dark/60 data-[state=active]:bg-card data-[state=active]:text-poke-dark data-[state=active]:shadow-card"
+      className="h-9 rounded-full text-xs font-bold text-foreground/60 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-card"
     >
       {children}
     </TabsTrigger>
@@ -792,8 +793,8 @@ function PillTab({ value, children }: { value: string; children: React.ReactNode
 function Stat({ label, value }: { label: string; value: number | string }) {
   return (
     <div className="rounded-2xl bg-card px-3 py-3 text-center shadow-card">
-      <div className="text-xl font-extrabold text-poke-dark">{value}</div>
-      <div className="mt-0.5 font-pixel-xs text-poke-dark/50">{label}</div>
+      <div className="text-xl font-extrabold text-foreground">{value}</div>
+      <div className="mt-0.5 font-pixel-xs text-foreground/50">{label}</div>
     </div>
   );
 }
@@ -801,8 +802,8 @@ function Stat({ label, value }: { label: string; value: number | string }) {
 function StatBox({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="rounded-3xl bg-card p-4 shadow-card">
-      <div className="font-pixel-xs text-poke-dark/55 uppercase">{label}</div>
-      <div className="mt-1 text-2xl font-extrabold text-poke-dark">{value}</div>
+      <div className="font-pixel-xs text-foreground/55 uppercase">{label}</div>
+      <div className="mt-1 text-2xl font-extrabold text-foreground">{value}</div>
     </div>
   );
 }
@@ -825,7 +826,7 @@ function BadgesTab() {
         const leaders = GYM_LEADERS.filter((g) => g.region === r);
         return (
           <div key={r} className={`rounded-3xl p-3 shadow-card ${REGION_TINT[r] ?? "bg-card"}`}>
-            <div className="mb-2 text-center font-pixel-xs text-poke-dark/60">{r.toUpperCase()}</div>
+            <div className="mb-2 text-center font-pixel-xs text-foreground/60">{r.toUpperCase()}</div>
             <div className="grid grid-cols-4 gap-2">
               {leaders.map((g) => {
                 const got = owned.has(g.id);
@@ -870,7 +871,7 @@ function BadgeCell({ leader, got }: { leader: GymLeader; got: boolean }) {
         <div className={`text-3xl ${got ? "" : "opacity-20 grayscale"}`}>🎖</div>
       )}
       {got && (
-        <div className="mt-1 truncate text-center text-[10px] font-semibold leading-tight text-poke-dark">
+        <div className="mt-1 truncate text-center text-[10px] font-semibold leading-tight text-foreground">
           {leader.name}
         </div>
       )}

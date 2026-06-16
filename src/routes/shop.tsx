@@ -144,14 +144,14 @@ function ShopPage() {
       <div className="px-5 pb-5 pt-[calc(env(safe-area-inset-top)+1rem)]">
         <p className="font-pixel-xs text-primary">WELCOME TO</p>
         <div className="mt-1 flex items-center justify-between gap-3">
-          <h1 className="font-display-xl text-poke-dark">PokéMart</h1>
+          <h1 className="font-display-xl text-foreground">PokéMart</h1>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setBagOpen(true)}
               className="relative flex h-11 w-11 items-center justify-center rounded-full bg-card shadow-card"
               aria-label="Open bag"
             >
-              <ShoppingBag className="h-5 w-5 text-poke-dark" />
+              <ShoppingBag className="h-5 w-5 text-foreground" />
               {totalItems > 0 && (
                 <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-primary px-1 font-pixel-xs text-white">
                   {totalItems}
@@ -159,8 +159,8 @@ function ShopPage() {
               )}
             </button>
             <div className="flex items-center gap-1.5 rounded-full bg-poke-yellow px-3.5 py-2 shadow-card">
-              <Star className="h-4 w-4 fill-poke-dark text-poke-dark" />
-              <span className="text-sm font-extrabold text-poke-dark">{xp.toLocaleString()}</span>
+              <Star className="h-4 w-4 fill-poke-dark text-foreground" />
+              <span className="text-sm font-extrabold text-foreground">{xp.toLocaleString()}</span>
             </div>
           </div>
         </div>
@@ -181,7 +181,7 @@ function ShopPage() {
           }
           className="relative mb-5 flex w-full items-center gap-5 overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-[#b5341f] p-6 pt-9 text-left shadow-card"
         >
-          <span className="absolute left-1/2 top-3 -translate-x-1/2 rounded-full bg-poke-yellow px-3 py-0.5 font-pixel-xs uppercase text-poke-dark shadow-sm">
+          <span className="absolute left-1/2 top-3 -translate-x-1/2 rounded-full bg-poke-yellow px-3 py-0.5 font-pixel-xs uppercase text-foreground shadow-sm">
             Discounted {featured.discountPct}% off
           </span>
           <div
@@ -212,7 +212,7 @@ function ShopPage() {
               key={c.id}
               onClick={() => setTab(c.id)}
               className={`h-9 rounded-full text-xs font-bold transition ${
-                tab === c.id ? "bg-poke-dark text-white shadow-card" : "text-poke-dark/60"
+                tab === c.id ? "bg-poke-dark text-white shadow-card" : "text-foreground/60"
               }`}
             >
               {c.label}
@@ -243,7 +243,7 @@ function ShopPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <div className="font-display-md leading-tight text-poke-dark">
+                      <div className="font-display-md leading-tight text-foreground">
                         {item.name}
                       </div>
                       {item.premium && (
@@ -251,7 +251,7 @@ function ShopPage() {
                       )}
                     </div>
                     {owned > 0 && (
-                      <span className="mt-1 inline-flex w-fit rounded-full bg-poke-dark/10 px-2 py-0.5 font-pixel-xs text-poke-dark/70">
+                      <span className="mt-1 inline-flex w-fit rounded-full bg-poke-dark/10 px-2 py-0.5 font-pixel-xs text-foreground/70">
                         OWNED ×{owned}
                       </span>
                     )}
@@ -286,14 +286,14 @@ function ShopPage() {
                   <ItemIcon item={confirmState.item} className="h-11 w-11" />
                 </div>
                 <div className="min-w-0">
-                  <div className="font-display-lg text-poke-dark">{confirmState.item.name}</div>
+                  <div className="font-display-lg text-foreground">{confirmState.item.name}</div>
                   <div className="mt-0.5 text-sm text-muted-foreground">{confirmState.item.desc}</div>
                 </div>
               </div>
 
               {/* Featured discount note (only for featured) */}
               {confirmState.featured && (
-                <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-poke-yellow px-3 py-1 font-pixel-xs uppercase text-poke-dark">
+                <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-poke-yellow px-3 py-1 font-pixel-xs uppercase text-foreground">
                   Discounted {confirmState.featured.discountPct}% off
                 </div>
               )}
@@ -304,17 +304,17 @@ function ShopPage() {
                 const maxQty = unitCost > 0 ? Math.max(1, Math.floor(xp / unitCost)) : 1;
                 return (
                   <div className="mt-4 flex items-center justify-between rounded-2xl bg-poke-blue/10 px-4 py-3">
-                    <span className="font-bold text-poke-dark">Quantity</span>
+                    <span className="font-bold text-foreground">Quantity</span>
                     <div className="flex items-center gap-4">
                       <button
                         onClick={() => setQty((q) => Math.max(1, q - 1))}
                         disabled={qty <= 1}
-                        className="flex h-9 w-9 items-center justify-center rounded-full bg-card text-poke-dark shadow-card disabled:opacity-40"
+                        className="flex h-9 w-9 items-center justify-center rounded-full bg-card text-foreground shadow-card disabled:opacity-40"
                         aria-label="Decrease quantity"
                       >
                         <Minus className="h-4 w-4" />
                       </button>
-                      <span className="w-6 text-center text-lg font-extrabold tabular-nums text-poke-dark">{qty}</span>
+                      <span className="w-6 text-center text-lg font-extrabold tabular-nums text-foreground">{qty}</span>
                       <button
                         onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
                         disabled={qty >= maxQty}
@@ -338,7 +338,7 @@ function ShopPage() {
                   <div className="mt-4 space-y-2.5">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Your XP</span>
-                      <span className="font-bold text-poke-dark tabular-nums">{xp.toLocaleString()}</span>
+                      <span className="font-bold text-foreground tabular-nums">{xp.toLocaleString()}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Cost</span>
@@ -346,7 +346,7 @@ function ShopPage() {
                     </div>
                     <div className="border-t border-dashed border-border pt-2.5">
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-poke-dark">Balance after</span>
+                        <span className="font-bold text-foreground">Balance after</span>
                         <span className={`font-extrabold tabular-nums ${canAfford ? "text-hp-good" : "text-destructive"}`}>
                           {balanceAfter.toLocaleString()} XP
                         </span>
@@ -389,7 +389,7 @@ function ShopPage() {
       <Sheet open={bagOpen} onOpenChange={setBagOpen}>
         <SheetContent side="bottom" className="rounded-t-3xl">
           <SheetHeader>
-            <SheetTitle className="text-center font-display-lg text-poke-dark">
+            <SheetTitle className="text-center font-display-lg text-foreground">
               Your Bag
             </SheetTitle>
             <SheetDescription className="text-center text-sm">
@@ -412,14 +412,14 @@ function ShopPage() {
                 {ownedInBag.length === 0 ? (
                   <div className="rounded-3xl bg-poke-yellow/15 p-6 text-center">
                     <div className="mx-auto mb-2 text-4xl">🎒</div>
-                    <div className="font-display-md text-poke-dark">Your bag is empty</div>
-                    <p className="mt-1 text-xs text-poke-dark/60">Buy items below to stock up.</p>
+                    <div className="font-display-md text-foreground">Your bag is empty</div>
+                    <p className="mt-1 text-xs text-foreground/60">Buy items below to stock up.</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
                     {bagGroups.map((group) => (
                       <div key={group.id}>
-                        <div className="mb-2 font-pixel-xs uppercase tracking-wider text-poke-dark/45">
+                        <div className="mb-2 font-pixel-xs uppercase tracking-wider text-foreground/45">
                           {group.label}
                         </div>
                         <div className="flex flex-col gap-2.5">
@@ -434,21 +434,21 @@ function ShopPage() {
                                   <ItemIcon item={it} className="h-9 w-9" />
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                  <div className="font-bold leading-tight text-poke-dark">
+                                  <div className="font-bold leading-tight text-foreground">
                                     {it.name}
                                   </div>
-                                  <div className="mt-0.5 truncate text-xs text-poke-dark/55">
+                                  <div className="mt-0.5 truncate text-xs text-foreground/55">
                                     {BAG_SHORT_DESC[it.id] ?? it.desc}
                                   </div>
                                 </div>
-                                <div className="shrink-0 font-pixel-xs text-poke-dark">×{n}</div>
+                                <div className="shrink-0 font-pixel-xs text-foreground">×{n}</div>
                               </div>
                             );
                           })}
                         </div>
                       </div>
                     ))}
-                    <div className="rounded-2xl bg-poke-blue/10 px-4 py-3 text-xs leading-snug text-poke-dark/70">
+                    <div className="rounded-2xl bg-poke-blue/10 px-4 py-3 text-xs leading-snug text-foreground/70">
                       💡 Battle items appear in your item dock during a match. Tap one before
                       answering to activate it.
                     </div>

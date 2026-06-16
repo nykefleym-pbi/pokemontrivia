@@ -58,10 +58,10 @@ function SplashPage() {
                 className="mt-6 h-auto w-[168px] select-none"
                 draggable={false}
               />
-              <h1 className="mt-1 text-[2.625rem] font-black leading-none tracking-tight text-poke-dark">
+              <h1 className="mt-1 text-[2.625rem] font-black leading-none tracking-tight text-foreground">
                 Trivia Battle
               </h1>
-              <p className="mt-4 max-w-[17rem] text-[15px] leading-relaxed text-poke-dark/65">
+              <p className="mt-4 max-w-[17rem] text-[15px] leading-relaxed text-foreground/65">
                 Battle trainers with your knowledge. Earn XP, climb leagues, fill your Pokédex.
               </p>
 
@@ -80,7 +80,7 @@ function SplashPage() {
               <Button
                 size="lg"
                 variant="outline"
-                className="h-[58px] w-full rounded-full border-2 border-poke-dark/10 bg-card text-[17px] font-bold text-poke-dark active:scale-95"
+                className="h-[58px] w-full rounded-full border-2 border-poke-dark/10 bg-card text-[17px] font-bold text-foreground active:scale-95"
                 onClick={() => {
                   useGameStore.getState().startGuestSession();
                   navigate({ to: "/battle", search: { autostart: 1 } as never });
@@ -258,9 +258,9 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
           aria-label="Back"
           className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-pop active:scale-95"
         >
-          <ChevronLeft className="h-5 w-5 text-poke-dark" />
+          <ChevronLeft className="h-5 w-5 text-foreground" />
         </button>
-        <span className="font-pixel text-xs uppercase tracking-wider text-poke-dark/70">
+        <span className="font-pixel text-xs uppercase tracking-wider text-foreground/70">
           Step {stepIndex + 1}/3
         </span>
       </div>
@@ -281,7 +281,7 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
       <div className="mt-5 flex flex-1 flex-col overflow-y-auto overflow-x-hidden">
         {substep === "name" && (
           <div className="flex flex-1 flex-col">
-            <h2 className="text-center text-[30px] font-extrabold leading-tight tracking-tight text-poke-dark">
+            <h2 className="text-center text-[30px] font-extrabold leading-tight tracking-tight text-foreground">
               What should we call you?
             </h2>
 
@@ -296,14 +296,14 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                 <div className="relative font-pixel text-[10px] uppercase tracking-wider text-primary">
                   Prof. Oak
                 </div>
-                <p className="relative mt-1.5 text-sm leading-snug text-poke-dark/80">
+                <p className="relative mt-1.5 text-sm leading-snug text-foreground/80">
                   Welcome, challenger! Every great trainer's story starts with a name.
                 </p>
               </div>
             </div>
 
             <div className="mt-[18px]">
-              <label className="mb-2 block font-pixel text-[10px] uppercase tracking-wider text-poke-dark/55">
+              <label className="mb-2 block font-pixel text-[10px] uppercase tracking-wider text-foreground/55">
                 Trainer name
               </label>
               <Input
@@ -314,7 +314,7 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                 className="h-[54px] rounded-full border-[2.5px] border-primary bg-card px-5 text-[17px] font-bold"
                 autoFocus
               />
-              <p className="mt-2 text-xs text-poke-dark/55">
+              <p className="mt-2 text-xs text-foreground/55">
                 Max 16 characters
               </p>
             </div>
@@ -334,11 +334,11 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
 
         {substep === "trainer" && (
           <div className="flex flex-1 flex-col">
-            <h2 className="text-[30px] font-extrabold leading-tight tracking-tight text-poke-dark">Pick your avatar</h2>
-            <p className="mt-1.5 text-sm text-poke-dark/60">Tap a trainer to read their story.</p>
+            <h2 className="text-[30px] font-extrabold leading-tight tracking-tight text-foreground">Pick your avatar</h2>
+            <p className="mt-1.5 text-sm text-foreground/60">Tap a trainer to read their story.</p>
 
             <div className="relative mt-4">
-              <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-poke-dark/50" />
+              <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/50" />
               <Input
                 value={trainerQuery}
                 onChange={(e) => setTrainerQuery(e.target.value)}
@@ -372,12 +372,12 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                         setBrokenTrainerIds((s) => { const n = new Set(s); n.add(t.id); return n; })
                       }
                     />
-                    <span className="truncate text-[13px] font-bold capitalize text-poke-dark">{t.name}</span>
+                    <span className="truncate text-[13px] font-bold capitalize text-foreground">{t.name}</span>
                   </button>
                 );
               })}
               {trainerResults.length === 0 && (
-                <div className="col-span-3 py-4 text-center text-sm text-poke-dark/60">
+                <div className="col-span-3 py-4 text-center text-sm text-foreground/60">
                   No trainers match &ldquo;{trainerQuery}&rdquo;.
                 </div>
               )}
@@ -394,7 +394,7 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                   <div className="font-pixel text-[10px] uppercase tracking-wider text-primary">
                     {selectedTrainer.name}
                   </div>
-                  <p className="mt-1.5 text-sm italic leading-snug text-poke-dark/80">
+                  <p className="mt-1.5 text-sm italic leading-snug text-foreground/80">
                     {trainerQuote(selectedTrainer.id, selectedTrainer.name)}
                   </p>
                 </div>
@@ -415,11 +415,11 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
 
         {substep === "pokemon" && (
           <div className="flex flex-1 flex-col">
-            <h2 className="text-3xl font-extrabold leading-tight text-poke-dark">Choose your partner</h2>
-            <p className="mt-1 text-sm text-poke-dark/60">Your partner's type grants a battle ability.</p>
+            <h2 className="text-3xl font-extrabold leading-tight text-foreground">Choose your partner</h2>
+            <p className="mt-1 text-sm text-foreground/60">Your partner's type grants a battle ability.</p>
 
             <div className="relative mt-4">
-              <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-poke-dark/50" />
+              <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/50" />
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -445,7 +445,7 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                       </span>
                     )}
                     <PokemonSprite id={p.id} alt={p.name} className="sprite h-[76px] w-[76px]" />
-                    <span className="mt-1 truncate text-xs font-bold text-poke-dark">{p.name}</span>
+                    <span className="mt-1 truncate text-xs font-bold text-foreground">{p.name}</span>
                     <div className="mt-1">
                       <TypeBadge type={p.types[0]} size="sm" />
                     </div>
@@ -462,8 +462,8 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                     <span className="text-lg">●</span>
                   </div>
                   <div className="min-w-0">
-                    <div className="text-sm font-bold text-poke-dark">{ability.name}</div>
-                    <p className="text-xs leading-snug text-poke-dark/70">{ability.description}</p>
+                    <div className="text-sm font-bold text-foreground">{ability.name}</div>
+                    <p className="text-xs leading-snug text-foreground/70">{ability.description}</p>
                   </div>
                 </div>
               );
