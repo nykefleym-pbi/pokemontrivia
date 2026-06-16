@@ -1441,8 +1441,8 @@ function ResultScreen({
           <div className="font-pixel-xs uppercase tracking-[0.25em] text-primary">
             ★ Battle Won ★
           </div>
-          <h1 className="mt-2 font-display-xl text-poke-dark">Victory!</h1>
-          <p className="mt-1 text-sm text-poke-dark/70">
+          <h1 className="mt-2 font-display-xl text-foreground">Victory!</h1>
+          <p className="mt-1 text-sm text-foreground/70">
             {opponentName} defeated · {correctCount}/{totalQuestions} correct
           </p>
 
@@ -1481,10 +1481,10 @@ function ResultScreen({
               valueClass="text-hp-good"
             />
           )}
-          <div className="my-3 border-t border-dashed border-poke-dark/15" />
+          <div className="my-3 border-t border-dashed border-foreground/15" />
           <div className="flex items-center gap-2">
             <span className="font-pixel-xs text-foreground/70">Lv {currentLevel} · {Math.round(levelProgressPct)}%</span>
-            <div className="h-2 flex-1 overflow-hidden rounded-full bg-poke-dark/10">
+            <div className="h-2 flex-1 overflow-hidden rounded-full bg-foreground/15">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-poke-yellow via-primary to-destructive transition-[width] duration-700"
                 style={{ width: `${levelProgressPct}%` }}
@@ -1507,7 +1507,7 @@ function ResultScreen({
               size="lg"
               variant="outline"
               onClick={onShare}
-              className="h-14 w-full rounded-full border-2 border-poke-dark/15 bg-card font-bold text-foreground hover:bg-card/80"
+              className="h-14 w-full rounded-full border-2 border-foreground/15 bg-card font-bold text-foreground hover:bg-card/80"
             >
               <span className="flex items-center gap-2">
                 <img
