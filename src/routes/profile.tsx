@@ -3,7 +3,7 @@ import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Pencil, RotateCcw, Check, Search, Volume2, VolumeX } from "lucide-react";
+import { RotateCcw, Check, Search, Volume2, VolumeX, ChevronRight, Moon } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import {
   rankForLevel,
