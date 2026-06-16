@@ -1,32 +1,17 @@
-## Battle screen visual fixes
+# Plan: Grayscale Played Daily/Weekly Buttons
 
-All changes in `src/components/battle-screen.tsx`.
+## Summary
+Add `grayscale` CSS filter to the Daily Quest and Weekly League buttons once they have already been played, giving users an immediate visual cue that those modes are no longer available today/this week. The buttons automatically return to full color after their respective reset.
 
-### 1. CombatPanel — drop trainer name, keep gutter from screen edges
-- Remove the `trainerName` line in the card body (line 95) and remove the `trainerName` prop from `CombatPanel` (definition + both call sites at the enemy/player zones).
-- Card retains only: pokemon name, type badges, HP bar + HP number, and the ability/status pill row.
-- Confirm gutter: combat arena wrapper stays `px-5`, and shrink card width slightly to `w-[clamp(8rem,38vw,10.5rem)]` so the cards clearly float inside the safe area like the reference (not edge-to-edge as in image 1).
+## Behavior
 
-### 2. ROUND / STREAK pills — smaller
-- Top bar pills: reduce to `px-2.5 py-1 text-[9px]` (from `px-3 py-1.5 text-[10px]`). Tighten the back/bag buttons to `h-9 w-9` for proportion. Result matches the slim "ROUND 3/5" and "STREAK ×3" pills in image 2.
+- **Daily Quest**: Uses the existing `dailyDone` flag (`dailyResult?.date === today`). The `grayscale` class is applied only while `dailyDone` is true. After midnight local time when the daily refreshes, `dailyDone` becomes false and the button automatically regains its full yellow gradient color.
+- **Weekly League**: Uses the existing `weeklyFinished` flag (`weeklyLeague?.status === "won" || weeklyLeague?.status === "lost"`). The `grayscale` class is applied only while `weeklyFinished` is true. When the weekly league resets on Monday 00:00 UTC, `weeklyFinished` becomes false and the button automatically regains its full blue gradient color.
 
-### 3. Grass platforms — pure CSS, no PNG/WebP
-- Remove the two `<img src="/grass/Basic_Grass*.webp" />` elements behind the sprites.
-- Replace each with a CSS oval rendered as a positioned `<div>`:
-  ```
-  radial-gradient(ellipse at 50% 35%,
-    oklch(0.85 0.16 145) 0%,
-    oklch(0.72 0.18 145) 55%,
-    oklch(0.55 0.16 150) 100%);
-  border-radius: 50%;
-  box-shadow: 0 8px 14px -6px oklch(0.3 0.1 150 / 0.35);
-  ```
-  Sized roughly `w-28 h-8` (enemy) and `w-32 h-10` (player), with a couple of small lighter dots overlaid via inset highlights to mimic the speckles in the reference.
+## Changes
 
-### Technical notes
-- No prop/type changes leak outside `battle-screen.tsx`; `CombatPanel` is only used in two spots in the same file.
-- No changes to game logic, store, or routes.
-- Grass image files in `/public/grass/` remain on disk (left alone); they're simply no longer referenced.
+### `src/routes/battle.tsx`
+- **Daily Quest button** (line ~424): Add `${dailyDone ? "grayscale" : ""}` to the `className` so the entire button turns grayscale when the daily is completed. The button already has `disabled:opacity-80`; grayscale layers on top.
+- **Weekly League button** (line ~445): Add `${weeklyFinished ? "grayscale" : ""}` to the `className` so the entire button turns grayscale when the weekly is won or lost. The button already has `disabled:opacity-80`; grayscale layers on top.
 
-### Out of scope
-- Question card, timer pill, item bag, and other surfaces already match the reference.
+No other UI or logic changes are needed — the existing reset logic in the store handles returning buttons to full color.

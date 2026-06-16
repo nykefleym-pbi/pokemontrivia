@@ -422,6 +422,8 @@ function BattleHome({
           onClick={handleDaily}
           disabled={dailyDone || loading}
           className={`relative flex h-[96px] items-center gap-1 overflow-hidden rounded-[18px] bg-gradient-to-br from-[oklch(0.9_0.13_95)] to-[oklch(0.85_0.17_80)] p-3 text-left shadow-card disabled:opacity-80 ${
+            dailyDone ? "grayscale" : ""
+          } ${
             pending === "daily" ? "animate-pulse ring-2 ring-[oklch(0.35_0.06_80)]/40" : ""
           }`}
         >
@@ -443,6 +445,8 @@ function BattleHome({
           onClick={handleWeekly}
           disabled={loading || weeklyFinished}
           className={`relative flex h-[96px] items-center gap-1 overflow-hidden rounded-[18px] bg-gradient-to-br from-[oklch(0.62_0.16_250)] to-[oklch(0.5_0.18_270)] p-3 text-left text-white shadow-card disabled:opacity-80 ${
+            weeklyFinished ? "grayscale" : ""
+          } ${
             pending === "weekly" ? "animate-pulse ring-2 ring-white/60" : ""
           }`}
         >
