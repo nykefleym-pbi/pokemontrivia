@@ -232,6 +232,21 @@ function ProfilePage() {
 
       <div className="px-5 pb-8 pt-4">
         {/* Partner card */}
+        {/* Stat cards */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-3xl bg-card p-4 shadow-card">
+            <div className="font-pixel-xs text-poke-dark/55">BATTLES WON</div>
+            <div className="mt-1 text-3xl font-extrabold text-poke-dark">{stats.wins}</div>
+            <div className="mt-1 text-xs font-semibold text-hp-good">{winRate}% win rate</div>
+          </div>
+          <div className="rounded-3xl bg-card p-4 shadow-card">
+            <div className="font-pixel-xs text-poke-dark/55">BEST STREAK</div>
+            <div className="mt-1 text-3xl font-extrabold text-primary">{stats.bestStreak}</div>
+            <div className="mt-1 text-xs text-poke-dark/60">correct in a row</div>
+          </div>
+        </div>
+
+        {/* Partner card */}
         <PartnerCard
           pokemon={pokemon}
           tp={trainingPoints[pokemon.id] ?? 0}
@@ -247,109 +262,70 @@ function ProfilePage() {
           }}
         />
 
-        {/* Tabs */}
-        <Tabs defaultValue="stats" className="mt-4">
-          <div className="rounded-3xl bg-poke-dark/10 p-1 space-y-1">
-            <TabsList className="grid w-full h-auto grid-cols-4 gap-1 bg-transparent p-0">
-              <PillTab value="stats">Stats</PillTab>
-              <PillTab value="inventory">Bag</PillTab>
-              <PillTab value="trophies">Trophies</PillTab>
-              <PillTab value="badges">Badges</PillTab>
-            </TabsList>
-            <TabsList className="grid w-full h-auto grid-cols-3 gap-1 bg-transparent p-0">
-              <PillTab value="abilities">Abilities</PillTab>
-              <PillTab value="battles">Battles</PillTab>
-              <PillTab value="settings">Settings</PillTab>
-            </TabsList>
+        {/* This week */}
+        <div className="mt-3 rounded-3xl bg-card p-4 shadow-card">
+          <div className="flex items-center justify-between">
+            <div className="font-display-md text-poke-dark">This week</div>
+            <div className="font-pixel-xs text-primary">{weekStreak}-DAY STREAK 🔥</div>
           </div>
-
-          <TabsContent value="stats" className="mt-3 space-y-3">
-            <div className="grid grid-cols-3 gap-2">
-              <Stat label="Battles" value={stats.battles} />
-              <Stat label="Wins" value={stats.wins} />
-              <Stat label="Losses" value={stats.losses} />
-              <Stat label="Accuracy" value={`${accuracy}%`} />
-              <Stat label="Best Streak" value={stats.bestStreak} />
-              <Stat label="Avg Time" value={`${avgTime}s`} />
-            </div>
-            {/* heatmap */}
-            <div className="rounded-3xl bg-card p-3 shadow-card">
-              <div className="mb-2 font-pixel-xs text-poke-dark/60">LAST 7 DAYS</div>
-              <div className="flex justify-between gap-1">
-                {heatmap.map((d) => {
-                  const intensity = Math.min(4, d.count);
-                  const bg =
-                    intensity === 0 ? "bg-muted"
-                    : intensity === 1 ? "bg-primary/30"
-                    : intensity === 2 ? "bg-primary/55"
-                    : intensity === 3 ? "bg-primary/80"
-                    : "bg-primary";
-                  return (
-                    <div key={d.date} className="flex flex-1 flex-col items-center gap-1">
-                      <div className={`h-8 w-full rounded-lg ${bg}`} title={`${d.date}: ${d.count}`} />
-                      <div className="font-pixel-xs text-poke-dark/50">
-                        {new Date(d.date).toLocaleDateString(undefined, { weekday: "narrow" })}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="inventory" className="mt-3">
-            {(() => {
-              const owned = ITEMS.filter((it) => (inventory[it.id] ?? 0) > 0);
-              if (owned.length === 0) {
-                return (
-                  <div className="rounded-3xl bg-poke-yellow/15 p-6 text-center shadow-card">
-                    <div className="mx-auto mb-3 text-4xl">🎒</div>
-                    <div className="font-display-md text-poke-dark">Your bag is empty</div>
-                    <p className="mt-1 text-xs text-poke-dark/60">
-                      Stock up on potions, scopes and lucky eggs.
-                    </p>
-                    <Button
-                      onClick={() => navigate({ to: "/shop" })}
-                      className="mt-4 h-11 w-full rounded-full bg-primary text-sm font-bold shadow-pop"
-                    >
-                      Visit PokéMart
-                    </Button>
-                  </div>
-                );
-              }
+          <div className="mt-3 flex justify-between gap-1">
+            {heatmap.map((d) => {
+              const played = d.count > 0;
+              const isToday = d.date === todayKey;
               return (
-                <div className="grid grid-cols-2 gap-3">
-                  {owned.map((it) => {
-                    const n = inventory[it.id] ?? 0;
-                    return (
-                      <div key={it.id} className="relative flex flex-col gap-2 rounded-3xl bg-card p-4 shadow-card">
-                        <div className="absolute right-3 top-3 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground shadow-sm">
-                          ×{n}
-                        </div>
-                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
-                          <img
-                            src={it.iconUrl}
-                            alt={it.name}
-                            crossOrigin="anonymous"
-                            className="sprite h-10 w-10 object-contain"
-                            onError={(e) => {
-                              const el = e.currentTarget as HTMLImageElement;
-                              el.replaceWith(Object.assign(document.createElement("span"), { textContent: it.emoji, className: "text-3xl" }));
-                            }}
-                          />
-                        </div>
-                        <div className="font-display-md leading-tight text-poke-dark">{it.name}</div>
-                        <div className="line-clamp-2 text-[11px] text-muted-foreground">{it.desc}</div>
-                      </div>
-                    );
-                  })}
+                <div key={d.date} className="flex flex-1 flex-col items-center gap-1">
+                  <div
+                    className={`relative h-9 w-9 rounded-full border-2 ${
+                      played ? "bg-primary border-primary" : "bg-muted border-muted"
+                    } ${isToday ? "ring-2 ring-offset-2 ring-poke-yellow" : ""}`}
+                    title={`${d.date}: ${d.count}`}
+                  >
+                    <div className="absolute left-1/2 top-1/2 h-1.5 w-full -translate-x-1/2 -translate-y-1/2 bg-card/80" />
+                    <div className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-card bg-card" />
+                  </div>
+                  <div className="font-pixel-xs text-poke-dark/50 uppercase">
+                    {new Date(d.date).toLocaleDateString(undefined, { weekday: "short" }).slice(0, 3)}
+                  </div>
                 </div>
               );
-            })()}
-          </TabsContent>
+            })}
+          </div>
+        </div>
 
+        {/* Trophies / Badges / Settings buttons */}
+        <div className="mt-3 grid grid-cols-3 gap-3">
+          <button
+            onClick={() => setTrophiesOpen(true)}
+            className="flex flex-col items-center gap-1 rounded-3xl bg-card p-4 shadow-card transition active:scale-95"
+          >
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-poke-yellow/20 text-2xl">🏆</div>
+            <span className="font-display-md text-poke-dark">Trophies</span>
+            <span className="font-pixel-xs text-poke-dark/50">{unlocked.size}/{ACHIEVEMENTS.length}</span>
+          </button>
+          <button
+            onClick={() => setBadgesOpen(true)}
+            className="flex flex-col items-center gap-1 rounded-3xl bg-card p-4 shadow-card transition active:scale-95"
+          >
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-2xl">🎖</div>
+            <span className="font-display-md text-poke-dark">Badges</span>
+            <span className="font-pixel-xs text-poke-dark/50">{gymBadges.length}/{GYM_LEADERS.length}</span>
+          </button>
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className="flex flex-col items-center gap-1 rounded-3xl bg-card p-4 shadow-card transition active:scale-95"
+          >
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-muted text-2xl">⚙️</div>
+            <span className="font-display-md text-poke-dark">Settings</span>
+            <span className="font-pixel-xs text-poke-dark/50">&nbsp;</span>
+          </button>
+        </div>
+      </div>
 
-          <TabsContent value="trophies" className="mt-3 space-y-3">
+      {/* Trophies sheet */}
+      <Sheet open={trophiesOpen} onOpenChange={setTrophiesOpen}>
+        <SheetContent side="bottom" className="rounded-t-3xl bg-poke-cream max-h-[85vh] overflow-y-auto">
+          <SheetHeader><SheetTitle>Trophies</SheetTitle></SheetHeader>
+          <div className="mt-3 space-y-3">
             <div className="rounded-3xl bg-card p-3 shadow-card">
               <div className="mb-2 flex items-center justify-between">
                 <span className="font-pixel-xs text-poke-dark/60">
@@ -376,57 +352,23 @@ function ProfilePage() {
                 );
               })}
             </div>
-          </TabsContent>
+          </div>
+        </SheetContent>
+      </Sheet>
 
-          <TabsContent value="badges" className="mt-3">
-            <BadgesTab />
-          </TabsContent>
+      {/* Badges sheet */}
+      <Sheet open={badgesOpen} onOpenChange={setBadgesOpen}>
+        <SheetContent side="bottom" className="rounded-t-3xl bg-poke-cream max-h-[85vh] overflow-y-auto">
+          <SheetHeader><SheetTitle>Badges</SheetTitle></SheetHeader>
+          <div className="mt-3"><BadgesTab /></div>
+        </SheetContent>
+      </Sheet>
 
-          <TabsContent value="abilities" className="mt-3">
-            <div className="grid grid-cols-2 gap-3">
-              {Object.values(ABILITIES).map((ab) => (
-                <div key={ab.id} className="rounded-3xl bg-card p-3 shadow-card">
-                  <div className="flex items-start justify-between gap-1">
-                    <div className="font-display-md text-poke-dark leading-tight">{ab.name}</div>
-                    <TypeBadge type={ab.type} />
-                  </div>
-                  <div className="mt-1.5 text-[11px] leading-snug text-poke-dark/60">
-                    {ab.description}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="battles" className="mt-3">
-            {battleLog.length === 0 ? (
-              <div className="rounded-3xl bg-poke-yellow/15 p-6 text-center shadow-card">
-                <div className="mx-auto mb-3 text-4xl">⚔️</div>
-                <div className="font-display-md text-poke-dark">No battles yet</div>
-                <p className="mt-1 text-xs text-poke-dark/60">Earn XP and fill your Pokédex.</p>
-                <Button
-                  onClick={() => navigate({ to: "/battle" })}
-                  className="mt-4 h-11 w-full rounded-full bg-primary text-sm font-bold shadow-pop"
-                >
-                  Start a battle
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {battleLog.slice(0, 12).map((e, i) => (
-                  <div key={i} className="flex items-center gap-2 rounded-2xl bg-card px-3 py-2 shadow-card">
-                    <span className={`rounded-full px-2 py-0.5 font-pixel-xs ${e.won ? "bg-hp-good/20 text-hp-good" : "bg-destructive/15 text-destructive"}`}>
-                      {e.won ? "WIN" : "LOSS"}
-                    </span>
-                    <span className="flex-1 truncate text-sm text-poke-dark">vs {e.opponent}</span>
-                    <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-bold text-primary">+{e.xpGained}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="settings" className="mt-3 space-y-2">
+      {/* Settings sheet */}
+      <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <SheetContent side="bottom" className="rounded-t-3xl bg-poke-cream max-h-[85vh] overflow-y-auto">
+          <SheetHeader><SheetTitle>Settings</SheetTitle></SheetHeader>
+          <div className="mt-3 space-y-2">
             <div className="flex items-center justify-between rounded-3xl bg-card p-4 shadow-card">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
@@ -439,8 +381,6 @@ function ProfilePage() {
               </div>
               <Switch checked={!muted} onCheckedChange={(v) => { setMuted(!v); setMutedState(!v); }} />
             </div>
-
-
             <button
               onClick={() => setResetOpen(true)}
               className="flex w-full items-center justify-between rounded-3xl bg-card p-4 shadow-card transition active:scale-95"
@@ -455,9 +395,10 @@ function ProfilePage() {
                 </div>
               </div>
             </button>
-          </TabsContent>
-        </Tabs>
-      </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
 
       <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
         <AlertDialogContent>
