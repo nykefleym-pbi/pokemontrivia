@@ -173,43 +173,10 @@ function ProfilePage() {
 
       {/* Hero strip */}
       <div className="px-5 pb-5 pt-[calc(env(safe-area-inset-top)+1rem)]">
-        <p className="font-pixel-xs text-primary">TRAINER</p>
-        <div className="mt-1 flex items-center justify-between gap-3">
-          <h1 className="font-display-xl text-poke-dark">Profile</h1>
-          <div className="relative h-[72px] w-[72px] shrink-0">
-            <svg viewBox="0 0 72 72" className="absolute inset-0 h-full w-full -rotate-90">
-              <circle
-                cx="36"
-                cy="36"
-                r="30"
-                fill="none"
-                stroke="oklch(0.22 0.04 260 / 0.12)"
-                strokeWidth="6"
-              />
-              <circle
-                cx="36"
-                cy="36"
-                r="30"
-                fill="none"
-                stroke="var(--color-primary)"
-                strokeWidth="6"
-                strokeLinecap="round"
-                strokeDasharray={ringCirc}
-                strokeDashoffset={ringCirc * (1 - xpPct / 100)}
-                style={{ transition: "stroke-dashoffset 0.5s ease" }}
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="font-pixel-xs text-poke-dark/50 leading-none">LV</span>
-              <span className="text-base font-extrabold text-poke-dark leading-none">{level}</span>
-            </div>
-          </div>
-        </div>
-
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-3 flex items-center gap-4"
+          className="flex items-center gap-4"
         >
           <button
             onClick={() => setTrainerPickerOpen(true)}
@@ -220,50 +187,21 @@ function ProfilePage() {
               alt={trainerSprite}
               className="sprite h-20 w-20 rounded-full object-contain"
             />
-            <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
-              <Pencil className="h-3 w-3" />
-            </div>
           </button>
           <div className="min-w-0 flex-1">
             <p className="font-pixel-xs text-primary uppercase truncate">
               {rank} · LV {level}
             </p>
-            {editingName ? (
-              <div className="mt-1 flex gap-2">
-                <Input
-                  value={nameDraft}
-                  onChange={(e) => setNameDraft(e.target.value)}
-                  maxLength={16}
-                  className="h-9 rounded-full"
-                  autoFocus
-                />
-                <Button size="sm" onClick={saveName} className="rounded-full">
-                  <Check className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
-              <button
-                onClick={() => {
-                  setNameDraft(trainerName);
-                  setEditingName(true);
-                }}
-                className="mt-0.5 flex items-center gap-1.5 text-left transition active:scale-95"
-              >
-                <h2 className="font-display-lg text-2xl font-extrabold text-poke-dark truncate">
-                  {trainerName}
-                </h2>
-                <Pencil className="h-3.5 w-3.5 text-poke-dark/40" />
-              </button>
-            )}
+            <h2 className="font-display-lg text-2xl font-extrabold text-poke-dark truncate">
+              {trainerName}
+            </h2>
             <p className="mt-0.5 text-xs text-poke-dark/55 truncate">
               Trainer since {trainerSince}
             </p>
-            <div className="mt-2">
-              <XpBar xp={xpProg.current} need={xpProg.need} />
-            </div>
           </div>
         </motion.div>
       </div>
+
 
       <div className="px-5 pb-8 pt-4">
         {/* Partner card */}
