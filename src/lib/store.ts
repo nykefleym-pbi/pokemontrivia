@@ -244,6 +244,9 @@ export const useGameStore = create<GameState>()(
       weeklyLeague: null,
       gymBadges: [],
       weeklyLeagueHistory: [],
+      darkMode: false,
+      setDarkMode: (v) => set({ darkMode: v }),
+
 
       initWeeklyLeague: () => {
         const s = get();
