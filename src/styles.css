@@ -344,6 +344,9 @@
   image-rendering: -moz-crisp-edges;
   filter: drop-shadow(0 6px 8px oklch(0.2 0.05 260 / 0.25));
 }
+.dark .sprite {
+  filter: drop-shadow(0 6px 10px oklch(0 0 0 / 0.45));
+}
 
 /* Animations */
 @keyframes shake {
