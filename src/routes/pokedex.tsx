@@ -116,7 +116,7 @@ function PokedexPage() {
                 {type === "all" ? "+ Type" : type}
               </button>
             </PopoverTrigger>
-            <PopoverContent className="w-64 rounded-2xl p-2" align="start">
+            <PopoverContent className="w-64 rounded-2xl bg-card p-2" align="start">
               <div className="flex flex-wrap gap-1">
                 <button
                   onClick={() => setType("all")}
@@ -131,7 +131,7 @@ function PokedexPage() {
                     key={t}
                     onClick={() => setType(t)}
                     className="rounded-full px-2.5 py-1 text-[11px] font-bold capitalize text-white"
-                    style={{ background: `var(--color-type-${t})`, opacity: type === t ? 1 : 0.7 }}
+                    style={{ background: `var(--type-${t})`, opacity: type === t ? 1 : 0.7 }}
                   >
                     {t}
                   </button>
@@ -200,7 +200,7 @@ function PokedexPage() {
                   ...(shiny
                     ? { backgroundImage: "linear-gradient(135deg, color-mix(in oklab, var(--color-poke-yellow) 35%, var(--color-card)), var(--color-card))" }
                     : got
-                      ? { backgroundImage: `linear-gradient(135deg, color-mix(in oklab, var(--color-type-${primaryType}) 18%, transparent), var(--color-card))` }
+                      ? { backgroundImage: `linear-gradient(135deg, color-mix(in oklab, var(--type-${primaryType}) 18%, transparent), var(--color-card))` }
                       : {}),
                 } as React.CSSProperties}
                 className={`relative flex flex-col items-center rounded-2xl p-2 transition active:scale-95 ${
@@ -256,7 +256,7 @@ function PokedexPage() {
             <div
               className="relative shrink-0 px-5 pb-10 pt-[calc(env(safe-area-inset-top)+1rem)]"
               style={{
-                background: `linear-gradient(160deg, var(--color-type-${primaryType}) 0%, color-mix(in oklab, var(--color-type-${primaryType}) 62%, #000) 100%)`,
+                background: `linear-gradient(160deg, var(--type-${primaryType}) 0%, color-mix(in oklab, var(--type-${primaryType}) 62%, #000) 100%)`,
               }}
             >
               <div className="flex items-center justify-between">
