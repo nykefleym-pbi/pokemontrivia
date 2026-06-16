@@ -1,38 +1,41 @@
 ## Goal
+Source curated trivia from the external Supabase project `dvdorceiasaipdvyfhil` while keeping Lovable Cloud (`omhlpjvimtrzdmeyzreq`) as the linked backend for auth, profiles, and server functions.
 
-Make the app actually read curated questions from the new external Supabase project `dvdorceiasaipdvyfhil` (the curated wiring in code is already correct, but `.env` is currently pointing back at the old Lovable-managed project `omhlpjvimtrzdmeyzreq`).
-
-## Current state
-
-- `supabase/config.toml` → `dvdorceiasaipdvyfhil` ✅
-- `.env` (both `SUPABASE_*` and `VITE_SUPABASE_*`) → still `omhlpjvimtrzdmeyzreq` ❌ (the earlier repoint got reverted)
-- `src/lib/curated-questions.ts` reads `verified=true` rows from `curated_questions` via the browser supabase client. No code changes needed.
-- New project's `curated_questions` table: schema present, **0 rows** (you confirmed "just verify wiring" — no seeding).
+## Why the previous attempt reverted
+`VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY` in `.env` are auto-managed by Lovable Cloud and re-pinned to the linked project on every sync. We must not touch them. Instead, add **separate** vars for the curated read-only source.
 
 ## Changes
 
-1. **`.env`** — overwrite all four Supabase entries to point at the new project:
-   - `SUPABASE_PROJECT_ID` / `VITE_SUPABASE_PROJECT_ID` → `dvdorceiasaipdvyfhil`
-   - `SUPABASE_URL` / `VITE_SUPABASE_URL` → `https://dvdorceiasaipdvyfhil.supabase.co`
-   - `SUPABASE_PUBLISHABLE_KEY` / `VITE_SUPABASE_PUBLISHABLE_KEY` → `sb_publishable_4xsV56UPyHng1xGrKAM8mQ_meXNg3sH`
+### 1. Add new public env vars (won't collide with managed ones)
+In `.env`, append:
+```
+VITE_CURATED_SUPABASE_URL="https://dvdorceiasaipdvyfhil.supabase.co"
+VITE_CURATED_SUPABASE_PUBLISHABLE_KEY="sb_publishable_4xsV56UPyHng1xGrKAM8mQ_meXNg3sH"
+```
+Leave all `VITE_SUPABASE_*` / `SUPABASE_*` vars pointing at `omhlpjvimtrzdmeyzreq` untouched.
 
-2. **No code changes.** `curated-questions.ts`, `api.trivia-batch.ts`, `api.trivia-elite.ts`, and `src/integrations/supabase/client.ts` already read from env; they will automatically hit the new project once `.env` is updated.
+### 2. Create a dedicated curated client
+New file `src/lib/curated-client.ts`:
+- `createClient(import.meta.env.VITE_CURATED_SUPABASE_URL, import.meta.env.VITE_CURATED_SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: false, autoRefreshToken: false, storageKey: 'curated-ro' } })`
+- Separate `storageKey` so it never conflicts with the main client's session storage.
+- Read-only usage (table has only a public SELECT policy on `verified = true`).
 
-3. **No migration, no seeding** — table is intentionally left empty per your choice. Until rows with `verified=true` exist, the curated fetch returns `[]` and trivia batches fall back to 100% AI (existing behavior).
+### 3. Rewire `src/lib/curated-questions.ts`
+- Replace the existing `import { supabase } from '@/integrations/supabase/client'` with `import { curatedSupabase } from './curated-client'`.
+- All `.from('curated_questions').select(...)` reads use `curatedSupabase`.
+- The `increment_curated_served` / `increment_curated_correct` RPCs: those functions exist on `dvdorceiasaipdvyfhil` too, so call them via `curatedSupabase.rpc(...)`. If the external project rejects anonymous RPC writes, wrap the calls in try/catch so a failure doesn't break gameplay (stats are best-effort).
+
+### 4. Leave everything else alone
+- `src/integrations/supabase/client.ts` (managed) — untouched.
+- Server functions, auth, profiles — keep using the linked Lovable Cloud project.
+- Server routes (`api.trivia-batch.ts`, etc.) that mix curated reads with AI: if any read curated server-side, they should also import the new curated client (browser-safe `createClient` is fine in server fns too — no service role needed for verified reads).
 
 ## Verification
+1. Restart dev server, hard-refresh preview.
+2. In browser devtools Network tab, start a Regular Battle → confirm a request to `dvdorceiasaipdvyfhil.supabase.co/rest/v1/curated_questions?verified=eq.true` returns 200 with rows.
+3. Confirm no request to `dvdorceiasaipdvyfhil` for auth/profiles (those stay on the linked project).
+4. Confirm `.env` `VITE_SUPABASE_URL` still equals `omhlpjvimtrzdmeyzreq` after the next platform sync.
 
-After the edit:
-- `rg "omhlpjvimtrzdmeyzreq" .env src/` returns nothing.
-- `bun run build` succeeds.
-- A quick browser-side fetch from the running preview to `curated_questions` against the new URL returns `0` rows with no permission error (confirms the "Public can read verified curated questions" policy + GRANT are reachable on the new project).
-
-## Caveat
-
-The previous repoint was reverted between sessions, which suggests something (Lovable Cloud sync, or a prior turn) may rewrite `.env` back to the managed project. If `.env` flips back after this edit, that's an environment-level issue — the fix is the same edit, but you may need to keep the new project's keys out of any auto-sync.
-
-## Non-goals
-
-- No seeding curated_questions (you chose "just verify wiring").
-- No schema changes.
-- No changes to game logic, AI fallback, or UI.
+## Out of scope
+- Migrating auth/profiles to `dvdorceiasaipdvyfhil` (would require unlinking the Lovable Cloud backend — not doable via code).
+- Writes to `curated_questions` (table is locked to public SELECT only).
