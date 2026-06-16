@@ -356,7 +356,10 @@ function ProfilePage() {
           className="rounded-t-3xl bg-poke-cream max-h-[85vh] overflow-y-auto"
         >
           <SheetHeader>
-            <SheetTitle>Badges</SheetTitle>
+            <div className="font-pixel-xs text-primary">
+              {gymBadges.length} OF {GYM_LEADERS.length} EARNED
+            </div>
+            <SheetTitle className="font-display-xl text-poke-dark">Badge case</SheetTitle>
           </SheetHeader>
           <div className="mt-3">
             <BadgesTab />
