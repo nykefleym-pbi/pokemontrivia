@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { curatedSupabase as supabase } from "./curated-client";
 import type { TriviaPayload } from "./trivia-core";
 
 interface CuratedRow {
