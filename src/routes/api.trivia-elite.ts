@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { generateTrivia } from "@/lib/trivia-core";
+import { generateTrivia, type TriviaPayload } from "@/lib/trivia-core";
 import { fetchCuratedQuestions, recordCuratedServed } from "@/lib/curated-questions";
+
+type Difficulty = "easy" | "medium" | "hard" | "expert";
 
 export const Route = createFileRoute("/api/trivia-elite")({
   server: {
@@ -11,20 +13,33 @@ export const Route = createFileRoute("/api/trivia-elite")({
         let seenHashes: string[] = [];
         let seenSamples: string[] = [];
         let flowSeed = Math.floor(Math.random() * 1_000_000);
-        let requestedCount = 12;
+        let tiers: Difficulty[] = ["hard"];
+        let curatedTarget = 26;
+        let aiNominal = 4;
         try {
           const body = (await request.json()) as {
             type?: string;
             memberName?: string;
-            count?: number;
+            difficultyTiers?: string[];
+            curatedTarget?: number;
+            aiCount?: number;
             seenHashes?: string[];
             seenSamples?: string[];
             flowSeed?: number;
           };
           if (body.type) type = body.type;
           if (body.memberName) memberName = body.memberName;
-          if (typeof body.count === "number" && body.count >= 5 && body.count <= 25) {
-            requestedCount = Math.floor(body.count);
+          if (Array.isArray(body.difficultyTiers)) {
+            const valid = body.difficultyTiers.filter((d): d is Difficulty =>
+              ["easy", "medium", "hard", "expert"].includes(d)
+            );
+            if (valid.length > 0) tiers = valid;
+          }
+          if (typeof body.curatedTarget === "number" && body.curatedTarget >= 0 && body.curatedTarget <= 60) {
+            curatedTarget = Math.floor(body.curatedTarget);
+          }
+          if (typeof body.aiCount === "number" && body.aiCount >= 0 && body.aiCount <= 20) {
+            aiNominal = Math.floor(body.aiCount);
           }
           if (Array.isArray(body.seenHashes)) seenHashes = body.seenHashes.slice(-500);
           if (Array.isArray(body.seenSamples)) seenSamples = body.seenSamples.slice(-80);
@@ -33,36 +48,61 @@ export const Route = createFileRoute("/api/trivia-elite")({
           /* defaults */
         }
 
-        const themeNote = `THIS IS AN ELITE FOUR BATTLE vs ${memberName}. Bias HEAVILY toward the ${type.toUpperCase()} type — at least 70% of questions must involve ${type}-type Pokémon, ${type}-type moves, abilities, matchups, lore, characters, or ${type}-themed regions/gyms. The remainder may be general Pokémon trivia. Make it feel like a thematic boss battle.`;
+        const TOTAL = curatedTarget + aiNominal;
+        const aiDifficulty = tiers.join(" or ");
 
-        const CURATED_COUNT = Math.min(2, Math.max(1, Math.floor(requestedCount * 0.1)));
-        const AI_COUNT = requestedCount - CURATED_COUNT;
+        const themeNote = `THIS IS A BOSS BATTLE vs ${memberName}. Bias HEAVILY toward the ${type.toUpperCase()} type — at least 70% of questions must involve ${type}-type Pokémon, ${type}-type moves, abilities, matchups, lore, characters, or ${type}-themed regions/gyms. The remainder may be general Pokémon trivia. Make it feel like a thematic boss battle.`;
 
-        const [curatedResult, aiResult] = await Promise.all([
-          fetchCuratedQuestions({
-            difficulty: "hard",
-            count: CURATED_COUNT,
-            typeTheme: type.toLowerCase(),
-          }),
-          generateTrivia({
-            difficulty: "hard",
-            flowSeed,
-            seenHashes,
-            seenSamples,
-            batchSize: AI_COUNT,
-            themeNote,
-          }),
-        ]);
+        let curatedQuestions: TriviaPayload[] = [];
+        let curatedIds: string[] = [];
+        const themed = await fetchCuratedQuestions({
+          difficulty: tiers,
+          count: curatedTarget,
+          typeTheme: type.toLowerCase(),
+        });
+        curatedQuestions = themed.questions;
+        curatedIds = themed.servedIds;
 
-        if (aiResult.status) {
-          return Response.json({ error: aiResult.error, code: aiResult.status }, { status: aiResult.status });
+        if (curatedQuestions.length < curatedTarget) {
+          const need = curatedTarget - curatedQuestions.length;
+          const fill = await fetchCuratedQuestions({
+            difficulty: tiers,
+            count: need,
+            excludeIds: curatedIds,
+          });
+          curatedQuestions = [...curatedQuestions, ...fill.questions];
+          curatedIds = [...curatedIds, ...fill.servedIds];
         }
 
-        await recordCuratedServed(curatedResult.servedIds).catch(() => {
+        const aiCount = Math.max(0, TOTAL - curatedQuestions.length);
+        const aiResult = await generateTrivia({
+          difficulty: aiDifficulty,
+          flowSeed,
+          seenHashes,
+          seenSamples,
+          batchSize: aiCount,
+          themeNote,
+        });
+
+        await recordCuratedServed(curatedIds).catch(() => {
           console.warn("Failed to record curated served (non-fatal).");
         });
 
-        const merged = [...aiResult.questions, ...curatedResult.questions];
+        if (aiResult.status) {
+          if (curatedQuestions.length >= 5) {
+            const onlyCurated = curatedQuestions
+              .map((q) => ({ q, sort: Math.random() }))
+              .sort((a, b) => a.sort - b.sort)
+              .map(({ q }) => q);
+            return Response.json({
+              questions: onlyCurated,
+              source: `curated-only-${curatedQuestions.length}`,
+            });
+          }
+          return Response.json({ error: aiResult.error, code: aiResult.status }, { status: aiResult.status });
+        }
+
+        const merged = [...aiResult.questions, ...curatedQuestions];
         const shuffled = merged
           .map((q) => ({ q, sort: Math.random() }))
           .sort((a, b) => a.sort - b.sort)
@@ -71,8 +111,8 @@ export const Route = createFileRoute("/api/trivia-elite")({
         return Response.json({
           questions: shuffled,
           source:
-            curatedResult.questions.length > 0
-              ? `${aiResult.source}+curated-${curatedResult.questions.length}`
+            curatedQuestions.length > 0
+              ? `${aiResult.source}+curated-${curatedQuestions.length}`
               : aiResult.source,
         });
       },
