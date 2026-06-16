@@ -1441,8 +1441,8 @@ function ResultScreen({
           <div className="font-pixel-xs uppercase tracking-[0.25em] text-primary">
             ★ Battle Won ★
           </div>
-          <h1 className="mt-2 font-display-xl text-foreground">Victory!</h1>
-          <p className="mt-1 text-sm text-foreground/70">
+          <h1 className="mt-2 font-display-xl text-poke-dark">Victory!</h1>
+          <p className="mt-1 text-sm text-poke-dark/70">
             {opponentName} defeated · {correctCount}/{totalQuestions} correct
           </p>
 
