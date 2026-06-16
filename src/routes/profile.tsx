@@ -500,6 +500,30 @@ function ProfilePage() {
         </SheetContent>
       </Sheet>
 
+      {/* All stats sheet */}
+      <Sheet open={statsOpen} onOpenChange={setStatsOpen}>
+        <SheetContent
+          side="bottom"
+          className="rounded-t-3xl bg-poke-cream max-h-[80vh] overflow-y-auto"
+        >
+          <SheetHeader>
+            <div className="font-pixel-xs text-primary">CAREER STATS</div>
+            <SheetTitle className="font-display-xl text-poke-dark">All stats</SheetTitle>
+          </SheetHeader>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <StatBox label="Battles" value={stats.battles} />
+            <StatBox label="Wins" value={stats.wins} />
+            <StatBox label="Losses" value={stats.losses} />
+            <StatBox label="Win rate" value={`${winRate}%`} />
+            <StatBox label="Best streak" value={stats.bestStreak} />
+            <StatBox label="Accuracy" value={`${accuracy}%`} />
+            <StatBox label="Avg time" value={`${avgTime}s`} />
+            <StatBox label="Questions" value={stats.answered} />
+            <StatBox label="Correct" value={stats.correct} />
+          </div>
+        </SheetContent>
+      </Sheet>
+
       {/* Rename trainer dialog */}
       <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
         <DialogContent className="max-w-xs">
@@ -770,6 +794,15 @@ function Stat({ label, value }: { label: string; value: number | string }) {
     <div className="rounded-2xl bg-card px-3 py-3 text-center shadow-card">
       <div className="text-xl font-extrabold text-poke-dark">{value}</div>
       <div className="mt-0.5 font-pixel-xs text-poke-dark/50">{label}</div>
+    </div>
+  );
+}
+
+function StatBox({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-3xl bg-card p-4 shadow-card">
+      <div className="font-pixel-xs text-poke-dark/55 uppercase">{label}</div>
+      <div className="mt-1 text-2xl font-extrabold text-poke-dark">{value}</div>
     </div>
   );
 }
