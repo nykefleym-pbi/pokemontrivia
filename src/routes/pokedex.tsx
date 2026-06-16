@@ -211,9 +211,6 @@ function PokedexPage() {
                       : "bg-muted/40"
                 }`}
               >
-                <div className="absolute left-1.5 top-1.5 font-pixel-xs text-poke-dark/40">
-                  #{String(p.id).padStart(3, "0")}
-                </div>
                 <PokemonSprite
                   id={p.id}
                   alt={got ? p.name : "???"}
@@ -329,14 +326,11 @@ function PokedexPage() {
                         <div className={col.length > 4 ? "grid grid-cols-2 gap-1" : "flex flex-col gap-1"}>
                           {col.map((stage) => {
                             const stageCaught = !!pokedex[stage.id];
-                            const isCurrent = stage.id === p.id;
                             return (
                               <button
                                 key={stage.id}
                                 onClick={() => { setDetailId(stage.id); setShowShiny(false); }}
-                                className={`flex w-[72px] shrink-0 flex-col items-center rounded-2xl p-1.5 transition ${
-                                  isCurrent ? "bg-primary/10 ring-2 ring-primary/30" : "active:bg-muted/50"
-                                }`}
+                                className="flex w-[72px] shrink-0 flex-col items-center rounded-2xl p-1.5 transition active:bg-muted/50"
                               >
                                 <PokemonSprite
                                   id={stage.id}
@@ -415,9 +409,9 @@ function PokedexFlavor({ pokemonId }: { pokemonId: number }) {
   if (loading) return null;
   if (!flavor) return null;
   return (
-    <div className="w-full rounded-2xl bg-poke-yellow/15 p-3 text-center text-[12px] italic leading-relaxed text-poke-dark/80">
+    <p className="text-sm italic leading-relaxed text-poke-dark/75">
       {flavor}
-    </div>
+    </p>
   );
 }
 
