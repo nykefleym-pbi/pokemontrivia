@@ -352,14 +352,14 @@ function BattleHome({
           {ring}
           <div className="min-w-0 flex-1">
             <p className="font-pixel-xs text-primary">{rank}</p>
-            <h1 className="truncate font-display-lg text-poke-dark">{trainerName}</h1>
+            <h1 className="truncate font-display-lg text-foreground">{trainerName}</h1>
             <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-poke-dark/15">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-poke-yellow to-primary transition-[width] duration-500"
                 style={{ width: `${xpPct}%` }}
               />
             </div>
-            <p className="mt-1 text-[10px] text-poke-dark/60">
+            <p className="mt-1 text-[10px] text-foreground/60">
               {xpProg.current.toLocaleString()} / {xpProg.need.toLocaleString()} XP to Lv {level + 1}
             </p>
           </div>
@@ -373,15 +373,15 @@ function BattleHome({
         {/* Stat row */}
         <div className="mt-4 grid grid-cols-3 gap-2">
           <div className="rounded-2xl bg-card px-2 py-2 text-center shadow-card">
-            <div className="font-pixel-xs text-poke-dark/60">Streak</div>
-            <div className="text-lg font-extrabold text-poke-dark">{bestStreak} <span className="text-base">🔥</span></div>
+            <div className="font-pixel-xs text-foreground/60">Streak</div>
+            <div className="text-lg font-extrabold text-foreground">{bestStreak} <span className="text-base">🔥</span></div>
           </div>
           <div className="rounded-2xl bg-card px-2 py-2 text-center shadow-card">
-            <div className="font-pixel-xs text-poke-dark/60">XP</div>
-            <div className="text-lg font-extrabold text-poke-dark">{xp.toLocaleString()}</div>
+            <div className="font-pixel-xs text-foreground/60">XP</div>
+            <div className="text-lg font-extrabold text-foreground">{xp.toLocaleString()}</div>
           </div>
           <div className="rounded-2xl bg-card px-2 py-2 text-center shadow-card">
-            <div className="font-pixel-xs text-poke-dark/60">TP ×{tpMult.toFixed(2)}</div>
+            <div className="font-pixel-xs text-foreground/60">TP ×{tpMult.toFixed(2)}</div>
             <div className="text-lg font-extrabold text-poke-blue">{partnerTp}</div>
           </div>
         </div>
@@ -552,7 +552,7 @@ function ElitePendingTakeover({
           <Button
             size="lg"
             onClick={onStart}
-            className="h-14 w-full rounded-full bg-poke-yellow text-base font-bold text-poke-dark shadow-pop hover:bg-poke-yellow/90"
+            className="h-14 w-full rounded-full bg-poke-yellow text-base font-bold text-foreground shadow-pop hover:bg-poke-yellow/90"
           >
             <Crown className="mr-2 h-5 w-5" /> Challenge {elite.name}
           </Button>

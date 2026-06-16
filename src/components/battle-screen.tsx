@@ -108,7 +108,7 @@ function CombatPanel({
               transition={{ type: "spring", stiffness: 100, damping: 18 }}
             />
           </div>
-          <span className="text-[11px] font-bold tabular-nums text-poke-dark">{Math.round(hp)}</span>
+          <span className="text-[11px] font-bold tabular-nums text-foreground">{Math.round(hp)}</span>
         </div>
         {(abilityName || immune || disadvantaged || statuses.length > 0) && (
           <div className={`mt-1 flex w-full flex-wrap gap-0.5 ${justifyCls}`}>
@@ -116,7 +116,7 @@ function CombatPanel({
             {immune && <span className="rounded-full bg-hp-good/20 px-1.5 py-[1px] font-pixel-xs text-hp-good">🛡</span>}
             {disadvantaged && !immune && <span className="rounded-full bg-destructive/20 px-1.5 py-[1px] font-pixel-xs text-destructive">⚠</span>}
             {statuses.map((s) => (
-              <span key={s.kind} className={`rounded-full px-1.5 py-[1px] font-pixel-xs ${s.kind === "confused" ? "bg-poke-yellow/30 text-poke-dark" : "bg-purple-500/20 text-purple-700"}`}>
+              <span key={s.kind} className={`rounded-full px-1.5 py-[1px] font-pixel-xs ${s.kind === "confused" ? "bg-poke-yellow/30 text-foreground" : "bg-purple-500/20 text-purple-700"}`}>
                 {s.kind === "confused" ? "🌀" : "☠️"}
               </span>
             ))}
@@ -1184,7 +1184,7 @@ function BattleMode({
               {/* Floating timer pill + category label */}
               <div className="pointer-events-none absolute left-1/2 -top-12 z-10 flex -translate-x-1/2 flex-col items-center">
                 <TimerRing timer={timer} maxTime={TIMER_BASE + bonusTime} />
-                <p className="mt-1.5 font-pixel-xs text-poke-dark/70">
+                <p className="mt-1.5 font-pixel-xs text-foreground/70">
                   {trivia.category}
                 </p>
               </div>
@@ -1441,8 +1441,8 @@ function ResultScreen({
           <div className="font-pixel-xs uppercase tracking-[0.25em] text-primary">
             ★ Battle Won ★
           </div>
-          <h1 className="mt-2 font-display-xl text-poke-dark">Victory!</h1>
-          <p className="mt-1 text-sm text-poke-dark/70">
+          <h1 className="mt-2 font-display-xl text-foreground">Victory!</h1>
+          <p className="mt-1 text-sm text-foreground/70">
             {opponentName} defeated · {correctCount}/{totalQuestions} correct
           </p>
 
@@ -1483,14 +1483,14 @@ function ResultScreen({
           )}
           <div className="my-3 border-t border-dashed border-poke-dark/15" />
           <div className="flex items-center gap-2">
-            <span className="font-pixel-xs text-poke-dark/70">Lv {currentLevel} · {Math.round(levelProgressPct)}%</span>
+            <span className="font-pixel-xs text-foreground/70">Lv {currentLevel} · {Math.round(levelProgressPct)}%</span>
             <div className="h-2 flex-1 overflow-hidden rounded-full bg-poke-dark/10">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-poke-yellow via-primary to-destructive transition-[width] duration-700"
                 style={{ width: `${levelProgressPct}%` }}
               />
             </div>
-            <span className="font-pixel-xs text-poke-dark/70">Lv {currentLevel + 1}</span>
+            <span className="font-pixel-xs text-foreground/70">Lv {currentLevel + 1}</span>
           </div>
         </div>
 
@@ -1507,7 +1507,7 @@ function ResultScreen({
               size="lg"
               variant="outline"
               onClick={onShare}
-              className="h-14 w-full rounded-full border-2 border-poke-dark/15 bg-card font-bold text-poke-dark hover:bg-card/80"
+              className="h-14 w-full rounded-full border-2 border-poke-dark/15 bg-card font-bold text-foreground hover:bg-card/80"
             >
               <span className="flex items-center gap-2">
                 <img
@@ -1617,8 +1617,8 @@ function ResultScreen({
 function Row({ label, value, valueClass }: { label: ReactNode; value: ReactNode; valueClass?: string }) {
   return (
     <div className="flex items-center justify-between py-1.5 text-sm">
-      <div className="font-semibold text-poke-dark">{label}</div>
-      <div className={`font-display-md ${valueClass ?? "text-poke-dark"}`}>{value}</div>
+      <div className="font-semibold text-foreground">{label}</div>
+      <div className={`font-display-md ${valueClass ?? "text-foreground"}`}>{value}</div>
     </div>
   );
 }
@@ -1784,7 +1784,7 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
       <div className="relative shrink-0 rounded-t-[28px] bg-card pt-14 px-[max(1rem,env(safe-area-inset-left))] pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-[0_-8px_30px_-12px_oklch(0.3_0.05_260/0.25)]">
         <div className="pointer-events-none absolute left-1/2 -top-12 z-10 flex -translate-x-1/2 flex-col items-center">
           <TimerRing timer={timer} maxTime={20} />
-          <p className="mt-1.5 font-pixel-xs text-poke-dark/70">{trivia.category}</p>
+          <p className="mt-1.5 font-pixel-xs text-foreground/70">{trivia.category}</p>
         </div>
 
         <p className="text-center text-[clamp(0.95rem,4vw,1.125rem)] font-bold leading-snug">{trivia.question}</p>
@@ -1847,7 +1847,7 @@ function DailyResultScreen({
       animate={{ opacity: 1 }}
       className="flex h-full w-full flex-col items-center justify-center overflow-y-auto bg-poke-hero px-6 py-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)] safe-x"
     >
-      <div className="rounded-full bg-poke-yellow px-3 py-1 font-pixel-xs uppercase text-poke-dark">
+      <div className="rounded-full bg-poke-yellow px-3 py-1 font-pixel-xs uppercase text-foreground">
         Daily Challenge · {date}
       </div>
       <motion.div
@@ -1864,7 +1864,7 @@ function DailyResultScreen({
           <path d="M22 44 L18 60 L26 54 L32 60 L38 54 L46 60 L42 44 Z" fill="var(--color-primary)" stroke="var(--color-poke-dark)" strokeWidth="2" strokeLinejoin="round" />
         </svg>
       </motion.div>
-      <div className="mt-3 font-display-xl text-poke-dark">All done!</div>
+      <div className="mt-3 font-display-xl text-foreground">All done!</div>
 
       <div className="mt-5 grid w-full max-w-xs grid-cols-3 gap-2">
         <DailyTile label="Score" value={`${correct}/${total}`} accent />
@@ -1882,7 +1882,7 @@ function DailyResultScreen({
       <Button
         size="lg"
         onClick={onExit}
-        className="mt-5 h-12 w-full max-w-xs rounded-full border-2 border-poke-dark/20 bg-card font-bold text-poke-dark shadow-card hover:bg-card/80"
+        className="mt-5 h-12 w-full max-w-xs rounded-full border-2 border-poke-dark/20 bg-card font-bold text-foreground shadow-card hover:bg-card/80"
       >
         Back
       </Button>
@@ -1893,7 +1893,7 @@ function DailyResultScreen({
 function DailyTile({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
     <div className="rounded-2xl bg-card px-2 py-3 text-center shadow-card">
-      <div className={`font-display-md ${accent ? "text-primary" : "text-poke-dark"}`}>
+      <div className={`font-display-md ${accent ? "text-primary" : "text-foreground"}`}>
         {value}
       </div>
       <div className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">

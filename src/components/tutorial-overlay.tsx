@@ -78,7 +78,7 @@ export function TutorialOverlay({ step, onDismiss, onSkip }: Props) {
                   />
                 ))}
               </div>
-              <h3 className="font-display-md text-poke-dark">{current.title}</h3>
+              <h3 className="font-display-md text-foreground">{current.title}</h3>
               <p className="mt-2 text-sm leading-snug text-muted-foreground">{current.body}</p>
               <div className="mt-6 flex items-center justify-between gap-3">
                 <button

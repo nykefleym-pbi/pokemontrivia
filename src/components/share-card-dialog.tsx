@@ -106,7 +106,7 @@ export function ShareCardDialog({ open, onClose, data }: Props) {
             onClick={handleSave}
             disabled={!imageUrl}
             variant="outline"
-            className="h-14 flex-1 rounded-full border-2 border-white/20 bg-white font-bold text-poke-dark hover:bg-white/90"
+            className="h-14 flex-1 rounded-full border-2 border-white/20 bg-white font-bold text-foreground hover:bg-white/90"
           >
             <ImageIcon className="mr-2 h-5 w-5" /> Save image
           </Button>

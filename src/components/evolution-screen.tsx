@@ -108,7 +108,7 @@ export function EvolutionScreen({ from, to, onComplete }: Props) {
           animate={{ opacity: 1, y: 0 }}
           className="mt-8 w-full max-w-xs rounded-3xl bg-card p-5 text-center shadow-pop"
         >
-          <div className="inline-flex rounded-full bg-poke-yellow/40 px-2.5 py-0.5 font-pixel-xs uppercase text-poke-dark">
+          <div className="inline-flex rounded-full bg-poke-yellow/40 px-2.5 py-0.5 font-pixel-xs uppercase text-foreground">
             Evolution Complete
           </div>
           <div className="mt-3 text-sm text-muted-foreground">

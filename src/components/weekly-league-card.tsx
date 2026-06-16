@@ -31,7 +31,7 @@ export function WeeklyLeagueCard({ weeklyLeague, onStart, resumeMode = false, lo
         </SpriteHalo>
       </div>
 
-      <div className="mt-3 font-display-md text-poke-dark">{leader.name}</div>
+      <div className="mt-3 font-display-md text-foreground">{leader.name}</div>
       <div className="mt-1.5">
         <TypeBadge type={leader.type} size="sm" />
       </div>
@@ -42,7 +42,7 @@ export function WeeklyLeagueCard({ weeklyLeague, onStart, resumeMode = false, lo
         <span className="text-poke-yellow/80">”</span>
       </div>
 
-      <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-poke-yellow/40 px-3 py-1 text-xs font-bold text-poke-dark">
+      <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-poke-yellow/40 px-3 py-1 text-xs font-bold text-foreground">
         <Trophy className="h-3.5 w-3.5" />
         {leader.badge}
       </div>
@@ -91,16 +91,16 @@ export function WeeklyLeagueResultCard({ weeklyLeague, nextWeekStart }: ResultPr
     <div className="flex flex-col items-center text-center">
       <div
         className={`flex h-14 w-14 items-center justify-center rounded-full ${
-          isWin ? "bg-poke-yellow/40 text-poke-dark" : "bg-destructive/15 text-destructive"
+          isWin ? "bg-poke-yellow/40 text-foreground" : "bg-destructive/15 text-destructive"
         }`}
       >
         {isWin ? <Trophy className="h-7 w-7" /> : <HeartCrack className="h-7 w-7" />}
       </div>
-      <div className="mt-2 font-display-md text-poke-dark">
+      <div className="mt-2 font-display-md text-foreground">
         {isWin ? `${leader?.badge} earned!` : `Defeated by ${leader?.name}`}
       </div>
       <div className="mt-2 rounded-2xl bg-card/60 px-3 py-1.5 text-xs text-muted-foreground">
-        Next challenge in <span className="font-bold text-poke-dark">{timeLeft}</span>
+        Next challenge in <span className="font-bold text-foreground">{timeLeft}</span>
       </div>
     </div>
   );
