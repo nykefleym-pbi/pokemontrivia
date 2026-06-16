@@ -183,7 +183,9 @@ function BattlePage() {
         body: JSON.stringify({
           type: leader.type,
           memberName: `Gym Leader ${leader.name}`,
-          count: 20,
+          difficultyTiers: ["hard"],
+          curatedTarget: 26,
+          aiCount: 4,
           seenHashes,
           seenSamples: seenQuestions.slice(-80),
           flowSeed: Math.floor(Math.random() * 1_000_000),
