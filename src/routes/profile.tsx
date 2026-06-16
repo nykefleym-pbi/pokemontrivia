@@ -151,6 +151,17 @@ function ProfilePage() {
 
   const xpPct = xpProg.need > 0 ? Math.round((xpProg.current / xpProg.need) * 100) : 0;
   const ringCirc = 2 * Math.PI * 30;
+  const winRate = stats.battles > 0 ? Math.round((stats.wins / stats.battles) * 100) : 0;
+  const trainerSince = new Date().toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  const weekStreak = (() => {
+    let n = 0;
+    for (let i = heatmap.length - 1; i >= 0; i--) {
+      if (heatmap[i].count > 0) n++;
+      else break;
+    }
+    return n;
+  })();
+  const todayKey = new Date().toISOString().slice(0, 10);
 
   return (
     <div className="bg-poke-cream h-full w-full overflow-y-auto pb-nav safe-x">
