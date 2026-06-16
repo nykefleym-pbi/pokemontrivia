@@ -83,6 +83,12 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  const darkMode = useGameStore((s) => s.darkMode);
+  useEffect(() => {
+    const root = document.documentElement;
+    if (darkMode) root.classList.add("dark");
+    else root.classList.remove("dark");
+  }, [darkMode]);
   return (
     <div className="h-[100dvh] w-full overflow-hidden bg-background">
       <div className="mx-auto flex h-[100dvh] w-full max-w-[480px] flex-col overflow-hidden bg-background">
@@ -93,3 +99,4 @@ function RootComponent() {
     </div>
   );
 }
+
