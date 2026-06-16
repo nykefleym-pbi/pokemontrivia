@@ -136,6 +136,10 @@ export interface GameState {
   gymBadges: string[];
   weeklyLeagueHistory: WeeklyLeagueAttempt[];
 
+  // preferences
+  darkMode: boolean;
+
+
   // actions
   setOnboarded: (name: string, pokemon: PokeEntry, trainerSprite: string) => void;
   startGuestSession: () => void;
