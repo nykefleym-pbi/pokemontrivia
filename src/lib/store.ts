@@ -111,6 +111,8 @@ export interface GameState {
   // question history (per-device)
   seenQuestionHashes: string[];
   seenQuestions: string[];
+  seenCuratedIds: string[];
+
 
   // achievements / progression flags
   flags: string[];
