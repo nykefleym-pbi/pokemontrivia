@@ -83,6 +83,7 @@ export const Route = createFileRoute("/api/trivia-batch")({
               ? `${aiResult.source}+curated-${curatedResult.questions.length}`
               : aiResult.source,
           curatedCount: curatedResult.questions.length,
+          servedIds: curatedResult.servedIds,
         });
       },
     },
