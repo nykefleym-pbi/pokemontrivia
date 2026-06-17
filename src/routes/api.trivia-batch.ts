@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { generateTrivia } from "@/lib/trivia-core";
-import { fetchCuratedQuestions, recordCuratedServed } from "@/lib/curated-questions";
+import { pickBattleCurated, recordCuratedServed } from "@/lib/curated-questions";
 
 type Difficulty = "easy" | "medium" | "hard" | "expert";
 
