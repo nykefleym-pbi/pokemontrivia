@@ -94,6 +94,7 @@ function BattlePage() {
           difficulty: difficultyForLevel(level),
           seenHashes,
           seenSamples: seenQuestions.slice(-80),
+          excludeIds: seenCuratedIds.slice(-500),
           flowSeed: Math.floor(Math.random() * 1_000_000),
         }),
       });
