@@ -372,6 +372,19 @@ export const useGameStore = create<GameState>()(
         });
       },
 
+      markCuratedSeen: (ids) => {
+        if (ids.length === 0) return;
+        const s = get();
+        const merged = [...s.seenCuratedIds];
+        const have = new Set(merged);
+        for (const id of ids) {
+          if (have.has(id)) continue;
+          have.add(id);
+          merged.push(id);
+        }
+        set({ seenCuratedIds: merged.slice(-MAX_SEEN_CURATED) });
+      },
+
       setOnboarded: (name, pokemon, trainerSprite) =>
         set({ hasOnboarded: true, isGuest: false, trainerName: name, pokemon, trainerSprite }),
 
