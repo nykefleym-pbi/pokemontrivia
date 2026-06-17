@@ -31,7 +31,9 @@ function BattlePage() {
   const defeatedElites = useGameStore((s) => s.defeatedElites);
   const seenHashes = useGameStore((s) => s.seenQuestionHashes);
   const seenQuestions = useGameStore((s) => s.seenQuestions);
+  const seenCuratedIds = useGameStore((s) => s.seenCuratedIds);
   const markQuestionsSeen = useGameStore((s) => s.markQuestionsSeen);
+  const markCuratedSeen = useGameStore((s) => s.markCuratedSeen);
   const navigate = useNavigate();
   const search = Route.useSearch();
   const [phase, setPhase] = useState<"home" | "loading" | "fighting" | "daily" | "elite" | "weekly">("home");
@@ -92,18 +94,20 @@ function BattlePage() {
           difficulty: difficultyForLevel(level),
           seenHashes,
           seenSamples: seenQuestions.slice(-80),
+          excludeIds: seenCuratedIds.slice(-500),
           flowSeed: Math.floor(Math.random() * 1_000_000),
         }),
       });
       if (resp.status === 429) { toast.error("Rate limited. Please wait a moment."); setPhase("home"); return; }
       if (resp.status === 402) { toast.error("AI credits exhausted. Add credits in Settings."); setPhase("home"); return; }
-      const data = (await resp.json()) as { questions: Trivia[] };
+      const data = (await resp.json()) as { questions: Trivia[]; servedIds?: string[] };
       if (!data.questions || data.questions.length < 5) {
         toast.error("Couldn't prepare battle. Try again.");
         setPhase("home");
         return;
       }
       markQuestionsSeen(data.questions.map((q) => q.question));
+      markCuratedSeen(data.servedIds ?? []);
       setQuestions(data.questions);
       setPhase("fighting");
     } catch (e) {

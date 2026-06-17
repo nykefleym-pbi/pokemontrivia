@@ -8,6 +8,7 @@ import { pickRandomGymLeader } from "./gym-leaders";
 
 const MAX_SEEN_HASHES = 500;
 const MAX_SEEN_TEXTS = 200;
+const MAX_SEEN_CURATED = 500;
 
 export function normalizeQuestion(s: string): string {
   return s
@@ -110,6 +111,8 @@ export interface GameState {
   // question history (per-device)
   seenQuestionHashes: string[];
   seenQuestions: string[];
+  seenCuratedIds: string[];
+
 
   // achievements / progression flags
   flags: string[];
@@ -148,6 +151,7 @@ export interface GameState {
   setPokemon: (p: PokeEntry) => void;
   setTrainerSprite: (id: string) => void;
   markQuestionsSeen: (texts: string[]) => void;
+  markCuratedSeen: (ids: string[]) => void;
 
   buyItem: (id: ItemId, cost: number) => boolean;
   useItem: (id: ItemId) => boolean;
@@ -232,6 +236,7 @@ export const useGameStore = create<GameState>()(
 
       seenQuestionHashes: [],
       seenQuestions: [],
+      seenCuratedIds: [],
 
       flags: [],
       dailyResult: null,
@@ -367,6 +372,19 @@ export const useGameStore = create<GameState>()(
         });
       },
 
+      markCuratedSeen: (ids) => {
+        if (ids.length === 0) return;
+        const s = get();
+        const merged = [...s.seenCuratedIds];
+        const have = new Set(merged);
+        for (const id of ids) {
+          if (have.has(id)) continue;
+          have.add(id);
+          merged.push(id);
+        }
+        set({ seenCuratedIds: merged.slice(-MAX_SEEN_CURATED) });
+      },
+
       setOnboarded: (name, pokemon, trainerSprite) =>
         set({ hasOnboarded: true, isGuest: false, trainerName: name, pokemon, trainerSprite }),
 
@@ -404,6 +422,7 @@ export const useGameStore = create<GameState>()(
           luckyEggActive: false,
           seenQuestionHashes: [],
           seenQuestions: [],
+          seenCuratedIds: [],
           flags: [],
           dailyResult: null,
           battleLog: [],
@@ -615,6 +634,7 @@ export const useGameStore = create<GameState>()(
         itemCooldowns: s.itemCooldowns,
         seenQuestionHashes: s.seenQuestionHashes,
         seenQuestions: s.seenQuestions,
+        seenCuratedIds: s.seenCuratedIds,
         flags: s.flags,
         dailyResult: s.dailyResult,
         battleLog: s.battleLog,

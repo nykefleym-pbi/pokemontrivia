@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { generateTrivia } from "@/lib/trivia-core";
-import { fetchCuratedQuestions, recordCuratedServed } from "@/lib/curated-questions";
+import { pickBattleCurated, recordCuratedServed } from "@/lib/curated-questions";
 
 type Difficulty = "easy" | "medium" | "hard" | "expert";
 
@@ -11,12 +11,14 @@ export const Route = createFileRoute("/api/trivia-batch")({
         let difficulty: Difficulty = "easy";
         let seenHashes: string[] = [];
         let seenSamples: string[] = [];
+        let excludeIds: string[] = [];
         let flowSeed = Math.floor(Math.random() * 1_000_000);
         try {
           const body = (await request.json()) as {
             difficulty?: string;
             seenHashes?: string[];
             seenSamples?: string[];
+            excludeIds?: string[];
             flowSeed?: number;
           };
           if (body.difficulty && ["easy", "medium", "hard", "expert"].includes(body.difficulty)) {
@@ -24,6 +26,7 @@ export const Route = createFileRoute("/api/trivia-batch")({
           }
           if (Array.isArray(body.seenHashes)) seenHashes = body.seenHashes.slice(-500);
           if (Array.isArray(body.seenSamples)) seenSamples = body.seenSamples.slice(-80);
+          if (Array.isArray(body.excludeIds)) excludeIds = body.excludeIds.slice(-500);
           if (typeof body.flowSeed === "number") flowSeed = body.flowSeed;
         } catch {
           /* defaults */
@@ -32,9 +35,10 @@ export const Route = createFileRoute("/api/trivia-batch")({
         const TOTAL = 20;
         const CURATED_TARGET = 18;
 
-        const curatedResult = await fetchCuratedQuestions({
+        const curatedResult = await pickBattleCurated({
           difficulty,
           count: CURATED_TARGET,
+          excludeIds,
         });
 
         const aiCount = Math.max(0, TOTAL - curatedResult.questions.length);
@@ -60,6 +64,7 @@ export const Route = createFileRoute("/api/trivia-batch")({
               questions: onlyCurated,
               source: `curated-only-${curatedResult.questions.length}`,
               curatedCount: curatedResult.questions.length,
+              servedIds: curatedResult.servedIds,
             });
           }
           return Response.json({ error: aiResult.error, code: aiResult.status }, { status: aiResult.status });
@@ -78,6 +83,7 @@ export const Route = createFileRoute("/api/trivia-batch")({
               ? `${aiResult.source}+curated-${curatedResult.questions.length}`
               : aiResult.source,
           curatedCount: curatedResult.questions.length,
+          servedIds: curatedResult.servedIds,
         });
       },
     },
