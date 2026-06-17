@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { generateTrivia, type TriviaPayload } from "@/lib/trivia-core";
 import { curatedSupabase as supabase } from "@/lib/curated-client";
+import { recordCuratedServed } from "@/lib/curated-questions";
 
-// daily_questions table + insert_daily_if_absent RPC are not in the generated
-// Supabase types yet, so use an untyped handle for those two calls.
+// daily_questions table + RPCs are not in the generated Supabase types.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const sb = supabase as any;
 
@@ -17,6 +17,15 @@ function todayUTC(): string {
 
 function dateSeed(date: string): number {
   return parseInt(date.replace(/-/g, ""), 10);
+}
+
+interface CuratedRow {
+  id: string;
+  question: string;
+  options: string[];
+  correct_index: number;
+  explanation: string;
+  category: string;
 }
 
 const cache = new Map<string, TriviaPayload[]>();
@@ -49,25 +58,63 @@ async function getDaily(date: string): Promise<TriviaPayload[]> {
       return existing;
     }
 
-    const seed = dateSeed(date);
-    const [easy, medium] = await Promise.all([
-      generateTrivia({ difficulty: "easy", flowSeed: seed, seenHashes: [], seenSamples: [], batchSize: 3 }),
-      generateTrivia({ difficulty: "medium", flowSeed: seed + 1, seenHashes: [], seenSamples: [], batchSize: 7 }),
-    ]);
-    const generated = [...easy.questions, ...medium.questions]
+    // Pull today's 10 from the curated bank, excluding questions used in the
+    // last 50 daily sets (no repeat until ~500 unique dailies have passed).
+    let curated: CuratedRow[] = [];
+    try {
+      const { data, error } = await sb.rpc("pick_daily_curated", {
+        p_easy: 3,
+        p_medium: 7,
+        p_window: 50,
+      });
+      if (!error && Array.isArray(data)) curated = data as CuratedRow[];
+    } catch {
+      /* fall through to fallback top-up */
+    }
+
+    const servedIds = curated.map((r) => r.id);
+    let questions: TriviaPayload[] = curated.map((r) => ({
+      question: r.question,
+      options: r.options,
+      correct: r.correct_index,
+      explanation: r.explanation,
+      category: r.category,
+    }));
+
+    // Top up from AI / bundled fallback only if curated came up short.
+    if (questions.length < 10) {
+      const need = 10 - questions.length;
+      const top = await generateTrivia({
+        difficulty: "easy",
+        flowSeed: dateSeed(date),
+        seenHashes: [],
+        seenSamples: questions.map((q) => q.question),
+        batchSize: need,
+      });
+      questions = [...questions, ...top.questions];
+    }
+
+    // Shuffle so easy/medium aren't grouped; cap at 10.
+    questions = questions
       .map((q) => ({ q, sort: Math.random() }))
       .sort((a, b) => a.sort - b.sort)
       .map(({ q }) => q)
       .slice(0, 10);
 
-    if (generated.length < 5) return generated;
+    if (questions.length < 5) return questions;
 
     try {
-      await sb.rpc("insert_daily_if_absent", { p_date: date, p_questions: generated });
+      await sb.rpc("insert_daily_if_absent", {
+        p_date: date,
+        p_questions: questions,
+        p_served_ids: servedIds,
+      });
     } catch {
       /* non-fatal */
     }
-    const authoritative = (await readDaily(date)) ?? generated;
+    await recordCuratedServed(servedIds).catch(() => {});
+
+    const authoritative = (await readDaily(date)) ?? questions;
     cache.set(date, authoritative);
     return authoritative;
   })();
