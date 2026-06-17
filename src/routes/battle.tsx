@@ -490,7 +490,7 @@ function ElitePendingTakeover({
   loading: boolean;
 }) {
   return (
-    <div className="bg-elite-arena relative flex h-full w-full flex-col overflow-y-auto px-5 pb-[calc(env(safe-area-inset-bottom)+5rem)] pt-[calc(env(safe-area-inset-top)+1.5rem)] safe-x">
+    <div className="bg-elite-arena relative flex h-full w-full flex-col overflow-y-auto pl-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))] pb-[calc(env(safe-area-inset-bottom)+5rem)] pt-[calc(env(safe-area-inset-top)+1.5rem)]">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-poke-dark/40 via-transparent to-poke-dark/70" />
 
       <motion.div
