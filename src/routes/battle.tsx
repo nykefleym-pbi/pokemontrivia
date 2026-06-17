@@ -161,6 +161,7 @@ function BattlePage() {
         setPhase("home");
         return;
       }
+      markQuestionsSeen(data.questions.map((q) => q.question));
       setQuestions(data.questions);
       setPhase("daily");
     } catch (e) {
