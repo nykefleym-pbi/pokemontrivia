@@ -31,7 +31,9 @@ function BattlePage() {
   const defeatedElites = useGameStore((s) => s.defeatedElites);
   const seenHashes = useGameStore((s) => s.seenQuestionHashes);
   const seenQuestions = useGameStore((s) => s.seenQuestions);
+  const seenCuratedIds = useGameStore((s) => s.seenCuratedIds);
   const markQuestionsSeen = useGameStore((s) => s.markQuestionsSeen);
+  const markCuratedSeen = useGameStore((s) => s.markCuratedSeen);
   const navigate = useNavigate();
   const search = Route.useSearch();
   const [phase, setPhase] = useState<"home" | "loading" | "fighting" | "daily" | "elite" | "weekly">("home");
