@@ -1845,7 +1845,7 @@ function DailyResultScreen({
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex h-full w-full flex-col items-center justify-center overflow-y-auto bg-poke-hero px-6 py-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)] safe-x"
+      className="flex h-full w-full flex-col items-center justify-center overflow-y-auto bg-poke-hero pl-[max(1.5rem,env(safe-area-inset-left))] pr-[max(1.5rem,env(safe-area-inset-right))] py-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)]"
     >
       <div className="rounded-full bg-poke-yellow px-3 py-1 font-pixel-xs uppercase text-foreground">
         Daily Challenge · {date}
