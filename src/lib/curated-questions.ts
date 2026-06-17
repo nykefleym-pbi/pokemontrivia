@@ -83,6 +83,40 @@ export async function fetchCuratedQuestions(opts: FetchCuratedOpts): Promise<{
   }
 }
 
+export async function pickBattleCurated(opts: {
+  difficulty: CuratedDifficulty;
+  count: number;
+  excludeIds?: string[];
+}): Promise<{ questions: TriviaPayload[]; servedIds: string[] }> {
+  const { difficulty, count, excludeIds = [] } = opts;
+  if (count <= 0) return { questions: [], servedIds: [] };
+  try {
+    const { data, error } = await supabase.rpc("pick_battle_curated", {
+      p_difficulty: difficulty,
+      p_count: count,
+      p_exclude: excludeIds,
+    });
+    if (error || !Array.isArray(data)) {
+      console.warn("pick_battle_curated failed:", error?.message);
+      return { questions: [], servedIds: [] };
+    }
+    const rows = data as unknown as CuratedRow[];
+    return {
+      questions: rows.map((r) => ({
+        question: r.question,
+        options: r.options,
+        correct: r.correct_index,
+        explanation: r.explanation,
+        category: r.category,
+      })),
+      servedIds: rows.map((r) => r.id),
+    };
+  } catch (e) {
+    console.warn("pick_battle_curated failed:", e);
+    return { questions: [], servedIds: [] };
+  }
+}
+
 export async function recordCuratedServed(ids: string[]) {
   if (ids.length === 0) return;
   try {
