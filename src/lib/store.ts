@@ -8,6 +8,7 @@ import { pickRandomGymLeader } from "./gym-leaders";
 
 const MAX_SEEN_HASHES = 500;
 const MAX_SEEN_TEXTS = 200;
+const MAX_SEEN_CURATED = 500;
 
 export function normalizeQuestion(s: string): string {
   return s
