@@ -151,6 +151,7 @@ export interface GameState {
   setPokemon: (p: PokeEntry) => void;
   setTrainerSprite: (id: string) => void;
   markQuestionsSeen: (texts: string[]) => void;
+  markCuratedSeen: (ids: string[]) => void;
 
   buyItem: (id: ItemId, cost: number) => boolean;
   useItem: (id: ItemId) => boolean;
