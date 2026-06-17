@@ -236,6 +236,7 @@ export const useGameStore = create<GameState>()(
 
       seenQuestionHashes: [],
       seenQuestions: [],
+      seenCuratedIds: [],
 
       flags: [],
       dailyResult: null,
