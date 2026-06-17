@@ -634,6 +634,7 @@ export const useGameStore = create<GameState>()(
         itemCooldowns: s.itemCooldowns,
         seenQuestionHashes: s.seenQuestionHashes,
         seenQuestions: s.seenQuestions,
+        seenCuratedIds: s.seenCuratedIds,
         flags: s.flags,
         dailyResult: s.dailyResult,
         battleLog: s.battleLog,
