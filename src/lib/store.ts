@@ -422,6 +422,7 @@ export const useGameStore = create<GameState>()(
           luckyEggActive: false,
           seenQuestionHashes: [],
           seenQuestions: [],
+          seenCuratedIds: [],
           flags: [],
           dailyResult: null,
           battleLog: [],
