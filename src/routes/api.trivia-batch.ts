@@ -64,6 +64,7 @@ export const Route = createFileRoute("/api/trivia-batch")({
               questions: onlyCurated,
               source: `curated-only-${curatedResult.questions.length}`,
               curatedCount: curatedResult.questions.length,
+              servedIds: curatedResult.servedIds,
             });
           }
           return Response.json({ error: aiResult.error, code: aiResult.status }, { status: aiResult.status });
