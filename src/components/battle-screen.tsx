@@ -204,6 +204,9 @@ function BattleMode({
   const bonusTime = useGameStore((s) => s.bonusTimeThisBattle);
   const inventory = useGameStore((s) => s.inventory);
   const usedThisBattle = useGameStore((s) => s.usedThisBattle);
+  const tryAutoFocusBand = useGameStore((s) => s.tryAutoFocusBand);
+  const tryAutoQuickClaw = useGameStore((s) => s.tryAutoQuickClaw);
+  const tryAutoAssaultVest = useGameStore((s) => s.tryAutoAssaultVest);
   const raiseFlag = useGameStore((s) => s.raiseFlag);
   const pushBattleLog = useGameStore((s) => s.pushBattleLog);
   const recordPokedexCapture = useGameStore((s) => s.recordPokedexCapture);
@@ -301,6 +304,7 @@ function BattleMode({
     () => isPlayerImmune(player, enemy.pokemon),
     [player, enemy.pokemon],
   );
+  const assaultVestActiveRef = useRef(false);
 
   // Phase 2: ability + status state
   type StatusKind = "confused" | "poisoned";
@@ -479,6 +483,15 @@ function BattleMode({
     }
   }
 
+  // Assault Vest: auto-activate at battle start when the foe is super-effective against the partner
+  useEffect(() => {
+    if (disadvantaged && tryAutoAssaultVest()) {
+      assaultVestActiveRef.current = true;
+      toast.success("🦺 Assault Vest — damage halved this battle!");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // timer
   useEffect(() => {
     if (phase !== "question") return;
@@ -492,6 +505,17 @@ function BattleMode({
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, timer, confirmExit, tutorialStep]);
+
+  // Quick Claw: auto-reset the timer to 20s when it drops below 5s (once per battle)
+  useEffect(() => {
+    if (phase === "question" && timer > 0 && timer < 5) {
+      if (tryAutoQuickClaw()) {
+        setTimer(20);
+        toast.success("⏱️ Quick Claw — timer reset to 20s!");
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timer, phase]);
 
   // Trigger tutorial on first 3 questions
   useEffect(() => {
@@ -679,6 +703,7 @@ function BattleMode({
       let wrongDmg = 10;
       if (immune) wrongDmg = 5;
       else if (disadvantaged) wrongDmg = 15;
+      if (assaultVestActiveRef.current) wrongDmg = Math.floor(wrongDmg / 2);
 
       // Ability modifiers (in spec order)
       if (playerAbility.id === "multiscale" && playerHp === playerMaxHp) {
@@ -725,6 +750,12 @@ function BattleMode({
         newPlayerHp = 1;
         abilityStateRef.current.sturdyUsed = true;
         triggerAbilityToast(playerAbility);
+      }
+
+      // Focus Band: auto-heal to 50% when HP is 10 or below (once per week)
+      if (newPlayerHp <= 10 && tryAutoFocusBand()) {
+        newPlayerHp = Math.round(playerMaxHp * 0.5);
+        toast.success("🎽 Focus Band — restored to 50% HP!");
       }
 
       setPlayerHp(newPlayerHp);
@@ -944,6 +975,12 @@ function BattleMode({
     toast.success(`${def.emoji} Used ${def.name}!`);
     if (id === "potion") {
       setPlayerHp((hp) => Math.min(playerMaxHp, hp + 30));
+    }
+    if (id === "superpotion") {
+      setPlayerHp((hp) => Math.min(playerMaxHp, hp + 60));
+    }
+    if (id === "maxpotion") {
+      setPlayerHp(playerMaxHp);
     }
     if (id === "scope" && trivia) {
       const wrongs = [0, 1, 2, 3].filter((w) => w !== trivia.correct);
@@ -1256,7 +1293,9 @@ function BattleMode({
                         {ITEMS.map((it) => {
                           const owned = inventory[it.id] ?? 0;
                           const used = usedThisBattle[it.id] ?? false;
-                          const disabled = owned <= 0 || used || (isWeekly && it.id === "escape");
+                          const isAuto =
+                            it.id === "focusband" || it.id === "quickclaw" || it.id === "assaultvest";
+                          const disabled = isAuto || owned <= 0 || used || (isWeekly && it.id === "escape");
                           return (
                             <button
                               key={it.id}
@@ -1286,7 +1325,8 @@ function BattleMode({
                                 <div className="text-[10px] leading-tight text-muted-foreground">
                                   {it.desc}
                                 </div>
-                                {used && <div className="text-[10px] text-destructive">Used this battle</div>}
+                                {isAuto && <div className="text-[10px] text-primary">Auto-activates</div>}
+                                {used && !isAuto && <div className="text-[10px] text-destructive">Used this battle</div>}
                               </div>
                             </button>
                           );
@@ -1294,7 +1334,13 @@ function BattleMode({
                       </div>
                     </SheetContent>
                   </Sheet>
-                  {ITEMS.filter((it) => (inventory[it.id] ?? 0) > 0)
+                  {ITEMS.filter(
+                    (it) =>
+                      (inventory[it.id] ?? 0) > 0 &&
+                      it.id !== "focusband" &&
+                      it.id !== "quickclaw" &&
+                      it.id !== "assaultvest",
+                  )
                     .slice(0, 3)
                     .map((it) => {
                       const owned = inventory[it.id] ?? 0;
