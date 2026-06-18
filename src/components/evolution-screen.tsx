@@ -2,8 +2,13 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PokemonSprite } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
+import { Share2 } from "lucide-react";
 import { playSfx, playCry } from "@/lib/audio";
 import type { PokeEntry } from "@/lib/pokemon-data";
+import { useGameStore } from "@/lib/store";
+import { trainerSpriteUrl, rankForLevel } from "@/lib/game-data";
+import { ShareCardDialog } from "@/components/share-card-dialog";
+import type { ShareData } from "@/components/share-card-builder";
 
 interface Props {
   from: PokeEntry;
