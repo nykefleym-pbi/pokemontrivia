@@ -220,6 +220,165 @@ export async function buildShareCard(data: ShareData): Promise<string> {
   return canvas.toDataURL("image/png");
 }
 
+async function buildEvolutionCard(data: EvolutionShareData): Promise<string> {
+  const W = CARD_SIZE;
+  const H = CARD_SIZE;
+  const headerH = 400;
+  const DARK = "#23252f";
+  const GREEN = "#3f9d5a";
+  const PURPLE = "#6f5bd6";
+  const GRAYLBL = "#7d7f8a";
+
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d")!;
+
+  ctx.save();
+  roundRectPath(ctx, 0, 0, W, H, 56);
+  ctx.clip();
+
+  const hg = ctx.createLinearGradient(0, 0, W, headerH);
+  hg.addColorStop(0, "#7e62d8");
+  hg.addColorStop(1, "#4a3a9e");
+  ctx.fillStyle = hg;
+  ctx.fillRect(0, 0, W, headerH);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, headerH, W, H - headerH);
+
+  const ag = ctx.createRadialGradient(124, 196, 10, 124, 196, 150);
+  ag.addColorStop(0, "rgba(255,255,255,0.16)");
+  ag.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = ag;
+  ctx.fillRect(0, 40, 360, 360);
+
+  ctx.textBaseline = "alphabetic";
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#ffffff";
+  ctx.font = `700 27px ${SYSTEM_FONT}`;
+  drawTrackedText(ctx, "POKÉMON TRIVIA BATTLE", 60, 76, 2);
+  ctx.textAlign = "right";
+  ctx.fillStyle = "#f2d64e";
+  ctx.font = `800 27px ${SYSTEM_FONT}`;
+  drawTrackedText(ctx, "✦ EVOLVED", W - 60, 76, 2, "right");
+
+  const aD = 128;
+  const aCX = 124;
+  const aCY = 196;
+  await drawCircleImage(ctx, data.trainerSpriteUrl, aCX, aCY, aD);
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#ffffff";
+  ctx.font = `800 54px ${SYSTEM_FONT}`;
+  ctx.fillText(truncate(data.trainerName, 12), aCX + aD / 2 + 26, 188);
+  ctx.fillStyle = "rgba(255,255,255,0.82)";
+  ctx.font = `700 23px ${SYSTEM_FONT}`;
+  drawTrackedText(ctx, `LV ${data.level} · ${data.rank.toUpperCase()}`, aCX + aD / 2 + 26, 226, 1.5);
+
+  const toSize = 290;
+  const toX = 640;
+  const toY = 150;
+  const toCX = toX + toSize / 2;
+  const toCY = toY + toSize / 2;
+  const tg = ctx.createRadialGradient(toCX, toCY - 10, 30, toCX, toCY - 10, toSize * 0.6);
+  tg.addColorStop(0, "rgba(245,214,78,0.45)");
+  tg.addColorStop(1, "rgba(245,214,78,0)");
+  ctx.fillStyle = tg;
+  ctx.fillRect(toCX - toSize, toCY - toSize, toSize * 2, toSize * 2);
+
+  ctx.globalAlpha = 0.82;
+  await drawPokemonSprite(ctx, data.fromPokemonId, false, 300, 235, 150);
+  ctx.globalAlpha = 1;
+
+  ctx.fillStyle = "#f2d64e";
+  ctx.font = `800 64px ${SYSTEM_FONT}`;
+  ctx.textAlign = "center";
+  ctx.fillText("→", 508, 332);
+
+  await drawPokemonSprite(ctx, data.toPokemonId, data.toShiny, toX, toY, toSize);
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = DARK;
+  ctx.font = `800 50px ${SYSTEM_FONT}`;
+  ctx.fillText(`${truncate(data.fromName, 12)} evolved into ${truncate(data.toName, 12)}!`, W / 2, 540);
+  ctx.fillStyle = "#6f7280";
+  ctx.font = `500 27px ${SYSTEM_FONT}`;
+  ctx.fillText(formatDate(data.dateISO), W / 2, 584);
+
+  ctx.textAlign = "left";
+  ctx.fillStyle = GRAYLBL;
+  ctx.font = `700 22px ${SYSTEM_FONT}`;
+  drawTrackedText(ctx, "CAREER STATS", 60, 640, 1.5);
+  const hchars = [..."CAREER STATS"];
+  const headW = hchars.map((c) => ctx.measureText(c).width).reduce((a, b) => a + b, 0) + 1.5 * (hchars.length - 1);
+  ctx.strokeStyle = "#e6e8ec";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(60 + headW + 24, 633);
+  ctx.lineTo(W - 60, 633);
+  ctx.stroke();
+
+  const winRate = data.statBattles > 0 ? Math.round((data.statWins / data.statBattles) * 100) : 0;
+  const accuracy = data.statAnswered > 0 ? Math.round((data.statCorrect / data.statAnswered) * 100) : 0;
+  const avgTime = data.statAnswered > 0 ? `${(data.statTotalAnswerTime / data.statAnswered / 1000).toFixed(1)}s` : "—s";
+  const chips = [
+    { v: `${data.statBattles}`, l: "BATTLES", c: DARK },
+    { v: `${data.statWins}`, l: "WINS", c: GREEN },
+    { v: `${data.statLosses}`, l: "LOSSES", c: DARK },
+    { v: `${winRate}%`, l: "WIN RATE", c: GREEN },
+    { v: `${data.statBestStreak}🔥`, l: "BEST STREAK", c: DARK },
+    { v: `${accuracy}%`, l: "ACCURACY", c: PURPLE },
+    { v: avgTime, l: "AVG TIME", c: DARK },
+    { v: `${data.statAnswered}`, l: "QUESTIONS", c: DARK },
+    { v: `${data.statCorrect}`, l: "CORRECT", c: DARK },
+  ];
+  const gx0 = 60;
+  const gap = 18;
+  const cw = (W - 120 - gap * 2) / 3;
+  const ch = 98;
+  const rgap = 12;
+  const gy0 = 664;
+  chips.forEach((chip, i) => {
+    const col = i % 3;
+    const row = Math.floor(i / 3);
+    const cx = gx0 + col * (cw + gap);
+    const cy = gy0 + row * (ch + rgap);
+    ctx.fillStyle = "#f1f2f5";
+    roundRectPath(ctx, cx, cy, cw, ch, 18);
+    ctx.fill();
+    ctx.textAlign = "center";
+    ctx.fillStyle = chip.c;
+    ctx.font = `800 40px ${SYSTEM_FONT}`;
+    ctx.fillText(chip.v, cx + cw / 2, cy + 56);
+    ctx.fillStyle = GRAYLBL;
+    ctx.font = `700 18px ${SYSTEM_FONT}`;
+    drawTrackedText(ctx, chip.l, cx + cw / 2, cy + 82, 1.2, "center");
+  });
+
+  const gridBottom = gy0 + 3 * ch + 2 * rgap;
+  ctx.strokeStyle = "#cfd2da";
+  ctx.lineWidth = 2;
+  ctx.setLineDash([2, 10]);
+  ctx.beginPath();
+  ctx.moveTo(60, gridBottom + 30);
+  ctx.lineTo(W - 60, gridBottom + 30);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  const fy = gridBottom + 72;
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#6f7280";
+  ctx.font = `700 22px ${SYSTEM_FONT}`;
+  drawTrackedText(ctx, "◓ PLAY.POKETRIVIA.APP", 60, fy, 1.5);
+  ctx.textAlign = "right";
+  ctx.fillStyle = PURPLE;
+  ctx.font = `800 22px ${SYSTEM_FONT}`;
+  drawTrackedText(ctx, "CATCH UP ›", W - 60, fy, 1.5, "right");
+
+  ctx.restore();
+  return canvas.toDataURL("image/png");
+}
+
 // ---------- helpers ----------
 
 function roundRectPath(
