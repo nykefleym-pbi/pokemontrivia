@@ -53,6 +53,9 @@ const SYSTEM_FONT =
   "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
 export async function buildShareCard(data: ShareData): Promise<string> {
+  if (data.type === "evolution") {
+    return buildEvolutionCard(data);
+  }
   const W = CARD_SIZE;
   const H = CARD_SIZE;
   const canvas = document.createElement("canvas");
