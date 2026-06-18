@@ -102,11 +102,12 @@ export interface GameState {
   inBattle: boolean;
   battleScreenActive: boolean;
   setsThisBattle: number;
-  potionsUsedThisBattle: number;
+  usedThisBattle: Partial<Record<ItemId, boolean>>;
   xAttackActive: boolean;
   scopeRevealedThisBattle: boolean;
   bonusTimeThisBattle: number;
-  luckyEggActive: boolean;
+  luckyEggExpiresAt: number;
+  luckyEggUsedWeek: number;
 
   // question history (per-device)
   seenQuestionHashes: string[];
@@ -200,7 +201,6 @@ const defaultStats: PlayerStats = {
 
 const defaultInventory: Record<ItemId, number> = {
   potion: 2,
-  revive: 1,
   xattack: 1,
   escape: 1,
   candy: 0,
@@ -228,11 +228,12 @@ export const useGameStore = create<GameState>()(
       battleScreenActive: false,
       setBattleScreenActive: (v) => set({ battleScreenActive: v }),
       setsThisBattle: 0,
-      potionsUsedThisBattle: 0,
+      usedThisBattle: {},
       xAttackActive: false,
       scopeRevealedThisBattle: false,
       bonusTimeThisBattle: 0,
-      luckyEggActive: false,
+      luckyEggExpiresAt: 0,
+      luckyEggUsedWeek: 0,
 
       seenQuestionHashes: [],
       seenQuestions: [],
@@ -415,11 +416,12 @@ export const useGameStore = create<GameState>()(
           itemCooldowns: {},
           inBattle: false,
           setsThisBattle: 0,
-          potionsUsedThisBattle: 0,
+          usedThisBattle: {},
           xAttackActive: false,
           scopeRevealedThisBattle: false,
           bonusTimeThisBattle: 0,
-          luckyEggActive: false,
+          luckyEggExpiresAt: 0,
+          luckyEggUsedWeek: 0,
           seenQuestionHashes: [],
           seenQuestions: [],
           seenCuratedIds: [],
@@ -458,33 +460,35 @@ export const useGameStore = create<GameState>()(
         const s = get();
         const have = s.inventory[id] ?? 0;
         if (have <= 0) return false;
-        const cd = s.itemCooldowns[id] ?? 0;
-        if (cd > 0) return false;
 
-        // Per-battle constraints
-        if (id === "potion" && s.potionsUsedThisBattle >= 2) return false;
+        // Once-per-battle items
+        const ONCE_PER_BATTLE: ItemId[] = ["potion", "xattack", "scope", "xaccuracy", "escape"];
+        if (ONCE_PER_BATTLE.includes(id) && s.usedThisBattle[id]) return false;
+
+        // Lucky Egg: one activation per week (Monday 00:00 UTC reset)
+        if (id === "luckyegg") {
+          const { start } = getWeekRangeUtc();
+          if (s.luckyEggUsedWeek === start) return false;
+        }
 
         const nextInventory = { ...s.inventory, [id]: have - 1 };
-        const nextCooldowns: Partial<Record<ItemId, number>> = { ...s.itemCooldowns };
-
-        // Set cooldowns (in completed sets)
-        if (id === "xattack") nextCooldowns.xattack = 1;
-        if (id === "scope") nextCooldowns.scope = 1;
+        const nextUsed = ONCE_PER_BATTLE.includes(id)
+          ? { ...s.usedThisBattle, [id]: true }
+          : s.usedThisBattle;
 
         set({
           inventory: nextInventory,
-          itemCooldowns: nextCooldowns,
-          potionsUsedThisBattle:
-            id === "potion" ? s.potionsUsedThisBattle + 1 : s.potionsUsedThisBattle,
+          usedThisBattle: nextUsed,
           xAttackActive: id === "xattack" ? true : s.xAttackActive,
-          scopeRevealedThisBattle: id === "scope" ? true : s.scopeRevealedThisBattle,
-          bonusTimeThisBattle:
-            id === "xaccuracy" ? s.bonusTimeThisBattle + 5 : s.bonusTimeThisBattle,
-          luckyEggActive: id === "luckyegg" ? true : s.luckyEggActive,
+          luckyEggExpiresAt:
+            id === "luckyegg" ? Date.now() + 24 * 60 * 60 * 1000 : s.luckyEggExpiresAt,
+          luckyEggUsedWeek:
+            id === "luckyegg" ? getWeekRangeUtc().start : s.luckyEggUsedWeek,
         });
 
         if (id === "candy") {
-          get().addXp(50);
+          const p = get().pokemon;
+          if (p) get().addTrainingPoints(p.id, 50);
         }
         return true;
       },
@@ -493,7 +497,7 @@ export const useGameStore = create<GameState>()(
         set({
           inBattle: true,
           setsThisBattle: 0,
-          potionsUsedThisBattle: 0,
+          usedThisBattle: {},
           xAttackActive: false,
           scopeRevealedThisBattle: false,
           bonusTimeThisBattle: 0,
@@ -502,7 +506,6 @@ export const useGameStore = create<GameState>()(
       abortBattle: () =>
         set({
           inBattle: false,
-          luckyEggActive: false,
           xAttackActive: false,
           scopeRevealedThisBattle: false,
           bonusTimeThisBattle: 0,
@@ -510,14 +513,13 @@ export const useGameStore = create<GameState>()(
 
       endBattle: (won, xpGained) => {
         const s = get();
-        const finalXp = s.luckyEggActive ? xpGained * 2 : xpGained;
+        const finalXp = xpGained;
         set({
           inBattle: false,
-          luckyEggActive: false,
           xAttackActive: false,
           scopeRevealedThisBattle: false,
           bonusTimeThisBattle: 0,
-          potionsUsedThisBattle: 0,
+          usedThisBattle: {},
           stats: {
             ...s.stats,
             battles: s.stats.battles + 1,
@@ -530,7 +532,8 @@ export const useGameStore = create<GameState>()(
 
       addXp: (amount) => {
         const s = get();
-        const newXp = s.xp + amount;
+        const mult = Date.now() < s.luckyEggExpiresAt ? 2 : 1;
+        const newXp = s.xp + amount * mult;
         const newLevel = levelFromTotalXp(newXp);
         const newPeak = Math.max(s.peakLevel, newLevel);
         set({ xp: newXp, level: newLevel, peakLevel: newPeak });
@@ -632,6 +635,8 @@ export const useGameStore = create<GameState>()(
         stats: s.stats,
         inventory: s.inventory,
         itemCooldowns: s.itemCooldowns,
+        luckyEggExpiresAt: s.luckyEggExpiresAt,
+        luckyEggUsedWeek: s.luckyEggUsedWeek,
         seenQuestionHashes: s.seenQuestionHashes,
         seenQuestions: s.seenQuestions,
         seenCuratedIds: s.seenCuratedIds,

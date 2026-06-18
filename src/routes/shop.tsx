@@ -23,7 +23,6 @@ type Category = "HEALING" | "BATTLE" | "UTILITY" | "PREMIUM";
 
 const CATEGORY_OF: Record<ItemId, Category> = {
   potion: "HEALING",
-  revive: "HEALING",
   xattack: "BATTLE",
   scope: "BATTLE",
   xaccuracy: "BATTLE",
