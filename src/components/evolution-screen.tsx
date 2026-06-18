@@ -148,13 +148,26 @@ export function EvolutionScreen({ from, to, onComplete }: Props) {
           <div className="mt-1 font-display-lg text-primary">{to.name}!</div>
           <Button
             size="lg"
+            onClick={() => setShareOpen(true)}
+            className="mt-5 h-12 w-full rounded-full bg-poke-yellow font-bold text-poke-dark shadow-pop"
+          >
+            <Share2 className="mr-2 h-5 w-5" /> Share evolution
+          </Button>
+          <Button
+            size="lg"
             onClick={onComplete}
-            className="mt-5 h-12 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
+            className="mt-3 h-12 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
           >
             Continue
           </Button>
         </motion.div>
       )}
+
+      <ShareCardDialog
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        data={shareData}
+      />
     </div>
   );
 }
