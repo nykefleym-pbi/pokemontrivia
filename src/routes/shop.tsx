@@ -45,13 +45,17 @@ const CATEGORIES: Array<{ id: Category; label: string }> = [
 
 const BAG_SHORT_DESC: Record<string, string> = {
   potion: "Restore 30 HP",
-  revive: "Revive to 50 HP",
-  xattack: "2× damage next answer",
+  superpotion: "Restore 60 HP",
+  maxpotion: "Fully restore HP",
+  xattack: "+20 damage next answer",
   scope: "Remove one wrong answer",
-  candy: "+50 TP for your partner",
+  xaccuracy: "Reveal the correct answer",
   escape: "Bail out, no XP lost",
-  xaccuracy: "+5 seconds to your timer",
-  luckyegg: "Double XP this battle",
+  candy: "+50 TP for your partner",
+  luckyegg: "2× XP for 24 hours",
+  focusband: "Auto: clutch heal at low HP",
+  quickclaw: "Auto: timer reset under 5s",
+  assaultvest: "Auto: ½ damage vs bad matchups",
 };
 
 function bagDesc(it: ItemDef): string {
@@ -88,6 +92,9 @@ function ShopPage() {
   const xp = useGameStore((s) => s.xp);
   const inventory = useGameStore((s) => s.inventory);
   const buyItem = useGameStore((s) => s.buyItem);
+  const useItem = useGameStore((s) => s.useItem);
+  const autoItems = useGameStore((s) => s.autoItems);
+  const toggleAutoItem = useGameStore((s) => s.toggleAutoItem);
 
   const [tab, setTab] = useState<Category>("HEALING");
   const [confirmState, setConfirmState] = useState<ConfirmState>(null);
@@ -140,6 +147,21 @@ function ShopPage() {
   }
 
   const ownedInBag = ITEMS.filter((it) => (inventory[it.id] ?? 0) > 0);
+
+  function handleUseFromBag(it: ItemDef) {
+    const ok = useItem(it.id);
+    if (!ok) {
+      toast.error(
+        it.id === "luckyegg"
+          ? "Lucky Egg can only be used once per week."
+          : `Can't use ${it.name} right now.`,
+      );
+      return;
+    }
+    if (it.id === "candy") toast.success("🍬 +50 TP added to your partner!");
+    else if (it.id === "luckyegg") toast.success("🥚 2× XP active for 24 hours!");
+    else toast.success(`Used ${it.name}!`);
+  }
 
   return (
     <div className="bg-poke-cream h-full w-full overflow-y-auto pb-nav safe-x">
@@ -429,6 +451,12 @@ function ShopPage() {
                         <div className="flex flex-col gap-2.5">
                           {group.items.map((it) => {
                             const n = inventory[it.id] ?? 0;
+                            const isUsable = it.id === "candy" || it.id === "luckyegg";
+                            const isAuto =
+                              it.id === "focusband" ||
+                              it.id === "quickclaw" ||
+                              it.id === "assaultvest";
+                            const autoOn = autoItems[it.id] !== false;
                             return (
                               <div
                                 key={it.id}
@@ -445,7 +473,27 @@ function ShopPage() {
                                     {BAG_SHORT_DESC[it.id] ?? it.desc}
                                   </div>
                                 </div>
-                                <div className="shrink-0 font-pixel-xs text-foreground">×{n}</div>
+                                <div className="flex shrink-0 items-center gap-2">
+                                  <span className="font-pixel-xs text-foreground">×{n}</span>
+                                  {isUsable && (
+                                    <button
+                                      onClick={() => handleUseFromBag(it)}
+                                      className="rounded-full bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-sm transition active:scale-95"
+                                    >
+                                      Use
+                                    </button>
+                                  )}
+                                  {isAuto && (
+                                    <button
+                                      onClick={() => toggleAutoItem(it.id)}
+                                      className={`rounded-full px-3 py-1.5 text-xs font-bold shadow-sm transition active:scale-95 ${
+                                        autoOn ? "bg-hp-good text-white" : "bg-muted text-foreground/50"
+                                      }`}
+                                    >
+                                      {autoOn ? "Auto: On" : "Auto: Off"}
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             );
                           })}
