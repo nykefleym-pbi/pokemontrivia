@@ -20,6 +20,32 @@ type Phase = "intro" | "glow" | "morph" | "reveal" | "done";
 
 export function EvolutionScreen({ from, to, onComplete }: Props) {
   const [phase, setPhase] = useState<Phase>("intro");
+  const [shareOpen, setShareOpen] = useState(false);
+  const trainerName = useGameStore((s) => s.trainerName);
+  const trainerSprite = useGameStore((s) => s.trainerSprite);
+  const level = useGameStore((s) => s.level);
+  const stats = useGameStore((s) => s.stats);
+
+  const shareData: ShareData = {
+    type: "evolution",
+    trainerName: trainerName || "Trainer",
+    trainerSpriteUrl: trainerSpriteUrl(trainerSprite),
+    fromPokemonId: from.id,
+    fromName: from.name,
+    toPokemonId: to.id,
+    toName: to.name,
+    toShiny: false,
+    level,
+    rank: rankForLevel(level),
+    statBattles: stats.battles,
+    statWins: stats.wins,
+    statLosses: stats.losses,
+    statBestStreak: stats.bestStreak,
+    statCorrect: stats.correct,
+    statAnswered: stats.answered,
+    statTotalAnswerTime: stats.totalAnswerTime,
+    dateISO: new Date().toISOString().slice(0, 10),
+  };
 
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = [];
