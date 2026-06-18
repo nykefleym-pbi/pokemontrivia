@@ -1,6 +1,6 @@
 import { findPokemon } from "@/lib/pokemon-data";
 
-export interface ShareData {
+export interface BattleShareData {
   type: "elite" | "weekly" | "daily-perfect" | "battle";
   trainerName: string;
   trainerSpriteUrl: string;
@@ -24,6 +24,29 @@ export interface ShareData {
   level?: number;
   rank?: string;
 }
+
+export interface EvolutionShareData {
+  type: "evolution";
+  trainerName: string;
+  trainerSpriteUrl: string;
+  fromPokemonId: number;
+  fromName: string;
+  toPokemonId: number;
+  toName: string;
+  toShiny: boolean;
+  level: number;
+  rank: string;
+  statBattles: number;
+  statWins: number;
+  statLosses: number;
+  statBestStreak: number;
+  statCorrect: number;
+  statAnswered: number;
+  statTotalAnswerTime: number;
+  dateISO: string;
+}
+
+export type ShareData = BattleShareData | EvolutionShareData;
 
 const CARD_SIZE = 1080;
 const SYSTEM_FONT =
