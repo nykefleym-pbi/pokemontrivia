@@ -208,12 +208,17 @@ const defaultStats: PlayerStats = {
 
 const defaultInventory: Record<ItemId, number> = {
   potion: 2,
+  superpotion: 0,
+  maxpotion: 0,
   xattack: 1,
   escape: 1,
   candy: 0,
   luckyegg: 0,
   scope: 1,
   xaccuracy: 1,
+  focusband: 0,
+  quickclaw: 0,
+  assaultvest: 0,
 };
 
 export const useGameStore = create<GameState>()(
