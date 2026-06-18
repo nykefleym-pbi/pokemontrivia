@@ -2,8 +2,13 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PokemonSprite } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
+import { Share2 } from "lucide-react";
 import { playSfx, playCry } from "@/lib/audio";
 import type { PokeEntry } from "@/lib/pokemon-data";
+import { useGameStore } from "@/lib/store";
+import { trainerSpriteUrl, rankForLevel } from "@/lib/game-data";
+import { ShareCardDialog } from "@/components/share-card-dialog";
+import type { ShareData } from "@/components/share-card-builder";
 
 interface Props {
   from: PokeEntry;
@@ -15,6 +20,32 @@ type Phase = "intro" | "glow" | "morph" | "reveal" | "done";
 
 export function EvolutionScreen({ from, to, onComplete }: Props) {
   const [phase, setPhase] = useState<Phase>("intro");
+  const [shareOpen, setShareOpen] = useState(false);
+  const trainerName = useGameStore((s) => s.trainerName);
+  const trainerSprite = useGameStore((s) => s.trainerSprite);
+  const level = useGameStore((s) => s.level);
+  const stats = useGameStore((s) => s.stats);
+
+  const shareData: ShareData = {
+    type: "evolution",
+    trainerName: trainerName || "Trainer",
+    trainerSpriteUrl: trainerSpriteUrl(trainerSprite),
+    fromPokemonId: from.id,
+    fromName: from.name,
+    toPokemonId: to.id,
+    toName: to.name,
+    toShiny: false,
+    level,
+    rank: rankForLevel(level),
+    statBattles: stats.battles,
+    statWins: stats.wins,
+    statLosses: stats.losses,
+    statBestStreak: stats.bestStreak,
+    statCorrect: stats.correct,
+    statAnswered: stats.answered,
+    statTotalAnswerTime: stats.totalAnswerTime,
+    dateISO: new Date().toISOString().slice(0, 10),
+  };
 
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = [];
@@ -117,13 +148,26 @@ export function EvolutionScreen({ from, to, onComplete }: Props) {
           <div className="mt-1 font-display-lg text-primary">{to.name}!</div>
           <Button
             size="lg"
+            onClick={() => setShareOpen(true)}
+            className="mt-5 h-12 w-full rounded-full bg-poke-yellow font-bold text-poke-dark shadow-pop"
+          >
+            <Share2 className="mr-2 h-5 w-5" /> Share evolution
+          </Button>
+          <Button
+            size="lg"
             onClick={onComplete}
-            className="mt-5 h-12 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
+            className="mt-3 h-12 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
           >
             Continue
           </Button>
         </motion.div>
       )}
+
+      <ShareCardDialog
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        data={shareData}
+      />
     </div>
   );
 }
