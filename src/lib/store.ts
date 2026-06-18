@@ -108,6 +108,9 @@ export interface GameState {
   bonusTimeThisBattle: number;
   luckyEggExpiresAt: number;
   luckyEggUsedWeek: number;
+  focusBandUsedWeek: number;
+  assaultVestUsedWeek: number;
+  autoItems: Partial<Record<ItemId, boolean>>;
 
   // question history (per-device)
   seenQuestionHashes: string[];
@@ -156,6 +159,10 @@ export interface GameState {
 
   buyItem: (id: ItemId, cost: number) => boolean;
   useItem: (id: ItemId) => boolean;
+  tryAutoFocusBand: () => boolean;
+  tryAutoQuickClaw: () => boolean;
+  tryAutoAssaultVest: () => boolean;
+  toggleAutoItem: (id: ItemId) => void;
 
   startBattle: () => void;
   endBattle: (won: boolean, xpGained: number) => void;
@@ -201,12 +208,17 @@ const defaultStats: PlayerStats = {
 
 const defaultInventory: Record<ItemId, number> = {
   potion: 2,
+  superpotion: 0,
+  maxpotion: 0,
   xattack: 1,
   escape: 1,
   candy: 0,
   luckyegg: 0,
   scope: 1,
   xaccuracy: 1,
+  focusband: 0,
+  quickclaw: 0,
+  assaultvest: 0,
 };
 
 export const useGameStore = create<GameState>()(
@@ -234,6 +246,9 @@ export const useGameStore = create<GameState>()(
       bonusTimeThisBattle: 0,
       luckyEggExpiresAt: 0,
       luckyEggUsedWeek: 0,
+      focusBandUsedWeek: 0,
+      assaultVestUsedWeek: 0,
+      autoItems: {},
 
       seenQuestionHashes: [],
       seenQuestions: [],
@@ -324,6 +339,50 @@ export const useGameStore = create<GameState>()(
       },
 
       getPartnerTp: (pokemonId) => get().trainingPoints[pokemonId] ?? 0,
+
+      tryAutoFocusBand: () => {
+        const s = get();
+        if ((s.inventory.focusband ?? 0) <= 0) return false;
+        if (s.autoItems.focusband === false) return false;
+        const { start } = getWeekRangeUtc();
+        if (s.focusBandUsedWeek === start) return false;
+        set({
+          inventory: { ...s.inventory, focusband: (s.inventory.focusband ?? 0) - 1 },
+          focusBandUsedWeek: start,
+        });
+        return true;
+      },
+
+      tryAutoQuickClaw: () => {
+        const s = get();
+        if ((s.inventory.quickclaw ?? 0) <= 0) return false;
+        if (s.autoItems.quickclaw === false) return false;
+        if (s.usedThisBattle.quickclaw) return false;
+        set({
+          inventory: { ...s.inventory, quickclaw: (s.inventory.quickclaw ?? 0) - 1 },
+          usedThisBattle: { ...s.usedThisBattle, quickclaw: true },
+        });
+        return true;
+      },
+
+      tryAutoAssaultVest: () => {
+        const s = get();
+        if ((s.inventory.assaultvest ?? 0) <= 0) return false;
+        if (s.autoItems.assaultvest === false) return false;
+        const { start } = getWeekRangeUtc();
+        if (s.assaultVestUsedWeek === start) return false;
+        set({
+          inventory: { ...s.inventory, assaultvest: (s.inventory.assaultvest ?? 0) - 1 },
+          assaultVestUsedWeek: start,
+        });
+        return true;
+      },
+
+      toggleAutoItem: (id) => {
+        const s = get();
+        const enabled = s.autoItems[id] !== false;
+        set({ autoItems: { ...s.autoItems, [id]: !enabled } });
+      },
 
       evolvePartner: (toPokemon) => {
         const s = get();
@@ -422,6 +481,9 @@ export const useGameStore = create<GameState>()(
           bonusTimeThisBattle: 0,
           luckyEggExpiresAt: 0,
           luckyEggUsedWeek: 0,
+          focusBandUsedWeek: 0,
+          assaultVestUsedWeek: 0,
+          autoItems: {},
           seenQuestionHashes: [],
           seenQuestions: [],
           seenCuratedIds: [],
@@ -461,8 +523,11 @@ export const useGameStore = create<GameState>()(
         const have = s.inventory[id] ?? 0;
         if (have <= 0) return false;
 
+        // Auto-trigger items can't be used manually
+        if (id === "focusband" || id === "quickclaw" || id === "assaultvest") return false;
+
         // Once-per-battle items
-        const ONCE_PER_BATTLE: ItemId[] = ["potion", "xattack", "scope", "xaccuracy", "escape"];
+        const ONCE_PER_BATTLE: ItemId[] = ["potion", "superpotion", "maxpotion", "xattack", "scope", "xaccuracy", "escape"];
         if (ONCE_PER_BATTLE.includes(id) && s.usedThisBattle[id]) return false;
 
         // Lucky Egg: one activation per week (Monday 00:00 UTC reset)
@@ -637,6 +702,9 @@ export const useGameStore = create<GameState>()(
         itemCooldowns: s.itemCooldowns,
         luckyEggExpiresAt: s.luckyEggExpiresAt,
         luckyEggUsedWeek: s.luckyEggUsedWeek,
+        focusBandUsedWeek: s.focusBandUsedWeek,
+        assaultVestUsedWeek: s.assaultVestUsedWeek,
+        autoItems: s.autoItems,
         seenQuestionHashes: s.seenQuestionHashes,
         seenQuestions: s.seenQuestions,
         seenCuratedIds: s.seenCuratedIds,

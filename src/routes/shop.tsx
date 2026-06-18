@@ -23,9 +23,14 @@ type Category = "HEALING" | "BATTLE" | "UTILITY" | "PREMIUM";
 
 const CATEGORY_OF: Record<ItemId, Category> = {
   potion: "HEALING",
+  superpotion: "HEALING",
+  maxpotion: "HEALING",
+  focusband: "HEALING",
   xattack: "BATTLE",
   scope: "BATTLE",
   xaccuracy: "BATTLE",
+  quickclaw: "BATTLE",
+  assaultvest: "BATTLE",
   escape: "UTILITY",
   candy: "PREMIUM",
   luckyegg: "PREMIUM",

@@ -16,12 +16,17 @@ export interface ItemDef {
 
 export type ItemId =
   | "potion"
+  | "superpotion"
+  | "maxpotion"
   | "xattack"
   | "escape"
   | "candy"
   | "luckyegg"
   | "scope"
-  | "xaccuracy";
+  | "xaccuracy"
+  | "focusband"
+  | "quickclaw"
+  | "assaultvest";
 
 const ICON = (slug: string) =>
   `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${slug}.png`;
@@ -34,6 +39,11 @@ export const ITEMS: ItemDef[] = [
   { id: "escape", name: "Escape Rope", emoji: "🪢", iconUrl: ICON("escape-rope"), desc: "End the battle with no XP lost. Once per battle.", cost: 500 },
   { id: "candy", name: "Rare Candy", emoji: "🍬", iconUrl: ICON("rare-candy"), desc: "+50 TP to your partner, instantly. Usable anytime.", cost: 2000, premium: true },
   { id: "luckyegg", name: "Lucky Egg", emoji: "🥚", iconUrl: ICON("lucky-egg"), desc: "2× XP for 24 hours. Once per week. Usable anytime.", cost: 2000, premium: true },
+  { id: "superpotion", name: "Super Potion", emoji: "🧪", iconUrl: ICON("super-potion"), desc: "Heals 60 HP. Once per battle.", cost: 300 },
+  { id: "maxpotion", name: "Max Potion", emoji: "🍶", iconUrl: ICON("max-potion"), desc: "Fully restores HP. Once per battle.", cost: 1000 },
+  { id: "focusband", name: "Focus Band", emoji: "🎽", iconUrl: ICON("focus-band"), desc: "Auto: at 10 HP or less, restores HP to 50%. Once per week.", cost: 2000, premium: true },
+  { id: "quickclaw", name: "Quick Claw", emoji: "⏱️", iconUrl: ICON("quick-claw"), desc: "Auto: when the timer drops below 5s, resets it to 20s. Once per battle.", cost: 1000 },
+  { id: "assaultvest", name: "Assault Vest", emoji: "🦺", iconUrl: ICON("assault-vest"), desc: "Auto: halves damage in battles where the foe is super-effective against you. Once per week.", cost: 2000, premium: true },
 ];
 
 // Trainer roster scraped from Bulbagarden (Gen III/IV/V + Pokémon Masters).
