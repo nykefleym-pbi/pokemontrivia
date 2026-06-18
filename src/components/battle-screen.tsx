@@ -203,7 +203,7 @@ function BattleMode({
   const consumeScope = useGameStore((s) => s.consumeScope);
   const bonusTime = useGameStore((s) => s.bonusTimeThisBattle);
   const inventory = useGameStore((s) => s.inventory);
-  const cooldowns = useGameStore((s) => s.itemCooldowns);
+  const usedThisBattle = useGameStore((s) => s.usedThisBattle);
   const raiseFlag = useGameStore((s) => s.raiseFlag);
   const pushBattleLog = useGameStore((s) => s.pushBattleLog);
   const recordPokedexCapture = useGameStore((s) => s.recordPokedexCapture);
@@ -264,6 +264,7 @@ function BattleMode({
   const [trivia, setTrivia] = useState<Trivia | null>(null);
   const [chosen, setChosen] = useState<number | null>(null);
   const [revealedWrong, setRevealedWrong] = useState<number | null>(null);
+  const [revealedCorrect, setRevealedCorrect] = useState<number | null>(null);
   const [streak, setStreak] = useState(0);
   const [questionIdx, setQuestionIdx] = useState(0);
   const [introBanner, setIntroBanner] = useState<string | null>(null);
@@ -457,6 +458,7 @@ function BattleMode({
   function loadQuestion(idx: number) {
     setChosen(null);
     setRevealedWrong(null);
+    setRevealedCorrect(null);
     const data = questions[idx];
     if (!data) {
       // Out of questions — decide based on remaining HP.
@@ -943,12 +945,12 @@ function BattleMode({
     if (id === "potion") {
       setPlayerHp((hp) => Math.min(playerMaxHp, hp + 30));
     }
-    if (id === "revive" && playerHp <= 10) {
-      setPlayerHp(50);
+    if (id === "scope" && trivia) {
+      const wrongs = [0, 1, 2, 3].filter((w) => w !== trivia.correct);
+      setRevealedWrong(wrongs[Math.floor(Math.random() * wrongs.length)]);
     }
-    if (id === "xaccuracy") {
-      // Also extend the currently-running question's timer immediately.
-      setTimer((t) => t + 5);
+    if (id === "xaccuracy" && trivia) {
+      setRevealedCorrect(trivia.correct);
     }
     if (id === "escape") {
       setBagOpen(false);
@@ -1199,6 +1201,7 @@ function BattleMode({
                     const isCorrect = phase === "feedback" && i === trivia.correct;
                     const isWrong = phase === "feedback" && chosen === i && i !== trivia.correct;
                     const isRevealed = revealedWrong === i;
+                    const isAnswerRevealed = phase === "question" && revealedCorrect === i;
                     return (
                       <button
                         key={i}
@@ -1211,7 +1214,9 @@ function BattleMode({
                               ? "border-destructive bg-destructive/5 text-destructive"
                               : isRevealed
                                 ? "border-border/60 line-through opacity-50"
-                                : "border-border/60 text-foreground hover:border-primary/50"
+                                : isAnswerRevealed
+                                  ? "border-hp-good bg-hp-good/10 text-hp-good"
+                                  : "border-border/60 text-foreground hover:border-primary/50"
                         } disabled:cursor-not-allowed`}
                       >
                         <span className="min-w-0 flex-1 truncate">{opt}</span>
@@ -1250,8 +1255,8 @@ function BattleMode({
                       <div className="mt-4 grid grid-cols-2 gap-2 pb-6">
                         {ITEMS.map((it) => {
                           const owned = inventory[it.id] ?? 0;
-                          const cd = cooldowns[it.id] ?? 0;
-                          const disabled = owned <= 0 || cd > 0 || (isWeekly && it.id === "escape");
+                          const used = usedThisBattle[it.id] ?? false;
+                          const disabled = owned <= 0 || used || (isWeekly && it.id === "escape");
                           return (
                             <button
                               key={it.id}
@@ -1281,7 +1286,7 @@ function BattleMode({
                                 <div className="text-[10px] leading-tight text-muted-foreground">
                                   {it.desc}
                                 </div>
-                                {cd > 0 && <div className="text-[10px] text-destructive">Cooldown: {cd}</div>}
+                                {used && <div className="text-[10px] text-destructive">Used this battle</div>}
                               </div>
                             </button>
                           );
@@ -1293,8 +1298,8 @@ function BattleMode({
                     .slice(0, 3)
                     .map((it) => {
                       const owned = inventory[it.id] ?? 0;
-                      const cd = cooldowns[it.id] ?? 0;
-                      const disabled = cd > 0 || (isWeekly && it.id === "escape");
+                      const used = usedThisBattle[it.id] ?? false;
+                      const disabled = owned <= 0 || used || (isWeekly && it.id === "escape");
                       return (
                         <button
                           key={it.id}
