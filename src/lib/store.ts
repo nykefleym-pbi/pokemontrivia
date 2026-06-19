@@ -111,6 +111,7 @@ export interface GameState {
   focusBandUsedWeek: number;
   assaultVestUsedWeek: number;
   autoItems: Partial<Record<ItemId, boolean>>;
+  whosThatHourKey: number;
 
   // question history (per-device)
   seenQuestionHashes: string[];
@@ -163,6 +164,8 @@ export interface GameState {
   tryAutoQuickClaw: () => boolean;
   tryAutoAssaultVest: () => boolean;
   toggleAutoItem: (id: ItemId) => void;
+  grantItem: (id: ItemId, qty?: number) => void;
+  consumeWhosThat: () => void;
 
   startBattle: () => void;
   endBattle: (won: boolean, xpGained: number) => void;
@@ -249,6 +252,7 @@ export const useGameStore = create<GameState>()(
       focusBandUsedWeek: 0,
       assaultVestUsedWeek: 0,
       autoItems: {},
+      whosThatHourKey: 0,
 
       seenQuestionHashes: [],
       seenQuestions: [],
