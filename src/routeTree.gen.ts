@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WhosThatPokemonRouteImport } from './routes/whos-that-pokemon'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PokedexRouteImport } from './routes/pokedex'
@@ -19,6 +20,11 @@ import { Route as ApiTriviaBatchRouteImport } from './routes/api.trivia-batch'
 import { Route as ApiTriviaRouteImport } from './routes/api.trivia'
 import { Route as ApiDailyChallengeRouteImport } from './routes/api.daily-challenge'
 
+const WhosThatPokemonRoute = WhosThatPokemonRouteImport.update({
+  id: '/whos-that-pokemon',
+  path: '/whos-that-pokemon',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShopRoute = ShopRouteImport.update({
   id: '/shop',
   path: '/shop',
@@ -71,6 +77,7 @@ export interface FileRoutesByFullPath {
   '/pokedex': typeof PokedexRoute
   '/profile': typeof ProfileRoute
   '/shop': typeof ShopRoute
+  '/whos-that-pokemon': typeof WhosThatPokemonRoute
   '/api/daily-challenge': typeof ApiDailyChallengeRoute
   '/api/trivia': typeof ApiTriviaRoute
   '/api/trivia-batch': typeof ApiTriviaBatchRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/pokedex': typeof PokedexRoute
   '/profile': typeof ProfileRoute
   '/shop': typeof ShopRoute
+  '/whos-that-pokemon': typeof WhosThatPokemonRoute
   '/api/daily-challenge': typeof ApiDailyChallengeRoute
   '/api/trivia': typeof ApiTriviaRoute
   '/api/trivia-batch': typeof ApiTriviaBatchRoute
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/pokedex': typeof PokedexRoute
   '/profile': typeof ProfileRoute
   '/shop': typeof ShopRoute
+  '/whos-that-pokemon': typeof WhosThatPokemonRoute
   '/api/daily-challenge': typeof ApiDailyChallengeRoute
   '/api/trivia': typeof ApiTriviaRoute
   '/api/trivia-batch': typeof ApiTriviaBatchRoute
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/pokedex'
     | '/profile'
     | '/shop'
+    | '/whos-that-pokemon'
     | '/api/daily-challenge'
     | '/api/trivia'
     | '/api/trivia-batch'
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/pokedex'
     | '/profile'
     | '/shop'
+    | '/whos-that-pokemon'
     | '/api/daily-challenge'
     | '/api/trivia'
     | '/api/trivia-batch'
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/pokedex'
     | '/profile'
     | '/shop'
+    | '/whos-that-pokemon'
     | '/api/daily-challenge'
     | '/api/trivia'
     | '/api/trivia-batch'
@@ -141,6 +153,7 @@ export interface RootRouteChildren {
   PokedexRoute: typeof PokedexRoute
   ProfileRoute: typeof ProfileRoute
   ShopRoute: typeof ShopRoute
+  WhosThatPokemonRoute: typeof WhosThatPokemonRoute
   ApiDailyChallengeRoute: typeof ApiDailyChallengeRoute
   ApiTriviaRoute: typeof ApiTriviaRoute
   ApiTriviaBatchRoute: typeof ApiTriviaBatchRoute
@@ -149,6 +162,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/whos-that-pokemon': {
+      id: '/whos-that-pokemon'
+      path: '/whos-that-pokemon'
+      fullPath: '/whos-that-pokemon'
+      preLoaderRoute: typeof WhosThatPokemonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/shop': {
       id: '/shop'
       path: '/shop'
@@ -221,6 +241,7 @@ const rootRouteChildren: RootRouteChildren = {
   PokedexRoute: PokedexRoute,
   ProfileRoute: ProfileRoute,
   ShopRoute: ShopRoute,
+  WhosThatPokemonRoute: WhosThatPokemonRoute,
   ApiDailyChallengeRoute: ApiDailyChallengeRoute,
   ApiTriviaRoute: ApiTriviaRoute,
   ApiTriviaBatchRoute: ApiTriviaBatchRoute,
@@ -229,12 +250,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
