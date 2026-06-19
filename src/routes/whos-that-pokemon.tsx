@@ -134,7 +134,7 @@ function WhosThatPokemon() {
 
   if (locked) {
     return (
-      <div className="mx-auto flex min-h-screen max-w-md flex-col bg-poke-cream px-5 pb-10 pt-8 text-center">
+      <div className="flex h-full w-full flex-col overflow-y-auto bg-poke-cream px-5 pb-10 pt-8 text-center">
         <h1 className="font-pixel text-lg leading-relaxed text-poke-dark">WHO'S THAT<br />POKÉMON?</h1>
         <div className="flex flex-1 flex-col items-center justify-center gap-3">
           <div className="text-5xl">⏰</div>
@@ -149,7 +149,7 @@ function WhosThatPokemon() {
 
   if (phase === "correct") {
     return (
-      <div className="mx-auto flex min-h-screen max-w-md flex-col bg-poke-cream px-5 pb-8 pt-10">
+      <div className="flex h-full w-full flex-col overflow-y-auto bg-poke-cream px-5 pb-8 pt-10">
         <div className="relative flex flex-col items-center">
           <div className="absolute inset-x-0 top-4 mx-auto h-56 w-56" style={{ background: "repeating-conic-gradient(from 0deg, rgba(245,197,24,0.22) 0deg 6deg, transparent 6deg 14deg)" }} />
           {round.isShiny && (
@@ -173,7 +173,7 @@ function WhosThatPokemon() {
 
   if (phase === "incorrect") {
     return (
-      <div className="mx-auto flex min-h-screen max-w-md flex-col items-center bg-poke-cream px-5 pb-8 pt-12 text-center">
+      <div className="flex h-full w-full flex-col items-center overflow-y-auto bg-poke-cream px-5 pb-8 pt-12 text-center">
         <PokemonSprite id={round.monId} alt={round.name} className="h-40 w-40 [image-rendering:pixelated] opacity-90" />
         <h1 className="mt-4 text-3xl font-extrabold text-poke-dark">Not quite…</h1>
         <p className="mt-2 text-lg text-poke-dark/70">It was <span className="font-bold text-poke-dark">{round.name}</span>.</p>
@@ -186,7 +186,7 @@ function WhosThatPokemon() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-md flex-col bg-poke-cream px-5 pb-8 pt-6">
+    <div className="flex h-full w-full flex-col overflow-y-auto bg-poke-cream px-5 pb-8 pt-6">
       <div className="flex items-center justify-between">
         <button onClick={goHome} aria-label="Back" className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-xl text-poke-dark shadow-card active:scale-95">‹</button>
         <div className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 font-pixel text-[11px] text-primary shadow-card"><span>⏱</span>{`0:${String(timeLeft).padStart(2, "0")}`}</div>
