@@ -289,6 +289,16 @@ function BattleHome({
   }, [loading]);
   const handleDaily = () => { setPending("daily"); onStartDaily(); };
   const handleWeekly = () => { setPending("weekly"); onStartWeekly(); };
+  const navigate = useNavigate();
+  const whosThatHourKey = useGameStore((s) => s.whosThatHourKey);
+  const [nowTick, setNowTick] = useState(Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNowTick(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const whosThatOnCooldown = Math.floor(nowTick / 3_600_000) === whosThatHourKey;
+  const whosThatMsLeft = 3_600_000 - (nowTick % 3_600_000);
+  const whosThatClock = `${String(Math.floor(whosThatMsLeft / 60000)).padStart(2, "0")}:${String(Math.floor((whosThatMsLeft % 60000) / 1000)).padStart(2, "0")}`;
   const trainerName = useGameStore((s) => s.trainerName);
   const trainerSprite = useGameStore((s) => s.trainerSprite);
   const pokemon = useGameStore((s) => s.pokemon);
@@ -478,6 +488,28 @@ function BattleHome({
           {weeklyLeader && (
             <PokemonSprite id={weeklyLeader.signaturePokemonId} alt={weeklyLeader.name} className="sprite -mr-1 h-[52px] w-[52px] shrink-0" />
           )}
+        </button>
+      </div>
+
+      <div className="px-5 pt-2.5">
+        <button
+          onClick={() => navigate({ to: "/whos-that-pokemon" })}
+          disabled={whosThatOnCooldown}
+          className={`relative flex w-full items-center gap-3 overflow-hidden rounded-[18px] bg-gradient-to-br from-[oklch(0.62_0.2_25)] to-[oklch(0.5_0.2_25)] px-4 py-3.5 text-left text-white shadow-card disabled:opacity-80 ${whosThatOnCooldown ? "grayscale" : ""}`}
+        >
+          <div className="absolute inset-0 opacity-25" style={{ background: "repeating-conic-gradient(from 0deg at 16% 50%, rgba(255,255,255,0.18) 0deg 4deg, transparent 4deg 10deg)" }} />
+          <div className="relative flex h-11 w-11 shrink-0 items-center justify-center">
+            <PokemonSprite id={25} alt="" className="h-9 w-9 [filter:brightness(0)_invert(1)] [image-rendering:pixelated]" />
+            <span className="absolute -right-0.5 -top-1 font-pixel text-base text-poke-yellow drop-shadow">?</span>
+          </div>
+          <div className="relative min-w-0 flex-1">
+            <div className="font-pixel text-[7px] leading-none text-white/85">HOURLY MINI-GAME</div>
+            <h3 className="mt-1.5 text-base font-extrabold leading-tight">Who's That Pokémon?</h3>
+            {whosThatOnCooldown && (
+              <p className="mt-0.5 font-pixel text-[8px] leading-none text-white/85">NEXT IN {whosThatClock}</p>
+            )}
+          </div>
+          <span className="relative shrink-0 text-lg text-white/80">›</span>
         </button>
       </div>
     </div>

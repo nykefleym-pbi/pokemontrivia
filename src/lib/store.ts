@@ -719,6 +719,7 @@ export const useGameStore = create<GameState>()(
         focusBandUsedWeek: s.focusBandUsedWeek,
         assaultVestUsedWeek: s.assaultVestUsedWeek,
         autoItems: s.autoItems,
+        whosThatHourKey: s.whosThatHourKey,
         seenQuestionHashes: s.seenQuestionHashes,
         seenQuestions: s.seenQuestions,
         seenCuratedIds: s.seenCuratedIds,
