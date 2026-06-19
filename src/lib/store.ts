@@ -388,6 +388,15 @@ export const useGameStore = create<GameState>()(
         set({ autoItems: { ...s.autoItems, [id]: !enabled } });
       },
 
+      grantItem: (id, qty = 1) => {
+        const s = get();
+        set({ inventory: { ...s.inventory, [id]: (s.inventory[id] ?? 0) + qty } });
+      },
+
+      consumeWhosThat: () => {
+        set({ whosThatHourKey: Math.floor(Date.now() / 3_600_000) });
+      },
+
       evolvePartner: (toPokemon) => {
         const s = get();
         if (!s.pokemon) return false;
@@ -488,6 +497,7 @@ export const useGameStore = create<GameState>()(
           focusBandUsedWeek: 0,
           assaultVestUsedWeek: 0,
           autoItems: {},
+          whosThatHourKey: 0,
           seenQuestionHashes: [],
           seenQuestions: [],
           seenCuratedIds: [],
