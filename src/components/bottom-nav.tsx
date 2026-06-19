@@ -15,6 +15,7 @@ export function BottomNav() {
   const battleScreenActive = useGameStore((s) => s.battleScreenActive);
 
   if (path === "/" || path === "") return null;
+  if (path.startsWith("/whos-that-pokemon")) return null;
   if (battleScreenActive) return null;
 
   return (
