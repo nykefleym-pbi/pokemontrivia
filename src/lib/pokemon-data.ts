@@ -6,8 +6,11 @@ export const ALL_POKEMON: PokeEntry[] = GENERATED;
 // Back-compat alias
 export const GEN1_POKEMON: PokeEntry[] = GENERATED.filter((p) => p.id <= 151);
 
+const _byId = new Map<number, PokeEntry>(ALL_POKEMON.map((p) => [p.id, p]));
+const _byName = new Map<string, PokeEntry>(ALL_POKEMON.map((p) => [p.name.toLowerCase(), p]));
+
 export function findPokemon(id: number): PokeEntry | undefined {
-  return ALL_POKEMON.find((p) => p.id === id);
+  return _byId.get(id);
 }
 
 export function isStartingPartner(p: PokeEntry): boolean {
@@ -40,8 +43,7 @@ export function rehydratePokemon(p: PokeEntry | null | undefined): PokeEntry | n
 }
 
 export function findPokemonByName(name: string): PokeEntry | undefined {
-  const n = name.trim().toLowerCase();
-  return ALL_POKEMON.find((p) => p.name.toLowerCase() === n);
+  return _byName.get(name.trim().toLowerCase());
 }
 
 export function searchPokemon(query: string, limit = 9): PokeEntry[] {
