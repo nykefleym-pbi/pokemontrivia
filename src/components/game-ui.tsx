@@ -153,7 +153,7 @@ export function AppHeader({ children, gradient }: { children?: React.ReactNode; 
   );
 }
 
-export function PokemonSprite({
+export const PokemonSprite = React.memo(function PokemonSprite({
   id,
   shiny = false,
   back = false,
@@ -194,7 +194,7 @@ export function PokemonSprite({
       }}
     />
   );
-}
+});
 
 export type DailyMark = "correct" | "wrong" | "timeout";
 
