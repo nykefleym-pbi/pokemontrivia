@@ -55,6 +55,9 @@ export const Route = createRootRoute({
       { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "apple-touch-icon", href: "/icons/icon-192.png" },
       { rel: "apple-touch-icon", sizes: "512x512", href: "/icons/icon-512.png" },
+      { rel: "preconnect", href: "https://raw.githubusercontent.com", crossOrigin: "anonymous" },
+      { rel: "preconnect", href: "https://pokeapi.co", crossOrigin: "anonymous" },
+      { rel: "dns-prefetch", href: "https://raw.githubusercontent.com" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
