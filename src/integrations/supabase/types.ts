@@ -62,11 +62,77 @@ export type Database = {
         }
         Relationships: []
       }
+      friends: {
+        Row: {
+          created_at: string
+          friend_id: string
+          owner_id: string
+        }
+        Insert: {
+          created_at?: string
+          friend_id: string
+          owner_id: string
+        }
+        Update: {
+          created_at?: string
+          friend_id?: string
+          owner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "friends_friend_id_fkey"
+            columns: ["friend_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          ace_pokemon_id: number | null
+          created_at: string
+          friend_code: string
+          id: string
+          level: number
+          pokedex_count: number
+          trainer_name: string
+          trainer_sprite: string
+          updated_at: string
+          xp: number
+        }
+        Insert: {
+          ace_pokemon_id?: number | null
+          created_at?: string
+          friend_code: string
+          id: string
+          level?: number
+          pokedex_count?: number
+          trainer_name?: string
+          trainer_sprite?: string
+          updated_at?: string
+          xp?: number
+        }
+        Update: {
+          ace_pokemon_id?: number | null
+          created_at?: string
+          friend_code?: string
+          id?: string
+          level?: number
+          pokedex_count?: number
+          trainer_name?: string
+          trainer_sprite?: string
+          updated_at?: string
+          xp?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      gen_friend_code: { Args: never; Returns: string }
       increment_curated_correct: {
         Args: { question_id: string }
         Returns: undefined
