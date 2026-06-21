@@ -141,6 +141,27 @@ export type Database = {
         Args: { question_ids: string[] }
         Returns: undefined
       }
+      lookup_profile_by_code: {
+        Args: { _code: string }
+        Returns: {
+          ace_pokemon_id: number | null
+          created_at: string
+          friend_code: string
+          id: string
+          level: number
+          pokedex_count: number
+          trainer_name: string
+          trainer_sprite: string
+          updated_at: string
+          xp: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       [_ in never]: never
