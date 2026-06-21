@@ -68,10 +68,11 @@ export function bootstrapSocial(): Promise<string | null> {
 export async function getProfileByCode(code: string): Promise<TrainerProfile | null> {
   const clean = code.trim().toUpperCase();
   if (!clean) return null;
-  const { data, error } = await db
-    .from("profiles").select("*").eq("friend_code", clean).maybeSingle();
+  const rpc = supabase as unknown as { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }> };
+  const { data, error } = await rpc.rpc("lookup_profile_by_code", { _code: clean });
   if (error) { console.warn("[social] getProfileByCode failed:", error.message); return null; }
-  return (data as TrainerProfile) ?? null;
+  if (!data || (typeof data === "object" && !(data as { id?: string }).id)) return null;
+  return data as TrainerProfile;
 }
 
 /** Add a friend by code. Returns { profile } or { error }. */
