@@ -3,8 +3,9 @@ import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { RotateCcw, Check, Search, Volume2, VolumeX, ChevronRight, Moon } from "lucide-react";
+import { RotateCcw, Check, Search, Volume2, VolumeX, ChevronRight, Moon, Copy, Share2, UserPlus, Users, X, Loader2 } from "lucide-react";
 import { useGameStore } from "@/lib/store";
+import { listFriends, addFriendByCode, removeFriend, syncProfile, type TrainerProfile } from "@/lib/social";
 import {
   rankForLevel,
   xpProgressInLevel,
@@ -75,6 +76,37 @@ function ProfilePage() {
   }, [stats, flags, peakLevel, pokedex]);
 
   const [trophiesOpen, setTrophiesOpen] = useState(false);
+  const friendCode = useGameStore((s) => s.friendCode);
+  const pokedexCount = Object.keys(pokedex).length;
+  const [cardOpen, setCardOpen] = useState(false);
+  const [friendsOpen, setFriendsOpen] = useState(false);
+  const [friends, setFriends] = useState<TrainerProfile[]>([]);
+  const [friendCodeInput, setFriendCodeInput] = useState("");
+  const [addingFriend, setAddingFriend] = useState(false);
+
+  const refreshFriends = React.useCallback(async () => {
+    setFriends(await listFriends());
+  }, []);
+  useEffect(() => { void refreshFriends(); }, [refreshFriends]);
+
+  function handleOpenCard() {
+    setCardOpen(true);
+    void syncProfile();
+  }
+  async function handleAddFriend() {
+    const code = friendCodeInput.trim().toUpperCase();
+    if (!code || addingFriend) return;
+    setAddingFriend(true);
+    const res = await addFriendByCode(code);
+    setAddingFriend(false);
+    if (res.error) { toast.error(res.error); return; }
+    toast.success(`Added ${res.profile?.trainer_name ?? "trainer"}!`);
+    setFriendCodeInput("");
+    void refreshFriends();
+  }
+  async function handleRemoveFriend(id: string) {
+    if (await removeFriend(id)) setFriends((f) => f.filter((x) => x.id !== id));
+  }
   const [badgesOpen, setBadgesOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
@@ -195,9 +227,11 @@ function ProfilePage() {
             <p className="font-pixel-xs text-primary uppercase truncate">
               {rank} · LV {level}
             </p>
-            <h2 className="font-display-lg text-2xl font-extrabold text-foreground truncate">
-              {trainerName}
-            </h2>
+            <button onClick={handleOpenCard} className="text-left">
+              <h2 className="font-display-lg text-2xl font-extrabold text-foreground truncate">
+                {trainerName}
+              </h2>
+            </button>
             <p className="mt-0.5 text-xs text-foreground/55 truncate">
               Trainer since {trainerSince}
             </p>
@@ -218,11 +252,14 @@ function ProfilePage() {
             <div className="mt-1 text-3xl font-extrabold text-foreground">{stats.wins}</div>
             <div className="mt-1 text-xs font-semibold text-hp-good">{winRate}% win rate</div>
           </button>
-          <div className="rounded-3xl bg-card p-4 shadow-card">
-            <div className="font-pixel-xs text-foreground/55">BEST STREAK</div>
-            <div className="mt-1 text-3xl font-extrabold text-primary">{stats.bestStreak}</div>
-            <div className="mt-1 text-xs text-foreground/60">correct in a row</div>
-          </div>
+          <button
+            onClick={() => setFriendsOpen(true)}
+            className="rounded-3xl bg-card p-4 text-left shadow-card transition active:scale-95"
+          >
+            <div className="font-pixel-xs text-foreground/55">FRIENDS</div>
+            <div className="mt-1 text-3xl font-extrabold text-primary">{friends.length}</div>
+            <div className="mt-1 text-xs text-foreground/60">tap to manage</div>
+          </button>
         </div>
 
         {/* Partner card */}
@@ -311,6 +348,114 @@ function ProfilePage() {
           </button>
         </div>
       </div>
+
+      {/* Trainer card dialog */}
+      <Dialog open={cardOpen} onOpenChange={setCardOpen}>
+        <DialogContent className="max-w-sm overflow-hidden rounded-3xl bg-poke-cream p-0">
+          <div className="relative bg-gradient-to-b from-primary/20 to-poke-cream px-6 pb-6 pt-8 text-center">
+            <button
+              onClick={() => setCardOpen(false)}
+              className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-card/80 text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <div className="font-pixel-xs text-primary uppercase">Trainer Card</div>
+            <h3 className="mt-1 font-display-xl text-2xl font-extrabold text-foreground">
+              {trainerName}
+            </h3>
+            <p className="font-pixel-xs text-foreground/70 uppercase">
+              {rank} · LV {level}
+            </p>
+            <div className="mt-4 flex justify-center">
+              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-card p-1 shadow-pop">
+                <img
+                  src={trainerSpriteUrl(trainerSprite)}
+                  alt={trainerName}
+                  className="sprite h-20 w-20 object-contain"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="px-5 pb-6">
+            <div className="grid grid-cols-3 gap-2">
+              <CardStat label="Level" value={level} />
+              <CardStat label="Pokédex" value={pokedexCount} />
+              <CardStat label="Battles" value={stats.battles} />
+            </div>
+            <div className="mt-4 rounded-2xl bg-card p-4 shadow-card">
+              <div className="font-pixel-xs text-foreground/55 uppercase">Friend Code</div>
+              <div className="mt-0.5 text-2xl font-extrabold tracking-[0.15em] text-foreground">
+                {friendCode ?? "------"}
+              </div>
+              <div className="mt-3 flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    if (friendCode) {
+                      navigator.clipboard?.writeText(friendCode);
+                      toast.success("Friend code copied!");
+                    }
+                  }}
+                  className="flex-1 rounded-full"
+                >
+                  <Copy className="mr-1.5 h-3.5 w-3.5" /> Copy
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    const text = `Add me on Pokémon Trivia Battle! Friend code: ${friendCode}`;
+                    if (navigator.share) navigator.share({ text }).catch(() => {});
+                    else { navigator.clipboard?.writeText(text); toast.success("Invite copied!"); }
+                  }}
+                  className="flex-1 rounded-full"
+                >
+                  <Share2 className="mr-1.5 h-3.5 w-3.5" /> Share
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Friends sheet */}
+      <Sheet open={friendsOpen} onOpenChange={setFriendsOpen}>
+        <SheetContent
+          side="bottom"
+          className="rounded-t-3xl bg-poke-cream max-h-[85vh] overflow-y-auto"
+        >
+          <SheetHeader>
+            <div className="font-pixel-xs text-primary">{friends.length} ADDED</div>
+            <SheetTitle className="font-display-xl text-foreground">Friends</SheetTitle>
+          </SheetHeader>
+          <div className="mt-4 space-y-4">
+            <div className="flex gap-2">
+              <Input
+                value={friendCodeInput}
+                onChange={(e) => setFriendCodeInput(e.target.value.toUpperCase())}
+                onKeyDown={(e) => { if (e.key === "Enter") void handleAddFriend(); }}
+                placeholder="ENTER CODE"
+                maxLength={6}
+                className="h-12 flex-1 rounded-full bg-card font-pixel text-sm uppercase tracking-[0.2em]"
+              />
+              <Button onClick={() => void handleAddFriend()} disabled={addingFriend} className="h-12 rounded-full px-5">
+                {addingFriend ? <Loader2 className="h-5 w-5 animate-spin" /> : <UserPlus className="h-5 w-5" />}
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {friends.length === 0 ? (
+                <div className="rounded-3xl bg-card p-6 text-center text-sm text-foreground/55 shadow-card">
+                  No friends yet. Tap your name to open your Trainer Card and share your code!
+                </div>
+              ) : (
+                friends.map((f) => (
+                  <FriendRow key={f.id} friend={f} onRemove={() => void handleRemoveFriend(f.id)} />
+                ))
+              )}
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Trophies sheet */}
       <Sheet open={trophiesOpen} onOpenChange={setTrophiesOpen}>
@@ -795,6 +940,39 @@ function Stat({ label, value }: { label: string; value: number | string }) {
     <div className="rounded-2xl bg-card px-3 py-3 text-center shadow-card">
       <div className="text-xl font-extrabold text-foreground">{value}</div>
       <div className="mt-0.5 font-pixel-xs text-foreground/50">{label}</div>
+    </div>
+  );
+}
+
+function CardStat({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-2xl bg-card px-3 py-3 text-center shadow-card">
+      <div className="text-xl font-extrabold text-foreground">{value}</div>
+      <div className="mt-0.5 font-pixel-xs text-foreground/50">{label}</div>
+    </div>
+  );
+}
+
+function FriendRow({ friend, onRemove }: { friend: TrainerProfile; onRemove: () => void }) {
+  return (
+    <div className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-card">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-muted">
+        <Users className="h-5 w-5 text-foreground/60" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="truncate font-display-md text-foreground">
+          {friend.trainer_name}
+        </div>
+        <div className="text-xs text-foreground/55">
+          LV {friend.level} · {friend.pokedex_count} caught
+        </div>
+      </div>
+      <button
+        onClick={onRemove}
+        className="flex h-9 w-9 items-center justify-center rounded-full bg-destructive/10 text-destructive transition active:scale-95"
+      >
+        <X className="h-4 w-4" />
+      </button>
     </div>
   );
 }
