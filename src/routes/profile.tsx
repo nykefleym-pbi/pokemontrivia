@@ -353,13 +353,8 @@ function ProfilePage() {
       <Dialog open={cardOpen} onOpenChange={setCardOpen}>
         <DialogContent className="max-w-sm overflow-hidden rounded-3xl bg-poke-cream p-0">
           <div className="relative bg-gradient-to-b from-primary/20 to-poke-cream px-6 pb-6 pt-8 text-center">
-            <button
-              onClick={() => setCardOpen(false)}
-              className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-card/80 text-foreground"
-            >
-              <X className="h-4 w-4" />
-            </button>
             <div className="font-pixel-xs text-primary uppercase">Trainer Card</div>
+
             <h3 className="mt-1 font-display-xl text-2xl font-extrabold text-foreground">
               {trainerName}
             </h3>

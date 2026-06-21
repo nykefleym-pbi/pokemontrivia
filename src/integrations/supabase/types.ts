@@ -132,7 +132,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      gen_friend_code: { Args: never; Returns: string }
       increment_curated_correct: {
         Args: { question_id: string }
         Returns: undefined

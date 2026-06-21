@@ -1,41 +1,49 @@
-## Goal
-Source curated trivia from the external Supabase project `dvdorceiasaipdvyfhil` while keeping Lovable Cloud (`omhlpjvimtrzdmeyzreq`) as the linked backend for auth, profiles, and server functions.
+## What's wrong
 
-## Why the previous attempt reverted
-`VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY` in `.env` are auto-managed by Lovable Cloud and re-pinned to the linked project on every sync. We must not touch them. Instead, add **separate** vars for the curated read-only source.
-
-## Changes
-
-### 1. Add new public env vars (won't collide with managed ones)
-In `.env`, append:
+**1. Friend code shows `------`**
+Console reveals the real cause:
 ```
-VITE_CURATED_SUPABASE_URL="https://dvdorceiasaipdvyfhil.supabase.co"
-VITE_CURATED_SUPABASE_PUBLISHABLE_KEY="sb_publishable_4xsV56UPyHng1xGrKAM8mQ_meXNg3sH"
+[social] syncProfile failed: permission denied for function gen_friend_code
 ```
-Leave all `VITE_SUPABASE_*` / `SUPABASE_*` vars pointing at `omhlpjvimtrzdmeyzreq` untouched.
+In the previous security pass I revoked `EXECUTE` on `gen_friend_code()` from `public`/`anon`/`authenticated`. The `profiles` BEFORE-INSERT trigger calls that function while running as the inserting user, so every new profile insert now fails — no row is created, no friend code is returned, and the store stays `null`.
 
-### 2. Create a dedicated curated client
-New file `src/lib/curated-client.ts`:
-- `createClient(import.meta.env.VITE_CURATED_SUPABASE_URL, import.meta.env.VITE_CURATED_SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: false, autoRefreshToken: false, storageKey: 'curated-ro' } })`
-- Separate `storageKey` so it never conflicts with the main client's session storage.
-- Read-only usage (table has only a public SELECT policy on `verified = true`).
+**2. Two X buttons on the Trainer Card**
+shadcn's `DialogContent` already renders a built-in close button (`src/components/ui/dialog.tsx` line 47). The trainer card in `src/routes/profile.tsx` (lines 356–361) adds a second custom one in the same top-right position, so the user sees two stacked Xs.
 
-### 3. Rewire `src/lib/curated-questions.ts`
-- Replace the existing `import { supabase } from '@/integrations/supabase/client'` with `import { curatedSupabase } from './curated-client'`.
-- All `.from('curated_questions').select(...)` reads use `curatedSupabase`.
-- The `increment_curated_served` / `increment_curated_correct` RPCs: those functions exist on `dvdorceiasaipdvyfhil` too, so call them via `curatedSupabase.rpc(...)`. If the external project rejects anonymous RPC writes, wrap the calls in try/catch so a failure doesn't break gameplay (stats are best-effort).
+## Fix
 
-### 4. Leave everything else alone
-- `src/integrations/supabase/client.ts` (managed) — untouched.
-- Server functions, auth, profiles — keep using the linked Lovable Cloud project.
-- Server routes (`api.trivia-batch.ts`, etc.) that mix curated reads with AI: if any read curated server-side, they should also import the new curated client (browser-safe `createClient` is fine in server fns too — no service role needed for verified reads).
+### Migration — inline the code generator into the trigger
+Drop the brittle separate-function approach. Move the random-code loop directly into `profiles_before_write()` and remove `gen_friend_code()` entirely. The trigger is `SECURITY DEFINER`, so it bypasses RLS to check uniqueness, and no user ever needs `EXECUTE` on a helper function.
 
-## Verification
-1. Restart dev server, hard-refresh preview.
-2. In browser devtools Network tab, start a Regular Battle → confirm a request to `dvdorceiasaipdvyfhil.supabase.co/rest/v1/curated_questions?verified=eq.true` returns 200 with rows.
-3. Confirm no request to `dvdorceiasaipdvyfhil` for auth/profiles (those stay on the linked project).
-4. Confirm `.env` `VITE_SUPABASE_URL` still equals `omhlpjvimtrzdmeyzreq` after the next platform sync.
+```sql
+create or replace function public.profiles_before_write()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  alphabet text := '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+  code text; i int;
+begin
+  if tg_op = 'INSERT' and (new.friend_code is null or new.friend_code = '') then
+    loop
+      code := '';
+      for i in 1..6 loop
+        code := code || substr(alphabet, 1 + floor(random()*length(alphabet))::int, 1);
+      end loop;
+      exit when not exists (select 1 from public.profiles where friend_code = code);
+    end loop;
+    new.friend_code := code;
+  end if;
+  new.updated_at := now();
+  return new;
+end; $$;
 
-## Out of scope
-- Migrating auth/profiles to `dvdorceiasaipdvyfhil` (would require unlinking the Lovable Cloud backend — not doable via code).
-- Writes to `curated_questions` (table is locked to public SELECT only).
+drop function if exists public.gen_friend_code();
+```
+
+### Code — remove the duplicate close button
+In `src/routes/profile.tsx`, delete the custom `<button>` wrapping `<X />` at lines 356–361 inside the trainer card `<DialogContent>`. The built-in close button stays.
+
+## Technical notes
+
+- After the migration the user must reload once so `syncProfile()` runs again with a working trigger; the friend code will then appear and be persisted to the local store.
+- The dialog's built-in close is keyboard- and screen-reader-friendly (`sr-only` "Close" label), so removing the custom one is a net accessibility win.
+- No client API changes; `social.ts` already calls `syncProfile` on dialog open, which will now succeed.
