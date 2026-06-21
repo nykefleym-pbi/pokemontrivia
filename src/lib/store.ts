@@ -88,7 +88,9 @@ export interface GameState {
   isGuest: boolean;
   trainerName: string;
   trainerSprite: string;
+  friendCode: string | null;
   pokemon: PokeEntry | null;
+
 
   // progression
   level: number;
@@ -150,7 +152,9 @@ export interface GameState {
 
   // actions
   setOnboarded: (name: string, pokemon: PokeEntry, trainerSprite: string) => void;
+  setFriendCode: (code: string) => void;
   startGuestSession: () => void;
+
   reset: () => void;
   setName: (name: string) => void;
   setPokemon: (p: PokeEntry) => void;
@@ -231,7 +235,9 @@ export const useGameStore = create<GameState>()(
       isGuest: false,
       trainerName: "",
       trainerSprite: TRAINER_SPRITES[0]?.id ?? "",
+      friendCode: null,
       pokemon: null,
+
       level: 1,
       peakLevel: 1,
       xp: 0,
@@ -460,6 +466,9 @@ export const useGameStore = create<GameState>()(
 
       setOnboarded: (name, pokemon, trainerSprite) =>
         set({ hasOnboarded: true, isGuest: false, trainerName: name, pokemon, trainerSprite }),
+
+      setFriendCode: (code) => set({ friendCode: code }),
+
 
       startGuestSession: () => {
         const poke = ALL_POKEMON[Math.floor(Math.random() * ALL_POKEMON.length)];
@@ -735,8 +744,10 @@ export const useGameStore = create<GameState>()(
         gymBadges: s.gymBadges,
         weeklyLeagueHistory: s.weeklyLeagueHistory,
         darkMode: s.darkMode,
+        friendCode: s.friendCode,
 
       }),
+
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<GameState>;
         // Migrate legacy dailyResult.pattern (string) -> DailyMark[]
