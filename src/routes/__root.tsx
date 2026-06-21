@@ -3,8 +3,10 @@ import { useEffect } from "react";
 import { BottomNav } from "@/components/bottom-nav";
 import { PwaRegister } from "@/components/pwa-register";
 import { useGameStore } from "@/lib/store";
+import { useEnsureSocial } from "@/lib/social";
 
 import appCss from "../styles.css?url";
+
 
 
 function NotFoundComponent() {
@@ -91,8 +93,11 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  useEnsureSocial();
+
   const darkMode = useGameStore((s) => s.darkMode);
   useEffect(() => {
+
     const root = document.documentElement;
     if (darkMode) root.classList.add("dark");
     else root.classList.remove("dark");
