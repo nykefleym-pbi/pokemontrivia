@@ -46,7 +46,22 @@ export interface EvolutionShareData {
   dateISO: string;
 }
 
-export type ShareData = BattleShareData | EvolutionShareData;
+export interface TrainerCardShareData {
+  type: "trainer-card";
+  trainerName: string;
+  trainerSpriteUrl: string;
+  level: number;
+  rank: string;
+  friendCode: string;
+  pokedexCount: number;
+  wins: number;
+  bestStreak: number;
+  acePokemonId: number;
+  aceShiny: boolean;
+  dateISO: string;
+}
+
+export type ShareData = BattleShareData | EvolutionShareData | TrainerCardShareData;
 
 const CARD_SIZE = 1080;
 const SYSTEM_FONT =
@@ -55,6 +70,9 @@ const SYSTEM_FONT =
 export async function buildShareCard(data: ShareData): Promise<string> {
   if (data.type === "evolution") {
     return buildEvolutionCard(data);
+  }
+  if (data.type === "trainer-card") {
+    return buildTrainerCard(data);
   }
   const W = CARD_SIZE;
   const H = CARD_SIZE;
@@ -215,6 +233,108 @@ export async function buildShareCard(data: ShareData): Promise<string> {
   ctx.fillStyle = "#e23b2e";
   ctx.font = `800 24px ${SYSTEM_FONT}`;
   drawTrackedText(ctx, "BEAT MY SCORE ›", W - 60, y, 1.5, "right");
+
+  ctx.restore();
+  return canvas.toDataURL("image/png");
+}
+
+async function buildTrainerCard(data: TrainerCardShareData): Promise<string> {
+  const W = CARD_SIZE;
+  const H = CARD_SIZE;
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d")!;
+
+  ctx.save();
+  roundRectPath(ctx, 0, 0, W, H, 56);
+  ctx.clip();
+
+  ctx.fillStyle = "#fbf3df";
+  ctx.fillRect(0, 0, W, H);
+
+  const headerH = Math.round(H * 0.46);
+  const grad = ctx.createLinearGradient(0, 0, W, headerH);
+  grad.addColorStop(0, "#e23b2e");
+  grad.addColorStop(1, "#b5341f");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, headerH);
+
+  const rg = ctx.createRadialGradient(W * 0.74, headerH * 0.6, 20, W * 0.74, headerH * 0.6, 320);
+  rg.addColorStop(0, "rgba(255,255,255,0.14)");
+  rg.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = rg;
+  ctx.fillRect(0, 0, W, headerH);
+
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "#ffffff";
+  ctx.font = `700 28px ${SYSTEM_FONT}`;
+  drawTrackedText(ctx, "POKÉMON TRIVIA BATTLE", 60, 78, 2);
+  ctx.fillStyle = "#f2d64e";
+  ctx.font = `800 28px ${SYSTEM_FONT}`;
+  drawTrackedText(ctx, "TRAINER CARD", W - 60, 78, 2, "right");
+
+  if (!isNaN(data.acePokemonId) && data.acePokemonId > 0) {
+    await drawPokemonSprite(ctx, data.acePokemonId, data.aceShiny, W - 350, headerH - 320, 300);
+  }
+
+  const avatarD = 150;
+  const avatarCX = 60 + avatarD / 2;
+  const avatarCY = 230;
+  await drawCircleImage(ctx, data.trainerSpriteUrl, avatarCX, avatarCY, avatarD);
+
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#ffffff";
+  ctx.font = `800 60px ${SYSTEM_FONT}`;
+  ctx.fillText(truncate(data.trainerName, 14), avatarCX + avatarD / 2 + 30, 220);
+  ctx.fillStyle = "rgba(255,255,255,0.85)";
+  ctx.font = `700 28px ${SYSTEM_FONT}`;
+  drawTrackedText(ctx, `LV ${data.level} · ${data.rank.toUpperCase()}`, avatarCX + avatarD / 2 + 30, 266, 1.5);
+
+  const margin = 60;
+  const gap = 30;
+  const tileW = (W - margin * 2 - gap * 2) / 3;
+  const tileY = headerH + 50;
+  const tileH = 180;
+  const tiles = [
+    { label: "POKÉDEX", value: String(data.pokedexCount) },
+    { label: "WINS", value: String(data.wins) },
+    { label: "BEST STREAK", value: String(data.bestStreak) },
+  ];
+  tiles.forEach((t, i) => {
+    const x = margin + i * (tileW + gap);
+    ctx.fillStyle = "#ffffff";
+    roundRectPath(ctx, x, tileY, tileW, tileH, 28);
+    ctx.fill();
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#1f2937";
+    ctx.font = `800 64px ${SYSTEM_FONT}`;
+    ctx.fillText(t.value, x + tileW / 2, tileY + 100);
+    ctx.fillStyle = "#9ca3af";
+    ctx.font = `700 22px ${SYSTEM_FONT}`;
+    drawTrackedText(ctx, t.label, x + tileW / 2, tileY + 142, 1.5, "center");
+  });
+
+  const fcY = tileY + tileH + 44;
+  const fcW = W - margin * 2;
+  const fcH = 200;
+  ctx.fillStyle = "#ffffff";
+  roundRectPath(ctx, margin, fcY, fcW, fcH, 28);
+  ctx.fill();
+  ctx.strokeStyle = "#e23b2e";
+  ctx.lineWidth = 4;
+  ctx.setLineDash([14, 12]);
+  roundRectPath(ctx, margin, fcY, fcW, fcH, 28);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#9ca3af";
+  ctx.font = `700 24px ${SYSTEM_FONT}`;
+  drawTrackedText(ctx, "FRIEND CODE", W / 2, fcY + 66, 2, "center");
+  ctx.fillStyle = "#e23b2e";
+  ctx.font = `800 88px ${SYSTEM_FONT}`;
+  drawTrackedText(ctx, data.friendCode || "------", W / 2, fcY + 150, 10, "center");
 
   ctx.restore();
   return canvas.toDataURL("image/png");

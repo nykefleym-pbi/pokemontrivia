@@ -3,7 +3,8 @@ import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { RotateCcw, Check, Search, Volume2, VolumeX, ChevronRight, Moon, Copy, Share2, UserPlus, Users, X, Loader2 } from "lucide-react";
+import { RotateCcw, Check, Search, Volume2, VolumeX, ChevronRight, Moon, Copy, Share2, UserPlus, Users, X, Loader2, IdCard, ImageDown } from "lucide-react";
+import { ShareCardDialog } from "@/components/share-card-dialog";
 import { useGameStore } from "@/lib/store";
 import { listFriends, addFriendByCode, removeFriend, syncProfile, type TrainerProfile } from "@/lib/social";
 import {
@@ -83,6 +84,8 @@ function ProfilePage() {
   const [friends, setFriends] = useState<TrainerProfile[]>([]);
   const [friendCodeInput, setFriendCodeInput] = useState("");
   const [addingFriend, setAddingFriend] = useState(false);
+  const [cardShareOpen, setCardShareOpen] = useState(false);
+  const [friendToRemove, setFriendToRemove] = useState<TrainerProfile | null>(null);
 
   const refreshFriends = React.useCallback(async () => {
     setFriends(await listFriends());
@@ -214,7 +217,7 @@ function ProfilePage() {
           className="flex items-center gap-4"
         >
           <button
-            onClick={() => setTrainerPickerOpen(true)}
+            onClick={handleOpenCard}
             className="relative shrink-0 rounded-full bg-card p-1 ring-4 ring-primary shadow-pop transition active:scale-95"
           >
             <img
@@ -231,6 +234,9 @@ function ProfilePage() {
               <h2 className="font-display-lg text-2xl font-extrabold text-foreground truncate">
                 {trainerName}
               </h2>
+              <span className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
+                <IdCard className="h-3 w-3" /> Card
+              </span>
             </button>
             <p className="mt-0.5 text-xs text-foreground/55 truncate">
               Trainer since {trainerSince}
@@ -408,10 +414,37 @@ function ProfilePage() {
                   <Share2 className="mr-1.5 h-3.5 w-3.5" /> Share
                 </Button>
               </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => { setCardOpen(false); setCardShareOpen(true); }}
+                className="mt-2 w-full rounded-full"
+              >
+                <ImageDown className="mr-1.5 h-3.5 w-3.5" /> Save as image
+              </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
+
+      <ShareCardDialog
+        open={cardShareOpen}
+        onClose={() => setCardShareOpen(false)}
+        data={{
+          type: "trainer-card",
+          trainerName,
+          trainerSpriteUrl: trainerSpriteUrl(trainerSprite),
+          level,
+          rank,
+          friendCode: friendCode ?? "------",
+          pokedexCount,
+          wins: stats.wins,
+          bestStreak: stats.bestStreak,
+          acePokemonId: pokemon?.id ?? 0,
+          aceShiny: false,
+          dateISO: new Date().toISOString().slice(0, 10),
+        }}
+      />
 
       {/* Friends sheet */}
       <Sheet open={friendsOpen} onOpenChange={setFriendsOpen}>
@@ -444,7 +477,7 @@ function ProfilePage() {
                 </div>
               ) : (
                 friends.map((f) => (
-                  <FriendRow key={f.id} friend={f} onRemove={() => void handleRemoveFriend(f.id)} />
+                  <FriendRow key={f.id} friend={f} onRemove={() => setFriendToRemove(f)} />
                 ))
               )}
             </div>
@@ -696,6 +729,22 @@ function ProfilePage() {
       </Dialog>
 
 
+      <AlertDialog open={!!friendToRemove} onOpenChange={(o) => !o && setFriendToRemove(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove friend?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Remove {friendToRemove?.trainer_name ?? "this trainer"} from your friends list? You can add them back anytime with their friend code.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { if (friendToRemove) void handleRemoveFriend(friendToRemove.id); setFriendToRemove(null); }}>
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
