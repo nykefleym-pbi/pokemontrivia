@@ -414,10 +414,37 @@ function ProfilePage() {
                   <Share2 className="mr-1.5 h-3.5 w-3.5" /> Share
                 </Button>
               </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => { setCardOpen(false); setCardShareOpen(true); }}
+                className="mt-2 w-full rounded-full"
+              >
+                <ImageDown className="mr-1.5 h-3.5 w-3.5" /> Save as image
+              </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
+
+      <ShareCardDialog
+        open={cardShareOpen}
+        onClose={() => setCardShareOpen(false)}
+        data={{
+          type: "trainer-card",
+          trainerName,
+          trainerSpriteUrl: trainerSpriteUrl(trainerSprite),
+          level,
+          rank,
+          friendCode: friendCode ?? "------",
+          pokedexCount,
+          wins: stats.wins,
+          bestStreak: stats.bestStreak,
+          acePokemonId: pokemon?.id ?? 0,
+          aceShiny: false,
+          dateISO: new Date().toISOString().slice(0, 10),
+        }}
+      />
 
       {/* Friends sheet */}
       <Sheet open={friendsOpen} onOpenChange={setFriendsOpen}>
