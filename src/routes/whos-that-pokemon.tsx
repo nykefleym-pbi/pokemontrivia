@@ -278,9 +278,15 @@ function WhosThatPokemon() {
 
       {round.mode === "2" && (
         <div className="relative mx-auto mt-8 h-60 w-60 overflow-hidden rounded-full border-[6px] border-poke-dark bg-poke-dark shadow-card ring-4 ring-white">
-          <img src={spriteUrl(round.monId, { back: round.cropBack })} alt="" crossOrigin="anonymous"
-            className="absolute left-1/2 top-1/2 [image-rendering:pixelated]"
-            style={{ width: "300%", height: "300%", transform: `translate(calc(-50% + ${round.cropDX}%), calc(-50% + ${round.cropDY}%))` }} />
+          <div
+            className="absolute inset-0 [image-rendering:pixelated]"
+            style={{
+              backgroundImage: `url(${spriteUrl(round.monId, { back: round.cropBack })})`,
+              backgroundRepeat: "no-repeat",
+              backgroundSize: "300%",
+              backgroundPosition: `${50 + round.cropDX}% ${50 + round.cropDY}%`,
+            }}
+          />
         </div>
       )}
 
