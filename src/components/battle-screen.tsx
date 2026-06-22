@@ -1825,7 +1825,7 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
         >
           <div className="relative">
             <div className="absolute inset-0 -z-10 rounded-full bg-destructive/50 blur-3xl" />
-            <PokemonSprite id={479} alt="Rotom" className="sprite h-64 w-64 sm:h-72 sm:w-72 drop-shadow-[0_0_40px_oklch(0.62_0.22_25/0.85)]" />
+            <PokemonSprite id={479} alt="Rotom" className="sprite h-72 w-72 sm:h-80 sm:w-80 shrink-0 object-contain drop-shadow-[0_0_40px_oklch(0.62_0.22_25/0.85)]" />
           </div>
         </motion.div>
         <PokeballPattern marks={pattern} />
