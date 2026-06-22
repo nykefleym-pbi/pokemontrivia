@@ -46,7 +46,22 @@ export interface EvolutionShareData {
   dateISO: string;
 }
 
-export type ShareData = BattleShareData | EvolutionShareData;
+export interface TrainerCardShareData {
+  type: "trainer-card";
+  trainerName: string;
+  trainerSpriteUrl: string;
+  level: number;
+  rank: string;
+  friendCode: string;
+  pokedexCount: number;
+  wins: number;
+  bestStreak: number;
+  acePokemonId: number;
+  aceShiny: boolean;
+  dateISO: string;
+}
+
+export type ShareData = BattleShareData | EvolutionShareData | TrainerCardShareData;
 
 const CARD_SIZE = 1080;
 const SYSTEM_FONT =
