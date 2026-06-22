@@ -891,9 +891,9 @@ function PartnerCard({
   return (
     <div className="mt-3 rounded-3xl bg-card p-4 shadow-card">
       <div className="flex items-center gap-4">
-        <button onClick={onChange} className="shrink-0 transition active:scale-95">
+        <div className="shrink-0">
           <PokemonSprite id={pokemon.id} alt={pokemon.name} className="sprite h-20 w-20" />
-        </button>
+        </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <span className="font-display-lg text-xl font-extrabold text-foreground truncate">
