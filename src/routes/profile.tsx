@@ -729,6 +729,22 @@ function ProfilePage() {
       </Dialog>
 
 
+      <AlertDialog open={!!friendToRemove} onOpenChange={(o) => !o && setFriendToRemove(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove friend?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Remove {friendToRemove?.trainer_name ?? "this trainer"} from your friends list? You can add them back anytime with their friend code.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { if (friendToRemove) void handleRemoveFriend(friendToRemove.id); setFriendToRemove(null); }}>
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
