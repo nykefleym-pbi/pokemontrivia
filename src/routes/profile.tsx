@@ -217,7 +217,7 @@ function ProfilePage() {
           className="flex items-center gap-4"
         >
           <button
-            onClick={() => setTrainerPickerOpen(true)}
+            onClick={handleOpenCard}
             className="relative shrink-0 rounded-full bg-card p-1 ring-4 ring-primary shadow-pop transition active:scale-95"
           >
             <img
