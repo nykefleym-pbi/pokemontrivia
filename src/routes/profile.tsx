@@ -84,6 +84,8 @@ function ProfilePage() {
   const [friends, setFriends] = useState<TrainerProfile[]>([]);
   const [friendCodeInput, setFriendCodeInput] = useState("");
   const [addingFriend, setAddingFriend] = useState(false);
+  const [cardShareOpen, setCardShareOpen] = useState(false);
+  const [friendToRemove, setFriendToRemove] = useState<TrainerProfile | null>(null);
 
   const refreshFriends = React.useCallback(async () => {
     setFriends(await listFriends());
