@@ -71,6 +71,9 @@ export async function buildShareCard(data: ShareData): Promise<string> {
   if (data.type === "evolution") {
     return buildEvolutionCard(data);
   }
+  if (data.type === "trainer-card") {
+    return buildTrainerCard(data);
+  }
   const W = CARD_SIZE;
   const H = CARD_SIZE;
   const canvas = document.createElement("canvas");
