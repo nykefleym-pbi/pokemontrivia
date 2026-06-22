@@ -234,6 +234,9 @@ function ProfilePage() {
               <h2 className="font-display-lg text-2xl font-extrabold text-foreground truncate">
                 {trainerName}
               </h2>
+              <span className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
+                <IdCard className="h-3 w-3" /> Card
+              </span>
             </button>
             <p className="mt-0.5 text-xs text-foreground/55 truncate">
               Trainer since {trainerSince}
