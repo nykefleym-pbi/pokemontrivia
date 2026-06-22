@@ -477,7 +477,7 @@ function ProfilePage() {
                 </div>
               ) : (
                 friends.map((f) => (
-                  <FriendRow key={f.id} friend={f} onRemove={() => void handleRemoveFriend(f.id)} />
+                  <FriendRow key={f.id} friend={f} onRemove={() => setFriendToRemove(f)} />
                 ))
               )}
             </div>
