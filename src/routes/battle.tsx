@@ -299,6 +299,9 @@ function BattleHome({
   const whosThatOnCooldown = Math.floor(nowTick / 3_600_000) === whosThatHourKey;
   const whosThatMsLeft = 3_600_000 - (nowTick % 3_600_000);
   const whosThatClock = `${String(Math.floor(whosThatMsLeft / 60000)).padStart(2, "0")}:${String(Math.floor((whosThatMsLeft % 60000) / 1000)).padStart(2, "0")}`;
+  const _nd = new Date(nowTick);
+  const msToNextDay = Date.UTC(_nd.getUTCFullYear(), _nd.getUTCMonth(), _nd.getUTCDate() + 1) - nowTick;
+  const dailyClock = `${Math.floor(msToNextDay / 3_600_000)}h ${String(Math.floor((msToNextDay % 3_600_000) / 60_000)).padStart(2, "0")}m`;
   const trainerName = useGameStore((s) => s.trainerName);
   const trainerSprite = useGameStore((s) => s.trainerSprite);
   const pokemon = useGameStore((s) => s.pokemon);
@@ -453,9 +456,7 @@ function BattleHome({
               {dailyDone ? "Done" : "Beat Rotom"}
             </h3>
             <p className="mt-0.5 text-[11px] font-semibold leading-tight text-[oklch(0.35_0.06_80/0.8)]">
-              {dailyDone && dailyResult
-                ? `${dailyResult.correct}/${dailyResult.total} · ${Math.round(dailyResult.timeMs / 1000)}s`
-                : "10 fast questions"}
+              {dailyDone ? `Next in ${dailyClock}` : "Tap to begin"}
             </p>
           </div>
           <PokemonSprite id={479} alt="Rotom" className="sprite -mr-1 h-[52px] w-[52px] shrink-0" />
@@ -476,13 +477,11 @@ function BattleHome({
               {weeklyLeader ? `Gym: ${weeklyLeader.name}` : "Loading..."}
             </h3>
             <p className="mt-0.5 text-[11px] font-semibold leading-tight text-white/85">
-              {weeklyLeague?.status === "won"
-                ? "Victory!"
-                : weeklyLeague?.status === "lost"
-                  ? weeklyTimeLeft
-                  : weeklyLeague?.status === "in_progress"
-                    ? "Resume your run"
-                    : "Resets Monday 00:00 UTC"}
+              {weeklyFinished
+                ? `Next in ${weeklyTimeLeft}`
+                : weeklyLeague?.status === "in_progress"
+                  ? "Resume your run"
+                  : "Tap to begin"}
             </p>
           </div>
           {weeklyLeader && (
@@ -505,9 +504,9 @@ function BattleHome({
           <div className="relative min-w-0 flex-1">
             <div className="font-pixel text-[7px] leading-none text-white/85">HOURLY MINI-GAME</div>
             <h3 className="mt-1.5 text-base font-extrabold leading-tight">Who's That Pokémon?</h3>
-            {whosThatOnCooldown && (
-              <p className="mt-0.5 font-pixel text-[8px] leading-none text-white/85">NEXT IN {whosThatClock}</p>
-            )}
+            <p className="mt-0.5 font-pixel text-[8px] leading-none text-white/85">
+              {whosThatOnCooldown ? `NEXT IN ${whosThatClock}` : "TAP TO BEGIN"}
+            </p>
           </div>
           <span className="relative shrink-0 text-lg text-white/80">›</span>
         </button>

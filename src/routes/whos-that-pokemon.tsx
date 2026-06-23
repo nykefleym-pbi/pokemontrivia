@@ -203,10 +203,10 @@ function WhosThatPokemon() {
   if (locked) {
     return (
       <div className="flex h-full w-full flex-col overflow-y-auto bg-poke-cream px-5 pb-10 pt-8 text-center">
-        <h1 className="font-pixel text-lg leading-relaxed text-poke-dark">WHO'S THAT<br />POKÉMON?</h1>
+        <h1 className="font-pixel text-lg leading-relaxed text-foreground">WHO'S THAT<br />POKÉMON?</h1>
         <div className="flex flex-1 flex-col items-center justify-center gap-3">
           <div className="text-5xl">⏰</div>
-          <div className="font-pixel text-[10px] uppercase tracking-wide text-poke-dark/50">Play again in</div>
+          <div className="font-pixel text-[10px] uppercase tracking-wide text-foreground/50">Play again in</div>
           <div className="font-pixel text-xl text-primary">{fmtHMS(msToNextHour)}</div>
         </div>
         <button onClick={goHome} className="rounded-full border-2 border-poke-dark/15 bg-white py-3.5 font-pixel text-sm tracking-wide text-poke-dark shadow-card active:scale-[0.98]">CLOSE</button>
@@ -223,7 +223,7 @@ function WhosThatPokemon() {
           <div className="absolute inset-x-0 top-4 mx-auto h-56 w-56" style={{ background: "repeating-conic-gradient(from 0deg, rgba(245,197,24,0.22) 0deg 6deg, transparent 6deg 14deg)" }} />
           {round.isShiny && <div className="z-10 mb-1 rounded-full bg-poke-yellow px-3 py-1 font-pixel text-[10px] text-poke-dark shadow-card">✨ SHINY!</div>}
           <PokemonSprite id={shown.id} shiny={round.isShiny} alt={shown.name} className={`relative z-10 h-44 w-44 [image-rendering:pixelated] ${round.isShiny ? "drop-shadow-[0_0_14px_rgba(245,197,24,0.85)]" : ""}`} />
-          <h1 className="z-10 mt-2 text-3xl font-extrabold text-poke-dark">It's {shown.name}!</h1>
+          <h1 className="z-10 mt-2 text-3xl font-extrabold text-foreground">It's {shown.name}!</h1>
         </div>
         <div className="mt-6 space-y-3">
           <Row icon={<div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-poke-yellow/30 text-xl">⭐</div>} title="+100 XP" />
@@ -240,11 +240,11 @@ function WhosThatPokemon() {
     return (
       <div className="flex h-full w-full flex-col overflow-y-auto items-center bg-poke-cream px-5 pb-8 pt-12 text-center">
         <PokemonSprite id={round.monId} alt={round.name} className="h-40 w-40 [image-rendering:pixelated] opacity-90" />
-        <h1 className="mt-4 text-3xl font-extrabold text-poke-dark">Not quite…</h1>
+        <h1 className="mt-4 text-3xl font-extrabold text-foreground">Not quite…</h1>
         {round.mode === "4"
-          ? <p className="mt-2 text-lg text-poke-dark/70">e.g. <span className="font-bold text-poke-dark">{round.name}</span> has that typing.</p>
-          : <p className="mt-2 text-lg text-poke-dark/70">It was <span className="font-bold text-poke-dark">{round.name}</span>.</p>}
-        <div className="mt-6 font-pixel text-[10px] uppercase tracking-wide text-poke-dark/45">Play again in</div>
+          ? <p className="mt-2 text-lg text-foreground/70">e.g. <span className="font-bold text-foreground">{round.name}</span> has that typing.</p>
+          : <p className="mt-2 text-lg text-foreground/70">It was <span className="font-bold text-foreground">{round.name}</span>.</p>}
+        <div className="mt-6 font-pixel text-[10px] uppercase tracking-wide text-foreground/45">Play again in</div>
         <div className="mt-1 font-pixel text-base text-primary">{fmtHMS(msToNextHour)}</div>
         <div className="flex-1" />
         <button onClick={goHome} className="w-full rounded-full border-2 border-poke-dark/15 bg-white py-3.5 font-pixel text-sm tracking-wide text-poke-dark shadow-card active:scale-[0.98]">CLOSE</button>

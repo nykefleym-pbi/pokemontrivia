@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { ChevronLeft, Backpack, Sparkles, Crown } from "lucide-react";
+import { Backpack, Sparkles, Crown } from "lucide-react";
 import { useGameStore, getItemDef } from "@/lib/store";
 import {
   pickRandomEnemy,
@@ -963,8 +963,8 @@ function BattleMode({
 
   function tryUseItem(id: ItemId) {
     const def = getItemDef(id);
-    if (id === "escape" && isWeekly) {
-      toast.error("Escape Rope can't be used in the Weekly League.");
+    if (id === "escape" && (isWeekly || isElite)) {
+      toast.error("Escape Rope can't be used in the Weekly League or Elite Four.");
       return;
     }
     const ok = useItem(id);
@@ -1068,18 +1068,6 @@ function BattleMode({
       {/* top bar */}
       <div className="flex shrink-0 items-center justify-between gap-2 pt-[calc(env(safe-area-inset-top)+1rem)] pb-1 px-[max(1.25rem,env(safe-area-inset-left))]">
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => {
-              if (isWeekly) {
-                toast.error("You cannot leave a Weekly League challenge.");
-                return;
-              }
-              setConfirmExit(true);
-            }}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-card/90 backdrop-blur shadow-card"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
           <div className={`flex items-center gap-1 rounded-full px-2.5 py-1 font-pixel text-[9px] shadow-card backdrop-blur ${isElite ? "bg-poke-dark text-poke-yellow" : "bg-card/90 text-foreground"}`}>
             {isElite && <Crown className="h-3 w-3" />}
             {isElite
@@ -1295,7 +1283,7 @@ function BattleMode({
                           const used = usedThisBattle[it.id] ?? false;
                           const isAuto =
                             it.id === "focusband" || it.id === "quickclaw" || it.id === "assaultvest";
-                          const disabled = isAuto || owned <= 0 || used || (isWeekly && it.id === "escape");
+                          const disabled = isAuto || owned <= 0 || used || ((isWeekly || isElite) && it.id === "escape");
                           return (
                             <button
                               key={it.id}
@@ -1345,7 +1333,7 @@ function BattleMode({
                     .map((it) => {
                       const owned = inventory[it.id] ?? 0;
                       const used = usedThisBattle[it.id] ?? false;
-                      const disabled = owned <= 0 || used || (isWeekly && it.id === "escape");
+                      const disabled = owned <= 0 || used || ((isWeekly || isElite) && it.id === "escape");
                       return (
                         <button
                           key={it.id}
@@ -1785,9 +1773,7 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
         <motion.div className="h-full bg-poke-yellow" initial={false} animate={{ width: `${progressPct}%` }} />
       </div>
       <div className="flex shrink-0 items-center justify-between pt-[calc(env(safe-area-inset-top)+1rem)] pb-1 px-[max(1.25rem,env(safe-area-inset-left))]">
-        <button onClick={() => setConfirmExit(true)} className="flex h-9 w-9 items-center justify-center rounded-full bg-card/90 backdrop-blur shadow-card">
-          <ChevronLeft className="h-5 w-5" />
-        </button>
+        <div className="w-9" />
         <div className="rounded-full bg-poke-dark px-2.5 py-1 font-pixel text-[9px] text-poke-yellow shadow-card">
           🔥 DAILY · {idx + 1}/{total}
         </div>

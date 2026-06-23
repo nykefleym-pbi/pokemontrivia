@@ -264,6 +264,7 @@
     background-color: var(--color-background);
     min-height: 100%;
     overscroll-behavior-y: none;
+    touch-action: pan-x pan-y;
   }
   body {
     color: var(--color-foreground);
