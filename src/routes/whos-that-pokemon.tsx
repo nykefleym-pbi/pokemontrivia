@@ -272,7 +272,7 @@ function WhosThatPokemon() {
         <button onClick={goHome} aria-label="Back" className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-xl text-poke-dark shadow-card active:scale-95">‹</button>
         <div className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 font-pixel text-[11px] text-primary shadow-card"><span>⏱</span>{`0:${String(timeLeft).padStart(2, "0")}`}</div>
       </div>
-      <h1 className="mt-3 text-center font-pixel text-lg leading-relaxed text-poke-dark">WHO'S THAT<br />POKÉMON?</h1>
+      <h1 className="mt-3 text-center font-pixel text-lg leading-relaxed text-foreground">WHO'S THAT<br />POKÉMON?</h1>
 
       {(round.mode === "1A" || round.mode === "1B") && silhouettePanel}
 
@@ -297,7 +297,7 @@ function WhosThatPokemon() {
               className="flex items-center gap-2 rounded-full border-b-4 border-primary/60 bg-white px-7 py-3.5 font-pixel text-base text-primary shadow-card disabled:opacity-40 active:translate-y-0.5 active:border-b-0">
               <span className="text-lg">🔊</span> PLAY CRY
             </button>
-            <div className="mt-2 font-pixel text-[9px] uppercase tracking-wide text-poke-dark/45">{playsLeft} {playsLeft === 1 ? "play" : "plays"} left</div>
+            <div className="mt-2 font-pixel text-[9px] uppercase tracking-wide text-foreground/45">{playsLeft} {playsLeft === 1 ? "play" : "plays"} left</div>
           </div>
           <div className="mt-6 grid grid-cols-2 gap-3">
             {round.choices.map((c) => {
@@ -319,19 +319,19 @@ function WhosThatPokemon() {
           <div className="flex items-center gap-3">
             {round.types.map((t, i) => (
               <div key={t} className="flex items-center gap-3">
-                {i > 0 && <span className="font-pixel text-lg text-poke-dark/50">+</span>}
+                {i > 0 && <span className="font-pixel text-lg text-foreground/50">+</span>}
                 <span className={`rounded-full px-6 py-3 font-pixel text-base uppercase tracking-wide text-white shadow-card ${TYPE_BG[t]}`}>{t}</span>
               </div>
             ))}
           </div>
-          <p className="mt-6 text-center text-2xl font-extrabold leading-tight text-poke-dark">Name any Pokémon with<br />this typing.</p>
+          <p className="mt-6 text-center text-2xl font-extrabold leading-tight text-foreground">Name any Pokémon with<br />this typing.</p>
         </div>
       )}
 
       {round.mode === "5" && (
         <div className="mt-6">
           {!dexEntry || dexLoading ? (
-            <div className="py-16 text-center font-pixel text-[10px] text-poke-dark/50">Loading Pokédex entry…</div>
+            <div className="py-16 text-center font-pixel text-[10px] text-foreground/50">Loading Pokédex entry…</div>
           ) : dexEntry.flavor === "" ? (
             <div className="py-12 text-center">
               <div className="font-pixel text-[10px] text-poke-dark/60">Couldn't load the entry.</div>
