@@ -1283,7 +1283,7 @@ function BattleMode({
                           const used = usedThisBattle[it.id] ?? false;
                           const isAuto =
                             it.id === "focusband" || it.id === "quickclaw" || it.id === "assaultvest";
-                          const disabled = isAuto || owned <= 0 || used || (isWeekly && it.id === "escape");
+                          const disabled = isAuto || owned <= 0 || used || ((isWeekly || isElite) && it.id === "escape");
                           return (
                             <button
                               key={it.id}
