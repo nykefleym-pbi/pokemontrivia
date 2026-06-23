@@ -223,7 +223,7 @@ function WhosThatPokemon() {
           <div className="absolute inset-x-0 top-4 mx-auto h-56 w-56" style={{ background: "repeating-conic-gradient(from 0deg, rgba(245,197,24,0.22) 0deg 6deg, transparent 6deg 14deg)" }} />
           {round.isShiny && <div className="z-10 mb-1 rounded-full bg-poke-yellow px-3 py-1 font-pixel text-[10px] text-poke-dark shadow-card">✨ SHINY!</div>}
           <PokemonSprite id={shown.id} shiny={round.isShiny} alt={shown.name} className={`relative z-10 h-44 w-44 [image-rendering:pixelated] ${round.isShiny ? "drop-shadow-[0_0_14px_rgba(245,197,24,0.85)]" : ""}`} />
-          <h1 className="z-10 mt-2 text-3xl font-extrabold text-poke-dark">It's {shown.name}!</h1>
+          <h1 className="z-10 mt-2 text-3xl font-extrabold text-foreground">It's {shown.name}!</h1>
         </div>
         <div className="mt-6 space-y-3">
           <Row icon={<div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-poke-yellow/30 text-xl">⭐</div>} title="+100 XP" />
