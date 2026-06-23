@@ -35,7 +35,7 @@ export const Route = createRootRoute({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" },
       { title: "Pokémon Trivia Battle" },
       { name: "description", content: "A vibrant Pokémon trivia battler with AI-generated questions, type effectiveness, items and ranks." },
       { name: "theme-color", content: "#dc2626" },
