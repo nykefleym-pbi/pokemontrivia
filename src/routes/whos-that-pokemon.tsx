@@ -206,7 +206,7 @@ function WhosThatPokemon() {
         <h1 className="font-pixel text-lg leading-relaxed text-foreground">WHO'S THAT<br />POKÉMON?</h1>
         <div className="flex flex-1 flex-col items-center justify-center gap-3">
           <div className="text-5xl">⏰</div>
-          <div className="font-pixel text-[10px] uppercase tracking-wide text-poke-dark/50">Play again in</div>
+          <div className="font-pixel text-[10px] uppercase tracking-wide text-foreground/50">Play again in</div>
           <div className="font-pixel text-xl text-primary">{fmtHMS(msToNextHour)}</div>
         </div>
         <button onClick={goHome} className="rounded-full border-2 border-poke-dark/15 bg-white py-3.5 font-pixel text-sm tracking-wide text-poke-dark shadow-card active:scale-[0.98]">CLOSE</button>
