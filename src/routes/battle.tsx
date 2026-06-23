@@ -45,6 +45,12 @@ function BattlePage() {
   const dailyResult = useGameStore((s) => s.dailyResult);
   const today = new Date().toISOString().slice(0, 10);
   const dailyDone = dailyResult?.date === today;
+  const whosThatHourKey = useGameStore((s) => s.whosThatHourKey);
+  const lastEngagePromptDate = useGameStore((s) => s.lastEngagePromptDate);
+  const setLastEngagePromptDate = useGameStore((s) => s.setLastEngagePromptDate);
+  const [engageCards, setEngageCards] = useState<Array<{ kind: "daily" | "weekly" | "whosthat"; title: string; desc: string; chip: string; cta: string; onPlay: () => void; heroSrc?: string }> | null>(null);
+  const [engageActive, setEngageActive] = useState(0);
+  const engageShownRef = useRef(false);
 
   const weeklyLeague = useGameStore((s) => s.weeklyLeague);
   const initWeeklyLeague = useGameStore((s) => s.initWeeklyLeague);
@@ -225,9 +231,107 @@ function BattlePage() {
     useGameStore.getState().abortBattle();
   }
 
+  useEffect(() => {
+    if (engageShownRef.current) return;
+    if (phase !== "home" || pendingElite) return;
+    if (lastEngagePromptDate === today) return;
+    const now = Date.now();
+    const msToNextDay = Date.UTC(new Date(now).getUTCFullYear(), new Date(now).getUTCMonth(), new Date(now).getUTCDate() + 1) - now;
+    const dailyClock = `${Math.floor(msToNextDay / 3_600_000)}H ${String(Math.floor((msToNextDay % 3_600_000) / 60_000)).padStart(2, "0")}M`;
+    const weeklyStatus = weeklyLeague?.status;
+    const leader = weeklyLeague ? findGymLeader(weeklyLeague.gymLeaderId) : null;
+    const cards: Array<{ kind: "daily" | "weekly" | "whosthat"; title: string; desc: string; chip: string; cta: string; onPlay: () => void; heroSrc?: string }> = [];
+    if (!dailyDone) {
+      cards.push({ kind: "daily", title: "Daily Quest is ready!", desc: "Beat Rotom in 10 fast questions for bonus XP.", chip: `RESETS IN ${dailyClock}`, cta: "Play Daily Quest", onPlay: startDaily });
+    }
+    if (weeklyStatus !== "won" && weeklyStatus !== "lost") {
+      cards.push({ kind: "weekly", title: "Weekly League is open!", desc: weeklyStatus === "in_progress" ? "Finish your run before the week resets." : "Challenge this week's Gym Leader and climb the ranks.", chip: "RESETS MONDAY", cta: "Enter Weekly League", onPlay: startWeekly, heroSrc: leader ? `/trainers/gym/${leader.trainerSpriteId}.png` : undefined });
+    }
+    if (Math.floor(now / 3_600_000) !== whosThatHourKey) {
+      cards.push({ kind: "whosthat", title: "A new round is live!", desc: "Guess the hidden Pokémon to earn rewards.", chip: "NEW ROUND EVERY HOUR", cta: "Play now", onPlay: () => navigate({ to: "/whos-that-pokemon" }) });
+    }
+    if (cards.length > 0) {
+      engageShownRef.current = true;
+      setEngageActive(0);
+      setEngageCards(cards);
+      setLastEngagePromptDate(today);
+    }
+  }, [phase, pendingElite, lastEngagePromptDate, today, dailyDone, weeklyLeague, whosThatHourKey, startDaily, startWeekly, navigate, setLastEngagePromptDate]);
+
+  const ENGAGE_THEME: Record<string, { cardBg: string; hero: string; ray: string; glow: string; labelBg: string; labelColor: string; label: string; chipBg: string; chipColor: string; chipStroke: string; ctaBg: string; ctaColor: string; ctaShadow: string; titleColor: string; descColor: string }> = {
+    daily: { cardBg: "#FBF3DF", hero: "radial-gradient(circle at 50% 42%, #FF8A3D 0%, #F0531F 52%, #D23A12 100%)", ray: "rgba(255,255,255,0.14)", glow: "rgba(255,224,130,0.6)", labelBg: "rgba(0,0,0,0.22)", labelColor: "#fff", label: "DAILY QUEST", chipBg: "#F6E6C4", chipColor: "#9A7320", chipStroke: "#B8862A", ctaBg: "#E23B2E", ctaColor: "#fff", ctaShadow: "#A82A20", titleColor: "#1C2333", descColor: "#6B6E7B" },
+    weekly: { cardBg: "#FBF3DF", hero: "radial-gradient(circle at 50% 40%, #8A6BC9 0%, #5B3F95 60%, #3F2A6E 100%)", ray: "rgba(242,214,78,0.16)", glow: "rgba(242,214,78,0.45)", labelBg: "#F2D64E", labelColor: "#3F2A6E", label: "WEEKLY LEAGUE", chipBg: "#ECE3F4", chipColor: "#5B3F95", chipStroke: "#6B4FA0", ctaBg: "linear-gradient(95deg, #F2D64E, #E8A93C)", ctaColor: "#3F2A6E", ctaShadow: "#C18A28", titleColor: "#1C2333", descColor: "#6B6E7B" },
+    whosthat: { cardBg: "linear-gradient(165deg, #E23B2E 0%, #B5341F 100%)", hero: "transparent", ray: "rgba(255,255,255,0.08)", glow: "transparent", labelBg: "#F2D64E", labelColor: "#B5341F", label: "WHO'S THAT POKÉMON?", chipBg: "rgba(255,255,255,0.16)", chipColor: "#fff", chipStroke: "#fff", ctaBg: "#F2D64E", ctaColor: "#1C2333", ctaShadow: "#C9AE2E", titleColor: "#fff", descColor: "rgba(255,255,255,0.82)" },
+  };
+
   return (
     <>
       <Toaster position="top-center" />
+      {engageCards && engageCards.length > 0 && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+          <div className="absolute inset-0 bg-[rgba(8,9,14,0.72)]" onClick={() => setEngageCards(null)} />
+          <div className="relative w-[360px] max-w-[94vw]">
+            <button onClick={() => setEngageCards(null)} aria-label="Close" className="absolute -top-1.5 right-1 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white active:scale-90">
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1 1l11 11M12 1L1 12" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" /></svg>
+            </button>
+            <div className="px-10 text-center">
+              <div className="text-[26px] font-black tracking-tight text-white">Ready to play?</div>
+              <div className="mt-1.5 font-pixel text-[8px] tracking-widest text-[#F2D64E]">
+                {engageCards.length} {engageCards.length === 1 ? "ACTIVITY" : "ACTIVITIES"} AVAILABLE
+              </div>
+            </div>
+            <div
+              className="mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-10 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              onScroll={(e) => { const el = e.currentTarget; setEngageActive(Math.max(0, Math.min(engageCards.length - 1, Math.round(el.scrollLeft / 292)))); }}
+            >
+              {engageCards.map((card) => {
+                const t = ENGAGE_THEME[card.kind];
+                return (
+                  <div key={card.kind} className="relative w-[280px] shrink-0 snap-center overflow-hidden rounded-[28px] shadow-[0_18px_40px_-14px_rgba(0,0,0,0.5)]" style={{ background: t.cardBg }}>
+                    <div className="relative flex h-[200px] items-center justify-center overflow-hidden" style={{ background: t.hero }}>
+                      <div className="absolute inset-0" style={{ background: `repeating-conic-gradient(from 0deg at 50% 44%, ${t.ray} 0deg 6deg, transparent 6deg 13deg)` }} />
+                      {card.kind !== "whosthat" && <div className="absolute h-[150px] w-[150px] rounded-full" style={{ background: `radial-gradient(circle, ${t.glow} 0%, transparent 70%)` }} />}
+                      {card.kind === "daily" && <PokemonSprite id={479} alt="Rotom" className="sprite relative h-[150px] w-[150px] object-contain drop-shadow-[0_10px_14px_rgba(120,30,0,0.45)]" />}
+                      {card.kind === "weekly" && (card.heroSrc
+                        ? <img src={card.heroSrc} alt="Gym Leader" className="relative h-[150px] w-[150px] object-contain [filter:brightness(0)] [image-rendering:pixelated]" />
+                        : <div className="relative text-[110px] leading-none">🏆</div>)}
+                      {card.kind === "whosthat" && (
+                        <div className="relative flex h-[124px] w-[124px] items-center justify-center overflow-hidden rounded-full shadow-[0_10px_26px_-8px_rgba(0,0,0,0.4)]" style={{ background: "radial-gradient(circle at 50% 46%, #FFF4D6 0%, #FFD98A 100%)" }}>
+                          <PokemonSprite id={25} alt="Pikachu" className="h-[104px] w-[104px] [filter:brightness(0)] [image-rendering:pixelated]" />
+                        </div>
+                      )}
+                      <div className="absolute left-4 top-4 rounded-full px-2.5 py-1.5 font-pixel text-[7px] tracking-wider" style={{ background: t.labelBg, color: t.labelColor }}>{t.label}</div>
+                    </div>
+                    <div className="px-5 pb-6 pt-4">
+                      <div className="text-[21px] font-black leading-tight tracking-tight" style={{ color: t.titleColor }}>{card.title}</div>
+                      <div className="mt-1.5 text-[14px] leading-snug" style={{ color: t.descColor }}>{card.desc}</div>
+                      <div className="mt-3.5 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5" style={{ background: t.chipBg }}>
+                        <svg width="11" height="11" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="8.5" stroke={t.chipStroke} strokeWidth="2" /><path d="M11 6.5V11l3 2" stroke={t.chipStroke} strokeWidth="2" strokeLinecap="round" /></svg>
+                        <span className="font-pixel text-[7px]" style={{ color: t.chipColor }}>{card.chip}</span>
+                      </div>
+                      <button
+                        onClick={() => { const p = card.onPlay; setEngageCards(null); p(); }}
+                        className="mt-4 flex h-[50px] w-full items-center justify-center rounded-full text-[16px] font-extrabold active:translate-y-0.5"
+                        style={{ background: t.ctaBg, color: t.ctaColor, boxShadow: `0 4px 0 ${t.ctaShadow}` }}
+                      >
+                        {card.cta}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {engageCards.length > 1 && (
+              <div className="mt-4 flex items-center justify-center gap-2">
+                {engageCards.map((c, i) => (
+                  <div key={c.kind} className="h-2 rounded-full transition-all" style={{ width: i === engageActive ? 22 : 8, background: i === engageActive ? "#E23B2E" : "rgba(255,255,255,0.32)" }} />
+                ))}
+              </div>
+            )}
+            <button onClick={() => setEngageCards(null)} className="mx-auto mt-4 block text-[15px] font-semibold text-white/55">Maybe later</button>
+          </div>
+        </div>
+      )}
       {phase === "fighting" ? (
         <BattleScreen
           key={battleKey}
