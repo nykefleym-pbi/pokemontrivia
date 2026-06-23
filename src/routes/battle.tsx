@@ -456,9 +456,7 @@ function BattleHome({
               {dailyDone ? "Done" : "Beat Rotom"}
             </h3>
             <p className="mt-0.5 text-[11px] font-semibold leading-tight text-[oklch(0.35_0.06_80/0.8)]">
-              {dailyDone && dailyResult
-                ? `${dailyResult.correct}/${dailyResult.total} · ${Math.round(dailyResult.timeMs / 1000)}s`
-                : "10 fast questions"}
+              {dailyDone ? `Next in ${dailyClock}` : "Tap to begin"}
             </p>
           </div>
           <PokemonSprite id={479} alt="Rotom" className="sprite -mr-1 h-[52px] w-[52px] shrink-0" />
