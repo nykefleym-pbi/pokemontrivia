@@ -1773,9 +1773,7 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
         <motion.div className="h-full bg-poke-yellow" initial={false} animate={{ width: `${progressPct}%` }} />
       </div>
       <div className="flex shrink-0 items-center justify-between pt-[calc(env(safe-area-inset-top)+1rem)] pb-1 px-[max(1.25rem,env(safe-area-inset-left))]">
-        <button onClick={() => setConfirmExit(true)} className="flex h-9 w-9 items-center justify-center rounded-full bg-card/90 backdrop-blur shadow-card">
-          <ChevronLeft className="h-5 w-5" />
-        </button>
+        <div className="w-9" />
         <div className="rounded-full bg-poke-dark px-2.5 py-1 font-pixel text-[9px] text-poke-yellow shadow-card">
           🔥 DAILY · {idx + 1}/{total}
         </div>
