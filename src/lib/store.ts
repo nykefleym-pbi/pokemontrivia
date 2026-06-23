@@ -90,6 +90,9 @@ export interface GameState {
   trainerSprite: string;
   friendCode: string | null;
   lastEngagePromptDate: string | null;
+  dailyGiftLastClaim: string | null;
+  dailyGiftStreak: number;
+  guaranteedShinyPending: boolean;
   pokemon: PokeEntry | null;
 
 
@@ -155,6 +158,8 @@ export interface GameState {
   setOnboarded: (name: string, pokemon: PokeEntry, trainerSprite: string) => void;
   setFriendCode: (code: string) => void;
   setLastEngagePromptDate: (date: string) => void;
+  claimDailyGift: () => { itemId: ItemId; qty: number; day: number; shiny: boolean } | null;
+  consumeGuaranteedShiny: () => void;
   startGuestSession: () => void;
 
   reset: () => void;
@@ -239,6 +244,9 @@ export const useGameStore = create<GameState>()(
       trainerSprite: TRAINER_SPRITES[0]?.id ?? "",
       friendCode: null,
       lastEngagePromptDate: null,
+      dailyGiftLastClaim: null,
+      dailyGiftStreak: 0,
+      guaranteedShinyPending: false,
       pokemon: null,
 
       level: 1,
@@ -472,6 +480,36 @@ export const useGameStore = create<GameState>()(
 
       setFriendCode: (code) => set({ friendCode: code }),
       setLastEngagePromptDate: (date) => set({ lastEngagePromptDate: date }),
+
+      claimDailyGift: () => {
+        const s = get();
+        const today = new Date().toISOString().slice(0, 10);
+        if (s.dailyGiftLastClaim === today) return null;
+        const yd = new Date();
+        yd.setUTCDate(yd.getUTCDate() - 1);
+        const yesterday = yd.toISOString().slice(0, 10);
+        const continuing = s.dailyGiftLastClaim === yesterday;
+        const day = ((continuing ? s.dailyGiftStreak : 0) % 7) + 1;
+        const commonPool: ItemId[] = ["potion", "xattack", "scope", "superpotion", "xaccuracy", "escape", "quickclaw", "maxpotion"];
+        const premiumPool: ItemId[] = ["candy", "luckyegg", "focusband", "assaultvest"];
+        const shiny = day === 7;
+        let itemId: ItemId;
+        let qty = 1;
+        if (shiny) {
+          itemId = premiumPool[Math.floor(Math.random() * premiumPool.length)];
+        } else {
+          itemId = commonPool[Math.floor(Math.random() * commonPool.length)];
+          qty = Math.random() < 0.3 ? 2 : 1;
+        }
+        set({
+          inventory: { ...s.inventory, [itemId]: (s.inventory[itemId] ?? 0) + qty },
+          dailyGiftStreak: day,
+          dailyGiftLastClaim: today,
+          guaranteedShinyPending: shiny ? true : s.guaranteedShinyPending,
+        });
+        return { itemId, qty, day, shiny };
+      },
+      consumeGuaranteedShiny: () => set({ guaranteedShinyPending: false }),
 
 
       startGuestSession: () => {
@@ -750,6 +788,9 @@ export const useGameStore = create<GameState>()(
         darkMode: s.darkMode,
         friendCode: s.friendCode,
         lastEngagePromptDate: s.lastEngagePromptDate,
+        dailyGiftLastClaim: s.dailyGiftLastClaim,
+        dailyGiftStreak: s.dailyGiftStreak,
+        guaranteedShinyPending: s.guaranteedShinyPending,
 
       }),
 
