@@ -504,9 +504,9 @@ function BattleHome({
           <div className="relative min-w-0 flex-1">
             <div className="font-pixel text-[7px] leading-none text-white/85">HOURLY MINI-GAME</div>
             <h3 className="mt-1.5 text-base font-extrabold leading-tight">Who's That Pokémon?</h3>
-            {whosThatOnCooldown && (
-              <p className="mt-0.5 font-pixel text-[8px] leading-none text-white/85">NEXT IN {whosThatClock}</p>
-            )}
+            <p className="mt-0.5 font-pixel text-[8px] leading-none text-white/85">
+              {whosThatOnCooldown ? `NEXT IN ${whosThatClock}` : "TAP TO BEGIN"}
+            </p>
           </div>
           <span className="relative shrink-0 text-lg text-white/80">›</span>
         </button>
