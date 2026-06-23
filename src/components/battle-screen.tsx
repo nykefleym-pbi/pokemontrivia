@@ -1333,7 +1333,7 @@ function BattleMode({
                     .map((it) => {
                       const owned = inventory[it.id] ?? 0;
                       const used = usedThisBattle[it.id] ?? false;
-                      const disabled = owned <= 0 || used || (isWeekly && it.id === "escape");
+                      const disabled = owned <= 0 || used || ((isWeekly || isElite) && it.id === "escape");
                       return (
                         <button
                           key={it.id}
