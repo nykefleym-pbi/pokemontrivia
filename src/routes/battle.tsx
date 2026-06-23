@@ -299,6 +299,9 @@ function BattleHome({
   const whosThatOnCooldown = Math.floor(nowTick / 3_600_000) === whosThatHourKey;
   const whosThatMsLeft = 3_600_000 - (nowTick % 3_600_000);
   const whosThatClock = `${String(Math.floor(whosThatMsLeft / 60000)).padStart(2, "0")}:${String(Math.floor((whosThatMsLeft % 60000) / 1000)).padStart(2, "0")}`;
+  const _nd = new Date(nowTick);
+  const msToNextDay = Date.UTC(_nd.getUTCFullYear(), _nd.getUTCMonth(), _nd.getUTCDate() + 1) - nowTick;
+  const dailyClock = `${Math.floor(msToNextDay / 3_600_000)}h ${String(Math.floor((msToNextDay % 3_600_000) / 60_000)).padStart(2, "0")}m`;
   const trainerName = useGameStore((s) => s.trainerName);
   const trainerSprite = useGameStore((s) => s.trainerSprite);
   const pokemon = useGameStore((s) => s.pokemon);
