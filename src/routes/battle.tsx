@@ -45,6 +45,12 @@ function BattlePage() {
   const dailyResult = useGameStore((s) => s.dailyResult);
   const today = new Date().toISOString().slice(0, 10);
   const dailyDone = dailyResult?.date === today;
+  const whosThatHourKey = useGameStore((s) => s.whosThatHourKey);
+  const lastEngagePromptDate = useGameStore((s) => s.lastEngagePromptDate);
+  const setLastEngagePromptDate = useGameStore((s) => s.setLastEngagePromptDate);
+  const [engageCards, setEngageCards] = useState<Array<{ kind: "daily" | "weekly" | "whosthat"; title: string; desc: string; chip: string; cta: string; onPlay: () => void; heroSrc?: string }> | null>(null);
+  const [engageActive, setEngageActive] = useState(0);
+  const engageShownRef = useRef(false);
 
   const weeklyLeague = useGameStore((s) => s.weeklyLeague);
   const initWeeklyLeague = useGameStore((s) => s.initWeeklyLeague);

@@ -89,6 +89,7 @@ export interface GameState {
   trainerName: string;
   trainerSprite: string;
   friendCode: string | null;
+  lastEngagePromptDate: string | null;
   pokemon: PokeEntry | null;
 
 
@@ -153,6 +154,7 @@ export interface GameState {
   // actions
   setOnboarded: (name: string, pokemon: PokeEntry, trainerSprite: string) => void;
   setFriendCode: (code: string) => void;
+  setLastEngagePromptDate: (date: string) => void;
   startGuestSession: () => void;
 
   reset: () => void;
@@ -236,6 +238,7 @@ export const useGameStore = create<GameState>()(
       trainerName: "",
       trainerSprite: TRAINER_SPRITES[0]?.id ?? "",
       friendCode: null,
+      lastEngagePromptDate: null,
       pokemon: null,
 
       level: 1,
@@ -468,6 +471,7 @@ export const useGameStore = create<GameState>()(
         set({ hasOnboarded: true, isGuest: false, trainerName: name, pokemon, trainerSprite }),
 
       setFriendCode: (code) => set({ friendCode: code }),
+      setLastEngagePromptDate: (date) => set({ lastEngagePromptDate: date }),
 
 
       startGuestSession: () => {
@@ -745,6 +749,7 @@ export const useGameStore = create<GameState>()(
         weeklyLeagueHistory: s.weeklyLeagueHistory,
         darkMode: s.darkMode,
         friendCode: s.friendCode,
+        lastEngagePromptDate: s.lastEngagePromptDate,
 
       }),
 
