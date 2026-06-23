@@ -240,11 +240,11 @@ function WhosThatPokemon() {
     return (
       <div className="flex h-full w-full flex-col overflow-y-auto items-center bg-poke-cream px-5 pb-8 pt-12 text-center">
         <PokemonSprite id={round.monId} alt={round.name} className="h-40 w-40 [image-rendering:pixelated] opacity-90" />
-        <h1 className="mt-4 text-3xl font-extrabold text-poke-dark">Not quite…</h1>
+        <h1 className="mt-4 text-3xl font-extrabold text-foreground">Not quite…</h1>
         {round.mode === "4"
-          ? <p className="mt-2 text-lg text-poke-dark/70">e.g. <span className="font-bold text-poke-dark">{round.name}</span> has that typing.</p>
-          : <p className="mt-2 text-lg text-poke-dark/70">It was <span className="font-bold text-poke-dark">{round.name}</span>.</p>}
-        <div className="mt-6 font-pixel text-[10px] uppercase tracking-wide text-poke-dark/45">Play again in</div>
+          ? <p className="mt-2 text-lg text-foreground/70">e.g. <span className="font-bold text-foreground">{round.name}</span> has that typing.</p>
+          : <p className="mt-2 text-lg text-foreground/70">It was <span className="font-bold text-foreground">{round.name}</span>.</p>}
+        <div className="mt-6 font-pixel text-[10px] uppercase tracking-wide text-foreground/45">Play again in</div>
         <div className="mt-1 font-pixel text-base text-primary">{fmtHMS(msToNextHour)}</div>
         <div className="flex-1" />
         <button onClick={goHome} className="w-full rounded-full border-2 border-poke-dark/15 bg-white py-3.5 font-pixel text-sm tracking-wide text-poke-dark shadow-card active:scale-[0.98]">CLOSE</button>
