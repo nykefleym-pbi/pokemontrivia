@@ -94,6 +94,30 @@ function ShopPage() {
   const buyItem = useGameStore((s) => s.buyItem);
   const useItem = useGameStore((s) => s.useItem);
   const autoItems = useGameStore((s) => s.autoItems);
+  const dailyGiftLastClaim = useGameStore((s) => s.dailyGiftLastClaim);
+  const dailyGiftStreak = useGameStore((s) => s.dailyGiftStreak);
+  const claimDailyGift = useGameStore((s) => s.claimDailyGift);
+  const [giftNow, setGiftNow] = useState(Date.now());
+  useEffect(() => { const i = setInterval(() => setGiftNow(Date.now()), 1000); return () => clearInterval(i); }, []);
+  const giftToday = new Date(giftNow).toISOString().slice(0, 10);
+  const giftYesterday = (() => { const d = new Date(giftNow); d.setUTCDate(d.getUTCDate() - 1); return d.toISOString().slice(0, 10); })();
+  const giftClaimable = dailyGiftLastClaim !== giftToday;
+  const giftClaimedToday = dailyGiftLastClaim === giftToday;
+  const giftContinuing = dailyGiftLastClaim === giftYesterday;
+  const giftLit = giftClaimedToday ? dailyGiftStreak : (giftContinuing ? dailyGiftStreak : 0);
+  const giftNextDay = (giftLit % 7) + 1;
+  const giftMsToNext = Date.UTC(new Date(giftNow).getUTCFullYear(), new Date(giftNow).getUTCMonth(), new Date(giftNow).getUTCDate() + 1) - giftNow;
+  const giftClock = `${Math.floor(giftMsToNext / 3_600_000)}h ${String(Math.floor((giftMsToNext % 3_600_000) / 60_000)).padStart(2, "0")}m`;
+  function handleClaimGift() {
+    const res = claimDailyGift();
+    if (!res) return;
+    const it = ITEMS.find((x) => x.id === res.itemId);
+    if (res.shiny) {
+      toast.success(`Day 7 reward! ${res.qty}× ${it?.name ?? "item"} ${it?.emoji ?? "🎁"} — your next battle win is a guaranteed shiny! ✨`);
+    } else {
+      toast.success(`Daily Gift opened: ${res.qty}× ${it?.name ?? "item"} ${it?.emoji ?? "🎁"}`);
+    }
+  }
   const toggleAutoItem = useGameStore((s) => s.toggleAutoItem);
 
   const [tab, setTab] = useState<Category>("HEALING");
@@ -193,6 +217,49 @@ function ShopPage() {
       </div>
 
       <div className="px-5 pb-8 pt-2">
+        {/* Daily Gift */}
+        {giftClaimable ? (
+          <button onClick={handleClaimGift} className="relative mb-5 flex w-full items-center gap-4 overflow-hidden rounded-3xl bg-gradient-to-br from-[#F2D64E] to-[#E8A93C] p-5 text-left shadow-card active:scale-[0.99]">
+            <span className="absolute right-3 top-3 rounded-full bg-primary px-2.5 py-1 font-pixel-xs uppercase text-white shadow-sm">Free</span>
+            <div className="shrink-0 text-5xl drop-shadow">🎁</div>
+            <div className="min-w-0 flex-1">
+              <div className="font-pixel-xs uppercase text-foreground/70">Daily Gift · Day {giftNextDay}</div>
+              <div className="text-lg font-extrabold leading-tight text-foreground">Tap to open your free item!</div>
+              <div className="mt-2.5 flex items-center gap-1.5">
+                {Array.from({ length: 7 }).map((_, i) => {
+                  const day = i + 1;
+                  const filled = day <= giftLit;
+                  const active = day === giftNextDay;
+                  return (
+                    <div key={day} className={`flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold ${filled ? "bg-primary text-white" : active ? "bg-white text-primary ring-2 ring-primary" : "bg-black/10 text-foreground/40"}`}>
+                      {day === 7 ? "★" : day}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </button>
+        ) : (
+          <div className="relative mb-5 flex w-full items-center gap-4 overflow-hidden rounded-3xl bg-card p-5 shadow-card">
+            <div className="shrink-0 text-5xl opacity-40 grayscale">🎁</div>
+            <div className="min-w-0 flex-1">
+              <div className="font-pixel-xs uppercase text-foreground/55">Daily Gift · claimed today</div>
+              <div className="text-lg font-extrabold leading-tight text-foreground/70">Next gift in {giftClock}</div>
+              <div className="mt-2.5 flex items-center gap-1.5">
+                {Array.from({ length: 7 }).map((_, i) => {
+                  const day = i + 1;
+                  const filled = day <= giftLit;
+                  return (
+                    <div key={day} className={`flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold ${filled ? "bg-primary text-white" : "bg-black/10 text-foreground/40"}`}>
+                      {day === 7 ? "★" : day}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Featured — single discounted item */}
         <button
           onClick={() =>

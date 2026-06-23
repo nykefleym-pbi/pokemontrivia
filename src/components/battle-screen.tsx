@@ -256,7 +256,8 @@ function BattleMode({
         isShiny: false,
       };
     }
-    return pickRandomEnemy();
+    const base = pickRandomEnemy();
+    return useGameStore.getState().guaranteedShinyPending ? { ...base, isShiny: true } : base;
   });
   const enemyMaxHp = isWeekly ? 250 : isElite ? 200 : enemyHpForLevel(level);
   const playerAbility = useMemo(() => getAbilityFn(player.types), [player.types]);
@@ -839,6 +840,7 @@ function BattleMode({
     // Pokédex capture on win
     if (won) {
       recordPokedexCapture(enemy.pokemon.id, enemy.isShiny);
+      if (!isWeekly && !isElite) useGameStore.getState().consumeGuaranteedShiny();
     }
 
     // Elite Four bookkeeping + premium item rewards
