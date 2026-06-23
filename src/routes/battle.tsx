@@ -477,13 +477,11 @@ function BattleHome({
               {weeklyLeader ? `Gym: ${weeklyLeader.name}` : "Loading..."}
             </h3>
             <p className="mt-0.5 text-[11px] font-semibold leading-tight text-white/85">
-              {weeklyLeague?.status === "won"
-                ? "Victory!"
-                : weeklyLeague?.status === "lost"
-                  ? weeklyTimeLeft
-                  : weeklyLeague?.status === "in_progress"
-                    ? "Resume your run"
-                    : "Resets Monday 00:00 UTC"}
+              {weeklyFinished
+                ? `Next in ${weeklyTimeLeft}`
+                : weeklyLeague?.status === "in_progress"
+                  ? "Resume your run"
+                  : "Tap to begin"}
             </p>
           </div>
           {weeklyLeader && (
