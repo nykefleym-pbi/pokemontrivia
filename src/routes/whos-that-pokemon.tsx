@@ -203,7 +203,7 @@ function WhosThatPokemon() {
   if (locked) {
     return (
       <div className="flex h-full w-full flex-col overflow-y-auto bg-poke-cream px-5 pb-10 pt-8 text-center">
-        <h1 className="font-pixel text-lg leading-relaxed text-poke-dark">WHO'S THAT<br />POKÉMON?</h1>
+        <h1 className="font-pixel text-lg leading-relaxed text-foreground">WHO'S THAT<br />POKÉMON?</h1>
         <div className="flex flex-1 flex-col items-center justify-center gap-3">
           <div className="text-5xl">⏰</div>
           <div className="font-pixel text-[10px] uppercase tracking-wide text-poke-dark/50">Play again in</div>
