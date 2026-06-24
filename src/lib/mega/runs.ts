@@ -1,9 +1,11 @@
 import { supabase } from "@/integrations/supabase/client";
 import { ensureSession, syncProfile } from "@/lib/social";
-import { useGameStore } from "@/lib/store";
 
-// Loosely-typed table client so this compiles even before Supabase types regenerate.
+// Loosely-typed clients so this compiles even before Supabase types regenerate.
 const db = supabase as unknown as { from: (t: string) => any };
+const rpc = supabase as unknown as {
+  rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: any; error: { message: string } | null }>;
+};
 
 export interface MegaRunRow {
   id: string;
@@ -16,12 +18,8 @@ export interface MegaRunRow {
   trainer_name: string;
   trainer_sprite: string;
   level: number;
+  attempts: number;
   finished_at: string;
-}
-
-/** True when `a` outranks `b`: higher accuracy, ties broken by faster time. */
-function isBetter(a: { accuracy: number; time_ms: number }, b: { accuracy: number; time_ms: number }) {
-  return a.accuracy > b.accuracy || (a.accuracy === b.accuracy && a.time_ms < b.time_ms);
 }
 
 /** Read the current user's stored run for an event (or null). */
@@ -36,6 +34,12 @@ export async function getMyMegaRun(eventId: string): Promise<MegaRunRow | null> 
     .maybeSingle();
   if (error) { console.warn("[mega] getMyMegaRun failed:", error.message); return null; }
   return (data ?? null) as MegaRunRow | null;
+}
+
+/** Attempts used so far (0–2). Escapes are free and never increment this. */
+export async function getMegaAttempts(eventId: string): Promise<number> {
+  const row = await getMyMegaRun(eventId);
+  return row?.attempts ?? 0;
 }
 
 /** Full leaderboard for an event, ordered by accuracy desc then time asc. */
@@ -60,10 +64,14 @@ export async function getMyMegaRank(eventId: string): Promise<{ row: MegaRunRow;
   return { row: mine, rank: idx >= 0 ? idx + 1 : board.length + 1 };
 }
 
+export type SubmitResult =
+  | { ok: true; row: MegaRunRow; rank: number }
+  | { ok: false; error: string };
+
 /**
- * Submit a finished Mega Raid run. Keeps the player's BEST run for the event
- * (higher accuracy, ties broken by faster time) — a worse replay never demotes
- * an earlier good score. Returns the stored row + 1-based rank, or null on failure.
+ * Submit a finished Mega Raid run through the server RPC, which enforces the
+ * active-window freeze, the 2-attempt cap, and keep-best (higher accuracy, ties
+ * broken by faster time). A rejected 3rd attempt returns { ok: false }.
  */
 export async function submitMegaRun(input: {
   eventId: string;
@@ -71,33 +79,23 @@ export async function submitMegaRun(input: {
   correct: number;
   total: number;
   timeMs: number;
-}): Promise<{ row: MegaRunRow; rank: number } | null> {
+}): Promise<SubmitResult> {
   // Guarantee the profiles row exists (mega_runs.user_id references it) and trainer fields are fresh.
   await syncProfile();
   const uid = await ensureSession();
-  if (!uid) return null;
-  const s = useGameStore.getState();
+  if (!uid) return { ok: false, error: "No session yet — try again in a moment." };
 
-  const incoming = { accuracy: input.accuracy, time_ms: input.timeMs };
-  const existing = await getMyMegaRun(input.eventId);
-
-  if (!existing || isBetter(incoming, existing)) {
-    const payload = {
-      user_id: uid,
-      event_id: input.eventId,
-      accuracy: input.accuracy,
-      correct: input.correct,
-      total: input.total,
-      time_ms: input.timeMs,
-      trainer_name: s.trainerName || "Trainer",
-      trainer_sprite: s.trainerSprite || "red",
-      level: s.level ?? 1,
-    };
-    const { error } = await db
-      .from("mega_runs")
-      .upsert(payload, { onConflict: "user_id,event_id" });
-    if (error) console.warn("[mega] submitMegaRun failed:", error.message);
+  const { data, error } = await rpc.rpc("submit_mega_run", {
+    p_event_id: input.eventId,
+    p_accuracy: input.accuracy,
+    p_correct: input.correct,
+    p_total: input.total,
+    p_time_ms: input.timeMs,
+  });
+  if (error) {
+    console.warn("[mega] submitMegaRun failed:", error.message);
+    return { ok: false, error: error.message };
   }
-
-  return getMyMegaRank(input.eventId);
+  const ranked = await getMyMegaRank(input.eventId);
+  return { ok: true, row: data as MegaRunRow, rank: ranked?.rank ?? 0 };
 }
