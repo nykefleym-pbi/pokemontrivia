@@ -11,6 +11,11 @@ import { rankForLevel, xpProgressInLevel, difficultyForLevel, getTpMultiplier } 
 
 import { trainerSpriteUrl } from "@/lib/game-data";
 import { BattleScreen, type Trivia } from "@/components/battle-screen";
+import { MegaRaidScreen } from "@/components/mega/MegaRaidScreen";
+import { MegaLeaderboard } from "@/components/mega/MegaLeaderboard";
+import { MegaEntryCard } from "@/components/mega/MegaEntryCard";
+import { fetchActiveMegaEvent, type MegaEvent } from "@/lib/mega/schedule";
+import { ensureMegaQuestions } from "@/lib/mega/questions";
 import { Toaster } from "@/components/ui/sonner";
 import { nextPendingElite, type EliteMember } from "@/lib/elite-four";
 import { findGymLeader, type GymLeader } from "@/lib/gym-leaders";
@@ -36,10 +41,11 @@ function BattlePage() {
   const markCuratedSeen = useGameStore((s) => s.markCuratedSeen);
   const navigate = useNavigate();
   const search = Route.useSearch();
-  const [phase, setPhase] = useState<"home" | "loading" | "fighting" | "daily" | "elite" | "weekly">("home");
+  const [phase, setPhase] = useState<"home" | "loading" | "fighting" | "daily" | "elite" | "weekly" | "mega" | "megaLeaderboard">("home");
   const [questions, setQuestions] = useState<Trivia[]>([]);
   const [eliteOpponent, setEliteOpponent] = useState<EliteMember | null>(null);
   const [weeklyOpponent, setWeeklyOpponent] = useState<GymLeader | null>(null);
+  const [megaEvent, setMegaEvent] = useState<MegaEvent | null>(null);
   const [battleKey, setBattleKey] = useState(0);
   const autoStartedRef = useRef(false);
   const dailyResult = useGameStore((s) => s.dailyResult);
@@ -222,6 +228,31 @@ function BattlePage() {
     }
   }
 
+  async function startMega() {
+    setPhase("loading");
+    try {
+      const ev = await fetchActiveMegaEvent();
+      if (!ev) { toast.error("No Mega Raid is active right now."); setPhase("home"); return; }
+      const qs = await ensureMegaQuestions(ev);
+      if (!qs.length) { toast.error("Mega Raid questions aren't ready yet. Try again soon."); setPhase("home"); return; }
+      setMegaEvent(ev);
+      setQuestions(qs);
+      setBattleKey((k) => k + 1);
+      setPhase("mega");
+    } catch (e) {
+      console.error(e);
+      toast.error("Couldn't load the Mega Raid.");
+      setPhase("home");
+    }
+  }
+
+  async function openMegaLeaderboard() {
+    const ev = megaEvent ?? (await fetchActiveMegaEvent());
+    if (!ev) { toast.error("No Mega Raid leaderboard yet."); return; }
+    setMegaEvent(ev);
+    setPhase("megaLeaderboard");
+  }
+
   function exitBattle() {
     setPhase("home");
     setQuestions([]);
@@ -348,6 +379,16 @@ function BattlePage() {
           mode="elite"
           eliteMember={eliteOpponent}
         />
+      ) : phase === "mega" && megaEvent ? (
+        <MegaRaidScreen
+          key={battleKey}
+          event={megaEvent}
+          questions={questions}
+          onExit={exitBattle}
+          onViewLeaderboard={() => setPhase("megaLeaderboard")}
+        />
+      ) : phase === "megaLeaderboard" && megaEvent ? (
+        <MegaLeaderboard event={megaEvent} onBack={() => setPhase("home")} onBattle={startMega} />
       ) : phase === "weekly" && weeklyOpponent ? (
         <BattleScreen key={battleKey} questions={questions} onExit={exitBattle} mode="weekly" gymLeader={weeklyOpponent} />
       ) : phase === "daily" ? (
@@ -363,6 +404,8 @@ function BattlePage() {
           onStart={startBattle}
           onStartDaily={startDaily}
           onStartWeekly={startWeekly}
+          onStartMega={startMega}
+          onOpenMegaLeaderboard={openMegaLeaderboard}
           loading={phase === "loading"}
           dailyDone={dailyDone}
           dailyResult={dailyDone ? dailyResult : null}
@@ -376,6 +419,8 @@ function BattleHome({
   onStart,
   onStartDaily,
   onStartWeekly,
+  onStartMega,
+  onOpenMegaLeaderboard,
   loading,
   dailyDone,
   dailyResult,
@@ -383,6 +428,8 @@ function BattleHome({
   onStart: () => void;
   onStartDaily: () => void;
   onStartWeekly: () => void;
+  onStartMega: () => void;
+  onOpenMegaLeaderboard: () => void;
   loading: boolean;
   dailyDone: boolean;
   dailyResult: { correct: number; total: number; timeMs: number; pattern: DailyMark[]; date: string } | null;
@@ -615,6 +662,8 @@ function BattleHome({
           <span className="relative shrink-0 text-lg text-white/80">›</span>
         </button>
       </div>
+
+      <MegaEntryCard onStart={onStartMega} onLeaderboard={onOpenMegaLeaderboard} />
     </div>
   );
 }
