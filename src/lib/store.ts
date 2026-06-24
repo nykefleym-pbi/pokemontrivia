@@ -164,6 +164,7 @@ export interface GameState {
   consumeGuaranteedShiny: () => void;
   grantPokeEgg: (n?: number) => void;
   claimMegaChampion: (eventId: string, name: string, pokeId: number) => boolean;
+  hatchPokeEgg: () => boolean;
   startGuestSession: () => void;
 
   reset: () => void;
@@ -521,6 +522,12 @@ export const useGameStore = create<GameState>()(
         const s = get();
         if ((s.megaTrophies ?? []).some((t) => t.eventId === eventId)) return false;
         set({ megaTrophies: [...(s.megaTrophies ?? []), { eventId, name, pokeId, claimedAt: new Date().toISOString() }] });
+        return true;
+      },
+      hatchPokeEgg: () => {
+        const s = get();
+        if ((s.pokeEggs ?? 0) <= 0) return false;
+        set({ pokeEggs: s.pokeEggs - 1 });
         return true;
       },
 
