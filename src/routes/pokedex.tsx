@@ -5,6 +5,7 @@ import { Search, Sparkles, X, ArrowRight, Volume2, ChevronLeft } from "lucide-re
 import { Fragment } from "react";
 import { playCry } from "@/lib/audio";
 import { useGameStore } from "@/lib/store";
+import { EggHatch } from "@/components/mega/EggHatch";
 import { ALL_POKEMON, type PokeType } from "@/lib/pokemon-data";
 import { Input } from "@/components/ui/input";
 import { PokemonSprite } from "@/components/game-ui";
@@ -88,7 +89,9 @@ function PokedexPage() {
             <h1 className="font-display-xl text-foreground">Pokédex</h1>
           </div>
 
-          <div className="relative h-16 w-16 shrink-0">
+          <div className="flex items-center gap-3">
+            <EggHatch />
+            <div className="relative h-16 w-16 shrink-0">
             <svg viewBox="0 0 64 64" className="absolute inset-0 h-full w-full -rotate-90">
               <circle cx="32" cy="32" r="26" fill="none" stroke="oklch(0.22 0.04 260 / 0.12)" strokeWidth="6" />
               <circle
@@ -103,6 +106,7 @@ function PokedexPage() {
               <span className="text-base font-extrabold text-foreground">{regionCaught}</span>
               <span className="text-[10px] text-foreground/55">/ {regionTotal}</span>
             </div>
+          </div>
           </div>
         </div>
         <div className="mt-3 flex flex-wrap gap-1.5">
