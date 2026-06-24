@@ -16,6 +16,7 @@ import { MegaLeaderboard } from "@/components/mega/MegaLeaderboard";
 
 import { fetchActiveMegaEvent, type MegaEvent } from "@/lib/mega/schedule";
 import { ensureMegaQuestions } from "@/lib/mega/questions";
+import { fetchMegaLeaderboard, getMyMegaRun } from "@/lib/mega/runs";
 import { Toaster } from "@/components/ui/sonner";
 import { nextPendingElite, type EliteMember } from "@/lib/elite-four";
 import { findGymLeader, type GymLeader } from "@/lib/gym-leaders";
