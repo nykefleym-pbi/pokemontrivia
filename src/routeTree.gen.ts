@@ -18,6 +18,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiTriviaEliteRouteImport } from './routes/api.trivia-elite'
 import { Route as ApiTriviaBatchRouteImport } from './routes/api.trivia-batch'
 import { Route as ApiTriviaRouteImport } from './routes/api.trivia'
+import { Route as ApiMegaQuestionsRouteImport } from './routes/api.mega-questions'
 import { Route as ApiDailyChallengeRouteImport } from './routes/api.daily-challenge'
 
 const WhosThatPokemonRoute = WhosThatPokemonRouteImport.update({
@@ -65,6 +66,11 @@ const ApiTriviaRoute = ApiTriviaRouteImport.update({
   path: '/api/trivia',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMegaQuestionsRoute = ApiMegaQuestionsRouteImport.update({
+  id: '/api/mega-questions',
+  path: '/api/mega-questions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDailyChallengeRoute = ApiDailyChallengeRouteImport.update({
   id: '/api/daily-challenge',
   path: '/api/daily-challenge',
@@ -79,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/shop': typeof ShopRoute
   '/whos-that-pokemon': typeof WhosThatPokemonRoute
   '/api/daily-challenge': typeof ApiDailyChallengeRoute
+  '/api/mega-questions': typeof ApiMegaQuestionsRoute
   '/api/trivia': typeof ApiTriviaRoute
   '/api/trivia-batch': typeof ApiTriviaBatchRoute
   '/api/trivia-elite': typeof ApiTriviaEliteRoute
@@ -91,6 +98,7 @@ export interface FileRoutesByTo {
   '/shop': typeof ShopRoute
   '/whos-that-pokemon': typeof WhosThatPokemonRoute
   '/api/daily-challenge': typeof ApiDailyChallengeRoute
+  '/api/mega-questions': typeof ApiMegaQuestionsRoute
   '/api/trivia': typeof ApiTriviaRoute
   '/api/trivia-batch': typeof ApiTriviaBatchRoute
   '/api/trivia-elite': typeof ApiTriviaEliteRoute
@@ -104,6 +112,7 @@ export interface FileRoutesById {
   '/shop': typeof ShopRoute
   '/whos-that-pokemon': typeof WhosThatPokemonRoute
   '/api/daily-challenge': typeof ApiDailyChallengeRoute
+  '/api/mega-questions': typeof ApiMegaQuestionsRoute
   '/api/trivia': typeof ApiTriviaRoute
   '/api/trivia-batch': typeof ApiTriviaBatchRoute
   '/api/trivia-elite': typeof ApiTriviaEliteRoute
@@ -118,6 +127,7 @@ export interface FileRouteTypes {
     | '/shop'
     | '/whos-that-pokemon'
     | '/api/daily-challenge'
+    | '/api/mega-questions'
     | '/api/trivia'
     | '/api/trivia-batch'
     | '/api/trivia-elite'
@@ -130,6 +140,7 @@ export interface FileRouteTypes {
     | '/shop'
     | '/whos-that-pokemon'
     | '/api/daily-challenge'
+    | '/api/mega-questions'
     | '/api/trivia'
     | '/api/trivia-batch'
     | '/api/trivia-elite'
@@ -142,6 +153,7 @@ export interface FileRouteTypes {
     | '/shop'
     | '/whos-that-pokemon'
     | '/api/daily-challenge'
+    | '/api/mega-questions'
     | '/api/trivia'
     | '/api/trivia-batch'
     | '/api/trivia-elite'
@@ -155,6 +167,7 @@ export interface RootRouteChildren {
   ShopRoute: typeof ShopRoute
   WhosThatPokemonRoute: typeof WhosThatPokemonRoute
   ApiDailyChallengeRoute: typeof ApiDailyChallengeRoute
+  ApiMegaQuestionsRoute: typeof ApiMegaQuestionsRoute
   ApiTriviaRoute: typeof ApiTriviaRoute
   ApiTriviaBatchRoute: typeof ApiTriviaBatchRoute
   ApiTriviaEliteRoute: typeof ApiTriviaEliteRoute
@@ -225,6 +238,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTriviaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/mega-questions': {
+      id: '/api/mega-questions'
+      path: '/api/mega-questions'
+      fullPath: '/api/mega-questions'
+      preLoaderRoute: typeof ApiMegaQuestionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/daily-challenge': {
       id: '/api/daily-challenge'
       path: '/api/daily-challenge'
@@ -243,6 +263,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShopRoute: ShopRoute,
   WhosThatPokemonRoute: WhosThatPokemonRoute,
   ApiDailyChallengeRoute: ApiDailyChallengeRoute,
+  ApiMegaQuestionsRoute: ApiMegaQuestionsRoute,
   ApiTriviaRoute: ApiTriviaRoute,
   ApiTriviaBatchRoute: ApiTriviaBatchRoute,
   ApiTriviaEliteRoute: ApiTriviaEliteRoute,

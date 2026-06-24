@@ -4,9 +4,6 @@ import type { MegaEvent } from "./schedule";
 
 // Loosely-typed clients so this compiles even before Supabase types regenerate.
 const db = supabase as unknown as { from: (t: string) => any };
-const fns = supabase as unknown as {
-  functions: { invoke: (name: string, opts?: { body?: unknown }) => Promise<{ data: unknown; error: unknown }> };
-};
 
 /** Read the frozen 50-question set for an event (or [] if not generated yet). */
 export async function fetchMegaQuestions(eventId: string): Promise<Trivia[]> {
@@ -27,11 +24,19 @@ export async function fetchMegaQuestions(eventId: string): Promise<Trivia[]> {
 export async function ensureMegaQuestions(event: MegaEvent): Promise<Trivia[]> {
   let qs = await fetchMegaQuestions(event.id);
   if (qs.length > 0) return qs;
-  // Not generated yet — ask the edge function to generate + save (idempotent, race-safe).
+  // Not generated yet — ask the server route to generate + save (idempotent, race-safe).
   try {
-    await fns.functions.invoke("mega-questions", { body: { eventId: event.id } });
+    const resp = await fetch("/api/mega-questions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ eventId: event.id }),
+    });
+    if (resp.ok) {
+      const data = (await resp.json()) as { questions?: Trivia[] };
+      if (data.questions && data.questions.length > 0) return data.questions;
+    }
   } catch (e) {
-    console.warn("[mega] mega-questions generation invoke failed:", e);
+    console.warn("[mega] mega-questions generation failed:", e);
   }
   qs = await fetchMegaQuestions(event.id);
   return qs;
