@@ -73,7 +73,17 @@ function BattlePage() {
   }, [initWeeklyLeague]);
 
   useEffect(() => {
-    fetchActiveMegaEvent().then(setActiveMega).catch(() => {});
+    fetchActiveMegaEvent().then((ev) => {
+      setActiveMega(ev);
+      if (!ev) { setMegaStats({ rank: 0, total: 0 }); return; }
+      Promise.all([fetchMegaLeaderboard(ev.id, 500), getMyMegaRun(ev.id)])
+        .then(([board, mineRun]) => {
+          const total = board.length;
+          const rank = mineRun ? board.findIndex((r) => r.user_id === mineRun.user_id) + 1 : 0;
+          setMegaStats({ rank, total });
+        })
+        .catch(() => setMegaStats({ rank: 0, total: 0 }));
+    }).catch(() => setMegaStats({ rank: 0, total: 0 }));
   }, []);
 
   // Hide the persistent bottom nav while a Mega Raid or its end screens are on-screen,
