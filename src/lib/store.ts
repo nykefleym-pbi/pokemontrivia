@@ -93,6 +93,7 @@ export interface GameState {
   dailyGiftLastClaim: string | null;
   dailyGiftStreak: number;
   guaranteedShinyPending: boolean;
+  pokeEggs: number;
   pokemon: PokeEntry | null;
 
 
@@ -160,6 +161,7 @@ export interface GameState {
   setLastEngagePromptDate: (date: string) => void;
   claimDailyGift: () => { itemId: ItemId; qty: number; day: number; shiny: boolean } | null;
   consumeGuaranteedShiny: () => void;
+  grantPokeEgg: (n?: number) => void;
   startGuestSession: () => void;
 
   reset: () => void;
@@ -247,6 +249,7 @@ export const useGameStore = create<GameState>()(
       dailyGiftLastClaim: null,
       dailyGiftStreak: 0,
       guaranteedShinyPending: false,
+      pokeEggs: 0,
       pokemon: null,
 
       level: 1,
@@ -510,6 +513,7 @@ export const useGameStore = create<GameState>()(
         return { itemId, qty, day, shiny };
       },
       consumeGuaranteedShiny: () => set({ guaranteedShinyPending: false }),
+      grantPokeEgg: (n = 1) => set((s) => ({ pokeEggs: (s.pokeEggs ?? 0) + n })),
 
 
       startGuestSession: () => {
@@ -791,6 +795,7 @@ export const useGameStore = create<GameState>()(
         dailyGiftLastClaim: s.dailyGiftLastClaim,
         dailyGiftStreak: s.dailyGiftStreak,
         guaranteedShinyPending: s.guaranteedShinyPending,
+        pokeEggs: s.pokeEggs,
 
       }),
 
