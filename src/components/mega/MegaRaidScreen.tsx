@@ -36,9 +36,10 @@ interface Props {
   questions: Trivia[];
   onExit: () => void;
   onViewLeaderboard: () => void;
+  onRematch: () => void;
 }
 
-export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard }: Props) {
+export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, onRematch }: Props) {
   const total = questions.length;
   const inventory = useGameStore((s) => s.inventory);
   const grantItem = useGameStore((s) => s.grantItem);
@@ -64,13 +65,13 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard }: 
   const endedRef = useRef(false);
 
   const [result, setResult] = useState<{
-    outcome: "win" | "loss"; accuracy: number; correct: number; rank: number | null; items: MegaRewardItem[];
+    outcome: "win" | "loss"; accuracy: number; correct: number; rank: number | null; attempts: number; items: MegaRewardItem[];
   } | null>(null);
 
   const q = questions[qIndex];
   const lowHp = playerHp / PLAYER_MAX_HP <= 0.3 && playerHp > 0;
   const hasAnyPotion = (["potion", "superpotion", "maxpotion"] as ItemId[]).some((id) => (inventory[id] ?? 0) > 0);
-  const attemptsRemainingAfter = MEGA_MAX_ATTEMPTS - 1;
+  
 
   const grantRewards = useCallback((): MegaRewardItem[] => {
     const st = useGameStore.getState();
@@ -101,12 +102,13 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard }: 
       const accuracy = Math.round((finalCorrect / total) * 100);
       const items = won ? grantRewards() : [];
       let rank: number | null = null;
+      let attempts = MEGA_MAX_ATTEMPTS;
       const res = await submitMegaRun({ eventId: event.id, accuracy, correct: finalCorrect, total, timeMs });
-      if (res.ok) rank = res.rank || null;
+      if (res.ok) { rank = res.rank || null; attempts = res.row?.attempts ?? MEGA_MAX_ATTEMPTS; }
       else if (res.error && !/no attempts/i.test(res.error)) {
         toast.error("Couldn't save your run — check your connection.");
       }
-      setResult({ outcome: won ? "win" : "loss", accuracy, correct: finalCorrect, rank, items });
+      setResult({ outcome: won ? "win" : "loss", accuracy, correct: finalCorrect, rank, attempts, items });
       setPhase("result");
     },
     [event, total, grantRewards],
@@ -208,8 +210,8 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard }: 
         rank={result.rank}
         shiny={bossShiny}
         items={result.items}
-        canRematch={result.outcome === "loss" && attemptsRemainingAfter > 0}
-        onRematch={onExit}
+        canRematch={result.outcome === "loss" && result.attempts < MEGA_MAX_ATTEMPTS}
+        onRematch={onRematch}
         onHome={onExit}
         onViewLeaderboard={onViewLeaderboard}
       />

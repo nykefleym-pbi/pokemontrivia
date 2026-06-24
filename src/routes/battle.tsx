@@ -407,6 +407,7 @@ function BattlePage() {
           questions={questions}
           onExit={exitBattle}
           onViewLeaderboard={() => setPhase("megaLeaderboard")}
+          onRematch={() => setBattleKey((k) => k + 1)}
         />
       ) : phase === "megaLeaderboard" && megaEvent ? (
         <MegaLeaderboard event={megaEvent} onBack={() => setPhase("home")} onBattle={startMega} />

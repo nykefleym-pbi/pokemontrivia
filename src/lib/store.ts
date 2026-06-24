@@ -94,6 +94,7 @@ export interface GameState {
   dailyGiftStreak: number;
   guaranteedShinyPending: boolean;
   pokeEggs: number;
+  megaTrophies: { eventId: string; name: string; pokeId: number; claimedAt: string }[];
   pokemon: PokeEntry | null;
 
 
@@ -162,6 +163,7 @@ export interface GameState {
   claimDailyGift: () => { itemId: ItemId; qty: number; day: number; shiny: boolean } | null;
   consumeGuaranteedShiny: () => void;
   grantPokeEgg: (n?: number) => void;
+  claimMegaChampion: (eventId: string, name: string, pokeId: number) => boolean;
   startGuestSession: () => void;
 
   reset: () => void;
@@ -250,6 +252,7 @@ export const useGameStore = create<GameState>()(
       dailyGiftStreak: 0,
       guaranteedShinyPending: false,
       pokeEggs: 0,
+      megaTrophies: [],
       pokemon: null,
 
       level: 1,
@@ -514,6 +517,12 @@ export const useGameStore = create<GameState>()(
       },
       consumeGuaranteedShiny: () => set({ guaranteedShinyPending: false }),
       grantPokeEgg: (n = 1) => set((s) => ({ pokeEggs: (s.pokeEggs ?? 0) + n })),
+      claimMegaChampion: (eventId, name, pokeId) => {
+        const s = get();
+        if ((s.megaTrophies ?? []).some((t) => t.eventId === eventId)) return false;
+        set({ megaTrophies: [...(s.megaTrophies ?? []), { eventId, name, pokeId, claimedAt: new Date().toISOString() }] });
+        return true;
+      },
 
 
       startGuestSession: () => {
@@ -796,6 +805,7 @@ export const useGameStore = create<GameState>()(
         dailyGiftStreak: s.dailyGiftStreak,
         guaranteedShinyPending: s.guaranteedShinyPending,
         pokeEggs: s.pokeEggs,
+        megaTrophies: s.megaTrophies,
 
       }),
 
