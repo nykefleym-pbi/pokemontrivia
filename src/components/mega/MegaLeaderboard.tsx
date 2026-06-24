@@ -4,7 +4,7 @@ import { trainerSpriteUrl, type ItemId } from "@/lib/game-data";
 import { useGameStore } from "@/lib/store";
 import { toast } from "sonner";
 import type { MegaEvent } from "@/lib/mega/schedule";
-import { fetchMegaLeaderboard, getMyMegaRun, type MegaRunRow } from "@/lib/mega/runs";
+import { fetchMegaLeaderboard, getMyMegaRun, type MegaRunRow, type MegaLeaderboardRow } from "@/lib/mega/runs";
 
 function fmtTime(ms: number) {
   const s = Math.max(0, Math.round(ms / 1000));
@@ -27,7 +27,7 @@ interface Props {
 }
 
 export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
-  const [rows, setRows] = useState<MegaRunRow[]>([]);
+  const [rows, setRows] = useState<MegaLeaderboardRow[]>([]);
   const [mine, setMine] = useState<MegaRunRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(Date.now());
@@ -135,7 +135,7 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
               const isMe = mine?.user_id === r.user_id;
               return (
                 <div
-                  key={r.id}
+                  key={r.user_id}
                   className="flex items-center gap-3 rounded-2xl px-3 py-2.5"
                   style={isMe
                     ? { background: "rgba(242,214,78,0.14)", border: "1.5px solid rgba(242,214,78,0.5)" }
