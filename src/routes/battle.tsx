@@ -13,7 +13,7 @@ import { trainerSpriteUrl } from "@/lib/game-data";
 import { BattleScreen, type Trivia } from "@/components/battle-screen";
 import { MegaRaidScreen } from "@/components/mega/MegaRaidScreen";
 import { MegaLeaderboard } from "@/components/mega/MegaLeaderboard";
-import { MegaEntryCard } from "@/components/mega/MegaEntryCard";
+
 import { fetchActiveMegaEvent, type MegaEvent } from "@/lib/mega/schedule";
 import { ensureMegaQuestions } from "@/lib/mega/questions";
 import { Toaster } from "@/components/ui/sonner";
@@ -46,6 +46,7 @@ function BattlePage() {
   const [eliteOpponent, setEliteOpponent] = useState<EliteMember | null>(null);
   const [weeklyOpponent, setWeeklyOpponent] = useState<GymLeader | null>(null);
   const [megaEvent, setMegaEvent] = useState<MegaEvent | null>(null);
+  const [activeMega, setActiveMega] = useState<MegaEvent | null>(null);
   const [battleKey, setBattleKey] = useState(0);
   const autoStartedRef = useRef(false);
   const dailyResult = useGameStore((s) => s.dailyResult);
@@ -54,7 +55,7 @@ function BattlePage() {
   const whosThatHourKey = useGameStore((s) => s.whosThatHourKey);
   const lastEngagePromptDate = useGameStore((s) => s.lastEngagePromptDate);
   const setLastEngagePromptDate = useGameStore((s) => s.setLastEngagePromptDate);
-  const [engageCards, setEngageCards] = useState<Array<{ kind: "daily" | "weekly" | "whosthat"; title: string; desc: string; chip: string; cta: string; onPlay: () => void; heroSrc?: string }> | null>(null);
+  const [engageCards, setEngageCards] = useState<Array<{ kind: "daily" | "weekly" | "whosthat" | "mega" | "megaleaderboard"; title: string; desc: string; chip: string; cta: string; onPlay: () => void; heroSrc?: string; heroPokeId?: number }> | null>(null);
   const [engageActive, setEngageActive] = useState(0);
   const engageShownRef = useRef(false);
 
@@ -68,6 +69,10 @@ function BattlePage() {
   useEffect(() => {
     initWeeklyLeague();
   }, [initWeeklyLeague]);
+
+  useEffect(() => {
+    fetchActiveMegaEvent().then(setActiveMega).catch(() => {});
+  }, []);
 
   // On mount: if a weekly battle was left in_progress (app closed mid-fight), count it as loss
   useEffect(() => {
@@ -265,13 +270,14 @@ function BattlePage() {
   useEffect(() => {
     if (engageShownRef.current) return;
     if (phase !== "home" || pendingElite) return;
-    if (lastEngagePromptDate === today) return;
+    const hasMega = !!activeMega && Date.parse(activeMega.endsAt) > Date.now();
+    if (!hasMega && lastEngagePromptDate === today) return;
     const now = Date.now();
     const msToNextDay = Date.UTC(new Date(now).getUTCFullYear(), new Date(now).getUTCMonth(), new Date(now).getUTCDate() + 1) - now;
     const dailyClock = `${Math.floor(msToNextDay / 3_600_000)}H ${String(Math.floor((msToNextDay % 3_600_000) / 60_000)).padStart(2, "0")}M`;
     const weeklyStatus = weeklyLeague?.status;
     const leader = weeklyLeague ? findGymLeader(weeklyLeague.gymLeaderId) : null;
-    const cards: Array<{ kind: "daily" | "weekly" | "whosthat"; title: string; desc: string; chip: string; cta: string; onPlay: () => void; heroSrc?: string }> = [];
+    const cards: Array<{ kind: "daily" | "weekly" | "whosthat" | "mega" | "megaleaderboard"; title: string; desc: string; chip: string; cta: string; onPlay: () => void; heroSrc?: string; heroPokeId?: number }> = [];
     if (!dailyDone) {
       cards.push({ kind: "daily", title: "Daily Quest is ready!", desc: "Beat Rotom in 10 fast questions for bonus XP.", chip: `RESETS IN ${dailyClock}`, cta: "Play Daily Quest", onPlay: startDaily });
     }
@@ -281,18 +287,29 @@ function BattlePage() {
     if (Math.floor(now / 3_600_000) !== whosThatHourKey) {
       cards.push({ kind: "whosthat", title: "A new round is live!", desc: "Guess the hidden Pokémon to earn rewards.", chip: "NEW ROUND EVERY HOUR", cta: "Play now", onPlay: () => navigate({ to: "/whos-that-pokemon" }) });
     }
+    if (hasMega && activeMega) {
+      const s2 = Math.floor((Date.parse(activeMega.endsAt) - Date.now()) / 1000);
+      const dd = Math.floor(s2 / 86400), hh = Math.floor((s2 % 86400) / 3600);
+      const megaClock = dd > 0 ? `${dd}D ${hh}H` : `${hh}H`;
+      cards.unshift(
+        { kind: "megaleaderboard", title: "Mega Raid Leaderboard", desc: "See where you rank against Trainers worldwide.", chip: "LIVE RANKINGS", cta: "View Leaderboard", onPlay: openMegaLeaderboard },
+        { kind: "mega", title: `${activeMega.name} appeared!`, desc: "Defeat the raid boss across 50 questions for huge rewards.", chip: `ENDS IN ${megaClock}`, cta: "Battle Mega Raid", onPlay: startMega, heroPokeId: activeMega.megaId },
+      );
+    }
     if (cards.length > 0) {
       engageShownRef.current = true;
       setEngageActive(0);
       setEngageCards(cards);
       setLastEngagePromptDate(today);
     }
-  }, [phase, pendingElite, lastEngagePromptDate, today, dailyDone, weeklyLeague, whosThatHourKey, startDaily, startWeekly, navigate, setLastEngagePromptDate]);
+  }, [phase, pendingElite, lastEngagePromptDate, today, dailyDone, weeklyLeague, whosThatHourKey, startDaily, startWeekly, navigate, setLastEngagePromptDate, activeMega, startMega, openMegaLeaderboard]);
 
   const ENGAGE_THEME: Record<string, { cardBg: string; hero: string; ray: string; glow: string; labelBg: string; labelColor: string; label: string; chipBg: string; chipColor: string; chipStroke: string; ctaBg: string; ctaColor: string; ctaShadow: string; titleColor: string; descColor: string }> = {
     daily: { cardBg: "#FBF3DF", hero: "radial-gradient(circle at 50% 42%, #FF8A3D 0%, #F0531F 52%, #D23A12 100%)", ray: "rgba(255,255,255,0.14)", glow: "rgba(255,224,130,0.6)", labelBg: "rgba(0,0,0,0.22)", labelColor: "#fff", label: "DAILY QUEST", chipBg: "#F6E6C4", chipColor: "#9A7320", chipStroke: "#B8862A", ctaBg: "#E23B2E", ctaColor: "#fff", ctaShadow: "#A82A20", titleColor: "#1C2333", descColor: "#6B6E7B" },
     weekly: { cardBg: "#FBF3DF", hero: "radial-gradient(circle at 50% 40%, #8A6BC9 0%, #5B3F95 60%, #3F2A6E 100%)", ray: "rgba(242,214,78,0.16)", glow: "rgba(242,214,78,0.45)", labelBg: "#F2D64E", labelColor: "#3F2A6E", label: "WEEKLY LEAGUE", chipBg: "#ECE3F4", chipColor: "#5B3F95", chipStroke: "#6B4FA0", ctaBg: "linear-gradient(95deg, #F2D64E, #E8A93C)", ctaColor: "#3F2A6E", ctaShadow: "#C18A28", titleColor: "#1C2333", descColor: "#6B6E7B" },
     whosthat: { cardBg: "linear-gradient(165deg, #E23B2E 0%, #B5341F 100%)", hero: "transparent", ray: "rgba(255,255,255,0.08)", glow: "transparent", labelBg: "#F2D64E", labelColor: "#B5341F", label: "WHO'S THAT POKÉMON?", chipBg: "rgba(255,255,255,0.16)", chipColor: "#fff", chipStroke: "#fff", ctaBg: "#F2D64E", ctaColor: "#1C2333", ctaShadow: "#C9AE2E", titleColor: "#fff", descColor: "rgba(255,255,255,0.82)" },
+    mega: { cardBg: "#FBF3DF", hero: "radial-gradient(circle at 50% 42%, #2E3A5C 0%, #1C2333 60%, #14161F 100%)", ray: "rgba(242,214,78,0.16)", glow: "rgba(242,214,78,0.5)", labelBg: "#F2D64E", labelColor: "#1C2333", label: "⚡ MEGA RAID", chipBg: "#F6E6C4", chipColor: "#9A7320", chipStroke: "#B8862A", ctaBg: "linear-gradient(95deg, #F2D64E, #E8A93C)", ctaColor: "#1C2333", ctaShadow: "#C18A28", titleColor: "#1C2333", descColor: "#6B6E7B" },
+    megaleaderboard: { cardBg: "#FBF3DF", hero: "radial-gradient(circle at 50% 42%, #2E3A5C 0%, #1C2333 60%, #14161F 100%)", ray: "rgba(242,214,78,0.16)", glow: "rgba(242,214,78,0.4)", labelBg: "#F2D64E", labelColor: "#1C2333", label: "MEGA RAID", chipBg: "#F6E6C4", chipColor: "#9A7320", chipStroke: "#B8862A", ctaBg: "#1C2333", ctaColor: "#fff", ctaShadow: "#0C0F17", titleColor: "#1C2333", descColor: "#6B6E7B" },
   };
 
   return (
@@ -331,6 +348,10 @@ function BattlePage() {
                           <PokemonSprite id={25} alt="Pikachu" className="h-[104px] w-[104px] [filter:brightness(0)] [image-rendering:pixelated]" />
                         </div>
                       )}
+                      {card.kind === "mega" && card.heroPokeId && (
+                        <PokemonSprite id={card.heroPokeId} alt="Mega Raid boss" className="sprite relative h-[150px] w-[150px] object-contain drop-shadow-[0_10px_14px_rgba(0,0,0,0.5)]" />
+                      )}
+                      {card.kind === "megaleaderboard" && <div className="relative text-[104px] leading-none">🏆</div>}
                       <div className="absolute left-4 top-4 rounded-full px-2.5 py-1.5 font-pixel text-[7px] tracking-wider" style={{ background: t.labelBg, color: t.labelColor }}>{t.label}</div>
                     </div>
                     <div className="px-5 pb-6 pt-4">
@@ -404,8 +425,6 @@ function BattlePage() {
           onStart={startBattle}
           onStartDaily={startDaily}
           onStartWeekly={startWeekly}
-          onStartMega={startMega}
-          onOpenMegaLeaderboard={openMegaLeaderboard}
           loading={phase === "loading"}
           dailyDone={dailyDone}
           dailyResult={dailyDone ? dailyResult : null}
@@ -419,8 +438,6 @@ function BattleHome({
   onStart,
   onStartDaily,
   onStartWeekly,
-  onStartMega,
-  onOpenMegaLeaderboard,
   loading,
   dailyDone,
   dailyResult,
@@ -428,8 +445,6 @@ function BattleHome({
   onStart: () => void;
   onStartDaily: () => void;
   onStartWeekly: () => void;
-  onStartMega: () => void;
-  onOpenMegaLeaderboard: () => void;
   loading: boolean;
   dailyDone: boolean;
   dailyResult: { correct: number; total: number; timeMs: number; pattern: DailyMark[]; date: string } | null;
@@ -662,8 +677,6 @@ function BattleHome({
           <span className="relative shrink-0 text-lg text-white/80">›</span>
         </button>
       </div>
-
-      <MegaEntryCard onStart={onStartMega} onLeaderboard={onOpenMegaLeaderboard} />
     </div>
   );
 }
