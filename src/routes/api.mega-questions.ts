@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { generateTrivia, type TriviaPayload } from "@/lib/trivia-core";
 import { pickBattleCurated, recordCuratedServed } from "@/lib/curated-questions";
-import { curatedSupabase as supabase } from "@/lib/curated-client";
+import { supabase } from "@/integrations/supabase/client";
 
 // mega_event_questions + the save RPC aren't in the generated Supabase types.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
