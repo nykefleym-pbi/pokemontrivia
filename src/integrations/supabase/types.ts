@@ -286,6 +286,10 @@ export type Database = {
         Args: { question_ids: string[] }
         Returns: undefined
       }
+      insert_mega_questions_if_absent: {
+        Args: { p_event_id: string; p_questions: Json }
+        Returns: undefined
+      }
       lookup_profile_by_code: {
         Args: { _code: string }
         Returns: {
