@@ -93,6 +93,7 @@ export interface GameState {
   dailyGiftLastClaim: string | null;
   dailyGiftStreak: number;
   guaranteedShinyPending: boolean;
+  pokeEggs: number;
   pokemon: PokeEntry | null;
 
 
