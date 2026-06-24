@@ -74,6 +74,16 @@ function BattlePage() {
     fetchActiveMegaEvent().then(setActiveMega).catch(() => {});
   }, []);
 
+  // Hide the persistent bottom nav while a Mega Raid or its end screens are on-screen,
+  // so the nav pill can't overlay raid action buttons or be tapped by accident.
+  useEffect(() => {
+    const inMega = phase === "mega" || phase === "megaLeaderboard";
+    if (!inMega) return;
+    const { setBattleScreenActive } = useGameStore.getState();
+    setBattleScreenActive(true);
+    return () => setBattleScreenActive(false);
+  }, [phase]);
+
   // On mount: if a weekly battle was left in_progress (app closed mid-fight), count it as loss
   useEffect(() => {
     if (useGameStore.getState().weeklyLeague?.status === "in_progress") {
