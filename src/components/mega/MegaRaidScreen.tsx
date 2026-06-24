@@ -308,7 +308,7 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
               >
                 <span>{opt}</span>
                 {locked && isCorrect && <span style={{ color: "#3F9D5A" }}>✓</span>}
-                {locked && isPicked && !isCorrect && <span style={{ color: "#C22E28" }}>✕</span>}
+                {locked && isPicked && !isCorrect && <span className="font-pixel" style={{ fontSize: 7, color: "#C22E28" }}>YOUR PICK ✕</span>}
               </button>
             );
           })}
