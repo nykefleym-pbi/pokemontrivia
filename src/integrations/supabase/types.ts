@@ -88,9 +88,96 @@ export type Database = {
           },
         ]
       }
+      mega_event_questions: {
+        Row: {
+          event_id: string
+          generated_at: string
+          questions: Json
+        }
+        Insert: {
+          event_id: string
+          generated_at?: string
+          questions: Json
+        }
+        Update: {
+          event_id?: string
+          generated_at?: string
+          questions?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mega_event_questions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "mega_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mega_events: {
+        Row: {
+          base_dex_id: number
+          base_name: string
+          champ_items: number
+          champ_tp: number
+          champ_xp: number
+          created_at: string
+          ends_at: string
+          id: string
+          mega_id: number
+          name: string
+          starts_at: string
+          trophy_id: string
+          trophy_name: string
+          types: string[]
+          win_items: number
+          win_tp: number
+          win_xp: number
+        }
+        Insert: {
+          base_dex_id: number
+          base_name: string
+          champ_items?: number
+          champ_tp?: number
+          champ_xp?: number
+          created_at?: string
+          ends_at: string
+          id: string
+          mega_id: number
+          name: string
+          starts_at: string
+          trophy_id: string
+          trophy_name: string
+          types: string[]
+          win_items?: number
+          win_tp?: number
+          win_xp?: number
+        }
+        Update: {
+          base_dex_id?: number
+          base_name?: string
+          champ_items?: number
+          champ_tp?: number
+          champ_xp?: number
+          created_at?: string
+          ends_at?: string
+          id?: string
+          mega_id?: number
+          name?: string
+          starts_at?: string
+          trophy_id?: string
+          trophy_name?: string
+          types?: string[]
+          win_items?: number
+          win_tp?: number
+          win_xp?: number
+        }
+        Relationships: []
+      }
       mega_runs: {
         Row: {
           accuracy: number
+          attempts: number
           correct: number
           event_id: string
           finished_at: string
@@ -104,6 +191,7 @@ export type Database = {
         }
         Insert: {
           accuracy: number
+          attempts?: number
           correct: number
           event_id: string
           finished_at?: string
@@ -117,6 +205,7 @@ export type Database = {
         }
         Update: {
           accuracy?: number
+          attempts?: number
           correct?: number
           event_id?: string
           finished_at?: string
@@ -129,6 +218,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "mega_runs_event_fk"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "mega_events"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "mega_runs_user_id_fkey"
             columns: ["user_id"]
@@ -207,6 +303,35 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      submit_mega_run: {
+        Args: {
+          p_accuracy: number
+          p_correct: number
+          p_event_id: string
+          p_time_ms: number
+          p_total: number
+        }
+        Returns: {
+          accuracy: number
+          attempts: number
+          correct: number
+          event_id: string
+          finished_at: string
+          id: string
+          level: number
+          time_ms: number
+          total: number
+          trainer_name: string
+          trainer_sprite: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "mega_runs"
           isOneToOne: true
           isSetofReturn: false
         }
