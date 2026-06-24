@@ -269,7 +269,11 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
       </div>
 
       <div className="relative mt-2.5 flex-1 overflow-y-auto" style={{ background: "#fff", borderRadius: "32px 32px 0 0", boxShadow: "0 -12px 36px -14px rgba(20,16,40,0.4)", padding: "18px 20px 26px" }}>
-        <div className="absolute left-1/2 flex items-center gap-2" style={{ top: -20, transform: "translateX(-50%)", background: "#fff", borderRadius: 999, padding: "7px 16px", boxShadow: "0 10px 24px -8px rgba(20,16,40,0.4)" }}>
+        <div className="absolute left-1/2 flex items-center gap-2" style={{ top: -22, transform: "translateX(-50%)", background: "#fff", borderRadius: 999, padding: "7px 16px 7px 8px", boxShadow: "0 10px 24px -8px rgba(20,16,40,0.4)" }}>
+          <svg width="30" height="30" viewBox="0 0 30 30">
+            <circle cx="15" cy="15" r="12" fill="none" stroke="oklch(0.92 0.02 250)" strokeWidth="4" />
+            <circle cx="15" cy="15" r="12" fill="none" stroke={timer <= 5 ? "#E23B2E" : "#3F9D5A"} strokeWidth="4" strokeDasharray="75.4" strokeDashoffset={75.4 * (1 - timer / TIMER)} strokeLinecap="round" transform="rotate(-90 15 15)" />
+          </svg>
           <span className="text-base font-extrabold" style={{ color: timer <= 5 ? "#E23B2E" : "#3F9D5A" }}>{timer}s</span>
         </div>
 
