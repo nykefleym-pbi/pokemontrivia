@@ -13,12 +13,16 @@ function fmtTime(ms: number) {
 function fmtCountdown(ms: number) {
   const s = Math.max(0, Math.floor(ms / 1000));
   const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
-  if (d > 0) return `${d}d ${h}h`;
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}m`;
+  if (d > 0) return `${d}D ${h}H`;
+  if (h > 0) return `${h}H ${m}M`;
+  return `${m}M`;
 }
 
-const MEDAL: Record<number, string> = { 1: "#F2D64E", 2: "#C7CDD8", 3: "#D9A066" };
+const PODIUM = {
+  1: { ring: "#F2D64E", bar: "linear-gradient(#F2D64E,#D9B838)", barText: "#7A5E10", h: 80, av: 50, w: 92 },
+  2: { ring: "#C0C6D4", bar: "linear-gradient(#3A4660,#2A3450)", barText: "#C0C6D4", h: 58, av: 40, w: 86 },
+  3: { ring: "#C8895A", bar: "linear-gradient(#5A4636,#3F3127)", barText: "#C8895A", h: 44, av: 40, w: 86 },
+} as const;
 
 interface Props {
   event: MegaEvent;
@@ -32,13 +36,14 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(Date.now());
 
+  const trophies = useGameStore((s) => s.megaTrophies);
+  const claimed = (trophies ?? []).some((t) => t.eventId === event.id);
+
   useEffect(() => {
     let on = true;
-    Promise.all([fetchMegaLeaderboard(event.id, 100), getMyMegaRun(event.id)]).then(([r, m]) => {
+    Promise.all([fetchMegaLeaderboard(event.id, 200), getMyMegaRun(event.id)]).then(([r, m]) => {
       if (!on) return;
-      setRows(r);
-      setMine(m);
-      setLoading(false);
+      setRows(r); setMine(m); setLoading(false);
     });
     const t = setInterval(() => setNow(Date.now()), 30_000);
     return () => { on = false; clearInterval(t); };
@@ -46,11 +51,9 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
 
   const ended = now >= Date.parse(event.endsAt);
   const msLeft = Date.parse(event.endsAt) - now;
-  const champion = ended && rows.length > 0 ? rows[0] : null;
-  const myRank = mine ? rows.findIndex((r) => r.user_id === mine.user_id) + 1 : 0;
+  const champion = rows[0] ?? null;
   const isMyChampion = !!(champion && mine && champion.user_id === mine.user_id);
-  const trophies = useGameStore((s) => s.megaTrophies);
-  const claimed = (trophies ?? []).some((t) => t.eventId === event.id);
+  const myRank = mine ? rows.findIndex((r) => r.user_id === mine.user_id) + 1 : 0;
 
   const claimChampion = () => {
     const st = useGameStore.getState();
@@ -62,121 +65,136 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
     if (ok) toast.success(`Champion reward claimed! 🏆 ${event.champion.trophyName}`);
   };
 
+  const Avatar = ({ sprite, size, ring }: { sprite: string; size: number; ring: string }) => (
+    <div className="flex items-start justify-center overflow-hidden rounded-full" style={{ width: size, height: size, background: "#2A2D3A", border: `2px solid ${ring}` }}>
+      <img src={trainerSpriteUrl(sprite)} alt="" crossOrigin="anonymous" className="object-cover object-top" style={{ width: size - 4, height: size - 4 }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }} />
+    </div>
+  );
+
   return (
     <div className="flex h-full w-full flex-col overflow-hidden" style={{ background: "#14161F", fontFamily: "Outfit, sans-serif" }}>
-      {/* header */}
-      <div className="relative px-5 pb-4" style={{ paddingTop: 44, background: "radial-gradient(circle at 50% 20%, #2E3A5C 0%, #1C2333 60%, #14161F 100%)", overflow: "hidden" }}>
-        <div className="absolute inset-0" style={{ background: "repeating-conic-gradient(from 0deg at 50% 18%, rgba(242,214,78,0.1) 0deg 6deg, transparent 6deg 13deg)" }} />
-        <div className="relative flex items-center justify-between">
-          <button onClick={onBack} className="flex h-9 w-9 items-center justify-center rounded-full text-lg text-white" style={{ background: "rgba(255,255,255,0.1)" }}>‹</button>
-          <div className="font-pixel" style={{ fontSize: 7, letterSpacing: 1.5, color: "rgba(255,255,255,0.65)" }}>MEGA RAID LEADERBOARD</div>
-          <div className="h-9 w-9" />
-        </div>
-        <div className="relative mt-3 flex items-center gap-3">
-          <PokemonSprite id={event.megaId} alt={event.name} className="h-[64px] w-[64px] object-contain [filter:drop-shadow(0_4px_8px_rgba(0,0,0,0.5))]" />
-          <div className="flex-1">
-            <div className="text-[20px] font-black leading-tight text-white">{event.name}</div>
-            <div
-              className="mt-1.5 inline-block font-pixel"
-              style={{
-                fontSize: 7,
-                color: ended ? "rgba(255,255,255,0.6)" : "#1C2333",
-                background: ended ? "rgba(255,255,255,0.1)" : "#F2D64E",
-                borderRadius: 999, padding: "5px 11px",
-              }}
-            >
-              {ended ? "RAID ENDED" : `ENDS IN ${fmtCountdown(msLeft)}`}
-            </div>
+      {/* header banner */}
+      <div className="relative px-5 pb-[18px]" style={{ paddingTop: 44, background: "radial-gradient(circle at 50% 30%, #2E3A5C 0%, #1C2333 62%, #14161F 100%)", overflow: "hidden" }}>
+        <div className="absolute inset-0" style={{ background: "repeating-conic-gradient(from 0deg at 50% 26%, rgba(242,214,78,0.14) 0deg 7deg, transparent 7deg 15deg)" }} />
+        <img src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${event.megaId}.png`} alt={event.name} crossOrigin="anonymous" className="absolute object-contain" style={{ right: 6, top: 40, width: 96, height: 96, opacity: 0.92 }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+        <button onClick={onBack} className="relative flex h-9 w-9 items-center justify-center rounded-full text-lg text-white" style={{ background: "rgba(255,255,255,0.1)" }}>‹</button>
+        <div className="relative mt-2.5">
+          <div className="font-pixel" style={{ fontSize: 6.5, letterSpacing: 1, color: "#F2D64E" }}>{ended ? "EVENT ENDED · RESULTS" : "MEGA RAID · LEADERBOARD"}</div>
+          <div className="mt-2 text-[23px] font-black leading-[1.1] text-white" style={{ maxWidth: 220 }}>{event.name}</div>
+          <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5" style={{ background: "rgba(0,0,0,0.3)" }}>
+            {!ended && <svg width="11" height="11" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="8.5" stroke="#F2D64E" strokeWidth="2" /><path d="M11 6.5V11l3 2" stroke="#F2D64E" strokeWidth="2" strokeLinecap="round" /></svg>}
+            <span className="font-pixel" style={{ fontSize: 6.5, color: "#F2D64E" }}>{ended ? `${rows.length} TRAINERS COMPETED` : `ENDS IN ${fmtCountdown(msLeft)}`}</span>
           </div>
         </div>
       </div>
 
-      {/* champion banner */}
-      {champion && (
-        <div className="mx-5 mt-3 rounded-2xl px-4 py-3" style={{ background: "linear-gradient(95deg, rgba(242,214,78,0.18), rgba(232,169,60,0.12))", border: "1px solid rgba(242,214,78,0.4)" }}>
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">👑</span>
-            <div className="flex-1">
-              <div className="font-pixel" style={{ fontSize: 6.5, color: "#F2D64E" }}>CHAMPION · {event.champion.trophyName}</div>
-              <div className="mt-1 text-[15px] font-extrabold text-white">{champion.trainer_name}{isMyChampion ? " (you)" : ""}</div>
-            </div>
-            <div className="text-right">
-              <div className="text-[17px] font-black" style={{ color: "#F2D64E" }}>{Math.round(champion.accuracy)}%</div>
-              <div className="text-[11px] text-white/55">{fmtTime(champion.time_ms)}</div>
-            </div>
-          </div>
-          {isMyChampion && !claimed && (
-            <button onClick={claimChampion} className="mt-3 flex h-11 w-full items-center justify-center rounded-full text-[15px] font-extrabold active:scale-[0.99]" style={{ background: "linear-gradient(95deg, #F2D64E, #E8A93C)", color: "#1C2333", boxShadow: "0 3px 0 #C18A28" }}>
-              Claim Champion Reward · +{event.champion.xp} XP
-            </button>
-          )}
-          {claimed && (
-            <div className="mt-3 flex items-center justify-center gap-2 rounded-full py-2.5 text-[13px] font-bold" style={{ background: "rgba(242,214,78,0.16)", color: "#F2D64E" }}>
-              🏆 Trophy claimed · {event.champion.trophyName}
-            </div>
+      {loading ? (
+        <div className="mt-10 text-center font-pixel" style={{ fontSize: 8, color: "rgba(255,255,255,0.5)" }}>LOADING…</div>
+      ) : rows.length === 0 ? (
+        <div className="flex flex-1 flex-col items-center justify-center px-9 text-center">
+          <div className="text-[22px] font-black text-white [text-wrap:pretty]">Be the first to challenge {event.name}!</div>
+          <div className="mt-2 text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>No trainers have completed the raid yet. Set the pace and claim #1.</div>
+          {!ended && (
+            <button onClick={onBattle} className="mt-6 flex h-[54px] w-full items-center justify-center rounded-full font-pixel text-white" style={{ fontSize: 11, letterSpacing: 1, background: "#E23B2E", boxShadow: "0 5px 0 #A82A20" }}>START THE RAID</button>
           )}
         </div>
-      )}
-
-      {/* list */}
-      <div className="flex-1 overflow-y-auto px-5 pb-28 pt-3">
-        {loading ? (
-          <div className="mt-10 text-center font-pixel" style={{ fontSize: 8, color: "rgba(255,255,255,0.5)" }}>LOADING…</div>
-        ) : rows.length === 0 ? (
-          <div className="mt-12 flex flex-col items-center text-center">
-            <PokemonSprite id={event.megaId} alt={event.name} className="h-24 w-24 object-contain opacity-90" />
-            <div className="mt-3 text-[17px] font-extrabold text-white">No challengers yet</div>
-            <div className="mt-1 text-[14px] text-white/55">Be the first to take on {event.name}!</div>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {rows.map((r, i) => {
+      ) : ended ? (
+        <div className="flex-1 overflow-y-auto px-4 pb-9 pt-3.5">
+          {isMyChampion && (
+            <div className="relative overflow-hidden rounded-[20px] p-[18px] text-center" style={{ background: "radial-gradient(circle at 50% 0%, #6a2db5 0%, #1C2333 80%)", border: "1.5px solid #F2D64E" }}>
+              <div className="absolute inset-0" style={{ background: "repeating-conic-gradient(from 0deg at 50% 30%, rgba(242,214,78,0.16) 0deg 6deg, transparent 6deg 13deg)" }} />
+              <div className="relative">
+                <div className="text-[38px]">🏆</div>
+                <div className="mt-1.5 font-pixel" style={{ fontSize: 10, letterSpacing: 1, color: "#F2D64E" }}>YOU'RE THE CHAMPION!</div>
+                <div className="mt-2 text-[13px]" style={{ color: "rgba(255,255,255,0.8)" }}>
+                  {Math.round(champion!.accuracy)}% accuracy · {champion!.correct}/{champion!.total} · {fmtTime(champion!.time_ms)} — #1 of {rows.length}
+                </div>
+                {claimed ? (
+                  <div className="mt-3.5 flex h-[54px] items-center justify-center rounded-full font-pixel" style={{ fontSize: 10, letterSpacing: 1, background: "rgba(242,214,78,0.16)", color: "#F2D64E" }}>🏆 {event.champion.trophyName.toUpperCase()} CLAIMED</div>
+                ) : (
+                  <button onClick={claimChampion} className="mt-3.5 flex h-[54px] w-full items-center justify-center rounded-full font-pixel active:scale-[0.99]" style={{ fontSize: 11, letterSpacing: 1, background: "linear-gradient(95deg, #F2D64E, #E8A93C)", color: "#1C2333", boxShadow: "0 5px 0 #C18A28" }}>CLAIM REWARDS</button>
+                )}
+              </div>
+            </div>
+          )}
+          <div className="mt-3.5 font-pixel" style={{ fontSize: 7, letterSpacing: 1, color: "rgba(255,255,255,0.5)" }}>RANKINGS</div>
+          <div className="mt-2.5 flex flex-col gap-2">
+            {rows.slice(0, 50).map((r, i) => {
               const rank = i + 1;
-              const isMe = mine?.user_id === r.user_id;
+              const me = mine?.user_id === r.user_id;
+              const medal = rank === 1 ? "#F2D64E" : rank === 2 ? "#C0C6D4" : rank === 3 ? "#C8895A" : "rgba(255,255,255,0.5)";
               return (
-                <div
-                  key={r.user_id}
-                  className="flex items-center gap-3 rounded-2xl px-3 py-2.5"
-                  style={isMe
-                    ? { background: "rgba(242,214,78,0.14)", border: "1.5px solid rgba(242,214,78,0.5)" }
-                    : { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
-                >
-                  <div className="flex w-7 shrink-0 justify-center font-black" style={{ fontSize: rank <= 3 ? 18 : 15, color: MEDAL[rank] ?? "rgba(255,255,255,0.5)" }}>
-                    {rank <= 3 ? "●" : rank}
-                  </div>
-                  <img src={trainerSpriteUrl(r.trainer_sprite)} alt="" crossOrigin="anonymous" className="h-9 w-9 rounded-full object-contain" style={{ background: "rgba(255,255,255,0.08)" }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }} />
+                <div key={r.user_id} className="flex items-center gap-3 rounded-[14px] px-3.5 py-[11px]" style={me ? { background: "linear-gradient(95deg, rgba(242,214,78,0.2), rgba(242,214,78,0.05))", border: "1.5px solid #F2D64E" } : undefined}>
+                  <span className="font-pixel" style={{ fontSize: rank <= 3 ? 10 : 9, color: medal, width: 24 }}>{rank}</span>
+                  <Avatar sprite={r.trainer_sprite} size={rank <= 3 ? 36 : 34} ring={medal === "rgba(255,255,255,0.5)" ? "#2A2D3A" : medal} />
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-[15px] font-bold text-white">{r.trainer_name}{isMe ? " (you)" : ""}</div>
-                    <div className="text-[11px] text-white/45">Lv {r.level} · {fmtTime(r.time_ms)} · {r.attempts > 1 ? "2 tries" : "1 try"}</div>
+                    <div className="truncate text-[14px] font-bold text-white">{me ? "You" : r.trainer_name}</div>
+                    {me && isMyChampion && <div className="font-pixel" style={{ fontSize: 6, color: "#F2D64E" }}>CHAMPION 👑</div>}
+                  </div>
+                  <div className="text-[17px] font-black" style={{ color: medal === "rgba(255,255,255,0.5)" ? "#fff" : medal }}>{Math.round(r.accuracy)}%</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <div className="px-4 pt-3">
+            <div className="flex items-center gap-2 rounded-[14px] px-3.5 py-2.5" style={{ background: "linear-gradient(95deg, #F2D64E, #E8A93C)" }}>
+              <span className="text-sm">🏆</span>
+              <span className="text-[11.5px] font-bold leading-tight" style={{ color: "#5A3E12" }}>Champion wins: Trophy + {event.champion.xp.toLocaleString()} XP + {event.champion.tp} TP + {event.champion.items} items</span>
+            </div>
+          </div>
+          <div className="flex items-end justify-center gap-2 px-[18px] pt-3.5">
+            {([2, 1, 3] as const).map((rank) => {
+              const r = rows[rank - 1];
+              if (!r) return <div key={rank} style={{ width: PODIUM[rank].w }} />;
+              const p = PODIUM[rank];
+              return (
+                <div key={rank} className="flex flex-col items-center" style={{ width: p.w }}>
+                  {rank === 1 && <div className="text-lg leading-none">👑</div>}
+                  <div className={rank === 1 ? "mt-0.5" : ""} style={rank === 1 ? { filter: "drop-shadow(0 0 14px rgba(242,214,78,0.6))" } : undefined}>
+                    <Avatar sprite={r.trainer_sprite} size={p.av} ring={p.ring} />
+                  </div>
+                  <div className="mt-1 text-[12px] font-bold text-white">{mine?.user_id === r.user_id ? "You" : r.trainer_name}</div>
+                  <div className="text-[13px] font-black" style={{ color: p.ring }}>{Math.round(r.accuracy)}%</div>
+                  <div className="mt-1.5 flex w-full justify-center rounded-t-lg pt-1.5 font-pixel" style={{ height: p.h, background: p.bar, fontSize: rank === 1 ? 14 : rank === 2 ? 12 : 11, color: p.barText }}>{rank}</div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex-1 overflow-y-auto px-3.5 pt-1">
+            {rows.slice(3).map((r, i) => {
+              const rank = i + 4;
+              const me = mine?.user_id === r.user_id;
+              return (
+                <div key={r.user_id} className="flex items-center gap-3 rounded-xl px-3 py-2.5" style={i % 2 === 1 ? { background: "rgba(255,255,255,0.04)" } : undefined}>
+                  <span className="font-pixel" style={{ fontSize: 9, color: "rgba(255,255,255,0.5)", width: 22 }}>{rank}</span>
+                  <Avatar sprite={r.trainer_sprite} size={34} ring="#2A2D3A" />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[14px] font-bold text-white">{me ? "You" : r.trainer_name}</div>
+                    <div className="font-pixel" style={{ fontSize: 6, color: "rgba(255,255,255,0.45)" }}>{r.correct}/{r.total} · {fmtTime(r.time_ms)}</div>
                   </div>
                   <div className="text-[17px] font-black text-white">{Math.round(r.accuracy)}%</div>
                 </div>
               );
             })}
           </div>
-        )}
-      </div>
-
-      {/* footer action */}
-      <div className="absolute inset-x-0 bottom-0 px-5 pb-9 pt-3" style={{ background: "linear-gradient(0deg, #14161F 60%, transparent)" }}>
-        {!ended && (
-          <button
-            onClick={onBattle}
-            className="flex h-14 w-full items-center justify-center rounded-full text-base font-extrabold active:scale-[0.99]"
-            style={{ background: "linear-gradient(95deg, #F2D64E, #E8A93C)", color: "#1C2333", boxShadow: "0 4px 0 #C18A28" }}
-          >
-            {mine ? (mine.attempts >= 2 ? "View only — no retakes left" : "Battle (1 retake left)") : "Battle Mega Raid"}
-          </button>
-        )}
-        {ended && (
-          <div className="text-center text-[13px] text-white/45">This raid has ended.</div>
-        )}
-        {myRank > 0 && (
-          <div className="mt-2.5 text-center font-pixel" style={{ fontSize: 7, color: "rgba(255,255,255,0.5)" }}>
-            YOUR RANK · #{myRank}
-          </div>
-        )}
-      </div>
+          {mine && myRank > 0 && (
+            <div className="px-3.5 pb-9 pt-2" style={{ background: "linear-gradient(180deg, transparent, #14161F 40%)" }}>
+              <div className="flex items-center gap-3 rounded-2xl px-3.5 py-3" style={{ background: "linear-gradient(95deg, rgba(226,59,46,0.25), rgba(242,214,78,0.25))", border: "1.5px solid #F2D64E" }}>
+                <span className="font-pixel" style={{ fontSize: 10, color: "#F2D64E", width: 30 }}>{myRank}</span>
+                <Avatar sprite={mine.trainer_sprite} size={36} ring="#E23B2E" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-[15px] font-extrabold text-white">You</div>
+                  <div className="font-pixel" style={{ fontSize: 6, color: "rgba(255,255,255,0.6)" }}>{mine.correct}/{mine.total} · {fmtTime(mine.time_ms)}</div>
+                </div>
+                <div className="text-[18px] font-black text-white">{Math.round(mine.accuracy)}%</div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
