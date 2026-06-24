@@ -368,7 +368,8 @@ function BattlePage() {
                   <div key={card.kind} className="relative w-[280px] shrink-0 snap-center overflow-hidden rounded-[28px] shadow-[0_18px_40px_-14px_rgba(0,0,0,0.5)]" style={{ background: t.cardBg }}>
                     <div className="relative flex h-[200px] items-center justify-center overflow-hidden" style={{ background: t.hero }}>
                       <div className="absolute inset-0" style={{ background: `repeating-conic-gradient(from 0deg at 50% 44%, ${t.ray} 0deg 6deg, transparent 6deg 13deg)` }} />
-                      {card.kind !== "whosthat" && <div className="absolute h-[150px] w-[150px] rounded-full" style={{ background: `radial-gradient(circle, ${t.glow} 0%, transparent 70%)` }} />}
+                      {card.kind === "mega" && <div className="absolute h-[168px] w-[168px] rounded-full" style={{ background: "radial-gradient(circle, rgba(242,214,78,0.42) 0%, rgba(181,52,31,0.18) 55%, transparent 72%)" }} />}
+                      {card.kind !== "whosthat" && card.kind !== "mega" && <div className="absolute h-[150px] w-[150px] rounded-full" style={{ background: `radial-gradient(circle, ${t.glow} 0%, transparent 70%)` }} />}
                       {card.kind === "daily" && <PokemonSprite id={479} alt="Rotom" className="sprite relative h-[150px] w-[150px] object-contain drop-shadow-[0_10px_14px_rgba(120,30,0,0.45)]" />}
                       {card.kind === "weekly" && (card.heroSrc
                         ? <img src={card.heroSrc} alt="Gym Leader" className="relative h-[150px] w-[150px] object-contain [filter:brightness(0)] [image-rendering:pixelated]" />
