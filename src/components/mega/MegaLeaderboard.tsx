@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { PokemonSprite } from "@/components/game-ui";
-import { trainerSpriteUrl } from "@/lib/game-data";
+import { trainerSpriteUrl, type ItemId } from "@/lib/game-data";
+import { useGameStore } from "@/lib/store";
+import { toast } from "sonner";
 import type { MegaEvent } from "@/lib/mega/schedule";
 import { fetchMegaLeaderboard, getMyMegaRun, type MegaRunRow } from "@/lib/mega/runs";
 
@@ -46,6 +48,19 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
   const msLeft = Date.parse(event.endsAt) - now;
   const champion = ended && rows.length > 0 ? rows[0] : null;
   const myRank = mine ? rows.findIndex((r) => r.user_id === mine.user_id) + 1 : 0;
+  const isMyChampion = !!(champion && mine && champion.user_id === mine.user_id);
+  const trophies = useGameStore((s) => s.megaTrophies);
+  const claimed = (trophies ?? []).some((t) => t.eventId === event.id);
+
+  const claimChampion = () => {
+    const st = useGameStore.getState();
+    st.addXp(event.champion.xp);
+    if (st.pokemon) st.addTrainingPoints(st.pokemon.id, event.champion.tp);
+    const pool: ItemId[] = ["potion", "superpotion", "maxpotion", "xattack", "scope", "xaccuracy", "candy", "luckyegg"];
+    for (let i = 0; i < event.champion.items; i++) st.grantItem(pool[Math.floor(Math.random() * pool.length)], 1);
+    const ok = st.claimMegaChampion(event.id, event.champion.trophyName, event.megaId);
+    if (ok) toast.success(`Champion reward claimed! 🏆 ${event.champion.trophyName}`);
+  };
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden" style={{ background: "#14161F", fontFamily: "Outfit, sans-serif" }}>
@@ -78,16 +93,28 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
 
       {/* champion banner */}
       {champion && (
-        <div className="mx-5 mt-3 flex items-center gap-3 rounded-2xl px-4 py-3" style={{ background: "linear-gradient(95deg, rgba(242,214,78,0.18), rgba(232,169,60,0.12))", border: "1px solid rgba(242,214,78,0.4)" }}>
-          <span className="text-2xl">👑</span>
-          <div className="flex-1">
-            <div className="font-pixel" style={{ fontSize: 6.5, color: "#F2D64E" }}>CHAMPION · {event.champion.trophyName}</div>
-            <div className="mt-1 text-[15px] font-extrabold text-white">{champion.trainer_name}</div>
+        <div className="mx-5 mt-3 rounded-2xl px-4 py-3" style={{ background: "linear-gradient(95deg, rgba(242,214,78,0.18), rgba(232,169,60,0.12))", border: "1px solid rgba(242,214,78,0.4)" }}>
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">👑</span>
+            <div className="flex-1">
+              <div className="font-pixel" style={{ fontSize: 6.5, color: "#F2D64E" }}>CHAMPION · {event.champion.trophyName}</div>
+              <div className="mt-1 text-[15px] font-extrabold text-white">{champion.trainer_name}{isMyChampion ? " (you)" : ""}</div>
+            </div>
+            <div className="text-right">
+              <div className="text-[17px] font-black" style={{ color: "#F2D64E" }}>{Math.round(champion.accuracy)}%</div>
+              <div className="text-[11px] text-white/55">{fmtTime(champion.time_ms)}</div>
+            </div>
           </div>
-          <div className="text-right">
-            <div className="text-[17px] font-black" style={{ color: "#F2D64E" }}>{Math.round(champion.accuracy)}%</div>
-            <div className="text-[11px] text-white/55">{fmtTime(champion.time_ms)}</div>
-          </div>
+          {isMyChampion && !claimed && (
+            <button onClick={claimChampion} className="mt-3 flex h-11 w-full items-center justify-center rounded-full text-[15px] font-extrabold active:scale-[0.99]" style={{ background: "linear-gradient(95deg, #F2D64E, #E8A93C)", color: "#1C2333", boxShadow: "0 3px 0 #C18A28" }}>
+              Claim Champion Reward · +{event.champion.xp} XP
+            </button>
+          )}
+          {claimed && (
+            <div className="mt-3 flex items-center justify-center gap-2 rounded-full py-2.5 text-[13px] font-bold" style={{ background: "rgba(242,214,78,0.16)", color: "#F2D64E" }}>
+              🏆 Trophy claimed · {event.champion.trophyName}
+            </div>
+          )}
         </div>
       )}
 
