@@ -513,6 +513,7 @@ export const useGameStore = create<GameState>()(
         return { itemId, qty, day, shiny };
       },
       consumeGuaranteedShiny: () => set({ guaranteedShinyPending: false }),
+      grantPokeEgg: (n = 1) => set((s) => ({ pokeEggs: (s.pokeEggs ?? 0) + n })),
 
 
       startGuestSession: () => {
