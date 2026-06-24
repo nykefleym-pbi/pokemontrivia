@@ -88,6 +88,56 @@ export type Database = {
           },
         ]
       }
+      mega_runs: {
+        Row: {
+          accuracy: number
+          correct: number
+          event_id: string
+          finished_at: string
+          id: string
+          level: number
+          time_ms: number
+          total: number
+          trainer_name: string
+          trainer_sprite: string
+          user_id: string
+        }
+        Insert: {
+          accuracy: number
+          correct: number
+          event_id: string
+          finished_at?: string
+          id?: string
+          level: number
+          time_ms: number
+          total: number
+          trainer_name: string
+          trainer_sprite: string
+          user_id: string
+        }
+        Update: {
+          accuracy?: number
+          correct?: number
+          event_id?: string
+          finished_at?: string
+          id?: string
+          level?: number
+          time_ms?: number
+          total?: number
+          trainer_name?: string
+          trainer_sprite?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mega_runs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           ace_pokemon_id: number | null
