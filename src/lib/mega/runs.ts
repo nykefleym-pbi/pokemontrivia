@@ -43,16 +43,28 @@ export async function getMegaAttempts(eventId: string): Promise<number> {
 }
 
 /** Full leaderboard for an event, ordered by accuracy desc then time asc. */
-export async function fetchMegaLeaderboard(eventId: string, limit = 100): Promise<MegaRunRow[]> {
-  const { data, error } = await db
-    .from("mega_runs")
-    .select("*")
-    .eq("event_id", eventId)
-    .order("accuracy", { ascending: false })
-    .order("time_ms", { ascending: true })
-    .limit(limit);
+/** Public leaderboard row (display columns only — no run id, served via RPC). */
+export interface MegaLeaderboardRow {
+  user_id: string;
+  trainer_name: string;
+  trainer_sprite: string;
+  level: number;
+  accuracy: number;
+  correct: number;
+  total: number;
+  time_ms: number;
+  attempts: number;
+  finished_at: string;
+}
+
+/**
+ * Leaderboard for an event via the get_mega_leaderboard RPC. The mega_runs table
+ * itself is owner-only readable; this function exposes just the display columns.
+ */
+export async function fetchMegaLeaderboard(eventId: string, limit = 100): Promise<MegaLeaderboardRow[]> {
+  const { data, error } = await rpc.rpc("get_mega_leaderboard", { p_event_id: eventId, p_limit: limit });
   if (error) { console.warn("[mega] fetchMegaLeaderboard failed:", error.message); return []; }
-  return (data ?? []) as MegaRunRow[];
+  return (data ?? []) as MegaLeaderboardRow[];
 }
 
 /** The current user's row + 1-based rank for an event, or null if no run yet. */

@@ -278,6 +278,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_mega_leaderboard: {
+        Args: { p_event_id: string; p_limit?: number }
+        Returns: {
+          accuracy: number
+          attempts: number
+          correct: number
+          finished_at: string
+          level: number
+          time_ms: number
+          total: number
+          trainer_name: string
+          trainer_sprite: string
+          user_id: string
+        }[]
+      }
       increment_curated_correct: {
         Args: { question_id: string }
         Returns: undefined
