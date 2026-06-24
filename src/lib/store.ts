@@ -795,6 +795,7 @@ export const useGameStore = create<GameState>()(
         dailyGiftLastClaim: s.dailyGiftLastClaim,
         dailyGiftStreak: s.dailyGiftStreak,
         guaranteedShinyPending: s.guaranteedShinyPending,
+        pokeEggs: s.pokeEggs,
 
       }),
 
