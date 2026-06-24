@@ -161,6 +161,7 @@ export interface GameState {
   setLastEngagePromptDate: (date: string) => void;
   claimDailyGift: () => { itemId: ItemId; qty: number; day: number; shiny: boolean } | null;
   consumeGuaranteedShiny: () => void;
+  grantPokeEgg: (n?: number) => void;
   startGuestSession: () => void;
 
   reset: () => void;
