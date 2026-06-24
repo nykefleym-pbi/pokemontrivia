@@ -314,9 +314,16 @@ function BattlePage() {
       const s2 = Math.floor((Date.parse(activeMega.endsAt) - Date.now()) / 1000);
       const dd = Math.floor(s2 / 86400), hh = Math.floor((s2 % 86400) / 3600);
       const megaClock = dd > 0 ? `${dd}D ${hh}H` : `${hh}H`;
-      cards.unshift(
-        { kind: "megaleaderboard", title: "Mega Raid Leaderboard", desc: "See where you rank against Trainers worldwide.", chip: "LIVE RANKINGS", cta: "View Leaderboard", onPlay: openMegaLeaderboard },
-        { kind: "mega", title: `${activeMega.name} appeared!`, desc: "Defeat the raid boss across 50 questions for huge rewards.", chip: `ENDS IN ${megaClock}`, cta: "Battle Mega Raid", onPlay: startMega, heroPokeId: activeMega.megaId },
+      const lbCopy = megaStats && megaStats.rank > 0
+        ? `You're ranked #${megaStats.rank} of ${megaStats.total} by accuracy.`
+        : megaStats && megaStats.total > 0
+          ? `${megaStats.total} trainers competing — top 3 earn exclusive rewards.`
+          : "Be the first to set the pace — top 3 earn exclusive rewards.";
+      // Mega is a headline event: the carousel shows only the two mega cards.
+      cards.length = 0;
+      cards.push(
+        { kind: "mega", title: `${activeMega.name} appeared!`, desc: "Outsmart 50 brutal questions — only the sharpest trainer is crowned.", chip: `ENDS IN ${megaClock}`, cta: "Enter Mega Raid", onPlay: startMega, heroPokeId: activeMega.megaId },
+        { kind: "megaleaderboard", title: `${activeMega.name} Rankings`, desc: lbCopy, chip: "LIVE RANKINGS", cta: "View Leaderboard", onPlay: openMegaLeaderboard },
       );
     }
     if (cards.length > 0) {
