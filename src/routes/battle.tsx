@@ -382,7 +382,28 @@ function BattlePage() {
                       {card.kind === "mega" && card.heroPokeId && (
                         <PokemonSprite id={card.heroPokeId} alt="Mega Raid boss" className="sprite relative h-[150px] w-[150px] object-contain drop-shadow-[0_10px_14px_rgba(0,0,0,0.5)]" />
                       )}
-                      {card.kind === "megaleaderboard" && <div className="relative text-[104px] leading-none">🏆</div>}
+                      {card.kind === "megaleaderboard" && (
+                        <>
+                          <div className="absolute top-[20px] flex flex-col items-center">
+                            <div className="text-[40px] leading-none" style={{ filter: "drop-shadow(0 6px 10px rgba(0,0,0,0.5))" }}>🏆</div>
+                            <div className="font-pixel" style={{ fontSize: 9, color: "#F2D64E", marginTop: 2 }}>#1</div>
+                          </div>
+                          <div className="absolute bottom-0 flex items-end gap-1.5">
+                            <div className="flex flex-col items-center">
+                              <div className="flex items-center justify-center rounded-full font-pixel" style={{ width: 26, height: 26, background: "#C0C6D4", border: "2px solid #fff", fontSize: 8, color: "#1C2333" }}>2</div>
+                              <div style={{ marginTop: 5, width: 52, height: 46, background: "linear-gradient(#3A4660,#2A3450)", borderRadius: "6px 6px 0 0" }} />
+                            </div>
+                            <div className="flex flex-col items-center">
+                              <div className="flex items-center justify-center rounded-full font-pixel" style={{ width: 32, height: 32, background: "#F2D64E", border: "2px solid #fff", fontSize: 9, color: "#1C2333" }}>1</div>
+                              <div style={{ marginTop: 5, width: 56, height: 68, background: "linear-gradient(#F2D64E,#D9B838)", borderRadius: "6px 6px 0 0" }} />
+                            </div>
+                            <div className="flex flex-col items-center">
+                              <div className="flex items-center justify-center rounded-full font-pixel" style={{ width: 26, height: 26, background: "#C8895A", border: "2px solid #fff", fontSize: 8, color: "#1C2333" }}>3</div>
+                              <div style={{ marginTop: 5, width: 52, height: 38, background: "linear-gradient(#4A3A5C,#34283F)", borderRadius: "6px 6px 0 0" }} />
+                            </div>
+                          </div>
+                        </>
+                      )}
                       <div className="absolute left-4 top-4 rounded-full px-2.5 py-1.5 font-pixel text-[7px] tracking-wider" style={{ background: t.labelBg, color: t.labelColor }}>{t.label}</div>
                     </div>
                     <div className="px-5 pb-6 pt-4">
