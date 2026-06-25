@@ -317,6 +317,8 @@ function BattlePage() {
   useEffect(() => {
     if (engageShownRef.current) return;
     if (phase !== "home" || pendingElite) return;
+    const dismissedToday = engageDismissDate === today ? engageDismissCount : 0;
+    if (dismissedToday >= 3) return;
     const hasMega = !!activeMega && Date.parse(activeMega.endsAt) > Date.now();
     if (megaStats === null && !engageDelayPassed) return;
     const now = Date.now();
