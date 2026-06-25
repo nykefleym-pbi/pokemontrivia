@@ -22,6 +22,8 @@ import { nextPendingElite, type EliteMember } from "@/lib/elite-four";
 import { findGymLeader, type GymLeader } from "@/lib/gym-leaders";
 import { getWeekRangeUtc } from "@/lib/game-data";
 
+const ENGAGE_DELAY_MS = 30000; // diagnostic: delay carousel so mega data fully resolves
+
 export const Route = createFileRoute("/battle")({
   component: BattlePage,
   validateSearch: (s: Record<string, unknown>) => ({
@@ -64,6 +66,12 @@ function BattlePage() {
   const [engageCards, setEngageCards] = useState<Array<{ kind: "daily" | "weekly" | "whosthat" | "mega" | "megaleaderboard"; title: string; desc: string; chip: string; cta: string; onPlay: () => void; heroSrc?: string; heroPokeId?: number }> | null>(null);
   const [engageActive, setEngageActive] = useState(0);
   const engageShownRef = useRef(false);
+  const [engageDelayPassed, setEngageDelayPassed] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setEngageDelayPassed(true), ENGAGE_DELAY_MS);
+    return () => clearTimeout(t);
+  }, []);
 
   const weeklyLeague = useGameStore((s) => s.weeklyLeague);
   const initWeeklyLeague = useGameStore((s) => s.initWeeklyLeague);
@@ -312,6 +320,7 @@ function BattlePage() {
   useEffect(() => {
     if (engageShownRef.current) return;
     if (phase !== "home" || pendingElite) return;
+    if (!engageDelayPassed) return;
     const hasMega = !!activeMega && Date.parse(activeMega.endsAt) > Date.now();
     if (megaStats === null) return;
     const now = Date.now();
@@ -357,7 +366,7 @@ function BattlePage() {
       if (weeklyIncluded) setEngageWeeklyShownDate(today);
       if (whosThatIncluded) setEngageWhosThatShownHour(hourKey);
     }
-  }, [phase, pendingElite, today, dailyDone, weeklyLeague, whosThatHourKey, engageDailyShownDate, engageWeeklyShownDate, engageWhosThatShownHour, startDaily, startWeekly, navigate, setEngageDailyShownDate, setEngageWeeklyShownDate, setEngageWhosThatShownHour, activeMega, megaStats, startMega, openMegaLeaderboard]);
+  }, [phase, pendingElite, today, dailyDone, weeklyLeague, whosThatHourKey, engageDailyShownDate, engageWeeklyShownDate, engageWhosThatShownHour, startDaily, startWeekly, navigate, setEngageDailyShownDate, setEngageWeeklyShownDate, setEngageWhosThatShownHour, activeMega, megaStats, startMega, openMegaLeaderboard, engageDelayPassed]);
 
   const ENGAGE_THEME: Record<string, { cardBg: string; hero: string; ray: string; glow: string; labelBg: string; labelColor: string; label: string; chipBg: string; chipColor: string; chipStroke: string; ctaBg: string; ctaColor: string; ctaShadow: string; titleColor: string; descColor: string }> = {
     daily: { cardBg: "#FBF3DF", hero: "radial-gradient(circle at 50% 42%, #FF8A3D 0%, #F0531F 52%, #D23A12 100%)", ray: "rgba(255,255,255,0.14)", glow: "rgba(255,224,130,0.6)", labelBg: "rgba(0,0,0,0.22)", labelColor: "#fff", label: "DAILY QUEST", chipBg: "#F6E6C4", chipColor: "#9A7320", chipStroke: "#B8862A", ctaBg: "#E23B2E", ctaColor: "#fff", ctaShadow: "#A82A20", titleColor: "#1C2333", descColor: "#6B6E7B" },
