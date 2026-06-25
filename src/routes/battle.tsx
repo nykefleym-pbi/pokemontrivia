@@ -22,7 +22,7 @@ import { nextPendingElite, type EliteMember } from "@/lib/elite-four";
 import { findGymLeader, type GymLeader } from "@/lib/gym-leaders";
 import { getWeekRangeUtc } from "@/lib/game-data";
 
-const ENGAGE_DELAY_MS = 5000; // safety cap: show carousel by now even if mega data never resolves
+const ENGAGE_DELAY_MS = 10000; // safety cap: show carousel by now even if mega data never resolves
 
 export const Route = createFileRoute("/battle")({
   component: BattlePage,
@@ -57,8 +57,6 @@ function BattlePage() {
   const today = new Date().toISOString().slice(0, 10);
   const dailyDone = dailyResult?.date === today;
   const whosThatHourKey = useGameStore((s) => s.whosThatHourKey);
-  const engageWhosThatShownHour = useGameStore((s) => s.engageWhosThatShownHour);
-  const setEngageWhosThatShownHour = useGameStore((s) => s.setEngageWhosThatShownHour);
   const [engageCards, setEngageCards] = useState<Array<{ kind: "daily" | "weekly" | "whosthat" | "mega" | "megaleaderboard"; title: string; desc: string; chip: string; cta: string; onPlay: () => void; heroSrc?: string; heroPokeId?: number }> | null>(null);
   const [engageActive, setEngageActive] = useState(0);
   const engageShownRef = useRef(false);
@@ -333,7 +331,7 @@ function BattlePage() {
     if (weeklyIncluded) {
       cards.push({ kind: "weekly", title: "Weekly League is open!", desc: weeklyStatus === "in_progress" ? "Finish your run before the week resets." : "Challenge this week's Gym Leader and climb the ranks.", chip: "RESETS MONDAY", cta: "Enter Weekly League", onPlay: startWeekly, heroSrc: leader ? `/trainers/gym/${leader.trainerSpriteId}.png` : undefined });
     }
-    const whosThatIncluded = hourKey !== whosThatHourKey && hourKey !== engageWhosThatShownHour;
+    const whosThatIncluded = hourKey !== whosThatHourKey;
     if (whosThatIncluded) {
       cards.push({ kind: "whosthat", title: "A new round is live!", desc: "Guess the hidden Pokémon to earn rewards.", chip: "NEW ROUND EVERY HOUR", cta: "Play now", onPlay: () => navigate({ to: "/whos-that-pokemon" }) });
     }
@@ -357,9 +355,8 @@ function BattlePage() {
       engageShownRef.current = true;
       setEngageActive(0);
       setEngageCards(cards);
-      if (whosThatIncluded) setEngageWhosThatShownHour(hourKey);
     }
-  }, [phase, pendingElite, today, dailyDone, weeklyLeague, whosThatHourKey, engageWhosThatShownHour, startDaily, startWeekly, navigate, setEngageWhosThatShownHour, activeMega, megaStats, startMega, openMegaLeaderboard, engageDelayPassed]);
+  }, [phase, pendingElite, today, dailyDone, weeklyLeague, whosThatHourKey, startDaily, startWeekly, navigate, activeMega, megaStats, startMega, openMegaLeaderboard, engageDelayPassed]);
 
   const ENGAGE_THEME: Record<string, { cardBg: string; hero: string; ray: string; glow: string; labelBg: string; labelColor: string; label: string; chipBg: string; chipColor: string; chipStroke: string; ctaBg: string; ctaColor: string; ctaShadow: string; titleColor: string; descColor: string }> = {
     daily: { cardBg: "#FBF3DF", hero: "radial-gradient(circle at 50% 42%, #FF8A3D 0%, #F0531F 52%, #D23A12 100%)", ray: "rgba(255,255,255,0.14)", glow: "rgba(255,224,130,0.6)", labelBg: "rgba(0,0,0,0.22)", labelColor: "#fff", label: "DAILY QUEST", chipBg: "#F6E6C4", chipColor: "#9A7320", chipStroke: "#B8862A", ctaBg: "#E23B2E", ctaColor: "#fff", ctaShadow: "#A82A20", titleColor: "#1C2333", descColor: "#6B6E7B" },
@@ -380,7 +377,7 @@ function BattlePage() {
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1 1l11 11M12 1L1 12" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" /></svg>
             </button>
             <div className="px-10 text-center">
-              <div className="text-[26px] font-black tracking-tight text-white">{engageCards.some((c) => c.kind === "mega" || c.kind === "megaleaderboard") ? "Limited-time event!" : "Ready to play?"}</div>
+              <div className="text-[26px] font-black tracking-tight text-white">Ready to play?</div>
               <div className="mt-1.5 font-pixel text-[8px] tracking-widest text-[#F2D64E]">
                 {engageCards.length} {engageCards.length === 1 ? "ACTIVITY" : "ACTIVITIES"} AVAILABLE
               </div>
@@ -411,7 +408,7 @@ function BattlePage() {
                       )}
                       {card.kind === "megaleaderboard" && (
                         <>
-                          <div className="absolute top-[20px] flex flex-col items-center">
+                          <div className="absolute top-[44px] flex flex-col items-center">
                             <div className="text-[40px] leading-none" style={{ filter: "drop-shadow(0 6px 10px rgba(0,0,0,0.5))" }}>🏆</div>
                             <div className="font-pixel" style={{ fontSize: 9, color: "#F2D64E", marginTop: 2 }}>#1</div>
                           </div>
