@@ -14,7 +14,7 @@ import { BattleScreen, type Trivia } from "@/components/battle-screen";
 import { MegaRaidScreen } from "@/components/mega/MegaRaidScreen";
 import { MegaLeaderboard } from "@/components/mega/MegaLeaderboard";
 
-import { fetchActiveMegaEvent, type MegaEvent } from "@/lib/mega/schedule";
+import { fetchActiveMegaEvent, MEGA_MAX_ATTEMPTS, type MegaEvent } from "@/lib/mega/schedule";
 import { ensureMegaQuestions } from "@/lib/mega/questions";
 import { fetchMegaLeaderboard, getMyMegaRun } from "@/lib/mega/runs";
 import { Toaster } from "@/components/ui/sonner";
