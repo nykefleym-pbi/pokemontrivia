@@ -22,7 +22,7 @@ import { nextPendingElite, type EliteMember } from "@/lib/elite-four";
 import { findGymLeader, type GymLeader } from "@/lib/gym-leaders";
 import { getWeekRangeUtc } from "@/lib/game-data";
 
-const ENGAGE_DELAY_MS = 5000; // safety cap: show carousel by now even if mega data never resolves
+const ENGAGE_DELAY_MS = 10000; // safety cap: show carousel by now even if mega data never resolves
 
 export const Route = createFileRoute("/battle")({
   component: BattlePage,
