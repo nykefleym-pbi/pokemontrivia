@@ -214,6 +214,54 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
   const setOnboarded = useGameStore((s) => s.setOnboarded);
   const navigate = useNavigate();
 
+  // Trainer-name claim flow state
+  const [nameAvail, setNameAvail] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle");
+  const [nameMsg, setNameMsg] = useState<string>("");
+  const [claimedName, setClaimedName] = useState<string>("");
+  const [claiming, setClaiming] = useState(false);
+
+  // Kick off the social bootstrap as soon as the create flow opens so the
+  // anonymous session + empty profile row exist by the time we try to claim.
+  useEffect(() => {
+    void bootstrapSocial();
+  }, []);
+
+  // Debounced availability check as the user types.
+  useEffect(() => {
+    const trimmed = name.trim();
+    if (trimmed.length === 0) {
+      setNameAvail("idle");
+      setNameMsg("");
+      return;
+    }
+    const v = validateTrainerName(name);
+    if (!v.ok) {
+      setNameAvail("invalid");
+      setNameMsg(claimErrorMessage(v.error));
+      return;
+    }
+    if (claimedName && v.name.toLowerCase() === claimedName.toLowerCase()) {
+      setNameAvail("available");
+      setNameMsg("Name available");
+      return;
+    }
+    setNameAvail("checking");
+    setNameMsg("Checking…");
+    const t = window.setTimeout(async () => {
+      const ok = await isTrainerNameAvailable(v.name);
+      // Stale-response guard: only commit if the input hasn't changed.
+      if (name.trim() !== v.name) return;
+      if (ok) {
+        setNameAvail("available");
+        setNameMsg("Name available");
+      } else {
+        setNameAvail("taken");
+        setNameMsg(claimErrorMessage("taken"));
+      }
+    }, 350);
+    return () => window.clearTimeout(t);
+  }, [name, claimedName]);
+
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     return STARTING_PARTNERS
@@ -233,9 +281,40 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
 
   const stepIndex = STEPS.indexOf(substep);
 
+  async function handleNameNext() {
+    const v = validateTrainerName(name);
+    if (!v.ok) {
+      setNameAvail("invalid");
+      setNameMsg(claimErrorMessage(v.error));
+      return;
+    }
+    // Re-claim if the name changed since the last successful claim.
+    if (claimedName.toLowerCase() !== v.name.toLowerCase()) {
+      setClaiming(true);
+      try {
+        // Make sure the profile row exists before attempting to claim.
+        await bootstrapSocial();
+        const res = await claimTrainerName(v.name);
+        if (!res.ok) {
+          if (res.error === "taken") setNameAvail("taken");
+          else if (res.error === "length" || res.error === "chars") setNameAvail("invalid");
+          else setNameAvail("idle");
+          setNameMsg(claimErrorMessage(res.error));
+          return;
+        }
+        setClaimedName(v.name);
+        setNameAvail("available");
+        setNameMsg("Name reserved ✓");
+      } finally {
+        setClaiming(false);
+      }
+    }
+    setSubstep("trainer");
+  }
+
   function start() {
-    if (!name.trim() || !pick) return;
-    setOnboarded(name.trim(), pick, trainerSprite);
+    if (!claimedName || !pick) return;
+    setOnboarded(claimedName, pick, trainerSprite);
     navigate({ to: "/battle" });
   }
 
