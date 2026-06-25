@@ -112,6 +112,8 @@ function RootComponent() {
         <BottomNav />
       </div>
       <FriendRequestInbox />
+      <NameReclaimPrompt />
+
       <PwaRegister />
     </div>
   );
