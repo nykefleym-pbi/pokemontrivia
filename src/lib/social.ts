@@ -33,9 +33,11 @@ export async function syncProfile(): Promise<TrainerProfile | null> {
   const uid = await ensureSession();
   if (!uid) return null;
   const s = useGameStore.getState();
+  // NOTE: trainer_name is intentionally omitted — it is owned by the claim flow
+  // (claimTrainerName RPC) so that name-uniqueness collisions cannot block
+  // routine level/xp/pokedex syncs.
   const payload = {
     id: uid,
-    trainer_name: s.trainerName || "Trainer",
     trainer_sprite: s.trainerSprite || "red",
     level: s.level ?? 1,
     xp: s.xp ?? 0,
@@ -105,6 +107,29 @@ export async function removeFriend(friendId: string): Promise<boolean> {
   if (!uid) return false;
   const { error } = await db.from("friends").delete().eq("owner_id", uid).eq("friend_id", friendId);
   return !error;
+}
+
+/** Check whether a trainer name is free (case-insensitive). */
+export async function isTrainerNameAvailable(name: string): Promise<boolean> {
+  const rpc = supabase as unknown as { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }> };
+  const { data, error } = await rpc.rpc("is_trainer_name_available", { _name: name });
+  if (error) { console.warn("[social] isTrainerNameAvailable failed:", error.message); return false; }
+  return data === true;
+}
+
+/** Claim a trainer name for the current user. */
+export async function claimTrainerName(name: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const rpc = supabase as unknown as { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }> };
+    const { data, error } = await rpc.rpc("claim_trainer_name", { _name: name });
+    if (error) { console.warn("[social] claimTrainerName failed:", error.message); return { ok: false, error: "network" }; }
+    const result = data as { ok?: boolean; error?: string } | null;
+    if (result && result.ok === true) return { ok: true };
+    return { ok: false, error: (result && result.error) || "network" };
+  } catch (e) {
+    console.warn("[social] claimTrainerName threw:", e);
+    return { ok: false, error: "network" };
+  }
 }
 
 /** Hook: bootstrap social identity once, after onboarding. */
