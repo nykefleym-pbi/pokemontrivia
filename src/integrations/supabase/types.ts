@@ -320,7 +320,28 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_curated_answer: {
+        Args: { _chosen_index: number; _question_id: string }
+        Returns: Json
+      }
       claim_trainer_name: { Args: { _name: string }; Returns: Json }
+      get_curated_questions: {
+        Args: {
+          _category?: string
+          _difficulty?: string
+          _exclude?: string[]
+          _limit?: number
+          _type_theme?: string
+        }
+        Returns: {
+          category: string
+          difficulty: string
+          id: string
+          options: Json
+          question: string
+          type_theme: string
+        }[]
+      }
       get_mega_leaderboard: {
         Args: { p_event_id: string; p_limit?: number }
         Returns: {
