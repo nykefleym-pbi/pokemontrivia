@@ -315,8 +315,10 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
   function start() {
     if (!claimedName || !pick) return;
     setOnboarded(claimedName, pick, trainerSprite);
+    useGameStore.getState().setNameReconciled(true);
     navigate({ to: "/battle" });
   }
+
 
   function goBack() {
     if (substep === "name") onBack();

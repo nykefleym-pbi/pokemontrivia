@@ -92,6 +92,9 @@ export interface GameState {
   lastEngagePromptDate: string | null;
   engageDismissCount: number;
   engageDismissDate: string | null;
+  nameReconciled: boolean;
+  needsNameReclaim: boolean;
+
   
   dailyGiftLastClaim: string | null;
   dailyGiftStreak: number;
@@ -164,6 +167,9 @@ export interface GameState {
   setFriendCode: (code: string) => void;
   setLastEngagePromptDate: (date: string) => void;
   recordEngageDismiss: () => void;
+  setNameReconciled: (v: boolean) => void;
+  setNeedsNameReclaim: (v: boolean) => void;
+
   
   claimDailyGift: () => { itemId: ItemId; qty: number; day: number; shiny: boolean } | null;
   consumeGuaranteedShiny: () => void;
@@ -256,6 +262,9 @@ export const useGameStore = create<GameState>()(
       lastEngagePromptDate: null,
       engageDismissCount: 0,
       engageDismissDate: null,
+      nameReconciled: false,
+      needsNameReclaim: false,
+
       dailyGiftLastClaim: null,
       dailyGiftStreak: 0,
       guaranteedShinyPending: false,
@@ -494,6 +503,9 @@ export const useGameStore = create<GameState>()(
 
       setFriendCode: (code) => set({ friendCode: code }),
       setLastEngagePromptDate: (date) => set({ lastEngagePromptDate: date }),
+      setNameReconciled: (v) => set({ nameReconciled: v }),
+      setNeedsNameReclaim: (v) => set({ needsNameReclaim: v }),
+
       recordEngageDismiss: () => {
         const today = new Date().toISOString().slice(0, 10);
         const s = get();
@@ -826,6 +838,9 @@ export const useGameStore = create<GameState>()(
         lastEngagePromptDate: s.lastEngagePromptDate,
         engageDismissCount: s.engageDismissCount,
         engageDismissDate: s.engageDismissDate,
+        nameReconciled: s.nameReconciled,
+        needsNameReclaim: s.needsNameReclaim,
+
         
         dailyGiftLastClaim: s.dailyGiftLastClaim,
         dailyGiftStreak: s.dailyGiftStreak,
