@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Backpack } from "lucide-react";
 import { toast } from "sonner";
 import { PokemonSprite } from "@/components/game-ui";
 import type { Trivia } from "@/components/battle-screen";
@@ -39,6 +40,30 @@ interface Props {
   onRematch: () => void;
 }
 
+function TimerRing({ timer, maxTime }: { timer: number; maxTime: number }) {
+  return (
+    <div
+      className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold shadow-card ${
+        timer <= 5 ? "animate-pulse bg-destructive text-destructive-foreground" : "bg-card text-foreground"
+      }`}
+    >
+      <svg viewBox="0 0 24 24" className="h-4 w-4">
+        <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeOpacity="0.2" strokeWidth="3" />
+        <circle
+          cx="12" cy="12" r="9" fill="none"
+          stroke={timer <= 5 ? "currentColor" : "var(--color-hp-good)"}
+          strokeWidth="3" strokeLinecap="round"
+          strokeDasharray={2 * Math.PI * 9}
+          strokeDashoffset={2 * Math.PI * 9 * (1 - timer / Math.max(1, maxTime))}
+          transform="rotate(-90 12 12)"
+          style={{ transition: "stroke-dashoffset 0.5s linear" }}
+        />
+      </svg>
+      {timer}s
+    </div>
+  );
+}
+
 export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, onRematch }: Props) {
   const total = questions.length;
   const inventory = useGameStore((s) => s.inventory);
@@ -71,7 +96,6 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
   const q = questions[qIndex];
   const lowHp = playerHp / PLAYER_MAX_HP <= 0.3 && playerHp > 0;
   const hasAnyPotion = (["potion", "superpotion", "maxpotion"] as ItemId[]).some((id) => (inventory[id] ?? 0) > 0);
-  
 
   const grantRewards = useCallback((): MegaRewardItem[] => {
     const st = useGameStore.getState();
@@ -221,110 +245,154 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
   const bossPct = Math.max(0, (bossHp / MEGA_BOSS_HP) * 100);
   const playerPct = Math.max(0, (playerHp / PLAYER_MAX_HP) * 100);
 
+  // Quick shortcut items shown next to the Bag button (potions only — battle items are bag-only).
+  const quickIds: ItemId[] = ["potion", "superpotion", "maxpotion"];
+  const quickShortcuts = quickIds
+    .filter((id) => (inventory[id] ?? 0) > 0)
+    .slice(0, 3);
+
   return (
     <div className="relative flex h-full w-full flex-col overflow-hidden" style={{ background: "#14161F", fontFamily: "Outfit, sans-serif" }}>
-      <div
-        className="relative px-4 pb-3.5"
-        style={{ paddingTop: 48, background: "radial-gradient(circle at 50% 30%, #2E3A5C 0%, #1C2333 58%, #14161F 100%)", overflow: "hidden" }}
-      >
-        <div className="absolute inset-0" style={{ background: "repeating-conic-gradient(from 0deg at 50% 26%, rgba(242,214,78,0.14) 0deg 6deg, transparent 6deg 13deg)" }} />
-        <div className="relative text-center">
-          <div className="text-[22px] font-black text-white">{event.name}{bossShiny ? " ✨" : ""}</div>
-          <div className="mt-1.5 flex justify-center gap-1.5">
-            {event.types.map((t) => (
-              <span key={t} className="font-pixel text-white" style={{ fontSize: 6, background: TYPE_COLORS[t] ?? "#777", padding: "4px 9px", borderRadius: 999 }}>
-                {t.toUpperCase()}
-              </span>
-            ))}
-          </div>
-          <div className="mt-2.5 flex items-center gap-2">
-            <span className="font-pixel text-white" style={{ fontSize: 7 }}>HP</span>
-            <div className="flex-1 overflow-hidden" style={{ height: 14, borderRadius: 999, background: "rgba(0,0,0,0.35)", border: "1.5px solid rgba(255,255,255,0.25)" }}>
-              <div style={{ width: `${bossPct}%`, height: "100%", borderRadius: 999, background: "linear-gradient(90deg, #F2D64E, #EE8130)", transition: "width 0.4s" }} />
+      {/* ARENA — boss + partner HP. Shrinks to fit so the question card always pins to the bottom. */}
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <div
+          className="relative px-4 pb-2 pt-[calc(env(safe-area-inset-top)+1.25rem)]"
+          style={{ background: "radial-gradient(circle at 50% 30%, #2E3A5C 0%, #1C2333 58%, #14161F 100%)", overflow: "hidden" }}
+        >
+          <div className="absolute inset-0" style={{ background: "repeating-conic-gradient(from 0deg at 50% 26%, rgba(242,214,78,0.14) 0deg 6deg, transparent 6deg 13deg)" }} />
+          <div className="relative text-center">
+            <div className="text-[20px] font-black text-white">{event.name}{bossShiny ? " ✨" : ""}</div>
+            <div className="mt-1 flex justify-center gap-1.5">
+              {event.types.map((t) => (
+                <span key={t} className="font-pixel text-white" style={{ fontSize: 6, background: TYPE_COLORS[t] ?? "#777", padding: "3px 8px", borderRadius: 999 }}>
+                  {t.toUpperCase()}
+                </span>
+              ))}
             </div>
-            <span className="font-pixel text-white" style={{ fontSize: 7 }}>{bossHp}/{MEGA_BOSS_HP}</span>
+            <div className="mt-2 flex items-center gap-2">
+              <span className="font-pixel text-white" style={{ fontSize: 7 }}>HP</span>
+              <div className="flex-1 overflow-hidden" style={{ height: 12, borderRadius: 999, background: "rgba(0,0,0,0.35)", border: "1.5px solid rgba(255,255,255,0.25)" }}>
+                <div style={{ width: `${bossPct}%`, height: "100%", borderRadius: 999, background: "linear-gradient(90deg, #F2D64E, #EE8130)", transition: "width 0.4s" }} />
+              </div>
+              <span className="font-pixel text-white" style={{ fontSize: 7 }}>{bossHp}/{MEGA_BOSS_HP}</span>
+            </div>
           </div>
         </div>
-        <div className="relative mt-1.5 flex justify-center">
-          <div className="absolute" style={{ bottom: 8, width: 150, height: 26, borderRadius: "50%", background: "rgba(0,0,0,0.35)" }} />
-          <PokemonSprite id={event.megaId} shiny={bossShiny} alt={event.name} className="relative h-[150px] w-[150px] object-contain [filter:drop-shadow(0_8px_14px_rgba(0,0,0,0.55))]" />
+
+        {/* Boss sprite — flex-1 region that scales to whatever vertical room is left. */}
+        <div
+          className="relative flex min-h-0 flex-1 items-center justify-center px-4"
+          style={{ background: "linear-gradient(180deg, #14161F 0%, #14161F 100%)" }}
+        >
+          <div className="absolute" style={{ bottom: 4, width: "min(46vw, 160px)", height: 22, borderRadius: "50%", background: "rgba(0,0,0,0.45)" }} />
+          <PokemonSprite
+            id={event.megaId}
+            shiny={bossShiny}
+            alt={event.name}
+            className="relative h-full max-h-[180px] w-auto object-contain [filter:drop-shadow(0_8px_14px_rgba(0,0,0,0.55))]"
+          />
+        </div>
+
+        {/* Partner HP row */}
+        <div className="flex shrink-0 items-center gap-2.5 px-4 pb-2 pt-1.5" style={{ background: "#14161F" }}>
+          <PartnerSprite />
+          <div className="flex-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] font-extrabold text-white"><PartnerName /></span>
+              <span className="font-pixel" style={{ fontSize: 6.5, color: "#E23B2E" }}>{playerHp}/{PLAYER_MAX_HP}</span>
+            </div>
+            <div className="mt-1 overflow-hidden" style={{ height: 9, borderRadius: 999, background: "rgba(255,255,255,0.12)" }}>
+              <div style={{ width: `${playerPct}%`, height: "100%", borderRadius: 999, background: lowHp ? "#E23B2E" : "#3F9D5A", transition: "width 0.4s" }} />
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="flex items-center gap-2.5 px-4 pt-2.5" style={{ background: "#14161F" }}>
-        <PartnerSprite />
-        <div className="flex-1">
-          <div className="flex items-center justify-between">
-            <span className="text-[13px] font-extrabold text-white"><PartnerName /></span>
-            <span className="font-pixel" style={{ fontSize: 6.5, color: "#E23B2E" }}>{playerHp}/{PLAYER_MAX_HP}</span>
-          </div>
-          <div className="mt-1 overflow-hidden" style={{ height: 9, borderRadius: 999, background: "rgba(255,255,255,0.12)" }}>
-            <div style={{ width: `${playerPct}%`, height: "100%", borderRadius: 999, background: lowHp ? "#E23B2E" : "#3F9D5A", transition: "width 0.4s" }} />
-          </div>
-        </div>
-      </div>
-
-      <div className="px-4 pt-2 text-center font-pixel" style={{ fontSize: 6.5, color: "rgba(255,255,255,0.5)" }}>
-        QUESTION {qIndex + 1} / {total} · {correctCount} CORRECT
-      </div>
-
-      <div className="relative mt-2.5 flex-1 overflow-y-auto" style={{ background: "#fff", borderRadius: "32px 32px 0 0", boxShadow: "0 -12px 36px -14px rgba(20,16,40,0.4)", padding: "18px 20px 26px" }}>
-        <div className="absolute left-1/2 flex items-center gap-2" style={{ top: -22, transform: "translateX(-50%)", background: "#fff", borderRadius: 999, padding: "7px 16px 7px 8px", boxShadow: "0 10px 24px -8px rgba(20,16,40,0.4)" }}>
-          <svg width="30" height="30" viewBox="0 0 30 30">
-            <circle cx="15" cy="15" r="12" fill="none" stroke="oklch(0.92 0.02 250)" strokeWidth="4" />
-            <circle cx="15" cy="15" r="12" fill="none" stroke={timer <= 5 ? "#E23B2E" : "#3F9D5A"} strokeWidth="4" strokeDasharray="75.4" strokeDashoffset={75.4 * (1 - timer / TIMER)} strokeLinecap="round" transform="rotate(-90 15 15)" />
-          </svg>
-          <span className="text-base font-extrabold" style={{ color: timer <= 5 ? "#E23B2E" : "#3F9D5A" }}>{timer}s</span>
+      {/* QUESTION CARD — pinned bottom, shrink-0, no inner scroll. */}
+      <div className="relative shrink-0 rounded-t-[28px] bg-card pt-12 px-[max(1rem,env(safe-area-inset-left))] pb-[calc(env(safe-area-inset-bottom)+0.75rem)] shadow-[0_-8px_30px_-12px_oklch(0.3_0.05_260/0.25)]">
+        {/* Floating timer pill + category label, sits in the negative gap above the card */}
+        <div className="pointer-events-none absolute left-1/2 -top-11 z-10 flex -translate-x-1/2 flex-col items-center">
+          <TimerRing timer={timer} maxTime={TIMER} />
+          <p className="mt-1 font-pixel text-foreground/70" style={{ fontSize: 7 }}>{q.category?.toUpperCase() || "TRIVIA"}</p>
         </div>
 
         {lowHp && hasAnyPotion && (
-          <div className="mt-2 flex items-center justify-between rounded-2xl px-3.5 py-2.5" style={{ background: "rgba(226,59,46,0.1)", border: "1.5px solid rgba(226,59,46,0.4)" }}>
-            <span className="text-[13px] font-bold" style={{ color: "#C22E28" }}>⚠️ Low HP — use a potion!</span>
-            <button onClick={() => setBagOpen(true)} className="font-pixel" style={{ fontSize: 7, color: "#fff", background: "#E23B2E", borderRadius: 999, padding: "6px 11px" }}>OPEN BAG</button>
+          <div className="mb-2 flex items-center justify-between rounded-2xl px-3 py-1.5" style={{ background: "rgba(226,59,46,0.1)", border: "1.5px solid rgba(226,59,46,0.4)" }}>
+            <span className="text-[12px] font-bold" style={{ color: "#C22E28" }}>⚠️ Low HP — use a potion!</span>
+            <button onClick={() => setBagOpen(true)} className="font-pixel" style={{ fontSize: 7, color: "#fff", background: "#E23B2E", borderRadius: 999, padding: "5px 10px" }}>OPEN BAG</button>
           </div>
         )}
 
-        <div className="mt-3 text-center font-pixel" style={{ fontSize: 7, color: "#6B6E7B" }}>{q.category?.toUpperCase() || "TRIVIA"}</div>
-        <div className="mt-2.5 flex min-h-[72px] items-center justify-center text-center text-[19px] font-bold leading-snug text-foreground [text-wrap:pretty]">{q.question}</div>
+        <p className="text-center text-[clamp(0.9rem,3.8vw,1.05rem)] font-bold leading-snug">{q.question}</p>
 
-        <div className="mt-3.5 flex flex-col gap-2.5">
+        <div className="mt-2.5 grid grid-cols-1 gap-2">
           {q.options.map((opt, i) => {
-            const isCorrect = i === q.correct;
-            const isPicked = i === picked;
+            const isCorrect = locked && i === q.correct;
+            const isWrong = locked && picked === i && i !== q.correct;
             const removed = removedWrong === i;
-            let bg = "oklch(0.96 0.01 250)", border = "2px solid transparent", color = "#3A3F4C";
-            if (revealCorrect && isCorrect && !locked) { border = "2px solid #3F9D5A"; }
-            if (locked) {
-              if (isCorrect) { bg = "rgba(63,157,90,0.16)"; border = "2px solid #3F9D5A"; color = "#2E7D44"; }
-              else if (isPicked) { bg = "rgba(226,59,46,0.12)"; border = "2px solid rgba(226,59,46,0.6)"; color = "#C22E28"; }
-            }
+            const isAnswerRevealed = !locked && revealCorrect && i === q.correct;
             return (
               <button
                 key={i}
                 disabled={locked || removed}
                 onClick={() => answer(i)}
-                className="flex h-[52px] items-center justify-between rounded-2xl px-4 text-left text-base font-semibold"
-                style={{ background: bg, border, color, opacity: removed ? 0.35 : 1 }}
+                className={`flex min-h-[44px] items-center justify-between rounded-2xl border-2 bg-card px-4 py-2 text-left text-[clamp(0.85rem,3.4vw,0.95rem)] font-semibold transition active:scale-[0.98] ${
+                  isCorrect
+                    ? "border-hp-good bg-hp-good/5 text-hp-good"
+                    : isWrong
+                      ? "border-destructive bg-destructive/5 text-destructive"
+                      : removed
+                        ? "border-border/60 line-through opacity-40"
+                        : isAnswerRevealed
+                          ? "border-hp-good bg-hp-good/10 text-hp-good"
+                          : "border-border/60 text-foreground hover:border-primary/50"
+                } disabled:cursor-not-allowed`}
               >
-                <span>{opt}</span>
-                {locked && isCorrect && <span style={{ color: "#3F9D5A" }}>✓</span>}
-                {locked && isPicked && !isCorrect && <span className="font-pixel" style={{ fontSize: 7, color: "#C22E28" }}>YOUR PICK ✕</span>}
+                <span className="min-w-0 flex-1 truncate">{opt}</span>
+                {isCorrect && (
+                  <span className="ml-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-hp-good text-[12px] text-white">✓</span>
+                )}
+                {isWrong && (
+                  <span className="ml-2 shrink-0 text-[10px] font-bold uppercase tracking-wide text-destructive">Your Pick ×</span>
+                )}
               </button>
             );
           })}
         </div>
 
-        <div className="mt-4 flex items-center justify-center gap-3">
-          <DockItem id="potion" count={inventory.potion ?? 0} onClick={() => usePotion("potion")} disabled={locked} />
-          <DockItem id="superpotion" count={inventory.superpotion ?? 0} onClick={() => usePotion("superpotion")} disabled={locked} />
-          <button onClick={() => setBagOpen(true)} className="flex h-[50px] items-center rounded-full px-4 font-pixel" style={{ fontSize: 7, color: "#1C2333", background: "#F2D64E", boxShadow: "0 3px 0 #C9AE2E" }}>BAG</button>
+        {/* Item shortcuts row — Backpack trigger + quick item buttons (matches regular battle) */}
+        <div className="mt-3 flex items-center justify-center gap-3">
+          <button
+            onClick={() => setBagOpen(true)}
+            className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition active:scale-95"
+          >
+            <Backpack className="h-6 w-6 text-muted-foreground" />
+          </button>
+          {quickShortcuts.map((id) => {
+            const def = itemDef(id);
+            const owned = inventory[id] ?? 0;
+            const disabled = owned <= 0 || playerHp >= PLAYER_MAX_HP || locked;
+            return (
+              <button
+                key={id}
+                disabled={disabled}
+                onClick={() => usePotion(id)}
+                className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition active:scale-95 disabled:opacity-40"
+              >
+                <img src={def?.iconUrl} alt={def?.name} className="sprite h-8 w-8 object-contain [image-rendering:pixelated]" />
+                <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-poke-dark px-1 font-pixel text-[9px] text-white">
+                  {owned}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {bagOpen && (
         <div className="absolute inset-0 z-50 flex flex-col justify-end" onClick={() => setBagOpen(false)}>
           <div className="absolute inset-0" style={{ background: "rgba(10,8,20,0.55)" }} />
-          <div className="relative" style={{ background: "#FBF3DF", borderRadius: "28px 28px 0 0", padding: "14px 20px 32px", boxShadow: "0 -16px 40px -12px rgba(0,0,0,0.5)" }} onClick={(e) => e.stopPropagation()}>
+          <div className="relative max-h-[88vh] overflow-y-auto" style={{ background: "#FBF3DF", borderRadius: "28px 28px 0 0", padding: "14px 20px 32px", boxShadow: "0 -16px 40px -12px rgba(0,0,0,0.5)" }} onClick={(e) => e.stopPropagation()}>
             <div className="mx-auto" style={{ width: 42, height: 5, borderRadius: 999, background: "#E2D6B6" }} />
             <div className="mt-3.5 flex items-center justify-between">
               <div className="text-xl font-black" style={{ color: "#1C2333" }}>Bag</div>
@@ -354,25 +422,12 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
 
 function PartnerSprite() {
   const partner = useGameStore((s) => s.pokemon);
-  if (!partner) return <div style={{ width: 58, height: 58 }} />;
-  return <PokemonSprite id={partner.id} back alt={partner.name} className="h-[58px] w-[58px]" />;
+  if (!partner) return <div style={{ width: 52, height: 52 }} />;
+  return <PokemonSprite id={partner.id} back alt={partner.name} className="h-[52px] w-[52px]" />;
 }
 function PartnerName() {
   const partner = useGameStore((s) => s.pokemon);
   return <>{partner?.name ?? "Partner"}</>;
-}
-
-function DockItem({ id, count, onClick, disabled }: { id: ItemId; count: number; onClick: () => void; disabled?: boolean }) {
-  const def = itemDef(id);
-  const off = count <= 0 || disabled;
-  return (
-    <button onClick={onClick} disabled={off} className="relative flex h-[50px] w-[50px] items-center justify-center rounded-full" style={{ background: "oklch(0.96 0.01 250)", border: "1.5px solid oklch(0.9 0.02 250)", opacity: off ? 0.45 : 1 }}>
-      <img src={def?.iconUrl} alt={def?.name} className="h-8 w-8 [image-rendering:pixelated]" />
-      {count > 0 && (
-        <span className="absolute flex items-center justify-center font-bold text-white" style={{ top: -4, right: -4, minWidth: 18, height: 18, fontSize: 10, borderRadius: 999, background: "#1C2333" }}>{count}</span>
-      )}
-    </button>
-  );
 }
 
 function BagRow({ id, count, subtitle, used, onUse, disabled }: { id: ItemId; count: number; subtitle: string; used?: boolean; onUse: () => void; disabled?: boolean }) {
