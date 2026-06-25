@@ -770,26 +770,40 @@ function ProfilePage() {
           <DialogHeader>
             <DialogTitle>Rename trainer</DialogTitle>
           </DialogHeader>
-          <div className="flex gap-2">
-            <Input
-              value={nameDraft}
-              onChange={(e) => setNameDraft(e.target.value)}
-              maxLength={16}
-              className="h-10 rounded-full"
-              autoFocus
-            />
-            <Button
-              onClick={() => {
-                if (nameDraft.trim()) {
-                  setName(nameDraft.trim());
-                  setRenameOpen(false);
-                  toast.success("Trainer name updated!");
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <Input
+                value={nameDraft}
+                onChange={(e) => setNameDraft(e.target.value)}
+                maxLength={TRAINER_NAME_MAX}
+                className="h-10 rounded-full"
+                autoFocus
+              />
+              <Button
+                onClick={() => void saveName()}
+                disabled={
+                  renaming ||
+                  renameAvail === "checking" ||
+                  renameAvail === "taken" ||
+                  renameAvail === "invalid" ||
+                  !nameDraft.trim()
                 }
-              }}
-              className="rounded-full"
+                className="rounded-full"
+              >
+                {renaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+              </Button>
+            </div>
+            <p
+              className={`text-xs ${
+                renameAvail === "available"
+                  ? "text-green-600"
+                  : renameAvail === "taken" || renameAvail === "invalid"
+                    ? "text-red-600"
+                    : "text-foreground/55"
+              }`}
             >
-              <Check className="h-4 w-4" />
-            </Button>
+              {renameMsg || "3–16 characters · letters, numbers, spaces, _ and -"}
+            </p>
           </div>
         </DialogContent>
       </Dialog>
