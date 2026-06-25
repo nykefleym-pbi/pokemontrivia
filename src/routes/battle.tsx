@@ -408,7 +408,7 @@ function BattlePage() {
                       )}
                       {card.kind === "megaleaderboard" && (
                         <>
-                          <div className="absolute top-[20px] flex flex-col items-center">
+                          <div className="absolute top-[44px] flex flex-col items-center">
                             <div className="text-[40px] leading-none" style={{ filter: "drop-shadow(0 6px 10px rgba(0,0,0,0.5))" }}>🏆</div>
                             <div className="font-pixel" style={{ fontSize: 9, color: "#F2D64E", marginTop: 2 }}>#1</div>
                           </div>
