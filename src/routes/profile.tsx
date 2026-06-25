@@ -220,6 +220,8 @@ function ProfilePage() {
         return;
       }
       setName(v.name);
+      useGameStore.getState().setNameReconciled(true);
+
       setRenameOpen(false);
       setEditingName(false);
       setRenameMsg("");
