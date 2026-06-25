@@ -33,49 +33,26 @@ export async function fetchCuratedQuestions(opts: FetchCuratedOpts): Promise<{
   if (count <= 0) return { questions: [], servedIds: [] };
 
   try {
-    let query = supabase
-      .from("curated_questions")
-      .select("id, question, options, correct_index, explanation, category, difficulty, type_theme")
-      .eq("verified", true);
-
-    query = Array.isArray(difficulty)
-      ? query.in("difficulty", difficulty)
-      : query.eq("difficulty", difficulty);
-
-
-
-    if (typeTheme) {
-      query = query.eq("type_theme", typeTheme);
-    }
-    if (excludeIds.length > 0) {
-      query = query.not("id", "in", `(${excludeIds.join(",")})`);
-    }
-
-    const { data, error } = await query.limit(count * 5);
-    if (error) {
-      console.warn("Curated question fetch failed:", error.message);
+    const { data, error } = await supabase.rpc("get_curated_questions", {
+      p_difficulties: Array.isArray(difficulty) ? difficulty : [difficulty],
+      p_count: count,
+      p_type_theme: typeTheme ?? null,
+      p_exclude: excludeIds,
+    });
+    if (error || !Array.isArray(data)) {
+      console.warn("get_curated_questions failed:", error?.message);
       return { questions: [], servedIds: [] };
     }
-    if (!data || data.length === 0) {
-      return { questions: [], servedIds: [] };
-    }
-
     const rows = data as unknown as CuratedRow[];
-    const shuffled = rows
-      .map((r) => ({ r, sort: Math.random() }))
-      .sort((a, b) => a.sort - b.sort)
-      .slice(0, count)
-      .map(({ r }) => r);
-
     return {
-      questions: shuffled.map((r) => ({
+      questions: rows.map((r) => ({
         question: r.question,
         options: r.options,
         correct: r.correct_index,
         explanation: r.explanation,
         category: r.category,
       })),
-      servedIds: shuffled.map((r) => r.id),
+      servedIds: rows.map((r) => r.id),
     };
   } catch (e) {
     console.warn("Curated question fetch failed:", e);
