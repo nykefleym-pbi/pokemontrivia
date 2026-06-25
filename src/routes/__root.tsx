@@ -4,6 +4,7 @@ import { BottomNav } from "@/components/bottom-nav";
 import { PwaRegister } from "@/components/pwa-register";
 import { useGameStore } from "@/lib/store";
 import { useEnsureSocial } from "@/lib/social";
+import { FriendRequestInbox } from "@/components/FriendRequestInbox";
 
 import appCss from "../styles.css?url";
 
@@ -108,6 +109,7 @@ function RootComponent() {
         <Outlet />
         <BottomNav />
       </div>
+      <FriendRequestInbox />
       <PwaRegister />
     </div>
   );

@@ -92,6 +92,11 @@ function ProfilePage() {
     setFriends(await listFriends());
   }, []);
   useEffect(() => { void refreshFriends(); }, [refreshFriends]);
+  useEffect(() => {
+    const handler = () => { void refreshFriends(); };
+    window.addEventListener("poketrivia:friends-refresh", handler);
+    return () => window.removeEventListener("poketrivia:friends-refresh", handler);
+  }, [refreshFriends]);
 
   function handleOpenCard() {
     setCardOpen(true);
@@ -104,9 +109,18 @@ function ProfilePage() {
     const res = await addFriendByCode(code);
     setAddingFriend(false);
     if (res.error) { toast.error(res.error); return; }
-    toast.success(`Added ${res.profile?.trainer_name ?? "trainer"}!`);
-    setFriendCodeInput("");
-    void refreshFriends();
+    const name = res.profile?.trainer_name ?? "trainer";
+    if (res.status === "accepted") {
+      toast.success(`You're now friends with ${name}!`);
+      setFriendCodeInput("");
+      void refreshFriends();
+    } else if (res.status === "already_pending") {
+      toast("Request already sent — waiting for them to accept.");
+      setFriendCodeInput("");
+    } else {
+      toast.success(`Friend request sent to ${name}!`);
+      setFriendCodeInput("");
+    }
   }
   async function handleRemoveFriend(id: string) {
     if (await removeFriend(id)) setFriends((f) => f.filter((x) => x.id !== id));
