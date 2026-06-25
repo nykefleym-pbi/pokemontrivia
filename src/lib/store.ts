@@ -92,6 +92,9 @@ export interface GameState {
   lastEngagePromptDate: string | null;
   engageDismissCount: number;
   engageDismissDate: string | null;
+  nameReconciled: boolean;
+  needsNameReclaim: boolean;
+
   
   dailyGiftLastClaim: string | null;
   dailyGiftStreak: number;
