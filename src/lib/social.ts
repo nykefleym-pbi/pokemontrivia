@@ -33,9 +33,11 @@ export async function syncProfile(): Promise<TrainerProfile | null> {
   const uid = await ensureSession();
   if (!uid) return null;
   const s = useGameStore.getState();
+  // NOTE: trainer_name is intentionally omitted — it is owned by the claim flow
+  // (claimTrainerName RPC) so that name-uniqueness collisions cannot block
+  // routine level/xp/pokedex syncs.
   const payload = {
     id: uid,
-    trainer_name: s.trainerName || "Trainer",
     trainer_sprite: s.trainerSprite || "red",
     level: s.level ?? 1,
     xp: s.xp ?? 0,
