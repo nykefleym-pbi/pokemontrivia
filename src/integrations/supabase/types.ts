@@ -278,6 +278,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_trainer_name: { Args: { _name: string }; Returns: Json }
       get_mega_leaderboard: {
         Args: { p_event_id: string; p_limit?: number }
         Returns: {
@@ -305,6 +306,7 @@ export type Database = {
         Args: { p_event_id: string; p_questions: Json }
         Returns: undefined
       }
+      is_trainer_name_available: { Args: { _name: string }; Returns: boolean }
       lookup_profile_by_code: {
         Args: { _code: string }
         Returns: {
