@@ -48,7 +48,7 @@ function BattlePage() {
   const [weeklyOpponent, setWeeklyOpponent] = useState<GymLeader | null>(null);
   const [megaEvent, setMegaEvent] = useState<MegaEvent | null>(null);
   const [activeMega, setActiveMega] = useState<MegaEvent | null>(null);
-  const [megaStats, setMegaStats] = useState<{ rank: number; total: number } | null>(null);
+  const [megaStats, setMegaStats] = useState<{ rank: number; total: number; attempts: number } | null>(null);
   const [battleKey, setBattleKey] = useState(0);
   const autoStartedRef = useRef(false);
   const dailyResult = useGameStore((s) => s.dailyResult);
