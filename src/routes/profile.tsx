@@ -123,6 +123,9 @@ function ProfilePage() {
   const [trainerQuery, setTrainerQuery] = useState("");
   const [resetOpen, setResetOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
+  const [renameAvail, setRenameAvail] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle");
+  const [renameMsg, setRenameMsg] = useState<string>("");
+  const [renaming, setRenaming] = useState(false);
   const [muted, setMutedState] = useState(false);
   const darkMode = useGameStore((s) => s.darkMode);
   const setDarkMode = useGameStore((s) => s.setDarkMode);
