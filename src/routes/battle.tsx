@@ -461,7 +461,7 @@ function BattlePage() {
                 ))}
               </div>
             )}
-            <button onClick={() => setEngageCards(null)} className="mx-auto mt-4 block text-[15px] font-semibold text-white/55">Maybe later</button>
+            <button onClick={() => { recordEngageDismiss(); setEngageCards(null); }} className="mx-auto mt-4 block text-[15px] font-semibold text-white/55">Maybe later</button>
           </div>
         </div>
       )}
