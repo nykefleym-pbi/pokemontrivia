@@ -62,6 +62,48 @@ export type Database = {
         }
         Relationships: []
       }
+      friend_requests: {
+        Row: {
+          created_at: string
+          from_id: string
+          id: string
+          responded_at: string | null
+          status: string
+          to_id: string
+        }
+        Insert: {
+          created_at?: string
+          from_id: string
+          id?: string
+          responded_at?: string | null
+          status?: string
+          to_id: string
+        }
+        Update: {
+          created_at?: string
+          from_id?: string
+          id?: string
+          responded_at?: string | null
+          status?: string
+          to_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "friend_requests_from_id_fkey"
+            columns: ["from_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friend_requests_to_id_fkey"
+            columns: ["to_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       friends: {
         Row: {
           created_at: string
@@ -307,6 +349,18 @@ export type Database = {
         Returns: undefined
       }
       is_trainer_name_available: { Args: { _name: string }; Returns: boolean }
+      list_incoming_friend_requests: {
+        Args: never
+        Returns: {
+          created_at: string
+          friend_code: string
+          from_id: string
+          level: number
+          request_id: string
+          trainer_name: string
+          trainer_sprite: string
+        }[]
+      }
       lookup_profile_by_code: {
         Args: { _code: string }
         Returns: {
@@ -328,6 +382,11 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      respond_friend_request: {
+        Args: { _accept: boolean; _request_id: string }
+        Returns: Json
+      }
+      send_friend_request: { Args: { _code: string }; Returns: Json }
       submit_mega_run: {
         Args: {
           p_accuracy: number
