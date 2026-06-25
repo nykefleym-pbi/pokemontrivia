@@ -11,6 +11,8 @@ import { trainerQuote } from "@/lib/trainer-quotes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import pokemonLogo from "@/assets/pokemon-logo.png.asset.json";
+import { bootstrapSocial, isTrainerNameAvailable, claimTrainerName } from "@/lib/social";
+import { validateTrainerName, claimErrorMessage, TRAINER_NAME_MAX } from "@/lib/trainer-name";
 
 export const Route = createFileRoute("/")({
   component: SplashPage,
