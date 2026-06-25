@@ -11,6 +11,8 @@ import { trainerQuote } from "@/lib/trainer-quotes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import pokemonLogo from "@/assets/pokemon-logo.png.asset.json";
+import { bootstrapSocial, isTrainerNameAvailable, claimTrainerName } from "@/lib/social";
+import { validateTrainerName, claimErrorMessage, TRAINER_NAME_MAX } from "@/lib/trainer-name";
 
 export const Route = createFileRoute("/")({
   component: SplashPage,
@@ -212,6 +214,54 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
   const setOnboarded = useGameStore((s) => s.setOnboarded);
   const navigate = useNavigate();
 
+  // Trainer-name claim flow state
+  const [nameAvail, setNameAvail] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle");
+  const [nameMsg, setNameMsg] = useState<string>("");
+  const [claimedName, setClaimedName] = useState<string>("");
+  const [claiming, setClaiming] = useState(false);
+
+  // Kick off the social bootstrap as soon as the create flow opens so the
+  // anonymous session + empty profile row exist by the time we try to claim.
+  useEffect(() => {
+    void bootstrapSocial();
+  }, []);
+
+  // Debounced availability check as the user types.
+  useEffect(() => {
+    const trimmed = name.trim();
+    if (trimmed.length === 0) {
+      setNameAvail("idle");
+      setNameMsg("");
+      return;
+    }
+    const v = validateTrainerName(name);
+    if (!v.ok) {
+      setNameAvail("invalid");
+      setNameMsg(claimErrorMessage(v.error));
+      return;
+    }
+    if (claimedName && v.name.toLowerCase() === claimedName.toLowerCase()) {
+      setNameAvail("available");
+      setNameMsg("Name available");
+      return;
+    }
+    setNameAvail("checking");
+    setNameMsg("Checking…");
+    const t = window.setTimeout(async () => {
+      const ok = await isTrainerNameAvailable(v.name);
+      // Stale-response guard: only commit if the input hasn't changed.
+      if (name.trim() !== v.name) return;
+      if (ok) {
+        setNameAvail("available");
+        setNameMsg("Name available");
+      } else {
+        setNameAvail("taken");
+        setNameMsg(claimErrorMessage("taken"));
+      }
+    }, 350);
+    return () => window.clearTimeout(t);
+  }, [name, claimedName]);
+
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     return STARTING_PARTNERS
@@ -231,9 +281,40 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
 
   const stepIndex = STEPS.indexOf(substep);
 
+  async function handleNameNext() {
+    const v = validateTrainerName(name);
+    if (!v.ok) {
+      setNameAvail("invalid");
+      setNameMsg(claimErrorMessage(v.error));
+      return;
+    }
+    // Re-claim if the name changed since the last successful claim.
+    if (claimedName.toLowerCase() !== v.name.toLowerCase()) {
+      setClaiming(true);
+      try {
+        // Make sure the profile row exists before attempting to claim.
+        await bootstrapSocial();
+        const res = await claimTrainerName(v.name);
+        if (!res.ok) {
+          if (res.error === "taken") setNameAvail("taken");
+          else if (res.error === "length" || res.error === "chars") setNameAvail("invalid");
+          else setNameAvail("idle");
+          setNameMsg(claimErrorMessage(res.error));
+          return;
+        }
+        setClaimedName(v.name);
+        setNameAvail("available");
+        setNameMsg("Name reserved ✓");
+      } finally {
+        setClaiming(false);
+      }
+    }
+    setSubstep("trainer");
+  }
+
   function start() {
-    if (!name.trim() || !pick) return;
-    setOnboarded(name.trim(), pick, trainerSprite);
+    if (!claimedName || !pick) return;
+    setOnboarded(claimedName, pick, trainerSprite);
     navigate({ to: "/battle" });
   }
 
@@ -310,27 +391,42 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Ash"
-                maxLength={16}
+                maxLength={TRAINER_NAME_MAX}
                 className="h-[54px] rounded-full border-[2.5px] border-primary bg-card px-5 text-[17px] font-bold"
                 autoFocus
               />
-              <p className="mt-2 text-xs text-foreground/55">
-                Max 16 characters
+              <p
+                className={`mt-2 text-xs ${
+                  nameAvail === "available"
+                    ? "text-green-600"
+                    : nameAvail === "taken" || nameAvail === "invalid"
+                      ? "text-red-600"
+                      : "text-foreground/55"
+                }`}
+              >
+                {nameMsg || "3–16 characters · letters, numbers, spaces, _ and -"}
               </p>
             </div>
 
             <div className="mt-auto px-1 pb-2 pt-6">
               <Button
                 size="lg"
-                disabled={!name.trim()}
-                onClick={() => setSubstep("trainer")}
+                disabled={
+                  claiming ||
+                  nameAvail === "checking" ||
+                  nameAvail === "taken" ||
+                  nameAvail === "invalid" ||
+                  !name.trim()
+                }
+                onClick={() => void handleNameNext()}
                 className="h-[58px] w-full rounded-full bg-primary text-[17px] font-bold shadow-pop active:scale-95 disabled:opacity-50"
               >
-                Next: Choose Avatar
+                {claiming ? "Reserving…" : "Next: Choose Avatar"}
               </Button>
             </div>
           </div>
         )}
+
 
         {substep === "trainer" && (
           <div className="flex flex-1 flex-col">

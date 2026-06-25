@@ -6,7 +6,8 @@ import { toast } from "sonner";
 import { RotateCcw, Check, Search, Volume2, VolumeX, ChevronRight, Moon, Copy, Share2, UserPlus, Users, X, Loader2, IdCard, ImageDown } from "lucide-react";
 import { ShareCardDialog } from "@/components/share-card-dialog";
 import { useGameStore } from "@/lib/store";
-import { listFriends, addFriendByCode, removeFriend, syncProfile, type TrainerProfile } from "@/lib/social";
+import { listFriends, addFriendByCode, removeFriend, syncProfile, isTrainerNameAvailable, claimTrainerName, bootstrapSocial, type TrainerProfile } from "@/lib/social";
+import { validateTrainerName, claimErrorMessage, TRAINER_NAME_MAX } from "@/lib/trainer-name";
 import {
   rankForLevel,
   xpProgressInLevel,
@@ -122,6 +123,9 @@ function ProfilePage() {
   const [trainerQuery, setTrainerQuery] = useState("");
   const [resetOpen, setResetOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
+  const [renameAvail, setRenameAvail] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle");
+  const [renameMsg, setRenameMsg] = useState<string>("");
+  const [renaming, setRenaming] = useState(false);
   const [muted, setMutedState] = useState(false);
   const darkMode = useGameStore((s) => s.darkMode);
   const setDarkMode = useGameStore((s) => s.setDarkMode);
@@ -178,13 +182,75 @@ function ProfilePage() {
   const avgTime =
     stats.answered > 0 ? Math.round(stats.totalAnswerTime / stats.answered / 100) / 10 : 0;
 
-  function saveName() {
-    if (nameDraft.trim()) {
-      setName(nameDraft.trim());
+  async function saveName() {
+    const v = validateTrainerName(nameDraft);
+    if (!v.ok) {
+      setRenameAvail("invalid");
+      setRenameMsg(claimErrorMessage(v.error));
+      return;
+    }
+    if (v.name.toLowerCase() === trainerName.toLowerCase()) {
+      setRenameOpen(false);
       setEditingName(false);
+      return;
+    }
+    setRenaming(true);
+    try {
+      await bootstrapSocial();
+      const res = await claimTrainerName(v.name);
+      if (!res.ok) {
+        if (res.error === "taken") setRenameAvail("taken");
+        else if (res.error === "length" || res.error === "chars") setRenameAvail("invalid");
+        else setRenameAvail("idle");
+        setRenameMsg(claimErrorMessage(res.error));
+        return;
+      }
+      setName(v.name);
+      setRenameOpen(false);
+      setEditingName(false);
+      setRenameMsg("");
+      setRenameAvail("idle");
       toast.success("Trainer name updated!");
+    } finally {
+      setRenaming(false);
     }
   }
+
+  // Debounced availability check while the rename dialog is open.
+  useEffect(() => {
+    if (!renameOpen) return;
+    const trimmed = nameDraft.trim();
+    if (trimmed.length === 0) {
+      setRenameAvail("idle");
+      setRenameMsg("");
+      return;
+    }
+    const v = validateTrainerName(nameDraft);
+    if (!v.ok) {
+      setRenameAvail("invalid");
+      setRenameMsg(claimErrorMessage(v.error));
+      return;
+    }
+    if (v.name.toLowerCase() === trainerName.toLowerCase()) {
+      setRenameAvail("available");
+      setRenameMsg("Current name");
+      return;
+    }
+    setRenameAvail("checking");
+    setRenameMsg("Checking…");
+    const t = window.setTimeout(async () => {
+      const ok = await isTrainerNameAvailable(v.name);
+      if (nameDraft.trim() !== v.name) return;
+      if (ok) {
+        setRenameAvail("available");
+        setRenameMsg("Name available");
+      } else {
+        setRenameAvail("taken");
+        setRenameMsg(claimErrorMessage("taken"));
+      }
+    }, 350);
+    return () => window.clearTimeout(t);
+  }, [nameDraft, renameOpen, trainerName]);
 
   function doReset() {
     reset();
@@ -704,26 +770,40 @@ function ProfilePage() {
           <DialogHeader>
             <DialogTitle>Rename trainer</DialogTitle>
           </DialogHeader>
-          <div className="flex gap-2">
-            <Input
-              value={nameDraft}
-              onChange={(e) => setNameDraft(e.target.value)}
-              maxLength={16}
-              className="h-10 rounded-full"
-              autoFocus
-            />
-            <Button
-              onClick={() => {
-                if (nameDraft.trim()) {
-                  setName(nameDraft.trim());
-                  setRenameOpen(false);
-                  toast.success("Trainer name updated!");
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <Input
+                value={nameDraft}
+                onChange={(e) => setNameDraft(e.target.value)}
+                maxLength={TRAINER_NAME_MAX}
+                className="h-10 rounded-full"
+                autoFocus
+              />
+              <Button
+                onClick={() => void saveName()}
+                disabled={
+                  renaming ||
+                  renameAvail === "checking" ||
+                  renameAvail === "taken" ||
+                  renameAvail === "invalid" ||
+                  !nameDraft.trim()
                 }
-              }}
-              className="rounded-full"
+                className="rounded-full"
+              >
+                {renaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+              </Button>
+            </div>
+            <p
+              className={`text-xs ${
+                renameAvail === "available"
+                  ? "text-green-600"
+                  : renameAvail === "taken" || renameAvail === "invalid"
+                    ? "text-red-600"
+                    : "text-foreground/55"
+              }`}
             >
-              <Check className="h-4 w-4" />
-            </Button>
+              {renameMsg || "3–16 characters · letters, numbers, spaces, _ and -"}
+            </p>
           </div>
         </DialogContent>
       </Dialog>
