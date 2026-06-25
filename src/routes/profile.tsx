@@ -92,6 +92,11 @@ function ProfilePage() {
     setFriends(await listFriends());
   }, []);
   useEffect(() => { void refreshFriends(); }, [refreshFriends]);
+  useEffect(() => {
+    const handler = () => { void refreshFriends(); };
+    window.addEventListener("poketrivia:friends-refresh", handler);
+    return () => window.removeEventListener("poketrivia:friends-refresh", handler);
+  }, [refreshFriends]);
 
   function handleOpenCard() {
     setCardOpen(true);
