@@ -320,6 +320,7 @@ function BattlePage() {
   useEffect(() => {
     if (engageShownRef.current) return;
     if (phase !== "home" || pendingElite) return;
+    if (!engageDelayPassed) return;
     const hasMega = !!activeMega && Date.parse(activeMega.endsAt) > Date.now();
     if (megaStats === null) return;
     const now = Date.now();
