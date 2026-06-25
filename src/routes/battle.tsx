@@ -320,12 +320,23 @@ function BattlePage() {
         : megaStats && megaStats.total > 0
           ? `${megaStats.total} trainers competing — top 3 earn exclusive rewards.`
           : "Be the first to set the pace — top 3 earn exclusive rewards.";
-      // Mega is a headline event: the carousel shows only the two mega cards.
+      const attemptsUsed = megaStats?.attempts ?? 0;
+      const exhausted = attemptsUsed >= MEGA_MAX_ATTEMPTS;
+      // Mega is a headline event: the carousel shows only mega cards.
       cards.length = 0;
-      cards.push(
-        { kind: "mega", title: `${activeMega.name} appeared!`, desc: "Outsmart 50 brutal questions — only the sharpest trainer is crowned.", chip: `ENDS IN ${megaClock}`, cta: "Enter Mega Raid", onPlay: startMega, heroPokeId: activeMega.megaId },
-        { kind: "megaleaderboard", title: `${activeMega.name} Rankings`, desc: lbCopy, chip: "LIVE RANKINGS", cta: "View Leaderboard", onPlay: openMegaLeaderboard },
-      );
+      if (exhausted) {
+        // No attempts left — show leaderboard only, and only once per day.
+        if (lastEngagePromptDate !== today) {
+          cards.push(
+            { kind: "megaleaderboard", title: `${activeMega.name} Rankings`, desc: lbCopy, chip: "LIVE RANKINGS", cta: "View Leaderboard", onPlay: openMegaLeaderboard },
+          );
+        }
+      } else {
+        cards.push(
+          { kind: "mega", title: `${activeMega.name} appeared!`, desc: "Outsmart 50 brutal questions — only the sharpest trainer is crowned.", chip: `ENDS IN ${megaClock}`, cta: "Enter Mega Raid", onPlay: startMega, heroPokeId: activeMega.megaId },
+          { kind: "megaleaderboard", title: `${activeMega.name} Rankings`, desc: lbCopy, chip: "LIVE RANKINGS", cta: "View Leaderboard", onPlay: openMegaLeaderboard },
+        );
+      }
     }
     if (cards.length > 0) {
       engageShownRef.current = true;
