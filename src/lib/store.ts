@@ -90,6 +90,9 @@ export interface GameState {
   trainerSprite: string;
   friendCode: string | null;
   lastEngagePromptDate: string | null;
+  engageDailyShownDate: string | null;
+  engageWeeklyShownDate: string | null;
+  engageWhosThatShownHour: number;
   dailyGiftLastClaim: string | null;
   dailyGiftStreak: number;
   guaranteedShinyPending: boolean;
@@ -160,6 +163,9 @@ export interface GameState {
   setOnboarded: (name: string, pokemon: PokeEntry, trainerSprite: string) => void;
   setFriendCode: (code: string) => void;
   setLastEngagePromptDate: (date: string) => void;
+  setEngageDailyShownDate: (date: string) => void;
+  setEngageWeeklyShownDate: (date: string) => void;
+  setEngageWhosThatShownHour: (hour: number) => void;
   claimDailyGift: () => { itemId: ItemId; qty: number; day: number; shiny: boolean } | null;
   consumeGuaranteedShiny: () => void;
   grantPokeEgg: (n?: number) => void;
@@ -249,6 +255,9 @@ export const useGameStore = create<GameState>()(
       trainerSprite: TRAINER_SPRITES[0]?.id ?? "",
       friendCode: null,
       lastEngagePromptDate: null,
+      engageDailyShownDate: null,
+      engageWeeklyShownDate: null,
+      engageWhosThatShownHour: 0,
       dailyGiftLastClaim: null,
       dailyGiftStreak: 0,
       guaranteedShinyPending: false,
@@ -487,6 +496,9 @@ export const useGameStore = create<GameState>()(
 
       setFriendCode: (code) => set({ friendCode: code }),
       setLastEngagePromptDate: (date) => set({ lastEngagePromptDate: date }),
+      setEngageDailyShownDate: (date) => set({ engageDailyShownDate: date }),
+      setEngageWeeklyShownDate: (date) => set({ engageWeeklyShownDate: date }),
+      setEngageWhosThatShownHour: (hour) => set({ engageWhosThatShownHour: hour }),
 
       claimDailyGift: () => {
         const s = get();
@@ -808,6 +820,9 @@ export const useGameStore = create<GameState>()(
         darkMode: s.darkMode,
         friendCode: s.friendCode,
         lastEngagePromptDate: s.lastEngagePromptDate,
+        engageDailyShownDate: s.engageDailyShownDate,
+        engageWeeklyShownDate: s.engageWeeklyShownDate,
+        engageWhosThatShownHour: s.engageWhosThatShownHour,
         dailyGiftLastClaim: s.dailyGiftLastClaim,
         dailyGiftStreak: s.dailyGiftStreak,
         guaranteedShinyPending: s.guaranteedShinyPending,
