@@ -262,6 +262,9 @@ export const useGameStore = create<GameState>()(
       lastEngagePromptDate: null,
       engageDismissCount: 0,
       engageDismissDate: null,
+      nameReconciled: false,
+      needsNameReclaim: false,
+
       dailyGiftLastClaim: null,
       dailyGiftStreak: 0,
       guaranteedShinyPending: false,
