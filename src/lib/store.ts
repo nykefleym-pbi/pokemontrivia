@@ -838,6 +838,9 @@ export const useGameStore = create<GameState>()(
         lastEngagePromptDate: s.lastEngagePromptDate,
         engageDismissCount: s.engageDismissCount,
         engageDismissDate: s.engageDismissDate,
+        nameReconciled: s.nameReconciled,
+        needsNameReclaim: s.needsNameReclaim,
+
         
         dailyGiftLastClaim: s.dailyGiftLastClaim,
         dailyGiftStreak: s.dailyGiftStreak,
