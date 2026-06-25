@@ -391,27 +391,42 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Ash"
-                maxLength={16}
+                maxLength={TRAINER_NAME_MAX}
                 className="h-[54px] rounded-full border-[2.5px] border-primary bg-card px-5 text-[17px] font-bold"
                 autoFocus
               />
-              <p className="mt-2 text-xs text-foreground/55">
-                Max 16 characters
+              <p
+                className={`mt-2 text-xs ${
+                  nameAvail === "available"
+                    ? "text-green-600"
+                    : nameAvail === "taken" || nameAvail === "invalid"
+                      ? "text-red-600"
+                      : "text-foreground/55"
+                }`}
+              >
+                {nameMsg || "3–16 characters · letters, numbers, spaces, _ and -"}
               </p>
             </div>
 
             <div className="mt-auto px-1 pb-2 pt-6">
               <Button
                 size="lg"
-                disabled={!name.trim()}
-                onClick={() => setSubstep("trainer")}
+                disabled={
+                  claiming ||
+                  nameAvail === "checking" ||
+                  nameAvail === "taken" ||
+                  nameAvail === "invalid" ||
+                  !name.trim()
+                }
+                onClick={() => void handleNameNext()}
                 className="h-[58px] w-full rounded-full bg-primary text-[17px] font-bold shadow-pop active:scale-95 disabled:opacity-50"
               >
-                Next: Choose Avatar
+                {claiming ? "Reserving…" : "Next: Choose Avatar"}
               </Button>
             </div>
           </div>
         )}
+
 
         {substep === "trainer" && (
           <div className="flex flex-1 flex-col">
