@@ -182,13 +182,75 @@ function ProfilePage() {
   const avgTime =
     stats.answered > 0 ? Math.round(stats.totalAnswerTime / stats.answered / 100) / 10 : 0;
 
-  function saveName() {
-    if (nameDraft.trim()) {
-      setName(nameDraft.trim());
+  async function saveName() {
+    const v = validateTrainerName(nameDraft);
+    if (!v.ok) {
+      setRenameAvail("invalid");
+      setRenameMsg(claimErrorMessage(v.error));
+      return;
+    }
+    if (v.name.toLowerCase() === trainerName.toLowerCase()) {
+      setRenameOpen(false);
       setEditingName(false);
+      return;
+    }
+    setRenaming(true);
+    try {
+      await bootstrapSocial();
+      const res = await claimTrainerName(v.name);
+      if (!res.ok) {
+        if (res.error === "taken") setRenameAvail("taken");
+        else if (res.error === "length" || res.error === "chars") setRenameAvail("invalid");
+        else setRenameAvail("idle");
+        setRenameMsg(claimErrorMessage(res.error));
+        return;
+      }
+      setName(v.name);
+      setRenameOpen(false);
+      setEditingName(false);
+      setRenameMsg("");
+      setRenameAvail("idle");
       toast.success("Trainer name updated!");
+    } finally {
+      setRenaming(false);
     }
   }
+
+  // Debounced availability check while the rename dialog is open.
+  useEffect(() => {
+    if (!renameOpen) return;
+    const trimmed = nameDraft.trim();
+    if (trimmed.length === 0) {
+      setRenameAvail("idle");
+      setRenameMsg("");
+      return;
+    }
+    const v = validateTrainerName(nameDraft);
+    if (!v.ok) {
+      setRenameAvail("invalid");
+      setRenameMsg(claimErrorMessage(v.error));
+      return;
+    }
+    if (v.name.toLowerCase() === trainerName.toLowerCase()) {
+      setRenameAvail("available");
+      setRenameMsg("Current name");
+      return;
+    }
+    setRenameAvail("checking");
+    setRenameMsg("Checking…");
+    const t = window.setTimeout(async () => {
+      const ok = await isTrainerNameAvailable(v.name);
+      if (nameDraft.trim() !== v.name) return;
+      if (ok) {
+        setRenameAvail("available");
+        setRenameMsg("Name available");
+      } else {
+        setRenameAvail("taken");
+        setRenameMsg(claimErrorMessage("taken"));
+      }
+    }, 350);
+    return () => window.clearTimeout(t);
+  }, [nameDraft, renameOpen, trainerName]);
 
   function doReset() {
     reset();
