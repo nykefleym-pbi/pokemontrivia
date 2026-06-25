@@ -810,7 +810,7 @@ export const useGameStore = create<GameState>()(
         darkMode: s.darkMode,
         friendCode: s.friendCode,
         lastEngagePromptDate: s.lastEngagePromptDate,
-        engageWhosThatShownHour: s.engageWhosThatShownHour,
+        
         dailyGiftLastClaim: s.dailyGiftLastClaim,
         dailyGiftStreak: s.dailyGiftStreak,
         guaranteedShinyPending: s.guaranteedShinyPending,
