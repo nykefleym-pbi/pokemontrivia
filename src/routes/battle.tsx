@@ -361,7 +361,7 @@ function BattlePage() {
       setEngageActive(0);
       setEngageCards(cards);
     }
-  }, [phase, pendingElite, today, dailyDone, weeklyLeague, whosThatHourKey, startDaily, startWeekly, navigate, activeMega, megaStats, startMega, openMegaLeaderboard, engageDelayPassed]);
+  }, [phase, pendingElite, today, dailyDone, weeklyLeague, whosThatHourKey, startDaily, startWeekly, navigate, activeMega, megaStats, startMega, openMegaLeaderboard, engageDelayPassed, engageDismissCount, engageDismissDate]);
 
   const ENGAGE_THEME: Record<string, { cardBg: string; hero: string; ray: string; glow: string; labelBg: string; labelColor: string; label: string; chipBg: string; chipColor: string; chipStroke: string; ctaBg: string; ctaColor: string; ctaShadow: string; titleColor: string; descColor: string }> = {
     daily: { cardBg: "#FBF3DF", hero: "radial-gradient(circle at 50% 42%, #FF8A3D 0%, #F0531F 52%, #D23A12 100%)", ray: "rgba(255,255,255,0.14)", glow: "rgba(255,224,130,0.6)", labelBg: "rgba(0,0,0,0.22)", labelColor: "#fff", label: "DAILY QUEST", chipBg: "#F6E6C4", chipColor: "#9A7320", chipStroke: "#B8862A", ctaBg: "#E23B2E", ctaColor: "#fff", ctaShadow: "#A82A20", titleColor: "#1C2333", descColor: "#6B6E7B" },
