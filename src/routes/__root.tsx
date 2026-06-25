@@ -5,6 +5,8 @@ import { PwaRegister } from "@/components/pwa-register";
 import { useGameStore } from "@/lib/store";
 import { useEnsureSocial } from "@/lib/social";
 import { FriendRequestInbox } from "@/components/FriendRequestInbox";
+import { NameReclaimPrompt } from "@/components/NameReclaimPrompt";
+
 
 import appCss from "../styles.css?url";
 
