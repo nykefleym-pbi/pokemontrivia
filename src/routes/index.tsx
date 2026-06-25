@@ -11,7 +11,7 @@ import { trainerQuote } from "@/lib/trainer-quotes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import pokemonLogo from "@/assets/pokemon-logo.png.asset.json";
-import { bootstrapSocial, isTrainerNameAvailable, claimTrainerName } from "@/lib/social";
+import { bootstrapSocial, isTrainerNameAvailable, claimTrainerName, syncProfile } from "@/lib/social";
 import { validateTrainerName, claimErrorMessage, TRAINER_NAME_MAX } from "@/lib/trainer-name";
 
 export const Route = createFileRoute("/")({
@@ -316,6 +316,7 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
     if (!claimedName || !pick) return;
     setOnboarded(claimedName, pick, trainerSprite);
     useGameStore.getState().setNameReconciled(true);
+    void syncProfile();
     navigate({ to: "/battle" });
   }
 
