@@ -77,18 +77,33 @@ function BattlePage() {
   }, [initWeeklyLeague]);
 
   useEffect(() => {
-    fetchActiveMegaEvent().then((ev) => {
-      setActiveMega(ev);
-      if (!ev) { setMegaStats({ rank: 0, total: 0, attempts: 0 }); return; }
-      Promise.all([fetchMegaLeaderboard(ev.id, 500), getMyMegaRun(ev.id)])
-        .then(([board, mineRun]) => {
-          const total = board.length;
-          const rank = mineRun ? board.findIndex((r) => r.user_id === mineRun.user_id) + 1 : 0;
-          const attempts = mineRun?.attempts ?? 0;
-          setMegaStats({ rank, total, attempts });
-        })
-        .catch(() => setMegaStats({ rank: 0, total: 0, attempts: 0 }));
-    }).catch(() => setMegaStats({ rank: 0, total: 0, attempts: 0 }));
+    let cancelled = false;
+    (async () => {
+      const ev = await fetchActiveMegaEvent();
+      if (cancelled) return;
+      if (!ev) {
+        setActiveMega(null);
+        setMegaStats({ rank: 0, total: 0, attempts: 0 });
+        return;
+      }
+      try {
+        const [board, mineRun] = await Promise.all([
+          fetchMegaLeaderboard(ev.id, 500),
+          getMyMegaRun(ev.id),
+        ]);
+        if (cancelled) return;
+        const total = board.length;
+        const rank = mineRun ? board.findIndex((r) => r.user_id === mineRun.user_id) + 1 : 0;
+        const attempts = mineRun?.attempts ?? 0;
+        setActiveMega(ev);
+        setMegaStats({ rank, total, attempts });
+      } catch {
+        if (cancelled) return;
+        setActiveMega(ev);
+        setMegaStats({ rank: 0, total: 0, attempts: 0 });
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   // Hide the persistent bottom nav while a Mega Raid or its end screens are on-screen,
