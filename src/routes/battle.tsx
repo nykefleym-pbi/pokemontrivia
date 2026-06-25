@@ -365,7 +365,7 @@ function BattlePage() {
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1 1l11 11M12 1L1 12" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" /></svg>
             </button>
             <div className="px-10 text-center">
-              <div className="text-[26px] font-black tracking-tight text-white">{engageCards.some((c) => c.kind === "mega") ? "Limited-time event!" : "Ready to play?"}</div>
+              <div className="text-[26px] font-black tracking-tight text-white">{engageCards.some((c) => c.kind === "mega" || c.kind === "megaleaderboard") ? "Limited-time event!" : "Ready to play?"}</div>
               <div className="mt-1.5 font-pixel text-[8px] tracking-widest text-[#F2D64E]">
                 {engageCards.length} {engageCards.length === 1 ? "ACTIVITY" : "ACTIVITIES"} AVAILABLE
               </div>
