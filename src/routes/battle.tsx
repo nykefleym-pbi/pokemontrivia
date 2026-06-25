@@ -299,20 +299,23 @@ function BattlePage() {
     if (phase !== "home" || pendingElite) return;
     const hasMega = !!activeMega && Date.parse(activeMega.endsAt) > Date.now();
     if (hasMega && megaStats === null) return;
-    if (!hasMega && lastEngagePromptDate === today) return;
     const now = Date.now();
+    const hourKey = Math.floor(now / 3_600_000);
     const msToNextDay = Date.UTC(new Date(now).getUTCFullYear(), new Date(now).getUTCMonth(), new Date(now).getUTCDate() + 1) - now;
     const dailyClock = `${Math.floor(msToNextDay / 3_600_000)}H ${String(Math.floor((msToNextDay % 3_600_000) / 60_000)).padStart(2, "0")}M`;
     const weeklyStatus = weeklyLeague?.status;
     const leader = weeklyLeague ? findGymLeader(weeklyLeague.gymLeaderId) : null;
     const cards: Array<{ kind: "daily" | "weekly" | "whosthat" | "mega" | "megaleaderboard"; title: string; desc: string; chip: string; cta: string; onPlay: () => void; heroSrc?: string; heroPokeId?: number }> = [];
-    if (!dailyDone) {
+    const dailyIncluded = !dailyDone && engageDailyShownDate !== today;
+    if (dailyIncluded) {
       cards.push({ kind: "daily", title: "Daily Quest is ready!", desc: "Beat Rotom in 10 fast questions for bonus XP.", chip: `RESETS IN ${dailyClock}`, cta: "Play Daily Quest", onPlay: startDaily });
     }
-    if (weeklyStatus !== "won" && weeklyStatus !== "lost") {
+    const weeklyIncluded = weeklyStatus !== "won" && weeklyStatus !== "lost" && engageWeeklyShownDate !== today;
+    if (weeklyIncluded) {
       cards.push({ kind: "weekly", title: "Weekly League is open!", desc: weeklyStatus === "in_progress" ? "Finish your run before the week resets." : "Challenge this week's Gym Leader and climb the ranks.", chip: "RESETS MONDAY", cta: "Enter Weekly League", onPlay: startWeekly, heroSrc: leader ? `/trainers/gym/${leader.trainerSpriteId}.png` : undefined });
     }
-    if (Math.floor(now / 3_600_000) !== whosThatHourKey) {
+    const whosThatIncluded = hourKey !== whosThatHourKey && hourKey !== engageWhosThatShownHour;
+    if (whosThatIncluded) {
       cards.push({ kind: "whosthat", title: "A new round is live!", desc: "Guess the hidden Pokémon to earn rewards.", chip: "NEW ROUND EVERY HOUR", cta: "Play now", onPlay: () => navigate({ to: "/whos-that-pokemon" }) });
     }
     if (hasMega && activeMega) {
@@ -326,29 +329,20 @@ function BattlePage() {
           : "Be the first to set the pace — top 3 earn exclusive rewards.";
       const attemptsUsed = megaStats?.attempts ?? 0;
       const exhausted = attemptsUsed >= MEGA_MAX_ATTEMPTS;
-      // Mega is a headline event: the carousel shows only mega cards.
-      cards.length = 0;
-      if (exhausted) {
-        // No attempts left — show leaderboard only, and only once per day.
-        if (lastEngagePromptDate !== today) {
-          cards.push(
-            { kind: "megaleaderboard", title: `${activeMega.name} Rankings`, desc: lbCopy, chip: "LIVE RANKINGS", cta: "View Leaderboard", onPlay: openMegaLeaderboard },
-          );
-        }
-      } else {
-        cards.push(
-          { kind: "mega", title: `${activeMega.name} appeared!`, desc: "Outsmart 50 brutal questions — only the sharpest trainer is crowned.", chip: `ENDS IN ${megaClock}`, cta: "Enter Mega Raid", onPlay: startMega, heroPokeId: activeMega.megaId },
-          { kind: "megaleaderboard", title: `${activeMega.name} Rankings`, desc: lbCopy, chip: "LIVE RANKINGS", cta: "View Leaderboard", onPlay: openMegaLeaderboard },
-        );
+      if (!exhausted) {
+        cards.push({ kind: "mega", title: `${activeMega.name} appeared!`, desc: "Outsmart 50 brutal questions — only the sharpest trainer is crowned.", chip: `ENDS IN ${megaClock}`, cta: "Enter Mega Raid", onPlay: startMega, heroPokeId: activeMega.megaId });
       }
+      cards.push({ kind: "megaleaderboard", title: `${activeMega.name} Rankings`, desc: lbCopy, chip: "LIVE RANKINGS", cta: "View Leaderboard", onPlay: openMegaLeaderboard });
     }
     if (cards.length > 0) {
       engageShownRef.current = true;
       setEngageActive(0);
       setEngageCards(cards);
-      setLastEngagePromptDate(today);
+      if (dailyIncluded) setEngageDailyShownDate(today);
+      if (weeklyIncluded) setEngageWeeklyShownDate(today);
+      if (whosThatIncluded) setEngageWhosThatShownHour(hourKey);
     }
-  }, [phase, pendingElite, lastEngagePromptDate, today, dailyDone, weeklyLeague, whosThatHourKey, startDaily, startWeekly, navigate, setLastEngagePromptDate, activeMega, megaStats, startMega, openMegaLeaderboard]);
+  }, [phase, pendingElite, today, dailyDone, weeklyLeague, whosThatHourKey, engageDailyShownDate, engageWeeklyShownDate, engageWhosThatShownHour, startDaily, startWeekly, navigate, setEngageDailyShownDate, setEngageWeeklyShownDate, setEngageWhosThatShownHour, activeMega, megaStats, startMega, openMegaLeaderboard]);
 
   const ENGAGE_THEME: Record<string, { cardBg: string; hero: string; ray: string; glow: string; labelBg: string; labelColor: string; label: string; chipBg: string; chipColor: string; chipStroke: string; ctaBg: string; ctaColor: string; ctaShadow: string; titleColor: string; descColor: string }> = {
     daily: { cardBg: "#FBF3DF", hero: "radial-gradient(circle at 50% 42%, #FF8A3D 0%, #F0531F 52%, #D23A12 100%)", ray: "rgba(255,255,255,0.14)", glow: "rgba(255,224,130,0.6)", labelBg: "rgba(0,0,0,0.22)", labelColor: "#fff", label: "DAILY QUEST", chipBg: "#F6E6C4", chipColor: "#9A7320", chipStroke: "#B8862A", ctaBg: "#E23B2E", ctaColor: "#fff", ctaShadow: "#A82A20", titleColor: "#1C2333", descColor: "#6B6E7B" },
