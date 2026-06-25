@@ -6,7 +6,8 @@ import { toast } from "sonner";
 import { RotateCcw, Check, Search, Volume2, VolumeX, ChevronRight, Moon, Copy, Share2, UserPlus, Users, X, Loader2, IdCard, ImageDown } from "lucide-react";
 import { ShareCardDialog } from "@/components/share-card-dialog";
 import { useGameStore } from "@/lib/store";
-import { listFriends, addFriendByCode, removeFriend, syncProfile, type TrainerProfile } from "@/lib/social";
+import { listFriends, addFriendByCode, removeFriend, syncProfile, isTrainerNameAvailable, claimTrainerName, bootstrapSocial, type TrainerProfile } from "@/lib/social";
+import { validateTrainerName, claimErrorMessage, TRAINER_NAME_MAX } from "@/lib/trainer-name";
 import {
   rankForLevel,
   xpProgressInLevel,
