@@ -489,7 +489,6 @@ export const useGameStore = create<GameState>()(
 
       setFriendCode: (code) => set({ friendCode: code }),
       setLastEngagePromptDate: (date) => set({ lastEngagePromptDate: date }),
-      setEngageWhosThatShownHour: (hour) => set({ engageWhosThatShownHour: hour }),
 
       claimDailyGift: () => {
         const s = get();
