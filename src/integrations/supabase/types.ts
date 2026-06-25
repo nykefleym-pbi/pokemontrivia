@@ -242,7 +242,7 @@ export type Database = {
           id: string
           level: number
           pokedex_count: number
-          trainer_name: string
+          trainer_name: string | null
           trainer_sprite: string
           updated_at: string
           xp: number
@@ -254,7 +254,7 @@ export type Database = {
           id: string
           level?: number
           pokedex_count?: number
-          trainer_name?: string
+          trainer_name?: string | null
           trainer_sprite?: string
           updated_at?: string
           xp?: number
@@ -266,7 +266,7 @@ export type Database = {
           id?: string
           level?: number
           pokedex_count?: number
-          trainer_name?: string
+          trainer_name?: string | null
           trainer_sprite?: string
           updated_at?: string
           xp?: number
@@ -316,7 +316,7 @@ export type Database = {
           id: string
           level: number
           pokedex_count: number
-          trainer_name: string
+          trainer_name: string | null
           trainer_sprite: string
           updated_at: string
           xp: number
