@@ -14,7 +14,7 @@ import { BattleScreen, type Trivia } from "@/components/battle-screen";
 import { MegaRaidScreen } from "@/components/mega/MegaRaidScreen";
 import { MegaLeaderboard } from "@/components/mega/MegaLeaderboard";
 
-import { fetchActiveMegaEvent, type MegaEvent } from "@/lib/mega/schedule";
+import { fetchActiveMegaEvent, MEGA_MAX_ATTEMPTS, type MegaEvent } from "@/lib/mega/schedule";
 import { ensureMegaQuestions } from "@/lib/mega/questions";
 import { fetchMegaLeaderboard, getMyMegaRun } from "@/lib/mega/runs";
 import { Toaster } from "@/components/ui/sonner";
@@ -48,7 +48,7 @@ function BattlePage() {
   const [weeklyOpponent, setWeeklyOpponent] = useState<GymLeader | null>(null);
   const [megaEvent, setMegaEvent] = useState<MegaEvent | null>(null);
   const [activeMega, setActiveMega] = useState<MegaEvent | null>(null);
-  const [megaStats, setMegaStats] = useState<{ rank: number; total: number } | null>(null);
+  const [megaStats, setMegaStats] = useState<{ rank: number; total: number; attempts: number } | null>(null);
   const [battleKey, setBattleKey] = useState(0);
   const autoStartedRef = useRef(false);
   const dailyResult = useGameStore((s) => s.dailyResult);
@@ -75,15 +75,16 @@ function BattlePage() {
   useEffect(() => {
     fetchActiveMegaEvent().then((ev) => {
       setActiveMega(ev);
-      if (!ev) { setMegaStats({ rank: 0, total: 0 }); return; }
+      if (!ev) { setMegaStats({ rank: 0, total: 0, attempts: 0 }); return; }
       Promise.all([fetchMegaLeaderboard(ev.id, 500), getMyMegaRun(ev.id)])
         .then(([board, mineRun]) => {
           const total = board.length;
           const rank = mineRun ? board.findIndex((r) => r.user_id === mineRun.user_id) + 1 : 0;
-          setMegaStats({ rank, total });
+          const attempts = mineRun?.attempts ?? 0;
+          setMegaStats({ rank, total, attempts });
         })
-        .catch(() => setMegaStats({ rank: 0, total: 0 }));
-    }).catch(() => setMegaStats({ rank: 0, total: 0 }));
+        .catch(() => setMegaStats({ rank: 0, total: 0, attempts: 0 }));
+    }).catch(() => setMegaStats({ rank: 0, total: 0, attempts: 0 }));
   }, []);
 
   // Hide the persistent bottom nav while a Mega Raid or its end screens are on-screen,
@@ -319,12 +320,23 @@ function BattlePage() {
         : megaStats && megaStats.total > 0
           ? `${megaStats.total} trainers competing — top 3 earn exclusive rewards.`
           : "Be the first to set the pace — top 3 earn exclusive rewards.";
-      // Mega is a headline event: the carousel shows only the two mega cards.
+      const attemptsUsed = megaStats?.attempts ?? 0;
+      const exhausted = attemptsUsed >= MEGA_MAX_ATTEMPTS;
+      // Mega is a headline event: the carousel shows only mega cards.
       cards.length = 0;
-      cards.push(
-        { kind: "mega", title: `${activeMega.name} appeared!`, desc: "Outsmart 50 brutal questions — only the sharpest trainer is crowned.", chip: `ENDS IN ${megaClock}`, cta: "Enter Mega Raid", onPlay: startMega, heroPokeId: activeMega.megaId },
-        { kind: "megaleaderboard", title: `${activeMega.name} Rankings`, desc: lbCopy, chip: "LIVE RANKINGS", cta: "View Leaderboard", onPlay: openMegaLeaderboard },
-      );
+      if (exhausted) {
+        // No attempts left — show leaderboard only, and only once per day.
+        if (lastEngagePromptDate !== today) {
+          cards.push(
+            { kind: "megaleaderboard", title: `${activeMega.name} Rankings`, desc: lbCopy, chip: "LIVE RANKINGS", cta: "View Leaderboard", onPlay: openMegaLeaderboard },
+          );
+        }
+      } else {
+        cards.push(
+          { kind: "mega", title: `${activeMega.name} appeared!`, desc: "Outsmart 50 brutal questions — only the sharpest trainer is crowned.", chip: `ENDS IN ${megaClock}`, cta: "Enter Mega Raid", onPlay: startMega, heroPokeId: activeMega.megaId },
+          { kind: "megaleaderboard", title: `${activeMega.name} Rankings`, desc: lbCopy, chip: "LIVE RANKINGS", cta: "View Leaderboard", onPlay: openMegaLeaderboard },
+        );
+      }
     }
     if (cards.length > 0) {
       engageShownRef.current = true;
@@ -353,7 +365,7 @@ function BattlePage() {
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1 1l11 11M12 1L1 12" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" /></svg>
             </button>
             <div className="px-10 text-center">
-              <div className="text-[26px] font-black tracking-tight text-white">{engageCards.some((c) => c.kind === "mega") ? "Limited-time event!" : "Ready to play?"}</div>
+              <div className="text-[26px] font-black tracking-tight text-white">{engageCards.some((c) => c.kind === "mega" || c.kind === "megaleaderboard") ? "Limited-time event!" : "Ready to play?"}</div>
               <div className="mt-1.5 font-pixel text-[8px] tracking-widest text-[#F2D64E]">
                 {engageCards.length} {engageCards.length === 1 ? "ACTIVITY" : "ACTIVITIES"} AVAILABLE
               </div>
