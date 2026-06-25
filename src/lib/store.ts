@@ -90,6 +90,8 @@ export interface GameState {
   trainerSprite: string;
   friendCode: string | null;
   lastEngagePromptDate: string | null;
+  engageDismissCount: number;
+  engageDismissDate: string | null;
   
   dailyGiftLastClaim: string | null;
   dailyGiftStreak: number;
@@ -161,6 +163,7 @@ export interface GameState {
   setOnboarded: (name: string, pokemon: PokeEntry, trainerSprite: string) => void;
   setFriendCode: (code: string) => void;
   setLastEngagePromptDate: (date: string) => void;
+  recordEngageDismiss: () => void;
   
   claimDailyGift: () => { itemId: ItemId; qty: number; day: number; shiny: boolean } | null;
   consumeGuaranteedShiny: () => void;
@@ -251,6 +254,8 @@ export const useGameStore = create<GameState>()(
       trainerSprite: TRAINER_SPRITES[0]?.id ?? "",
       friendCode: null,
       lastEngagePromptDate: null,
+      engageDismissCount: 0,
+      engageDismissDate: null,
       dailyGiftLastClaim: null,
       dailyGiftStreak: 0,
       guaranteedShinyPending: false,
@@ -489,6 +494,15 @@ export const useGameStore = create<GameState>()(
 
       setFriendCode: (code) => set({ friendCode: code }),
       setLastEngagePromptDate: (date) => set({ lastEngagePromptDate: date }),
+      recordEngageDismiss: () => {
+        const today = new Date().toISOString().slice(0, 10);
+        const s = get();
+        if (s.engageDismissDate !== today) {
+          set({ engageDismissDate: today, engageDismissCount: 1 });
+        } else {
+          set({ engageDismissCount: s.engageDismissCount + 1 });
+        }
+      },
 
       claimDailyGift: () => {
         const s = get();
@@ -810,6 +824,8 @@ export const useGameStore = create<GameState>()(
         darkMode: s.darkMode,
         friendCode: s.friendCode,
         lastEngagePromptDate: s.lastEngagePromptDate,
+        engageDismissCount: s.engageDismissCount,
+        engageDismissDate: s.engageDismissDate,
         
         dailyGiftLastClaim: s.dailyGiftLastClaim,
         dailyGiftStreak: s.dailyGiftStreak,

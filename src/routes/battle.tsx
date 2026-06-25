@@ -57,6 +57,9 @@ function BattlePage() {
   const today = new Date().toISOString().slice(0, 10);
   const dailyDone = dailyResult?.date === today;
   const whosThatHourKey = useGameStore((s) => s.whosThatHourKey);
+  const engageDismissCount = useGameStore((s) => s.engageDismissCount);
+  const engageDismissDate = useGameStore((s) => s.engageDismissDate);
+  const recordEngageDismiss = useGameStore((s) => s.recordEngageDismiss);
   const [engageCards, setEngageCards] = useState<Array<{ kind: "daily" | "weekly" | "whosthat" | "mega" | "megaleaderboard"; title: string; desc: string; chip: string; cta: string; onPlay: () => void; heroSrc?: string; heroPokeId?: number }> | null>(null);
   const [engageActive, setEngageActive] = useState(0);
   const engageShownRef = useRef(false);
@@ -314,6 +317,8 @@ function BattlePage() {
   useEffect(() => {
     if (engageShownRef.current) return;
     if (phase !== "home" || pendingElite) return;
+    const dismissedToday = engageDismissDate === today ? engageDismissCount : 0;
+    if (dismissedToday >= 3) return;
     const hasMega = !!activeMega && Date.parse(activeMega.endsAt) > Date.now();
     if (megaStats === null && !engageDelayPassed) return;
     const now = Date.now();
@@ -356,7 +361,7 @@ function BattlePage() {
       setEngageActive(0);
       setEngageCards(cards);
     }
-  }, [phase, pendingElite, today, dailyDone, weeklyLeague, whosThatHourKey, startDaily, startWeekly, navigate, activeMega, megaStats, startMega, openMegaLeaderboard, engageDelayPassed]);
+  }, [phase, pendingElite, today, dailyDone, weeklyLeague, whosThatHourKey, startDaily, startWeekly, navigate, activeMega, megaStats, startMega, openMegaLeaderboard, engageDelayPassed, engageDismissCount, engageDismissDate]);
 
   const ENGAGE_THEME: Record<string, { cardBg: string; hero: string; ray: string; glow: string; labelBg: string; labelColor: string; label: string; chipBg: string; chipColor: string; chipStroke: string; ctaBg: string; ctaColor: string; ctaShadow: string; titleColor: string; descColor: string }> = {
     daily: { cardBg: "#FBF3DF", hero: "radial-gradient(circle at 50% 42%, #FF8A3D 0%, #F0531F 52%, #D23A12 100%)", ray: "rgba(255,255,255,0.14)", glow: "rgba(255,224,130,0.6)", labelBg: "rgba(0,0,0,0.22)", labelColor: "#fff", label: "DAILY QUEST", chipBg: "#F6E6C4", chipColor: "#9A7320", chipStroke: "#B8862A", ctaBg: "#E23B2E", ctaColor: "#fff", ctaShadow: "#A82A20", titleColor: "#1C2333", descColor: "#6B6E7B" },
@@ -371,9 +376,9 @@ function BattlePage() {
       <Toaster position="top-center" />
       {engageCards && engageCards.length > 0 && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center">
-          <div className="absolute inset-0 bg-[rgba(8,9,14,0.72)]" onClick={() => setEngageCards(null)} />
+          <div className="absolute inset-0 bg-[rgba(8,9,14,0.72)]" onClick={() => { recordEngageDismiss(); setEngageCards(null); }} />
           <div className="relative w-[360px] max-w-[94vw]">
-            <button onClick={() => setEngageCards(null)} aria-label="Close" className="absolute -top-1.5 right-1 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white active:scale-90">
+            <button onClick={() => { recordEngageDismiss(); setEngageCards(null); }} aria-label="Close" className="absolute -top-1.5 right-1 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white active:scale-90">
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1 1l11 11M12 1L1 12" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" /></svg>
             </button>
             <div className="px-10 text-center">
@@ -456,7 +461,7 @@ function BattlePage() {
                 ))}
               </div>
             )}
-            <button onClick={() => setEngageCards(null)} className="mx-auto mt-4 block text-[15px] font-semibold text-white/55">Maybe later</button>
+            <button onClick={() => { recordEngageDismiss(); setEngageCards(null); }} className="mx-auto mt-4 block text-[15px] font-semibold text-white/55">Maybe later</button>
           </div>
         </div>
       )}
