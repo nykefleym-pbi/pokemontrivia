@@ -59,12 +59,60 @@ export function bootstrapSocial(): Promise<string | null> {
   if (!bootstrapPromise) {
     bootstrapPromise = (async () => {
       const uid = await ensureSession();
-      if (uid) await syncProfile();
+      if (uid) {
+        await syncProfile();
+        await reconcileTrainerName();
+      }
       return uid;
     })();
   }
   return bootstrapPromise;
 }
+
+/** Read the caller's current trainer name from the server. */
+export async function getMyTrainerName(): Promise<string | null> {
+  const uid = await ensureSession();
+  if (!uid) return null;
+  const { data, error } = await db
+    .from("profiles")
+    .select("trainer_name")
+    .eq("id", uid)
+    .single();
+  if (error) { console.warn("[social] getMyTrainerName failed:", error.message); return null; }
+  const name = (data as { trainer_name: string | null } | null)?.trainer_name ?? null;
+  return name && name.trim() ? name : null;
+}
+
+/** One-time reconciliation for installs that onboarded before server-side claim existed. */
+async function reconcileTrainerName(): Promise<void> {
+  const s = useGameStore.getState();
+  if (!s.hasOnboarded || s.isGuest || s.nameReconciled) return;
+  const local = (s.trainerName ?? "").trim();
+  if (!local) return;
+  try {
+    const serverName = await getMyTrainerName();
+    if (serverName) {
+      if (serverName.toLowerCase() === local.toLowerCase()) {
+        useGameStore.getState().setNameReconciled(true);
+      } else {
+        useGameStore.getState().setName(serverName);
+        useGameStore.getState().setNameReconciled(true);
+      }
+      return;
+    }
+    const res = await claimTrainerName(local);
+    if (res.ok) {
+      useGameStore.getState().setNameReconciled(true);
+      useGameStore.getState().setNeedsNameReclaim(false);
+    } else if (res.error === "taken") {
+      useGameStore.getState().setNeedsNameReclaim(true);
+    }
+    // other errors: silently retry on next launch
+  } catch (e) {
+    console.warn("[social] reconcileTrainerName threw:", e);
+  }
+}
+
 
 /** Look up a profile by friend code (preview before adding). */
 export async function getProfileByCode(code: string): Promise<TrainerProfile | null> {
