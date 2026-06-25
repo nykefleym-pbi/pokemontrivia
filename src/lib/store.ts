@@ -503,6 +503,9 @@ export const useGameStore = create<GameState>()(
 
       setFriendCode: (code) => set({ friendCode: code }),
       setLastEngagePromptDate: (date) => set({ lastEngagePromptDate: date }),
+      setNameReconciled: (v) => set({ nameReconciled: v }),
+      setNeedsNameReclaim: (v) => set({ needsNameReclaim: v }),
+
       recordEngageDismiss: () => {
         const today = new Date().toISOString().slice(0, 10);
         const s = get();
