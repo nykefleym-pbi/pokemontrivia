@@ -331,7 +331,7 @@ function BattlePage() {
     if (weeklyIncluded) {
       cards.push({ kind: "weekly", title: "Weekly League is open!", desc: weeklyStatus === "in_progress" ? "Finish your run before the week resets." : "Challenge this week's Gym Leader and climb the ranks.", chip: "RESETS MONDAY", cta: "Enter Weekly League", onPlay: startWeekly, heroSrc: leader ? `/trainers/gym/${leader.trainerSpriteId}.png` : undefined });
     }
-    const whosThatIncluded = hourKey !== whosThatHourKey && hourKey !== engageWhosThatShownHour;
+    const whosThatIncluded = hourKey !== whosThatHourKey;
     if (whosThatIncluded) {
       cards.push({ kind: "whosthat", title: "A new round is live!", desc: "Guess the hidden Pokémon to earn rewards.", chip: "NEW ROUND EVERY HOUR", cta: "Play now", onPlay: () => navigate({ to: "/whos-that-pokemon" }) });
     }
