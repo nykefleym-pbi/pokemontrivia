@@ -494,6 +494,15 @@ export const useGameStore = create<GameState>()(
 
       setFriendCode: (code) => set({ friendCode: code }),
       setLastEngagePromptDate: (date) => set({ lastEngagePromptDate: date }),
+      recordEngageDismiss: () => {
+        const today = new Date().toISOString().slice(0, 10);
+        const s = get();
+        if (s.engageDismissDate !== today) {
+          set({ engageDismissDate: today, engageDismissCount: 1 });
+        } else {
+          set({ engageDismissCount: s.engageDismissCount + 1 });
+        }
+      },
 
       claimDailyGift: () => {
         const s = get();
