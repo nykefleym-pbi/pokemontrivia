@@ -22,7 +22,7 @@ import { nextPendingElite, type EliteMember } from "@/lib/elite-four";
 import { findGymLeader, type GymLeader } from "@/lib/gym-leaders";
 import { getWeekRangeUtc } from "@/lib/game-data";
 
-const ENGAGE_DELAY_MS = 30000; // diagnostic: delay carousel so mega data fully resolves
+const ENGAGE_DELAY_MS = 5000; // safety cap: show carousel by now even if mega data never resolves
 
 export const Route = createFileRoute("/battle")({
   component: BattlePage,
@@ -57,8 +57,6 @@ function BattlePage() {
   const today = new Date().toISOString().slice(0, 10);
   const dailyDone = dailyResult?.date === today;
   const whosThatHourKey = useGameStore((s) => s.whosThatHourKey);
-  const engageDailyShownDate = useGameStore((s) => s.engageDailyShownDate);
-  const engageWeeklyShownDate = useGameStore((s) => s.engageWeeklyShownDate);
   const engageWhosThatShownHour = useGameStore((s) => s.engageWhosThatShownHour);
   const setEngageDailyShownDate = useGameStore((s) => s.setEngageDailyShownDate);
   const setEngageWeeklyShownDate = useGameStore((s) => s.setEngageWeeklyShownDate);
@@ -320,9 +318,8 @@ function BattlePage() {
   useEffect(() => {
     if (engageShownRef.current) return;
     if (phase !== "home" || pendingElite) return;
-    if (!engageDelayPassed) return;
     const hasMega = !!activeMega && Date.parse(activeMega.endsAt) > Date.now();
-    if (megaStats === null) return;
+    if (megaStats === null && !engageDelayPassed) return;
     const now = Date.now();
     const hourKey = Math.floor(now / 3_600_000);
     const msToNextDay = Date.UTC(new Date(now).getUTCFullYear(), new Date(now).getUTCMonth(), new Date(now).getUTCDate() + 1) - now;
@@ -330,11 +327,11 @@ function BattlePage() {
     const weeklyStatus = weeklyLeague?.status;
     const leader = weeklyLeague ? findGymLeader(weeklyLeague.gymLeaderId) : null;
     const cards: Array<{ kind: "daily" | "weekly" | "whosthat" | "mega" | "megaleaderboard"; title: string; desc: string; chip: string; cta: string; onPlay: () => void; heroSrc?: string; heroPokeId?: number }> = [];
-    const dailyIncluded = !dailyDone && engageDailyShownDate !== today;
+    const dailyIncluded = !dailyDone;
     if (dailyIncluded) {
       cards.push({ kind: "daily", title: "Daily Quest is ready!", desc: "Beat Rotom in 10 fast questions for bonus XP.", chip: `RESETS IN ${dailyClock}`, cta: "Play Daily Quest", onPlay: startDaily });
     }
-    const weeklyIncluded = weeklyStatus !== "won" && weeklyStatus !== "lost" && engageWeeklyShownDate !== today;
+    const weeklyIncluded = weeklyStatus !== "won" && weeklyStatus !== "lost";
     if (weeklyIncluded) {
       cards.push({ kind: "weekly", title: "Weekly League is open!", desc: weeklyStatus === "in_progress" ? "Finish your run before the week resets." : "Challenge this week's Gym Leader and climb the ranks.", chip: "RESETS MONDAY", cta: "Enter Weekly League", onPlay: startWeekly, heroSrc: leader ? `/trainers/gym/${leader.trainerSpriteId}.png` : undefined });
     }
@@ -362,11 +359,9 @@ function BattlePage() {
       engageShownRef.current = true;
       setEngageActive(0);
       setEngageCards(cards);
-      if (dailyIncluded) setEngageDailyShownDate(today);
-      if (weeklyIncluded) setEngageWeeklyShownDate(today);
       if (whosThatIncluded) setEngageWhosThatShownHour(hourKey);
     }
-  }, [phase, pendingElite, today, dailyDone, weeklyLeague, whosThatHourKey, engageDailyShownDate, engageWeeklyShownDate, engageWhosThatShownHour, startDaily, startWeekly, navigate, setEngageDailyShownDate, setEngageWeeklyShownDate, setEngageWhosThatShownHour, activeMega, megaStats, startMega, openMegaLeaderboard, engageDelayPassed]);
+  }, [phase, pendingElite, today, dailyDone, weeklyLeague, whosThatHourKey, engageWhosThatShownHour, startDaily, startWeekly, navigate, setEngageWhosThatShownHour, activeMega, megaStats, startMega, openMegaLeaderboard, engageDelayPassed]);
 
   const ENGAGE_THEME: Record<string, { cardBg: string; hero: string; ray: string; glow: string; labelBg: string; labelColor: string; label: string; chipBg: string; chipColor: string; chipStroke: string; ctaBg: string; ctaColor: string; ctaShadow: string; titleColor: string; descColor: string }> = {
     daily: { cardBg: "#FBF3DF", hero: "radial-gradient(circle at 50% 42%, #FF8A3D 0%, #F0531F 52%, #D23A12 100%)", ray: "rgba(255,255,255,0.14)", glow: "rgba(255,224,130,0.6)", labelBg: "rgba(0,0,0,0.22)", labelColor: "#fff", label: "DAILY QUEST", chipBg: "#F6E6C4", chipColor: "#9A7320", chipStroke: "#B8862A", ctaBg: "#E23B2E", ctaColor: "#fff", ctaShadow: "#A82A20", titleColor: "#1C2333", descColor: "#6B6E7B" },
