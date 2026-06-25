@@ -66,6 +66,12 @@ function BattlePage() {
   const [engageCards, setEngageCards] = useState<Array<{ kind: "daily" | "weekly" | "whosthat" | "mega" | "megaleaderboard"; title: string; desc: string; chip: string; cta: string; onPlay: () => void; heroSrc?: string; heroPokeId?: number }> | null>(null);
   const [engageActive, setEngageActive] = useState(0);
   const engageShownRef = useRef(false);
+  const [engageDelayPassed, setEngageDelayPassed] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setEngageDelayPassed(true), ENGAGE_DELAY_MS);
+    return () => clearTimeout(t);
+  }, []);
 
   const weeklyLeague = useGameStore((s) => s.weeklyLeague);
   const initWeeklyLeague = useGameStore((s) => s.initWeeklyLeague);
