@@ -298,7 +298,7 @@ function BattlePage() {
     if (engageShownRef.current) return;
     if (phase !== "home" || pendingElite) return;
     const hasMega = !!activeMega && Date.parse(activeMega.endsAt) > Date.now();
-    if (hasMega && megaStats === null) return;
+    if (megaStats === null) return;
     const now = Date.now();
     const hourKey = Math.floor(now / 3_600_000);
     const msToNextDay = Date.UTC(new Date(now).getUTCFullYear(), new Date(now).getUTCMonth(), new Date(now).getUTCDate() + 1) - now;
