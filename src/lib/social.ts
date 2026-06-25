@@ -77,16 +77,99 @@ export async function getProfileByCode(code: string): Promise<TrainerProfile | n
   return data as TrainerProfile;
 }
 
-/** Add a friend by code. Returns { profile } or { error }. */
-export async function addFriendByCode(code: string): Promise<{ profile?: TrainerProfile; error?: string }> {
+/** Send a friend request by code. Friendship becomes mutual only after the recipient accepts. */
+export async function addFriendByCode(code: string): Promise<{
+  profile?: TrainerProfile;
+  status?: "pending" | "accepted" | "already_pending";
+  error?: string;
+}> {
   const uid = await ensureSession();
   if (!uid) return { error: "No session yet — try again in a moment." };
   const profile = await getProfileByCode(code);
   if (!profile) return { error: "No trainer found with that code." };
   if (profile.id === uid) return { error: "That's your own code!" };
-  const { error } = await db.from("friends").insert({ owner_id: uid, friend_id: profile.id });
-  if (error && !String(error.message).toLowerCase().includes("duplicate")) return { error: error.message };
-  return { profile };
+  try {
+    const rpc = supabase as unknown as { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }> };
+    const { data, error } = await rpc.rpc("send_friend_request", { _code: code.trim().toUpperCase() });
+    if (error) {
+      console.warn("[social] send_friend_request failed:", error.message);
+      return { error: "Couldn't send request, try again." };
+    }
+    const r = data as { ok?: boolean; status?: string; error?: string } | null;
+    if (r && r.ok === true) {
+      const status = (r.status as "pending" | "accepted" | "already_pending") ?? "pending";
+      return { profile, status };
+    }
+    const err = (r && r.error) || "";
+    const msg =
+      err === "not_found" ? "No trainer found with that code." :
+      err === "self" ? "That's your own code!" :
+      err === "already_friends" ? "You're already friends." :
+      err === "no_session" ? "No session yet — try again in a moment." :
+      "Couldn't send request, try again.";
+    return { error: msg };
+  } catch (e) {
+    console.warn("[social] addFriendByCode threw:", e);
+    return { error: "Couldn't send request, try again." };
+  }
+}
+
+/** List the caller's pending incoming friend requests with requester display info. */
+export async function listIncomingFriendRequests(): Promise<Array<{
+  requestId: string;
+  fromId: string;
+  trainerName: string;
+  trainerSprite: string;
+  level: number;
+  friendCode: string;
+  createdAt: string;
+}>> {
+  try {
+    const rpc = supabase as unknown as { rpc: (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }> };
+    const { data, error } = await rpc.rpc("list_incoming_friend_requests", {});
+    if (error) { console.warn("[social] listIncomingFriendRequests failed:", error.message); return []; }
+    const rows = (data as Array<{
+      request_id: string;
+      from_id: string;
+      trainer_name: string | null;
+      trainer_sprite: string | null;
+      level: number | null;
+      friend_code: string | null;
+      created_at: string;
+    }>) ?? [];
+    return rows.map((r) => ({
+      requestId: r.request_id,
+      fromId: r.from_id,
+      trainerName: r.trainer_name ?? "",
+      trainerSprite: r.trainer_sprite ?? "red",
+      level: r.level ?? 1,
+      friendCode: r.friend_code ?? "",
+      createdAt: r.created_at,
+    }));
+  } catch (e) {
+    console.warn("[social] listIncomingFriendRequests threw:", e);
+    return [];
+  }
+}
+
+/** Accept or decline an incoming friend request. */
+export async function respondFriendRequest(
+  requestId: string,
+  accept: boolean,
+): Promise<{ ok: true; status: "accepted" | "declined" } | { ok: false; error: string }> {
+  try {
+    const rpc = supabase as unknown as { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }> };
+    const { data, error } = await rpc.rpc("respond_friend_request", { _request_id: requestId, _accept: accept });
+    if (error) { console.warn("[social] respondFriendRequest failed:", error.message); return { ok: false, error: "network" }; }
+    const r = data as { ok?: boolean; status?: string; error?: string } | null;
+    if (r && r.ok === true && (r.status === "accepted" || r.status === "declined")) {
+      return { ok: true, status: r.status };
+    }
+    return { ok: false, error: (r && r.error) || "network" };
+  } catch (e) {
+    console.warn("[social] respondFriendRequest threw:", e);
+    return { ok: false, error: "network" };
+  }
 }
 
 /** List the current user's friends (their profiles). */
