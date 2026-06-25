@@ -167,6 +167,9 @@ export interface GameState {
   setFriendCode: (code: string) => void;
   setLastEngagePromptDate: (date: string) => void;
   recordEngageDismiss: () => void;
+  setNameReconciled: (v: boolean) => void;
+  setNeedsNameReclaim: (v: boolean) => void;
+
   
   claimDailyGift: () => { itemId: ItemId; qty: number; day: number; shiny: boolean } | null;
   consumeGuaranteedShiny: () => void;
