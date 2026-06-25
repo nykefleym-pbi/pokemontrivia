@@ -163,6 +163,7 @@ export interface GameState {
   setOnboarded: (name: string, pokemon: PokeEntry, trainerSprite: string) => void;
   setFriendCode: (code: string) => void;
   setLastEngagePromptDate: (date: string) => void;
+  recordEngageDismiss: () => void;
   
   claimDailyGift: () => { itemId: ItemId; qty: number; day: number; shiny: boolean } | null;
   consumeGuaranteedShiny: () => void;
