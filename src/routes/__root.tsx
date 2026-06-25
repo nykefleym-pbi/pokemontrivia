@@ -108,6 +108,7 @@ function RootComponent() {
         <Outlet />
         <BottomNav />
       </div>
+      <FriendRequestInbox />
       <PwaRegister />
     </div>
   );
