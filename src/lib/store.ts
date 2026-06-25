@@ -90,7 +90,7 @@ export interface GameState {
   trainerSprite: string;
   friendCode: string | null;
   lastEngagePromptDate: string | null;
-  engageWhosThatShownHour: number;
+  
   dailyGiftLastClaim: string | null;
   dailyGiftStreak: number;
   guaranteedShinyPending: boolean;
