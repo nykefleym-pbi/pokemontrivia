@@ -22,6 +22,8 @@ import { nextPendingElite, type EliteMember } from "@/lib/elite-four";
 import { findGymLeader, type GymLeader } from "@/lib/gym-leaders";
 import { getWeekRangeUtc } from "@/lib/game-data";
 
+const ENGAGE_DELAY_MS = 30000; // diagnostic: delay carousel so mega data fully resolves
+
 export const Route = createFileRoute("/battle")({
   component: BattlePage,
   validateSearch: (s: Record<string, unknown>) => ({
