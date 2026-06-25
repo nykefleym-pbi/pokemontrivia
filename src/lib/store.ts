@@ -251,7 +251,6 @@ export const useGameStore = create<GameState>()(
       trainerSprite: TRAINER_SPRITES[0]?.id ?? "",
       friendCode: null,
       lastEngagePromptDate: null,
-      engageWhosThatShownHour: 0,
       dailyGiftLastClaim: null,
       dailyGiftStreak: 0,
       guaranteedShinyPending: false,
