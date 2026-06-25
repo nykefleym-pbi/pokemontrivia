@@ -62,18 +62,22 @@ function mapEvent(r: any): MegaEvent {
 }
 
 /** The event whose [startsAt, endsAt) window contains `now`, or null. */
-export async function fetchActiveMegaEvent(now: Date = new Date()): Promise<MegaEvent | null> {
+export async function fetchActiveMegaEvent(now: Date = new Date(), retries = 3): Promise<MegaEvent | null> {
   const iso = now.toISOString();
-  const { data, error } = await db
-    .from("mega_events")
-    .select("*")
-    .lte("starts_at", iso)
-    .gt("ends_at", iso)
-    .order("starts_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (error) { console.warn("[mega] fetchActiveMegaEvent failed:", error.message); return null; }
-  return data ? mapEvent(data) : null;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const { data, error } = await db
+      .from("mega_events")
+      .select("*")
+      .lte("starts_at", iso)
+      .gt("ends_at", iso)
+      .order("starts_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!error) return data ? mapEvent(data) : null;
+    console.warn("[mega] fetchActiveMegaEvent failed:", error.message);
+    if (attempt < retries) await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
+  }
+  return null;
 }
 
 /** Look up a single event by id (used by the leaderboard + champion-claim flows). */
