@@ -810,6 +810,7 @@ export const useGameStore = create<GameState>()(
         level: s.level,
         peakLevel: s.peakLevel,
         xp: s.xp,
+        coins: s.coins,
         stats: s.stats,
         inventory: s.inventory,
         itemCooldowns: s.itemCooldowns,
