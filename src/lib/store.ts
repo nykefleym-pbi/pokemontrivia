@@ -108,6 +108,7 @@ export interface GameState {
   level: number;
   peakLevel: number;
   xp: number;
+  coins: number;
   stats: PlayerStats;
   inventory: Record<ItemId, number>;
   itemCooldowns: Partial<Record<ItemId, number>>; // sets-remaining cooldown
