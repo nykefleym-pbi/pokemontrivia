@@ -331,7 +331,7 @@ function BattlePage() {
   }
 
   useEffect(() => {
-    if (engageShownRef.current) return;
+    if (engageShownRef.current || engageShownThisSession) return;
     if (phase !== "home" || pendingElite) return;
     const dismissedToday = engageDismissDate === today ? engageDismissCount : 0;
     if (dismissedToday >= 3) return;
