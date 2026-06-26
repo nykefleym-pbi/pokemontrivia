@@ -210,7 +210,7 @@ function ShopPage() {
             </button>
             <div className="flex items-center gap-1.5 rounded-full bg-poke-yellow px-3.5 py-2 shadow-card">
               <Star className="h-4 w-4 fill-poke-dark text-foreground" />
-              <span className="text-sm font-extrabold text-foreground">{xp.toLocaleString()}</span>
+              <span className="text-sm font-extrabold text-foreground">{coins.toLocaleString()}</span>
             </div>
           </div>
         </div>
@@ -321,7 +321,7 @@ function ShopPage() {
           <div className="flex flex-col gap-3">
             {items.map((item, i) => {
               const owned = inventory[item.id] ?? 0;
-              const canAfford = xp >= item.cost;
+              const canAfford = coins >= item.cost;
               return (
                 <motion.button
                   key={item.id}
@@ -394,7 +394,7 @@ function ShopPage() {
               {/* Quantity stepper */}
               {(() => {
                 const unitCost = confirmState.cost;
-                const maxQty = unitCost > 0 ? Math.max(1, Math.floor(xp / unitCost)) : 1;
+                const maxQty = unitCost > 0 ? Math.max(1, Math.floor(coins / unitCost)) : 1;
                 return (
                   <div className="mt-4 flex items-center justify-between rounded-2xl bg-poke-blue/10 px-4 py-3">
                     <span className="font-bold text-foreground">Quantity</span>
@@ -425,13 +425,13 @@ function ShopPage() {
               {(() => {
                 const unitCost = confirmState.cost;
                 const totalCost = unitCost * qty;
-                const balanceAfter = xp - totalCost;
+                const balanceAfter = coins - totalCost;
                 const canAfford = balanceAfter >= 0;
                 return (
                   <div className="mt-4 space-y-2.5">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Your XP</span>
-                      <span className="font-bold text-foreground tabular-nums">{xp.toLocaleString()}</span>
+                      <span className="font-bold text-foreground tabular-nums">{coins.toLocaleString()}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Cost</span>
@@ -453,7 +453,7 @@ function ShopPage() {
               {(() => {
                 const unitCost = confirmState.cost;
                 const totalCost = unitCost * qty;
-                const balanceAfter = xp - totalCost;
+                const balanceAfter = coins - totalCost;
                 const canAfford = balanceAfter >= 0;
                 return (
                   <div className="mt-5 space-y-2">
