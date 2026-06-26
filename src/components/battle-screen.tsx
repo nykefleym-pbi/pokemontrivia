@@ -1696,6 +1696,7 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
   const startedAt = useRef(Date.now());
   const qStart = useRef(Date.now());
   const recordedRef = useRef(false);
+  const dailyStreakRef = useRef(0);
 
   const trivia = questions[idx];
   const total = questions.length;
