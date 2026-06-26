@@ -128,14 +128,21 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
       endedRef.current = true;
       const timeMs = Date.now() - startRef.current;
       const accuracy = Math.round((finalCorrect / total) * 100);
-      const items = won ? grantRewards() : [];
       let rank: number | null = null;
       let attempts = MEGA_MAX_ATTEMPTS;
+      let accepted = false;
       const res = await submitMegaRun({ eventId: event.id, accuracy, correct: finalCorrect, total, timeMs });
-      if (res.ok) { rank = res.rank || null; attempts = res.row?.attempts ?? MEGA_MAX_ATTEMPTS; }
-      else if (res.error && !/no attempts/i.test(res.error)) {
+      if (res.ok) {
+        accepted = true;
+        rank = res.rank || null;
+        attempts = res.row?.attempts ?? MEGA_MAX_ATTEMPTS;
+      } else if (/no attempts/i.test(res.error)) {
+        toast.error("No attempts left — this run doesn't count.");
+      } else {
+        accepted = true;
         toast.error("Couldn't save your run — check your connection.");
       }
+      const items = won && accepted ? grantRewards() : [];
       setResult({ outcome: won ? "win" : "loss", accuracy, correct: finalCorrect, rank, attempts, items });
       setPhase("result");
     },
