@@ -85,6 +85,9 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
   const [xAtkArmed, setXAtkArmed] = useState(false);
   const [removedWrong, setRemovedWrong] = useState<number | null>(null);
   const [revealCorrect, setRevealCorrect] = useState(false);
+  // Per-question correct index, learned from the server on answer / hint item.
+  const [correctIdxByQ, setCorrectIdxByQ] = useState<Record<number, number>>({});
+  const currentCorrect = correctIdxByQ[qIndex];
 
   const startRef = useRef<number>(Date.now());
   const escapedRef = useRef(false);
