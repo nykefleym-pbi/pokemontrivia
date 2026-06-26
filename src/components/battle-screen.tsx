@@ -1879,6 +1879,11 @@ function DailyResultScreen({
 }) {
   const date = new Date().toISOString().slice(0, 10);
   const seconds = Math.round(timeMs / 1000);
+  const bestStreak = (() => {
+    let best = 0, cur = 0;
+    for (const m of pattern) { if (m === "correct") { cur += 1; best = Math.max(best, cur); } else cur = 0; }
+    return best;
+  })();
 
   return (
     <motion.div
