@@ -1879,6 +1879,11 @@ function DailyResultScreen({
 }) {
   const date = new Date().toISOString().slice(0, 10);
   const seconds = Math.round(timeMs / 1000);
+  const bestStreak = (() => {
+    let best = 0, cur = 0;
+    for (const m of pattern) { if (m === "correct") { cur += 1; best = Math.max(best, cur); } else cur = 0; }
+    return best;
+  })();
 
   return (
     <motion.div
@@ -1908,7 +1913,7 @@ function DailyResultScreen({
       <div className="mt-5 grid w-full max-w-xs grid-cols-3 gap-2">
         <DailyTile label="Score" value={`${correct}/${total}`} accent />
         <DailyTile label="Time" value={`${seconds}s`} />
-        <DailyTile label="Streak" value={String(correct)} />
+        <DailyTile label="Best Streak" value={String(bestStreak)} />
       </div>
 
       <div className="mt-4 w-full max-w-xs rounded-2xl bg-card p-4 shadow-card">
