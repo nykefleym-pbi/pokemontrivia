@@ -572,6 +572,7 @@ function BattleHome({
   const pokemon = useGameStore((s) => s.pokemon);
   const level = useGameStore((s) => s.level);
   const xp = useGameStore((s) => s.xp);
+  const coins = useGameStore((s) => s.coins);
   const trainingPoints = useGameStore((s) => s.trainingPoints);
   const weeklyLeague = useGameStore((s) => s.weeklyLeague);
   const bestStreak = useGameStore((s) => s.stats.bestStreak);
