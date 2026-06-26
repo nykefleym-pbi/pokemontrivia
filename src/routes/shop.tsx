@@ -89,7 +89,7 @@ type ConfirmState =
 function ShopPage() {
   const hasOnboarded = useGameStore((s) => s.hasOnboarded);
   const navigate = useNavigate();
-  const xp = useGameStore((s) => s.xp);
+  const coins = useGameStore((s) => s.coins);
   const inventory = useGameStore((s) => s.inventory);
   const buyItem = useGameStore((s) => s.buyItem);
   const useItem = useGameStore((s) => s.useItem);
