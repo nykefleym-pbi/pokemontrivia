@@ -1671,8 +1671,15 @@ function Row({ label, value, valueClass }: { label: ReactNode; value: ReactNode;
 
 // ----------------------------- Daily Challenge Mode -----------------------------
 
+function dailyXpFor(correct: number, total: number): number {
+  return 15 * correct + (correct === total ? 100 : 0); // e.g. perfect 10/10 = 250; 7/10 = 105
+}
+
 function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">) {
   const recordDaily = useGameStore((s) => s.recordDaily);
+  const recordAnswer = useGameStore((s) => s.recordAnswer);
+  const addXp = useGameStore((s) => s.addXp);
+  void addXp;
   const [idx, setIdx] = useState(0);
   const [phase, setPhase] = useState<"question" | "feedback" | "done">("question");
   const [chosen, setChosen] = useState<number | null>(null);
