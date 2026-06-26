@@ -89,7 +89,7 @@ type ConfirmState =
 function ShopPage() {
   const hasOnboarded = useGameStore((s) => s.hasOnboarded);
   const navigate = useNavigate();
-  const xp = useGameStore((s) => s.xp);
+  const coins = useGameStore((s) => s.coins);
   const inventory = useGameStore((s) => s.inventory);
   const buyItem = useGameStore((s) => s.buyItem);
   const useItem = useGameStore((s) => s.useItem);
@@ -161,9 +161,9 @@ function ShopPage() {
       bought++;
     }
     if (bought === 0) {
-      toast.error(`Need ${cost * qty} XP to buy ${qty}× ${item.name}.`);
+      toast.error(`Need ${cost * qty} Coins to buy ${qty}× ${item.name}.`);
     } else if (bought < qty) {
-      toast.success(`Bought ${bought}× ${item.name} (ran out of XP).`);
+      toast.success(`Bought ${bought}× ${item.name} (ran out of Coins).`);
     } else {
       toast.success(`Bought ${qty}× ${item.name}!`);
     }
@@ -210,7 +210,7 @@ function ShopPage() {
             </button>
             <div className="flex items-center gap-1.5 rounded-full bg-poke-yellow px-3.5 py-2 shadow-card">
               <Star className="h-4 w-4 fill-poke-dark text-foreground" />
-              <span className="text-sm font-extrabold text-foreground">{xp.toLocaleString()}</span>
+              <span className="text-sm font-extrabold text-foreground">{coins.toLocaleString()}</span>
             </div>
           </div>
         </div>
@@ -290,10 +290,10 @@ function ShopPage() {
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1.5">
             <span className="rounded-full bg-white px-3.5 py-1.5 text-sm font-extrabold text-primary">
-              {featured.discountedCost} XP
+              {featured.discountedCost} Coins
             </span>
             <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-bold text-white/60 line-through">
-              {featured.originalCost} XP
+              {featured.originalCost} Coins
             </span>
           </div>
         </button>
@@ -321,7 +321,7 @@ function ShopPage() {
           <div className="flex flex-col gap-3">
             {items.map((item, i) => {
               const owned = inventory[item.id] ?? 0;
-              const canAfford = xp >= item.cost;
+              const canAfford = coins >= item.cost;
               return (
                 <motion.button
                   key={item.id}
@@ -359,7 +359,7 @@ function ShopPage() {
                         : "bg-muted text-muted-foreground"
                     }`}
                   >
-                    {item.cost.toLocaleString()} XP
+                    {item.cost.toLocaleString()} Coins
                   </span>
                 </motion.button>
               );
@@ -394,7 +394,7 @@ function ShopPage() {
               {/* Quantity stepper */}
               {(() => {
                 const unitCost = confirmState.cost;
-                const maxQty = unitCost > 0 ? Math.max(1, Math.floor(xp / unitCost)) : 1;
+                const maxQty = unitCost > 0 ? Math.max(1, Math.floor(coins / unitCost)) : 1;
                 return (
                   <div className="mt-4 flex items-center justify-between rounded-2xl bg-poke-blue/10 px-4 py-3">
                     <span className="font-bold text-foreground">Quantity</span>
@@ -425,13 +425,13 @@ function ShopPage() {
               {(() => {
                 const unitCost = confirmState.cost;
                 const totalCost = unitCost * qty;
-                const balanceAfter = xp - totalCost;
+                const balanceAfter = coins - totalCost;
                 const canAfford = balanceAfter >= 0;
                 return (
                   <div className="mt-4 space-y-2.5">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Your XP</span>
-                      <span className="font-bold text-foreground tabular-nums">{xp.toLocaleString()}</span>
+                      <span className="text-muted-foreground">Your Coins</span>
+                      <span className="font-bold text-foreground tabular-nums">{coins.toLocaleString()}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Cost</span>
@@ -441,7 +441,7 @@ function ShopPage() {
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-foreground">Balance after</span>
                         <span className={`font-extrabold tabular-nums ${canAfford ? "text-hp-good" : "text-destructive"}`}>
-                          {balanceAfter.toLocaleString()} XP
+                          {balanceAfter.toLocaleString()} Coins
                         </span>
                       </div>
                     </div>
@@ -453,7 +453,7 @@ function ShopPage() {
               {(() => {
                 const unitCost = confirmState.cost;
                 const totalCost = unitCost * qty;
-                const balanceAfter = xp - totalCost;
+                const balanceAfter = coins - totalCost;
                 const canAfford = balanceAfter >= 0;
                 return (
                   <div className="mt-5 space-y-2">
@@ -462,7 +462,7 @@ function ShopPage() {
                       onClick={confirmPurchase}
                       className="h-13 w-full rounded-full bg-primary py-6 text-base font-bold text-primary-foreground shadow-pop disabled:opacity-50"
                     >
-                      Confirm — {totalCost.toLocaleString()} XP
+                      Confirm — {totalCost.toLocaleString()} Coins
                     </Button>
                     <button
                       onClick={() => setConfirmState(null)}

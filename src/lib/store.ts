@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { ItemId } from "./game-data";
-import { ITEMS, levelFromTotalXp, TRAINER_SPRITES, EVOLUTION_TP_COST, getWeekRangeUtc } from "./game-data";
+import { ITEMS, levelFromTotalXp, totalXpToReachLevel, TRAINER_SPRITES, EVOLUTION_TP_COST, getWeekRangeUtc } from "./game-data";
 import type { PokeEntry } from "./pokemon-data";
 import { ALL_POKEMON, rehydratePokemon } from "./pokemon-data";
 import { pickRandomGymLeader } from "./gym-leaders";
@@ -108,6 +108,7 @@ export interface GameState {
   level: number;
   peakLevel: number;
   xp: number;
+  coins: number;
   stats: PlayerStats;
   inventory: Record<ItemId, number>;
   itemCooldowns: Partial<Record<ItemId, number>>; // sets-remaining cooldown
@@ -275,6 +276,7 @@ export const useGameStore = create<GameState>()(
       level: 1,
       peakLevel: 1,
       xp: 0,
+      coins: 0,
       stats: defaultStats,
       inventory: { ...defaultInventory },
       itemCooldowns: {},
@@ -582,6 +584,7 @@ export const useGameStore = create<GameState>()(
           level: 1,
           peakLevel: 1,
           xp: 0,
+          coins: 0,
           stats: defaultStats,
           inventory: { ...defaultInventory },
           itemCooldowns: {},
@@ -619,13 +622,9 @@ export const useGameStore = create<GameState>()(
 
       buyItem: (id, cost) => {
         const s = get();
-        if (s.xp < cost) return false;
-        const newXp = s.xp - cost;
-        // Spending XP can lower the displayed level bar progress, but never demote.
-        const recalcLevel = Math.max(s.peakLevel, levelFromTotalXp(newXp));
+        if (s.coins < cost) return false;
         set({
-          xp: newXp,
-          level: recalcLevel,
+          coins: s.coins - cost,
           inventory: { ...s.inventory, [id]: (s.inventory[id] ?? 0) + 1 },
         });
         return true;
@@ -711,10 +710,11 @@ export const useGameStore = create<GameState>()(
       addXp: (amount) => {
         const s = get();
         const mult = Date.now() < s.luckyEggExpiresAt ? 2 : 1;
-        const newXp = s.xp + amount * mult;
+        const gain = amount * mult;
+        const newXp = s.xp + gain;
         const newLevel = levelFromTotalXp(newXp);
         const newPeak = Math.max(s.peakLevel, newLevel);
-        set({ xp: newXp, level: newLevel, peakLevel: newPeak });
+        set({ xp: newXp, coins: s.coins + gain, level: newLevel, peakLevel: newPeak });
       },
 
       recordAnswer: (correct, timeMs, streak) =>
@@ -810,6 +810,7 @@ export const useGameStore = create<GameState>()(
         level: s.level,
         peakLevel: s.peakLevel,
         xp: s.xp,
+        coins: s.coins,
         stats: s.stats,
         inventory: s.inventory,
         itemCooldowns: s.itemCooldowns,
@@ -861,9 +862,14 @@ export const useGameStore = create<GameState>()(
           );
           dailyResult = { ...dailyResult, pattern: marks };
         }
+        const peak = p.peakLevel ?? 1;
+        const migratedXp = Math.max(p.xp ?? 0, totalXpToReachLevel(peak));
+        const migratedCoins = p.coins ?? p.xp ?? 0;
         return {
           ...current,
           ...p,
+          xp: migratedXp,
+          coins: migratedCoins,
           pokemon: rehydratePokemon(p.pokemon ?? null),
           flags: p.flags ?? [],
           battleLog: p.battleLog ?? [],
