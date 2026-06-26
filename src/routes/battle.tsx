@@ -24,6 +24,10 @@ import { getWeekRangeUtc } from "@/lib/game-data";
 
 const ENGAGE_DELAY_MS = 10000; // safety cap: show carousel by now even if mega data never resolves
 
+// Module-level: survives Battle-route remounts within a single app session,
+// so the engagement carousel auto-appears at most once per app open.
+let engageShownThisSession = false;
+
 export const Route = createFileRoute("/battle")({
   component: BattlePage,
   validateSearch: (s: Record<string, unknown>) => ({
