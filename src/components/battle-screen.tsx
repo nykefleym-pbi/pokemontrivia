@@ -1759,6 +1759,8 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
               useGameStore.getState().addTrainingPoints(partner.id, TP_REWARDS.dailyPartial);
             }
           }
+          const dailyXp = dailyXpFor(finalCorrect, total);
+          if (dailyXp > 0) useGameStore.getState().addXp(dailyXp);
         }
         playSfx("victory");
         setPhase("done");
