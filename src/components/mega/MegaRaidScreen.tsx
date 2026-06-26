@@ -352,10 +352,10 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
 
         <div className="mt-2.5 grid grid-cols-1 gap-2">
           {q.options.map((opt, i) => {
-            const isCorrect = locked && i === q.correct;
-            const isWrong = locked && picked === i && i !== q.correct;
+            const isCorrect = locked && typeof currentCorrect === "number" && i === currentCorrect;
+            const isWrong = locked && picked === i && typeof currentCorrect === "number" && i !== currentCorrect;
             const removed = removedWrong === i;
-            const isAnswerRevealed = !locked && revealCorrect && i === q.correct;
+            const isAnswerRevealed = !locked && revealCorrect && typeof currentCorrect === "number" && i === currentCorrect;
             return (
               <button
                 key={i}
