@@ -1902,6 +1902,36 @@ function DailyResultScreen({
     for (const m of pattern) { if (m === "correct") { cur += 1; best = Math.max(best, cur); } else cur = 0; }
     return best;
   })();
+  const [shareOpen, setShareOpen] = useState(false);
+  const trainerName = useGameStore((s) => s.trainerName);
+  const trainerSprite = useGameStore((s) => s.trainerSprite);
+  const partner = useGameStore((s) => s.pokemon);
+  const level = useGameStore((s) => s.level);
+  const isPerfect = correct === total && total > 0;
+  const avgTimeMs = total > 0 ? timeMs / total : undefined;
+  const shareData: ShareData | null = (isPerfect && partner) ? {
+    type: "daily-perfect",
+    trainerName,
+    trainerSpriteUrl: trainerSpriteUrl(trainerSprite),
+    partnerName: partner.name,
+    partnerPokemonId: partner.id,
+    partnerShiny: false,
+    opponentName: "Rotom",
+    opponentTitle: "Daily Challenge",
+    opponentSpriteUrl: null,
+    signaturePokemonId: 479,
+    finalPlayerHp: 100,
+    maxPlayerHp: 100,
+    topStreak: bestStreak,
+    topDamage: 0,
+    dateISO: date,
+    correctCount: correct,
+    totalQuestions: total,
+    xpEarned: dailyXpFor(correct, total),
+    avgTimeMs,
+    level,
+    rank: rankForLevel(level),
+  } : null;
 
   return (
     <motion.div
