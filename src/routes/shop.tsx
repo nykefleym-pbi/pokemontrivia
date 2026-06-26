@@ -161,9 +161,9 @@ function ShopPage() {
       bought++;
     }
     if (bought === 0) {
-      toast.error(`Need ${cost * qty} XP to buy ${qty}× ${item.name}.`);
+      toast.error(`Need ${cost * qty} Coins to buy ${qty}× ${item.name}.`);
     } else if (bought < qty) {
-      toast.success(`Bought ${bought}× ${item.name} (ran out of XP).`);
+      toast.success(`Bought ${bought}× ${item.name} (ran out of Coins).`);
     } else {
       toast.success(`Bought ${qty}× ${item.name}!`);
     }
@@ -290,10 +290,10 @@ function ShopPage() {
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1.5">
             <span className="rounded-full bg-white px-3.5 py-1.5 text-sm font-extrabold text-primary">
-              {featured.discountedCost} XP
+              {featured.discountedCost} Coins
             </span>
             <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-bold text-white/60 line-through">
-              {featured.originalCost} XP
+              {featured.originalCost} Coins
             </span>
           </div>
         </button>
@@ -359,7 +359,7 @@ function ShopPage() {
                         : "bg-muted text-muted-foreground"
                     }`}
                   >
-                    {item.cost.toLocaleString()} XP
+                    {item.cost.toLocaleString()} Coins
                   </span>
                 </motion.button>
               );
@@ -430,7 +430,7 @@ function ShopPage() {
                 return (
                   <div className="mt-4 space-y-2.5">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Your XP</span>
+                      <span className="text-muted-foreground">Your Coins</span>
                       <span className="font-bold text-foreground tabular-nums">{coins.toLocaleString()}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
@@ -441,7 +441,7 @@ function ShopPage() {
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-foreground">Balance after</span>
                         <span className={`font-extrabold tabular-nums ${canAfford ? "text-hp-good" : "text-destructive"}`}>
-                          {balanceAfter.toLocaleString()} XP
+                          {balanceAfter.toLocaleString()} Coins
                         </span>
                       </div>
                     </div>
@@ -462,7 +462,7 @@ function ShopPage() {
                       onClick={confirmPurchase}
                       className="h-13 w-full rounded-full bg-primary py-6 text-base font-bold text-primary-foreground shadow-pop disabled:opacity-50"
                     >
-                      Confirm — {totalCost.toLocaleString()} XP
+                      Confirm — {totalCost.toLocaleString()} Coins
                     </Button>
                     <button
                       onClick={() => setConfirmState(null)}
