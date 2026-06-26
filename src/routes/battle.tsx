@@ -374,6 +374,7 @@ function BattlePage() {
     }
     if (cards.length > 0) {
       engageShownRef.current = true;
+      engageShownThisSession = true;
       setEngageActive(0);
       setEngageCards(cards);
     }
