@@ -189,8 +189,10 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
     },
     [locked, phase, qIndex, correctIdxByQ, event.id, bossHp, playerHp, correctCount, xAtkArmed, advance],
   );
+
+  useEffect(() => {
     if (phase !== "fighting" || locked || bagOpen) return;
-    if (timer <= 0) { answer(null); return; }
+    if (timer <= 0) { void answer(null); return; }
     const t = window.setTimeout(() => setTimer((v) => v - 1), 1000);
     return () => window.clearTimeout(t);
   }, [timer, locked, bagOpen, phase, answer]);
