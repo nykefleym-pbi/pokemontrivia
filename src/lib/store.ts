@@ -584,6 +584,7 @@ export const useGameStore = create<GameState>()(
           level: 1,
           peakLevel: 1,
           xp: 0,
+          coins: 0,
           stats: defaultStats,
           inventory: { ...defaultInventory },
           itemCooldowns: {},
