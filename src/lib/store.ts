@@ -710,10 +710,11 @@ export const useGameStore = create<GameState>()(
       addXp: (amount) => {
         const s = get();
         const mult = Date.now() < s.luckyEggExpiresAt ? 2 : 1;
-        const newXp = s.xp + amount * mult;
+        const gain = amount * mult;
+        const newXp = s.xp + gain;
         const newLevel = levelFromTotalXp(newXp);
         const newPeak = Math.max(s.peakLevel, newLevel);
-        set({ xp: newXp, level: newLevel, peakLevel: newPeak });
+        set({ xp: newXp, coins: s.coins + gain, level: newLevel, peakLevel: newPeak });
       },
 
       recordAnswer: (correct, timeMs, streak) =>
