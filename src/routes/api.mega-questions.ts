@@ -73,7 +73,9 @@ async function buildQuestions(eventId: string): Promise<TriviaPayload[]> {
   if (pool.length < 20) return pool; // too few — don't persist a thin set
 
   try {
-    await sb.rpc("insert_mega_questions_if_absent", { p_event_id: eventId, p_questions: pool });
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabaseAdmin as any).rpc("insert_mega_questions_if_absent", { p_event_id: eventId, p_questions: pool });
   } catch {
     /* non-fatal — return what we have */
   }
