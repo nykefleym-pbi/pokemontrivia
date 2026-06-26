@@ -1913,7 +1913,7 @@ function DailyResultScreen({
       <div className="mt-5 grid w-full max-w-xs grid-cols-3 gap-2">
         <DailyTile label="Score" value={`${correct}/${total}`} accent />
         <DailyTile label="Time" value={`${seconds}s`} />
-        <DailyTile label="Streak" value={String(correct)} />
+        <DailyTile label="Best Streak" value={String(bestStreak)} />
       </div>
 
       <div className="mt-4 w-full max-w-xs rounded-2xl bg-card p-4 shadow-card">
