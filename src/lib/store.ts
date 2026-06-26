@@ -622,13 +622,9 @@ export const useGameStore = create<GameState>()(
 
       buyItem: (id, cost) => {
         const s = get();
-        if (s.xp < cost) return false;
-        const newXp = s.xp - cost;
-        // Spending XP can lower the displayed level bar progress, but never demote.
-        const recalcLevel = Math.max(s.peakLevel, levelFromTotalXp(newXp));
+        if (s.coins < cost) return false;
         set({
-          xp: newXp,
-          level: recalcLevel,
+          coins: s.coins - cost,
           inventory: { ...s.inventory, [id]: (s.inventory[id] ?? 0) + 1 },
         });
         return true;
