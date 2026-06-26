@@ -5,6 +5,7 @@ import { ITEMS, levelFromTotalXp, totalXpToReachLevel, TRAINER_SPRITES, EVOLUTIO
 import type { PokeEntry } from "./pokemon-data";
 import { ALL_POKEMON, rehydratePokemon } from "./pokemon-data";
 import { pickRandomGymLeader } from "./gym-leaders";
+import type { Round } from "@/routes/whos-that-pokemon";
 
 const MAX_SEEN_HASHES = 500;
 const MAX_SEEN_TEXTS = 200;
@@ -128,6 +129,8 @@ export interface GameState {
   assaultVestUsedWeek: number;
   autoItems: Partial<Record<ItemId, boolean>>;
   whosThatHourKey: number;
+  whosThatActiveRound: Round | null;
+  whosThatRoundHourKey: number | null;
 
   // question history (per-device)
   seenQuestionHashes: string[];
@@ -172,6 +175,8 @@ export interface GameState {
   setNameReconciled: (v: boolean) => void;
   setNeedsNameReclaim: (v: boolean) => void;
   setEngageShownThisSession: (v: boolean) => void;
+  setWhosThatRound: (round: Round, hourKey: number) => void;
+  clearWhosThatRound: () => void;
 
   
   claimDailyGift: () => { itemId: ItemId; qty: number; day: number; shiny: boolean } | null;
@@ -298,6 +303,8 @@ export const useGameStore = create<GameState>()(
       assaultVestUsedWeek: 0,
       autoItems: {},
       whosThatHourKey: 0,
+      whosThatActiveRound: null,
+      whosThatRoundHourKey: null,
 
       seenQuestionHashes: [],
       seenQuestions: [],
@@ -441,6 +448,9 @@ export const useGameStore = create<GameState>()(
       consumeWhosThat: () => {
         set({ whosThatHourKey: Math.floor(Date.now() / 3_600_000) });
       },
+      setWhosThatRound: (round, hourKey) => set({ whosThatActiveRound: round, whosThatRoundHourKey: hourKey }),
+      clearWhosThatRound: () => set({ whosThatActiveRound: null, whosThatRoundHourKey: null }),
+
 
       evolvePartner: (toPokemon) => {
         const s = get();

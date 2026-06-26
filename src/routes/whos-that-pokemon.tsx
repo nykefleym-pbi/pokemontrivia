@@ -65,7 +65,7 @@ function fmtHMS(ms: number): string {
 }
 
 type Mode = "1A" | "1B" | "2" | "3" | "4" | "5";
-interface Round {
+export interface Round {
   monId: number; name: string; types: PokeType[]; mode: Mode;
   isShiny: boolean; rewardId: ItemId; rewardName: string; rewardIcon: string;
   cropBack: boolean; cropDX: number; cropDY: number;
