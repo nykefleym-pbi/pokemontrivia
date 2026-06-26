@@ -285,6 +285,12 @@ function BattlePage() {
     try {
       const ev = await fetchActiveMegaEvent();
       if (!ev) { toast.error("No Mega Raid is active right now."); setPhase("home"); return; }
+      const used = await getMegaAttempts(ev.id);
+      if (used >= MEGA_MAX_ATTEMPTS) {
+        toast.error("You've used all your Mega Raid attempts for this event.");
+        setPhase("home");
+        return;
+      }
       const qs = await ensureMegaQuestions(ev);
       if (!qs.length) { toast.error("Mega Raid questions aren't ready yet. Try again soon."); setPhase("home"); return; }
       setMegaEvent(ev);
