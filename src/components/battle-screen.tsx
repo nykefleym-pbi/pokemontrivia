@@ -282,6 +282,7 @@ function BattleMode({
   const [lastElapsedMs, setLastElapsedMs] = useState(0);
   const questionStart = useRef<number>(0);
   const startedRef = useRef(false);
+  const battleEndedRef = useRef(false);
   const maxStreakRef = useRef(0);
   const lastStreakLabelRef = useRef<string | null>(null);
   const correctCountRef = useRef(0);
@@ -805,6 +806,8 @@ function BattleMode({
   }
 
   function finish(won: boolean) {
+    if (battleEndedRef.current) return;
+    battleEndedRef.current = true;
     // Clear Phase 2 battle-scoped state
     stopPoisonTick();
     setStatuses([]);
