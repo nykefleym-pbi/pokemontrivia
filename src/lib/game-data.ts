@@ -252,7 +252,7 @@ export const FALLBACK_QUESTIONS = [
   { question: "How many original Pokémon are there in Gen 1?", options: ["100", "151", "251", "386"], correct: 1, explanation: "Gen 1 introduced 151 Pokémon, ending with Mew.", category: "Generations" },
   { question: "Which generation introduced the Fairy type?", options: ["Gen 4", "Gen 5", "Gen 6", "Gen 7"], correct: 2, explanation: "Fairy type was added in Generation 6 (X & Y).", category: "Generations" },
   { question: "Which generation introduced Mega Evolution?", options: ["Gen 5", "Gen 6", "Gen 7", "Gen 8"], correct: 1, explanation: "Mega Evolution debuted in Gen 6 (X & Y).", category: "Generations" },
-  { question: "How many Pokémon were added in Generation 2?", options: ["100", "135", "151", "100"], correct: 1, explanation: "Gen 2 (Gold/Silver) added 100 new Pokémon (152–251).", category: "Generations" },
+  { question: "How many Pokémon were added in Generation 2?", options: ["80", "100", "135", "251"], correct: 1, explanation: "Gen 2 (Gold/Silver) added 100 new Pokémon (152–251).", category: "Generations" },
   // Competitive
   { question: "In Smogon's tier list, what does 'OU' stand for?", options: ["Over Used", "Optimal Use", "Outright Unbanned", "Over Unbanned"], correct: 0, explanation: "OU = Over Used, the standard competitive singles tier.", category: "Competitive" },
   { question: "Which item boosts a held Pokémon's Speed by 50%?", options: ["Choice Scarf", "Quick Claw", "Focus Sash", "Life Orb"], correct: 0, explanation: "Choice Scarf gives a 1.5× Speed boost but locks the move.", category: "Competitive" },
