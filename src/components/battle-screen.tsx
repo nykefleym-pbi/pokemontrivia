@@ -806,6 +806,8 @@ function BattleMode({
   }
 
   function finish(won: boolean) {
+    if (battleEndedRef.current) return;
+    battleEndedRef.current = true;
     // Clear Phase 2 battle-scoped state
     stopPoisonTick();
     setStatuses([]);
