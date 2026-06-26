@@ -229,7 +229,6 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
   const useBattleItem = useCallback(
     async (id: ItemId) => {
       if (usedOnce.has(id) || (inventory[id] ?? 0) <= 0 || locked) return;
-      if (id === "xattack") setXAtkArmed(true);
       if (id === "scope" || id === "xaccuracy") {
         let correctIdx = correctIdxByQ[qIndex];
         if (typeof correctIdx !== "number") {
@@ -239,14 +238,18 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
             setCorrectIdxByQ((m) => ({ ...m, [qIndex]: rev.correctIndex }));
           }
         }
-        if (typeof correctIdx === "number") {
-          if (id === "scope") {
-            const wrongs = [0, 1, 2, 3].filter((i) => i !== correctIdx);
-            setRemovedWrong(wrongs[Math.floor(Math.random() * wrongs.length)]);
-          }
-          if (id === "xaccuracy") setRevealCorrect(true);
+        if (typeof correctIdx !== "number") {
+          // Reveal failed — don't consume the item. User can retry.
+          toast.error("Couldn't read the answer — try again in a moment.");
+          return;
         }
+        if (id === "scope") {
+          const wrongs = [0, 1, 2, 3].filter((i) => i !== correctIdx);
+          setRemovedWrong(wrongs[Math.floor(Math.random() * wrongs.length)]);
+        }
+        if (id === "xaccuracy") setRevealCorrect(true);
       }
+      if (id === "xattack") setXAtkArmed(true);
       grantItem(id, -1);
       setUsedOnce((s) => new Set(s).add(id));
       toast.success(`${itemDef(id)?.name} used`);
@@ -254,6 +257,7 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
     },
     [usedOnce, inventory, locked, qIndex, correctIdxByQ, event.id, grantItem],
   );
+
 
   const escape = useCallback(() => {
     if ((inventory.escape ?? 0) <= 0) { toast.error("No Escape Rope in your bag"); return; }
