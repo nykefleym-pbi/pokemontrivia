@@ -158,11 +158,20 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
   );
 
   const answer = useCallback(
-    (idx: number | null) => {
+    async (idx: number | null) => {
       if (locked || phase !== "fighting") return;
       setLocked(true);
       setPicked(idx);
-      const isCorrect = idx !== null && idx === q.correct;
+      // Fetch the correct index for this question from the server (cached per qIndex).
+      let correctIdx = correctIdxByQ[qIndex];
+      if (typeof correctIdx !== "number") {
+        const rev = await revealMegaAnswer(event.id, qIndex);
+        if (rev) {
+          correctIdx = rev.correctIndex;
+          setCorrectIdxByQ((m) => ({ ...m, [qIndex]: rev.correctIndex }));
+        }
+      }
+      const isCorrect = idx !== null && typeof correctIdx === "number" && idx === correctIdx;
       let nextBoss = bossHp;
       let nextPlayer = playerHp;
       let nextCorrect = correctCount;
@@ -178,10 +187,8 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
       setXAtkArmed(false);
       window.setTimeout(() => advance(nextCorrect, nextBoss, nextPlayer), 1100);
     },
-    [locked, phase, q, bossHp, playerHp, correctCount, xAtkArmed, advance],
+    [locked, phase, qIndex, correctIdxByQ, event.id, bossHp, playerHp, correctCount, xAtkArmed, advance],
   );
-
-  useEffect(() => {
     if (phase !== "fighting" || locked || bagOpen) return;
     if (timer <= 0) { answer(null); return; }
     const t = window.setTimeout(() => setTimer((v) => v - 1), 1000);
