@@ -862,9 +862,14 @@ export const useGameStore = create<GameState>()(
           );
           dailyResult = { ...dailyResult, pattern: marks };
         }
+        const peak = p.peakLevel ?? 1;
+        const migratedXp = Math.max(p.xp ?? 0, totalXpToReachLevel(peak));
+        const migratedCoins = p.coins ?? p.xp ?? 0;
         return {
           ...current,
           ...p,
+          xp: migratedXp,
+          coins: migratedCoins,
           pokemon: rehydratePokemon(p.pokemon ?? null),
           flags: p.flags ?? [],
           battleLog: p.battleLog ?? [],
