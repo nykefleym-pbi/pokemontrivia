@@ -1725,6 +1725,7 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
     const nextStreak = correct ? dailyStreakRef.current + 1 : 0;
     dailyStreakRef.current = nextStreak;
     recordAnswer(correct, elapsed, nextStreak);
+    const sym: DailyMark = picked === -1 ? "timeout" : correct ? "correct" : "wrong";
     const nextPattern: DailyMark[] = [...pattern, sym];
     setPattern(nextPattern);
     if (correct) setCorrectCount((c) => c + 1);
