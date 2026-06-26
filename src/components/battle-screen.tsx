@@ -1971,6 +1971,15 @@ function DailyResultScreen({
         </div>
       </div>
 
+      {shareData && (
+        <Button
+          size="lg"
+          onClick={() => setShareOpen(true)}
+          className="mt-5 h-12 w-full max-w-xs rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
+        >
+          Share result
+        </Button>
+      )}
       <Button
         size="lg"
         onClick={onExit}
@@ -1978,6 +1987,7 @@ function DailyResultScreen({
       >
         Back
       </Button>
+      {shareData && <ShareCardDialog open={shareOpen} onClose={() => setShareOpen(false)} data={shareData} />}
     </motion.div>
   );
 }
