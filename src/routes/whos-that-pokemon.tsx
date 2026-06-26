@@ -93,6 +93,10 @@ function WhosThatPokemon() {
   const navigate = useNavigate();
   const whosThatHourKey = useGameStore((s) => s.whosThatHourKey);
   const consumeWhosThat = useGameStore((s) => s.consumeWhosThat);
+  const whosThatActiveRound = useGameStore((s) => s.whosThatActiveRound);
+  const whosThatRoundHourKey = useGameStore((s) => s.whosThatRoundHourKey);
+  const setWhosThatRound = useGameStore((s) => s.setWhosThatRound);
+  const clearWhosThatRound = useGameStore((s) => s.clearWhosThatRound);
   const addXp = useGameStore((s) => s.addXp);
   const grantItem = useGameStore((s) => s.grantItem);
   const recordPokedexCapture = useGameStore((s) => s.recordPokedexCapture);
@@ -119,16 +123,24 @@ function WhosThatPokemon() {
   useEffect(() => {
     if (initRef.current) return;
     initRef.current = true;
-    if (Math.floor(Date.now() / HOUR) === whosThatHourKey) setLocked(true);
-    else { setRound(makeRound()); }
-  }, [whosThatHourKey]);
+    const currentHour = Math.floor(Date.now() / HOUR);
+    if (currentHour === whosThatHourKey) { setLocked(true); return; }
+    if (whosThatRoundHourKey === currentHour && whosThatActiveRound) {
+      setRound(whosThatActiveRound);
+    } else {
+      const r = makeRound();
+      setRound(r);
+      setWhosThatRound(r, currentHour);
+    }
+  }, [whosThatHourKey, whosThatRoundHourKey, whosThatActiveRound, setWhosThatRound]);
 
   useEffect(() => {
     if ((phase === "correct" || phase === "incorrect") && !burnedRef.current) {
       burnedRef.current = true;
       consumeWhosThat();
+      clearWhosThatRound();
     }
-  }, [phase, consumeWhosThat]);
+  }, [phase, consumeWhosThat, clearWhosThatRound]);
 
   useEffect(() => {
     if (round?.mode !== "5") return;
