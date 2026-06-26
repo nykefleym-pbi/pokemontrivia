@@ -392,11 +392,9 @@ function BattlePage() {
       <Toaster position="top-center" />
       {engageCards && engageCards.length > 0 && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center">
-          <div className="absolute inset-0 bg-[rgba(8,9,14,0.72)]" onClick={() => { recordEngageDismiss(); setEngageCards(null); }} />
+          <div className="absolute inset-0 bg-[rgba(8,9,14,0.72)]" />
+
           <div className="relative w-[360px] max-w-[94vw]">
-            <button onClick={() => { recordEngageDismiss(); setEngageCards(null); }} aria-label="Close" className="absolute -top-1.5 right-1 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white active:scale-90">
-              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1 1l11 11M12 1L1 12" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" /></svg>
-            </button>
             <div className="px-10 text-center">
               <div className="text-[26px] font-black tracking-tight text-white">Ready to play?</div>
               <div className="mt-1.5 font-pixel text-[8px] tracking-widest text-[#F2D64E]">
