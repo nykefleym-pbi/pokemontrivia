@@ -1,12 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { generateTrivia, type TriviaPayload } from "@/lib/trivia-core";
 import { pickBattleCurated, recordCuratedServed } from "@/lib/curated-questions";
-import { supabase } from "@/integrations/supabase/client";
-
-// mega_event_questions + the save RPC aren't in the generated Supabase types.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const sb = supabase as any;
-
 const MEGA_TOTAL = 50;
 // difficulty curve for a Mega Raid's frozen 50-question set
 const TIERS: ReadonlyArray<readonly ["easy" | "medium" | "hard" | "expert", number]> = [
@@ -19,6 +13,9 @@ const inflight = new Map<string, Promise<TriviaPayload[]>>();
 
 async function readQuestions(eventId: string): Promise<TriviaPayload[] | null> {
   try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sb = supabaseAdmin as any;
     const { data, error } = await sb
       .from("mega_event_questions")
       .select("questions")
