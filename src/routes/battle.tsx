@@ -81,35 +81,41 @@ function BattlePage() {
     initWeeklyLeague();
   }, [initWeeklyLeague]);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const ev = await fetchActiveMegaEvent();
-      if (cancelled) return;
-      if (!ev) {
-        setActiveMega(null);
-        setMegaStats({ rank: 0, total: 0, attempts: 0 });
-        return;
-      }
-      try {
-        const [board, mineRun] = await Promise.all([
-          fetchMegaLeaderboard(ev.id, 500),
-          getMyMegaRun(ev.id),
-        ]);
-        if (cancelled) return;
-        const total = board.length;
-        const rank = mineRun ? board.findIndex((r) => r.user_id === mineRun.user_id) + 1 : 0;
-        const attempts = mineRun?.attempts ?? 0;
-        setActiveMega(ev);
-        setMegaStats({ rank, total, attempts });
-      } catch {
-        if (cancelled) return;
-        setActiveMega(ev);
-        setMegaStats({ rank: 0, total: 0, attempts: 0 });
-      }
-    })();
-    return () => { cancelled = true; };
+  const loadMegaStats = useCallback(async () => {
+    const ev = await fetchActiveMegaEvent();
+    if (!ev) {
+      setActiveMega(null);
+      setMegaStats({ rank: 0, total: 0, attempts: 0 });
+      return;
+    }
+    try {
+      const [board, mineRun] = await Promise.all([
+        fetchMegaLeaderboard(ev.id, 500),
+        getMyMegaRun(ev.id),
+      ]);
+      const total = board.length;
+      const rank = mineRun ? board.findIndex((r) => r.user_id === mineRun.user_id) + 1 : 0;
+      const attempts = mineRun?.attempts ?? 0;
+      setActiveMega(ev);
+      setMegaStats({ rank, total, attempts });
+    } catch {
+      setActiveMega(ev);
+      setMegaStats({ rank: 0, total: 0, attempts: 0 });
+    }
   }, []);
+
+  useEffect(() => {
+    void loadMegaStats();
+  }, [loadMegaStats]);
+
+  const prevPhaseRef = useRef(phase);
+  useEffect(() => {
+    const prev = prevPhaseRef.current;
+    if (phase === "home" && (prev === "mega" || prev === "megaLeaderboard")) {
+      void loadMegaStats();
+    }
+    prevPhaseRef.current = phase;
+  }, [phase, loadMegaStats]);
 
   // Hide the persistent bottom nav while a Mega Raid or its end screens are on-screen,
   // so the nav pill can't overlay raid action buttons or be tapped by accident.
