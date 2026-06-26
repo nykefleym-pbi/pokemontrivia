@@ -1790,7 +1790,7 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
           <AlertDialogHeader>
             <AlertDialogTitle>Leave the daily challenge?</AlertDialogTitle>
             <AlertDialogDescription>
-              Leaving will end today's challenge. You won't be able to retry until tomorrow.
+              Leaving will discard your progress on today's challenge. You can start it again, but nothing is saved until you finish.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

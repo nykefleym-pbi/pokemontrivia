@@ -112,6 +112,7 @@ function WhosThatPokemon() {
   const [now, setNow] = useState(Date.now());
   const claimedRef = useRef(false);
   const initRef = useRef(false);
+  const burnedRef = useRef(false);
 
   const ready = !round || round.mode !== "5" || (!!dexEntry && dexEntry.flavor !== "");
 
@@ -119,8 +120,15 @@ function WhosThatPokemon() {
     if (initRef.current) return;
     initRef.current = true;
     if (Math.floor(Date.now() / HOUR) === whosThatHourKey) setLocked(true);
-    else { setRound(makeRound()); consumeWhosThat(); }
-  }, [whosThatHourKey, consumeWhosThat]);
+    else { setRound(makeRound()); }
+  }, [whosThatHourKey]);
+
+  useEffect(() => {
+    if ((phase === "correct" || phase === "incorrect") && !burnedRef.current) {
+      burnedRef.current = true;
+      consumeWhosThat();
+    }
+  }, [phase, consumeWhosThat]);
 
   useEffect(() => {
     if (round?.mode !== "5") return;
