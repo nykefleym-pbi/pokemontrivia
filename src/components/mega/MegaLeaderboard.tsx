@@ -57,12 +57,14 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
 
   const claimChampion = () => {
     const st = useGameStore.getState();
+    // Claim first (idempotent check-and-set) so rewards can't be granted twice on a double-tap.
+    const ok = st.claimMegaChampion(event.id, event.champion.trophyName, event.megaId);
+    if (!ok) return;
     st.addXp(event.champion.xp);
     if (st.pokemon) st.addTrainingPoints(st.pokemon.id, event.champion.tp);
     const pool: ItemId[] = ["potion", "superpotion", "maxpotion", "xattack", "scope", "xaccuracy", "candy", "luckyegg"];
     for (let i = 0; i < event.champion.items; i++) st.grantItem(pool[Math.floor(Math.random() * pool.length)], 1);
-    const ok = st.claimMegaChampion(event.id, event.champion.trophyName, event.megaId);
-    if (ok) toast.success(`Champion reward claimed! 🏆 ${event.champion.trophyName}`);
+    toast.success(`Champion reward claimed! 🏆 ${event.champion.trophyName}`);
   };
 
   const Avatar = ({ sprite, size, ring }: { sprite: string; size: number; ring: string }) => (
