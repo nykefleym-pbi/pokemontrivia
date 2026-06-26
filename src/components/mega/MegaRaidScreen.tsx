@@ -12,6 +12,7 @@ import {
   type MegaEvent,
 } from "@/lib/mega/schedule";
 import { submitMegaRun } from "@/lib/mega/runs";
+import { revealMegaAnswer } from "@/lib/mega/questions";
 import { MegaResults, type MegaRewardItem } from "@/components/mega/MegaResults";
 
 const PLAYER_MAX_HP = 100;
