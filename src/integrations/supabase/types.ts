@@ -357,6 +357,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_mega_questions_public: { Args: { p_event_id: string }; Returns: Json }
       increment_curated_correct: {
         Args: { question_id: string }
         Returns: undefined
@@ -405,6 +406,10 @@ export type Database = {
       }
       respond_friend_request: {
         Args: { _accept: boolean; _request_id: string }
+        Returns: Json
+      }
+      reveal_mega_answer: {
+        Args: { p_event_id: string; p_q_index: number }
         Returns: Json
       }
       send_friend_request: { Args: { _code: string }; Returns: Json }

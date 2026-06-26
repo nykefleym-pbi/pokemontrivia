@@ -12,6 +12,7 @@ import {
   type MegaEvent,
 } from "@/lib/mega/schedule";
 import { submitMegaRun } from "@/lib/mega/runs";
+import { revealMegaAnswer } from "@/lib/mega/questions";
 import { MegaResults, type MegaRewardItem } from "@/components/mega/MegaResults";
 
 const PLAYER_MAX_HP = 100;
@@ -84,6 +85,9 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
   const [xAtkArmed, setXAtkArmed] = useState(false);
   const [removedWrong, setRemovedWrong] = useState<number | null>(null);
   const [revealCorrect, setRevealCorrect] = useState(false);
+  // Per-question correct index, learned from the server on answer / hint item.
+  const [correctIdxByQ, setCorrectIdxByQ] = useState<Record<number, number>>({});
+  const currentCorrect = correctIdxByQ[qIndex];
 
   const startRef = useRef<number>(Date.now());
   const escapedRef = useRef(false);
@@ -154,11 +158,20 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
   );
 
   const answer = useCallback(
-    (idx: number | null) => {
+    async (idx: number | null) => {
       if (locked || phase !== "fighting") return;
       setLocked(true);
       setPicked(idx);
-      const isCorrect = idx !== null && idx === q.correct;
+      // Fetch the correct index for this question from the server (cached per qIndex).
+      let correctIdx = correctIdxByQ[qIndex];
+      if (typeof correctIdx !== "number") {
+        const rev = await revealMegaAnswer(event.id, qIndex);
+        if (rev) {
+          correctIdx = rev.correctIndex;
+          setCorrectIdxByQ((m) => ({ ...m, [qIndex]: rev.correctIndex }));
+        }
+      }
+      const isCorrect = idx !== null && typeof correctIdx === "number" && idx === correctIdx;
       let nextBoss = bossHp;
       let nextPlayer = playerHp;
       let nextCorrect = correctCount;
@@ -174,12 +187,12 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
       setXAtkArmed(false);
       window.setTimeout(() => advance(nextCorrect, nextBoss, nextPlayer), 1100);
     },
-    [locked, phase, q, bossHp, playerHp, correctCount, xAtkArmed, advance],
+    [locked, phase, qIndex, correctIdxByQ, event.id, bossHp, playerHp, correctCount, xAtkArmed, advance],
   );
 
   useEffect(() => {
     if (phase !== "fighting" || locked || bagOpen) return;
-    if (timer <= 0) { answer(null); return; }
+    if (timer <= 0) { void answer(null); return; }
     const t = window.setTimeout(() => setTimer((v) => v - 1), 1000);
     return () => window.clearTimeout(t);
   }, [timer, locked, bagOpen, phase, answer]);
@@ -197,20 +210,32 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
   );
 
   const useBattleItem = useCallback(
-    (id: ItemId) => {
+    async (id: ItemId) => {
       if (usedOnce.has(id) || (inventory[id] ?? 0) <= 0 || locked) return;
       if (id === "xattack") setXAtkArmed(true);
-      if (id === "scope") {
-        const wrongs = [0, 1, 2, 3].filter((i) => i !== q.correct);
-        setRemovedWrong(wrongs[Math.floor(Math.random() * wrongs.length)]);
+      if (id === "scope" || id === "xaccuracy") {
+        let correctIdx = correctIdxByQ[qIndex];
+        if (typeof correctIdx !== "number") {
+          const rev = await revealMegaAnswer(event.id, qIndex);
+          if (rev) {
+            correctIdx = rev.correctIndex;
+            setCorrectIdxByQ((m) => ({ ...m, [qIndex]: rev.correctIndex }));
+          }
+        }
+        if (typeof correctIdx === "number") {
+          if (id === "scope") {
+            const wrongs = [0, 1, 2, 3].filter((i) => i !== correctIdx);
+            setRemovedWrong(wrongs[Math.floor(Math.random() * wrongs.length)]);
+          }
+          if (id === "xaccuracy") setRevealCorrect(true);
+        }
       }
-      if (id === "xaccuracy") setRevealCorrect(true);
       grantItem(id, -1);
       setUsedOnce((s) => new Set(s).add(id));
       toast.success(`${itemDef(id)?.name} used`);
       setBagOpen(false);
     },
-    [usedOnce, inventory, locked, q, grantItem],
+    [usedOnce, inventory, locked, qIndex, correctIdxByQ, event.id, grantItem],
   );
 
   const escape = useCallback(() => {
@@ -327,10 +352,10 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
 
         <div className="mt-2.5 grid grid-cols-1 gap-2">
           {q.options.map((opt, i) => {
-            const isCorrect = locked && i === q.correct;
-            const isWrong = locked && picked === i && i !== q.correct;
+            const isCorrect = locked && typeof currentCorrect === "number" && i === currentCorrect;
+            const isWrong = locked && picked === i && typeof currentCorrect === "number" && i !== currentCorrect;
             const removed = removedWrong === i;
-            const isAnswerRevealed = !locked && revealCorrect && i === q.correct;
+            const isAnswerRevealed = !locked && revealCorrect && typeof currentCorrect === "number" && i === currentCorrect;
             return (
               <button
                 key={i}
