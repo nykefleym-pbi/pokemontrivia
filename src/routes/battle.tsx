@@ -666,8 +666,8 @@ function BattleHome({
             <div className="text-lg font-extrabold text-foreground">{bestStreak} <span className="text-base">🔥</span></div>
           </div>
           <div className="rounded-2xl bg-card px-2 py-2 text-center shadow-card">
-            <div className="font-pixel-xs text-foreground/60">XP</div>
-            <div className="text-lg font-extrabold text-foreground">{xp.toLocaleString()}</div>
+            <div className="font-pixel-xs text-foreground/60">Coins</div>
+            <div className="text-lg font-extrabold text-foreground">{coins.toLocaleString()}</div>
           </div>
           <div className="rounded-2xl bg-card px-2 py-2 text-center shadow-card">
             <div className="font-pixel-xs text-foreground/60">TP ×{tpMult.toFixed(2)}</div>
