@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Sparkles, Crown } from "lucide-react";
@@ -16,13 +16,17 @@ import { MegaLeaderboard } from "@/components/mega/MegaLeaderboard";
 
 import { fetchActiveMegaEvent, MEGA_MAX_ATTEMPTS, type MegaEvent } from "@/lib/mega/schedule";
 import { ensureMegaQuestions } from "@/lib/mega/questions";
-import { fetchMegaLeaderboard, getMyMegaRun } from "@/lib/mega/runs";
+import { fetchMegaLeaderboard, getMyMegaRun, getMegaAttempts } from "@/lib/mega/runs";
 import { Toaster } from "@/components/ui/sonner";
 import { nextPendingElite, type EliteMember } from "@/lib/elite-four";
 import { findGymLeader, type GymLeader } from "@/lib/gym-leaders";
 import { getWeekRangeUtc } from "@/lib/game-data";
 
 const ENGAGE_DELAY_MS = 10000; // safety cap: show carousel by now even if mega data never resolves
+
+// Module-level: survives Battle-route remounts within a single app session,
+// so the engagement carousel auto-appears at most once per app open.
+let engageShownThisSession = false;
 
 export const Route = createFileRoute("/battle")({
   component: BattlePage,
@@ -81,35 +85,41 @@ function BattlePage() {
     initWeeklyLeague();
   }, [initWeeklyLeague]);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const ev = await fetchActiveMegaEvent();
-      if (cancelled) return;
-      if (!ev) {
-        setActiveMega(null);
-        setMegaStats({ rank: 0, total: 0, attempts: 0 });
-        return;
-      }
-      try {
-        const [board, mineRun] = await Promise.all([
-          fetchMegaLeaderboard(ev.id, 500),
-          getMyMegaRun(ev.id),
-        ]);
-        if (cancelled) return;
-        const total = board.length;
-        const rank = mineRun ? board.findIndex((r) => r.user_id === mineRun.user_id) + 1 : 0;
-        const attempts = mineRun?.attempts ?? 0;
-        setActiveMega(ev);
-        setMegaStats({ rank, total, attempts });
-      } catch {
-        if (cancelled) return;
-        setActiveMega(ev);
-        setMegaStats({ rank: 0, total: 0, attempts: 0 });
-      }
-    })();
-    return () => { cancelled = true; };
+  const loadMegaStats = useCallback(async () => {
+    const ev = await fetchActiveMegaEvent();
+    if (!ev) {
+      setActiveMega(null);
+      setMegaStats({ rank: 0, total: 0, attempts: 0 });
+      return;
+    }
+    try {
+      const [board, mineRun] = await Promise.all([
+        fetchMegaLeaderboard(ev.id, 500),
+        getMyMegaRun(ev.id),
+      ]);
+      const total = board.length;
+      const rank = mineRun ? board.findIndex((r) => r.user_id === mineRun.user_id) + 1 : 0;
+      const attempts = mineRun?.attempts ?? 0;
+      setActiveMega(ev);
+      setMegaStats({ rank, total, attempts });
+    } catch {
+      setActiveMega(ev);
+      setMegaStats({ rank: 0, total: 0, attempts: 0 });
+    }
   }, []);
+
+  useEffect(() => {
+    void loadMegaStats();
+  }, [loadMegaStats]);
+
+  const prevPhaseRef = useRef(phase);
+  useEffect(() => {
+    const prev = prevPhaseRef.current;
+    if (phase === "home" && (prev === "mega" || prev === "megaLeaderboard")) {
+      void loadMegaStats();
+    }
+    prevPhaseRef.current = phase;
+  }, [phase, loadMegaStats]);
 
   // Hide the persistent bottom nav while a Mega Raid or its end screens are on-screen,
   // so the nav pill can't overlay raid action buttons or be tapped by accident.
@@ -285,6 +295,12 @@ function BattlePage() {
     try {
       const ev = await fetchActiveMegaEvent();
       if (!ev) { toast.error("No Mega Raid is active right now."); setPhase("home"); return; }
+      const used = await getMegaAttempts(ev.id);
+      if (used >= MEGA_MAX_ATTEMPTS) {
+        toast.error("You've used all your Mega Raid attempts for this event.");
+        setPhase("home");
+        return;
+      }
       const qs = await ensureMegaQuestions(ev);
       if (!qs.length) { toast.error("Mega Raid questions aren't ready yet. Try again soon."); setPhase("home"); return; }
       setMegaEvent(ev);
@@ -315,7 +331,7 @@ function BattlePage() {
   }
 
   useEffect(() => {
-    if (engageShownRef.current) return;
+    if (engageShownRef.current || engageShownThisSession) return;
     if (phase !== "home" || pendingElite) return;
     const dismissedToday = engageDismissDate === today ? engageDismissCount : 0;
     if (dismissedToday >= 3) return;
@@ -358,6 +374,7 @@ function BattlePage() {
     }
     if (cards.length > 0) {
       engageShownRef.current = true;
+      engageShownThisSession = true;
       setEngageActive(0);
       setEngageCards(cards);
     }
