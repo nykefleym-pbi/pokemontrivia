@@ -178,6 +178,15 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
           setCorrectIdxByQ((m) => ({ ...m, [qIndex]: rev.correctIndex }));
         }
       }
+      // If the server check failed (network hiccup) and the user actually picked
+      // an option, do NOT score the question — unlock and let them retry rather
+      // than mis-marking a correct pick as wrong.
+      if (typeof correctIdx !== "number" && idx !== null) {
+        toast.error("Connection blip — try that answer again.");
+        setLocked(false);
+        setPicked(null);
+        return;
+      }
       const isCorrect = idx !== null && typeof correctIdx === "number" && idx === correctIdx;
       let nextBoss = bossHp;
       let nextPlayer = playerHp;
@@ -196,6 +205,7 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
     },
     [locked, phase, qIndex, correctIdxByQ, event.id, bossHp, playerHp, correctCount, xAtkArmed, advance],
   );
+
 
   useEffect(() => {
     if (phase !== "fighting" || locked || bagOpen) return;
