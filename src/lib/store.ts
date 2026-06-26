@@ -92,6 +92,7 @@ export interface GameState {
   lastEngagePromptDate: string | null;
   engageDismissCount: number;
   engageDismissDate: string | null;
+  engageShownThisSession: boolean;
   nameReconciled: boolean;
   needsNameReclaim: boolean;
 
@@ -170,6 +171,7 @@ export interface GameState {
   recordEngageDismiss: () => void;
   setNameReconciled: (v: boolean) => void;
   setNeedsNameReclaim: (v: boolean) => void;
+  setEngageShownThisSession: (v: boolean) => void;
 
   
   claimDailyGift: () => { itemId: ItemId; qty: number; day: number; shiny: boolean } | null;
@@ -263,6 +265,7 @@ export const useGameStore = create<GameState>()(
       lastEngagePromptDate: null,
       engageDismissCount: 0,
       engageDismissDate: null,
+      engageShownThisSession: false,
       nameReconciled: false,
       needsNameReclaim: false,
 
@@ -507,6 +510,7 @@ export const useGameStore = create<GameState>()(
       setLastEngagePromptDate: (date) => set({ lastEngagePromptDate: date }),
       setNameReconciled: (v) => set({ nameReconciled: v }),
       setNeedsNameReclaim: (v) => set({ needsNameReclaim: v }),
+      setEngageShownThisSession: (v) => set({ engageShownThisSession: v }),
 
       recordEngageDismiss: () => {
         const today = new Date().toISOString().slice(0, 10);
@@ -600,6 +604,10 @@ export const useGameStore = create<GameState>()(
           assaultVestUsedWeek: 0,
           autoItems: {},
           whosThatHourKey: 0,
+          engageShownThisSession: false,
+          engageDismissCount: 0,
+          engageDismissDate: null,
+          lastEngagePromptDate: null,
           seenQuestionHashes: [],
           seenQuestions: [],
           seenCuratedIds: [],
