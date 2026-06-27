@@ -161,7 +161,7 @@ export async function buildShareCard(data: ShareData): Promise<string> {
   ctx.textAlign = "left";
   ctx.fillStyle = "#23252f";
   ctx.font = `800 52px ${SYSTEM_FONT}`;
-  ctx.fillText(`defeated ${truncate(data.opponentName, 18)}`, 60, y);
+  ctx.fillText(data.type === "daily-perfect" ? "Perfect Daily Quest!" : `defeated ${truncate(data.opponentName, 18)}`, 60, y);
 
   y += 46;
   ctx.fillStyle = "#6f7280";
