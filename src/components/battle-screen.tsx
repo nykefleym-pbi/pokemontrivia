@@ -1671,8 +1671,13 @@ function Row({ label, value, valueClass }: { label: ReactNode; value: ReactNode;
 
 // ----------------------------- Daily Challenge Mode -----------------------------
 
+function dailyXpFor(correct: number, total: number): number {
+  return 15 * correct + (correct === total ? 100 : 0); // e.g. perfect 10/10 = 250; 7/10 = 105
+}
+
 function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">) {
   const recordDaily = useGameStore((s) => s.recordDaily);
+  const recordAnswer = useGameStore((s) => s.recordAnswer);
   const [idx, setIdx] = useState(0);
   const [phase, setPhase] = useState<"question" | "feedback" | "done">("question");
   const [chosen, setChosen] = useState<number | null>(null);
@@ -1689,6 +1694,7 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
   const startedAt = useRef(Date.now());
   const qStart = useRef(Date.now());
   const recordedRef = useRef(false);
+  const dailyStreakRef = useRef(0);
 
   const trivia = questions[idx];
   const total = questions.length;
@@ -1713,6 +1719,10 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
     if (!trivia || phase !== "question") return;
     setChosen(picked);
     const correct = picked === trivia.correct;
+    const elapsed = Date.now() - qStart.current;
+    const nextStreak = correct ? dailyStreakRef.current + 1 : 0;
+    dailyStreakRef.current = nextStreak;
+    recordAnswer(correct, elapsed, nextStreak);
     const sym: DailyMark = picked === -1 ? "timeout" : correct ? "correct" : "wrong";
     const nextPattern: DailyMark[] = [...pattern, sym];
     setPattern(nextPattern);
@@ -1747,6 +1757,8 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
               useGameStore.getState().addTrainingPoints(partner.id, TP_REWARDS.dailyPartial);
             }
           }
+          const dailyXp = dailyXpFor(finalCorrect, total);
+          if (dailyXp > 0) useGameStore.getState().addXp(dailyXp);
         }
         playSfx("victory");
         setPhase("done");
@@ -1888,6 +1900,36 @@ function DailyResultScreen({
     for (const m of pattern) { if (m === "correct") { cur += 1; best = Math.max(best, cur); } else cur = 0; }
     return best;
   })();
+  const [shareOpen, setShareOpen] = useState(false);
+  const trainerName = useGameStore((s) => s.trainerName);
+  const trainerSprite = useGameStore((s) => s.trainerSprite);
+  const partner = useGameStore((s) => s.pokemon);
+  const level = useGameStore((s) => s.level);
+  const isPerfect = correct === total && total > 0;
+  const avgTimeMs = total > 0 ? timeMs / total : undefined;
+  const shareData: ShareData | null = (isPerfect && partner) ? {
+    type: "daily-perfect",
+    trainerName,
+    trainerSpriteUrl: trainerSpriteUrl(trainerSprite),
+    partnerName: partner.name,
+    partnerPokemonId: partner.id,
+    partnerShiny: false,
+    opponentName: "Rotom",
+    opponentTitle: "Daily Challenge",
+    opponentSpriteUrl: null,
+    signaturePokemonId: 479,
+    finalPlayerHp: 100,
+    maxPlayerHp: 100,
+    topStreak: bestStreak,
+    topDamage: 0,
+    dateISO: date,
+    correctCount: correct,
+    totalQuestions: total,
+    xpEarned: dailyXpFor(correct, total),
+    avgTimeMs,
+    level,
+    rank: rankForLevel(level),
+  } : null;
 
   return (
     <motion.div
@@ -1927,6 +1969,15 @@ function DailyResultScreen({
         </div>
       </div>
 
+      {shareData && (
+        <Button
+          size="lg"
+          onClick={() => setShareOpen(true)}
+          className="mt-5 h-12 w-full max-w-xs rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
+        >
+          Share result
+        </Button>
+      )}
       <Button
         size="lg"
         onClick={onExit}
@@ -1934,6 +1985,7 @@ function DailyResultScreen({
       >
         Back
       </Button>
+      {shareData && <ShareCardDialog open={shareOpen} onClose={() => setShareOpen(false)} data={shareData} />}
     </motion.div>
   );
 }
