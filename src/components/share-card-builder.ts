@@ -118,7 +118,7 @@ export async function buildShareCard(data: ShareData): Promise<string> {
   ctx.textAlign = "right";
   ctx.fillStyle = "#f2d64e";
   ctx.font = `800 28px ${SYSTEM_FONT}`;
-  drawTrackedText(ctx, "★ VICTORY", W - 60, 78, 2, "right");
+  drawTrackedText(ctx, data.type === "daily-perfect" ? "★ PERFECT" : "★ VICTORY", W - 60, 78, 2, "right");
 
   // Trainer avatar (circular)
   const avatarD = 150;
