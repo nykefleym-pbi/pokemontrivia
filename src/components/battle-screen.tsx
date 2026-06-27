@@ -1678,8 +1678,6 @@ function dailyXpFor(correct: number, total: number): number {
 function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">) {
   const recordDaily = useGameStore((s) => s.recordDaily);
   const recordAnswer = useGameStore((s) => s.recordAnswer);
-  const addXp = useGameStore((s) => s.addXp);
-  void addXp;
   const [idx, setIdx] = useState(0);
   const [phase, setPhase] = useState<"question" | "feedback" | "done">("question");
   const [chosen, setChosen] = useState<number | null>(null);
