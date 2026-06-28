@@ -1122,14 +1122,6 @@ function PartnerCard({
 }
 
 
-function Stat({ label, value }: { label: string; value: number | string }) {
-  return (
-    <div className="rounded-2xl bg-card px-3 py-3 text-center shadow-card">
-      <div className="text-xl font-extrabold text-foreground">{value}</div>
-      <div className="mt-0.5 font-pixel-xs text-foreground/50">{label}</div>
-    </div>
-  );
-}
 
 function CardStat({ label, value }: { label: string; value: string | number }) {
   return (
