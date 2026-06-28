@@ -278,6 +278,7 @@ function BattleMode({
   const [confirmExit, setConfirmExit] = useState(false);
   const [resultWon, setResultWon] = useState<boolean | null>(null);
   const [xpEarned, setXpEarned] = useState(0);
+  const [coinsEarned, setCoinsEarned] = useState(0);
   const [streakBanner, setStreakBanner] = useState<string | null>(null);
   const [lastElapsedMs, setLastElapsedMs] = useState(0);
   const questionStart = useRef<number>(0);
@@ -814,26 +815,41 @@ function BattleMode({
     wrongStreakRef.current = 0;
     abilityStateRef.current.cursedBodyPending = null;
 
-    const baseXp = won ? 40 + level * 5 : 10 + level * 2;
-    const eliteBonus = isElite && won ? 100 + level * 10 : 0;
-    const bonus = maxStreakRef.current * 2;
-    const total = baseXp + bonus + eliteBonus;
-    setXpEarned(total);
-    setResultWon(won);
+    const levelMult = 1 + 0.05 * (level - 1);
+    const streakMult = streakMultiplier(maxStreakRef.current);
 
-    // Phase 3: Training Points
-    let tp = 0;
-    if (isWeekly) {
-      tp = won ? TP_REWARDS.weeklyWin : TP_REWARDS.battleLoss;
-    } else if (isElite) {
-      tp = won ? TP_REWARDS.eliteWin : TP_REWARDS.battleLoss;
-    } else if (won) {
-      tp = Math.min(20, correctCountRef.current * TP_REWARDS.battleWinPerCorrect);
+    let xpAward = 0;
+    let coinAward = 0;
+    let tpAward = 0;
+
+    if (isElite) {
+      const baseXp = won ? 40 + level * 5 : 10 + level * 2;
+      const eliteBonus = won ? 100 + level * 10 : 0;
+      xpAward = baseXp + maxStreakRef.current * 2 + eliteBonus;
+      coinAward = xpAward;
+      tpAward = won ? TP_REWARDS.eliteWin : TP_REWARDS.battleLoss;
+    } else if (isWeekly) {
+      if (won) {
+        xpAward = Math.round(100 * levelMult * streakMult);
+        coinAward = Math.round(0.30 * xpAward);
+        tpAward = Math.round(0.20 * xpAward);
+      }
     } else {
-      tp = TP_REWARDS.battleLoss;
+      if (won) {
+        xpAward = Math.round(50 * levelMult * streakMult);
+        coinAward = Math.round(0.25 * xpAward);
+        tpAward = Math.round(0.10 * xpAward);
+      } else {
+        xpAward = Math.round(10 * levelMult * streakMult);
+      }
     }
-    useGameStore.getState().addTrainingPoints(player.id, tp);
-    setTpEarned(tp);
+
+    setXpEarned(xpAward);
+    setCoinsEarned(coinAward);
+    setTpEarned(tpAward);
+    setResultWon(won);
+    if (tpAward > 0) useGameStore.getState().addTrainingPoints(player.id, tpAward);
+    if (coinAward > 0) useGameStore.getState().addCoins(coinAward);
 
     // comeback flag — won at low HP
     if (won && playerHp <= 10) {
@@ -892,7 +908,7 @@ function BattleMode({
           badgeName: gymLeader.badge,
           correctCount: correctCountRef.current,
           totalQuestions: questions.length,
-          xpEarned: total,
+          xpEarned: xpAward,
           avgTimeMs: answeredCountRef.current
             ? totalElapsedMsRef.current / answeredCountRef.current
             : undefined,
@@ -923,7 +939,7 @@ function BattleMode({
         topDamage: topDmgRef.current,
         correctCount: correctCountRef.current,
         totalQuestions: questions.length,
-        xpEarned: total,
+        xpEarned: xpAward,
         avgTimeMs: answeredCountRef.current
           ? totalElapsedMsRef.current / answeredCountRef.current
           : undefined,
@@ -935,11 +951,11 @@ function BattleMode({
 
     // snapshot achievements before/after
     const before = new Set(unlockedAchievements(useGameStore.getState()));
-    endBattle(won, total);
+    endBattle(won, xpAward);
     pushBattleLog({
       opponent: `${enemy.name} (${enemy.pokemon.name})`,
       won,
-      xpGained: total,
+      xpGained: xpAward,
       bestStreak: maxStreakRef.current,
       timestamp: Date.now(),
     });
@@ -959,9 +975,9 @@ function BattleMode({
 
     playSfx(won ? "victory" : "defeat");
     if (won) {
-      toast.success(`Victory! +${total} XP`, { duration: 2500 });
+      toast.success(`Victory! +${xpAward} XP`, { duration: 2500 });
     } else {
-      toast.error(`Defeat — +${total} XP`, { duration: 2500 });
+      toast.error(`Defeat — +${xpAward} XP`, { duration: 2500 });
     }
     setPhase("result");
   }
@@ -1015,6 +1031,7 @@ function BattleMode({
           totalQuestions={questions.length}
           xpEarned={xpEarned}
           tpEarned={tpEarned}
+          coinsEarned={coinsEarned}
           speedBonus={speedBonusTotalRef.current}
           partnerName={player.name}
           partnerId={player.id}
@@ -1404,6 +1421,7 @@ function ResultScreen({
   totalQuestions,
   xpEarned,
   tpEarned,
+  coinsEarned,
   speedBonus,
   partnerName,
   partnerId,
@@ -1424,6 +1442,7 @@ function ResultScreen({
   totalQuestions: number;
   xpEarned: number;
   tpEarned: number;
+  coinsEarned: number;
   speedBonus: number;
   partnerName: string;
   partnerId: number;
@@ -1512,7 +1531,7 @@ function ResultScreen({
 
         <div className="mx-auto mt-6 w-full max-w-sm rounded-2xl bg-card p-4 shadow-card">
           <Row label="XP earned" value={`+${xpEarned}`} valueClass="text-primary" />
-          <Row label="Coins earned" value={`+${xpEarned}`} valueClass="text-poke-yellow" />
+          {coinsEarned > 0 && <Row label="Coins earned" value={`+${coinsEarned}`} valueClass="text-poke-yellow" />}
           <Row label={`${partnerName} TP`} value={`+${tpEarned}`} valueClass="text-poke-blue" />
           {speedBonus > 0 && (
             <Row
@@ -1671,8 +1690,11 @@ function Row({ label, value, valueClass }: { label: ReactNode; value: ReactNode;
 
 // ----------------------------- Daily Challenge Mode -----------------------------
 
-function dailyXpFor(correct: number, total: number): number {
-  return 15 * correct + (correct === total ? 100 : 0); // e.g. perfect 10/10 = 250; 7/10 = 105
+function dailyXpFor(correct: number, total: number, level: number): number {
+  if (correct < 6) return 0;
+  const levelMult = 1 + 0.05 * (level - 1);
+  const perfectMult = correct === total ? 2 : 1;
+  return Math.round(50 * levelMult * perfectMult);
 }
 
 function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">) {
@@ -1748,17 +1770,13 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
             timeMs,
             pattern: nextPattern,
           });
-          // Phase 3: Daily TP
-          const partner = useGameStore.getState().pokemon;
-          if (partner) {
-            if (finalCorrect === total) {
-              useGameStore.getState().addTrainingPoints(partner.id, TP_REWARDS.dailyPerfect);
-            } else if (finalCorrect >= 5) {
-              useGameStore.getState().addTrainingPoints(partner.id, TP_REWARDS.dailyPartial);
-            }
+          const lvl = useGameStore.getState().level;
+          const dailyXp = dailyXpFor(finalCorrect, total, lvl);
+          if (dailyXp > 0) {
+            useGameStore.getState().addXp(dailyXp);
+            const partner = useGameStore.getState().pokemon;
+            if (partner) useGameStore.getState().addTrainingPoints(partner.id, Math.round(0.20 * dailyXp));
           }
-          const dailyXp = dailyXpFor(finalCorrect, total);
-          if (dailyXp > 0) useGameStore.getState().addXp(dailyXp);
         }
         playSfx("victory");
         setPhase("done");
@@ -1925,7 +1943,7 @@ function DailyResultScreen({
     dateISO: date,
     correctCount: correct,
     totalQuestions: total,
-    xpEarned: dailyXpFor(correct, total),
+    xpEarned: dailyXpFor(correct, total, level),
     avgTimeMs,
     level,
     rank: rankForLevel(level),

@@ -211,6 +211,7 @@ export interface GameState {
   consumeXAttack: () => void;
   consumeScope: () => void;
   addXp: (amount: number) => void;
+  addCoins: (n: number) => void;
   raiseFlag: (name: string) => void;
   recordDaily: (r: DailyResult) => void;
   pushBattleLog: (e: BattleLogEntry) => void;
@@ -734,7 +735,13 @@ export const useGameStore = create<GameState>()(
         const newXp = s.xp + gain;
         const newLevel = levelFromTotalXp(newXp);
         const newPeak = Math.max(s.peakLevel, newLevel);
-        set({ xp: newXp, coins: s.coins + gain, level: newLevel, peakLevel: newPeak });
+        set({ xp: newXp, level: newLevel, peakLevel: newPeak });
+      },
+
+      addCoins: (n) => {
+        const v = Math.max(0, Math.round(n));
+        if (v <= 0) return;
+        set((s) => ({ coins: s.coins + v }));
       },
 
       recordAnswer: (correct, timeMs, streak) =>
