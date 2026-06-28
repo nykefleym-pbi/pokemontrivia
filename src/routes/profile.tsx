@@ -45,7 +45,7 @@ import {
   getEvolutionTargets,
   type PokeEntry,
 } from "@/lib/pokemon-data";
-import { ABILITIES } from "@/lib/abilities";
+
 import { EVOLUTION_TP_COST, getTpMultiplier } from "@/lib/game-data";
 import { EvolutionScreen } from "@/components/evolution-screen";
 import { XpBar, TypeBadge, PokemonSprite } from "@/components/game-ui";
