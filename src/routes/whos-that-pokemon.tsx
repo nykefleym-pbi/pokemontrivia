@@ -6,6 +6,7 @@ import { ITEMS, type ItemId } from "@/lib/game-data";
 import { WHOS_THAT_XP } from "@/lib/rewards";
 import { PokemonSprite } from "@/components/game-ui";
 import { playCry } from "@/lib/audio";
+import { pokeApiUrls } from "@/lib/api/pokeapi";
 
 export const Route = createFileRoute("/whos-that-pokemon")({
   component: WhosThatPokemon,

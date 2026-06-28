@@ -10,6 +10,7 @@ import { ALL_POKEMON, type PokeType } from "@/lib/pokemon-data";
 import { Input } from "@/components/ui/input";
 import { PokemonSprite } from "@/components/game-ui";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { pokeApiUrls } from "@/lib/api/pokeapi";
 
 export const Route = createFileRoute("/pokedex")({
   component: PokedexPage,
