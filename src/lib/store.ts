@@ -494,29 +494,13 @@ export const useGameStore = create<GameState>()(
       },
       consumeGuaranteedShiny: () => set({ guaranteedShinyPending: false }),
       grantPokeEgg: (n = 1) => set((s) => ({ pokeEggs: (s.pokeEggs ?? 0) + n })),
-      claimMegaChampion: (eventId, name, pokeId) => {
-        const s = get();
-        if ((s.megaTrophies ?? []).some((t) => t.eventId === eventId)) return false;
-        set({
-          megaTrophies: [
-            ...(s.megaTrophies ?? []),
-            { eventId, name, pokeId, claimedAt: new Date().toISOString() },
-          ],
-        });
-        return true;
-      },
       hatchPokeEgg: () => {
         const s = get();
         if ((s.pokeEggs ?? 0) <= 0) return false;
         set({ pokeEggs: s.pokeEggs - 1 });
         return true;
       },
-      markMegaRewardClaimed: (eventId) =>
-        set((s) =>
-          s.claimedMegaRewards.includes(eventId)
-            ? s
-            : { claimedMegaRewards: [...s.claimedMegaRewards, eventId] },
-        ),
+
 
       startGuestSession: () => {
         const poke = ALL_POKEMON[Math.floor(Math.random() * ALL_POKEMON.length)];
