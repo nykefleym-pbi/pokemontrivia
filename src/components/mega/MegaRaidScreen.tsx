@@ -351,14 +351,14 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
   return (
     <div
       className="relative flex h-full w-full flex-col overflow-hidden"
-      style={{ background: "#14161F", fontFamily: "Outfit, sans-serif" }}
+      style={{ background: "var(--brand-ink-deep)", fontFamily: "Outfit, sans-serif" }}
     >
       {/* ARENA — boss + partner HP. Shrinks to fit so the question card always pins to the bottom. */}
       <div className="relative flex min-h-0 flex-1 flex-col">
         <div
           className="relative px-4 pb-2 pt-[calc(env(safe-area-inset-top)+1.25rem)]"
           style={{
-            background: "radial-gradient(circle at 50% 30%, #2E3A5C 0%, #1C2333 58%, #14161F 100%)",
+            background: "radial-gradient(circle at 50% 30%, #2E3A5C 0%, var(--brand-ink) 58%, var(--brand-ink-deep) 100%)",
             overflow: "hidden",
           }}
         >
@@ -408,7 +408,7 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
                     width: `${bossPct}%`,
                     height: "100%",
                     borderRadius: 999,
-                    background: "linear-gradient(90deg, #F2D64E, #EE8130)",
+                    background: "linear-gradient(90deg, var(--brand-gold), #EE8130)",
                     transition: "width 0.4s",
                   }}
                 />
@@ -423,7 +423,7 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
         {/* Boss sprite — flex-1 region that scales to whatever vertical room is left. */}
         <div
           className="relative flex min-h-0 flex-1 items-center justify-center px-4"
-          style={{ background: "linear-gradient(180deg, #14161F 0%, #14161F 100%)" }}
+          style={{ background: "linear-gradient(180deg, var(--brand-ink-deep) 0%, var(--brand-ink-deep) 100%)" }}
         >
           <div
             className="absolute"
@@ -446,7 +446,7 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
         {/* Partner HP row */}
         <div
           className="flex shrink-0 items-center gap-2.5 px-4 pb-2 pt-1.5"
-          style={{ background: "#14161F" }}
+          style={{ background: "var(--brand-ink-deep)" }}
         >
           <PartnerSprite />
           <div className="flex-1">
@@ -454,7 +454,7 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
               <span className="text-[13px] font-extrabold text-white">
                 <PartnerName />
               </span>
-              <span className="font-pixel" style={{ fontSize: 6.5, color: "#E23B2E" }}>
+              <span className="font-pixel" style={{ fontSize: 6.5, color: "var(--brand-red)" }}>
                 {playerHp}/{PLAYER_MAX_HP}
               </span>
             </div>
@@ -467,7 +467,7 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
                   width: `${playerPct}%`,
                   height: "100%",
                   borderRadius: 999,
-                  background: lowHp ? "#E23B2E" : "#3F9D5A",
+                  background: lowHp ? "var(--brand-red)" : "#3F9D5A",
                   transition: "width 0.4s",
                 }}
               />
@@ -500,7 +500,7 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
               style={{
                 fontSize: 7,
                 color: "#fff",
-                background: "#E23B2E",
+                background: "var(--brand-red)",
                 borderRadius: 999,
                 padding: "5px 10px",
               }}
@@ -600,7 +600,7 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
           <div
             className="relative max-h-[88vh] overflow-y-auto"
             style={{
-              background: "#FBF3DF",
+              background: "var(--brand-cream)",
               borderRadius: "28px 28px 0 0",
               padding: "14px 20px 32px",
               boxShadow: "0 -16px 40px -12px rgba(0,0,0,0.5)",
@@ -612,7 +612,7 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
               style={{ width: 42, height: 5, borderRadius: 999, background: "#E2D6B6" }}
             />
             <div className="mt-3.5 flex items-center justify-between">
-              <div className="text-xl font-black" style={{ color: "#1C2333" }}>
+              <div className="text-xl font-black" style={{ color: "var(--brand-ink)" }}>
                 Bag
               </div>
               <div
@@ -630,7 +630,7 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
             </div>
             <div
               className="mt-2 font-pixel"
-              style={{ fontSize: 7, letterSpacing: 1, color: "#6B6E7B" }}
+              style={{ fontSize: 7, letterSpacing: 1, color: "var(--brand-slate)" }}
             >
               HEALING · STACKABLE
             </div>
@@ -648,7 +648,7 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
             </div>
             <div
               className="mt-3.5 font-pixel"
-              style={{ fontSize: 7, letterSpacing: 1, color: "#6B6E7B" }}
+              style={{ fontSize: 7, letterSpacing: 1, color: "var(--brand-slate)" }}
             >
               BATTLE · ONCE PER BATTLE
             </div>
@@ -721,10 +721,10 @@ function BagRow({
         <img src={def?.iconUrl} alt={def?.name} className="h-8 w-8 [image-rendering:pixelated]" />
       </div>
       <div className="flex-1">
-        <div className="text-[15px] font-bold" style={{ color: "#1C2333" }}>
-          {def?.name} {count > 0 && <span style={{ color: "#6B6E7B" }}>×{count}</span>}
+        <div className="text-[15px] font-bold" style={{ color: "var(--brand-ink)" }}>
+          {def?.name} {count > 0 && <span style={{ color: "var(--brand-slate)" }}>×{count}</span>}
         </div>
-        <div className="text-xs" style={{ color: "#6B6E7B" }}>
+        <div className="text-xs" style={{ color: "var(--brand-slate)" }}>
           {subtitle}
         </div>
       </div>
@@ -734,8 +734,8 @@ function BagRow({
         className="font-pixel"
         style={{
           fontSize: 6.5,
-          color: used ? "#6B6E7B" : "#fff",
-          background: used ? "#EFE7D2" : disabled ? "#C9B998" : "#E23B2E",
+          color: used ? "var(--brand-slate)" : "#fff",
+          background: used ? "#EFE7D2" : disabled ? "#C9B998" : "var(--brand-red)",
           borderRadius: 999,
           padding: "8px 11px",
         }}

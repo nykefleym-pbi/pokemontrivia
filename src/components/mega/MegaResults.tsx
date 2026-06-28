@@ -49,14 +49,14 @@ export function MegaResults({
   return (
     <div
       className="flex h-full w-full flex-col overflow-y-auto"
-      style={{ background: "#14161F", fontFamily: "Outfit, sans-serif" }}
+      style={{ background: "var(--brand-ink-deep)", fontFamily: "Outfit, sans-serif" }}
     >
       {/* header: navy hero + gold sunburst */}
       <div
         className="relative px-6 pb-6 text-center"
         style={{
           paddingTop: 56,
-          background: "radial-gradient(circle at 50% 30%, #2E3A5C 0%, #1C2333 58%, #14161F 100%)",
+          background: "radial-gradient(circle at 50% 30%, #2E3A5C 0%, var(--brand-ink) 58%, var(--brand-ink-deep) 100%)",
           overflow: "hidden",
         }}
       >
@@ -72,8 +72,8 @@ export function MegaResults({
             fontSize: 9,
             lineHeight: 1.5,
             letterSpacing: 1,
-            color: win ? "#1C2333" : "rgba(255,255,255,0.6)",
-            background: win ? "#F2D64E" : "rgba(255,255,255,0.08)",
+            color: win ? "var(--brand-ink)" : "rgba(255,255,255,0.6)",
+            background: win ? "var(--brand-gold)" : "rgba(255,255,255,0.08)",
             borderRadius: 999,
             padding: "9px 18px",
             boxShadow: win ? "0 4px 0 #C9AE2E" : "none",
@@ -118,8 +118,8 @@ export function MegaResults({
           style={
             win
               ? {
-                  background: "linear-gradient(95deg, #F2D64E, #E8A93C)",
-                  boxShadow: "0 4px 0 #C18A28",
+                  background: "linear-gradient(95deg, var(--brand-gold), var(--brand-amber))",
+                  boxShadow: "0 4px 0 var(--brand-gold-shadow)",
                 }
               : { background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }
           }
@@ -132,7 +132,7 @@ export function MegaResults({
           </span>
           <span
             className="mt-1.5 text-[26px] font-black leading-none"
-            style={{ color: win ? "#1C2333" : "rgba(255,255,255,0.85)" }}
+            style={{ color: win ? "var(--brand-ink)" : "rgba(255,255,255,0.85)" }}
           >
             {rank ? `#${rank}` : "—"}
           </span>
@@ -154,7 +154,7 @@ export function MegaResults({
               style={{ color: "rgba(255,255,255,0.85)" }}
             >
               Rewards are awarded by your{" "}
-              <span className="font-extrabold" style={{ color: "#F2D64E" }}>
+              <span className="font-extrabold" style={{ color: "var(--brand-gold)" }}>
                 final rank
               </span>{" "}
               when the event ends. Come back to the leaderboard after it closes to claim yours.
@@ -173,9 +173,9 @@ export function MegaResults({
               onClick={onViewLeaderboard}
               className="flex h-14 items-center justify-center rounded-full text-base font-extrabold active:scale-[0.99]"
               style={{
-                background: "linear-gradient(95deg, #F2D64E, #E8A93C)",
-                color: "#1C2333",
-                boxShadow: "0 4px 0 #C18A28",
+                background: "linear-gradient(95deg, var(--brand-gold), var(--brand-amber))",
+                color: "var(--brand-ink)",
+                boxShadow: "0 4px 0 var(--brand-gold-shadow)",
               }}
             >
               View Leaderboard
@@ -198,7 +198,7 @@ export function MegaResults({
                 onClick={onRematch}
                 className="flex h-14 items-center justify-center rounded-full text-base font-bold text-white active:scale-[0.99]"
                 style={{
-                  background: "#E23B2E",
+                  background: "var(--brand-red)",
                   boxShadow: "0 14px 30px -8px rgba(226,59,46,0.55)",
                 }}
               >
@@ -254,7 +254,7 @@ function StatCard({
     >
       <div
         className="font-pixel"
-        style={{ fontSize: 6, color: highlight ? "#F2D64E" : "rgba(255,255,255,0.6)" }}
+        style={{ fontSize: 6, color: highlight ? "var(--brand-gold)" : "rgba(255,255,255,0.6)" }}
       >
         {label}
       </div>
