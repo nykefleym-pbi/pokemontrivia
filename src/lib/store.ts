@@ -267,7 +267,10 @@ const defaultInventory: Record<ItemId, number> = {
 
 export const useGameStore = create<GameState>()(
   persist(
-    (set, get) => ({
+    (set, get, store) => ({
+      ...createMegaSlice(set, get, store),
+      ...createWhosThatSlice(set, get, store),
+      ...createLeaguesSlice(set, get, store),
       hasOnboarded: false,
       isGuest: false,
       trainerName: "",
