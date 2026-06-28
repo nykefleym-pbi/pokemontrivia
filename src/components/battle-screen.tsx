@@ -10,7 +10,6 @@ import {
   enemyHpForLevel,
   streakMultiplier,
   streakLabel,
-  TP_REWARDS,
   getTpMultiplier,
   xpProgressInLevel,
   rankForLevel,
