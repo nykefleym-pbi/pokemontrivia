@@ -290,54 +290,6 @@ export const useGameStore = create<GameState>()(
 
 
 
-      tryAutoFocusBand: () => {
-        const s = get();
-        if ((s.inventory.focusband ?? 0) <= 0) return false;
-        if (s.autoItems.focusband === false) return false;
-        const { start } = getWeekRangeUtc();
-        if (s.focusBandUsedWeek === start) return false;
-        set({
-          inventory: { ...s.inventory, focusband: (s.inventory.focusband ?? 0) - 1 },
-          focusBandUsedWeek: start,
-        });
-        return true;
-      },
-
-      tryAutoQuickClaw: () => {
-        const s = get();
-        if ((s.inventory.quickclaw ?? 0) <= 0) return false;
-        if (s.autoItems.quickclaw === false) return false;
-        if (s.usedThisBattle.quickclaw) return false;
-        set({
-          inventory: { ...s.inventory, quickclaw: (s.inventory.quickclaw ?? 0) - 1 },
-          usedThisBattle: { ...s.usedThisBattle, quickclaw: true },
-        });
-        return true;
-      },
-
-      tryAutoAssaultVest: () => {
-        const s = get();
-        if ((s.inventory.assaultvest ?? 0) <= 0) return false;
-        if (s.autoItems.assaultvest === false) return false;
-        const { start } = getWeekRangeUtc();
-        if (s.assaultVestUsedWeek === start) return false;
-        set({
-          inventory: { ...s.inventory, assaultvest: (s.inventory.assaultvest ?? 0) - 1 },
-          assaultVestUsedWeek: start,
-        });
-        return true;
-      },
-
-      toggleAutoItem: (id) => {
-        const s = get();
-        const enabled = s.autoItems[id] !== false;
-        set({ autoItems: { ...s.autoItems, [id]: !enabled } });
-      },
-
-      grantItem: (id, qty = 1) => {
-        const s = get();
-        set({ inventory: { ...s.inventory, [id]: (s.inventory[id] ?? 0) + qty } });
-      },
 
       evolvePartner: (toPokemon) => {
         const s = get();
