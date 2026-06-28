@@ -1123,16 +1123,6 @@ function PartnerCard({
   );
 }
 
-function PillTab({ value, children }: { value: string; children: React.ReactNode }) {
-  return (
-    <TabsTrigger
-      value={value}
-      className="h-9 rounded-full text-xs font-bold text-foreground/60 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-card"
-    >
-      {children}
-    </TabsTrigger>
-  );
-}
 
 function Stat({ label, value }: { label: string; value: number | string }) {
   return (
