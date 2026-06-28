@@ -19,7 +19,7 @@
 
 ## Conventions
 
-- **Rewards.** Reward formulas (XP base × levelMult × streakMult, Coin/TP percentages, Elite/Mega tiers) will live in `src/lib/rewards/` once Phase 1 lands. Components should call helpers, not inline arithmetic.
+- **Rewards.** Reward formulas live in `src/lib/rewards/` (`battleReward` for regular/weekly/elite battles, `dailyReward` for the Daily Quest, `WHOS_THAT_XP` for Who's That Pokémon). Mega Raid rewards live in `src/lib/mega/schedule.ts` (`MEGA_REWARD` + `megaRankScale`). Components call these helpers — never inline the arithmetic.
 - **API calls.** Supabase and server-function calls will route through `src/lib/api/`. Components should not import `supabase` directly once Phase 2 lands.
 - **Styling.** Use Tailwind theme tokens defined in `src/styles.css` (`bg-card`, `text-primary`, etc.). Do not hardcode hex values or `text-white`/`bg-black` in components — they bypass theming and break dark mode.
 - **Tests.** Pure functions in `src/lib/` should have `*.test.ts` regression coverage. UI tests are out of scope for now.
