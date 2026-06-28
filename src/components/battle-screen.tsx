@@ -27,7 +27,6 @@ import {
 import { getAbility as getAbilityFn, type Ability } from "@/lib/abilities";
 import { TutorialOverlay } from "@/components/tutorial-overlay";
 import {
-  HpBar,
   TypeBadge,
   PokemonSprite,
   PokeballPattern,
