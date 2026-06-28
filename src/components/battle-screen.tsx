@@ -1943,7 +1943,7 @@ function DailyResultScreen({
     dateISO: date,
     correctCount: correct,
     totalQuestions: total,
-    xpEarned: dailyXpFor(correct, total),
+    xpEarned: dailyXpFor(correct, total, level),
     avgTimeMs,
     level,
     rank: rankForLevel(level),
