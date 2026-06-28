@@ -103,6 +103,7 @@ export interface GameState {
   guaranteedShinyPending: boolean;
   pokeEggs: number;
   megaTrophies: { eventId: string; name: string; pokeId: number; claimedAt: string }[];
+  claimedMegaRewards: string[];
   pokemon: PokeEntry | null;
 
 
