@@ -823,11 +823,12 @@ function BattleMode({
     let tpAward = 0;
 
     if (isElite) {
-      const baseXp = won ? 40 + level * 5 : 10 + level * 2;
-      const eliteBonus = won ? 100 + level * 10 : 0;
-      xpAward = baseXp + maxStreakRef.current * 2 + eliteBonus;
-      coinAward = xpAward;
-      tpAward = won ? TP_REWARDS.eliteWin : TP_REWARDS.battleLoss;
+      if (won) {
+        xpAward = 0;
+        coinAward = 2000;
+        tpAward = Math.round(200 * levelMult * streakMult);
+      }
+      // elite loss: no reward (all stay 0)
     } else if (isWeekly) {
       if (won) {
         xpAward = Math.round(100 * levelMult * streakMult);
@@ -1530,7 +1531,7 @@ function ResultScreen({
         </div>
 
         <div className="mx-auto mt-6 w-full max-w-sm rounded-2xl bg-card p-4 shadow-card">
-          <Row label="XP earned" value={`+${xpEarned}`} valueClass="text-primary" />
+          {xpEarned > 0 && <Row label="XP earned" value={`+${xpEarned}`} valueClass="text-primary" />}
           {coinsEarned > 0 && <Row label="Coins earned" value={`+${coinsEarned}`} valueClass="text-poke-yellow" />}
           <Row label={`${partnerName} TP`} value={`+${tpEarned}`} valueClass="text-poke-blue" />
           {speedBonus > 0 && (
