@@ -1687,8 +1687,8 @@ function Row({ label, value, valueClass }: { label: ReactNode; value: ReactNode;
 
 // ----------------------------- Daily Challenge Mode -----------------------------
 
-function dailyXpFor(correct: number, xpAward: number): number {
-  return 15 * correct + (correct === xpAward ? 100 : 0); // e.g. perfect 10/10 = 250; 7/10 = 105
+function dailyXpFor(correct: number, total: number): number {
+  return 15 * correct + (correct === total ? 100 : 0); // e.g. perfect 10/10 = 250; 7/10 = 105
 }
 
 function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">) {
@@ -1713,7 +1713,7 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
   const dailyStreakRef = useRef(0);
 
   const trivia = questions[idx];
-  const xpAward = questions.length;
+  const total = questions.length;
 
   useEffect(() => {
     qStart.current = Date.now();
@@ -1752,7 +1752,7 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
     setPhase("feedback");
     setTimeout(() => {
       const next = idx + 1;
-      if (next >= xpAward) {
+      if (next >= total) {
         const timeMs = Date.now() - startedAt.current;
         if (!recordedRef.current) {
           recordedRef.current = true;
@@ -1760,20 +1760,20 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
           recordDaily({
             date: new Date().toISOString().slice(0, 10),
             correct: finalCorrect,
-            xpAward,
+            total,
             timeMs,
             pattern: nextPattern,
           });
           // Phase 3: Daily TP
           const partner = useGameStore.getState().pokemon;
           if (partner) {
-            if (finalCorrect === xpAward) {
+            if (finalCorrect === total) {
               useGameStore.getState().addTrainingPoints(partner.id, TP_REWARDS.dailyPerfect);
             } else if (finalCorrect >= 5) {
               useGameStore.getState().addTrainingPoints(partner.id, TP_REWARDS.dailyPartial);
             }
           }
-          const dailyXp = dailyXpFor(finalCorrect, xpAward);
+          const dailyXp = dailyXpFor(finalCorrect, total);
           if (dailyXp > 0) useGameStore.getState().addXp(dailyXp);
         }
         playSfx("victory");
@@ -1788,7 +1788,7 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
 
   if (phase === "done") {
     const timeMs = Date.now() - startedAt.current;
-    return <DailyResultScreen correct={correctCount} xpAward={xpAward} timeMs={timeMs} pattern={pattern} onExit={onExit} />;
+    return <DailyResultScreen correct={correctCount} total={total} timeMs={timeMs} pattern={pattern} onExit={onExit} />;
   }
 
   if (!trivia) {
@@ -1799,7 +1799,7 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
     );
   }
 
-  const progressPct = ((idx) / xpAward) * 100;
+  const progressPct = ((idx) / total) * 100;
 
   return (
     <div className="bg-battle-field relative flex h-full w-full flex-col overflow-hidden">
@@ -1809,7 +1809,7 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
       <div className="flex shrink-0 items-center justify-between pt-[calc(env(safe-area-inset-top)+1rem)] pb-1 px-[max(1.25rem,env(safe-area-inset-left))]">
         <div className="w-9" />
         <div className="rounded-full bg-poke-dark px-2.5 py-1 font-pixel text-[9px] text-poke-yellow shadow-card">
-          🔥 DAILY · {idx + 1}/{xpAward}
+          🔥 DAILY · {idx + 1}/{total}
         </div>
         <div className="w-9" />
       </div>
@@ -1898,13 +1898,13 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
 
 function DailyResultScreen({
   correct,
-  xpAward,
+  total,
   timeMs,
   pattern,
   onExit,
 }: {
   correct: number;
-  xpAward: number;
+  total: number;
   timeMs: number;
   pattern: DailyMark[];
   onExit: () => void;
@@ -1921,8 +1921,8 @@ function DailyResultScreen({
   const trainerSprite = useGameStore((s) => s.trainerSprite);
   const partner = useGameStore((s) => s.pokemon);
   const level = useGameStore((s) => s.level);
-  const isPerfect = correct === xpAward && xpAward > 0;
-  const avgTimeMs = xpAward > 0 ? timeMs / xpAward : undefined;
+  const isPerfect = correct === total && total > 0;
+  const avgTimeMs = total > 0 ? timeMs / total : undefined;
   const shareData: ShareData | null = (isPerfect && partner) ? {
     type: "daily-perfect",
     trainerName,
@@ -1940,8 +1940,8 @@ function DailyResultScreen({
     topDamage: 0,
     dateISO: date,
     correctCount: correct,
-    totalQuestions: xpAward,
-    xpEarned: dailyXpFor(correct, xpAward),
+    totalQuestions: total,
+    xpEarned: dailyXpFor(correct, total),
     avgTimeMs,
     level,
     rank: rankForLevel(level),
@@ -1973,7 +1973,7 @@ function DailyResultScreen({
       <div className="mt-3 font-display-xl text-foreground">All done!</div>
 
       <div className="mt-5 grid w-full max-w-xs grid-cols-3 gap-2">
-        <DailyTile label="Score" value={`${correct}/${xpAward}`} accent />
+        <DailyTile label="Score" value={`${correct}/${total}`} accent />
         <DailyTile label="Time" value={`${seconds}s`} />
         <DailyTile label="Best Streak" value={String(bestStreak)} />
       </div>
