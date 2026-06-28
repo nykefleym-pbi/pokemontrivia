@@ -38,7 +38,7 @@ export function MegaResults({
   timeMs,
   rank,
   shiny,
-  items,
+  items: _items,
   canRematch,
   onRematch,
   onHome,
