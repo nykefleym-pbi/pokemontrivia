@@ -30,7 +30,11 @@ export function normalize(s: string) {
 }
 
 export function tokens(s: string): Set<string> {
-  return new Set(normalize(s).split(" ").filter((w) => w.length > 2));
+  return new Set(
+    normalize(s)
+      .split(" ")
+      .filter((w) => w.length > 2),
+  );
 }
 
 export function jaccard(a: Set<string>, b: Set<string>): number {
@@ -239,10 +243,20 @@ CRITICAL RULES:
     });
 
     if (resp.status === 429) {
-      return { questions: [], source: "rate-limited", status: 429, error: "Rate limit exceeded. Please wait a moment." };
+      return {
+        questions: [],
+        source: "rate-limited",
+        status: 429,
+        error: "Rate limit exceeded. Please wait a moment.",
+      };
     }
     if (resp.status === 402) {
-      return { questions: [], source: "no-credits", status: 402, error: "AI credits exhausted. Add credits in Settings." };
+      return {
+        questions: [],
+        source: "no-credits",
+        status: 402,
+        error: "AI credits exhausted. Add credits in Settings.",
+      };
     }
     if (!resp.ok) {
       console.error("AI gateway error", resp.status, await resp.text());

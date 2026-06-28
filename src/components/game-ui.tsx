@@ -44,10 +44,19 @@ export const TypeBadge = React.memo(function TypeBadge({
   );
 });
 
-export const HpBar = React.memo(function HpBar({ hp, max = 100, label, compact = false }: { hp: number; max?: number; label?: string; compact?: boolean }) {
+export const HpBar = React.memo(function HpBar({
+  hp,
+  max = 100,
+  label,
+  compact = false,
+}: {
+  hp: number;
+  max?: number;
+  label?: string;
+  compact?: boolean;
+}) {
   const pct = Math.max(0, Math.min(100, (hp / max) * 100));
-  const color =
-    pct > 50 ? "bg-hp-good" : pct > 20 ? "bg-hp-warn" : "bg-hp-low";
+  const color = pct > 50 ? "bg-hp-good" : pct > 20 ? "bg-hp-warn" : "bg-hp-low";
   if (compact) {
     return (
       <div className="flex w-full items-center gap-1.5">
@@ -141,7 +150,13 @@ export const PokeballSpinner = React.memo(function PokeballSpinner({
   );
 });
 
-export function AppHeader({ children, gradient }: { children?: React.ReactNode; gradient?: boolean }) {
+export function AppHeader({
+  children,
+  gradient,
+}: {
+  children?: React.ReactNode;
+  gradient?: boolean;
+}) {
   return (
     <header
       className={`sticky top-0 z-30 px-5 pb-3 pt-[calc(env(safe-area-inset-top)+1rem)] ${
@@ -179,7 +194,9 @@ export const PokemonSprite = React.memo(function PokemonSprite({
 
   const [idx, setIdx] = useState(0);
   // Reset on id/shiny change
-  React.useEffect(() => { setIdx(0); }, [id, shiny, back]);
+  React.useEffect(() => {
+    setIdx(0);
+  }, [id, shiny, back]);
   const src = sources[Math.min(idx, sources.length - 1)];
 
   return (
@@ -212,7 +229,12 @@ export function PokeballPattern({ marks }: { marks: DailyMark[] }) {
             m === "correct" ? "" : m === "wrong" ? "opacity-40 grayscale" : "opacity-30 grayscale"
           }`}
         >
-          <img src={POKEBALL_SPRITE} alt={m} crossOrigin="anonymous" className="sprite h-full w-full object-contain" />
+          <img
+            src={POKEBALL_SPRITE}
+            alt={m}
+            crossOrigin="anonymous"
+            className="sprite h-full w-full object-contain"
+          />
           {m === "wrong" && (
             <span className="pointer-events-none absolute inset-0 flex items-center justify-center font-pixel text-[10px] text-destructive">
               ✕

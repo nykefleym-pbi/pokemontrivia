@@ -7,10 +7,7 @@ import { useEnsureSocial } from "@/lib/social";
 import { FriendRequestInbox } from "@/components/FriendRequestInbox";
 import { NameReclaimPrompt } from "@/components/NameReclaimPrompt";
 
-
 import appCss from "../styles.css?url";
-
-
 
 function NotFoundComponent() {
   return (
@@ -38,18 +35,42 @@ export const Route = createRootRoute({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" },
+      {
+        name: "viewport",
+        content:
+          "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover",
+      },
       { title: "Pokémon Trivia Battle" },
-      { name: "description", content: "A vibrant Pokémon trivia battler with AI-generated questions, type effectiveness, items and ranks." },
+      {
+        name: "description",
+        content:
+          "A vibrant Pokémon trivia battler with AI-generated questions, type effectiveness, items and ranks.",
+      },
       { name: "theme-color", content: "#dc2626" },
       { property: "og:title", content: "Pokémon Trivia Battle" },
-      { property: "og:description", content: "A vibrant Pokémon trivia battler with AI-generated questions, type effectiveness, items and ranks." },
+      {
+        property: "og:description",
+        content:
+          "A vibrant Pokémon trivia battler with AI-generated questions, type effectiveness, items and ranks.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:title", content: "Pokémon Trivia Battle" },
-      { name: "twitter:description", content: "A vibrant Pokémon trivia battler with AI-generated questions, type effectiveness, items and ranks." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4821ffd7-0b16-4355-afee-f0c11331bc94/id-preview-899adb33--3026bd96-efdd-46df-80e9-123ce9557fc1.lovable.app-1776994971470.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4821ffd7-0b16-4355-afee-f0c11331bc94/id-preview-899adb33--3026bd96-efdd-46df-80e9-123ce9557fc1.lovable.app-1776994971470.png" },
+      {
+        name: "twitter:description",
+        content:
+          "A vibrant Pokémon trivia battler with AI-generated questions, type effectiveness, items and ranks.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4821ffd7-0b16-4355-afee-f0c11331bc94/id-preview-899adb33--3026bd96-efdd-46df-80e9-123ce9557fc1.lovable.app-1776994971470.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4821ffd7-0b16-4355-afee-f0c11331bc94/id-preview-899adb33--3026bd96-efdd-46df-80e9-123ce9557fc1.lovable.app-1776994971470.png",
+      },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
       { name: "apple-mobile-web-app-title", content: "Trivia Battle" },
@@ -100,7 +121,6 @@ function RootComponent() {
 
   const darkMode = useGameStore((s) => s.darkMode);
   useEffect(() => {
-
     const root = document.documentElement;
     if (darkMode) root.classList.add("dark");
     else root.classList.remove("dark");
@@ -118,4 +138,3 @@ function RootComponent() {
     </div>
   );
 }
-

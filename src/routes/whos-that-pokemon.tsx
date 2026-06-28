@@ -16,30 +16,74 @@ const ANSWER_SECONDS = 20;
 const CRY_PLAYS = 3;
 
 const TYPES: PokeType[] = [
-  "normal", "fire", "water", "electric", "grass", "ice", "fighting", "poison",
-  "ground", "flying", "psychic", "bug", "rock", "ghost", "dragon", "dark", "steel", "fairy",
+  "normal",
+  "fire",
+  "water",
+  "electric",
+  "grass",
+  "ice",
+  "fighting",
+  "poison",
+  "ground",
+  "flying",
+  "psychic",
+  "bug",
+  "rock",
+  "ghost",
+  "dragon",
+  "dark",
+  "steel",
+  "fairy",
 ];
 const TYPE_BG: Record<PokeType, string> = {
-  normal: "bg-type-normal", fire: "bg-type-fire", water: "bg-type-water",
-  electric: "bg-type-electric", grass: "bg-type-grass", ice: "bg-type-ice",
-  fighting: "bg-type-fighting", poison: "bg-type-poison", ground: "bg-type-ground",
-  flying: "bg-type-flying", psychic: "bg-type-psychic", bug: "bg-type-bug",
-  rock: "bg-type-rock", ghost: "bg-type-ghost", dragon: "bg-type-dragon",
-  dark: "bg-poke-dark", steel: "bg-muted-foreground", fairy: "bg-pink-400",
+  normal: "bg-type-normal",
+  fire: "bg-type-fire",
+  water: "bg-type-water",
+  electric: "bg-type-electric",
+  grass: "bg-type-grass",
+  ice: "bg-type-ice",
+  fighting: "bg-type-fighting",
+  poison: "bg-type-poison",
+  ground: "bg-type-ground",
+  flying: "bg-type-flying",
+  psychic: "bg-type-psychic",
+  bug: "bg-type-bug",
+  rock: "bg-type-rock",
+  ghost: "bg-type-ghost",
+  dragon: "bg-type-dragon",
+  dark: "bg-poke-dark",
+  steel: "bg-muted-foreground",
+  fairy: "bg-pink-400",
 };
 const TYPE_TEXT: Record<PokeType, string> = {
-  normal: "text-type-normal", fire: "text-type-fire", water: "text-type-water",
-  electric: "text-type-electric", grass: "text-type-grass", ice: "text-type-ice",
-  fighting: "text-type-fighting", poison: "text-type-poison", ground: "text-type-ground",
-  flying: "text-type-flying", psychic: "text-type-psychic", bug: "text-type-bug",
-  rock: "text-type-rock", ghost: "text-type-ghost", dragon: "text-type-dragon",
-  dark: "text-poke-dark", steel: "text-muted-foreground", fairy: "text-pink-400",
+  normal: "text-type-normal",
+  fire: "text-type-fire",
+  water: "text-type-water",
+  electric: "text-type-electric",
+  grass: "text-type-grass",
+  ice: "text-type-ice",
+  fighting: "text-type-fighting",
+  poison: "text-type-poison",
+  ground: "text-type-ground",
+  flying: "text-type-flying",
+  psychic: "text-type-psychic",
+  bug: "text-type-bug",
+  rock: "text-type-rock",
+  ghost: "text-type-ghost",
+  dragon: "text-type-dragon",
+  dark: "text-poke-dark",
+  steel: "text-muted-foreground",
+  fairy: "text-pink-400",
 };
 
 const REWARD_POOL = ITEMS.filter((i) => !i.premium);
 
 function normalizeName(s: string): string {
-  return s.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  return s
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
 }
 function findByNorm(input: string) {
   const n = normalizeName(input);
@@ -66,22 +110,42 @@ function fmtHMS(ms: number): string {
 
 type Mode = "1A" | "1B" | "2" | "3" | "4" | "5";
 export interface Round {
-  monId: number; name: string; types: PokeType[]; mode: Mode;
-  isShiny: boolean; rewardId: ItemId; rewardName: string; rewardIcon: string;
-  cropBack: boolean; cropDX: number; cropDY: number;
+  monId: number;
+  name: string;
+  types: PokeType[];
+  mode: Mode;
+  isShiny: boolean;
+  rewardId: ItemId;
+  rewardName: string;
+  rewardIcon: string;
+  cropBack: boolean;
+  cropDX: number;
+  cropDY: number;
   choices: string[];
 }
-interface DexEntry { flavor: string; genus: string; heightM: string; }
+interface DexEntry {
+  flavor: string;
+  genus: string;
+  heightM: string;
+}
 
 function makeRound(): Round {
   const mon = ALL_POKEMON[Math.floor(Math.random() * ALL_POKEMON.length)];
   const reward = REWARD_POOL[Math.floor(Math.random() * REWARD_POOL.length)];
   const mode = (["1A", "1B", "2", "3", "4", "5"] as Mode[])[Math.floor(Math.random() * 6)];
-  const others = sample(ALL_POKEMON.filter((p) => p.id !== mon.id), 3).map((p) => p.name);
+  const others = sample(
+    ALL_POKEMON.filter((p) => p.id !== mon.id),
+    3,
+  ).map((p) => p.name);
   return {
-    monId: mon.id, name: mon.name, types: mon.types, mode,
+    monId: mon.id,
+    name: mon.name,
+    types: mon.types,
+    mode,
     isShiny: Math.random() < SHINY_RATE,
-    rewardId: reward.id, rewardName: reward.name, rewardIcon: reward.iconUrl,
+    rewardId: reward.id,
+    rewardName: reward.name,
+    rewardIcon: reward.iconUrl,
     cropBack: mon.id <= 649 ? Math.random() < 0.5 : false,
     cropDX: Math.round((Math.random() - 0.5) * 56),
     cropDY: Math.round((Math.random() - 0.5) * 56),
@@ -124,7 +188,10 @@ function WhosThatPokemon() {
     if (initRef.current) return;
     initRef.current = true;
     const currentHour = Math.floor(Date.now() / HOUR);
-    if (currentHour === whosThatHourKey) { setLocked(true); return; }
+    if (currentHour === whosThatHourKey) {
+      setLocked(true);
+      return;
+    }
     if (whosThatRoundHourKey === currentHour && whosThatActiveRound) {
       setRound(whosThatActiveRound);
     } else {
@@ -145,7 +212,8 @@ function WhosThatPokemon() {
   useEffect(() => {
     if (round?.mode !== "5") return;
     let cancelled = false;
-    setDexLoading(true); setDexEntry(null);
+    setDexLoading(true);
+    setDexEntry(null);
     (async () => {
       try {
         const [spRes, pkRes] = await Promise.all([
@@ -155,22 +223,40 @@ function WhosThatPokemon() {
         if (!spRes.ok) throw new Error("species");
         const sp = await spRes.json();
         const pk = pkRes.ok ? await pkRes.json() : null;
-        const fe = (sp.flavor_text_entries || []).find((e: { language?: { name: string } }) => e.language?.name === "en");
-        const flavor = ((fe?.flavor_text as string) || "").replace(/[\f\n\r]/g, " ").replace(/\s+/g, " ").trim();
-        const ge = (sp.genera || []).find((g: { language?: { name: string } }) => g.language?.name === "en");
+        const fe = (sp.flavor_text_entries || []).find(
+          (e: { language?: { name: string } }) => e.language?.name === "en",
+        );
+        const flavor = ((fe?.flavor_text as string) || "")
+          .replace(/[\f\n\r]/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+        const ge = (sp.genera || []).find(
+          (g: { language?: { name: string } }) => g.language?.name === "en",
+        );
         const genus = ((ge?.genus as string) || "").replace(/\s*Pokémon\s*$/i, "").toUpperCase();
         const heightM = pk?.height ? `${(pk.height / 10).toFixed(1)} m` : "";
-        if (!cancelled) { setDexEntry({ flavor, genus, heightM }); setDexLoading(false); }
+        if (!cancelled) {
+          setDexEntry({ flavor, genus, heightM });
+          setDexLoading(false);
+        }
       } catch {
-        if (!cancelled) { setDexEntry({ flavor: "", genus: "", heightM: "" }); setDexLoading(false); }
+        if (!cancelled) {
+          setDexEntry({ flavor: "", genus: "", heightM: "" });
+          setDexLoading(false);
+        }
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [round?.mode, round?.monId, dexNonce]);
 
   useEffect(() => {
     if (phase !== "play" || !round || !ready) return;
-    if (timeLeft <= 0) { setPhase("incorrect"); return; }
+    if (timeLeft <= 0) {
+      setPhase("incorrect");
+      return;
+    }
     const t = setTimeout(() => setTimeLeft((v) => v - 1), 1000);
     return () => clearTimeout(t);
   }, [phase, round, ready, timeLeft]);
@@ -192,19 +278,30 @@ function WhosThatPokemon() {
 
   const goHome = () => navigate({ to: "/battle" });
 
-  const canSubmit = !round ? false
-    : round.mode === "1B" ? selTypes.length > 0
-    : round.mode === "3" ? selChoice !== null
-    : guess.trim().length > 0;
+  const canSubmit = !round
+    ? false
+    : round.mode === "1B"
+      ? selTypes.length > 0
+      : round.mode === "3"
+        ? selChoice !== null
+        : guess.trim().length > 0;
 
   function submit() {
     if (!round || !canSubmit) return;
-    if (round.mode === "1B") { setPhase(sameTypes(selTypes, round.types) ? "correct" : "incorrect"); return; }
-    if (round.mode === "3") { setPhase(selChoice === round.name ? "correct" : "incorrect"); return; }
+    if (round.mode === "1B") {
+      setPhase(sameTypes(selTypes, round.types) ? "correct" : "incorrect");
+      return;
+    }
+    if (round.mode === "3") {
+      setPhase(selChoice === round.name ? "correct" : "incorrect");
+      return;
+    }
     if (round.mode === "4") {
       const m = findByNorm(guess);
-      if (m && sameTypes(m.types, round.types)) { setCaught({ id: m.id, name: m.name }); setPhase("correct"); }
-      else setPhase("incorrect");
+      if (m && sameTypes(m.types, round.types)) {
+        setCaught({ id: m.id, name: m.name });
+        setPhase("correct");
+      } else setPhase("incorrect");
       return;
     }
     setPhase(normalizeName(guess) === normalizeName(round.name) ? "correct" : "incorrect");
@@ -223,13 +320,24 @@ function WhosThatPokemon() {
   if (locked) {
     return (
       <div className="flex h-full w-full flex-col overflow-y-auto bg-poke-cream px-5 pb-10 pt-8 text-center">
-        <h1 className="font-pixel text-lg leading-relaxed text-foreground">WHO'S THAT<br />POKÉMON?</h1>
+        <h1 className="font-pixel text-lg leading-relaxed text-foreground">
+          WHO'S THAT
+          <br />
+          POKÉMON?
+        </h1>
         <div className="flex flex-1 flex-col items-center justify-center gap-3">
           <div className="text-5xl">⏰</div>
-          <div className="font-pixel text-[10px] uppercase tracking-wide text-foreground/50">Play again in</div>
+          <div className="font-pixel text-[10px] uppercase tracking-wide text-foreground/50">
+            Play again in
+          </div>
           <div className="font-pixel text-xl text-primary">{fmtHMS(msToNextHour)}</div>
         </div>
-        <button onClick={goHome} className="rounded-full border-2 border-poke-dark/15 bg-white py-3.5 font-pixel text-sm tracking-wide text-poke-dark shadow-card active:scale-[0.98]">CLOSE</button>
+        <button
+          onClick={goHome}
+          className="rounded-full border-2 border-poke-dark/15 bg-white py-3.5 font-pixel text-sm tracking-wide text-poke-dark shadow-card active:scale-[0.98]"
+        >
+          CLOSE
+        </button>
       </div>
     );
   }
@@ -240,18 +348,64 @@ function WhosThatPokemon() {
     return (
       <div className="flex h-full w-full flex-col overflow-y-auto bg-poke-cream px-5 pb-8 pt-10">
         <div className="relative flex flex-col items-center">
-          <div className="absolute inset-x-0 top-4 mx-auto h-56 w-56" style={{ background: "repeating-conic-gradient(from 0deg, rgba(245,197,24,0.22) 0deg 6deg, transparent 6deg 14deg)" }} />
-          {round.isShiny && <div className="z-10 mb-1 rounded-full bg-poke-yellow px-3 py-1 font-pixel text-[10px] text-poke-dark shadow-card">✨ SHINY!</div>}
-          <PokemonSprite id={shown.id} shiny={round.isShiny} alt={shown.name} className={`relative z-10 h-44 w-44 [image-rendering:pixelated] ${round.isShiny ? "drop-shadow-[0_0_14px_rgba(245,197,24,0.85)]" : ""}`} />
+          <div
+            className="absolute inset-x-0 top-4 mx-auto h-56 w-56"
+            style={{
+              background:
+                "repeating-conic-gradient(from 0deg, rgba(245,197,24,0.22) 0deg 6deg, transparent 6deg 14deg)",
+            }}
+          />
+          {round.isShiny && (
+            <div className="z-10 mb-1 rounded-full bg-poke-yellow px-3 py-1 font-pixel text-[10px] text-poke-dark shadow-card">
+              ✨ SHINY!
+            </div>
+          )}
+          <PokemonSprite
+            id={shown.id}
+            shiny={round.isShiny}
+            alt={shown.name}
+            className={`relative z-10 h-44 w-44 [image-rendering:pixelated] ${round.isShiny ? "drop-shadow-[0_0_14px_rgba(245,197,24,0.85)]" : ""}`}
+          />
           <h1 className="z-10 mt-2 text-3xl font-extrabold text-foreground">It's {shown.name}!</h1>
         </div>
         <div className="mt-6 space-y-3">
-          <Row icon={<div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-poke-yellow/30 text-xl">⭐</div>} title="+100 XP" />
-          <Row sub="You got" title={round.rewardName} icon={<div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10"><img src={round.rewardIcon} alt={round.rewardName} className="h-7 w-7 [image-rendering:pixelated]" /></div>} />
-          <Row icon={<div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-hp-good/20 text-xl">✓</div>} title="Added to Pokédex" />
+          <Row
+            icon={
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-poke-yellow/30 text-xl">
+                ⭐
+              </div>
+            }
+            title="+100 XP"
+          />
+          <Row
+            sub="You got"
+            title={round.rewardName}
+            icon={
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10">
+                <img
+                  src={round.rewardIcon}
+                  alt={round.rewardName}
+                  className="h-7 w-7 [image-rendering:pixelated]"
+                />
+              </div>
+            }
+          />
+          <Row
+            icon={
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-hp-good/20 text-xl">
+                ✓
+              </div>
+            }
+            title="Added to Pokédex"
+          />
         </div>
         <div className="flex-1" />
-        <button onClick={goHome} className="rounded-full bg-primary py-4 font-pixel text-base tracking-wide text-primary-foreground shadow-card active:scale-[0.98]">COLLECT</button>
+        <button
+          onClick={goHome}
+          className="rounded-full bg-primary py-4 font-pixel text-base tracking-wide text-primary-foreground shadow-card active:scale-[0.98]"
+        >
+          COLLECT
+        </button>
       </div>
     );
   }
@@ -259,40 +413,99 @@ function WhosThatPokemon() {
   if (phase === "incorrect") {
     return (
       <div className="flex h-full w-full flex-col overflow-y-auto items-center bg-poke-cream px-5 pb-8 pt-12 text-center">
-        <PokemonSprite id={round.monId} alt={round.name} className="h-40 w-40 [image-rendering:pixelated] opacity-90" />
+        <PokemonSprite
+          id={round.monId}
+          alt={round.name}
+          className="h-40 w-40 [image-rendering:pixelated] opacity-90"
+        />
         <h1 className="mt-4 text-3xl font-extrabold text-foreground">Not quite…</h1>
-        {round.mode === "4"
-          ? <p className="mt-2 text-lg text-foreground/70">e.g. <span className="font-bold text-foreground">{round.name}</span> has that typing.</p>
-          : <p className="mt-2 text-lg text-foreground/70">It was <span className="font-bold text-foreground">{round.name}</span>.</p>}
-        <div className="mt-6 font-pixel text-[10px] uppercase tracking-wide text-foreground/45">Play again in</div>
+        {round.mode === "4" ? (
+          <p className="mt-2 text-lg text-foreground/70">
+            e.g. <span className="font-bold text-foreground">{round.name}</span> has that typing.
+          </p>
+        ) : (
+          <p className="mt-2 text-lg text-foreground/70">
+            It was <span className="font-bold text-foreground">{round.name}</span>.
+          </p>
+        )}
+        <div className="mt-6 font-pixel text-[10px] uppercase tracking-wide text-foreground/45">
+          Play again in
+        </div>
         <div className="mt-1 font-pixel text-base text-primary">{fmtHMS(msToNextHour)}</div>
         <div className="flex-1" />
-        <button onClick={goHome} className="w-full rounded-full border-2 border-poke-dark/15 bg-white py-3.5 font-pixel text-sm tracking-wide text-poke-dark shadow-card active:scale-[0.98]">CLOSE</button>
+        <button
+          onClick={goHome}
+          className="w-full rounded-full border-2 border-poke-dark/15 bg-white py-3.5 font-pixel text-sm tracking-wide text-poke-dark shadow-card active:scale-[0.98]"
+        >
+          CLOSE
+        </button>
       </div>
     );
   }
 
   const silhouettePanel = (
-    <div className="relative mx-auto mt-6 aspect-square w-64 overflow-hidden rounded-[28px] shadow-card" style={{ background: "radial-gradient(circle at 50% 45%, #ff6a5d 0%, #e03a2f 55%, #b3261c 100%)" }}>
-      <div className="absolute inset-0" style={{ background: "repeating-conic-gradient(from 0deg at 50% 45%, rgba(255,255,255,0.10) 0deg 4deg, transparent 4deg 9deg)" }} />
-      <PokemonSprite id={round.monId} alt="silhouette" className="absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 [filter:brightness(0)] [image-rendering:pixelated]" />
+    <div
+      className="relative mx-auto mt-6 aspect-square w-64 overflow-hidden rounded-[28px] shadow-card"
+      style={{
+        background: "radial-gradient(circle at 50% 45%, #ff6a5d 0%, #e03a2f 55%, #b3261c 100%)",
+      }}
+    >
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "repeating-conic-gradient(from 0deg at 50% 45%, rgba(255,255,255,0.10) 0deg 4deg, transparent 4deg 9deg)",
+        }}
+      />
+      <PokemonSprite
+        id={round.monId}
+        alt="silhouette"
+        className="absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 [filter:brightness(0)] [image-rendering:pixelated]"
+      />
     </div>
   );
   const nameInput = (
     <div className="mt-auto pt-8">
-      <input value={guess} onChange={(e) => setGuess(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") submit(); }} placeholder="Type the Pokémon's name…" autoFocus
-        className="w-full rounded-full border-2 border-poke-dark/10 bg-white px-5 py-4 text-base text-poke-dark shadow-card outline-none placeholder:text-poke-dark/35 focus:border-primary/40" />
-      <button onClick={submit} disabled={!canSubmit} className="mt-3 w-full rounded-full bg-primary py-4 font-pixel text-base tracking-wide text-primary-foreground shadow-card disabled:opacity-50 active:scale-[0.98]">SUBMIT</button>
+      <input
+        value={guess}
+        onChange={(e) => setGuess(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") submit();
+        }}
+        placeholder="Type the Pokémon's name…"
+        autoFocus
+        className="w-full rounded-full border-2 border-poke-dark/10 bg-white px-5 py-4 text-base text-poke-dark shadow-card outline-none placeholder:text-poke-dark/35 focus:border-primary/40"
+      />
+      <button
+        onClick={submit}
+        disabled={!canSubmit}
+        className="mt-3 w-full rounded-full bg-primary py-4 font-pixel text-base tracking-wide text-primary-foreground shadow-card disabled:opacity-50 active:scale-[0.98]"
+      >
+        SUBMIT
+      </button>
     </div>
   );
 
   return (
     <div className="flex h-full w-full flex-col overflow-y-auto bg-poke-cream px-5 pb-8 pt-6">
       <div className="flex items-center justify-between">
-        <button onClick={goHome} aria-label="Back" className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-xl text-poke-dark shadow-card active:scale-95">‹</button>
-        <div className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 font-pixel text-[11px] text-primary shadow-card"><span>⏱</span>{`0:${String(timeLeft).padStart(2, "0")}`}</div>
+        <button
+          onClick={goHome}
+          aria-label="Back"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-xl text-poke-dark shadow-card active:scale-95"
+        >
+          ‹
+        </button>
+        <div className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 font-pixel text-[11px] text-primary shadow-card">
+          <span>⏱</span>
+          {`0:${String(timeLeft).padStart(2, "0")}`}
+        </div>
       </div>
-      <h1 className="mt-3 text-center font-pixel text-lg leading-relaxed text-foreground">WHO'S THAT<br />POKÉMON?</h1>
+      <h1 className="mt-3 text-center font-pixel text-lg leading-relaxed text-foreground">
+        WHO'S THAT
+        <br />
+        POKÉMON?
+      </h1>
 
       {(round.mode === "1A" || round.mode === "1B") && silhouettePanel}
 
@@ -313,24 +526,40 @@ function WhosThatPokemon() {
       {round.mode === "3" && (
         <div className="mt-6 flex flex-1 flex-col">
           <div className="flex flex-col items-center">
-            <button onClick={playCryNow} disabled={playsLeft <= 0}
-              className="flex items-center gap-2 rounded-full border-b-4 border-primary/60 bg-white px-7 py-3.5 font-pixel text-base text-primary shadow-card disabled:opacity-40 active:translate-y-0.5 active:border-b-0">
+            <button
+              onClick={playCryNow}
+              disabled={playsLeft <= 0}
+              className="flex items-center gap-2 rounded-full border-b-4 border-primary/60 bg-white px-7 py-3.5 font-pixel text-base text-primary shadow-card disabled:opacity-40 active:translate-y-0.5 active:border-b-0"
+            >
               <span className="text-lg">🔊</span> PLAY CRY
             </button>
-            <div className="mt-2 font-pixel text-[9px] uppercase tracking-wide text-foreground/45">{playsLeft} {playsLeft === 1 ? "play" : "plays"} left</div>
+            <div className="mt-2 font-pixel text-[9px] uppercase tracking-wide text-foreground/45">
+              {playsLeft} {playsLeft === 1 ? "play" : "plays"} left
+            </div>
           </div>
           <div className="mt-6 grid grid-cols-2 gap-3">
             {round.choices.map((c) => {
               const on = selChoice === c;
               return (
-                <button key={c} onClick={() => setSelChoice(c)}
-                  className={`rounded-2xl px-3 py-5 text-base font-extrabold shadow-card transition active:scale-95 ${on ? "bg-[oklch(0.62_0.16_250)] text-white" : "bg-white text-poke-dark"}`}>
+                <button
+                  key={c}
+                  onClick={() => setSelChoice(c)}
+                  className={`rounded-2xl px-3 py-5 text-base font-extrabold shadow-card transition active:scale-95 ${on ? "bg-[oklch(0.62_0.16_250)] text-white" : "bg-white text-poke-dark"}`}
+                >
                   {c}
                 </button>
               );
             })}
           </div>
-          <div className="mt-auto pt-8"><button onClick={submit} disabled={!canSubmit} className="w-full rounded-full bg-primary py-4 font-pixel text-base tracking-wide text-primary-foreground shadow-card disabled:opacity-50 active:scale-[0.98]">SUBMIT</button></div>
+          <div className="mt-auto pt-8">
+            <button
+              onClick={submit}
+              disabled={!canSubmit}
+              className="w-full rounded-full bg-primary py-4 font-pixel text-base tracking-wide text-primary-foreground shadow-card disabled:opacity-50 active:scale-[0.98]"
+            >
+              SUBMIT
+            </button>
+          </div>
         </div>
       )}
 
@@ -340,22 +569,39 @@ function WhosThatPokemon() {
             {round.types.map((t, i) => (
               <div key={t} className="flex items-center gap-3">
                 {i > 0 && <span className="font-pixel text-lg text-foreground/50">+</span>}
-                <span className={`rounded-full px-6 py-3 font-pixel text-base uppercase tracking-wide text-white shadow-card ${TYPE_BG[t]}`}>{t}</span>
+                <span
+                  className={`rounded-full px-6 py-3 font-pixel text-base uppercase tracking-wide text-white shadow-card ${TYPE_BG[t]}`}
+                >
+                  {t}
+                </span>
               </div>
             ))}
           </div>
-          <p className="mt-6 text-center text-2xl font-extrabold leading-tight text-foreground">Name any Pokémon with<br />this typing.</p>
+          <p className="mt-6 text-center text-2xl font-extrabold leading-tight text-foreground">
+            Name any Pokémon with
+            <br />
+            this typing.
+          </p>
         </div>
       )}
 
       {round.mode === "5" && (
         <div className="mt-6">
           {!dexEntry || dexLoading ? (
-            <div className="py-16 text-center font-pixel text-[10px] text-foreground/50">Loading Pokédex entry…</div>
+            <div className="py-16 text-center font-pixel text-[10px] text-foreground/50">
+              Loading Pokédex entry…
+            </div>
           ) : dexEntry.flavor === "" ? (
             <div className="py-12 text-center">
-              <div className="font-pixel text-[10px] text-poke-dark/60">Couldn't load the entry.</div>
-              <button onClick={() => setDexNonce((n) => n + 1)} className="mt-3 rounded-full bg-primary px-5 py-2 font-pixel text-[10px] text-primary-foreground active:scale-95">RETRY</button>
+              <div className="font-pixel text-[10px] text-poke-dark/60">
+                Couldn't load the entry.
+              </div>
+              <button
+                onClick={() => setDexNonce((n) => n + 1)}
+                className="mt-3 rounded-full bg-primary px-5 py-2 font-pixel text-[10px] text-primary-foreground active:scale-95"
+              >
+                RETRY
+              </button>
             </div>
           ) : (
             <div className="mx-auto w-full max-w-[340px] rounded-[22px] bg-[#e23b30] p-4 shadow-card">
@@ -366,14 +612,28 @@ function WhosThatPokemon() {
                 <span className="h-2.5 w-2.5 rounded-full bg-green-400" />
               </div>
               <div className="mt-3 rounded-2xl border-2 border-poke-dark/80 bg-[#dfe8d6] p-4">
-                <div className="font-pixel text-[8px] tracking-wide text-poke-dark/70">POKÉDEX ENTRY</div>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {dexEntry.genus && <span className="rounded-md bg-yellow-200 px-2 py-1 font-pixel text-[8px] text-poke-dark">{dexEntry.genus}</span>}
-                  {dexEntry.heightM && <span className="rounded-md bg-blue-200 px-2 py-1 font-pixel text-[8px] text-poke-dark">{dexEntry.heightM}</span>}
+                <div className="font-pixel text-[8px] tracking-wide text-poke-dark/70">
+                  POKÉDEX ENTRY
                 </div>
-                <p className="mt-3 text-[15px] font-semibold leading-relaxed text-poke-dark">"{dexEntry.flavor}"</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {dexEntry.genus && (
+                    <span className="rounded-md bg-yellow-200 px-2 py-1 font-pixel text-[8px] text-poke-dark">
+                      {dexEntry.genus}
+                    </span>
+                  )}
+                  {dexEntry.heightM && (
+                    <span className="rounded-md bg-blue-200 px-2 py-1 font-pixel text-[8px] text-poke-dark">
+                      {dexEntry.heightM}
+                    </span>
+                  )}
+                </div>
+                <p className="mt-3 text-[15px] font-semibold leading-relaxed text-poke-dark">
+                  "{dexEntry.flavor}"
+                </p>
               </div>
-              <div className="mt-3 text-center font-pixel text-[9px] tracking-wide text-white">WHO IS BEING DESCRIBED?</div>
+              <div className="mt-3 text-center font-pixel text-[9px] tracking-wide text-white">
+                WHO IS BEING DESCRIBED?
+              </div>
             </div>
           )}
         </div>
@@ -387,18 +647,29 @@ function WhosThatPokemon() {
             {TYPES.map((t) => {
               const on = selTypes.includes(t);
               return (
-                <button key={t} onClick={() => toggleType(t)}
-                  className={`rounded-full border-2 py-2.5 font-pixel text-[9px] uppercase tracking-wide transition active:scale-95 ${on ? `${TYPE_BG[t]} border-transparent text-white` : `border-current bg-transparent ${TYPE_TEXT[t]}`}`}>
-                  {on ? "✓ " : ""}{t}
+                <button
+                  key={t}
+                  onClick={() => toggleType(t)}
+                  className={`rounded-full border-2 py-2.5 font-pixel text-[9px] uppercase tracking-wide transition active:scale-95 ${on ? `${TYPE_BG[t]} border-transparent text-white` : `border-current bg-transparent ${TYPE_TEXT[t]}`}`}
+                >
+                  {on ? "✓ " : ""}
+                  {t}
                 </button>
               );
             })}
           </div>
-          <button onClick={submit} disabled={!canSubmit} className="mt-5 w-full rounded-full bg-primary py-4 font-pixel text-base tracking-wide text-primary-foreground shadow-card disabled:opacity-50 active:scale-[0.98]">SUBMIT</button>
+          <button
+            onClick={submit}
+            disabled={!canSubmit}
+            className="mt-5 w-full rounded-full bg-primary py-4 font-pixel text-base tracking-wide text-primary-foreground shadow-card disabled:opacity-50 active:scale-[0.98]"
+          >
+            SUBMIT
+          </button>
         </div>
       )}
 
-      {(round.mode === "1A" || round.mode === "2" || round.mode === "4" || round.mode === "5") && nameInput}
+      {(round.mode === "1A" || round.mode === "2" || round.mode === "4" || round.mode === "5") &&
+        nameInput}
     </div>
   );
 }

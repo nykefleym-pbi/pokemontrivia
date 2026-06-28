@@ -110,7 +110,8 @@ export const ABILITIES: Record<PokeType, Ability> = {
     id: "cursed-body",
     name: "Cursed Body",
     type: "ghost",
-    description: "Wrong answers heal back fully if the next question is answered correctly within 5 seconds.",
+    description:
+      "Wrong answers heal back fully if the next question is answered correctly within 5 seconds.",
   },
   dragon: {
     id: "multiscale",

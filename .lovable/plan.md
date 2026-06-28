@@ -2,9 +2,11 @@
 
 **1. Friend code shows `------`**
 Console reveals the real cause:
+
 ```
 [social] syncProfile failed: permission denied for function gen_friend_code
 ```
+
 In the previous security pass I revoked `EXECUTE` on `gen_friend_code()` from `public`/`anon`/`authenticated`. The `profiles` BEFORE-INSERT trigger calls that function while running as the inserting user, so every new profile insert now fails — no row is created, no friend code is returned, and the store stays `null`.
 
 **2. Two X buttons on the Trainer Card**
@@ -13,6 +15,7 @@ shadcn's `DialogContent` already renders a built-in close button (`src/component
 ## Fix
 
 ### Migration — inline the code generator into the trigger
+
 Drop the brittle separate-function approach. Move the random-code loop directly into `profiles_before_write()` and remove `gen_friend_code()` entirely. The trigger is `SECURITY DEFINER`, so it bypasses RLS to check uniqueness, and no user ever needs `EXECUTE` on a helper function.
 
 ```sql
@@ -40,6 +43,7 @@ drop function if exists public.gen_friend_code();
 ```
 
 ### Code — remove the duplicate close button
+
 In `src/routes/profile.tsx`, delete the custom `<button>` wrapping `<X />` at lines 356–361 inside the trainer card `<DialogContent>`. The built-in close button stays.
 
 ## Technical notes

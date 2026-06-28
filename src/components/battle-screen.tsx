@@ -16,18 +16,25 @@ import {
   rankForLevel,
 } from "@/lib/game-data";
 
-import { isSuperEffective, findPokemon, isPlayerDisadvantaged, isPlayerImmune, type PokeEntry, type PokeType } from "@/lib/pokemon-data";
+import {
+  isSuperEffective,
+  findPokemon,
+  isPlayerDisadvantaged,
+  isPlayerImmune,
+  type PokeEntry,
+  type PokeType,
+} from "@/lib/pokemon-data";
 import { getAbility as getAbilityFn, type Ability } from "@/lib/abilities";
 import { TutorialOverlay } from "@/components/tutorial-overlay";
-import { HpBar, TypeBadge, PokemonSprite, PokeballPattern, type DailyMark } from "@/components/game-ui";
-import { Button } from "@/components/ui/button";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+  HpBar,
+  TypeBadge,
+  PokemonSprite,
+  PokeballPattern,
+  type DailyMark,
+} from "@/components/game-ui";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,11 +48,7 @@ import {
 import type { ItemId } from "@/lib/game-data";
 import { ACHIEVEMENTS, unlockedAchievements } from "@/lib/achievements";
 import { playCry, playSfx } from "@/lib/audio";
-import {
-  type EliteMember,
-  ELITE_FOUR,
-  regionCompleted,
-} from "@/lib/elite-four";
+import { type EliteMember, ELITE_FOUR, regionCompleted } from "@/lib/elite-four";
 import type { GymLeader } from "@/lib/gym-leaders";
 import { ShareCardDialog } from "@/components/share-card-dialog";
 import type { ShareData } from "@/components/share-card-builder";
@@ -97,7 +100,9 @@ function CombatPanel({
         <div className="w-full truncate text-sm font-bold leading-tight">{pokemonName}</div>
 
         <div className={`mt-1 flex w-full gap-1 ${justifyCls}`}>
-          {types.map((t) => <TypeBadge key={t} type={t} size="sm" />)}
+          {types.map((t) => (
+            <TypeBadge key={t} type={t} size="sm" />
+          ))}
         </div>
         <div className="mt-1.5 flex w-full items-center gap-2">
           <div className="h-2 flex-1 overflow-hidden rounded-full bg-poke-dark/15">
@@ -108,15 +113,32 @@ function CombatPanel({
               transition={{ type: "spring", stiffness: 100, damping: 18 }}
             />
           </div>
-          <span className="text-[11px] font-bold tabular-nums text-foreground">{Math.round(hp)}</span>
+          <span className="text-[11px] font-bold tabular-nums text-foreground">
+            {Math.round(hp)}
+          </span>
         </div>
         {(abilityName || immune || disadvantaged || statuses.length > 0) && (
           <div className={`mt-1 flex w-full flex-wrap gap-0.5 ${justifyCls}`}>
-            {abilityName && <span className="rounded-full bg-primary/10 px-1.5 py-[1px] font-pixel-xs text-primary">⚡ {abilityName}</span>}
-            {immune && <span className="rounded-full bg-hp-good/20 px-1.5 py-[1px] font-pixel-xs text-hp-good">🛡</span>}
-            {disadvantaged && !immune && <span className="rounded-full bg-destructive/20 px-1.5 py-[1px] font-pixel-xs text-destructive">⚠</span>}
+            {abilityName && (
+              <span className="rounded-full bg-primary/10 px-1.5 py-[1px] font-pixel-xs text-primary">
+                ⚡ {abilityName}
+              </span>
+            )}
+            {immune && (
+              <span className="rounded-full bg-hp-good/20 px-1.5 py-[1px] font-pixel-xs text-hp-good">
+                🛡
+              </span>
+            )}
+            {disadvantaged && !immune && (
+              <span className="rounded-full bg-destructive/20 px-1.5 py-[1px] font-pixel-xs text-destructive">
+                ⚠
+              </span>
+            )}
             {statuses.map((s) => (
-              <span key={s.kind} className={`rounded-full px-1.5 py-[1px] font-pixel-xs ${s.kind === "confused" ? "bg-poke-yellow/30 text-foreground" : "bg-purple-500/20 text-purple-700"}`}>
+              <span
+                key={s.kind}
+                className={`rounded-full px-1.5 py-[1px] font-pixel-xs ${s.kind === "confused" ? "bg-poke-yellow/30 text-foreground" : "bg-purple-500/20 text-purple-700"}`}
+              >
                 {s.kind === "confused" ? "🌀" : "☠️"}
               </span>
             ))}
@@ -131,15 +153,29 @@ function TimerRing({ timer, maxTime }: { timer: number; maxTime: number }) {
   return (
     <div
       className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold shadow-card ${
-        timer <= 5 ? "animate-pulse bg-destructive text-destructive-foreground" : "bg-card text-foreground"
+        timer <= 5
+          ? "animate-pulse bg-destructive text-destructive-foreground"
+          : "bg-card text-foreground"
       }`}
     >
       <svg viewBox="0 0 24 24" className="h-4 w-4">
-        <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeOpacity="0.2" strokeWidth="3" />
         <circle
-          cx="12" cy="12" r="9" fill="none"
+          cx="12"
+          cy="12"
+          r="9"
+          fill="none"
+          stroke="currentColor"
+          strokeOpacity="0.2"
+          strokeWidth="3"
+        />
+        <circle
+          cx="12"
+          cy="12"
+          r="9"
+          fill="none"
           stroke={timer <= 5 ? "currentColor" : "var(--color-hp-good)"}
-          strokeWidth="3" strokeLinecap="round"
+          strokeWidth="3"
+          strokeLinecap="round"
           strokeDasharray={2 * Math.PI * 9}
           strokeDashoffset={2 * Math.PI * 9 * (1 - timer / Math.max(1, maxTime))}
           transform="rotate(-90 12 12)"
@@ -151,8 +187,6 @@ function TimerRing({ timer, maxTime }: { timer: number; maxTime: number }) {
   );
 }
 
-
-
 interface Props {
   questions: Trivia[];
   onExit: () => void;
@@ -162,15 +196,36 @@ interface Props {
   gymLeader?: GymLeader | null;
 }
 
-export function BattleScreen({ questions, onExit, onRematch, mode = "battle", eliteMember, gymLeader }: Props) {
+export function BattleScreen({
+  questions,
+  onExit,
+  onRematch,
+  mode = "battle",
+  eliteMember,
+  gymLeader,
+}: Props) {
   if (mode === "daily") {
     return <DailyScreen questions={questions} onExit={onExit} />;
   }
   if (mode === "elite" && eliteMember) {
-    return <BattleMode questions={questions} onExit={onExit} onRematch={onRematch} eliteMember={eliteMember} />;
+    return (
+      <BattleMode
+        questions={questions}
+        onExit={onExit}
+        onRematch={onRematch}
+        eliteMember={eliteMember}
+      />
+    );
   }
   if (mode === "weekly" && gymLeader) {
-    return <BattleMode questions={questions} onExit={onExit} onRematch={onRematch} gymLeader={gymLeader} />;
+    return (
+      <BattleMode
+        questions={questions}
+        onExit={onExit}
+        onRematch={onRematch}
+        gymLeader={gymLeader}
+      />
+    );
   }
   return <BattleMode questions={questions} onExit={onExit} onRematch={onRematch} />;
 }
@@ -181,7 +236,10 @@ function BattleMode({
   onRematch,
   eliteMember,
   gymLeader,
-}: Pick<Props, "questions" | "onExit" | "onRematch"> & { eliteMember?: EliteMember; gymLeader?: GymLeader }) {
+}: Pick<Props, "questions" | "onExit" | "onRematch"> & {
+  eliteMember?: EliteMember;
+  gymLeader?: GymLeader;
+}) {
   const player = useGameStore((s) => s.pokemon)!;
   const level = useGameStore((s) => s.level);
   const trainerName = useGameStore((s) => s.trainerName);
@@ -219,17 +277,16 @@ function BattleMode({
 
   const [enemy] = useState<EnemyTrainer>(() => {
     if (gymLeader) {
-      const poke: PokeEntry =
-        findPokemon(gymLeader.signaturePokemonId) ?? {
-          id: gymLeader.signaturePokemonId,
-          slug: gymLeader.name.toLowerCase(),
-          name: gymLeader.name,
-          types: [gymLeader.type],
-          evolvesFromId: null,
-          evolvesToIds: [],
-          evolutionStage: 1,
-          isFullyEvolved: true,
-        };
+      const poke: PokeEntry = findPokemon(gymLeader.signaturePokemonId) ?? {
+        id: gymLeader.signaturePokemonId,
+        slug: gymLeader.name.toLowerCase(),
+        name: gymLeader.name,
+        types: [gymLeader.type],
+        evolvesFromId: null,
+        evolvesToIds: [],
+        evolutionStage: 1,
+        isFullyEvolved: true,
+      };
       return {
         name: gymLeader.name,
         title: `Gym Leader · ${gymLeader.region}`,
@@ -238,17 +295,16 @@ function BattleMode({
       };
     }
     if (eliteMember) {
-      const poke: PokeEntry =
-        findPokemon(eliteMember.signaturePokemonId) ?? {
-          id: eliteMember.signaturePokemonId,
-          slug: eliteMember.signaturePokemonName.toLowerCase(),
-          name: eliteMember.signaturePokemonName,
-          types: [eliteMember.type],
-          evolvesFromId: null,
-          evolvesToIds: [],
-          evolutionStage: 1,
-          isFullyEvolved: true,
-        };
+      const poke: PokeEntry = findPokemon(eliteMember.signaturePokemonId) ?? {
+        id: eliteMember.signaturePokemonId,
+        slug: eliteMember.signaturePokemonName.toLowerCase(),
+        name: eliteMember.signaturePokemonName,
+        types: [eliteMember.type],
+        evolvesFromId: null,
+        evolvesToIds: [],
+        evolutionStage: 1,
+        isFullyEvolved: true,
+      };
       return {
         name: eliteMember.name,
         title: `${eliteMember.title} · ${eliteMember.region}`,
@@ -273,7 +329,12 @@ function BattleMode({
   const [questionIdx, setQuestionIdx] = useState(0);
   const [introBanner, setIntroBanner] = useState<string | null>(null);
   const [shakeWho, setShakeWho] = useState<"player" | "enemy" | null>(null);
-  const [floatDmg, setFloatDmg] = useState<{ who: "player" | "enemy"; n: number; super: boolean; speedy: boolean } | null>(null);
+  const [floatDmg, setFloatDmg] = useState<{
+    who: "player" | "enemy";
+    n: number;
+    super: boolean;
+    speedy: boolean;
+  } | null>(null);
   const [bagOpen, setBagOpen] = useState(false);
   const [confirmExit, setConfirmExit] = useState(false);
   const [resultWon, setResultWon] = useState<boolean | null>(null);
@@ -303,18 +364,21 @@ function BattleMode({
     () => isPlayerDisadvantaged(player, enemy.pokemon),
     [player, enemy.pokemon],
   );
-  const immune = useMemo(
-    () => isPlayerImmune(player, enemy.pokemon),
-    [player, enemy.pokemon],
-  );
+  const immune = useMemo(() => isPlayerImmune(player, enemy.pokemon), [player, enemy.pokemon]);
   const assaultVestActiveRef = useRef(false);
 
   // Phase 2: ability + status state
   type StatusKind = "confused" | "poisoned";
-  interface ActiveStatus { kind: StatusKind; curesRemaining: number; appliedAt: number }
+  interface ActiveStatus {
+    kind: StatusKind;
+    curesRemaining: number;
+    appliedAt: number;
+  }
   const [statuses, setStatuses] = useState<ActiveStatus[]>([]);
   const wrongStreakRef = useRef(0);
-  const missedRef = useRef<Array<{ question: string; correctAnswer: string; explanation: string }>>([]);
+  const missedRef = useRef<Array<{ question: string; correctAnswer: string; explanation: string }>>(
+    [],
+  );
   const newTrophiesRef = useRef<Array<{ icon: string; name: string }>>([]);
   const speedBonusTotalRef = useRef(0);
 
@@ -409,7 +473,6 @@ function BattleMode({
       return updated;
     });
   }
-
 
   // Tutorial state — only in regular battles, never Elite
   const flags = useGameStore((s) => s.flags);
@@ -578,7 +641,6 @@ function BattleMode({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, questionIdx, trivia, playerAbility]);
 
-
   function handleAnswer(idx: number) {
     if (phase !== "question" || !trivia) return;
     if (tutorialStep !== null) return;
@@ -595,7 +657,6 @@ function BattleMode({
     setLastElapsedMs(elapsed);
     totalElapsedMsRef.current += elapsed;
     answeredCountRef.current += 1;
-
 
     let newStreak = streak;
     if (correct) {
@@ -726,7 +787,7 @@ function BattleMode({
         abilityStateRef.current.iceFirstWrongConsumed = true;
         triggerAbilityToast(playerAbility);
       }
-      if (playerAbility.id === "flame-body" && Math.random() < 0.10) {
+      if (playerAbility.id === "flame-body" && Math.random() < 0.1) {
         wrongDmg = 0;
         triggerAbilityToast(playerAbility);
       }
@@ -772,10 +833,7 @@ function BattleMode({
       setTimeout(() => setFloatDmg(null), 1000);
 
       // Status thresholds
-      if (
-        wrongStreakRef.current === 2 &&
-        !statuses.some((s) => s.kind === "confused")
-      ) {
+      if (wrongStreakRef.current === 2 && !statuses.some((s) => s.kind === "confused")) {
         applyStatus("confused");
       }
       if (
@@ -832,14 +890,14 @@ function BattleMode({
     } else if (isWeekly) {
       if (won) {
         xpAward = Math.round(100 * levelMult * streakMult);
-        coinAward = Math.round(0.30 * xpAward);
-        tpAward = Math.round(0.20 * xpAward);
+        coinAward = Math.round(0.3 * xpAward);
+        tpAward = Math.round(0.2 * xpAward);
       }
     } else {
       if (won) {
         xpAward = Math.round(50 * levelMult * streakMult);
         coinAward = Math.round(0.25 * xpAward);
-        tpAward = Math.round(0.10 * xpAward);
+        tpAward = Math.round(0.1 * xpAward);
       } else {
         xpAward = Math.round(10 * levelMult * streakMult);
       }
@@ -973,7 +1031,6 @@ function BattleMode({
     }
     newTrophiesRef.current = unlocked;
 
-
     playSfx(won ? "victory" : "defeat");
     if (won) {
       toast.success(`Victory! +${xpAward} XP`, { duration: 2500 });
@@ -1057,7 +1114,6 @@ function BattleMode({
     );
   }
 
-
   const totalQuestions = questions.length;
   const progressPct = Math.min(100, (questionIdx / Math.max(1, totalQuestions)) * 100);
 
@@ -1091,7 +1147,9 @@ function BattleMode({
       {/* top bar */}
       <div className="flex shrink-0 items-center justify-between gap-2 pt-[calc(env(safe-area-inset-top)+1rem)] pb-1 px-[max(1.25rem,env(safe-area-inset-left))]">
         <div className="flex items-center gap-2">
-          <div className={`flex items-center gap-1 rounded-full px-2.5 py-1 font-pixel text-[9px] shadow-card backdrop-blur ${isElite ? "bg-poke-dark text-poke-yellow" : "bg-card/90 text-foreground"}`}>
+          <div
+            className={`flex items-center gap-1 rounded-full px-2.5 py-1 font-pixel text-[9px] shadow-card backdrop-blur ${isElite ? "bg-poke-dark text-poke-yellow" : "bg-card/90 text-foreground"}`}
+          >
             {isElite && <Crown className="h-3 w-3" />}
             {isElite
               ? `ELITE · ${eliteMember!.region}`
@@ -1104,7 +1162,6 @@ function BattleMode({
               Streak ×{streak}
             </div>
           )}
-
         </div>
       </div>
 
@@ -1130,7 +1187,8 @@ function BattleMode({
               style={{
                 background:
                   "radial-gradient(ellipse at 50% 35%, oklch(0.88 0.16 145) 0%, oklch(0.72 0.18 145) 55%, oklch(0.55 0.16 150) 100%)",
-                boxShadow: "0 8px 14px -6px oklch(0.3 0.1 150 / 0.35), inset 0 1px 0 oklch(1 0 0 / 0.35)",
+                boxShadow:
+                  "0 8px 14px -6px oklch(0.3 0.1 150 / 0.35), inset 0 1px 0 oklch(1 0 0 / 0.35)",
               }}
             />
             <motion.div
@@ -1149,7 +1207,9 @@ function BattleMode({
               )}
               {floatDmg?.who === "enemy" && (
                 <div className="animate-float-up pointer-events-none absolute top-4 left-1/2 z-20 -translate-x-1/2 font-pixel text-base text-destructive">
-                  -{floatDmg.n}{floatDmg.super && " 💥"}{floatDmg.speedy && " ⚡"}
+                  -{floatDmg.n}
+                  {floatDmg.super && " 💥"}
+                  {floatDmg.speedy && " ⚡"}
                 </div>
               )}
             </motion.div>
@@ -1165,7 +1225,8 @@ function BattleMode({
               style={{
                 background:
                   "radial-gradient(ellipse at 50% 35%, oklch(0.88 0.16 145) 0%, oklch(0.72 0.18 145) 55%, oklch(0.55 0.16 150) 100%)",
-                boxShadow: "0 8px 14px -6px oklch(0.3 0.1 150 / 0.35), inset 0 1px 0 oklch(1 0 0 / 0.35)",
+                boxShadow:
+                  "0 8px 14px -6px oklch(0.3 0.1 150 / 0.35), inset 0 1px 0 oklch(1 0 0 / 0.35)",
               }}
             />
             <motion.div
@@ -1200,9 +1261,6 @@ function BattleMode({
         </div>
       </div>
 
-
-
-
       {/* intro banner overlay */}
       <AnimatePresence>
         {introBanner && (
@@ -1234,11 +1292,8 @@ function BattleMode({
               {/* Floating timer pill + category label */}
               <div className="pointer-events-none absolute left-1/2 -top-12 z-10 flex -translate-x-1/2 flex-col items-center">
                 <TimerRing timer={timer} maxTime={TIMER_BASE + bonusTime} />
-                <p className="mt-1.5 font-pixel-xs text-foreground/70">
-                  {trivia.category}
-                </p>
+                <p className="mt-1.5 font-pixel-xs text-foreground/70">{trivia.category}</p>
               </div>
-
 
               <div className="pt-1">
                 <p className="text-center text-[clamp(0.95rem,4vw,1.125rem)] font-bold leading-snug">
@@ -1305,8 +1360,14 @@ function BattleMode({
                           const owned = inventory[it.id] ?? 0;
                           const used = usedThisBattle[it.id] ?? false;
                           const isAuto =
-                            it.id === "focusband" || it.id === "quickclaw" || it.id === "assaultvest";
-                          const disabled = isAuto || owned <= 0 || used || ((isWeekly || isElite) && it.id === "escape");
+                            it.id === "focusband" ||
+                            it.id === "quickclaw" ||
+                            it.id === "assaultvest";
+                          const disabled =
+                            isAuto ||
+                            owned <= 0 ||
+                            used ||
+                            ((isWeekly || isElite) && it.id === "escape");
                           return (
                             <button
                               key={it.id}
@@ -1331,13 +1392,21 @@ function BattleMode({
                               <div className="min-w-0">
                                 <div className="flex items-center gap-1.5 text-sm font-semibold">
                                   {it.name}
-                                  <span className="font-pixel text-[9px] text-primary">×{owned}</span>
+                                  <span className="font-pixel text-[9px] text-primary">
+                                    ×{owned}
+                                  </span>
                                 </div>
                                 <div className="text-[10px] leading-tight text-muted-foreground">
                                   {it.desc}
                                 </div>
-                                {isAuto && <div className="text-[10px] text-primary">Auto-activates</div>}
-                                {used && !isAuto && <div className="text-[10px] text-destructive">Used this battle</div>}
+                                {isAuto && (
+                                  <div className="text-[10px] text-primary">Auto-activates</div>
+                                )}
+                                {used && !isAuto && (
+                                  <div className="text-[10px] text-destructive">
+                                    Used this battle
+                                  </div>
+                                )}
                               </div>
                             </button>
                           );
@@ -1356,7 +1425,8 @@ function BattleMode({
                     .map((it) => {
                       const owned = inventory[it.id] ?? 0;
                       const used = usedThisBattle[it.id] ?? false;
-                      const disabled = owned <= 0 || used || ((isWeekly || isElite) && it.id === "escape");
+                      const disabled =
+                        owned <= 0 || used || ((isWeekly || isElite) && it.id === "escape");
                       return (
                         <button
                           key={it.id}
@@ -1396,13 +1466,17 @@ function BattleMode({
           <AlertDialogHeader>
             <AlertDialogTitle>Leave battle?</AlertDialogTitle>
             <AlertDialogDescription>
-              Your progress in this battle will be lost. You'll keep XP and trophies you've already earned.
+              Your progress in this battle will be lost. You'll keep XP and trophies you've already
+              earned.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Stay</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => { abortBattle(); onExit(); }}
+              onClick={() => {
+                abortBattle();
+                onExit();
+              }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Leave
@@ -1517,7 +1591,8 @@ function ResultScreen({
               style={{
                 background:
                   "radial-gradient(ellipse at 50% 35%, oklch(0.88 0.16 145) 0%, oklch(0.72 0.18 145) 55%, oklch(0.55 0.16 150) 100%)",
-                boxShadow: "0 8px 14px -6px oklch(0.3 0.1 150 / 0.35), inset 0 1px 0 oklch(1 0 0 / 0.35)",
+                boxShadow:
+                  "0 8px 14px -6px oklch(0.3 0.1 150 / 0.35), inset 0 1px 0 oklch(1 0 0 / 0.35)",
               }}
             />
             <motion.div
@@ -1531,8 +1606,12 @@ function ResultScreen({
         </div>
 
         <div className="mx-auto mt-6 w-full max-w-sm rounded-2xl bg-card p-4 shadow-card">
-          {xpEarned > 0 && <Row label="XP earned" value={`+${xpEarned}`} valueClass="text-primary" />}
-          {coinsEarned > 0 && <Row label="Coins earned" value={`+${coinsEarned}`} valueClass="text-poke-yellow" />}
+          {xpEarned > 0 && (
+            <Row label="XP earned" value={`+${xpEarned}`} valueClass="text-primary" />
+          )}
+          {coinsEarned > 0 && (
+            <Row label="Coins earned" value={`+${coinsEarned}`} valueClass="text-poke-yellow" />
+          )}
           <Row label={`${partnerName} TP`} value={`+${tpEarned}`} valueClass="text-poke-blue" />
           {speedBonus > 0 && (
             <Row
@@ -1548,7 +1627,9 @@ function ResultScreen({
           )}
           <div className="my-3 border-t border-dashed border-foreground/15" />
           <div className="flex items-center gap-2">
-            <span className="font-pixel-xs text-foreground/70">Lv {currentLevel} · {Math.round(levelProgressPct)}%</span>
+            <span className="font-pixel-xs text-foreground/70">
+              Lv {currentLevel} · {Math.round(levelProgressPct)}%
+            </span>
             <div className="h-2 flex-1 overflow-hidden rounded-full bg-foreground/15">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-poke-yellow via-primary to-destructive transition-[width] duration-700"
@@ -1620,7 +1701,11 @@ function ResultScreen({
             transition={{ duration: 2, repeat: Infinity }}
             className="relative z-10"
           >
-            <PokemonSprite id={partnerId} alt={partnerName} className="sprite h-24 w-24 opacity-80 grayscale" />
+            <PokemonSprite
+              id={partnerId}
+              alt={partnerName}
+              className="sprite h-24 w-24 opacity-80 grayscale"
+            />
           </motion.div>
         </div>
       </div>
@@ -1645,14 +1730,11 @@ function ResultScreen({
               </div>
             ))
           )}
-          {more > 0 && (
-            <p className="text-xs italic text-white/45">and {more} more…</p>
-          )}
+          {more > 0 && <p className="text-xs italic text-white/45">and {more} more…</p>}
         </div>
         <div className="my-3 border-t border-dashed border-white/10" />
         <p className="text-xs text-white/70">
-          Consolation:{" "}
-          <span className="font-bold text-poke-yellow">+{xpEarned} XP</span>
+          Consolation: <span className="font-bold text-poke-yellow">+{xpEarned} XP</span>
           {" · "}
           {streakKept ? "streak kept 🔥" : "streak reset"}
         </p>
@@ -1679,7 +1761,15 @@ function ResultScreen({
   );
 }
 
-function Row({ label, value, valueClass }: { label: ReactNode; value: ReactNode; valueClass?: string }) {
+function Row({
+  label,
+  value,
+  valueClass,
+}: {
+  label: ReactNode;
+  value: ReactNode;
+  valueClass?: string;
+}) {
   return (
     <div className="flex items-center justify-between py-1.5 text-sm">
       <div className="font-semibold text-foreground">{label}</div>
@@ -1687,7 +1777,6 @@ function Row({ label, value, valueClass }: { label: ReactNode; value: ReactNode;
     </div>
   );
 }
-
 
 // ----------------------------- Daily Challenge Mode -----------------------------
 
@@ -1753,7 +1842,9 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
     if (typeof navigator !== "undefined" && "vibrate" in navigator) {
       try {
         navigator.vibrate(correct ? 30 : [50, 30, 50]);
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
     playSfx(correct ? "correct" : "wrong");
     setPhase("feedback");
@@ -1776,7 +1867,8 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
           if (dailyXp > 0) {
             useGameStore.getState().addXp(dailyXp);
             const partner = useGameStore.getState().pokemon;
-            if (partner) useGameStore.getState().addTrainingPoints(partner.id, Math.round(0.20 * dailyXp));
+            if (partner)
+              useGameStore.getState().addTrainingPoints(partner.id, Math.round(0.2 * dailyXp));
           }
         }
         playSfx("victory");
@@ -1791,23 +1883,37 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
 
   if (phase === "done") {
     const timeMs = Date.now() - startedAt.current;
-    return <DailyResultScreen correct={correctCount} total={total} timeMs={timeMs} pattern={pattern} onExit={onExit} />;
+    return (
+      <DailyResultScreen
+        correct={correctCount}
+        total={total}
+        timeMs={timeMs}
+        pattern={pattern}
+        onExit={onExit}
+      />
+    );
   }
 
   if (!trivia) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-background">
-        <div className="font-pixel text-sm text-muted-foreground">No daily questions available.</div>
+        <div className="font-pixel text-sm text-muted-foreground">
+          No daily questions available.
+        </div>
       </div>
     );
   }
 
-  const progressPct = ((idx) / total) * 100;
+  const progressPct = (idx / total) * 100;
 
   return (
     <div className="bg-battle-field relative flex h-full w-full flex-col overflow-hidden">
       <div className="absolute left-0 right-0 top-0 z-40 h-1 bg-poke-dark/20">
-        <motion.div className="h-full bg-poke-yellow" initial={false} animate={{ width: `${progressPct}%` }} />
+        <motion.div
+          className="h-full bg-poke-yellow"
+          initial={false}
+          animate={{ width: `${progressPct}%` }}
+        />
       </div>
       <div className="flex shrink-0 items-center justify-between pt-[calc(env(safe-area-inset-top)+1rem)] pb-1 px-[max(1.25rem,env(safe-area-inset-left))]">
         <div className="w-9" />
@@ -1821,13 +1927,17 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
           <AlertDialogHeader>
             <AlertDialogTitle>Leave the daily challenge?</AlertDialogTitle>
             <AlertDialogDescription>
-              Leaving will discard your progress on today's challenge. You can start it again, but nothing is saved until you finish.
+              Leaving will discard your progress on today's challenge. You can start it again, but
+              nothing is saved until you finish.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Stay</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => { abortBattle(); onExit(); }}
+              onClick={() => {
+                abortBattle();
+                onExit();
+              }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Leave
@@ -1848,12 +1958,15 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
         >
           <div className="relative">
             <div className="absolute inset-0 -z-10 rounded-full bg-destructive/50 blur-3xl" />
-            <PokemonSprite id={479} alt="Rotom" className="sprite h-72 w-72 sm:h-80 sm:w-80 shrink-0 object-contain drop-shadow-[0_0_40px_oklch(0.62_0.22_25/0.85)]" />
+            <PokemonSprite
+              id={479}
+              alt="Rotom"
+              className="sprite h-72 w-72 sm:h-80 sm:w-80 shrink-0 object-contain drop-shadow-[0_0_40px_oklch(0.62_0.22_25/0.85)]"
+            />
           </div>
         </motion.div>
         <PokeballPattern marks={pattern} />
       </div>
-
 
       <div className="relative shrink-0 rounded-t-[28px] bg-card pt-14 px-[max(1rem,env(safe-area-inset-left))] pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-[0_-8px_30px_-12px_oklch(0.3_0.05_260/0.25)]">
         <div className="pointer-events-none absolute left-1/2 -top-12 z-10 flex -translate-x-1/2 flex-col items-center">
@@ -1861,7 +1974,9 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
           <p className="mt-1.5 font-pixel-xs text-foreground/70">{trivia.category}</p>
         </div>
 
-        <p className="text-center text-[clamp(0.95rem,4vw,1.125rem)] font-bold leading-snug">{trivia.question}</p>
+        <p className="text-center text-[clamp(0.95rem,4vw,1.125rem)] font-bold leading-snug">
+          {trivia.question}
+        </p>
         <div className="mt-3 grid grid-cols-1 gap-2">
           {trivia.options.map((opt, i) => {
             const isCorrect = phase === "feedback" && i === trivia.correct;
@@ -1881,23 +1996,28 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
               >
                 <span className="min-w-0 flex-1 truncate">{opt}</span>
                 {isCorrect && (
-                  <span className="ml-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-hp-good text-[12px] text-white">✓</span>
+                  <span className="ml-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-hp-good text-[12px] text-white">
+                    ✓
+                  </span>
                 )}
                 {isWrong && (
-                  <span className="ml-2 shrink-0 text-[10px] font-bold uppercase tracking-wide text-destructive">Your Pick ×</span>
+                  <span className="ml-2 shrink-0 text-[10px] font-bold uppercase tracking-wide text-destructive">
+                    Your Pick ×
+                  </span>
                 )}
               </button>
             );
           })}
         </div>
         {phase === "feedback" && (
-          <p className="mt-2 rounded-xl bg-muted p-2 text-[11px] leading-snug text-muted-foreground">💡 {trivia.explanation}</p>
+          <p className="mt-2 rounded-xl bg-muted p-2 text-[11px] leading-snug text-muted-foreground">
+            💡 {trivia.explanation}
+          </p>
         )}
       </div>
     </div>
   );
 }
-
 
 function DailyResultScreen({
   correct,
@@ -1915,8 +2035,14 @@ function DailyResultScreen({
   const date = new Date().toISOString().slice(0, 10);
   const seconds = Math.round(timeMs / 1000);
   const bestStreak = (() => {
-    let best = 0, cur = 0;
-    for (const m of pattern) { if (m === "correct") { cur += 1; best = Math.max(best, cur); } else cur = 0; }
+    let best = 0,
+      cur = 0;
+    for (const m of pattern) {
+      if (m === "correct") {
+        cur += 1;
+        best = Math.max(best, cur);
+      } else cur = 0;
+    }
     return best;
   })();
   const [shareOpen, setShareOpen] = useState(false);
@@ -1926,29 +2052,32 @@ function DailyResultScreen({
   const level = useGameStore((s) => s.level);
   const isPerfect = correct === total && total > 0;
   const avgTimeMs = total > 0 ? timeMs / total : undefined;
-  const shareData: ShareData | null = (isPerfect && partner) ? {
-    type: "daily-perfect",
-    trainerName,
-    trainerSpriteUrl: trainerSpriteUrl(trainerSprite),
-    partnerName: partner.name,
-    partnerPokemonId: partner.id,
-    partnerShiny: false,
-    opponentName: "Rotom",
-    opponentTitle: "Daily Challenge",
-    opponentSpriteUrl: null,
-    signaturePokemonId: 479,
-    finalPlayerHp: 100,
-    maxPlayerHp: 100,
-    topStreak: bestStreak,
-    topDamage: 0,
-    dateISO: date,
-    correctCount: correct,
-    totalQuestions: total,
-    xpEarned: dailyXpFor(correct, total, level),
-    avgTimeMs,
-    level,
-    rank: rankForLevel(level),
-  } : null;
+  const shareData: ShareData | null =
+    isPerfect && partner
+      ? {
+          type: "daily-perfect",
+          trainerName,
+          trainerSpriteUrl: trainerSpriteUrl(trainerSprite),
+          partnerName: partner.name,
+          partnerPokemonId: partner.id,
+          partnerShiny: false,
+          opponentName: "Rotom",
+          opponentTitle: "Daily Challenge",
+          opponentSpriteUrl: null,
+          signaturePokemonId: 479,
+          finalPlayerHp: 100,
+          maxPlayerHp: 100,
+          topStreak: bestStreak,
+          topDamage: 0,
+          dateISO: date,
+          correctCount: correct,
+          totalQuestions: total,
+          xpEarned: dailyXpFor(correct, total, level),
+          avgTimeMs,
+          level,
+          rank: rankForLevel(level),
+        }
+      : null;
 
   return (
     <motion.div
@@ -1967,10 +2096,30 @@ function DailyResultScreen({
       >
         <div className="absolute inset-0 rounded-full bg-poke-yellow/50 blur-xl" />
         <svg viewBox="0 0 64 64" className="relative h-20 w-20">
-          <circle cx="32" cy="26" r="20" fill="var(--color-poke-yellow)" stroke="var(--color-poke-dark)" strokeWidth="2.5" />
+          <circle
+            cx="32"
+            cy="26"
+            r="20"
+            fill="var(--color-poke-yellow)"
+            stroke="var(--color-poke-dark)"
+            strokeWidth="2.5"
+          />
           <path d="M12 26 H52" stroke="var(--color-poke-dark)" strokeWidth="2.5" />
-          <circle cx="32" cy="26" r="5" fill="white" stroke="var(--color-poke-dark)" strokeWidth="2" />
-          <path d="M22 44 L18 60 L26 54 L32 60 L38 54 L46 60 L42 44 Z" fill="var(--color-primary)" stroke="var(--color-poke-dark)" strokeWidth="2" strokeLinejoin="round" />
+          <circle
+            cx="32"
+            cy="26"
+            r="5"
+            fill="white"
+            stroke="var(--color-poke-dark)"
+            strokeWidth="2"
+          />
+          <path
+            d="M22 44 L18 60 L26 54 L32 60 L38 54 L46 60 L42 44 Z"
+            fill="var(--color-primary)"
+            stroke="var(--color-poke-dark)"
+            strokeWidth="2"
+            strokeLinejoin="round"
+          />
         </svg>
       </motion.div>
       <div className="mt-3 font-display-xl text-foreground">All done!</div>
@@ -2004,7 +2153,9 @@ function DailyResultScreen({
       >
         Back
       </Button>
-      {shareData && <ShareCardDialog open={shareOpen} onClose={() => setShareOpen(false)} data={shareData} />}
+      {shareData && (
+        <ShareCardDialog open={shareOpen} onClose={() => setShareOpen(false)} data={shareData} />
+      )}
     </motion.div>
   );
 }

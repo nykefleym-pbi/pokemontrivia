@@ -63,7 +63,8 @@ export const TRAINER_QUOTES: Record<string, string> = {
   brycen: "If a strong Trainer's Pokémon are also strong, they can win!",
   drayden: "Heh-heh-heh! That's a great look in your eyes!",
   iris: "Yeah! I'm gonna battle with you for everything I've got!",
-  viola: "Whether it's the tears of frustration that follow a loss, or the blossoming of joy that comes with victory…",
+  viola:
+    "Whether it's the tears of frustration that follow a loss, or the blossoming of joy that comes with victory…",
   grant: "Only by overcoming the wall that looms before you can you grow.",
   korrina: "Time for Lady Korrina's big appearance!",
   ramos: "Ho-ho-hoh! So ye're me challenger?",

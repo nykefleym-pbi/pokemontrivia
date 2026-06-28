@@ -113,11 +113,7 @@ export function EvolutionScreen({ from, to, onComplete }: Props) {
         )}
 
         {showFrom && (
-          <PokemonSprite
-            id={from.id}
-            alt={from.name}
-            className="sprite relative h-40 w-40"
-          />
+          <PokemonSprite id={from.id} alt={from.name} className="sprite relative h-40 w-40" />
         )}
         {isMorphing && <MorphAnimation fromId={from.id} toId={to.id} />}
         {showTo && (
@@ -142,9 +138,7 @@ export function EvolutionScreen({ from, to, onComplete }: Props) {
           <div className="inline-flex rounded-full bg-poke-yellow/40 px-2.5 py-0.5 font-pixel-xs uppercase text-foreground">
             Evolution Complete
           </div>
-          <div className="mt-3 text-sm text-muted-foreground">
-            Your {from.name} evolved into
-          </div>
+          <div className="mt-3 text-sm text-muted-foreground">Your {from.name} evolved into</div>
           <div className="mt-1 font-display-lg text-primary">{to.name}!</div>
           <Button
             size="lg"
@@ -163,11 +157,7 @@ export function EvolutionScreen({ from, to, onComplete }: Props) {
         </motion.div>
       )}
 
-      <ShareCardDialog
-        open={shareOpen}
-        onClose={() => setShareOpen(false)}
-        data={shareData}
-      />
+      <ShareCardDialog open={shareOpen} onClose={() => setShareOpen(false)} data={shareData} />
     </div>
   );
 }

@@ -15,9 +15,10 @@ export function PartnerPicker({ onPick, selected, limit = 24 }: Props) {
   const [query, setQuery] = useState("");
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return STARTING_PARTNERS
-      .filter((p) => (q ? p.name.toLowerCase().startsWith(q) : true))
-      .slice(0, limit);
+    return STARTING_PARTNERS.filter((p) => (q ? p.name.toLowerCase().startsWith(q) : true)).slice(
+      0,
+      limit,
+    );
   }, [query, limit]);
 
   return (
@@ -54,7 +55,9 @@ export function PartnerPicker({ onPick, selected, limit = 24 }: Props) {
                   <TypeBadge key={t} type={t} size="sm" />
                 ))}
               </div>
-              <div className="font-pixel text-[8px] text-primary">⚡ {getAbility(p.types).name}</div>
+              <div className="font-pixel text-[8px] text-primary">
+                ⚡ {getAbility(p.types).name}
+              </div>
             </button>
           );
         })}

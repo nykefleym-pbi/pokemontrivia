@@ -38,7 +38,7 @@ export function MegaResults({
   timeMs,
   rank,
   shiny,
-  
+
   canRematch,
   onRematch,
   onHome,
@@ -117,11 +117,17 @@ export function MegaResults({
           className="flex flex-col justify-center rounded-2xl px-4 py-3.5 text-left active:scale-[0.98]"
           style={
             win
-              ? { background: "linear-gradient(95deg, #F2D64E, #E8A93C)", boxShadow: "0 4px 0 #C18A28" }
+              ? {
+                  background: "linear-gradient(95deg, #F2D64E, #E8A93C)",
+                  boxShadow: "0 4px 0 #C18A28",
+                }
               : { background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }
           }
         >
-          <span className="font-pixel" style={{ fontSize: 6, color: win ? "#7A5E10" : "rgba(255,255,255,0.6)" }}>
+          <span
+            className="font-pixel"
+            style={{ fontSize: 6, color: win ? "#7A5E10" : "rgba(255,255,255,0.6)" }}
+          >
             LEADERBOARD RANK ›
           </span>
           <span
@@ -137,11 +143,21 @@ export function MegaResults({
 
       {/* event-end reward note (shown win or loss) */}
       <div className="px-6 pt-4.5">
-        <div className="rounded-2xl p-3.5" style={{ background: "rgba(242,214,78,0.10)", border: "1px solid rgba(242,214,78,0.35)" }}>
+        <div
+          className="rounded-2xl p-3.5"
+          style={{ background: "rgba(242,214,78,0.10)", border: "1px solid rgba(242,214,78,0.35)" }}
+        >
           <div className="flex items-start gap-2.5">
             <span className="text-xl leading-none">🏆</span>
-            <div className="text-[13px] font-semibold leading-snug" style={{ color: "rgba(255,255,255,0.85)" }}>
-              Rewards are awarded by your <span className="font-extrabold" style={{ color: "#F2D64E" }}>final rank</span> when the event ends. Come back to the leaderboard after it closes to claim yours.
+            <div
+              className="text-[13px] font-semibold leading-snug"
+              style={{ color: "rgba(255,255,255,0.85)" }}
+            >
+              Rewards are awarded by your{" "}
+              <span className="font-extrabold" style={{ color: "#F2D64E" }}>
+                final rank
+              </span>{" "}
+              when the event ends. Come back to the leaderboard after it closes to claim yours.
             </div>
           </div>
         </div>
@@ -156,14 +172,21 @@ export function MegaResults({
             <button
               onClick={onViewLeaderboard}
               className="flex h-14 items-center justify-center rounded-full text-base font-extrabold active:scale-[0.99]"
-              style={{ background: "linear-gradient(95deg, #F2D64E, #E8A93C)", color: "#1C2333", boxShadow: "0 4px 0 #C18A28" }}
+              style={{
+                background: "linear-gradient(95deg, #F2D64E, #E8A93C)",
+                color: "#1C2333",
+                boxShadow: "0 4px 0 #C18A28",
+              }}
             >
               View Leaderboard
             </button>
             <button
               onClick={onHome}
               className="flex h-14 items-center justify-center rounded-full text-base font-bold text-white"
-              style={{ background: "rgba(255,255,255,0.08)", border: "1.5px solid rgba(255,255,255,0.18)" }}
+              style={{
+                background: "rgba(255,255,255,0.08)",
+                border: "1.5px solid rgba(255,255,255,0.18)",
+              }}
             >
               Back home
             </button>
@@ -174,7 +197,10 @@ export function MegaResults({
               <button
                 onClick={onRematch}
                 className="flex h-14 items-center justify-center rounded-full text-base font-bold text-white active:scale-[0.99]"
-                style={{ background: "#E23B2E", boxShadow: "0 14px 30px -8px rgba(226,59,46,0.55)" }}
+                style={{
+                  background: "#E23B2E",
+                  boxShadow: "0 14px 30px -8px rgba(226,59,46,0.55)",
+                }}
               >
                 Rematch (1 retake left)
               </button>
@@ -182,14 +208,20 @@ export function MegaResults({
             <button
               onClick={onViewLeaderboard}
               className="flex h-14 items-center justify-center rounded-full text-base font-bold text-white"
-              style={{ background: "rgba(255,255,255,0.08)", border: "1.5px solid rgba(255,255,255,0.18)" }}
+              style={{
+                background: "rgba(255,255,255,0.08)",
+                border: "1.5px solid rgba(255,255,255,0.18)",
+              }}
             >
               View Leaderboard
             </button>
             <button
               onClick={onHome}
               className="flex h-14 items-center justify-center rounded-full text-base font-bold text-white"
-              style={{ background: "rgba(255,255,255,0.04)", border: "1.5px solid rgba(255,255,255,0.12)" }}
+              style={{
+                background: "rgba(255,255,255,0.04)",
+                border: "1.5px solid rgba(255,255,255,0.12)",
+              }}
             >
               Back home
             </button>
@@ -200,7 +232,17 @@ export function MegaResults({
   );
 }
 
-function StatCard({ label, value, big, highlight }: { label: string; value: string; big?: boolean; highlight?: boolean }) {
+function StatCard({
+  label,
+  value,
+  big,
+  highlight,
+}: {
+  label: string;
+  value: string;
+  big?: boolean;
+  highlight?: boolean;
+}) {
   return (
     <div
       className="rounded-2xl px-4 py-3.5"
@@ -210,10 +252,15 @@ function StatCard({ label, value, big, highlight }: { label: string; value: stri
           : { background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }
       }
     >
-      <div className="font-pixel" style={{ fontSize: 6, color: highlight ? "#F2D64E" : "rgba(255,255,255,0.6)" }}>
+      <div
+        className="font-pixel"
+        style={{ fontSize: 6, color: highlight ? "#F2D64E" : "rgba(255,255,255,0.6)" }}
+      >
         {label}
       </div>
-      <div className={`mt-1.5 font-black leading-none text-white ${big ? "text-[26px]" : "text-[22px]"}`}>
+      <div
+        className={`mt-1.5 font-black leading-none text-white ${big ? "text-[26px]" : "text-[22px]"}`}
+      >
         {value}
       </div>
     </div>

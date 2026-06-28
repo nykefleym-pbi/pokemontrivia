@@ -1,11 +1,7 @@
 import { useEffect, useState } from "react";
 import { Share2, X, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { PokeballSpinner } from "@/components/game-ui";
 import { buildShareCard, type ShareData } from "./share-card-builder";

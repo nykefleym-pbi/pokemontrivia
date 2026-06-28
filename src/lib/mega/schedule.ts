@@ -70,7 +70,10 @@ function mapEvent(r: any): MegaEvent {
 }
 
 /** The event whose [startsAt, endsAt) window contains `now`, or null. */
-export async function fetchActiveMegaEvent(now: Date = new Date(), retries = 3): Promise<MegaEvent | null> {
+export async function fetchActiveMegaEvent(
+  now: Date = new Date(),
+  retries = 3,
+): Promise<MegaEvent | null> {
   const iso = now.toISOString();
   for (let attempt = 0; attempt <= retries; attempt++) {
     const { data, error } = await db
@@ -91,7 +94,10 @@ export async function fetchActiveMegaEvent(now: Date = new Date(), retries = 3):
 /** Look up a single event by id (used by the leaderboard + champion-claim flows). */
 export async function fetchMegaEvent(id: string): Promise<MegaEvent | null> {
   const { data, error } = await db.from("mega_events").select("*").eq("id", id).maybeSingle();
-  if (error) { console.warn("[mega] fetchMegaEvent failed:", error.message); return null; }
+  if (error) {
+    console.warn("[mega] fetchMegaEvent failed:", error.message);
+    return null;
+  }
   return data ? mapEvent(data) : null;
 }
 
@@ -122,9 +128,14 @@ export function useActiveMegaEvent(): { event: MegaEvent | null; loading: boolea
   useEffect(() => {
     let on = true;
     fetchActiveMegaEvent().then((e) => {
-      if (on) { setEvent(e); setLoading(false); }
+      if (on) {
+        setEvent(e);
+        setLoading(false);
+      }
     });
-    return () => { on = false; };
+    return () => {
+      on = false;
+    };
   }, []);
   return { event, loading };
 }

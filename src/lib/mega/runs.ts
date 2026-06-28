@@ -4,7 +4,10 @@ import { ensureSession, syncProfile } from "@/lib/social";
 // Loosely-typed clients so this compiles even before Supabase types regenerate.
 const db = supabase as unknown as { from: (t: string) => any };
 const rpc = supabase as unknown as {
-  rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: any; error: { message: string } | null }>;
+  rpc: (
+    fn: string,
+    args: Record<string, unknown>,
+  ) => Promise<{ data: any; error: { message: string } | null }>;
 };
 
 export interface MegaRunRow {
@@ -32,7 +35,10 @@ export async function getMyMegaRun(eventId: string): Promise<MegaRunRow | null> 
     .eq("user_id", uid)
     .eq("event_id", eventId)
     .maybeSingle();
-  if (error) { console.warn("[mega] getMyMegaRun failed:", error.message); return null; }
+  if (error) {
+    console.warn("[mega] getMyMegaRun failed:", error.message);
+    return null;
+  }
   return (data ?? null) as MegaRunRow | null;
 }
 
@@ -61,14 +67,25 @@ export interface MegaLeaderboardRow {
  * Leaderboard for an event via the get_mega_leaderboard RPC. The mega_runs table
  * itself is owner-only readable; this function exposes just the display columns.
  */
-export async function fetchMegaLeaderboard(eventId: string, limit = 100): Promise<MegaLeaderboardRow[]> {
-  const { data, error } = await rpc.rpc("get_mega_leaderboard", { p_event_id: eventId, p_limit: limit });
-  if (error) { console.warn("[mega] fetchMegaLeaderboard failed:", error.message); return []; }
+export async function fetchMegaLeaderboard(
+  eventId: string,
+  limit = 100,
+): Promise<MegaLeaderboardRow[]> {
+  const { data, error } = await rpc.rpc("get_mega_leaderboard", {
+    p_event_id: eventId,
+    p_limit: limit,
+  });
+  if (error) {
+    console.warn("[mega] fetchMegaLeaderboard failed:", error.message);
+    return [];
+  }
   return (data ?? []) as MegaLeaderboardRow[];
 }
 
 /** The current user's row + 1-based rank for an event, or null if no run yet. */
-export async function getMyMegaRank(eventId: string): Promise<{ row: MegaRunRow; rank: number } | null> {
+export async function getMyMegaRank(
+  eventId: string,
+): Promise<{ row: MegaRunRow; rank: number } | null> {
   const mine = await getMyMegaRun(eventId);
   if (!mine) return null;
   const board = await fetchMegaLeaderboard(eventId, 1000);

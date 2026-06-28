@@ -3,10 +3,35 @@ import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { RotateCcw, Check, Search, Volume2, VolumeX, ChevronRight, Moon, Copy, Share2, UserPlus, Users, X, Loader2, IdCard, ImageDown } from "lucide-react";
+import {
+  RotateCcw,
+  Check,
+  Search,
+  Volume2,
+  VolumeX,
+  ChevronRight,
+  Moon,
+  Copy,
+  Share2,
+  UserPlus,
+  Users,
+  X,
+  Loader2,
+  IdCard,
+  ImageDown,
+} from "lucide-react";
 import { ShareCardDialog } from "@/components/share-card-dialog";
 import { useGameStore } from "@/lib/store";
-import { listFriends, addFriendByCode, removeFriend, syncProfile, isTrainerNameAvailable, claimTrainerName, bootstrapSocial, type TrainerProfile } from "@/lib/social";
+import {
+  listFriends,
+  addFriendByCode,
+  removeFriend,
+  syncProfile,
+  isTrainerNameAvailable,
+  claimTrainerName,
+  bootstrapSocial,
+  type TrainerProfile,
+} from "@/lib/social";
 import { validateTrainerName, claimErrorMessage, TRAINER_NAME_MAX } from "@/lib/trainer-name";
 import {
   rankForLevel,
@@ -91,9 +116,13 @@ function ProfilePage() {
   const refreshFriends = React.useCallback(async () => {
     setFriends(await listFriends());
   }, []);
-  useEffect(() => { void refreshFriends(); }, [refreshFriends]);
   useEffect(() => {
-    const handler = () => { void refreshFriends(); };
+    void refreshFriends();
+  }, [refreshFriends]);
+  useEffect(() => {
+    const handler = () => {
+      void refreshFriends();
+    };
     window.addEventListener("poketrivia:friends-refresh", handler);
     return () => window.removeEventListener("poketrivia:friends-refresh", handler);
   }, [refreshFriends]);
@@ -108,7 +137,10 @@ function ProfilePage() {
     setAddingFriend(true);
     const res = await addFriendByCode(code);
     setAddingFriend(false);
-    if (res.error) { toast.error(res.error); return; }
+    if (res.error) {
+      toast.error(res.error);
+      return;
+    }
     const name = res.profile?.trainer_name ?? "trainer";
     if (res.status === "accepted") {
       toast.success(`You're now friends with ${name}!`);
@@ -137,7 +169,9 @@ function ProfilePage() {
   const [trainerQuery, setTrainerQuery] = useState("");
   const [resetOpen, setResetOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
-  const [renameAvail, setRenameAvail] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle");
+  const [renameAvail, setRenameAvail] = useState<
+    "idle" | "checking" | "available" | "taken" | "invalid"
+  >("idle");
   const [renameMsg, setRenameMsg] = useState<string>("");
   const [renaming, setRenaming] = useState(false);
   const [muted, setMutedState] = useState(false);
@@ -327,7 +361,6 @@ function ProfilePage() {
         </motion.div>
       </div>
 
-
       <div className="px-5 pb-8 pt-4">
         {/* Partner card */}
         {/* Stat cards */}
@@ -395,7 +428,6 @@ function ProfilePage() {
               );
             })}
           </div>
-
         </div>
 
         {/* Trophies / Badges / Settings buttons */}
@@ -489,7 +521,10 @@ function ProfilePage() {
                   onClick={() => {
                     const text = `Add me on Pokémon Trivia Battle! Friend code: ${friendCode}`;
                     if (navigator.share) navigator.share({ text }).catch(() => {});
-                    else { navigator.clipboard?.writeText(text); toast.success("Invite copied!"); }
+                    else {
+                      navigator.clipboard?.writeText(text);
+                      toast.success("Invite copied!");
+                    }
                   }}
                   className="flex-1 rounded-full"
                 >
@@ -499,7 +534,10 @@ function ProfilePage() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => { setCardOpen(false); setCardShareOpen(true); }}
+                onClick={() => {
+                  setCardOpen(false);
+                  setCardShareOpen(true);
+                }}
                 className="mt-2 w-full rounded-full"
               >
                 <ImageDown className="mr-1.5 h-3.5 w-3.5" /> Save as image
@@ -543,13 +581,23 @@ function ProfilePage() {
               <Input
                 value={friendCodeInput}
                 onChange={(e) => setFriendCodeInput(e.target.value.toUpperCase())}
-                onKeyDown={(e) => { if (e.key === "Enter") void handleAddFriend(); }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void handleAddFriend();
+                }}
                 placeholder="ENTER CODE"
                 maxLength={6}
                 className="h-12 flex-1 rounded-full bg-card font-pixel text-sm uppercase tracking-[0.2em]"
               />
-              <Button onClick={() => void handleAddFriend()} disabled={addingFriend} className="h-12 rounded-full px-5">
-                {addingFriend ? <Loader2 className="h-5 w-5 animate-spin" /> : <UserPlus className="h-5 w-5" />}
+              <Button
+                onClick={() => void handleAddFriend()}
+                disabled={addingFriend}
+                className="h-12 rounded-full px-5"
+              >
+                {addingFriend ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <UserPlus className="h-5 w-5" />
+                )}
               </Button>
             </div>
             <div className="space-y-2">
@@ -605,7 +653,6 @@ function ProfilePage() {
               );
             })}
           </div>
-
         </SheetContent>
       </Sheet>
 
@@ -704,7 +751,11 @@ function ProfilePage() {
                 >
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted">
-                      <img src={trainerSpriteUrl(trainerSprite)} alt="" className="sprite h-8 w-8 object-contain" />
+                      <img
+                        src={trainerSpriteUrl(trainerSprite)}
+                        alt=""
+                        className="sprite h-8 w-8 object-contain"
+                      />
                     </div>
                     <div>
                       <div className="text-sm font-semibold text-foreground">Repick avatar</div>
@@ -806,7 +857,11 @@ function ProfilePage() {
                 }
                 className="rounded-full"
               >
-                {renaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                {renaming ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
               </Button>
             </div>
             <p
@@ -824,18 +879,23 @@ function ProfilePage() {
         </DialogContent>
       </Dialog>
 
-
       <AlertDialog open={!!friendToRemove} onOpenChange={(o) => !o && setFriendToRemove(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Remove friend?</AlertDialogTitle>
             <AlertDialogDescription>
-              Remove {friendToRemove?.trainer_name ?? "this trainer"} from your friends list? You can add them back anytime with their friend code.
+              Remove {friendToRemove?.trainer_name ?? "this trainer"} from your friends list? You
+              can add them back anytime with their friend code.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => { if (friendToRemove) void handleRemoveFriend(friendToRemove.id); setFriendToRemove(null); }}>
+            <AlertDialogAction
+              onClick={() => {
+                if (friendToRemove) void handleRemoveFriend(friendToRemove.id);
+                setFriendToRemove(null);
+              }}
+            >
               Remove
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -1100,9 +1160,7 @@ function FriendRow({ friend, onRemove }: { friend: TrainerProfile; onRemove: () 
         <Users className="h-5 w-5 text-foreground/60" />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="truncate font-display-md text-foreground">
-          {friend.trainer_name}
-        </div>
+        <div className="truncate font-display-md text-foreground">{friend.trainer_name}</div>
         <div className="text-xs text-foreground/55">
           LV {friend.level} · {friend.pokedex_count} caught
         </div>
@@ -1144,7 +1202,9 @@ function BadgesTab() {
         const leaders = GYM_LEADERS.filter((g) => g.region === r);
         return (
           <div key={r} className={`rounded-3xl p-3 shadow-card ${REGION_TINT[r] ?? "bg-card"}`}>
-            <div className="mb-2 text-center font-pixel-xs text-foreground/60">{r.toUpperCase()}</div>
+            <div className="mb-2 text-center font-pixel-xs text-foreground/60">
+              {r.toUpperCase()}
+            </div>
             <div className="grid grid-cols-4 gap-2">
               {leaders.map((g) => {
                 const got = owned.has(g.id);
@@ -1168,7 +1228,6 @@ function PokeballIcon({ className }: { className?: string }) {
     </svg>
   );
 }
-
 
 function BadgeCell({ leader, got }: { leader: GymLeader; got: boolean }) {
   const [imgBroken, setImgBroken] = useState(false);

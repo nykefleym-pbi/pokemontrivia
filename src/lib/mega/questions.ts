@@ -4,7 +4,10 @@ import type { MegaEvent } from "./schedule";
 
 // Loosely-typed client so this compiles even before Supabase types regenerate.
 const db = supabase as unknown as {
-  rpc: (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
+  rpc: (
+    fn: string,
+    args?: Record<string, unknown>,
+  ) => Promise<{ data: unknown; error: { message: string } | null }>;
 };
 
 interface PublicQuestion {
@@ -19,21 +22,33 @@ interface PublicQuestion {
  */
 export async function fetchMegaQuestions(eventId: string): Promise<Trivia[]> {
   const { data, error } = await db.rpc("get_mega_questions_public", { p_event_id: eventId });
-  if (error) { console.warn("[mega] fetchMegaQuestions failed:", error.message); return []; }
+  if (error) {
+    console.warn("[mega] fetchMegaQuestions failed:", error.message);
+    return [];
+  }
   const rows = (data as PublicQuestion[] | null) ?? [];
   return rows.map((r) => ({
     question: r.question,
     options: r.options,
-    correct: -1,          // unknown to the client; resolved via reveal_mega_answer
+    correct: -1, // unknown to the client; resolved via reveal_mega_answer
     explanation: "",
     category: r.category ?? "",
   }));
 }
 
 /** Reveal a single question's correct option + explanation (called on answer / hint item). */
-export async function revealMegaAnswer(eventId: string, qIndex: number): Promise<{ correctIndex: number; explanation: string } | null> {
-  const { data, error } = await db.rpc("reveal_mega_answer", { p_event_id: eventId, p_q_index: qIndex });
-  if (error) { console.warn("[mega] revealMegaAnswer failed:", error.message); return null; }
+export async function revealMegaAnswer(
+  eventId: string,
+  qIndex: number,
+): Promise<{ correctIndex: number; explanation: string } | null> {
+  const { data, error } = await db.rpc("reveal_mega_answer", {
+    p_event_id: eventId,
+    p_q_index: qIndex,
+  });
+  if (error) {
+    console.warn("[mega] revealMegaAnswer failed:", error.message);
+    return null;
+  }
   const d = data as { ok?: boolean; correct_index?: number; explanation?: string } | null;
   if (!d || !d.ok || typeof d.correct_index !== "number") return null;
   return { correctIndex: d.correct_index, explanation: d.explanation ?? "" };
