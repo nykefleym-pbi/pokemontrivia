@@ -78,7 +78,7 @@ function ProfilePage() {
   const level = useGameStore((s) => s.level);
   const xp = useGameStore((s) => s.xp);
   const stats = useGameStore((s) => s.stats);
-  
+
   const setName = useGameStore((s) => s.setName);
   const setPokemon = useGameStore((s) => s.setPokemon);
   const setTrainerSprite = useGameStore((s) => s.setTrainerSprite);
@@ -219,7 +219,7 @@ function ProfilePage() {
   if (!hasOnboarded || !pokemon) return null;
 
   const rank = rankForLevel(level);
-  
+
   const accuracy = stats.answered > 0 ? Math.round((stats.correct / stats.answered) * 100) : 0;
   const avgTime =
     stats.answered > 0 ? Math.round(stats.totalAnswerTime / stats.answered / 100) / 10 : 0;
@@ -1115,8 +1115,6 @@ function PartnerCard({
     </div>
   );
 }
-
-
 
 function CardStat({ label, value }: { label: string; value: string | number }) {
   return (

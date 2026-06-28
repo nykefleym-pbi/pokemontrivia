@@ -8,7 +8,6 @@ export interface Trivia {
   category: string;
 }
 
-
 export interface TriviaPayload {
   question: string;
   options: string[];

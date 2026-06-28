@@ -71,4 +71,3 @@ describe("store composition (slices)", () => {
     expect(typeof useGameStore.getState().addXp).toBe("function");
   });
 });
-

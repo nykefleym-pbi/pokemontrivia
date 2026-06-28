@@ -26,12 +26,7 @@ import {
 } from "@/lib/pokemon-data";
 import { getAbility as getAbilityFn, type Ability } from "@/lib/abilities";
 import { TutorialOverlay } from "@/components/tutorial-overlay";
-import {
-  TypeBadge,
-  PokemonSprite,
-  PokeballPattern,
-  type DailyMark,
-} from "@/components/game-ui";
+import { TypeBadge, PokemonSprite, PokeballPattern, type DailyMark } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -348,8 +343,6 @@ function BattleMode({
   const [shareData, setShareData] = useState<ShareData | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
   const trainerSpriteId = useGameStore((s) => s.trainerSprite);
-
-
 
   const superEff = isSuperEffective(player, enemy.pokemon);
   const disadvantaged = useMemo(
@@ -865,7 +858,11 @@ function BattleMode({
     wrongStreakRef.current = 0;
     abilityStateRef.current.cursedBodyPending = null;
 
-    const { xp: xpAward, coins: coinAward, tp: tpAward } = battleReward({
+    const {
+      xp: xpAward,
+      coins: coinAward,
+      tp: tpAward,
+    } = battleReward({
       mode: isElite ? "elite" : isWeekly ? "weekly" : "regular",
       won,
       level,
@@ -1748,7 +1745,6 @@ function Row({
 }
 
 // ----------------------------- Daily Challenge Mode -----------------------------
-
 
 function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">) {
   const recordDaily = useGameStore((s) => s.recordDaily);

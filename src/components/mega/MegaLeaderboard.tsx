@@ -147,7 +147,8 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
         className="relative px-5 pb-[18px]"
         style={{
           paddingTop: 44,
-          background: "radial-gradient(circle at 50% 30%, #2E3A5C 0%, var(--brand-ink) 62%, var(--brand-ink-deep) 100%)",
+          background:
+            "radial-gradient(circle at 50% 30%, #2E3A5C 0%, var(--brand-ink) 62%, var(--brand-ink-deep) 100%)",
           overflow: "hidden",
         }}
       >
@@ -176,7 +177,10 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
           ‹
         </button>
         <div className="relative mt-2.5">
-          <div className="font-pixel" style={{ fontSize: 6.5, letterSpacing: 1, color: "var(--brand-gold)" }}>
+          <div
+            className="font-pixel"
+            style={{ fontSize: 6.5, letterSpacing: 1, color: "var(--brand-gold)" }}
+          >
             {ended ? "EVENT ENDED · RESULTS" : "MEGA RAID · LEADERBOARD"}
           </div>
           <div
@@ -192,7 +196,12 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
             {!ended && (
               <svg width="11" height="11" viewBox="0 0 22 22" fill="none">
                 <circle cx="11" cy="11" r="8.5" stroke="var(--brand-gold)" strokeWidth="2" />
-                <path d="M11 6.5V11l3 2" stroke="var(--brand-gold)" strokeWidth="2" strokeLinecap="round" />
+                <path
+                  d="M11 6.5V11l3 2"
+                  stroke="var(--brand-gold)"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
               </svg>
             )}
             <span className="font-pixel" style={{ fontSize: 6.5, color: "var(--brand-gold)" }}>
@@ -248,7 +257,8 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
                   <div
                     className="relative overflow-hidden rounded-[20px] p-[18px] text-center"
                     style={{
-                      background: "radial-gradient(circle at 50% 0%, #6a2db5 0%, var(--brand-ink) 80%)",
+                      background:
+                        "radial-gradient(circle at 50% 0%, #6a2db5 0%, var(--brand-ink) 80%)",
                       border: "1.5px solid var(--brand-gold)",
                     }}
                   >
@@ -270,7 +280,10 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
                       <div className="mt-2 text-[13px]" style={{ color: "rgba(255,255,255,0.8)" }}>
                         {placementText}
                       </div>
-                      <div className="mt-2 text-[12px] font-bold" style={{ color: "var(--brand-gold)" }}>
+                      <div
+                        className="mt-2 text-[12px] font-bold"
+                        style={{ color: "var(--brand-gold)" }}
+                      >
                         +{xp} XP · +{coins} Coins · +{tp} TP
                       </div>
                       <div className="mt-1 text-[11px]" style={{ color: "rgba(255,255,255,0.7)" }}>
@@ -295,7 +308,8 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
                           style={{
                             fontSize: 11,
                             letterSpacing: 1,
-                            background: "linear-gradient(95deg, var(--brand-gold), var(--brand-amber))",
+                            background:
+                              "linear-gradient(95deg, var(--brand-gold), var(--brand-amber))",
                             color: "var(--brand-ink)",
                             boxShadow: "0 5px 0 var(--brand-gold-shadow)",
                           }}
@@ -408,7 +422,10 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
                       {me ? "You" : r.trainer_name}
                     </div>
                     {me && isMyChampion && (
-                      <div className="font-pixel" style={{ fontSize: 6, color: "var(--brand-gold)" }}>
+                      <div
+                        className="font-pixel"
+                        style={{ fontSize: 6, color: "var(--brand-gold)" }}
+                      >
                         CHAMPION 👑
                       </div>
                     )}
@@ -429,7 +446,9 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
           <div className="px-4 pt-3">
             <div
               className="flex items-center gap-2 rounded-[14px] px-3.5 py-2.5"
-              style={{ background: "linear-gradient(95deg, var(--brand-gold), var(--brand-amber))" }}
+              style={{
+                background: "linear-gradient(95deg, var(--brand-gold), var(--brand-amber))",
+              }}
             >
               <span className="text-sm">🏆</span>
               <span className="text-[11.5px] font-bold leading-tight" style={{ color: "#5A3E12" }}>
@@ -514,7 +533,9 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
           {mine && myRank > 0 && (
             <div
               className="px-3.5 pb-9 pt-2"
-              style={{ background: "linear-gradient(180deg, transparent, var(--brand-ink-deep) 40%)" }}
+              style={{
+                background: "linear-gradient(180deg, transparent, var(--brand-ink-deep) 40%)",
+              }}
             >
               <div
                 className="flex items-center gap-3 rounded-2xl px-3.5 py-3"
@@ -523,7 +544,10 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
                   border: "1.5px solid var(--brand-gold)",
                 }}
               >
-                <span className="font-pixel" style={{ fontSize: 10, color: "var(--brand-gold)", width: 30 }}>
+                <span
+                  className="font-pixel"
+                  style={{ fontSize: 10, color: "var(--brand-gold)", width: 30 }}
+                >
                   {myRank}
                 </span>
                 <Avatar sprite={mine.trainer_sprite} size={36} ring="var(--brand-red)" />

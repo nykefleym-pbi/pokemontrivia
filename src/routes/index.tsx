@@ -199,7 +199,6 @@ const TYPE_BG: Record<string, string> = {
   steel: "bg-slate-400",
 };
 
-
 function TrainerCreate({ onBack }: { onBack: () => void }) {
   const [substep, setSubstep] = useState<Step>("name");
   const [name, setName] = useState("");

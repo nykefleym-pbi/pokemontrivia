@@ -18,7 +18,6 @@ import { createProfileSlice } from "@/lib/store/slices/profileSlice";
 import { createItemsSlice, defaultInventory } from "@/lib/store/slices/itemsSlice";
 import { createCollectionsSlice } from "@/lib/store/slices/collectionsSlice";
 
-
 const MAX_SEEN_HASHES = 500;
 const MAX_SEEN_TEXTS = 200;
 const MAX_SEEN_CURATED = 500;
@@ -253,7 +252,6 @@ const defaultStats: PlayerStats = {
   totalAnswerTime: 0,
 };
 
-
 export const useGameStore = create<GameState>()(
   persist(
     (set, get, store) => ({
@@ -287,9 +285,6 @@ export const useGameStore = create<GameState>()(
       flags: [],
       dailyResult: null,
       battleLog: [],
-
-
-
 
       evolvePartner: (toPokemon) => {
         const s = get();
@@ -351,10 +346,6 @@ export const useGameStore = create<GameState>()(
         }
         set({ seenCuratedIds: merged.slice(-MAX_SEEN_CURATED) });
       },
-
-
-
-
 
       startGuestSession: () => {
         const poke = ALL_POKEMON[Math.floor(Math.random() * ALL_POKEMON.length)];
@@ -418,7 +409,6 @@ export const useGameStore = create<GameState>()(
         }),
 
       setPokemon: (p) => set({ pokemon: p }),
-
 
       startBattle: () =>
         set({
@@ -512,7 +502,6 @@ export const useGameStore = create<GameState>()(
         const s = get();
         set({ battleLog: [e, ...s.battleLog].slice(0, 100) });
       },
-
     }),
 
     {

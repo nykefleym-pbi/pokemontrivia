@@ -61,7 +61,10 @@ export function EggHatch() {
           <div className="absolute inset-0" style={{ background: "rgba(8,9,14,0.72)" }} />
           <div
             className="relative w-[330px] max-w-[92vw] overflow-hidden rounded-[28px] p-6 text-center"
-            style={{ background: "var(--brand-cream)", boxShadow: "0 24px 60px -18px rgba(0,0,0,0.6)" }}
+            style={{
+              background: "var(--brand-cream)",
+              boxShadow: "0 24px 60px -18px rgba(0,0,0,0.6)",
+            }}
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -109,7 +112,10 @@ export function EggHatch() {
                 <div className="mt-1 text-[22px] font-black" style={{ color: "var(--brand-ink)" }}>
                   {result.name}
                 </div>
-                <div className="mt-1 text-[13px] font-semibold" style={{ color: "var(--brand-slate)" }}>
+                <div
+                  className="mt-1 text-[13px] font-semibold"
+                  style={{ color: "var(--brand-slate)" }}
+                >
                   Added to your Pokédex!
                 </div>
                 <button

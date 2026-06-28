@@ -16,11 +16,7 @@ import {
 
 import { trainerSpriteUrl } from "@/lib/game-data";
 import { BattleScreen, type Trivia } from "@/components/battle-screen";
-import {
-  fetchBattleQuestions,
-  fetchEliteQuestions,
-  fetchDailyChallenge,
-} from "@/lib/api/trivia";
+import { fetchBattleQuestions, fetchEliteQuestions, fetchDailyChallenge } from "@/lib/api/trivia";
 import { ApiError } from "@/lib/api/client";
 import { MegaRaidScreen } from "@/components/mega/MegaRaidScreen";
 import { MegaLeaderboard } from "@/components/mega/MegaLeaderboard";
@@ -860,7 +856,8 @@ function BattlePage() {
                     className="h-2 rounded-full transition-all"
                     style={{
                       width: i === engageActive ? 22 : 8,
-                      background: i === engageActive ? "var(--brand-red)" : "rgba(255,255,255,0.32)",
+                      background:
+                        i === engageActive ? "var(--brand-red)" : "rgba(255,255,255,0.32)",
                     }}
                   />
                 ))}
