@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { PokemonSprite } from "@/components/game-ui";
+
 import { trainerSpriteUrl, type ItemId } from "@/lib/game-data";
 import { useGameStore } from "@/lib/store";
 import { toast } from "sonner";
