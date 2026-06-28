@@ -310,9 +310,6 @@ export const useGameStore = create<GameState>()(
       focusBandUsedWeek: 0,
       assaultVestUsedWeek: 0,
       autoItems: {},
-      whosThatHourKey: 0,
-      whosThatActiveRound: null,
-      whosThatRoundHourKey: null,
 
       seenQuestionHashes: [],
       seenQuestions: [],
