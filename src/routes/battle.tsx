@@ -519,7 +519,7 @@ function BattlePage() {
     }
   > = {
     daily: {
-      cardBg: "#FBF3DF",
+      cardBg: "var(--brand-cream)",
       hero: "radial-gradient(circle at 50% 42%, #FF8A3D 0%, #F0531F 52%, #D23A12 100%)",
       ray: "rgba(255,255,255,0.14)",
       glow: "rgba(255,224,130,0.6)",
@@ -529,79 +529,79 @@ function BattlePage() {
       chipBg: "#F6E6C4",
       chipColor: "#9A7320",
       chipStroke: "#B8862A",
-      ctaBg: "#E23B2E",
+      ctaBg: "var(--brand-red)",
       ctaColor: "#fff",
       ctaShadow: "#A82A20",
-      titleColor: "#1C2333",
-      descColor: "#6B6E7B",
+      titleColor: "var(--brand-ink)",
+      descColor: "var(--brand-slate)",
     },
     weekly: {
-      cardBg: "#FBF3DF",
+      cardBg: "var(--brand-cream)",
       hero: "radial-gradient(circle at 50% 40%, #8A6BC9 0%, #5B3F95 60%, #3F2A6E 100%)",
       ray: "rgba(242,214,78,0.16)",
       glow: "rgba(242,214,78,0.45)",
-      labelBg: "#F2D64E",
+      labelBg: "var(--brand-gold)",
       labelColor: "#3F2A6E",
       label: "WEEKLY LEAGUE",
       chipBg: "#ECE3F4",
       chipColor: "#5B3F95",
       chipStroke: "#6B4FA0",
-      ctaBg: "linear-gradient(95deg, #F2D64E, #E8A93C)",
+      ctaBg: "linear-gradient(95deg, var(--brand-gold), var(--brand-amber))",
       ctaColor: "#3F2A6E",
-      ctaShadow: "#C18A28",
-      titleColor: "#1C2333",
-      descColor: "#6B6E7B",
+      ctaShadow: "var(--brand-gold-shadow)",
+      titleColor: "var(--brand-ink)",
+      descColor: "var(--brand-slate)",
     },
     whosthat: {
-      cardBg: "linear-gradient(165deg, #E23B2E 0%, #B5341F 100%)",
+      cardBg: "linear-gradient(165deg, var(--brand-red) 0%, #B5341F 100%)",
       hero: "transparent",
       ray: "rgba(255,255,255,0.08)",
       glow: "transparent",
-      labelBg: "#F2D64E",
+      labelBg: "var(--brand-gold)",
       labelColor: "#B5341F",
       label: "WHO'S THAT POKÉMON?",
       chipBg: "rgba(255,255,255,0.16)",
       chipColor: "#fff",
       chipStroke: "#fff",
-      ctaBg: "#F2D64E",
-      ctaColor: "#1C2333",
+      ctaBg: "var(--brand-gold)",
+      ctaColor: "var(--brand-ink)",
       ctaShadow: "#C9AE2E",
       titleColor: "#fff",
       descColor: "rgba(255,255,255,0.82)",
     },
     mega: {
-      cardBg: "#FBF3DF",
-      hero: "radial-gradient(circle at 50% 34%, #2E3A5C 0%, #1C2333 66%)",
+      cardBg: "var(--brand-cream)",
+      hero: "radial-gradient(circle at 50% 34%, #2E3A5C 0%, var(--brand-ink) 66%)",
       ray: "rgba(242,214,78,0.16)",
       glow: "rgba(242,214,78,0.5)",
       labelBg: "rgba(0,0,0,0.3)",
-      labelColor: "#F2D64E",
+      labelColor: "var(--brand-gold)",
       label: "⚡ LIMITED EVENT",
       chipBg: "#E9E1F4",
       chipColor: "#5B3F95",
       chipStroke: "#6B4FA0",
-      ctaBg: "#E23B2E",
+      ctaBg: "var(--brand-red)",
       ctaColor: "#fff",
       ctaShadow: "#A82A20",
-      titleColor: "#1C2333",
-      descColor: "#6B6E7B",
+      titleColor: "var(--brand-ink)",
+      descColor: "var(--brand-slate)",
     },
     megaleaderboard: {
-      cardBg: "#FBF3DF",
-      hero: "radial-gradient(circle at 50% 34%, #2E3A5C 0%, #1C2333 66%)",
+      cardBg: "var(--brand-cream)",
+      hero: "radial-gradient(circle at 50% 34%, #2E3A5C 0%, var(--brand-ink) 66%)",
       ray: "rgba(242,214,78,0.14)",
       glow: "rgba(242,214,78,0.4)",
-      labelBg: "#F2D64E",
-      labelColor: "#1C2333",
+      labelBg: "var(--brand-gold)",
+      labelColor: "var(--brand-ink)",
       label: "LEADERBOARD",
       chipBg: "#F6E6C4",
       chipColor: "#9A7320",
       chipStroke: "#B8862A",
-      ctaBg: "linear-gradient(95deg, #F2D64E, #E8A93C)",
-      ctaColor: "#1C2333",
-      ctaShadow: "#C18A28",
-      titleColor: "#1C2333",
-      descColor: "#6B6E7B",
+      ctaBg: "linear-gradient(95deg, var(--brand-gold), var(--brand-amber))",
+      ctaColor: "var(--brand-ink)",
+      ctaShadow: "var(--brand-gold-shadow)",
+      titleColor: "var(--brand-ink)",
+      descColor: "var(--brand-slate)",
     },
   };
 
@@ -615,7 +615,7 @@ function BattlePage() {
           <div className="relative w-[360px] max-w-[94vw]">
             <div className="px-10 text-center">
               <div className="text-[26px] font-black tracking-tight text-white">Ready to play?</div>
-              <div className="mt-1.5 font-pixel text-[8px] tracking-widest text-[#F2D64E]">
+              <div className="mt-1.5 font-pixel text-[8px] tracking-widest text-[var(--brand-gold)]">
                 {engageCards.length} {engageCards.length === 1 ? "ACTIVITY" : "ACTIVITIES"}{" "}
                 AVAILABLE
               </div>
@@ -714,7 +714,7 @@ function BattlePage() {
                             </div>
                             <div
                               className="font-pixel"
-                              style={{ fontSize: 9, color: "#F2D64E", marginTop: 2 }}
+                              style={{ fontSize: 9, color: "var(--brand-gold)", marginTop: 2 }}
                             >
                               #1
                             </div>
@@ -729,7 +729,7 @@ function BattlePage() {
                                   background: "#C0C6D4",
                                   border: "2px solid #fff",
                                   fontSize: 8,
-                                  color: "#1C2333",
+                                  color: "var(--brand-ink)",
                                 }}
                               >
                                 2
@@ -750,10 +750,10 @@ function BattlePage() {
                                 style={{
                                   width: 32,
                                   height: 32,
-                                  background: "#F2D64E",
+                                  background: "var(--brand-gold)",
                                   border: "2px solid #fff",
                                   fontSize: 9,
-                                  color: "#1C2333",
+                                  color: "var(--brand-ink)",
                                 }}
                               >
                                 1
@@ -763,7 +763,7 @@ function BattlePage() {
                                   marginTop: 5,
                                   width: 56,
                                   height: 68,
-                                  background: "linear-gradient(#F2D64E,#D9B838)",
+                                  background: "linear-gradient(var(--brand-gold),#D9B838)",
                                   borderRadius: "6px 6px 0 0",
                                 }}
                               />
@@ -777,7 +777,7 @@ function BattlePage() {
                                   background: "#C8895A",
                                   border: "2px solid #fff",
                                   fontSize: 8,
-                                  color: "#1C2333",
+                                  color: "var(--brand-ink)",
                                 }}
                               >
                                 3
@@ -860,7 +860,7 @@ function BattlePage() {
                     className="h-2 rounded-full transition-all"
                     style={{
                       width: i === engageActive ? 22 : 8,
-                      background: i === engageActive ? "#E23B2E" : "rgba(255,255,255,0.32)",
+                      background: i === engageActive ? "var(--brand-red)" : "rgba(255,255,255,0.32)",
                     }}
                   />
                 ))}
