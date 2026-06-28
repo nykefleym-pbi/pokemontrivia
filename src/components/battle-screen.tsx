@@ -1770,17 +1770,13 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
             timeMs,
             pattern: nextPattern,
           });
-          // Phase 3: Daily TP
-          const partner = useGameStore.getState().pokemon;
-          if (partner) {
-            if (finalCorrect === total) {
-              useGameStore.getState().addTrainingPoints(partner.id, TP_REWARDS.dailyPerfect);
-            } else if (finalCorrect >= 5) {
-              useGameStore.getState().addTrainingPoints(partner.id, TP_REWARDS.dailyPartial);
-            }
+          const lvl = useGameStore.getState().level;
+          const dailyXp = dailyXpFor(finalCorrect, total, lvl);
+          if (dailyXp > 0) {
+            useGameStore.getState().addXp(dailyXp);
+            const partner = useGameStore.getState().pokemon;
+            if (partner) useGameStore.getState().addTrainingPoints(partner.id, Math.round(0.20 * dailyXp));
           }
-          const dailyXp = dailyXpFor(finalCorrect, total);
-          if (dailyXp > 0) useGameStore.getState().addXp(dailyXp);
         }
         playSfx("victory");
         setPhase("done");
