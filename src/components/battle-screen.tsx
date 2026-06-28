@@ -815,26 +815,41 @@ function BattleMode({
     wrongStreakRef.current = 0;
     abilityStateRef.current.cursedBodyPending = null;
 
-    const baseXp = won ? 40 + level * 5 : 10 + level * 2;
-    const eliteBonus = isElite && won ? 100 + level * 10 : 0;
-    const bonus = maxStreakRef.current * 2;
-    const total = baseXp + bonus + eliteBonus;
-    setXpEarned(total);
-    setResultWon(won);
+    const levelMult = 1 + 0.05 * (level - 1);
+    const streakMult = streakMultiplier(maxStreakRef.current);
 
-    // Phase 3: Training Points
-    let tp = 0;
-    if (isWeekly) {
-      tp = won ? TP_REWARDS.weeklyWin : TP_REWARDS.battleLoss;
-    } else if (isElite) {
-      tp = won ? TP_REWARDS.eliteWin : TP_REWARDS.battleLoss;
-    } else if (won) {
-      tp = Math.min(20, correctCountRef.current * TP_REWARDS.battleWinPerCorrect);
+    let xpAward = 0;
+    let coinAward = 0;
+    let tpAward = 0;
+
+    if (isElite) {
+      const baseXp = won ? 40 + level * 5 : 10 + level * 2;
+      const eliteBonus = won ? 100 + level * 10 : 0;
+      xpAward = baseXp + maxStreakRef.current * 2 + eliteBonus;
+      coinAward = xpAward;
+      tpAward = won ? TP_REWARDS.eliteWin : TP_REWARDS.battleLoss;
+    } else if (isWeekly) {
+      if (won) {
+        xpAward = Math.round(100 * levelMult * streakMult);
+        coinAward = Math.round(0.30 * xpAward);
+        tpAward = Math.round(0.20 * xpAward);
+      }
     } else {
-      tp = TP_REWARDS.battleLoss;
+      if (won) {
+        xpAward = Math.round(50 * levelMult * streakMult);
+        coinAward = Math.round(0.25 * xpAward);
+        tpAward = Math.round(0.10 * xpAward);
+      } else {
+        xpAward = Math.round(10 * levelMult * streakMult);
+      }
     }
-    useGameStore.getState().addTrainingPoints(player.id, tp);
-    setTpEarned(tp);
+
+    setXpEarned(xpAward);
+    setCoinsEarned(coinAward);
+    setTpEarned(tpAward);
+    setResultWon(won);
+    if (tpAward > 0) useGameStore.getState().addTrainingPoints(player.id, tpAward);
+    if (coinAward > 0) useGameStore.getState().addCoins(coinAward);
 
     // comeback flag — won at low HP
     if (won && playerHp <= 10) {
