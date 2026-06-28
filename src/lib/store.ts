@@ -578,6 +578,8 @@ export const useGameStore = create<GameState>()(
         set({ pokeEggs: s.pokeEggs - 1 });
         return true;
       },
+      markMegaRewardClaimed: (eventId) =>
+        set((s) => (s.claimedMegaRewards.includes(eventId) ? s : { claimedMegaRewards: [...s.claimedMegaRewards, eventId] })),
 
 
       startGuestSession: () => {
