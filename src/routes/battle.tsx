@@ -947,7 +947,7 @@ function BattleHome({
   onStartWeekly,
   loading,
   dailyDone,
-  dailyResult,
+  dailyResult: _dailyResult,
 }: {
   onStart: () => void;
   onStartDaily: () => void;
