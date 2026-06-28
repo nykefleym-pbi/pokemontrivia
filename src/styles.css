@@ -61,6 +61,16 @@
   --color-type-steel: var(--type-steel);
   --color-type-fairy: var(--type-fairy);
 
+  /* Brand palette tokens */
+  --color-brand-gold: var(--brand-gold);
+  --color-brand-amber: var(--brand-amber);
+  --color-brand-gold-shadow: var(--brand-gold-shadow);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-ink-deep: var(--brand-ink-deep);
+  --color-brand-red: var(--brand-red);
+  --color-brand-slate: var(--brand-slate);
+  --color-brand-cream: var(--brand-cream);
+
   --font-pixel: "Press Start 2P", monospace;
   --font-display: "Outfit", sans-serif;
 
