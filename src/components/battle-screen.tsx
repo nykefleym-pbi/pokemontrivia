@@ -278,6 +278,7 @@ function BattleMode({
   const [confirmExit, setConfirmExit] = useState(false);
   const [resultWon, setResultWon] = useState<boolean | null>(null);
   const [xpEarned, setXpEarned] = useState(0);
+  const [coinsEarned, setCoinsEarned] = useState(0);
   const [streakBanner, setStreakBanner] = useState<string | null>(null);
   const [lastElapsedMs, setLastElapsedMs] = useState(0);
   const questionStart = useRef<number>(0);
