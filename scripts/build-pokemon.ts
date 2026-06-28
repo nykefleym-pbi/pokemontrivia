@@ -112,7 +112,9 @@ async function main() {
       try {
         const data = await fetch(url).then((r) => r.json());
         chainsByUrl.set(url, data.chain);
-      } catch {}
+      } catch {
+        /* ignore fetch/parse errors for this evolution chain */
+      }
     },
     "chains",
   );

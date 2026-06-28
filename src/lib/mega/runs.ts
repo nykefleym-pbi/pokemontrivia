@@ -2,12 +2,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { ensureSession, syncProfile } from "@/lib/social";
 
 // Loosely-typed clients so this compiles even before Supabase types regenerate.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase Database type doesn't yet include the mega_* tables; chained query builder needs a loose return.
 const db = supabase as unknown as { from: (t: string) => any };
 const rpc = supabase as unknown as {
   rpc: (
     fn: string,
     args: Record<string, unknown>,
-  ) => Promise<{ data: any; error: { message: string } | null }>;
+  ) => Promise<{ data: unknown; error: { message: string } | null }>;
 };
 
 export interface MegaRunRow {
@@ -94,8 +95,7 @@ export async function getMyMegaRank(
 }
 
 export type SubmitResult =
-  | { ok: true; row: MegaRunRow; rank: number }
-  | { ok: false; error: string };
+  { ok: true; row: MegaRunRow; rank: number } | { ok: false; error: string };
 
 /**
  * Submit a finished Mega Raid run through the server RPC, which enforces the
