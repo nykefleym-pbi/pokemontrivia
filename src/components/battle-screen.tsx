@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { Backpack, Sparkles, Crown } from "lucide-react";
@@ -14,7 +14,7 @@ import {
   xpProgressInLevel,
   rankForLevel,
 } from "@/lib/game-data";
-import { battleReward, dailyReward } from "@/lib/rewards";
+import { battleReward } from "@/lib/rewards";
 
 import {
   isSuperEffective,
@@ -26,8 +26,7 @@ import {
 } from "@/lib/pokemon-data";
 import { getAbility as getAbilityFn, type Ability } from "@/lib/abilities";
 import { TutorialOverlay } from "@/components/tutorial-overlay";
-import { TypeBadge, PokemonSprite, PokeballPattern, type DailyMark } from "@/components/game-ui";
-import { Button } from "@/components/ui/button";
+import { TypeBadge, PokemonSprite } from "@/components/game-ui";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   AlertDialog,
@@ -47,11 +46,11 @@ import type { GymLeader } from "@/lib/gym-leaders";
 import { ShareCardDialog } from "@/components/share-card-dialog";
 import type { ShareData } from "@/components/share-card-builder";
 import { trainerSpriteUrl } from "@/lib/game-data";
-import shareIcon from "@/assets/share-icon-dark.png.asset.json";
 import type { Trivia } from "@/lib/trivia-core";
 export type { Trivia };
 import { DailyScreen } from "@/components/daily-screen";
 import { ResultScreen } from "@/components/result-screen";
+
 
 const QUESTIONS_PER_SET = 5;
 const TIMER_BASE = 20;
