@@ -48,7 +48,7 @@ import {
 
 import { EVOLUTION_TP_COST, getTpMultiplier } from "@/lib/game-data";
 import { EvolutionScreen } from "@/components/evolution-screen";
-import { XpBar, TypeBadge, PokemonSprite } from "@/components/game-ui";
+import { TypeBadge, PokemonSprite } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Toaster } from "@/components/ui/sonner";
