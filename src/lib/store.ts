@@ -375,13 +375,6 @@ export const useGameStore = create<GameState>()(
         set({ inventory: { ...s.inventory, [id]: (s.inventory[id] ?? 0) + qty } });
       },
 
-      consumeWhosThat: () => {
-        set({ whosThatHourKey: Math.floor(Date.now() / 3_600_000) });
-      },
-      setWhosThatRound: (round, hourKey) =>
-        set({ whosThatActiveRound: round, whosThatRoundHourKey: hourKey }),
-      clearWhosThatRound: () => set({ whosThatActiveRound: null, whosThatRoundHourKey: null }),
-
       evolvePartner: (toPokemon) => {
         const s = get();
         if (!s.pokemon) return false;
