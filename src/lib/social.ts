@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { useGameStore } from "@/lib/store";
 
 // Loosely-typed table client so this compiles even before Supabase types regenerate.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase Database type doesn't yet include every table here; chained query builder needs a loose return.
 const db = supabase as unknown as { from: (t: string) => any };
 
 export interface TrainerProfile {
@@ -279,7 +280,9 @@ export async function listFriends(): Promise<TrainerProfile[]> {
     console.warn("[social] listFriends failed:", error.message);
     return [];
   }
-  return (data ?? []).map((r: any) => r.friend).filter(Boolean) as TrainerProfile[];
+  return (data ?? [])
+    .map((r: { friend: TrainerProfile | null }) => r.friend)
+    .filter(Boolean) as TrainerProfile[];
 }
 
 /** Remove a friend. */

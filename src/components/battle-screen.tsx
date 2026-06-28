@@ -574,7 +574,6 @@ function BattleMode({
       const id = (questionIdx + 1) as 1 | 2 | 3;
       setTutorialStep(id);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, questionIdx, tutorialActive]);
 
   // Phase 2: ability onBattleStart effects (run once)
@@ -611,7 +610,6 @@ function BattleMode({
     const wrongs = trivia.options.map((_, i) => i).filter((i) => i !== trivia.correct);
     setRevealedWrong(wrongs[Math.floor(Math.random() * wrongs.length)]);
     triggerAbilityToast(playerAbility);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, questionIdx, trivia, playerAbility]);
 
   // Compound Eyes: reveal a wrong option on first/last of each set
@@ -623,7 +621,6 @@ function BattleMode({
     const wrongs = trivia.options.map((_, i) => i).filter((i) => i !== trivia.correct);
     setRevealedWrong(wrongs[Math.floor(Math.random() * wrongs.length)]);
     triggerAbilityToast(playerAbility);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, questionIdx, trivia, playerAbility]);
 
   function handleAnswer(idx: number) {

@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { PokeEntry, PokeType } from "@/lib/pokemon-data.generated";
 
 // Loosely-typed table client so this compiles even before Supabase types regenerate.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase Database type doesn't yet include the mega_* tables; chained query builder needs a loose return.
 const db = supabase as unknown as { from: (t: string) => any };
 
 export const MEGA_BOSS_HP = 400;
@@ -48,7 +49,26 @@ export interface MegaEvent {
   champion: ChampionReward;
 }
 
-function mapEvent(r: any): MegaEvent {
+interface MegaEventRow {
+  id: string;
+  mega_id: number;
+  name: string;
+  base_name: string;
+  base_dex_id: number;
+  types: PokeType[] | null;
+  starts_at: string;
+  ends_at: string;
+  win_xp: number;
+  win_tp: number;
+  win_items: number;
+  champ_xp: number;
+  champ_tp: number;
+  champ_items: number;
+  trophy_id: string;
+  trophy_name: string;
+}
+
+function mapEvent(r: MegaEventRow): MegaEvent {
   return {
     id: r.id,
     megaId: r.mega_id,
