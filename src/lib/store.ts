@@ -185,6 +185,7 @@ export interface GameState {
   grantPokeEgg: (n?: number) => void;
   claimMegaChampion: (eventId: string, name: string, pokeId: number) => boolean;
   hatchPokeEgg: () => boolean;
+  markMegaRewardClaimed: (eventId: string) => void;
   startGuestSession: () => void;
 
   reset: () => void;
