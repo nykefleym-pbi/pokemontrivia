@@ -40,7 +40,7 @@ export function EggHatch() {
         onClick={() => setOpen(true)}
         className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl active:scale-95"
         style={{
-          background: "linear-gradient(160deg, #FBF3DF, #F1E2BE)",
+          background: "linear-gradient(160deg, var(--brand-cream), #F1E2BE)",
           boxShadow: "0 3px 0 #E2D2A8",
         }}
         aria-label="Poké Eggs"
@@ -49,7 +49,7 @@ export function EggHatch() {
         {eggs > 0 && (
           <span
             className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-extrabold text-white"
-            style={{ background: "#E23B2E" }}
+            style={{ background: "var(--brand-red)" }}
           >
             {eggs}
           </span>
@@ -61,7 +61,7 @@ export function EggHatch() {
           <div className="absolute inset-0" style={{ background: "rgba(8,9,14,0.72)" }} />
           <div
             className="relative w-[330px] max-w-[92vw] overflow-hidden rounded-[28px] p-6 text-center"
-            style={{ background: "#FBF3DF", boxShadow: "0 24px 60px -18px rgba(0,0,0,0.6)" }}
+            style={{ background: "var(--brand-cream)", boxShadow: "0 24px 60px -18px rgba(0,0,0,0.6)" }}
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -73,7 +73,7 @@ export function EggHatch() {
               <svg width="12" height="12" viewBox="0 0 13 13" fill="none">
                 <path
                   d="M1 1l11 11M12 1L1 12"
-                  stroke="#6B6E7B"
+                  stroke="var(--brand-slate)"
                   strokeWidth="2.2"
                   strokeLinecap="round"
                 />
@@ -88,7 +88,7 @@ export function EggHatch() {
               <div className="mt-4 flex flex-col items-center">
                 <div
                   className="font-pixel"
-                  style={{ fontSize: 8, color: result.shiny ? "#E8A93C" : "#3F9D5A" }}
+                  style={{ fontSize: 8, color: result.shiny ? "var(--brand-amber)" : "#3F9D5A" }}
                 >
                   {result.shiny ? "✨ SHINY HATCH! ✨" : "IT HATCHED!"}
                 </div>
@@ -106,10 +106,10 @@ export function EggHatch() {
                     className="relative h-[136px] w-[136px] object-contain"
                   />
                 </div>
-                <div className="mt-1 text-[22px] font-black" style={{ color: "#1C2333" }}>
+                <div className="mt-1 text-[22px] font-black" style={{ color: "var(--brand-ink)" }}>
                   {result.name}
                 </div>
-                <div className="mt-1 text-[13px] font-semibold" style={{ color: "#6B6E7B" }}>
+                <div className="mt-1 text-[13px] font-semibold" style={{ color: "var(--brand-slate)" }}>
                   Added to your Pokédex!
                 </div>
                 <button
@@ -123,9 +123,9 @@ export function EggHatch() {
                   }
                   className="mt-5 flex h-12 w-full items-center justify-center rounded-full text-[15px] font-extrabold"
                   style={{
-                    background: "linear-gradient(95deg, #F2D64E, #E8A93C)",
-                    color: "#1C2333",
-                    boxShadow: "0 3px 0 #C18A28",
+                    background: "linear-gradient(95deg, var(--brand-gold), var(--brand-amber))",
+                    color: "var(--brand-ink)",
+                    boxShadow: "0 3px 0 var(--brand-gold-shadow)",
                   }}
                 >
                   {eggs > 0 ? `Hatch another (${eggs} left)` : "Done"}
@@ -143,10 +143,10 @@ export function EggHatch() {
                 >
                   🥚
                 </div>
-                <div className="mt-3 text-[15px] font-bold" style={{ color: "#1C2333" }}>
+                <div className="mt-3 text-[15px] font-bold" style={{ color: "var(--brand-ink)" }}>
                   {eggs > 0 ? `You have ${eggs} Poké Egg${eggs === 1 ? "" : "s"}` : "No eggs yet"}
                 </div>
-                <div className="mt-1 text-[13px]" style={{ color: "#6B6E7B" }}>
+                <div className="mt-1 text-[13px]" style={{ color: "var(--brand-slate)" }}>
                   {eggs > 0
                     ? "Hatch one to add a Pokémon to your Pokédex."
                     : "Win Mega Raids to earn Poké Eggs."}
@@ -156,9 +156,9 @@ export function EggHatch() {
                   disabled={eggs <= 0 || phase === "hatching"}
                   className="mt-5 flex h-12 w-full items-center justify-center rounded-full text-[15px] font-extrabold disabled:opacity-50"
                   style={{
-                    background: "linear-gradient(95deg, #F2D64E, #E8A93C)",
-                    color: "#1C2333",
-                    boxShadow: "0 3px 0 #C18A28",
+                    background: "linear-gradient(95deg, var(--brand-gold), var(--brand-amber))",
+                    color: "var(--brand-ink)",
+                    boxShadow: "0 3px 0 var(--brand-gold-shadow)",
                   }}
                 >
                   {phase === "hatching" ? "Hatching…" : "Hatch an Egg"}
