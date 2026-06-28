@@ -451,7 +451,7 @@ function PokedexFlavor({ pokemonId }: { pokemonId: number }) {
     let cancelled = false;
     setLoading(true);
     setFlavor(null);
-    fetch(`https://pokeapi.co/api/v2/pokemon-species/${pokemonId}`)
+    fetch(pokeApiUrls.species(pokemonId))
       .then((r) => r.json())
       .then((data) => {
         if (cancelled) return;

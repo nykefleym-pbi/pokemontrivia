@@ -1,5 +1,14 @@
 import { FALLBACK_QUESTIONS } from "./game-data";
 
+export interface Trivia {
+  question: string;
+  options: string[];
+  correct: number;
+  explanation: string;
+  category: string;
+}
+
+
 export interface TriviaPayload {
   question: string;
   options: string[];

@@ -218,8 +218,8 @@ function WhosThatPokemon() {
     (async () => {
       try {
         const [spRes, pkRes] = await Promise.all([
-          fetch(`https://pokeapi.co/api/v2/pokemon-species/${round.monId}`),
-          fetch(`https://pokeapi.co/api/v2/pokemon/${round.monId}`),
+          fetch(pokeApiUrls.species(round.monId)),
+          fetch(pokeApiUrls.pokemon(round.monId)),
         ]);
         if (!spRes.ok) throw new Error("species");
         const sp = await spRes.json();
