@@ -16,6 +16,12 @@ import {
 
 import { trainerSpriteUrl } from "@/lib/game-data";
 import { BattleScreen, type Trivia } from "@/components/battle-screen";
+import {
+  fetchBattleQuestions,
+  fetchEliteQuestions,
+  fetchDailyChallenge,
+} from "@/lib/api/trivia";
+import { ApiError } from "@/lib/api/client";
 import { MegaRaidScreen } from "@/components/mega/MegaRaidScreen";
 import { MegaLeaderboard } from "@/components/mega/MegaLeaderboard";
 
@@ -179,28 +185,13 @@ function BattlePage() {
     }
     setPhase("loading");
     try {
-      const resp = await fetch("/api/trivia-batch", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          difficulty: difficultyForLevel(level),
-          seenHashes,
-          seenSamples: seenQuestions.slice(-80),
-          excludeIds: seenCuratedIds.slice(-500),
-          flowSeed: Math.floor(Math.random() * 1_000_000),
-        }),
+      const data = await fetchBattleQuestions({
+        difficulty: difficultyForLevel(level),
+        seenHashes,
+        seenSamples: seenQuestions.slice(-80),
+        excludeIds: seenCuratedIds.slice(-500),
+        flowSeed: Math.floor(Math.random() * 1_000_000),
       });
-      if (resp.status === 429) {
-        toast.error("Rate limited. Please wait a moment.");
-        setPhase("home");
-        return;
-      }
-      if (resp.status === 402) {
-        toast.error("AI credits exhausted. Add credits in Settings.");
-        setPhase("home");
-        return;
-      }
-      const data = (await resp.json()) as { questions: Trivia[]; servedIds?: string[] };
       if (!data.questions || data.questions.length < 5) {
         toast.error("Couldn't prepare battle. Try again.");
         setPhase("home");
@@ -211,6 +202,16 @@ function BattlePage() {
       setQuestions(data.questions);
       setPhase("fighting");
     } catch (e) {
+      if (e instanceof ApiError && e.status === 429) {
+        toast.error("Rate limited. Please wait a moment.");
+        setPhase("home");
+        return;
+      }
+      if (e instanceof ApiError && e.status === 402) {
+        toast.error("AI credits exhausted. Add credits in Settings.");
+        setPhase("home");
+        return;
+      }
       console.error(e);
       toast.error("Couldn't prepare battle. Try again.");
       setPhase("home");
