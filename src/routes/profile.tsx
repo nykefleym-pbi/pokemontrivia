@@ -33,12 +33,7 @@ import {
   type TrainerProfile,
 } from "@/lib/social";
 import { validateTrainerName, claimErrorMessage, TRAINER_NAME_MAX } from "@/lib/trainer-name";
-import {
-  rankForLevel,
-  xpProgressInLevel,
-  TRAINER_SPRITES,
-  trainerSpriteUrl,
-} from "@/lib/game-data";
+import { rankForLevel, TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
 import {
   STARTING_PARTNERS,
   canEvolve,
