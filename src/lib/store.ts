@@ -352,70 +352,8 @@ export const useGameStore = create<GameState>()(
         set({ seenCuratedIds: merged.slice(-MAX_SEEN_CURATED) });
       },
 
-      setOnboarded: (name, pokemon, trainerSprite) =>
-        set({ hasOnboarded: true, isGuest: false, trainerName: name, pokemon, trainerSprite }),
 
-      setFriendCode: (code) => set({ friendCode: code }),
-      setLastEngagePromptDate: (date) => set({ lastEngagePromptDate: date }),
-      setNameReconciled: (v) => set({ nameReconciled: v }),
-      setNeedsNameReclaim: (v) => set({ needsNameReclaim: v }),
-      setEngageShownThisSession: (v) => set({ engageShownThisSession: v }),
 
-      recordEngageDismiss: () => {
-        const today = new Date().toISOString().slice(0, 10);
-        const s = get();
-        if (s.engageDismissDate !== today) {
-          set({ engageDismissDate: today, engageDismissCount: 1 });
-        } else {
-          set({ engageDismissCount: s.engageDismissCount + 1 });
-        }
-      },
-
-      claimDailyGift: () => {
-        const s = get();
-        const today = new Date().toISOString().slice(0, 10);
-        if (s.dailyGiftLastClaim === today) return null;
-        const yd = new Date();
-        yd.setUTCDate(yd.getUTCDate() - 1);
-        const yesterday = yd.toISOString().slice(0, 10);
-        const continuing = s.dailyGiftLastClaim === yesterday;
-        const day = ((continuing ? s.dailyGiftStreak : 0) % 7) + 1;
-        const commonPool: ItemId[] = [
-          "potion",
-          "xattack",
-          "scope",
-          "superpotion",
-          "xaccuracy",
-          "escape",
-          "quickclaw",
-          "maxpotion",
-        ];
-        const premiumPool: ItemId[] = ["candy", "luckyegg", "focusband", "assaultvest"];
-        const shiny = day === 7;
-        let itemId: ItemId;
-        let qty = 1;
-        if (shiny) {
-          itemId = premiumPool[Math.floor(Math.random() * premiumPool.length)];
-        } else {
-          itemId = commonPool[Math.floor(Math.random() * commonPool.length)];
-          qty = Math.random() < 0.3 ? 2 : 1;
-        }
-        set({
-          inventory: { ...s.inventory, [itemId]: (s.inventory[itemId] ?? 0) + qty },
-          dailyGiftStreak: day,
-          dailyGiftLastClaim: today,
-          guaranteedShinyPending: shiny ? true : s.guaranteedShinyPending,
-        });
-        return { itemId, qty, day, shiny };
-      },
-      consumeGuaranteedShiny: () => set({ guaranteedShinyPending: false }),
-      grantPokeEgg: (n = 1) => set((s) => ({ pokeEggs: (s.pokeEggs ?? 0) + n })),
-      hatchPokeEgg: () => {
-        const s = get();
-        if ((s.pokeEggs ?? 0) <= 0) return false;
-        set({ pokeEggs: s.pokeEggs - 1 });
-        return true;
-      },
 
 
       startGuestSession: () => {
