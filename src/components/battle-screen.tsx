@@ -1031,6 +1031,7 @@ function BattleMode({
           totalQuestions={questions.length}
           xpEarned={xpEarned}
           tpEarned={tpEarned}
+          coinsEarned={coinsEarned}
           speedBonus={speedBonusTotalRef.current}
           partnerName={player.name}
           partnerId={player.id}
