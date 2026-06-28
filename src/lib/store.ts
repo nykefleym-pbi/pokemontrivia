@@ -417,66 +417,8 @@ export const useGameStore = create<GameState>()(
           claimedMegaRewards: [],
         }),
 
-      setName: (name) => set({ trainerName: name }),
       setPokemon: (p) => set({ pokemon: p }),
-      setTrainerSprite: (id) => set({ trainerSprite: id }),
 
-      buyItem: (id, cost) => {
-        const s = get();
-        if (s.coins < cost) return false;
-        set({
-          coins: s.coins - cost,
-          inventory: { ...s.inventory, [id]: (s.inventory[id] ?? 0) + 1 },
-        });
-        return true;
-      },
-
-      useItem: (id) => {
-        const s = get();
-        const have = s.inventory[id] ?? 0;
-        if (have <= 0) return false;
-
-        // Auto-trigger items can't be used manually
-        if (id === "focusband" || id === "quickclaw" || id === "assaultvest") return false;
-
-        // Once-per-battle items
-        const ONCE_PER_BATTLE: ItemId[] = [
-          "potion",
-          "superpotion",
-          "maxpotion",
-          "xattack",
-          "scope",
-          "xaccuracy",
-          "escape",
-        ];
-        if (ONCE_PER_BATTLE.includes(id) && s.usedThisBattle[id]) return false;
-
-        // Lucky Egg: one activation per week (Monday 00:00 UTC reset)
-        if (id === "luckyegg") {
-          const { start } = getWeekRangeUtc();
-          if (s.luckyEggUsedWeek === start) return false;
-        }
-
-        const nextInventory = { ...s.inventory, [id]: have - 1 };
-        const nextUsed = ONCE_PER_BATTLE.includes(id)
-          ? { ...s.usedThisBattle, [id]: true }
-          : s.usedThisBattle;
-
-        set({
-          inventory: nextInventory,
-          usedThisBattle: nextUsed,
-          xAttackActive: id === "xattack" ? true : s.xAttackActive,
-          luckyEggExpiresAt:
-            id === "luckyegg" ? Date.now() + 24 * 60 * 60 * 1000 : s.luckyEggExpiresAt,
-          luckyEggUsedWeek: id === "luckyegg" ? getWeekRangeUtc().start : s.luckyEggUsedWeek,
-        });
-
-        if (id === "candy") {
-          const p = get().pokemon;
-          if (p) get().addTrainingPoints(p.id, 50);
-        }
-        return true;
-      },
 
       startBattle: () =>
         set({
@@ -571,40 +513,8 @@ export const useGameStore = create<GameState>()(
         set({ battleLog: [e, ...s.battleLog].slice(0, 100) });
       },
 
-      recordPokedexCapture: (pokemonId, isShiny) => {
-        const s = get();
-        const existing = s.pokedex[pokemonId];
-        set({
-          pokedex: {
-            ...s.pokedex,
-            [pokemonId]: {
-              pokemonId,
-              firstSeenAt: existing?.firstSeenAt ?? Date.now(),
-              shinyUnlocked: (existing?.shinyUnlocked ?? false) || isShiny,
-              defeatCount: (existing?.defeatCount ?? 0) + 1,
-            },
-          },
-        });
-      },
-
-      markEliteDefeated: (memberId, region, regionDone) => {
-        const s = get();
-        const elites = s.defeatedElites.includes(memberId)
-          ? s.defeatedElites
-          : [...s.defeatedElites, memberId];
-        const regions =
-          regionDone && !s.defeatedEliteRegions.includes(region)
-            ? [...s.defeatedEliteRegions, region]
-            : s.defeatedEliteRegions;
-        set({ defeatedElites: elites, defeatedEliteRegions: regions });
-      },
-
-      registerAbilityTriggered: (abilityId) => {
-        const s = get();
-        if (s.abilityCodex.includes(abilityId)) return;
-        set({ abilityCodex: [...s.abilityCodex, abilityId] });
-      },
     }),
+
     {
       name: "poke-trivia-store",
       storage: createJSONStorage(() =>
