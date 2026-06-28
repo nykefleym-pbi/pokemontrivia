@@ -285,31 +285,16 @@ function BattlePage() {
     if (!leader) return;
     setPhase("loading");
     try {
-      const resp = await fetch("/api/trivia-elite", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: leader.type,
-          memberName: `Gym Leader ${leader.name}`,
-          difficultyTiers: ["hard"],
-          curatedTarget: 26,
-          aiCount: 4,
-          seenHashes,
-          seenSamples: seenQuestions.slice(-80),
-          flowSeed: Math.floor(Math.random() * 1_000_000),
-        }),
+      const data = await fetchEliteQuestions({
+        type: leader.type,
+        memberName: `Gym Leader ${leader.name}`,
+        difficultyTiers: ["hard"],
+        curatedTarget: 26,
+        aiCount: 4,
+        seenHashes,
+        seenSamples: seenQuestions.slice(-80),
+        flowSeed: Math.floor(Math.random() * 1_000_000),
       });
-      if (resp.status === 429) {
-        toast.error("Rate limited.");
-        setPhase("home");
-        return;
-      }
-      if (resp.status === 402) {
-        toast.error("AI credits exhausted.");
-        setPhase("home");
-        return;
-      }
-      const data = (await resp.json()) as { questions: Trivia[] };
       if (!data.questions?.length) {
         toast.error("Couldn't prepare Weekly League.");
         setPhase("home");
@@ -321,6 +306,16 @@ function BattlePage() {
       setQuestions(data.questions);
       setPhase("weekly");
     } catch (e) {
+      if (e instanceof ApiError && e.status === 429) {
+        toast.error("Rate limited.");
+        setPhase("home");
+        return;
+      }
+      if (e instanceof ApiError && e.status === 402) {
+        toast.error("AI credits exhausted.");
+        setPhase("home");
+        return;
+      }
       console.error(e);
       toast.error("Couldn't prepare Weekly League.");
       setPhase("home");
