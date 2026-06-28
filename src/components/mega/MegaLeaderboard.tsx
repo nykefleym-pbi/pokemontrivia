@@ -179,7 +179,7 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
           <div className="px-4 pt-3">
             <div className="flex items-center gap-2 rounded-[14px] px-3.5 py-2.5" style={{ background: "linear-gradient(95deg, #F2D64E, #E8A93C)" }}>
               <span className="text-sm">🏆</span>
-              <span className="text-[11.5px] font-bold leading-tight" style={{ color: "#5A3E12" }}>Champion wins: Trophy + {event.champion.xp.toLocaleString()} XP + {event.champion.tp} TP + {event.champion.items} items</span>
+              <span className="text-[11.5px] font-bold leading-tight" style={{ color: "#5A3E12" }}>Champion: {MEGA_REWARD.xp.toLocaleString()} XP · {MEGA_REWARD.coins.toLocaleString()} Coins · {MEGA_REWARD.tp} TP · {MEGA_REWARD.items} items · Trophy — top 3 & all who place win rank-scaled rewards</span>
             </div>
           </div>
           <div className="flex items-end justify-center gap-2 px-[18px] pt-3.5">
