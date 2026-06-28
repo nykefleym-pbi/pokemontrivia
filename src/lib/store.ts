@@ -7,7 +7,6 @@ import {
   totalXpToReachLevel,
   TRAINER_SPRITES,
   EVOLUTION_TP_COST,
-  getWeekRangeUtc,
 } from "./game-data";
 import type { PokeEntry } from "./pokemon-data";
 import { ALL_POKEMON, rehydratePokemon } from "./pokemon-data";
@@ -15,6 +14,10 @@ import type { Round } from "@/routes/whos-that-pokemon";
 import { createMegaSlice } from "@/lib/store/slices/megaSlice";
 import { createWhosThatSlice } from "@/lib/store/slices/whosThatSlice";
 import { createLeaguesSlice } from "@/lib/store/slices/leaguesSlice";
+import { createProfileSlice } from "@/lib/store/slices/profileSlice";
+import { createItemsSlice, defaultInventory } from "@/lib/store/slices/itemsSlice";
+import { createCollectionsSlice } from "@/lib/store/slices/collectionsSlice";
+
 
 const MAX_SEEN_HASHES = 500;
 const MAX_SEEN_TEXTS = 200;
