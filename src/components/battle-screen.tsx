@@ -1456,4 +1456,3 @@ function BattleMode({
     </div>
   );
 }
-
