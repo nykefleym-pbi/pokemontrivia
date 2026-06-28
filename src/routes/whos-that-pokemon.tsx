@@ -184,7 +184,7 @@ function WhosThatPokemon() {
   useEffect(() => {
     if (phase === "correct" && round && !claimedRef.current) {
       claimedRef.current = true;
-      addXp(100);
+      addXp(10);
       grantItem(round.rewardId, 1);
       recordPokedexCapture(caught?.id ?? round.monId, round.isShiny);
     }
