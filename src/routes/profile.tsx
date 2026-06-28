@@ -160,7 +160,7 @@ function ProfilePage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
 
-  const [editingName, setEditingName] = useState(false);
+  const [, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(trainerName);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [trainerPickerOpen, setTrainerPickerOpen] = useState(false);
