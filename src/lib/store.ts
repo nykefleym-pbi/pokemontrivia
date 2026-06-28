@@ -211,6 +211,7 @@ export interface GameState {
   consumeXAttack: () => void;
   consumeScope: () => void;
   addXp: (amount: number) => void;
+  addCoins: (n: number) => void;
   raiseFlag: (name: string) => void;
   recordDaily: (r: DailyResult) => void;
   pushBattleLog: (e: BattleLogEntry) => void;
