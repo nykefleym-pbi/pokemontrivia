@@ -199,17 +199,6 @@ const TYPE_BG: Record<string, string> = {
   steel: "bg-slate-400",
 };
 
-const TRAINER_BLURBS: Record<string, { town: string; blurb: string }> = {
-  red: {
-    town: "Pallet Town",
-    blurb: "The silent legend of Mt. Silver. Lets results do the talking.",
-  },
-  lyra: { town: "New Bark Town", blurb: "A cheerful explorer with an eye for rare Pokémon." },
-  ethan: { town: "New Bark Town", blurb: "Earnest and quick on his feet — a natural rival." },
-  may: { town: "Littleroot Town", blurb: "Coordinator at heart, fierce in battle." },
-  brendan: { town: "Littleroot Town", blurb: "A field researcher who battles with style." },
-  dawn: { town: "Twinleaf Town", blurb: "Determined and graceful — always finds a way." },
-};
 
 function TrainerCreate({ onBack }: { onBack: () => void }) {
   const [substep, setSubstep] = useState<Step>("name");
