@@ -76,7 +76,7 @@ function ProfilePage() {
   const trainerSprite = useGameStore((s) => s.trainerSprite);
   const pokemon = useGameStore((s) => s.pokemon);
   const level = useGameStore((s) => s.level);
-  const xp = useGameStore((s) => s.xp);
+  
   const stats = useGameStore((s) => s.stats);
 
   const setName = useGameStore((s) => s.setName);
