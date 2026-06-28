@@ -20,7 +20,7 @@
 ## Conventions
 
 - **Rewards.** Reward formulas live in `src/lib/rewards/` (`battleReward` for regular/weekly/elite battles, `dailyReward` for the Daily Quest, `WHOS_THAT_XP` for Who's That Pokémon). Mega Raid rewards live in `src/lib/mega/schedule.ts` (`MEGA_REWARD` + `megaRankScale`). Components call these helpers — never inline the arithmetic.
-- **API calls.** Supabase and server-function calls will route through `src/lib/api/`. Components should not import `supabase` directly once Phase 2 lands.
+- **API calls.** Client HTTP goes through `src/lib/api/` — `client.ts` (`postJson`/`getJson` + `ApiError`), `trivia.ts` (battle/elite/daily/mega question endpoints), `pokeapi.ts` (PokéAPI URL builders). Two intentional exceptions remain inline: the server-side AI-gateway call in `src/lib/trivia-core.ts` and the blob download in `src/components/share-card-dialog.tsx`.
 - **Styling.** Use Tailwind theme tokens defined in `src/styles.css` (`bg-card`, `text-primary`, etc.). Do not hardcode hex values or `text-white`/`bg-black` in components — they bypass theming and break dark mode.
 - **Tests.** Pure functions in `src/lib/` should have `*.test.ts` regression coverage. UI tests are out of scope for now.
 - **No behavior change in refactors.** Each refactor phase keeps observable behavior identical; tests guard the invariants.

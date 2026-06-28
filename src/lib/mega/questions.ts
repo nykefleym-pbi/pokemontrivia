@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { Trivia } from "@/components/battle-screen";
+import type { Trivia } from "@/lib/trivia-core";
+import { triggerMegaQuestionGeneration } from "@/lib/api/trivia";
 import type { MegaEvent } from "./schedule";
 
 // Loosely-typed client so this compiles even before Supabase types regenerate.
@@ -62,16 +63,10 @@ export async function ensureMegaQuestions(event: MegaEvent): Promise<Trivia[]> {
   let qs = await fetchMegaQuestions(event.id);
   if (qs.length > 0) return qs;
   try {
-    const resp = await fetch("/api/mega-questions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ eventId: event.id }),
-    });
-    if (resp.ok) {
-      // Server generation is best-effort; re-read via the sanitized RPC.
-      qs = await fetchMegaQuestions(event.id);
-      if (qs.length > 0) return qs;
-    }
+    await triggerMegaQuestionGeneration(event.id);
+    // Server generation is best-effort; re-read via the sanitized RPC.
+    qs = await fetchMegaQuestions(event.id);
+    if (qs.length > 0) return qs;
   } catch (e) {
     console.warn("[mega] mega-questions generation failed:", e);
   }
