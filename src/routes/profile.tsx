@@ -306,8 +306,6 @@ function ProfilePage() {
     navigate({ to: "/" });
   }
 
-  const xpPct = xpProg.need > 0 ? Math.round((xpProg.current / xpProg.need) * 100) : 0;
-  const ringCirc = 2 * Math.PI * 30;
   const winRate = stats.battles > 0 ? Math.round((stats.wins / stats.battles) * 100) : 0;
   const trainerSince = new Date().toLocaleDateString(undefined, { month: "long", year: "numeric" });
   const weekStreak = (() => {
