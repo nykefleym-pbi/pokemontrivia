@@ -262,7 +262,7 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
     return () => window.clearTimeout(t);
   }, [timer, locked, bagOpen, phase, answer]);
 
-  const usePotion = useCallback(
+  const applyPotion = useCallback(
     (id: ItemId) => {
       if ((inventory[id] ?? 0) <= 0) return;
       const heal = HEAL[id] ?? 0;
@@ -277,7 +277,7 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
     [inventory, playerHp, grantItem],
   );
 
-  const useBattleItem = useCallback(
+  const applyBattleItem = useCallback(
     async (id: ItemId) => {
       if (usedOnce.has(id) || (inventory[id] ?? 0) <= 0 || locked) return;
       if (id === "scope" || id === "xaccuracy") {
@@ -578,7 +578,7 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
               <button
                 key={id}
                 disabled={disabled}
-                onClick={() => usePotion(id)}
+                onClick={() => applyPotion(id)}
                 className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition active:scale-95 disabled:opacity-40"
               >
                 <img
@@ -645,7 +645,7 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
                   id={id}
                   count={inventory[id] ?? 0}
                   subtitle={`Restore ${HEAL[id]} HP · stack freely`}
-                  onUse={() => usePotion(id)}
+                  onUse={() => applyPotion(id)}
                   disabled={(inventory[id] ?? 0) <= 0 || playerHp >= PLAYER_MAX_HP}
                 />
               ))}
@@ -664,7 +664,7 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
                   count={inventory[id] ?? 0}
                   subtitle={itemDef(id)?.desc ?? ""}
                   used={usedOnce.has(id)}
-                  onUse={() => useBattleItem(id)}
+                  onUse={() => applyBattleItem(id)}
                   disabled={usedOnce.has(id) || (inventory[id] ?? 0) <= 0 || locked}
                 />
               ))}

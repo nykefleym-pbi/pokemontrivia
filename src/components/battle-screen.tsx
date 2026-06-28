@@ -243,7 +243,7 @@ function BattleMode({
   const recordAnswer = useGameStore((s) => s.recordAnswer);
   const completeSet = useGameStore((s) => s.completeSet);
   const consumeXAttack = useGameStore((s) => s.consumeXAttack);
-  const useItem = useGameStore((s) => s.useItem);
+  const applyItem = useGameStore((s) => s.useItem);
   const xAttackActive = useGameStore((s) => s.xAttackActive);
   const scopeRevealedThisBattle = useGameStore((s) => s.scopeRevealedThisBattle);
   const consumeScope = useGameStore((s) => s.consumeScope);
@@ -1012,7 +1012,7 @@ function BattleMode({
       toast.error("Escape Rope can't be used in the Weekly League or Elite Four.");
       return;
     }
-    const ok = useItem(id);
+    const ok = applyItem(id);
     if (!ok) {
       toast.error(`Cannot use ${def.name} right now.`);
       return;

@@ -162,8 +162,6 @@ function BattlePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasOnboarded, search.autostart, phase]);
 
-  if (!hasOnboarded) return null;
-
   async function startBattle() {
     if (pendingElite) {
       toast.error(`${pendingElite.name} blocks the way! Defeat them first.`);
@@ -360,6 +358,7 @@ function BattlePage() {
   }
 
   useEffect(() => {
+    if (!hasOnboarded) return;
     if (engageShownRef.current || engageShownThisSession) return;
     if (phase !== "home" || pendingElite) return;
     const dismissedToday = engageDismissDate === today ? engageDismissCount : 0;
@@ -482,6 +481,7 @@ function BattlePage() {
     engageDismissDate,
     engageShownThisSession,
     setEngageShownThisSession,
+    hasOnboarded,
   ]);
 
   const ENGAGE_THEME: Record<
@@ -590,6 +590,8 @@ function BattlePage() {
       descColor: "var(--brand-slate)",
     },
   };
+
+  if (!hasOnboarded) return null;
 
   return (
     <>
