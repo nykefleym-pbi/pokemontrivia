@@ -15,6 +15,7 @@ import {
   xpProgressInLevel,
   rankForLevel,
 } from "@/lib/game-data";
+import { battleReward, dailyReward } from "@/lib/rewards";
 
 import {
   isSuperEffective,
@@ -873,35 +874,12 @@ function BattleMode({
     wrongStreakRef.current = 0;
     abilityStateRef.current.cursedBodyPending = null;
 
-    const levelMult = 1 + 0.05 * (level - 1);
-    const streakMult = streakMultiplier(maxStreakRef.current);
-
-    let xpAward = 0;
-    let coinAward = 0;
-    let tpAward = 0;
-
-    if (isElite) {
-      if (won) {
-        xpAward = 0;
-        coinAward = 2000;
-        tpAward = Math.round(200 * levelMult * streakMult);
-      }
-      // elite loss: no reward (all stay 0)
-    } else if (isWeekly) {
-      if (won) {
-        xpAward = Math.round(100 * levelMult * streakMult);
-        coinAward = Math.round(0.3 * xpAward);
-        tpAward = Math.round(0.2 * xpAward);
-      }
-    } else {
-      if (won) {
-        xpAward = Math.round(50 * levelMult * streakMult);
-        coinAward = Math.round(0.25 * xpAward);
-        tpAward = Math.round(0.1 * xpAward);
-      } else {
-        xpAward = Math.round(10 * levelMult * streakMult);
-      }
-    }
+    const { xp: xpAward, coins: coinAward, tp: tpAward } = battleReward({
+      mode: isElite ? "elite" : isWeekly ? "weekly" : "regular",
+      won,
+      level,
+      maxStreak: maxStreakRef.current,
+    });
 
     setXpEarned(xpAward);
     setCoinsEarned(coinAward);
@@ -1780,12 +1758,6 @@ function Row({
 
 // ----------------------------- Daily Challenge Mode -----------------------------
 
-function dailyXpFor(correct: number, total: number, level: number): number {
-  if (correct < 6) return 0;
-  const levelMult = 1 + 0.05 * (level - 1);
-  const perfectMult = correct === total ? 2 : 1;
-  return Math.round(50 * levelMult * perfectMult);
-}
 
 function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">) {
   const recordDaily = useGameStore((s) => s.recordDaily);
