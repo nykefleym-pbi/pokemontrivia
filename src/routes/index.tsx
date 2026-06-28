@@ -336,10 +336,6 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
   }
 
   const selectedTrainer = TRAINER_SPRITES.find((t) => t.id === trainerSprite);
-  const trainerInfo = TRAINER_BLURBS[trainerSprite] ?? {
-    town: "Unknown Town",
-    blurb: `${selectedTrainer?.name ?? "This trainer"} is ready for the next battle.`,
-  };
 
   return (
     <div className="flex h-full w-full flex-col px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)]">
