@@ -253,20 +253,6 @@ const defaultStats: PlayerStats = {
   totalAnswerTime: 0,
 };
 
-const defaultInventory: Record<ItemId, number> = {
-  potion: 2,
-  superpotion: 0,
-  maxpotion: 0,
-  xattack: 1,
-  escape: 1,
-  candy: 0,
-  luckyegg: 0,
-  scope: 1,
-  xaccuracy: 1,
-  focusband: 0,
-  quickclaw: 0,
-  assaultvest: 0,
-};
 
 export const useGameStore = create<GameState>()(
   persist(
@@ -274,22 +260,9 @@ export const useGameStore = create<GameState>()(
       ...createMegaSlice(set, get, store),
       ...createWhosThatSlice(set, get, store),
       ...createLeaguesSlice(set, get, store),
-      hasOnboarded: false,
-      isGuest: false,
-      trainerName: "",
-      trainerSprite: TRAINER_SPRITES[0]?.id ?? "",
-      friendCode: null,
-      lastEngagePromptDate: null,
-      engageDismissCount: 0,
-      engageDismissDate: null,
-      engageShownThisSession: false,
-      nameReconciled: false,
-      needsNameReclaim: false,
-
-      dailyGiftLastClaim: null,
-      dailyGiftStreak: 0,
-      guaranteedShinyPending: false,
-      pokeEggs: 0,
+      ...createProfileSlice(set, get, store),
+      ...createItemsSlice(set, get, store),
+      ...createCollectionsSlice(set, get, store),
       pokemon: null,
 
       level: 1,
@@ -297,8 +270,6 @@ export const useGameStore = create<GameState>()(
       xp: 0,
       coins: 0,
       stats: defaultStats,
-      inventory: { ...defaultInventory },
-      itemCooldowns: {},
 
       inBattle: false,
       battleScreenActive: false,
@@ -308,11 +279,6 @@ export const useGameStore = create<GameState>()(
       xAttackActive: false,
       scopeRevealedThisBattle: false,
       bonusTimeThisBattle: 0,
-      luckyEggExpiresAt: 0,
-      luckyEggUsedWeek: 0,
-      focusBandUsedWeek: 0,
-      assaultVestUsedWeek: 0,
-      autoItems: {},
 
       seenQuestionHashes: [],
       seenQuestions: [],
@@ -321,12 +287,7 @@ export const useGameStore = create<GameState>()(
       flags: [],
       dailyResult: null,
       battleLog: [],
-      pokedex: {},
-      defeatedEliteRegions: [],
-      defeatedElites: [],
-      abilityCodex: [],
-      darkMode: false,
-      setDarkMode: (v) => set({ darkMode: v }),
+
 
 
       tryAutoFocusBand: () => {
