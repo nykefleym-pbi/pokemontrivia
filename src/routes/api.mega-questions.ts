@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { generateTrivia, type TriviaPayload } from "@/lib/trivia-core";
+import { type TriviaPayload } from "@/lib/trivia-core";
 import { pickBattleCurated, recordCuratedServed } from "@/lib/curated-questions";
+import { FALLBACK_QUESTIONS } from "@/lib/game-data";
 const MEGA_TOTAL = 50;
 // difficulty curve for a Mega Raid's frozen 50-question set
 const TIERS: ReadonlyArray<readonly ["easy" | "medium" | "hard" | "expert", number]> = [
@@ -32,7 +33,7 @@ async function buildQuestions(eventId: string): Promise<TriviaPayload[]> {
   const existing = await readQuestions(eventId);
   if (existing && existing.length > 0) return existing;
 
-  // Pull a varied curated set across difficulties, then top up with AI.
+  // Pull a varied curated set across difficulties (pure curated — no AI).
   let pool: TriviaPayload[] = [];
   const served: string[] = [];
   for (const [difficulty, count] of TIERS) {
@@ -45,15 +46,12 @@ async function buildQuestions(eventId: string): Promise<TriviaPayload[]> {
     }
   }
 
+  // Defensive offline top-up (curated bank is normally deep enough for 50).
   if (pool.length < MEGA_TOTAL) {
-    const top = await generateTrivia({
-      difficulty: "medium",
-      flowSeed: Math.floor(Math.random() * 1_000_000),
-      seenHashes: [],
-      seenSamples: pool.map((q) => q.question),
-      batchSize: MEGA_TOTAL - pool.length,
-    });
-    pool = pool.concat(top.questions);
+    const have = new Set(pool.map((q) => q.question));
+    pool = pool.concat(
+      FALLBACK_QUESTIONS.filter((q) => !have.has(q.question)).slice(0, MEGA_TOTAL - pool.length),
+    );
   }
 
   // De-dupe by question text, shuffle, cap at 50.
