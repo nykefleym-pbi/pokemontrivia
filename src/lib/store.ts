@@ -11,8 +11,10 @@ import {
 } from "./game-data";
 import type { PokeEntry } from "./pokemon-data";
 import { ALL_POKEMON, rehydratePokemon } from "./pokemon-data";
-import { pickRandomGymLeader } from "./gym-leaders";
 import type { Round } from "@/routes/whos-that-pokemon";
+import { createMegaSlice } from "@/lib/store/slices/megaSlice";
+import { createWhosThatSlice } from "@/lib/store/slices/whosThatSlice";
+import { createLeaguesSlice } from "@/lib/store/slices/leaguesSlice";
 
 const MAX_SEEN_HASHES = 500;
 const MAX_SEEN_TEXTS = 200;
@@ -265,7 +267,10 @@ const defaultInventory: Record<ItemId, number> = {
 
 export const useGameStore = create<GameState>()(
   persist(
-    (set, get) => ({
+    (set, get, store) => ({
+      ...createMegaSlice(set, get, store),
+      ...createWhosThatSlice(set, get, store),
+      ...createLeaguesSlice(set, get, store),
       hasOnboarded: false,
       isGuest: false,
       trainerName: "",
@@ -282,8 +287,6 @@ export const useGameStore = create<GameState>()(
       dailyGiftStreak: 0,
       guaranteedShinyPending: false,
       pokeEggs: 0,
-      megaTrophies: [],
-      claimedMegaRewards: [],
       pokemon: null,
 
       level: 1,
@@ -307,9 +310,6 @@ export const useGameStore = create<GameState>()(
       focusBandUsedWeek: 0,
       assaultVestUsedWeek: 0,
       autoItems: {},
-      whosThatHourKey: 0,
-      whosThatActiveRound: null,
-      whosThatRoundHourKey: null,
 
       seenQuestionHashes: [],
       seenQuestions: [],
@@ -322,84 +322,9 @@ export const useGameStore = create<GameState>()(
       defeatedEliteRegions: [],
       defeatedElites: [],
       abilityCodex: [],
-      trainingPoints: {},
-      weeklyLeague: null,
-      gymBadges: [],
-      weeklyLeagueHistory: [],
       darkMode: false,
       setDarkMode: (v) => set({ darkMode: v }),
 
-      initWeeklyLeague: () => {
-        const s = get();
-        const { start: weekStartTs } = getWeekRangeUtc();
-        if (s.weeklyLeague && s.weeklyLeague.weekStartTs === weekStartTs) return;
-        const leader = pickRandomGymLeader(s.gymBadges);
-        set({
-          weeklyLeague: {
-            weekStartTs,
-            gymLeaderId: leader.id,
-            status: "not_started",
-            attemptStartedAt: null,
-            questionsAnswered: 0,
-          },
-        });
-      },
-
-      startWeeklyLeagueAttempt: () => {
-        const s = get();
-        if (!s.weeklyLeague) return;
-        if (s.weeklyLeague.status !== "not_started" && s.weeklyLeague.status !== "in_progress")
-          return;
-        set({
-          weeklyLeague: {
-            ...s.weeklyLeague,
-            status: "in_progress",
-            attemptStartedAt: s.weeklyLeague.attemptStartedAt ?? Date.now(),
-          },
-        });
-      },
-
-      recordWeeklyLeagueResult: (won) => {
-        const s = get();
-        if (!s.weeklyLeague) return;
-        const newHistory: WeeklyLeagueAttempt[] = [
-          ...s.weeklyLeagueHistory,
-          {
-            weekStartTs: s.weeklyLeague.weekStartTs,
-            gymLeaderId: s.weeklyLeague.gymLeaderId,
-            won,
-          },
-        ].slice(-8);
-        let newBadges = s.gymBadges;
-        if (won && !s.gymBadges.includes(s.weeklyLeague.gymLeaderId)) {
-          newBadges = [...s.gymBadges, s.weeklyLeague.gymLeaderId];
-        }
-        set({
-          weeklyLeague: { ...s.weeklyLeague, status: won ? "won" : "lost" },
-          gymBadges: newBadges,
-          weeklyLeagueHistory: newHistory,
-        });
-      },
-
-      addTrainingPoints: (pokemonId, amount) => {
-        const s = get();
-        const current = s.trainingPoints[pokemonId] ?? 0;
-        set({
-          trainingPoints: { ...s.trainingPoints, [pokemonId]: current + amount },
-        });
-      },
-
-      spendTrainingPoints: (pokemonId, amount) => {
-        const s = get();
-        const current = s.trainingPoints[pokemonId] ?? 0;
-        if (current < amount) return false;
-        set({
-          trainingPoints: { ...s.trainingPoints, [pokemonId]: current - amount },
-        });
-        return true;
-      },
-
-      getPartnerTp: (pokemonId) => get().trainingPoints[pokemonId] ?? 0,
 
       tryAutoFocusBand: () => {
         const s = get();
@@ -449,13 +374,6 @@ export const useGameStore = create<GameState>()(
         const s = get();
         set({ inventory: { ...s.inventory, [id]: (s.inventory[id] ?? 0) + qty } });
       },
-
-      consumeWhosThat: () => {
-        set({ whosThatHourKey: Math.floor(Date.now() / 3_600_000) });
-      },
-      setWhosThatRound: (round, hourKey) =>
-        set({ whosThatActiveRound: round, whosThatRoundHourKey: hourKey }),
-      clearWhosThatRound: () => set({ whosThatActiveRound: null, whosThatRoundHourKey: null }),
 
       evolvePartner: (toPokemon) => {
         const s = get();
@@ -576,29 +494,13 @@ export const useGameStore = create<GameState>()(
       },
       consumeGuaranteedShiny: () => set({ guaranteedShinyPending: false }),
       grantPokeEgg: (n = 1) => set((s) => ({ pokeEggs: (s.pokeEggs ?? 0) + n })),
-      claimMegaChampion: (eventId, name, pokeId) => {
-        const s = get();
-        if ((s.megaTrophies ?? []).some((t) => t.eventId === eventId)) return false;
-        set({
-          megaTrophies: [
-            ...(s.megaTrophies ?? []),
-            { eventId, name, pokeId, claimedAt: new Date().toISOString() },
-          ],
-        });
-        return true;
-      },
       hatchPokeEgg: () => {
         const s = get();
         if ((s.pokeEggs ?? 0) <= 0) return false;
         set({ pokeEggs: s.pokeEggs - 1 });
         return true;
       },
-      markMegaRewardClaimed: (eventId) =>
-        set((s) =>
-          s.claimedMegaRewards.includes(eventId)
-            ? s
-            : { claimedMegaRewards: [...s.claimedMegaRewards, eventId] },
-        ),
+
 
       startGuestSession: () => {
         const poke = ALL_POKEMON[Math.floor(Math.random() * ALL_POKEMON.length)];
