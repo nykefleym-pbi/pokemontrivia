@@ -640,6 +640,7 @@ export const useGameStore = create<GameState>()(
           weeklyLeague: null,
           gymBadges: [],
           weeklyLeagueHistory: [],
+          claimedMegaRewards: [],
         }),
 
       setName: (name) => set({ trainerName: name }),
