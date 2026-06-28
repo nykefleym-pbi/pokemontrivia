@@ -27,7 +27,7 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 const HEAL: Partial<Record<ItemId, number>> = { potion: 30, superpotion: 60, maxpotion: PLAYER_MAX_HP };
-const REWARD_POOL: ItemId[] = ["potion", "superpotion", "maxpotion", "xattack", "scope", "xaccuracy", "candy", "luckyegg"];
+
 
 function itemDef(id: ItemId) {
   return ITEMS.find((i) => i.id === id);
