@@ -11,8 +11,10 @@ import {
 } from "./game-data";
 import type { PokeEntry } from "./pokemon-data";
 import { ALL_POKEMON, rehydratePokemon } from "./pokemon-data";
-import { pickRandomGymLeader } from "./gym-leaders";
 import type { Round } from "@/routes/whos-that-pokemon";
+import { createMegaSlice } from "@/lib/store/slices/megaSlice";
+import { createWhosThatSlice } from "@/lib/store/slices/whosThatSlice";
+import { createLeaguesSlice } from "@/lib/store/slices/leaguesSlice";
 
 const MAX_SEEN_HASHES = 500;
 const MAX_SEEN_TEXTS = 200;
