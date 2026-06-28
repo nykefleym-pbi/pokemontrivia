@@ -1472,7 +1472,7 @@ function ResultScreen({
   streakKept,
   currentLevel,
   levelProgressPct,
-  newTrophies,
+  newTrophies: _newTrophies,
   missed,
   onRebattle,
   onBackHome,
