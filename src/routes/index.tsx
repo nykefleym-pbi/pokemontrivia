@@ -5,7 +5,7 @@ import { Search, ChevronLeft, Check } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { STARTING_PARTNERS, type PokeEntry } from "@/lib/pokemon-data";
 import { getAbility } from "@/lib/abilities";
-import { PokeballSpinner, TypeBadge, PokemonSprite } from "@/components/game-ui";
+import { TypeBadge, PokemonSprite } from "@/components/game-ui";
 import { TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
 import { trainerQuote } from "@/lib/trainer-quotes";
 import { Button } from "@/components/ui/button";
