@@ -349,8 +349,7 @@ function BattleMode({
   const [shareOpen, setShareOpen] = useState(false);
   const trainerSpriteId = useGameStore((s) => s.trainerSprite);
 
-  // finishRef gives hooks a stable handle to the latest finish() closure
-  const finishRef = useRef<(won: boolean) => void>(() => {});
+
 
   const superEff = isSuperEffective(player, enemy.pokemon);
   const disadvantaged = useMemo(
