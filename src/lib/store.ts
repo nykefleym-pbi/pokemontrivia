@@ -287,8 +287,6 @@ export const useGameStore = create<GameState>()(
       dailyGiftStreak: 0,
       guaranteedShinyPending: false,
       pokeEggs: 0,
-      megaTrophies: [],
-      claimedMegaRewards: [],
       pokemon: null,
 
       level: 1,
