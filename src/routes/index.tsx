@@ -30,7 +30,7 @@ function SplashPage() {
 
   useEffect(() => {
     if (hasOnboarded) {
-      navigate({ to: "/battle" });
+      navigate({ to: "/battle", search: { autostart: 0 } as never });
     }
   }, [hasOnboarded, navigate]);
 
@@ -315,7 +315,7 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
     setOnboarded(claimedName, pick, trainerSprite);
     useGameStore.getState().setNameReconciled(true);
     void syncProfile();
-    navigate({ to: "/battle" });
+    navigate({ to: "/battle", search: { autostart: 0 } as never });
   }
 
   function goBack() {

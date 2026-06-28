@@ -90,7 +90,7 @@ function ShopPage() {
   const coins = useGameStore((s) => s.coins);
   const inventory = useGameStore((s) => s.inventory);
   const buyItem = useGameStore((s) => s.buyItem);
-  const useItem = useGameStore((s) => s.useItem);
+  const applyItem = useGameStore((s) => s.useItem);
   const autoItems = useGameStore((s) => s.autoItems);
   const dailyGiftLastClaim = useGameStore((s) => s.dailyGiftLastClaim);
   const dailyGiftStreak = useGameStore((s) => s.dailyGiftStreak);
@@ -185,7 +185,7 @@ function ShopPage() {
   const ownedInBag = ITEMS.filter((it) => (inventory[it.id] ?? 0) > 0);
 
   function handleUseFromBag(it: ItemDef) {
-    const ok = useItem(it.id);
+    const ok = applyItem(it.id);
     if (!ok) {
       toast.error(
         it.id === "luckyegg"
