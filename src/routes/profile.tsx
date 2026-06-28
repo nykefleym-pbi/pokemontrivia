@@ -36,7 +36,6 @@ import { validateTrainerName, claimErrorMessage, TRAINER_NAME_MAX } from "@/lib/
 import {
   rankForLevel,
   xpProgressInLevel,
-  ITEMS,
   TRAINER_SPRITES,
   trainerSpriteUrl,
 } from "@/lib/game-data";
