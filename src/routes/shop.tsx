@@ -58,10 +58,6 @@ const BAG_SHORT_DESC: Record<string, string> = {
   assaultvest: "Auto: ½ damage vs bad matchups",
 };
 
-function bagDesc(it: ItemDef): string {
-  return BAG_SHORT_DESC[it.id] ?? it.desc;
-}
-
 function ItemIcon({ item, className }: { item: ItemDef; className: string }) {
   return (
     <img

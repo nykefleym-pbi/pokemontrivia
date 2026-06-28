@@ -358,7 +358,8 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
         <div
           className="relative px-4 pb-2 pt-[calc(env(safe-area-inset-top)+1.25rem)]"
           style={{
-            background: "radial-gradient(circle at 50% 30%, #2E3A5C 0%, var(--brand-ink) 58%, var(--brand-ink-deep) 100%)",
+            background:
+              "radial-gradient(circle at 50% 30%, #2E3A5C 0%, var(--brand-ink) 58%, var(--brand-ink-deep) 100%)",
             overflow: "hidden",
           }}
         >
@@ -423,7 +424,10 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
         {/* Boss sprite — flex-1 region that scales to whatever vertical room is left. */}
         <div
           className="relative flex min-h-0 flex-1 items-center justify-center px-4"
-          style={{ background: "linear-gradient(180deg, var(--brand-ink-deep) 0%, var(--brand-ink-deep) 100%)" }}
+          style={{
+            background:
+              "linear-gradient(180deg, var(--brand-ink-deep) 0%, var(--brand-ink-deep) 100%)",
+          }}
         >
           <div
             className="absolute"

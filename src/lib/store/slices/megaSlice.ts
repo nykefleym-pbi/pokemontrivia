@@ -2,7 +2,10 @@ import type { GameState } from "@/lib/store";
 import type { StoreSlice } from "@/lib/store/slice";
 
 export const createMegaSlice: StoreSlice<
-  Pick<GameState, "megaTrophies" | "claimedMegaRewards" | "claimMegaChampion" | "markMegaRewardClaimed">
+  Pick<
+    GameState,
+    "megaTrophies" | "claimedMegaRewards" | "claimMegaChampion" | "markMegaRewardClaimed"
+  >
 > = (set, get) => ({
   megaTrophies: [],
   claimedMegaRewards: [],

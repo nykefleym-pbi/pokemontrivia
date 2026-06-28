@@ -33,28 +33,22 @@ import {
   type TrainerProfile,
 } from "@/lib/social";
 import { validateTrainerName, claimErrorMessage, TRAINER_NAME_MAX } from "@/lib/trainer-name";
-import {
-  rankForLevel,
-  xpProgressInLevel,
-  ITEMS,
-  TRAINER_SPRITES,
-  trainerSpriteUrl,
-} from "@/lib/game-data";
+import { rankForLevel, TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
 import {
   STARTING_PARTNERS,
   canEvolve,
   getEvolutionTargets,
   type PokeEntry,
 } from "@/lib/pokemon-data";
-import { ABILITIES } from "@/lib/abilities";
+
 import { EVOLUTION_TP_COST, getTpMultiplier } from "@/lib/game-data";
 import { EvolutionScreen } from "@/components/evolution-screen";
-import { XpBar, TypeBadge, PokemonSprite } from "@/components/game-ui";
+import { TypeBadge, PokemonSprite } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Toaster } from "@/components/ui/sonner";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
@@ -82,9 +76,9 @@ function ProfilePage() {
   const trainerSprite = useGameStore((s) => s.trainerSprite);
   const pokemon = useGameStore((s) => s.pokemon);
   const level = useGameStore((s) => s.level);
-  const xp = useGameStore((s) => s.xp);
+
   const stats = useGameStore((s) => s.stats);
-  const inventory = useGameStore((s) => s.inventory);
+
   const setName = useGameStore((s) => s.setName);
   const setPokemon = useGameStore((s) => s.setPokemon);
   const setTrainerSprite = useGameStore((s) => s.setTrainerSprite);
@@ -161,7 +155,7 @@ function ProfilePage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
 
-  const [editingName, setEditingName] = useState(false);
+  const [, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(trainerName);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [trainerPickerOpen, setTrainerPickerOpen] = useState(false);
@@ -225,7 +219,7 @@ function ProfilePage() {
   if (!hasOnboarded || !pokemon) return null;
 
   const rank = rankForLevel(level);
-  const xpProg = xpProgressInLevel(xp);
+
   const accuracy = stats.answered > 0 ? Math.round((stats.correct / stats.answered) * 100) : 0;
   const avgTime =
     stats.answered > 0 ? Math.round(stats.totalAnswerTime / stats.answered / 100) / 10 : 0;
@@ -307,8 +301,6 @@ function ProfilePage() {
     navigate({ to: "/" });
   }
 
-  const xpPct = xpProg.need > 0 ? Math.round((xpProg.current / xpProg.need) * 100) : 0;
-  const ringCirc = 2 * Math.PI * 30;
   const winRate = stats.battles > 0 ? Math.round((stats.wins / stats.battles) * 100) : 0;
   const trainerSince = new Date().toLocaleDateString(undefined, { month: "long", year: "numeric" });
   const weekStreak = (() => {
@@ -1020,7 +1012,7 @@ function ProfilePage() {
 function PartnerCard({
   pokemon,
   tp,
-  onChange,
+  onChange: _onChange,
   onEvolve,
 }: {
   pokemon: PokeEntry;
@@ -1120,26 +1112,6 @@ function PartnerCard({
           </div>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
-
-function PillTab({ value, children }: { value: string; children: React.ReactNode }) {
-  return (
-    <TabsTrigger
-      value={value}
-      className="h-9 rounded-full text-xs font-bold text-foreground/60 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-card"
-    >
-      {children}
-    </TabsTrigger>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: number | string }) {
-  return (
-    <div className="rounded-2xl bg-card px-3 py-3 text-center shadow-card">
-      <div className="text-xl font-extrabold text-foreground">{value}</div>
-      <div className="mt-0.5 font-pixel-xs text-foreground/50">{label}</div>
     </div>
   );
 }

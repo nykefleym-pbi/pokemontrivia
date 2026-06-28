@@ -5,7 +5,7 @@ import { Search, ChevronLeft, Check } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { STARTING_PARTNERS, type PokeEntry } from "@/lib/pokemon-data";
 import { getAbility } from "@/lib/abilities";
-import { PokeballSpinner, TypeBadge, PokemonSprite } from "@/components/game-ui";
+import { TypeBadge, PokemonSprite } from "@/components/game-ui";
 import { TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
 import { trainerQuote } from "@/lib/trainer-quotes";
 import { Button } from "@/components/ui/button";
@@ -199,18 +199,6 @@ const TYPE_BG: Record<string, string> = {
   steel: "bg-slate-400",
 };
 
-const TRAINER_BLURBS: Record<string, { town: string; blurb: string }> = {
-  red: {
-    town: "Pallet Town",
-    blurb: "The silent legend of Mt. Silver. Lets results do the talking.",
-  },
-  lyra: { town: "New Bark Town", blurb: "A cheerful explorer with an eye for rare Pokémon." },
-  ethan: { town: "New Bark Town", blurb: "Earnest and quick on his feet — a natural rival." },
-  may: { town: "Littleroot Town", blurb: "Coordinator at heart, fierce in battle." },
-  brendan: { town: "Littleroot Town", blurb: "A field researcher who battles with style." },
-  dawn: { town: "Twinleaf Town", blurb: "Determined and graceful — always finds a way." },
-};
-
 function TrainerCreate({ onBack }: { onBack: () => void }) {
   const [substep, setSubstep] = useState<Step>("name");
   const [name, setName] = useState("");
@@ -336,10 +324,6 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
   }
 
   const selectedTrainer = TRAINER_SPRITES.find((t) => t.id === trainerSprite);
-  const trainerInfo = TRAINER_BLURBS[trainerSprite] ?? {
-    town: "Unknown Town",
-    blurb: `${selectedTrainer?.name ?? "This trainer"} is ready for the next battle.`,
-  };
 
   return (
     <div className="flex h-full w-full flex-col px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)]">

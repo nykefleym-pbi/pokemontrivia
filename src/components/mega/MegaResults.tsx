@@ -56,7 +56,8 @@ export function MegaResults({
         className="relative px-6 pb-6 text-center"
         style={{
           paddingTop: 56,
-          background: "radial-gradient(circle at 50% 30%, #2E3A5C 0%, var(--brand-ink) 58%, var(--brand-ink-deep) 100%)",
+          background:
+            "radial-gradient(circle at 50% 30%, #2E3A5C 0%, var(--brand-ink) 58%, var(--brand-ink-deep) 100%)",
           overflow: "hidden",
         }}
       >

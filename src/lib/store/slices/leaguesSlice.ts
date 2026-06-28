@@ -42,8 +42,7 @@ export const createLeaguesSlice: StoreSlice<
   startWeeklyLeagueAttempt: () => {
     const s = get();
     if (!s.weeklyLeague) return;
-    if (s.weeklyLeague.status !== "not_started" && s.weeklyLeague.status !== "in_progress")
-      return;
+    if (s.weeklyLeague.status !== "not_started" && s.weeklyLeague.status !== "in_progress") return;
     set({
       weeklyLeague: {
         ...s.weeklyLeague,

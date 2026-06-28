@@ -10,7 +10,6 @@ import {
   enemyHpForLevel,
   streakMultiplier,
   streakLabel,
-  TP_REWARDS,
   getTpMultiplier,
   xpProgressInLevel,
   rankForLevel,
@@ -27,13 +26,7 @@ import {
 } from "@/lib/pokemon-data";
 import { getAbility as getAbilityFn, type Ability } from "@/lib/abilities";
 import { TutorialOverlay } from "@/components/tutorial-overlay";
-import {
-  HpBar,
-  TypeBadge,
-  PokemonSprite,
-  PokeballPattern,
-  type DailyMark,
-} from "@/components/game-ui";
+import { TypeBadge, PokemonSprite, PokeballPattern, type DailyMark } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -49,7 +42,7 @@ import {
 import type { ItemId } from "@/lib/game-data";
 import { ACHIEVEMENTS, unlockedAchievements } from "@/lib/achievements";
 import { playCry, playSfx } from "@/lib/audio";
-import { type EliteMember, ELITE_FOUR, regionCompleted } from "@/lib/elite-four";
+import { type EliteMember, regionCompleted } from "@/lib/elite-four";
 import type { GymLeader } from "@/lib/gym-leaders";
 import { ShareCardDialog } from "@/components/share-card-dialog";
 import type { ShareData } from "@/components/share-card-builder";
@@ -350,9 +343,6 @@ function BattleMode({
   const [shareData, setShareData] = useState<ShareData | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
   const trainerSpriteId = useGameStore((s) => s.trainerSprite);
-
-  // finishRef gives hooks a stable handle to the latest finish() closure
-  const finishRef = useRef<(won: boolean) => void>(() => {});
 
   const superEff = isSuperEffective(player, enemy.pokemon);
   const disadvantaged = useMemo(
@@ -868,7 +858,11 @@ function BattleMode({
     wrongStreakRef.current = 0;
     abilityStateRef.current.cursedBodyPending = null;
 
-    const { xp: xpAward, coins: coinAward, tp: tpAward } = battleReward({
+    const {
+      xp: xpAward,
+      coins: coinAward,
+      tp: tpAward,
+    } = battleReward({
       mode: isElite ? "elite" : isWeekly ? "weekly" : "regular",
       won,
       level,
@@ -1475,7 +1469,7 @@ function ResultScreen({
   streakKept,
   currentLevel,
   levelProgressPct,
-  newTrophies,
+  newTrophies: _newTrophies,
   missed,
   onRebattle,
   onBackHome,
@@ -1751,7 +1745,6 @@ function Row({
 }
 
 // ----------------------------- Daily Challenge Mode -----------------------------
-
 
 function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">) {
   const recordDaily = useGameStore((s) => s.recordDaily);

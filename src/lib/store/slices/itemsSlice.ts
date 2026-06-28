@@ -143,8 +143,7 @@ export const createItemsSlice: StoreSlice<
       inventory: nextInventory,
       usedThisBattle: nextUsed,
       xAttackActive: id === "xattack" ? true : s.xAttackActive,
-      luckyEggExpiresAt:
-        id === "luckyegg" ? Date.now() + 24 * 60 * 60 * 1000 : s.luckyEggExpiresAt,
+      luckyEggExpiresAt: id === "luckyegg" ? Date.now() + 24 * 60 * 60 * 1000 : s.luckyEggExpiresAt,
       luckyEggUsedWeek: id === "luckyegg" ? getWeekRangeUtc().start : s.luckyEggUsedWeek,
     });
 
