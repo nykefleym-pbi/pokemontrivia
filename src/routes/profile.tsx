@@ -1017,7 +1017,7 @@ function ProfilePage() {
 function PartnerCard({
   pokemon,
   tp,
-  onChange,
+  onChange: _onChange,
   onEvolve,
 }: {
   pokemon: PokeEntry;
