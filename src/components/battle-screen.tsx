@@ -823,11 +823,12 @@ function BattleMode({
     let tpAward = 0;
 
     if (isElite) {
-      const baseXp = won ? 40 + level * 5 : 10 + level * 2;
-      const eliteBonus = won ? 100 + level * 10 : 0;
-      xpAward = baseXp + maxStreakRef.current * 2 + eliteBonus;
-      coinAward = xpAward;
-      tpAward = won ? TP_REWARDS.eliteWin : TP_REWARDS.battleLoss;
+      if (won) {
+        xpAward = 0;
+        coinAward = 2000;
+        tpAward = Math.round(200 * levelMult * streakMult);
+      }
+      // elite loss: no reward (all stay 0)
     } else if (isWeekly) {
       if (won) {
         xpAward = Math.round(100 * levelMult * streakMult);
