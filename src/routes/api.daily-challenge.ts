@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { generateTrivia, type TriviaPayload } from "@/lib/trivia-core";
+import { type TriviaPayload } from "@/lib/trivia-core";
 import { curatedSupabase as supabase } from "@/lib/curated-client";
 import { recordCuratedServed } from "@/lib/curated-questions";
+import { FALLBACK_QUESTIONS } from "@/lib/game-data";
 
 // daily_questions table + RPCs are not in the generated Supabase types.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -13,10 +14,6 @@ function todayUTC(): string {
   const m = String(d.getUTCMonth() + 1).padStart(2, "0");
   const day = String(d.getUTCDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
-}
-
-function dateSeed(date: string): number {
-  return parseInt(date.replace(/-/g, ""), 10);
 }
 
 interface CuratedRow {
@@ -81,17 +78,14 @@ async function getDaily(date: string): Promise<TriviaPayload[]> {
       category: r.category,
     }));
 
-    // Top up from AI / bundled fallback only if curated came up short.
+    // Top up from the bundled offline bank only if curated came up short.
     if (questions.length < 10) {
+      const have = new Set(questions.map((q) => q.question));
       const need = 10 - questions.length;
-      const top = await generateTrivia({
-        difficulty: "easy",
-        flowSeed: dateSeed(date),
-        seenHashes: [],
-        seenSamples: questions.map((q) => q.question),
-        batchSize: need,
-      });
-      questions = [...questions, ...top.questions];
+      questions = [
+        ...questions,
+        ...FALLBACK_QUESTIONS.filter((q) => !have.has(q.question)).slice(0, need),
+      ];
     }
 
     // Shuffle so easy/medium aren't grouped; cap at 10.
