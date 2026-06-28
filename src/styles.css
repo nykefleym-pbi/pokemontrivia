@@ -151,6 +151,16 @@
 
   --bottom-nav-height: 4.5rem;
   --bottom-nav-total: calc(4.5rem + env(safe-area-inset-bottom) + 0.75rem);
+
+  /* Brand palette (exact hex — used by mega/battle UI; single source of truth) */
+  --brand-gold: #f2d64e;
+  --brand-amber: #e8a93c;
+  --brand-gold-shadow: #c18a28;
+  --brand-ink: #1c2333;
+  --brand-ink-deep: #14161f;
+  --brand-red: #e23b2e;
+  --brand-slate: #6b6e7b;
+  --brand-cream: #fbf3df;
 }
 
 .dark {
