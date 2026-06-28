@@ -883,6 +883,7 @@ export const useGameStore = create<GameState>()(
         guaranteedShinyPending: s.guaranteedShinyPending,
         pokeEggs: s.pokeEggs,
         megaTrophies: s.megaTrophies,
+        claimedMegaRewards: s.claimedMegaRewards,
 
       }),
 
