@@ -3,7 +3,7 @@ import { PokemonSprite } from "@/components/game-ui";
 import { trainerSpriteUrl, type ItemId } from "@/lib/game-data";
 import { useGameStore } from "@/lib/store";
 import { toast } from "sonner";
-import type { MegaEvent } from "@/lib/mega/schedule";
+import { MEGA_REWARD, megaRankScale, type MegaEvent } from "@/lib/mega/schedule";
 import { fetchMegaLeaderboard, getMyMegaRun, type MegaRunRow, type MegaLeaderboardRow } from "@/lib/mega/runs";
 
 function fmtTime(ms: number) {
