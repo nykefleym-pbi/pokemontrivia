@@ -27,7 +27,7 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 const HEAL: Partial<Record<ItemId, number>> = { potion: 30, superpotion: 60, maxpotion: PLAYER_MAX_HP };
-const REWARD_POOL: ItemId[] = ["potion", "superpotion", "maxpotion", "xattack", "scope", "xaccuracy", "candy", "luckyegg"];
+
 
 function itemDef(id: ItemId) {
   return ITEMS.find((i) => i.id === id);
@@ -101,27 +101,6 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
   const lowHp = playerHp / PLAYER_MAX_HP <= 0.3 && playerHp > 0;
   const hasAnyPotion = (["potion", "superpotion", "maxpotion"] as ItemId[]).some((id) => (inventory[id] ?? 0) > 0);
 
-  const grantRewards = useCallback((): MegaRewardItem[] => {
-    const st = useGameStore.getState();
-    st.addXp(event.reward.xp);
-    const partner = st.pokemon;
-    if (partner) st.addTrainingPoints(partner.id, event.reward.tp);
-    st.recordPokedexCapture(event.reward.dexId, bossShiny);
-    st.grantPokeEgg(1);
-    const counts = new Map<ItemId, number>();
-    for (let i = 0; i < event.reward.items; i++) {
-      const id = REWARD_POOL[Math.floor(Math.random() * REWARD_POOL.length)];
-      counts.set(id, (counts.get(id) ?? 0) + 1);
-    }
-    const summary: MegaRewardItem[] = [];
-    counts.forEach((qty, id) => {
-      st.grantItem(id, qty);
-      const def = itemDef(id);
-      if (def) summary.push({ id, name: def.name, iconUrl: def.iconUrl, qty });
-    });
-    return summary;
-  }, [event, bossShiny]);
-
   const finish = useCallback(
     async (won: boolean, finalCorrect: number) => {
       if (endedRef.current) return;
@@ -130,23 +109,19 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
       const accuracy = Math.round((finalCorrect / total) * 100);
       let rank: number | null = null;
       let attempts = MEGA_MAX_ATTEMPTS;
-      let accepted = false;
       const res = await submitMegaRun({ eventId: event.id, accuracy, correct: finalCorrect, total, timeMs });
       if (res.ok) {
-        accepted = true;
         rank = res.rank || null;
         attempts = res.row?.attempts ?? MEGA_MAX_ATTEMPTS;
       } else if (/no attempts/i.test(res.error)) {
         toast.error("No attempts left — this run doesn't count.");
       } else {
-        accepted = true;
         toast.error("Couldn't save your run — check your connection.");
       }
-      const items = won && accepted ? grantRewards() : [];
-      setResult({ outcome: won ? "win" : "loss", accuracy, correct: finalCorrect, rank, attempts, items });
+      setResult({ outcome: won ? "win" : "loss", accuracy, correct: finalCorrect, rank, attempts, items: [] });
       setPhase("result");
     },
-    [event, total, grantRewards],
+    [event, total],
   );
 
   const advance = useCallback(

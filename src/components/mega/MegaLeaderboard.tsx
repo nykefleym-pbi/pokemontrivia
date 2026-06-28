@@ -3,7 +3,7 @@ import { PokemonSprite } from "@/components/game-ui";
 import { trainerSpriteUrl, type ItemId } from "@/lib/game-data";
 import { useGameStore } from "@/lib/store";
 import { toast } from "sonner";
-import type { MegaEvent } from "@/lib/mega/schedule";
+import { MEGA_REWARD, megaRankScale, type MegaEvent } from "@/lib/mega/schedule";
 import { fetchMegaLeaderboard, getMyMegaRun, type MegaRunRow, type MegaLeaderboardRow } from "@/lib/mega/runs";
 
 function fmtTime(ms: number) {
@@ -37,7 +37,9 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
   const [now, setNow] = useState(Date.now());
 
   const trophies = useGameStore((s) => s.megaTrophies);
+  const claimedRewards = useGameStore((s) => s.claimedMegaRewards);
   const claimed = (trophies ?? []).some((t) => t.eventId === event.id);
+  const rewardClaimed = (claimedRewards ?? []).includes(event.id);
 
   useEffect(() => {
     let on = true;
@@ -55,16 +57,23 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
   const isMyChampion = !!(champion && mine && champion.user_id === mine.user_id);
   const myRank = mine ? rows.findIndex((r) => r.user_id === mine.user_id) + 1 : 0;
 
-  const claimChampion = () => {
+  const claimReward = () => {
     const st = useGameStore.getState();
-    // Claim first (idempotent check-and-set) so rewards can't be granted twice on a double-tap.
-    const ok = st.claimMegaChampion(event.id, event.champion.trophyName, event.megaId);
-    if (!ok) return;
-    st.addXp(event.champion.xp);
-    if (st.pokemon) st.addTrainingPoints(st.pokemon.id, event.champion.tp);
-    const pool: ItemId[] = ["potion", "superpotion", "maxpotion", "xattack", "scope", "xaccuracy", "candy", "luckyegg"];
-    for (let i = 0; i < event.champion.items; i++) st.grantItem(pool[Math.floor(Math.random() * pool.length)], 1);
-    toast.success(`Champion reward claimed! 🏆 ${event.champion.trophyName}`);
+    if (st.claimedMegaRewards.includes(event.id)) return;
+    st.markMegaRewardClaimed(event.id);
+    const rank = myRank > 0 ? myRank : 99;
+    const scale = megaRankScale(rank);
+    st.addXp(Math.round(MEGA_REWARD.xp * scale));
+    st.addCoins(Math.round(MEGA_REWARD.coins * scale));
+    if (st.pokemon) st.addTrainingPoints(st.pokemon.id, Math.round(MEGA_REWARD.tp * scale));
+    if (rank === 1) {
+      const pool: ItemId[] = ["potion", "superpotion", "maxpotion", "xattack", "scope", "xaccuracy", "candy", "luckyegg"];
+      for (let i = 0; i < MEGA_REWARD.items; i++) st.grantItem(pool[Math.floor(Math.random() * pool.length)], 1);
+      st.grantPokeEgg(1);
+      st.recordPokedexCapture(event.baseDexId, false);
+      st.claimMegaChampion(event.id, event.champion.trophyName, event.megaId);
+    }
+    toast.success(rank === 1 ? `Champion rewards claimed! 🏆` : `Rank #${rank} rewards claimed!`);
   };
 
   const Avatar = ({ sprite, size, ring }: { sprite: string; size: number; ring: string }) => (
@@ -102,23 +111,49 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
         </div>
       ) : ended ? (
         <div className="flex-1 overflow-y-auto px-4 pb-9 pt-3.5">
-          {isMyChampion && (
-            <div className="relative overflow-hidden rounded-[20px] p-[18px] text-center" style={{ background: "radial-gradient(circle at 50% 0%, #6a2db5 0%, #1C2333 80%)", border: "1.5px solid #F2D64E" }}>
-              <div className="absolute inset-0" style={{ background: "repeating-conic-gradient(from 0deg at 50% 30%, rgba(242,214,78,0.16) 0deg 6deg, transparent 6deg 13deg)" }} />
-              <div className="relative">
-                <div className="text-[38px]">🏆</div>
-                <div className="mt-1.5 font-pixel" style={{ fontSize: 10, letterSpacing: 1, color: "#F2D64E" }}>YOU'RE THE CHAMPION!</div>
-                <div className="mt-2 text-[13px]" style={{ color: "rgba(255,255,255,0.8)" }}>
-                  {Math.round(champion!.accuracy)}% accuracy · {champion!.correct}/{champion!.total} · {fmtTime(champion!.time_ms)} — #1 of {rows.length}
+          {mine && (() => {
+            const rank = myRank > 0 ? myRank : 99;
+            const scale = megaRankScale(rank);
+            const xp = Math.round(MEGA_REWARD.xp * scale);
+            const coins = Math.round(MEGA_REWARD.coins * scale);
+            const tp = Math.round(MEGA_REWARD.tp * scale);
+            const placementText = myRank > 0 ? `You placed #${myRank} of ${rows.length}` : "You participated";
+            if (rank === 1) {
+              return (
+                <div className="relative overflow-hidden rounded-[20px] p-[18px] text-center" style={{ background: "radial-gradient(circle at 50% 0%, #6a2db5 0%, #1C2333 80%)", border: "1.5px solid #F2D64E" }}>
+                  <div className="absolute inset-0" style={{ background: "repeating-conic-gradient(from 0deg at 50% 30%, rgba(242,214,78,0.16) 0deg 6deg, transparent 6deg 13deg)" }} />
+                  <div className="relative">
+                    <div className="text-[38px]">🏆</div>
+                    <div className="mt-1.5 font-pixel" style={{ fontSize: 10, letterSpacing: 1, color: "#F2D64E" }}>YOU'RE THE CHAMPION!</div>
+                    <div className="mt-2 text-[13px]" style={{ color: "rgba(255,255,255,0.8)" }}>{placementText}</div>
+                    <div className="mt-2 text-[12px] font-bold" style={{ color: "#F2D64E" }}>
+                      +{xp} XP · +{coins} Coins · +{tp} TP
+                    </div>
+                    <div className="mt-1 text-[11px]" style={{ color: "rgba(255,255,255,0.7)" }}>+ 10 items · Poké Egg · Pokédex · Trophy</div>
+                    {rewardClaimed || claimed ? (
+                      <div className="mt-3.5 flex h-[54px] items-center justify-center rounded-full font-pixel" style={{ fontSize: 10, letterSpacing: 1, background: "rgba(242,214,78,0.16)", color: "#F2D64E" }}>REWARDS CLAIMED ✓</div>
+                    ) : (
+                      <button onClick={claimReward} className="mt-3.5 flex h-[54px] w-full items-center justify-center rounded-full font-pixel active:scale-[0.99]" style={{ fontSize: 11, letterSpacing: 1, background: "linear-gradient(95deg, #F2D64E, #E8A93C)", color: "#1C2333", boxShadow: "0 5px 0 #C18A28" }}>CLAIM REWARDS</button>
+                    )}
+                  </div>
                 </div>
-                {claimed ? (
-                  <div className="mt-3.5 flex h-[54px] items-center justify-center rounded-full font-pixel" style={{ fontSize: 10, letterSpacing: 1, background: "rgba(242,214,78,0.16)", color: "#F2D64E" }}>🏆 {event.champion.trophyName.toUpperCase()} CLAIMED</div>
+              );
+            }
+            return (
+              <div className="rounded-[20px] p-4 text-center" style={{ background: "rgba(255,255,255,0.05)", border: "1.5px solid rgba(255,255,255,0.14)" }}>
+                <div className="font-pixel" style={{ fontSize: 9, letterSpacing: 1, color: "#F2D64E" }}>EVENT REWARDS</div>
+                <div className="mt-1.5 text-[14px] font-extrabold text-white">{placementText}</div>
+                <div className="mt-1 text-[13px] font-bold" style={{ color: "rgba(255,255,255,0.85)" }}>
+                  +{xp} XP · +{coins} Coins · +{tp} TP
+                </div>
+                {rewardClaimed ? (
+                  <div className="mt-3 flex h-12 items-center justify-center rounded-full font-pixel" style={{ fontSize: 9, letterSpacing: 1, background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.7)" }}>REWARDS CLAIMED ✓</div>
                 ) : (
-                  <button onClick={claimChampion} className="mt-3.5 flex h-[54px] w-full items-center justify-center rounded-full font-pixel active:scale-[0.99]" style={{ fontSize: 11, letterSpacing: 1, background: "linear-gradient(95deg, #F2D64E, #E8A93C)", color: "#1C2333", boxShadow: "0 5px 0 #C18A28" }}>CLAIM REWARDS</button>
+                  <button onClick={claimReward} className="mt-3 flex h-12 w-full items-center justify-center rounded-full font-pixel active:scale-[0.99]" style={{ fontSize: 10, letterSpacing: 1, background: "linear-gradient(95deg, #F2D64E, #E8A93C)", color: "#1C2333", boxShadow: "0 4px 0 #C18A28" }}>CLAIM REWARDS</button>
                 )}
               </div>
-            </div>
-          )}
+            );
+          })()}
           <div className="mt-3.5 font-pixel" style={{ fontSize: 7, letterSpacing: 1, color: "rgba(255,255,255,0.5)" }}>RANKINGS</div>
           <div className="mt-2.5 flex flex-col gap-2">
             {rows.slice(0, 50).map((r, i) => {
