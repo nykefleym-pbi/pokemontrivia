@@ -82,9 +82,11 @@ function ItemIcon({ item, className }: { item: ItemDef; className: string }) {
   );
 }
 
-type ConfirmState =
-  | { item: ItemDef; cost: number; featured?: { originalCost: number; discountPct: number } }
-  | null;
+type ConfirmState = {
+  item: ItemDef;
+  cost: number;
+  featured?: { originalCost: number; discountPct: number };
+} | null;
 
 function ShopPage() {
   const hasOnboarded = useGameStore((s) => s.hasOnboarded);
@@ -98,22 +100,36 @@ function ShopPage() {
   const dailyGiftStreak = useGameStore((s) => s.dailyGiftStreak);
   const claimDailyGift = useGameStore((s) => s.claimDailyGift);
   const [giftNow, setGiftNow] = useState(Date.now());
-  useEffect(() => { const i = setInterval(() => setGiftNow(Date.now()), 1000); return () => clearInterval(i); }, []);
+  useEffect(() => {
+    const i = setInterval(() => setGiftNow(Date.now()), 1000);
+    return () => clearInterval(i);
+  }, []);
   const giftToday = new Date(giftNow).toISOString().slice(0, 10);
-  const giftYesterday = (() => { const d = new Date(giftNow); d.setUTCDate(d.getUTCDate() - 1); return d.toISOString().slice(0, 10); })();
+  const giftYesterday = (() => {
+    const d = new Date(giftNow);
+    d.setUTCDate(d.getUTCDate() - 1);
+    return d.toISOString().slice(0, 10);
+  })();
   const giftClaimable = dailyGiftLastClaim !== giftToday;
   const giftClaimedToday = dailyGiftLastClaim === giftToday;
   const giftContinuing = dailyGiftLastClaim === giftYesterday;
-  const giftLit = giftClaimedToday ? dailyGiftStreak : (giftContinuing ? dailyGiftStreak : 0);
+  const giftLit = giftClaimedToday ? dailyGiftStreak : giftContinuing ? dailyGiftStreak : 0;
   const giftNextDay = (giftLit % 7) + 1;
-  const giftMsToNext = Date.UTC(new Date(giftNow).getUTCFullYear(), new Date(giftNow).getUTCMonth(), new Date(giftNow).getUTCDate() + 1) - giftNow;
+  const giftMsToNext =
+    Date.UTC(
+      new Date(giftNow).getUTCFullYear(),
+      new Date(giftNow).getUTCMonth(),
+      new Date(giftNow).getUTCDate() + 1,
+    ) - giftNow;
   const giftClock = `${Math.floor(giftMsToNext / 3_600_000)}h ${String(Math.floor((giftMsToNext % 3_600_000) / 60_000)).padStart(2, "0")}m`;
   function handleClaimGift() {
     const res = claimDailyGift();
     if (!res) return;
     const it = ITEMS.find((x) => x.id === res.itemId);
     if (res.shiny) {
-      toast.success(`Day 7 reward! ${res.qty}× ${it?.name ?? "item"} ${it?.emoji ?? "🎁"} — your next battle win is a guaranteed shiny! ✨`);
+      toast.success(
+        `Day 7 reward! ${res.qty}× ${it?.name ?? "item"} ${it?.emoji ?? "🎁"} — your next battle win is a guaranteed shiny! ✨`,
+      );
     } else {
       toast.success(`Daily Gift opened: ${res.qty}× ${it?.name ?? "item"} ${it?.emoji ?? "🎁"}`);
     }
@@ -210,7 +226,9 @@ function ShopPage() {
             </button>
             <div className="flex items-center gap-1.5 rounded-full bg-poke-yellow px-3.5 py-2 shadow-card">
               <Star className="h-4 w-4 fill-poke-dark text-foreground" />
-              <span className="text-sm font-extrabold text-foreground">{coins.toLocaleString()}</span>
+              <span className="text-sm font-extrabold text-foreground">
+                {coins.toLocaleString()}
+              </span>
             </div>
           </div>
         </div>
@@ -219,19 +237,31 @@ function ShopPage() {
       <div className="px-5 pb-8 pt-2">
         {/* Daily Gift */}
         {giftClaimable ? (
-          <button onClick={handleClaimGift} className="relative mb-5 flex w-full items-center gap-4 overflow-hidden rounded-3xl bg-gradient-to-br from-[#F2D64E] to-[#E8A93C] p-5 text-left shadow-card active:scale-[0.99]">
-            <span className="absolute right-3 top-3 rounded-full bg-primary px-2.5 py-1 font-pixel-xs uppercase text-white shadow-sm">Free</span>
+          <button
+            onClick={handleClaimGift}
+            className="relative mb-5 flex w-full items-center gap-4 overflow-hidden rounded-3xl bg-gradient-to-br from-[#F2D64E] to-[#E8A93C] p-5 text-left shadow-card active:scale-[0.99]"
+          >
+            <span className="absolute right-3 top-3 rounded-full bg-primary px-2.5 py-1 font-pixel-xs uppercase text-white shadow-sm">
+              Free
+            </span>
             <div className="shrink-0 text-5xl drop-shadow">🎁</div>
             <div className="min-w-0 flex-1">
-              <div className="font-pixel-xs uppercase text-foreground/70">Daily Gift · Day {giftNextDay}</div>
-              <div className="text-lg font-extrabold leading-tight text-foreground">Tap to open your free item!</div>
+              <div className="font-pixel-xs uppercase text-foreground/70">
+                Daily Gift · Day {giftNextDay}
+              </div>
+              <div className="text-lg font-extrabold leading-tight text-foreground">
+                Tap to open your free item!
+              </div>
               <div className="mt-2.5 flex items-center gap-1.5">
                 {Array.from({ length: 7 }).map((_, i) => {
                   const day = i + 1;
                   const filled = day <= giftLit;
                   const active = day === giftNextDay;
                   return (
-                    <div key={day} className={`flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold ${filled ? "bg-primary text-white" : active ? "bg-white text-primary ring-2 ring-primary" : "bg-black/10 text-foreground/40"}`}>
+                    <div
+                      key={day}
+                      className={`flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold ${filled ? "bg-primary text-white" : active ? "bg-white text-primary ring-2 ring-primary" : "bg-black/10 text-foreground/40"}`}
+                    >
                       {day === 7 ? "★" : day}
                     </div>
                   );
@@ -243,14 +273,21 @@ function ShopPage() {
           <div className="relative mb-5 flex w-full items-center gap-4 overflow-hidden rounded-3xl bg-card p-5 shadow-card">
             <div className="shrink-0 text-5xl opacity-40 grayscale">🎁</div>
             <div className="min-w-0 flex-1">
-              <div className="font-pixel-xs uppercase text-foreground/55">Daily Gift · claimed today</div>
-              <div className="text-lg font-extrabold leading-tight text-foreground/70">Next gift in {giftClock}</div>
+              <div className="font-pixel-xs uppercase text-foreground/55">
+                Daily Gift · claimed today
+              </div>
+              <div className="text-lg font-extrabold leading-tight text-foreground/70">
+                Next gift in {giftClock}
+              </div>
               <div className="mt-2.5 flex items-center gap-1.5">
                 {Array.from({ length: 7 }).map((_, i) => {
                   const day = i + 1;
                   const filled = day <= giftLit;
                   return (
-                    <div key={day} className={`flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold ${filled ? "bg-primary text-white" : "bg-black/10 text-foreground/40"}`}>
+                    <div
+                      key={day}
+                      className={`flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold ${filled ? "bg-primary text-white" : "bg-black/10 text-foreground/40"}`}
+                    >
                       {day === 7 ? "★" : day}
                     </div>
                   );
@@ -380,7 +417,9 @@ function ShopPage() {
                 </div>
                 <div className="min-w-0">
                   <div className="font-display-lg text-foreground">{confirmState.item.name}</div>
-                  <div className="mt-0.5 text-sm text-muted-foreground">{confirmState.item.desc}</div>
+                  <div className="mt-0.5 text-sm text-muted-foreground">
+                    {confirmState.item.desc}
+                  </div>
                 </div>
               </div>
 
@@ -407,7 +446,9 @@ function ShopPage() {
                       >
                         <Minus className="h-4 w-4" />
                       </button>
-                      <span className="w-6 text-center text-lg font-extrabold tabular-nums text-foreground">{qty}</span>
+                      <span className="w-6 text-center text-lg font-extrabold tabular-nums text-foreground">
+                        {qty}
+                      </span>
                       <button
                         onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
                         disabled={qty >= maxQty}
@@ -431,16 +472,22 @@ function ShopPage() {
                   <div className="mt-4 space-y-2.5">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Your Coins</span>
-                      <span className="font-bold text-foreground tabular-nums">{coins.toLocaleString()}</span>
+                      <span className="font-bold text-foreground tabular-nums">
+                        {coins.toLocaleString()}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Cost</span>
-                      <span className="font-bold text-primary tabular-nums">−{totalCost.toLocaleString()}</span>
+                      <span className="font-bold text-primary tabular-nums">
+                        −{totalCost.toLocaleString()}
+                      </span>
                     </div>
                     <div className="border-t border-dashed border-border pt-2.5">
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-foreground">Balance after</span>
-                        <span className={`font-extrabold tabular-nums ${canAfford ? "text-hp-good" : "text-destructive"}`}>
+                        <span
+                          className={`font-extrabold tabular-nums ${canAfford ? "text-hp-good" : "text-destructive"}`}
+                        >
                           {balanceAfter.toLocaleString()} Coins
                         </span>
                       </div>
@@ -492,14 +539,12 @@ function ShopPage() {
             </SheetDescription>
           </SheetHeader>
           {(() => {
-            const bagGroups = CATEGORIES
-              .map((cat) => ({
-                ...cat,
-                items: ITEMS.filter(
-                  (it) => CATEGORY_OF[it.id] === cat.id && (inventory[it.id] ?? 0) > 0
-                ),
-              }))
-              .filter((g) => g.items.length > 0);
+            const bagGroups = CATEGORIES.map((cat) => ({
+              ...cat,
+              items: ITEMS.filter(
+                (it) => CATEGORY_OF[it.id] === cat.id && (inventory[it.id] ?? 0) > 0,
+              ),
+            })).filter((g) => g.items.length > 0);
             return (
               <div className="my-4 max-h-[65vh] overflow-y-auto">
                 {ownedInBag.length === 0 ? (
@@ -554,7 +599,9 @@ function ShopPage() {
                                     <button
                                       onClick={() => toggleAutoItem(it.id)}
                                       className={`rounded-full px-3 py-1.5 text-xs font-bold shadow-sm transition active:scale-95 ${
-                                        autoOn ? "bg-hp-good text-white" : "bg-muted text-foreground/50"
+                                        autoOn
+                                          ? "bg-hp-good text-white"
+                                          : "bg-muted text-foreground/50"
                                       }`}
                                     >
                                       {autoOn ? "Auto: On" : "Auto: Off"}
@@ -581,4 +628,3 @@ function ShopPage() {
     </div>
   );
 }
-

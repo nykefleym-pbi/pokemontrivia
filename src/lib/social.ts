@@ -21,10 +21,15 @@ let bootstrapPromise: Promise<string | null> | null = null;
 
 /** Ensure an anonymous session exists; returns the user id (or null on failure). */
 export async function ensureSession(): Promise<string | null> {
-  const { data: { session } } = await supabase.auth.getSession();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
   if (session?.user) return session.user.id;
   const { data, error } = await supabase.auth.signInAnonymously();
-  if (error) { console.warn("[social] anon sign-in failed:", error.message); return null; }
+  if (error) {
+    console.warn("[social] anon sign-in failed:", error.message);
+    return null;
+  }
   return data.user?.id ?? null;
 }
 
@@ -49,7 +54,10 @@ export async function syncProfile(): Promise<TrainerProfile | null> {
     .upsert(payload, { onConflict: "id" })
     .select()
     .single();
-  if (error) { console.warn("[social] syncProfile failed:", error.message); return null; }
+  if (error) {
+    console.warn("[social] syncProfile failed:", error.message);
+    return null;
+  }
   if (data?.friend_code) useGameStore.getState().setFriendCode(data.friend_code);
   return data as TrainerProfile;
 }
@@ -73,12 +81,11 @@ export function bootstrapSocial(): Promise<string | null> {
 export async function getMyTrainerName(): Promise<string | null> {
   const uid = await ensureSession();
   if (!uid) return null;
-  const { data, error } = await db
-    .from("profiles")
-    .select("trainer_name")
-    .eq("id", uid)
-    .single();
-  if (error) { console.warn("[social] getMyTrainerName failed:", error.message); return null; }
+  const { data, error } = await db.from("profiles").select("trainer_name").eq("id", uid).single();
+  if (error) {
+    console.warn("[social] getMyTrainerName failed:", error.message);
+    return null;
+  }
   const name = (data as { trainer_name: string | null } | null)?.trainer_name ?? null;
   return name && name.trim() ? name : null;
 }
@@ -113,14 +120,21 @@ async function reconcileTrainerName(): Promise<void> {
   }
 }
 
-
 /** Look up a profile by friend code (preview before adding). */
 export async function getProfileByCode(code: string): Promise<TrainerProfile | null> {
   const clean = code.trim().toUpperCase();
   if (!clean) return null;
-  const rpc = supabase as unknown as { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }> };
+  const rpc = supabase as unknown as {
+    rpc: (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: unknown; error: { message: string } | null }>;
+  };
   const { data, error } = await rpc.rpc("lookup_profile_by_code", { _code: clean });
-  if (error) { console.warn("[social] getProfileByCode failed:", error.message); return null; }
+  if (error) {
+    console.warn("[social] getProfileByCode failed:", error.message);
+    return null;
+  }
   if (!data || (typeof data === "object" && !(data as { id?: string }).id)) return null;
   return data as TrainerProfile;
 }
@@ -137,8 +151,15 @@ export async function addFriendByCode(code: string): Promise<{
   if (!profile) return { error: "No trainer found with that code." };
   if (profile.id === uid) return { error: "That's your own code!" };
   try {
-    const rpc = supabase as unknown as { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }> };
-    const { data, error } = await rpc.rpc("send_friend_request", { _code: code.trim().toUpperCase() });
+    const rpc = supabase as unknown as {
+      rpc: (
+        fn: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: unknown; error: { message: string } | null }>;
+    };
+    const { data, error } = await rpc.rpc("send_friend_request", {
+      _code: code.trim().toUpperCase(),
+    });
     if (error) {
       console.warn("[social] send_friend_request failed:", error.message);
       return { error: "Couldn't send request, try again." };
@@ -150,11 +171,15 @@ export async function addFriendByCode(code: string): Promise<{
     }
     const err = (r && r.error) || "";
     const msg =
-      err === "not_found" ? "No trainer found with that code." :
-      err === "self" ? "That's your own code!" :
-      err === "already_friends" ? "You're already friends." :
-      err === "no_session" ? "No session yet — try again in a moment." :
-      "Couldn't send request, try again.";
+      err === "not_found"
+        ? "No trainer found with that code."
+        : err === "self"
+          ? "That's your own code!"
+          : err === "already_friends"
+            ? "You're already friends."
+            : err === "no_session"
+              ? "No session yet — try again in a moment."
+              : "Couldn't send request, try again.";
     return { error: msg };
   } catch (e) {
     console.warn("[social] addFriendByCode threw:", e);
@@ -163,28 +188,39 @@ export async function addFriendByCode(code: string): Promise<{
 }
 
 /** List the caller's pending incoming friend requests with requester display info. */
-export async function listIncomingFriendRequests(): Promise<Array<{
-  requestId: string;
-  fromId: string;
-  trainerName: string;
-  trainerSprite: string;
-  level: number;
-  friendCode: string;
-  createdAt: string;
-}>> {
+export async function listIncomingFriendRequests(): Promise<
+  Array<{
+    requestId: string;
+    fromId: string;
+    trainerName: string;
+    trainerSprite: string;
+    level: number;
+    friendCode: string;
+    createdAt: string;
+  }>
+> {
   try {
-    const rpc = supabase as unknown as { rpc: (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }> };
+    const rpc = supabase as unknown as {
+      rpc: (
+        fn: string,
+        args?: Record<string, unknown>,
+      ) => Promise<{ data: unknown; error: { message: string } | null }>;
+    };
     const { data, error } = await rpc.rpc("list_incoming_friend_requests", {});
-    if (error) { console.warn("[social] listIncomingFriendRequests failed:", error.message); return []; }
-    const rows = (data as Array<{
-      request_id: string;
-      from_id: string;
-      trainer_name: string | null;
-      trainer_sprite: string | null;
-      level: number | null;
-      friend_code: string | null;
-      created_at: string;
-    }>) ?? [];
+    if (error) {
+      console.warn("[social] listIncomingFriendRequests failed:", error.message);
+      return [];
+    }
+    const rows =
+      (data as Array<{
+        request_id: string;
+        from_id: string;
+        trainer_name: string | null;
+        trainer_sprite: string | null;
+        level: number | null;
+        friend_code: string | null;
+        created_at: string;
+      }>) ?? [];
     return rows.map((r) => ({
       requestId: r.request_id,
       fromId: r.from_id,
@@ -206,9 +242,20 @@ export async function respondFriendRequest(
   accept: boolean,
 ): Promise<{ ok: true; status: "accepted" | "declined" } | { ok: false; error: string }> {
   try {
-    const rpc = supabase as unknown as { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }> };
-    const { data, error } = await rpc.rpc("respond_friend_request", { _request_id: requestId, _accept: accept });
-    if (error) { console.warn("[social] respondFriendRequest failed:", error.message); return { ok: false, error: "network" }; }
+    const rpc = supabase as unknown as {
+      rpc: (
+        fn: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: unknown; error: { message: string } | null }>;
+    };
+    const { data, error } = await rpc.rpc("respond_friend_request", {
+      _request_id: requestId,
+      _accept: accept,
+    });
+    if (error) {
+      console.warn("[social] respondFriendRequest failed:", error.message);
+      return { ok: false, error: "network" };
+    }
     const r = data as { ok?: boolean; status?: string; error?: string } | null;
     if (r && r.ok === true && (r.status === "accepted" || r.status === "declined")) {
       return { ok: true, status: r.status };
@@ -228,7 +275,10 @@ export async function listFriends(): Promise<TrainerProfile[]> {
     .from("friends")
     .select("friend:profiles!friends_friend_id_fkey(*)")
     .eq("owner_id", uid);
-  if (error) { console.warn("[social] listFriends failed:", error.message); return []; }
+  if (error) {
+    console.warn("[social] listFriends failed:", error.message);
+    return [];
+  }
   return (data ?? []).map((r: any) => r.friend).filter(Boolean) as TrainerProfile[];
 }
 
@@ -242,18 +292,36 @@ export async function removeFriend(friendId: string): Promise<boolean> {
 
 /** Check whether a trainer name is free (case-insensitive). */
 export async function isTrainerNameAvailable(name: string): Promise<boolean> {
-  const rpc = supabase as unknown as { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }> };
+  const rpc = supabase as unknown as {
+    rpc: (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: unknown; error: { message: string } | null }>;
+  };
   const { data, error } = await rpc.rpc("is_trainer_name_available", { _name: name });
-  if (error) { console.warn("[social] isTrainerNameAvailable failed:", error.message); return false; }
+  if (error) {
+    console.warn("[social] isTrainerNameAvailable failed:", error.message);
+    return false;
+  }
   return data === true;
 }
 
 /** Claim a trainer name for the current user. */
-export async function claimTrainerName(name: string): Promise<{ ok: true } | { ok: false; error: string }> {
+export async function claimTrainerName(
+  name: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
-    const rpc = supabase as unknown as { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }> };
+    const rpc = supabase as unknown as {
+      rpc: (
+        fn: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: unknown; error: { message: string } | null }>;
+    };
     const { data, error } = await rpc.rpc("claim_trainer_name", { _name: name });
-    if (error) { console.warn("[social] claimTrainerName failed:", error.message); return { ok: false, error: "network" }; }
+    if (error) {
+      console.warn("[social] claimTrainerName failed:", error.message);
+      return { ok: false, error: "network" };
+    }
     const result = data as { ok?: boolean; error?: string } | null;
     if (result && result.ok === true) return { ok: true };
     return { ok: false, error: (result && result.error) || "network" };

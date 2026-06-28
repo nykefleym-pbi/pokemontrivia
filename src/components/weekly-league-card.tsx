@@ -12,7 +12,12 @@ interface Props {
   loading?: boolean;
 }
 
-export function WeeklyLeagueCard({ weeklyLeague, onStart, resumeMode = false, loading = false }: Props) {
+export function WeeklyLeagueCard({
+  weeklyLeague,
+  onStart,
+  resumeMode = false,
+  loading = false,
+}: Props) {
   const leader = findGymLeader(weeklyLeague.gymLeaderId);
   if (!leader) return null;
   return (

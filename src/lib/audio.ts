@@ -27,7 +27,12 @@ function getCtx(): AudioContext | null {
   if (ctx) return ctx;
   try {
     const C =
-      (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }).AudioContext ||
+      (
+        window as unknown as {
+          AudioContext?: typeof AudioContext;
+          webkitAudioContext?: typeof AudioContext;
+        }
+      ).AudioContext ||
       (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!C) return null;
     ctx = new C();
@@ -37,7 +42,15 @@ function getCtx(): AudioContext | null {
   }
 }
 
-export type SfxKind = "correct" | "wrong" | "victory" | "defeat" | "level" | "elite_intro" | "evolution_glow" | "evolution_complete";
+export type SfxKind =
+  | "correct"
+  | "wrong"
+  | "victory"
+  | "defeat"
+  | "level"
+  | "elite_intro"
+  | "evolution_glow"
+  | "evolution_complete";
 
 const SFX: Record<SfxKind, { freq: number; type: OscillatorType; dur: number; vol: number }> = {
   correct: { freq: 880, type: "sine", dur: 0.15, vol: 0.18 },

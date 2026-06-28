@@ -11,7 +11,12 @@ import { trainerQuote } from "@/lib/trainer-quotes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import pokemonLogo from "@/assets/pokemon-logo.png.asset.json";
-import { bootstrapSocial, isTrainerNameAvailable, claimTrainerName, syncProfile } from "@/lib/social";
+import {
+  bootstrapSocial,
+  isTrainerNameAvailable,
+  claimTrainerName,
+  syncProfile,
+} from "@/lib/social";
 import { validateTrainerName, claimErrorMessage, TRAINER_NAME_MAX } from "@/lib/trainer-name";
 
 export const Route = createFileRoute("/")({
@@ -195,7 +200,10 @@ const TYPE_BG: Record<string, string> = {
 };
 
 const TRAINER_BLURBS: Record<string, { town: string; blurb: string }> = {
-  red: { town: "Pallet Town", blurb: "The silent legend of Mt. Silver. Lets results do the talking." },
+  red: {
+    town: "Pallet Town",
+    blurb: "The silent legend of Mt. Silver. Lets results do the talking.",
+  },
   lyra: { town: "New Bark Town", blurb: "A cheerful explorer with an eye for rare Pokémon." },
   ethan: { town: "New Bark Town", blurb: "Earnest and quick on his feet — a natural rival." },
   may: { town: "Littleroot Town", blurb: "Coordinator at heart, fierce in battle." },
@@ -215,7 +223,9 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
   const navigate = useNavigate();
 
   // Trainer-name claim flow state
-  const [nameAvail, setNameAvail] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle");
+  const [nameAvail, setNameAvail] = useState<
+    "idle" | "checking" | "available" | "taken" | "invalid"
+  >("idle");
   const [nameMsg, setNameMsg] = useState<string>("");
   const [claimedName, setClaimedName] = useState<string>("");
   const [claiming, setClaiming] = useState(false);
@@ -264,14 +274,14 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return STARTING_PARTNERS
-      .filter((p) => (q ? p.name.toLowerCase().startsWith(q) : true))
-      .slice(0, 24);
+    return STARTING_PARTNERS.filter((p) => (q ? p.name.toLowerCase().startsWith(q) : true)).slice(
+      0,
+      24,
+    );
   }, [query]);
 
   const trainerResults = useMemo(() => {
-    const all = TRAINER_SPRITES
-      .filter((t) => !brokenTrainerIds.has(t.id))
+    const all = TRAINER_SPRITES.filter((t) => !brokenTrainerIds.has(t.id))
       .slice()
       .sort((a, b) => a.name.localeCompare(b.name));
     const q = trainerQuery.trim().toLowerCase();
@@ -320,18 +330,16 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
     navigate({ to: "/battle" });
   }
 
-
   function goBack() {
     if (substep === "name") onBack();
     else setSubstep(STEPS[stepIndex - 1]);
   }
 
   const selectedTrainer = TRAINER_SPRITES.find((t) => t.id === trainerSprite);
-  const trainerInfo =
-    TRAINER_BLURBS[trainerSprite] ?? {
-      town: "Unknown Town",
-      blurb: `${selectedTrainer?.name ?? "This trainer"} is ready for the next battle.`,
-    };
+  const trainerInfo = TRAINER_BLURBS[trainerSprite] ?? {
+    town: "Unknown Town",
+    blurb: `${selectedTrainer?.name ?? "This trainer"} is ready for the next battle.`,
+  };
 
   return (
     <div className="flex h-full w-full flex-col px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)]">
@@ -430,10 +438,11 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
           </div>
         )}
 
-
         {substep === "trainer" && (
           <div className="flex flex-1 flex-col">
-            <h2 className="text-[30px] font-extrabold leading-tight tracking-tight text-foreground">Pick your avatar</h2>
+            <h2 className="text-[30px] font-extrabold leading-tight tracking-tight text-foreground">
+              Pick your avatar
+            </h2>
             <p className="mt-1.5 text-sm text-foreground/60">Tap a trainer to read their story.</p>
 
             <div className="relative mt-4">
@@ -468,10 +477,16 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                       className="sprite h-16 w-16 object-contain"
                       loading="lazy"
                       onError={() =>
-                        setBrokenTrainerIds((s) => { const n = new Set(s); n.add(t.id); return n; })
+                        setBrokenTrainerIds((s) => {
+                          const n = new Set(s);
+                          n.add(t.id);
+                          return n;
+                        })
                       }
                     />
-                    <span className="truncate text-[13px] font-bold capitalize text-foreground">{t.name}</span>
+                    <span className="truncate text-[13px] font-bold capitalize text-foreground">
+                      {t.name}
+                    </span>
                   </button>
                 );
               })}
@@ -514,8 +529,12 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
 
         {substep === "pokemon" && (
           <div className="flex flex-1 flex-col">
-            <h2 className="text-3xl font-extrabold leading-tight text-foreground">Choose your partner</h2>
-            <p className="mt-1 text-sm text-foreground/60">Your partner's type grants a battle ability.</p>
+            <h2 className="text-3xl font-extrabold leading-tight text-foreground">
+              Choose your partner
+            </h2>
+            <p className="mt-1 text-sm text-foreground/60">
+              Your partner's type grants a battle ability.
+            </p>
 
             <div className="relative mt-4">
               <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/50" />
@@ -544,7 +563,9 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
                       </span>
                     )}
                     <PokemonSprite id={p.id} alt={p.name} className="sprite h-[76px] w-[76px]" />
-                    <span className="mt-1 truncate text-xs font-bold text-foreground">{p.name}</span>
+                    <span className="mt-1 truncate text-xs font-bold text-foreground">
+                      {p.name}
+                    </span>
                     <div className="mt-1">
                       <TypeBadge type={p.types[0]} size="sm" />
                     </div>
@@ -553,20 +574,25 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
               })}
             </div>
 
-            {pick && (() => {
-              const ability = getAbility(pick.types);
-              return (
-                <div className="mt-5 flex items-center gap-3 rounded-2xl bg-primary/10 p-3">
-                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white shadow ${TYPE_BG[ability.type] ?? "bg-primary"}`}>
-                    <span className="text-lg">●</span>
+            {pick &&
+              (() => {
+                const ability = getAbility(pick.types);
+                return (
+                  <div className="mt-5 flex items-center gap-3 rounded-2xl bg-primary/10 p-3">
+                    <div
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white shadow ${TYPE_BG[ability.type] ?? "bg-primary"}`}
+                    >
+                      <span className="text-lg">●</span>
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-sm font-bold text-foreground">{ability.name}</div>
+                      <p className="text-xs leading-snug text-foreground/70">
+                        {ability.description}
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <div className="text-sm font-bold text-foreground">{ability.name}</div>
-                    <p className="text-xs leading-snug text-foreground/70">{ability.description}</p>
-                  </div>
-                </div>
-              );
-            })()}
+                );
+              })()}
 
             <div className="mt-auto pt-6">
               <Button

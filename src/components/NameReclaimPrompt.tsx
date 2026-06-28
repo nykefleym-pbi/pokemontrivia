@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useGameStore } from "@/lib/store";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { isTrainerNameAvailable, claimTrainerName, bootstrapSocial } from "@/lib/social";

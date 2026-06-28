@@ -67,7 +67,10 @@ export const Route = createFileRoute("/api/trivia-batch")({
               servedIds: curatedResult.servedIds,
             });
           }
-          return Response.json({ error: aiResult.error, code: aiResult.status }, { status: aiResult.status });
+          return Response.json(
+            { error: aiResult.error, code: aiResult.status },
+            { status: aiResult.status },
+          );
         }
 
         const merged = [...aiResult.questions, ...curatedResult.questions];

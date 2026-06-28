@@ -5,11 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useGameStore } from "@/lib/store";
-import {
-  ensureSession,
-  listIncomingFriendRequests,
-  respondFriendRequest,
-} from "@/lib/social";
+import { ensureSession, listIncomingFriendRequests, respondFriendRequest } from "@/lib/social";
 import { trainerSpriteUrl } from "@/lib/game-data";
 
 interface IncomingRequest {
@@ -64,7 +60,9 @@ export function FriendRequestInbox() {
               table: "friend_requests",
               filter: `to_id=eq.${uid}`,
             },
-            () => { void refresh(); },
+            () => {
+              void refresh();
+            },
           )
           .subscribe();
         channelRef.current = channel;
@@ -75,7 +73,11 @@ export function FriendRequestInbox() {
     return () => {
       cancelled = true;
       if (channelRef.current) {
-        try { supabase.removeChannel(channelRef.current); } catch { /* noop */ }
+        try {
+          supabase.removeChannel(channelRef.current);
+        } catch {
+          /* noop */
+        }
         channelRef.current = null;
       }
     };
@@ -97,7 +99,11 @@ export function FriendRequestInbox() {
     });
     if (res.status === "accepted") {
       toast.success(`You're now friends with ${req.trainerName || "trainer"}!`);
-      try { window.dispatchEvent(new CustomEvent(FRIENDS_REFRESH_EVENT)); } catch { /* noop */ }
+      try {
+        window.dispatchEvent(new CustomEvent(FRIENDS_REFRESH_EVENT));
+      } catch {
+        /* noop */
+      }
     } else {
       toast("Request declined.");
     }
@@ -106,7 +112,12 @@ export function FriendRequestInbox() {
   if (!hasOnboarded || requests.length === 0) return null;
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) setOpen(false); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) setOpen(false);
+      }}
+    >
       <DialogContent className="max-w-sm rounded-3xl">
         <DialogHeader>
           <DialogTitle className="font-display-xl text-foreground">
@@ -143,7 +154,11 @@ export function FriendRequestInbox() {
                     onClick={() => void handleRespond(req, false)}
                     aria-label="Decline"
                   >
-                    {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
+                    {busy ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <X className="h-4 w-4" />
+                    )}
                   </Button>
                   <Button
                     size="icon"
@@ -152,7 +167,11 @@ export function FriendRequestInbox() {
                     onClick={() => void handleRespond(req, true)}
                     aria-label="Accept"
                   >
-                    {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                    {busy ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
               </div>

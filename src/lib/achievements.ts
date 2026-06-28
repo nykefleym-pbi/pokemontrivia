@@ -78,8 +78,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     name: "Speedrunner",
     desc: "Average answer time under 5s (20+ answers).",
     icon: "⏱️",
-    check: (s) =>
-      s.stats.answered >= 20 && s.stats.totalAnswerTime / s.stats.answered < 5000,
+    check: (s) => s.stats.answered >= 20 && s.stats.totalAnswerTime / s.stats.answered < 5000,
   },
   {
     id: "scholar",
@@ -107,8 +106,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     name: "Kanto Complete",
     desc: "Capture all 151 Gen 1 Pokémon.",
     icon: "🟥",
-    check: (s) =>
-      Object.keys(s.pokedex ?? {}).filter((k) => Number(k) <= 151).length >= 151,
+    check: (s) => Object.keys(s.pokedex ?? {}).filter((k) => Number(k) <= 151).length >= 151,
   },
   {
     id: "shiny_first",

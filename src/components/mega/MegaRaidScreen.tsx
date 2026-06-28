@@ -20,14 +20,31 @@ const TIMER = 20;
 const BOSS_DMG = 10; // per correct answer; 40 correct depletes 400 HP
 const PLAYER_DMG = 8; // per wrong answer
 const TYPE_COLORS: Record<string, string> = {
-  fire: "#EE8130", dragon: "#6F35FC", water: "#6390F0", grass: "#7AC74C", electric: "#F7D02C",
-  ice: "#96D9D6", fighting: "#C22E28", poison: "#A33EA1", ground: "#E2BF65", flying: "#A98FF3",
-  psychic: "#F95587", bug: "#A6B91A", rock: "#B6A136", ghost: "#735797", dark: "#705746",
-  steel: "#B7B7CE", fairy: "#D685AD", normal: "#A8A77A",
+  fire: "#EE8130",
+  dragon: "#6F35FC",
+  water: "#6390F0",
+  grass: "#7AC74C",
+  electric: "#F7D02C",
+  ice: "#96D9D6",
+  fighting: "#C22E28",
+  poison: "#A33EA1",
+  ground: "#E2BF65",
+  flying: "#A98FF3",
+  psychic: "#F95587",
+  bug: "#A6B91A",
+  rock: "#B6A136",
+  ghost: "#735797",
+  dark: "#705746",
+  steel: "#B7B7CE",
+  fairy: "#D685AD",
+  normal: "#A8A77A",
 };
 
-const HEAL: Partial<Record<ItemId, number>> = { potion: 30, superpotion: 60, maxpotion: PLAYER_MAX_HP };
-
+const HEAL: Partial<Record<ItemId, number>> = {
+  potion: 30,
+  superpotion: 60,
+  maxpotion: PLAYER_MAX_HP,
+};
 
 function itemDef(id: ItemId) {
   return ITEMS.find((i) => i.id === id);
@@ -45,15 +62,29 @@ function TimerRing({ timer, maxTime }: { timer: number; maxTime: number }) {
   return (
     <div
       className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold shadow-card ${
-        timer <= 5 ? "animate-pulse bg-destructive text-destructive-foreground" : "bg-card text-foreground"
+        timer <= 5
+          ? "animate-pulse bg-destructive text-destructive-foreground"
+          : "bg-card text-foreground"
       }`}
     >
       <svg viewBox="0 0 24 24" className="h-4 w-4">
-        <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeOpacity="0.2" strokeWidth="3" />
         <circle
-          cx="12" cy="12" r="9" fill="none"
+          cx="12"
+          cy="12"
+          r="9"
+          fill="none"
+          stroke="currentColor"
+          strokeOpacity="0.2"
+          strokeWidth="3"
+        />
+        <circle
+          cx="12"
+          cy="12"
+          r="9"
+          fill="none"
           stroke={timer <= 5 ? "currentColor" : "var(--color-hp-good)"}
-          strokeWidth="3" strokeLinecap="round"
+          strokeWidth="3"
+          strokeLinecap="round"
           strokeDasharray={2 * Math.PI * 9}
           strokeDashoffset={2 * Math.PI * 9 * (1 - timer / Math.max(1, maxTime))}
           transform="rotate(-90 12 12)"
@@ -94,12 +125,19 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
   const endedRef = useRef(false);
 
   const [result, setResult] = useState<{
-    outcome: "win" | "loss"; accuracy: number; correct: number; rank: number | null; attempts: number; items: MegaRewardItem[];
+    outcome: "win" | "loss";
+    accuracy: number;
+    correct: number;
+    rank: number | null;
+    attempts: number;
+    items: MegaRewardItem[];
   } | null>(null);
 
   const q = questions[qIndex];
   const lowHp = playerHp / PLAYER_MAX_HP <= 0.3 && playerHp > 0;
-  const hasAnyPotion = (["potion", "superpotion", "maxpotion"] as ItemId[]).some((id) => (inventory[id] ?? 0) > 0);
+  const hasAnyPotion = (["potion", "superpotion", "maxpotion"] as ItemId[]).some(
+    (id) => (inventory[id] ?? 0) > 0,
+  );
 
   const finish = useCallback(
     async (won: boolean, finalCorrect: number) => {
@@ -109,7 +147,13 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
       const accuracy = Math.round((finalCorrect / total) * 100);
       let rank: number | null = null;
       let attempts = MEGA_MAX_ATTEMPTS;
-      const res = await submitMegaRun({ eventId: event.id, accuracy, correct: finalCorrect, total, timeMs });
+      const res = await submitMegaRun({
+        eventId: event.id,
+        accuracy,
+        correct: finalCorrect,
+        total,
+        timeMs,
+      });
       if (res.ok) {
         rank = res.rank || null;
         attempts = res.row?.attempts ?? MEGA_MAX_ATTEMPTS;
@@ -118,7 +162,14 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
       } else {
         toast.error("Couldn't save your run — check your connection.");
       }
-      setResult({ outcome: won ? "win" : "loss", accuracy, correct: finalCorrect, rank, attempts, items: [] });
+      setResult({
+        outcome: won ? "win" : "loss",
+        accuracy,
+        correct: finalCorrect,
+        rank,
+        attempts,
+        items: [],
+      });
       setPhase("result");
     },
     [event, total],
@@ -126,9 +177,18 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
 
   const advance = useCallback(
     (nextCorrect: number, nextBossHp: number, nextPlayerHp: number) => {
-      if (nextBossHp <= 0) { void finish(true, nextCorrect); return; }
-      if (nextPlayerHp <= 0) { void finish(false, nextCorrect); return; }
-      if (qIndex + 1 >= total) { void finish(nextCorrect >= MEGA_BOSS_HP / BOSS_DMG, nextCorrect); return; }
+      if (nextBossHp <= 0) {
+        void finish(true, nextCorrect);
+        return;
+      }
+      if (nextPlayerHp <= 0) {
+        void finish(false, nextCorrect);
+        return;
+      }
+      if (qIndex + 1 >= total) {
+        void finish(nextCorrect >= MEGA_BOSS_HP / BOSS_DMG, nextCorrect);
+        return;
+      }
       setQIndex((i) => i + 1);
       setPicked(null);
       setLocked(false);
@@ -178,13 +238,26 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
       setXAtkArmed(false);
       window.setTimeout(() => advance(nextCorrect, nextBoss, nextPlayer), 1100);
     },
-    [locked, phase, qIndex, correctIdxByQ, event.id, bossHp, playerHp, correctCount, xAtkArmed, advance],
+    [
+      locked,
+      phase,
+      qIndex,
+      correctIdxByQ,
+      event.id,
+      bossHp,
+      playerHp,
+      correctCount,
+      xAtkArmed,
+      advance,
+    ],
   );
-
 
   useEffect(() => {
     if (phase !== "fighting" || locked || bagOpen) return;
-    if (timer <= 0) { void answer(null); return; }
+    if (timer <= 0) {
+      void answer(null);
+      return;
+    }
     const t = window.setTimeout(() => setTimer((v) => v - 1), 1000);
     return () => window.clearTimeout(t);
   }, [timer, locked, bagOpen, phase, answer]);
@@ -193,7 +266,10 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
     (id: ItemId) => {
       if ((inventory[id] ?? 0) <= 0) return;
       const heal = HEAL[id] ?? 0;
-      if (playerHp >= PLAYER_MAX_HP) { toast("HP already full"); return; }
+      if (playerHp >= PLAYER_MAX_HP) {
+        toast("HP already full");
+        return;
+      }
       setPlayerHp((hp) => Math.min(PLAYER_MAX_HP, hp + heal));
       grantItem(id, -1);
       toast.success(`${itemDef(id)?.name} used`);
@@ -233,9 +309,11 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
     [usedOnce, inventory, locked, qIndex, correctIdxByQ, event.id, grantItem],
   );
 
-
   const escape = useCallback(() => {
-    if ((inventory.escape ?? 0) <= 0) { toast.error("No Escape Rope in your bag"); return; }
+    if ((inventory.escape ?? 0) <= 0) {
+      toast.error("No Escape Rope in your bag");
+      return;
+    }
     escapedRef.current = true;
     endedRef.current = true;
     grantItem("escape", -1);
@@ -268,34 +346,76 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
 
   // Quick shortcut items shown next to the Bag button (potions only — battle items are bag-only).
   const quickIds: ItemId[] = ["potion", "superpotion", "maxpotion"];
-  const quickShortcuts = quickIds
-    .filter((id) => (inventory[id] ?? 0) > 0)
-    .slice(0, 3);
+  const quickShortcuts = quickIds.filter((id) => (inventory[id] ?? 0) > 0).slice(0, 3);
 
   return (
-    <div className="relative flex h-full w-full flex-col overflow-hidden" style={{ background: "#14161F", fontFamily: "Outfit, sans-serif" }}>
+    <div
+      className="relative flex h-full w-full flex-col overflow-hidden"
+      style={{ background: "#14161F", fontFamily: "Outfit, sans-serif" }}
+    >
       {/* ARENA — boss + partner HP. Shrinks to fit so the question card always pins to the bottom. */}
       <div className="relative flex min-h-0 flex-1 flex-col">
         <div
           className="relative px-4 pb-2 pt-[calc(env(safe-area-inset-top)+1.25rem)]"
-          style={{ background: "radial-gradient(circle at 50% 30%, #2E3A5C 0%, #1C2333 58%, #14161F 100%)", overflow: "hidden" }}
+          style={{
+            background: "radial-gradient(circle at 50% 30%, #2E3A5C 0%, #1C2333 58%, #14161F 100%)",
+            overflow: "hidden",
+          }}
         >
-          <div className="absolute inset-0" style={{ background: "repeating-conic-gradient(from 0deg at 50% 26%, rgba(242,214,78,0.14) 0deg 6deg, transparent 6deg 13deg)" }} />
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "repeating-conic-gradient(from 0deg at 50% 26%, rgba(242,214,78,0.14) 0deg 6deg, transparent 6deg 13deg)",
+            }}
+          />
           <div className="relative text-center">
-            <div className="text-[20px] font-black text-white">{event.name}{bossShiny ? " ✨" : ""}</div>
+            <div className="text-[20px] font-black text-white">
+              {event.name}
+              {bossShiny ? " ✨" : ""}
+            </div>
             <div className="mt-1 flex justify-center gap-1.5">
               {event.types.map((t) => (
-                <span key={t} className="font-pixel text-white" style={{ fontSize: 6, background: TYPE_COLORS[t] ?? "#777", padding: "3px 8px", borderRadius: 999 }}>
+                <span
+                  key={t}
+                  className="font-pixel text-white"
+                  style={{
+                    fontSize: 6,
+                    background: TYPE_COLORS[t] ?? "#777",
+                    padding: "3px 8px",
+                    borderRadius: 999,
+                  }}
+                >
                   {t.toUpperCase()}
                 </span>
               ))}
             </div>
             <div className="mt-2 flex items-center gap-2">
-              <span className="font-pixel text-white" style={{ fontSize: 7 }}>HP</span>
-              <div className="flex-1 overflow-hidden" style={{ height: 12, borderRadius: 999, background: "rgba(0,0,0,0.35)", border: "1.5px solid rgba(255,255,255,0.25)" }}>
-                <div style={{ width: `${bossPct}%`, height: "100%", borderRadius: 999, background: "linear-gradient(90deg, #F2D64E, #EE8130)", transition: "width 0.4s" }} />
+              <span className="font-pixel text-white" style={{ fontSize: 7 }}>
+                HP
+              </span>
+              <div
+                className="flex-1 overflow-hidden"
+                style={{
+                  height: 12,
+                  borderRadius: 999,
+                  background: "rgba(0,0,0,0.35)",
+                  border: "1.5px solid rgba(255,255,255,0.25)",
+                }}
+              >
+                <div
+                  style={{
+                    width: `${bossPct}%`,
+                    height: "100%",
+                    borderRadius: 999,
+                    background: "linear-gradient(90deg, #F2D64E, #EE8130)",
+                    transition: "width 0.4s",
+                  }}
+                />
               </div>
-              <span className="font-pixel text-white" style={{ fontSize: 7 }}>{bossHp}/{MEGA_BOSS_HP}</span>
+              <span className="font-pixel text-white" style={{ fontSize: 7 }}>
+                {bossHp}/{MEGA_BOSS_HP}
+              </span>
             </div>
           </div>
         </div>
@@ -305,7 +425,16 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
           className="relative flex min-h-0 flex-1 items-center justify-center px-4"
           style={{ background: "linear-gradient(180deg, #14161F 0%, #14161F 100%)" }}
         >
-          <div className="absolute" style={{ bottom: 4, width: "min(46vw, 160px)", height: 22, borderRadius: "50%", background: "rgba(0,0,0,0.45)" }} />
+          <div
+            className="absolute"
+            style={{
+              bottom: 4,
+              width: "min(46vw, 160px)",
+              height: 22,
+              borderRadius: "50%",
+              background: "rgba(0,0,0,0.45)",
+            }}
+          />
           <PokemonSprite
             id={event.megaId}
             shiny={bossShiny}
@@ -315,15 +444,33 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
         </div>
 
         {/* Partner HP row */}
-        <div className="flex shrink-0 items-center gap-2.5 px-4 pb-2 pt-1.5" style={{ background: "#14161F" }}>
+        <div
+          className="flex shrink-0 items-center gap-2.5 px-4 pb-2 pt-1.5"
+          style={{ background: "#14161F" }}
+        >
           <PartnerSprite />
           <div className="flex-1">
             <div className="flex items-center justify-between">
-              <span className="text-[13px] font-extrabold text-white"><PartnerName /></span>
-              <span className="font-pixel" style={{ fontSize: 6.5, color: "#E23B2E" }}>{playerHp}/{PLAYER_MAX_HP}</span>
+              <span className="text-[13px] font-extrabold text-white">
+                <PartnerName />
+              </span>
+              <span className="font-pixel" style={{ fontSize: 6.5, color: "#E23B2E" }}>
+                {playerHp}/{PLAYER_MAX_HP}
+              </span>
             </div>
-            <div className="mt-1 overflow-hidden" style={{ height: 9, borderRadius: 999, background: "rgba(255,255,255,0.12)" }}>
-              <div style={{ width: `${playerPct}%`, height: "100%", borderRadius: 999, background: lowHp ? "#E23B2E" : "#3F9D5A", transition: "width 0.4s" }} />
+            <div
+              className="mt-1 overflow-hidden"
+              style={{ height: 9, borderRadius: 999, background: "rgba(255,255,255,0.12)" }}
+            >
+              <div
+                style={{
+                  width: `${playerPct}%`,
+                  height: "100%",
+                  borderRadius: 999,
+                  background: lowHp ? "#E23B2E" : "#3F9D5A",
+                  transition: "width 0.4s",
+                }}
+              />
             </div>
           </div>
         </div>
@@ -334,24 +481,50 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
         {/* Floating timer pill + category label, sits in the negative gap above the card */}
         <div className="pointer-events-none absolute left-1/2 -top-11 z-10 flex -translate-x-1/2 flex-col items-center">
           <TimerRing timer={timer} maxTime={TIMER} />
-          <p className="mt-1 font-pixel text-foreground/70" style={{ fontSize: 7 }}>{q.category?.toUpperCase() || "TRIVIA"}</p>
+          <p className="mt-1 font-pixel text-foreground/70" style={{ fontSize: 7 }}>
+            {q.category?.toUpperCase() || "TRIVIA"}
+          </p>
         </div>
 
         {lowHp && hasAnyPotion && (
-          <div className="mb-2 flex items-center justify-between rounded-2xl px-3 py-1.5" style={{ background: "rgba(226,59,46,0.1)", border: "1.5px solid rgba(226,59,46,0.4)" }}>
-            <span className="text-[12px] font-bold" style={{ color: "#C22E28" }}>⚠️ Low HP — use a potion!</span>
-            <button onClick={() => setBagOpen(true)} className="font-pixel" style={{ fontSize: 7, color: "#fff", background: "#E23B2E", borderRadius: 999, padding: "5px 10px" }}>OPEN BAG</button>
+          <div
+            className="mb-2 flex items-center justify-between rounded-2xl px-3 py-1.5"
+            style={{ background: "rgba(226,59,46,0.1)", border: "1.5px solid rgba(226,59,46,0.4)" }}
+          >
+            <span className="text-[12px] font-bold" style={{ color: "#C22E28" }}>
+              ⚠️ Low HP — use a potion!
+            </span>
+            <button
+              onClick={() => setBagOpen(true)}
+              className="font-pixel"
+              style={{
+                fontSize: 7,
+                color: "#fff",
+                background: "#E23B2E",
+                borderRadius: 999,
+                padding: "5px 10px",
+              }}
+            >
+              OPEN BAG
+            </button>
           </div>
         )}
 
-        <p className="text-center text-[clamp(0.9rem,3.8vw,1.05rem)] font-bold leading-snug">{q.question}</p>
+        <p className="text-center text-[clamp(0.9rem,3.8vw,1.05rem)] font-bold leading-snug">
+          {q.question}
+        </p>
 
         <div className="mt-2.5 grid grid-cols-1 gap-2">
           {q.options.map((opt, i) => {
             const isCorrect = locked && typeof currentCorrect === "number" && i === currentCorrect;
-            const isWrong = locked && picked === i && typeof currentCorrect === "number" && i !== currentCorrect;
+            const isWrong =
+              locked && picked === i && typeof currentCorrect === "number" && i !== currentCorrect;
             const removed = removedWrong === i;
-            const isAnswerRevealed = !locked && revealCorrect && typeof currentCorrect === "number" && i === currentCorrect;
+            const isAnswerRevealed =
+              !locked &&
+              revealCorrect &&
+              typeof currentCorrect === "number" &&
+              i === currentCorrect;
             return (
               <button
                 key={i}
@@ -371,10 +544,14 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
               >
                 <span className="min-w-0 flex-1 truncate">{opt}</span>
                 {isCorrect && (
-                  <span className="ml-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-hp-good text-[12px] text-white">✓</span>
+                  <span className="ml-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-hp-good text-[12px] text-white">
+                    ✓
+                  </span>
                 )}
                 {isWrong && (
-                  <span className="ml-2 shrink-0 text-[10px] font-bold uppercase tracking-wide text-destructive">Your Pick ×</span>
+                  <span className="ml-2 shrink-0 text-[10px] font-bold uppercase tracking-wide text-destructive">
+                    Your Pick ×
+                  </span>
                 )}
               </button>
             );
@@ -400,7 +577,11 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
                 onClick={() => usePotion(id)}
                 className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition active:scale-95 disabled:opacity-40"
               >
-                <img src={def?.iconUrl} alt={def?.name} className="sprite h-8 w-8 object-contain [image-rendering:pixelated]" />
+                <img
+                  src={def?.iconUrl}
+                  alt={def?.name}
+                  className="sprite h-8 w-8 object-contain [image-rendering:pixelated]"
+                />
                 <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-poke-dark px-1 font-pixel text-[9px] text-white">
                   {owned}
                 </span>
@@ -411,27 +592,84 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
       </div>
 
       {bagOpen && (
-        <div className="absolute inset-0 z-50 flex flex-col justify-end" onClick={() => setBagOpen(false)}>
+        <div
+          className="absolute inset-0 z-50 flex flex-col justify-end"
+          onClick={() => setBagOpen(false)}
+        >
           <div className="absolute inset-0" style={{ background: "rgba(10,8,20,0.55)" }} />
-          <div className="relative max-h-[88vh] overflow-y-auto" style={{ background: "#FBF3DF", borderRadius: "28px 28px 0 0", padding: "14px 20px 32px", boxShadow: "0 -16px 40px -12px rgba(0,0,0,0.5)" }} onClick={(e) => e.stopPropagation()}>
-            <div className="mx-auto" style={{ width: 42, height: 5, borderRadius: 999, background: "#E2D6B6" }} />
+          <div
+            className="relative max-h-[88vh] overflow-y-auto"
+            style={{
+              background: "#FBF3DF",
+              borderRadius: "28px 28px 0 0",
+              padding: "14px 20px 32px",
+              boxShadow: "0 -16px 40px -12px rgba(0,0,0,0.5)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              className="mx-auto"
+              style={{ width: 42, height: 5, borderRadius: 999, background: "#E2D6B6" }}
+            />
             <div className="mt-3.5 flex items-center justify-between">
-              <div className="text-xl font-black" style={{ color: "#1C2333" }}>Bag</div>
-              <div className="font-pixel" style={{ fontSize: 7, color: "#9A7320", background: "#F6E6C4", borderRadius: 999, padding: "6px 10px" }}>RAID RULES</div>
+              <div className="text-xl font-black" style={{ color: "#1C2333" }}>
+                Bag
+              </div>
+              <div
+                className="font-pixel"
+                style={{
+                  fontSize: 7,
+                  color: "#9A7320",
+                  background: "#F6E6C4",
+                  borderRadius: 999,
+                  padding: "6px 10px",
+                }}
+              >
+                RAID RULES
+              </div>
             </div>
-            <div className="mt-2 font-pixel" style={{ fontSize: 7, letterSpacing: 1, color: "#6B6E7B" }}>HEALING · STACKABLE</div>
+            <div
+              className="mt-2 font-pixel"
+              style={{ fontSize: 7, letterSpacing: 1, color: "#6B6E7B" }}
+            >
+              HEALING · STACKABLE
+            </div>
             <div className="mt-2.5 flex flex-col gap-2.5">
               {(["potion", "superpotion", "maxpotion"] as ItemId[]).map((id) => (
-                <BagRow key={id} id={id} count={inventory[id] ?? 0} subtitle={`Restore ${HEAL[id]} HP · stack freely`} onUse={() => usePotion(id)} disabled={(inventory[id] ?? 0) <= 0 || playerHp >= PLAYER_MAX_HP} />
+                <BagRow
+                  key={id}
+                  id={id}
+                  count={inventory[id] ?? 0}
+                  subtitle={`Restore ${HEAL[id]} HP · stack freely`}
+                  onUse={() => usePotion(id)}
+                  disabled={(inventory[id] ?? 0) <= 0 || playerHp >= PLAYER_MAX_HP}
+                />
               ))}
             </div>
-            <div className="mt-3.5 font-pixel" style={{ fontSize: 7, letterSpacing: 1, color: "#6B6E7B" }}>BATTLE · ONCE PER BATTLE</div>
+            <div
+              className="mt-3.5 font-pixel"
+              style={{ fontSize: 7, letterSpacing: 1, color: "#6B6E7B" }}
+            >
+              BATTLE · ONCE PER BATTLE
+            </div>
             <div className="mt-2.5 flex flex-col gap-2.5">
               {(["xattack", "scope", "xaccuracy"] as ItemId[]).map((id) => (
-                <BagRow key={id} id={id} count={inventory[id] ?? 0} subtitle={itemDef(id)?.desc ?? ""} used={usedOnce.has(id)} onUse={() => useBattleItem(id)} disabled={usedOnce.has(id) || (inventory[id] ?? 0) <= 0 || locked} />
+                <BagRow
+                  key={id}
+                  id={id}
+                  count={inventory[id] ?? 0}
+                  subtitle={itemDef(id)?.desc ?? ""}
+                  used={usedOnce.has(id)}
+                  onUse={() => useBattleItem(id)}
+                  disabled={usedOnce.has(id) || (inventory[id] ?? 0) <= 0 || locked}
+                />
               ))}
             </div>
-            <button onClick={escape} className="mt-4 flex h-12 w-full items-center justify-center rounded-full text-sm font-bold text-white" style={{ background: "rgba(28,35,51,0.9)" }}>
+            <button
+              onClick={escape}
+              className="mt-4 flex h-12 w-full items-center justify-center rounded-full text-sm font-bold text-white"
+              style={{ background: "rgba(28,35,51,0.9)" }}
+            >
               🪢 Flee with Escape Rope (doesn't count)
             </button>
           </div>
@@ -451,18 +689,57 @@ function PartnerName() {
   return <>{partner?.name ?? "Partner"}</>;
 }
 
-function BagRow({ id, count, subtitle, used, onUse, disabled }: { id: ItemId; count: number; subtitle: string; used?: boolean; onUse: () => void; disabled?: boolean }) {
+function BagRow({
+  id,
+  count,
+  subtitle,
+  used,
+  onUse,
+  disabled,
+}: {
+  id: ItemId;
+  count: number;
+  subtitle: string;
+  used?: boolean;
+  onUse: () => void;
+  disabled?: boolean;
+}) {
   const def = itemDef(id);
   return (
-    <div className="flex items-center gap-3 rounded-2xl px-3.5 py-3" style={{ background: "#FDF8EC", boxShadow: "0 3px 0 #ECE2C8", opacity: disabled && !used ? 0.55 : 1 }}>
-      <div className="flex h-[46px] w-[46px] items-center justify-center rounded-xl" style={{ background: "#F7DACB" }}>
+    <div
+      className="flex items-center gap-3 rounded-2xl px-3.5 py-3"
+      style={{
+        background: "#FDF8EC",
+        boxShadow: "0 3px 0 #ECE2C8",
+        opacity: disabled && !used ? 0.55 : 1,
+      }}
+    >
+      <div
+        className="flex h-[46px] w-[46px] items-center justify-center rounded-xl"
+        style={{ background: "#F7DACB" }}
+      >
         <img src={def?.iconUrl} alt={def?.name} className="h-8 w-8 [image-rendering:pixelated]" />
       </div>
       <div className="flex-1">
-        <div className="text-[15px] font-bold" style={{ color: "#1C2333" }}>{def?.name} {count > 0 && <span style={{ color: "#6B6E7B" }}>×{count}</span>}</div>
-        <div className="text-xs" style={{ color: "#6B6E7B" }}>{subtitle}</div>
+        <div className="text-[15px] font-bold" style={{ color: "#1C2333" }}>
+          {def?.name} {count > 0 && <span style={{ color: "#6B6E7B" }}>×{count}</span>}
+        </div>
+        <div className="text-xs" style={{ color: "#6B6E7B" }}>
+          {subtitle}
+        </div>
       </div>
-      <button onClick={onUse} disabled={disabled} className="font-pixel" style={{ fontSize: 6.5, color: used ? "#6B6E7B" : "#fff", background: used ? "#EFE7D2" : disabled ? "#C9B998" : "#E23B2E", borderRadius: 999, padding: "8px 11px" }}>
+      <button
+        onClick={onUse}
+        disabled={disabled}
+        className="font-pixel"
+        style={{
+          fontSize: 6.5,
+          color: used ? "#6B6E7B" : "#fff",
+          background: used ? "#EFE7D2" : disabled ? "#C9B998" : "#E23B2E",
+          borderRadius: 999,
+          padding: "8px 11px",
+        }}
+      >
         {used ? "USED" : "USE"}
       </button>
     </div>

@@ -31,11 +31,15 @@ export const Route = createFileRoute("/api/trivia-elite")({
           if (body.memberName) memberName = body.memberName;
           if (Array.isArray(body.difficultyTiers)) {
             const valid = body.difficultyTiers.filter((d): d is Difficulty =>
-              ["easy", "medium", "hard", "expert"].includes(d)
+              ["easy", "medium", "hard", "expert"].includes(d),
             );
             if (valid.length > 0) tiers = valid;
           }
-          if (typeof body.curatedTarget === "number" && body.curatedTarget >= 0 && body.curatedTarget <= 60) {
+          if (
+            typeof body.curatedTarget === "number" &&
+            body.curatedTarget >= 0 &&
+            body.curatedTarget <= 60
+          ) {
             curatedTarget = Math.floor(body.curatedTarget);
           }
           if (typeof body.aiCount === "number" && body.aiCount >= 0 && body.aiCount <= 20) {
@@ -99,7 +103,10 @@ export const Route = createFileRoute("/api/trivia-elite")({
               source: `curated-only-${curatedQuestions.length}`,
             });
           }
-          return Response.json({ error: aiResult.error, code: aiResult.status }, { status: aiResult.status });
+          return Response.json(
+            { error: aiResult.error, code: aiResult.status },
+            { status: aiResult.status },
+          );
         }
 
         const merged = [...aiResult.questions, ...curatedQuestions];

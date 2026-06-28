@@ -5,15 +5,11 @@ export const TRAINER_NAME_MIN = 3;
 export const TRAINER_NAME_MAX = 16;
 export const TRAINER_NAME_REGEX = /^[A-Za-z0-9 _-]+$/;
 
-export type ClaimErrorCode =
-  | "length"
-  | "chars"
-  | "taken"
-  | "no_session"
-  | "no_profile"
-  | "network";
+export type ClaimErrorCode = "length" | "chars" | "taken" | "no_session" | "no_profile" | "network";
 
-export function validateTrainerName(raw: string): { ok: true; name: string } | { ok: false; error: "length" | "chars" } {
+export function validateTrainerName(
+  raw: string,
+): { ok: true; name: string } | { ok: false; error: "length" | "chars" } {
   const name = raw.trim();
   if (name.length < TRAINER_NAME_MIN || name.length > TRAINER_NAME_MAX) {
     return { ok: false, error: "length" };

@@ -18,9 +18,7 @@ export function isStartingPartner(p: PokeEntry): boolean {
 }
 
 export function getEvolutionTargets(p: PokeEntry | null | undefined): PokeEntry[] {
-  return (p?.evolvesToIds ?? [])
-    .map((id) => findPokemon(id))
-    .filter(Boolean) as PokeEntry[];
+  return (p?.evolvesToIds ?? []).map((id) => findPokemon(id)).filter(Boolean) as PokeEntry[];
 }
 
 export function canEvolve(p: PokeEntry | null | undefined): boolean {
@@ -58,7 +56,7 @@ export function spriteUrl(
   optsOrBack?: boolean | { back?: boolean; shiny?: boolean },
 ): string {
   const opts =
-    typeof optsOrBack === "boolean" ? { back: optsOrBack, shiny: false } : optsOrBack ?? {};
+    typeof optsOrBack === "boolean" ? { back: optsOrBack, shiny: false } : (optsOrBack ?? {});
   const back = opts.back ?? false;
   const shiny = opts.shiny ?? false;
   const variant = shiny ? "shiny/" : "";

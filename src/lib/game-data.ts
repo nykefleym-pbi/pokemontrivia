@@ -32,18 +32,106 @@ const ICON = (slug: string) =>
   `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${slug}.png`;
 
 export const ITEMS: ItemDef[] = [
-  { id: "potion", name: "Potion", emoji: "🧪", iconUrl: ICON("potion"), desc: "Heals 30 HP. Once per battle.", cost: 100 },
-  { id: "xattack", name: "X Attack", emoji: "⚔️", iconUrl: ICON("x-attack"), desc: "+20 damage on your next correct answer. Once per battle.", cost: 100 },
-  { id: "scope", name: "Scope Lens", emoji: "🔭", iconUrl: ICON("scope-lens"), desc: "Removes one wrong answer. Once per battle.", cost: 100 },
-  { id: "xaccuracy", name: "X Accuracy", emoji: "🎯", iconUrl: ICON("x-accuracy"), desc: "Reveals the correct answer. Once per battle.", cost: 500 },
-  { id: "escape", name: "Escape Rope", emoji: "🪢", iconUrl: ICON("escape-rope"), desc: "End the battle with no XP lost. Once per battle.", cost: 500 },
-  { id: "candy", name: "Rare Candy", emoji: "🍬", iconUrl: ICON("rare-candy"), desc: "+50 TP to your partner, instantly. Usable anytime.", cost: 2000, premium: true },
-  { id: "luckyegg", name: "Lucky Egg", emoji: "🥚", iconUrl: ICON("lucky-egg"), desc: "2× XP for 24 hours. Once per week. Usable anytime.", cost: 2000, premium: true },
-  { id: "superpotion", name: "Super Potion", emoji: "🧪", iconUrl: ICON("super-potion"), desc: "Heals 60 HP. Once per battle.", cost: 300 },
-  { id: "maxpotion", name: "Max Potion", emoji: "🍶", iconUrl: ICON("max-potion"), desc: "Fully restores HP. Once per battle.", cost: 1000 },
-  { id: "focusband", name: "Focus Band", emoji: "🎽", iconUrl: ICON("focus-band"), desc: "Auto: at 10 HP or less, restores HP to 50%. Once per week.", cost: 2000, premium: true },
-  { id: "quickclaw", name: "Quick Claw", emoji: "⏱️", iconUrl: ICON("quick-claw"), desc: "Auto: when the timer drops below 5s, resets it to 20s. Once per battle.", cost: 1000 },
-  { id: "assaultvest", name: "Assault Vest", emoji: "🦺", iconUrl: ICON("assault-vest"), desc: "Auto: halves damage in battles where the foe is super-effective against you. Once per week.", cost: 2000, premium: true },
+  {
+    id: "potion",
+    name: "Potion",
+    emoji: "🧪",
+    iconUrl: ICON("potion"),
+    desc: "Heals 30 HP. Once per battle.",
+    cost: 100,
+  },
+  {
+    id: "xattack",
+    name: "X Attack",
+    emoji: "⚔️",
+    iconUrl: ICON("x-attack"),
+    desc: "+20 damage on your next correct answer. Once per battle.",
+    cost: 100,
+  },
+  {
+    id: "scope",
+    name: "Scope Lens",
+    emoji: "🔭",
+    iconUrl: ICON("scope-lens"),
+    desc: "Removes one wrong answer. Once per battle.",
+    cost: 100,
+  },
+  {
+    id: "xaccuracy",
+    name: "X Accuracy",
+    emoji: "🎯",
+    iconUrl: ICON("x-accuracy"),
+    desc: "Reveals the correct answer. Once per battle.",
+    cost: 500,
+  },
+  {
+    id: "escape",
+    name: "Escape Rope",
+    emoji: "🪢",
+    iconUrl: ICON("escape-rope"),
+    desc: "End the battle with no XP lost. Once per battle.",
+    cost: 500,
+  },
+  {
+    id: "candy",
+    name: "Rare Candy",
+    emoji: "🍬",
+    iconUrl: ICON("rare-candy"),
+    desc: "+50 TP to your partner, instantly. Usable anytime.",
+    cost: 2000,
+    premium: true,
+  },
+  {
+    id: "luckyegg",
+    name: "Lucky Egg",
+    emoji: "🥚",
+    iconUrl: ICON("lucky-egg"),
+    desc: "2× XP for 24 hours. Once per week. Usable anytime.",
+    cost: 2000,
+    premium: true,
+  },
+  {
+    id: "superpotion",
+    name: "Super Potion",
+    emoji: "🧪",
+    iconUrl: ICON("super-potion"),
+    desc: "Heals 60 HP. Once per battle.",
+    cost: 300,
+  },
+  {
+    id: "maxpotion",
+    name: "Max Potion",
+    emoji: "🍶",
+    iconUrl: ICON("max-potion"),
+    desc: "Fully restores HP. Once per battle.",
+    cost: 1000,
+  },
+  {
+    id: "focusband",
+    name: "Focus Band",
+    emoji: "🎽",
+    iconUrl: ICON("focus-band"),
+    desc: "Auto: at 10 HP or less, restores HP to 50%. Once per week.",
+    cost: 2000,
+    premium: true,
+  },
+  {
+    id: "quickclaw",
+    name: "Quick Claw",
+    emoji: "⏱️",
+    iconUrl: ICON("quick-claw"),
+    desc: "Auto: when the timer drops below 5s, resets it to 20s. Once per battle.",
+    cost: 1000,
+  },
+  {
+    id: "assaultvest",
+    name: "Assault Vest",
+    emoji: "🦺",
+    iconUrl: ICON("assault-vest"),
+    desc: "Auto: halves damage in battles where the foe is super-effective against you. Once per week.",
+    cost: 2000,
+    premium: true,
+  },
 ];
 
 // Trainer roster scraped from Bulbagarden (Gen III/IV/V + Pokémon Masters).
@@ -110,7 +198,11 @@ export function levelFromTotalXp(totalXp: number): number {
   }
 }
 
-export function xpProgressInLevel(totalXp: number): { current: number; need: number; level: number } {
+export function xpProgressInLevel(totalXp: number): {
+  current: number;
+  need: number;
+  level: number;
+} {
   const level = levelFromTotalXp(totalXp);
   const base = totalXpToReachLevel(level);
   return { current: Math.max(0, totalXp - base), need: xpForLevel(level), level };
@@ -132,7 +224,9 @@ export function streakLabel(streak: number): string | null {
   return null;
 }
 
-export function difficultyForLevel(level: number): "easy" | "medium" | "hard" | "expert" | "master" {
+export function difficultyForLevel(
+  level: number,
+): "easy" | "medium" | "hard" | "expert" | "master" {
   if (level >= 26) return "master";
   if (level >= 16) return "expert";
   if (level >= 6) return "hard";
@@ -172,9 +266,9 @@ export interface TpDamageBoost {
 export const TP_DAMAGE_TIERS: TpDamageBoost[] = [
   { threshold: 0, multiplier: 1.0 },
   { threshold: 100, multiplier: 1.05 },
-  { threshold: 300, multiplier: 1.10 },
+  { threshold: 300, multiplier: 1.1 },
   { threshold: 700, multiplier: 1.15 },
-  { threshold: 1500, multiplier: 1.20 },
+  { threshold: 1500, multiplier: 1.2 },
 ];
 
 /** Returns UTC timestamp of the most recent Monday 00:00:00. */
@@ -183,7 +277,15 @@ export function getCurrentWeekStartUtc(): number {
   const day = now.getUTCDay();
   const daysSinceMonday = (day + 6) % 7;
   const monday = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - daysSinceMonday, 0, 0, 0, 0),
+    Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate() - daysSinceMonday,
+      0,
+      0,
+      0,
+      0,
+    ),
   );
   return monday.getTime();
 }
@@ -202,7 +304,6 @@ export function getTpMultiplier(tp: number): number {
   }
   return mult;
 }
-
 
 // Use a wide pool: skip pre-evolutions by simple heuristic — favor higher-id Pokémon
 // of each evolution family. For simplicity, pick from all Pokémon with id divisible-friendly
@@ -224,42 +325,222 @@ export function pickRandomEnemy(): EnemyTrainer {
 // Keep this bank wide so repeat battles stay playable offline.
 export const FALLBACK_QUESTIONS = [
   // Pokédex
-  { question: "What type is Pikachu?", options: ["Electric", "Fire", "Water", "Normal"], correct: 0, explanation: "Pikachu is the iconic Electric-type Mouse Pokémon.", category: "Pokédex" },
-  { question: "Which Pokémon evolves into Charizard?", options: ["Charmander", "Charmeleon", "Squirtle", "Bulbasaur"], correct: 1, explanation: "Charmeleon evolves into Charizard at level 36.", category: "Pokédex" },
-  { question: "What is Bulbasaur's secondary type?", options: ["Grass", "Poison", "Bug", "Ground"], correct: 1, explanation: "Bulbasaur is a Grass/Poison-type.", category: "Pokédex" },
-  { question: "Which Pokémon is #150 in the National Pokédex?", options: ["Mew", "Mewtwo", "Dragonite", "Gyarados"], correct: 1, explanation: "Mewtwo is #150; Mew is #151.", category: "Pokédex" },
+  {
+    question: "What type is Pikachu?",
+    options: ["Electric", "Fire", "Water", "Normal"],
+    correct: 0,
+    explanation: "Pikachu is the iconic Electric-type Mouse Pokémon.",
+    category: "Pokédex",
+  },
+  {
+    question: "Which Pokémon evolves into Charizard?",
+    options: ["Charmander", "Charmeleon", "Squirtle", "Bulbasaur"],
+    correct: 1,
+    explanation: "Charmeleon evolves into Charizard at level 36.",
+    category: "Pokédex",
+  },
+  {
+    question: "What is Bulbasaur's secondary type?",
+    options: ["Grass", "Poison", "Bug", "Ground"],
+    correct: 1,
+    explanation: "Bulbasaur is a Grass/Poison-type.",
+    category: "Pokédex",
+  },
+  {
+    question: "Which Pokémon is #150 in the National Pokédex?",
+    options: ["Mew", "Mewtwo", "Dragonite", "Gyarados"],
+    correct: 1,
+    explanation: "Mewtwo is #150; Mew is #151.",
+    category: "Pokédex",
+  },
   // Anime
-  { question: "Who is the protagonist of the original Pokémon anime?", options: ["Brock", "Misty", "Ash Ketchum", "Gary"], correct: 2, explanation: "Ash Ketchum from Pallet Town is the main character.", category: "Anime" },
-  { question: "What is the name of Ash's first Pokémon?", options: ["Charmander", "Pikachu", "Squirtle", "Pidgey"], correct: 1, explanation: "Professor Oak gave Ash a Pikachu.", category: "Anime" },
-  { question: "Which gym leader gave Ash the Boulder Badge?", options: ["Misty", "Brock", "Lt. Surge", "Erika"], correct: 1, explanation: "Brock is the Pewter City Rock-type gym leader.", category: "Anime" },
+  {
+    question: "Who is the protagonist of the original Pokémon anime?",
+    options: ["Brock", "Misty", "Ash Ketchum", "Gary"],
+    correct: 2,
+    explanation: "Ash Ketchum from Pallet Town is the main character.",
+    category: "Anime",
+  },
+  {
+    question: "What is the name of Ash's first Pokémon?",
+    options: ["Charmander", "Pikachu", "Squirtle", "Pidgey"],
+    correct: 1,
+    explanation: "Professor Oak gave Ash a Pikachu.",
+    category: "Anime",
+  },
+  {
+    question: "Which gym leader gave Ash the Boulder Badge?",
+    options: ["Misty", "Brock", "Lt. Surge", "Erika"],
+    correct: 1,
+    explanation: "Brock is the Pewter City Rock-type gym leader.",
+    category: "Anime",
+  },
   // Lore
-  { question: "Mewtwo was created from the DNA of which Pokémon?", options: ["Mew", "Ditto", "Eevee", "Lugia"], correct: 0, explanation: "Mewtwo is a clone of the mythical Pokémon Mew.", category: "Lore" },
-  { question: "Who created the legendary trio Articuno, Zapdos, and Moltres?", options: ["Arceus", "Mew", "They occur naturally", "Dialga"], correct: 2, explanation: "The legendary birds are not created by another Pokémon.", category: "Lore" },
-  { question: "Arceus is said to have created the universe with how many plates?", options: ["16", "17", "18", "20"], correct: 1, explanation: "Arceus is associated with 17 plates (one per type at debut).", category: "Lore" },
+  {
+    question: "Mewtwo was created from the DNA of which Pokémon?",
+    options: ["Mew", "Ditto", "Eevee", "Lugia"],
+    correct: 0,
+    explanation: "Mewtwo is a clone of the mythical Pokémon Mew.",
+    category: "Lore",
+  },
+  {
+    question: "Who created the legendary trio Articuno, Zapdos, and Moltres?",
+    options: ["Arceus", "Mew", "They occur naturally", "Dialga"],
+    correct: 2,
+    explanation: "The legendary birds are not created by another Pokémon.",
+    category: "Lore",
+  },
+  {
+    question: "Arceus is said to have created the universe with how many plates?",
+    options: ["16", "17", "18", "20"],
+    correct: 1,
+    explanation: "Arceus is associated with 17 plates (one per type at debut).",
+    category: "Lore",
+  },
   // Items
-  { question: "Which item heals a Pokémon by 20 HP?", options: ["Potion", "Revive", "Antidote", "Repel"], correct: 0, explanation: "A standard Potion heals 20 HP in the games.", category: "Items" },
-  { question: "What does a Rare Candy do?", options: ["Heals status", "Raises a level", "Doubles XP", "Catches Pokémon"], correct: 1, explanation: "Rare Candy raises a Pokémon's level by one.", category: "Items" },
-  { question: "Which Poké Ball has the highest catch rate at night?", options: ["Dusk Ball", "Net Ball", "Quick Ball", "Timer Ball"], correct: 0, explanation: "Dusk Balls are 3× more effective at night or in caves.", category: "Items" },
+  {
+    question: "Which item heals a Pokémon by 20 HP?",
+    options: ["Potion", "Revive", "Antidote", "Repel"],
+    correct: 0,
+    explanation: "A standard Potion heals 20 HP in the games.",
+    category: "Items",
+  },
+  {
+    question: "What does a Rare Candy do?",
+    options: ["Heals status", "Raises a level", "Doubles XP", "Catches Pokémon"],
+    correct: 1,
+    explanation: "Rare Candy raises a Pokémon's level by one.",
+    category: "Items",
+  },
+  {
+    question: "Which Poké Ball has the highest catch rate at night?",
+    options: ["Dusk Ball", "Net Ball", "Quick Ball", "Timer Ball"],
+    correct: 0,
+    explanation: "Dusk Balls are 3× more effective at night or in caves.",
+    category: "Items",
+  },
   // Regions
-  { question: "What region is Pokémon Red & Blue set in?", options: ["Johto", "Hoenn", "Kanto", "Sinnoh"], correct: 2, explanation: "Red & Blue take place in the Kanto region.", category: "Regions" },
-  { question: "Which region is home to Professor Birch?", options: ["Kanto", "Johto", "Hoenn", "Sinnoh"], correct: 2, explanation: "Professor Birch studies Pokémon in Hoenn.", category: "Regions" },
-  { question: "What region was introduced in Pokémon Sword & Shield?", options: ["Alola", "Galar", "Paldea", "Unova"], correct: 1, explanation: "Galar debuted in Sword & Shield (Gen 8).", category: "Regions" },
+  {
+    question: "What region is Pokémon Red & Blue set in?",
+    options: ["Johto", "Hoenn", "Kanto", "Sinnoh"],
+    correct: 2,
+    explanation: "Red & Blue take place in the Kanto region.",
+    category: "Regions",
+  },
+  {
+    question: "Which region is home to Professor Birch?",
+    options: ["Kanto", "Johto", "Hoenn", "Sinnoh"],
+    correct: 2,
+    explanation: "Professor Birch studies Pokémon in Hoenn.",
+    category: "Regions",
+  },
+  {
+    question: "What region was introduced in Pokémon Sword & Shield?",
+    options: ["Alola", "Galar", "Paldea", "Unova"],
+    correct: 1,
+    explanation: "Galar debuted in Sword & Shield (Gen 8).",
+    category: "Regions",
+  },
   // Moves & Abilities
-  { question: "Which move was originally Normal-type before becoming Fairy?", options: ["Charm", "Sweet Kiss", "Moonlight", "All of the above"], correct: 3, explanation: "Many Fairy moves were Normal-type before Gen 6.", category: "Moves & Abilities" },
-  { question: "Which ability prevents the user from being put to sleep?", options: ["Insomnia", "Levitate", "Sturdy", "Pressure"], correct: 0, explanation: "Insomnia and Vital Spirit both prevent Sleep.", category: "Moves & Abilities" },
-  { question: "What type is the move Earthquake?", options: ["Rock", "Ground", "Fighting", "Steel"], correct: 1, explanation: "Earthquake is a powerful Ground-type move.", category: "Moves & Abilities" },
+  {
+    question: "Which move was originally Normal-type before becoming Fairy?",
+    options: ["Charm", "Sweet Kiss", "Moonlight", "All of the above"],
+    correct: 3,
+    explanation: "Many Fairy moves were Normal-type before Gen 6.",
+    category: "Moves & Abilities",
+  },
+  {
+    question: "Which ability prevents the user from being put to sleep?",
+    options: ["Insomnia", "Levitate", "Sturdy", "Pressure"],
+    correct: 0,
+    explanation: "Insomnia and Vital Spirit both prevent Sleep.",
+    category: "Moves & Abilities",
+  },
+  {
+    question: "What type is the move Earthquake?",
+    options: ["Rock", "Ground", "Fighting", "Steel"],
+    correct: 1,
+    explanation: "Earthquake is a powerful Ground-type move.",
+    category: "Moves & Abilities",
+  },
   // Generations
-  { question: "How many original Pokémon are there in Gen 1?", options: ["100", "151", "251", "386"], correct: 1, explanation: "Gen 1 introduced 151 Pokémon, ending with Mew.", category: "Generations" },
-  { question: "Which generation introduced the Fairy type?", options: ["Gen 4", "Gen 5", "Gen 6", "Gen 7"], correct: 2, explanation: "Fairy type was added in Generation 6 (X & Y).", category: "Generations" },
-  { question: "Which generation introduced Mega Evolution?", options: ["Gen 5", "Gen 6", "Gen 7", "Gen 8"], correct: 1, explanation: "Mega Evolution debuted in Gen 6 (X & Y).", category: "Generations" },
-  { question: "How many Pokémon were added in Generation 2?", options: ["80", "100", "135", "251"], correct: 1, explanation: "Gen 2 (Gold/Silver) added 100 new Pokémon (152–251).", category: "Generations" },
+  {
+    question: "How many original Pokémon are there in Gen 1?",
+    options: ["100", "151", "251", "386"],
+    correct: 1,
+    explanation: "Gen 1 introduced 151 Pokémon, ending with Mew.",
+    category: "Generations",
+  },
+  {
+    question: "Which generation introduced the Fairy type?",
+    options: ["Gen 4", "Gen 5", "Gen 6", "Gen 7"],
+    correct: 2,
+    explanation: "Fairy type was added in Generation 6 (X & Y).",
+    category: "Generations",
+  },
+  {
+    question: "Which generation introduced Mega Evolution?",
+    options: ["Gen 5", "Gen 6", "Gen 7", "Gen 8"],
+    correct: 1,
+    explanation: "Mega Evolution debuted in Gen 6 (X & Y).",
+    category: "Generations",
+  },
+  {
+    question: "How many Pokémon were added in Generation 2?",
+    options: ["80", "100", "135", "251"],
+    correct: 1,
+    explanation: "Gen 2 (Gold/Silver) added 100 new Pokémon (152–251).",
+    category: "Generations",
+  },
   // Competitive
-  { question: "In Smogon's tier list, what does 'OU' stand for?", options: ["Over Used", "Optimal Use", "Outright Unbanned", "Over Unbanned"], correct: 0, explanation: "OU = Over Used, the standard competitive singles tier.", category: "Competitive" },
-  { question: "Which item boosts a held Pokémon's Speed by 50%?", options: ["Choice Scarf", "Quick Claw", "Focus Sash", "Life Orb"], correct: 0, explanation: "Choice Scarf gives a 1.5× Speed boost but locks the move.", category: "Competitive" },
-  { question: "What does the move Stealth Rock do?", options: ["Lowers Speed", "Damage on switch-in", "Heals user", "Raises Defense"], correct: 1, explanation: "Stealth Rock damages opposing Pokémon when they switch in.", category: "Competitive" },
+  {
+    question: "In Smogon's tier list, what does 'OU' stand for?",
+    options: ["Over Used", "Optimal Use", "Outright Unbanned", "Over Unbanned"],
+    correct: 0,
+    explanation: "OU = Over Used, the standard competitive singles tier.",
+    category: "Competitive",
+  },
+  {
+    question: "Which item boosts a held Pokémon's Speed by 50%?",
+    options: ["Choice Scarf", "Quick Claw", "Focus Sash", "Life Orb"],
+    correct: 0,
+    explanation: "Choice Scarf gives a 1.5× Speed boost but locks the move.",
+    category: "Competitive",
+  },
+  {
+    question: "What does the move Stealth Rock do?",
+    options: ["Lowers Speed", "Damage on switch-in", "Heals user", "Raises Defense"],
+    correct: 1,
+    explanation: "Stealth Rock damages opposing Pokémon when they switch in.",
+    category: "Competitive",
+  },
   // Extra mix
-  { question: "Which Pokémon is known as the Electric Mouse?", options: ["Pichu", "Pikachu", "Raichu", "Plusle"], correct: 1, explanation: "Pikachu's classification is the Mouse Pokémon.", category: "Pokédex" },
-  { question: "What does Eevee evolve into when exposed to a Water Stone?", options: ["Jolteon", "Vaporeon", "Flareon", "Glaceon"], correct: 1, explanation: "A Water Stone evolves Eevee into Vaporeon.", category: "Pokédex" },
-  { question: "Who is the champion of the Indigo League in the games?", options: ["Lance", "Blue", "Red", "Steven"], correct: 0, explanation: "Lance leads the Indigo League's Elite Four as Champion.", category: "Lore" },
-  { question: "Which item evolves Onix into Steelix when traded?", options: ["Metal Coat", "King's Rock", "Up-Grade", "Dragon Scale"], correct: 0, explanation: "Onix holding a Metal Coat evolves into Steelix when traded.", category: "Items" },
+  {
+    question: "Which Pokémon is known as the Electric Mouse?",
+    options: ["Pichu", "Pikachu", "Raichu", "Plusle"],
+    correct: 1,
+    explanation: "Pikachu's classification is the Mouse Pokémon.",
+    category: "Pokédex",
+  },
+  {
+    question: "What does Eevee evolve into when exposed to a Water Stone?",
+    options: ["Jolteon", "Vaporeon", "Flareon", "Glaceon"],
+    correct: 1,
+    explanation: "A Water Stone evolves Eevee into Vaporeon.",
+    category: "Pokédex",
+  },
+  {
+    question: "Who is the champion of the Indigo League in the games?",
+    options: ["Lance", "Blue", "Red", "Steven"],
+    correct: 0,
+    explanation: "Lance leads the Indigo League's Elite Four as Champion.",
+    category: "Lore",
+  },
+  {
+    question: "Which item evolves Onix into Steelix when traded?",
+    options: ["Metal Coat", "King's Rock", "Up-Grade", "Dragon Scale"],
+    correct: 0,
+    explanation: "Onix holding a Metal Coat evolves into Steelix when traded.",
+    category: "Items",
+  },
 ];

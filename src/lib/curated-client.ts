@@ -5,9 +5,7 @@ import { createClient } from "@supabase/supabase-js";
  * (dvdorceiasaipdvyfhil). Kept separate from the Lovable Cloud-managed client
  * so it never collides with the main project's auth session storage.
  */
-const url =
-  import.meta.env.VITE_CURATED_SUPABASE_URL ??
-  "https://dvdorceiasaipdvyfhil.supabase.co";
+const url = import.meta.env.VITE_CURATED_SUPABASE_URL ?? "https://dvdorceiasaipdvyfhil.supabase.co";
 const key =
   import.meta.env.VITE_CURATED_SUPABASE_PUBLISHABLE_KEY ??
   "sb_publishable_4xsV56UPyHng1xGrKAM8mQ_meXNg3sH";

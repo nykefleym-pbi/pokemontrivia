@@ -22,8 +22,7 @@ export function PwaRegister() {
       }
     })();
     const host = window.location.hostname;
-    const isPreview =
-      host.includes("id-preview--") || host.includes("lovableproject.com");
+    const isPreview = host.includes("id-preview--") || host.includes("lovableproject.com");
 
     if (inIframe || isPreview) {
       navigator.serviceWorker

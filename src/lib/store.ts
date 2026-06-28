@@ -1,7 +1,14 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { ItemId } from "./game-data";
-import { ITEMS, levelFromTotalXp, totalXpToReachLevel, TRAINER_SPRITES, EVOLUTION_TP_COST, getWeekRangeUtc } from "./game-data";
+import {
+  ITEMS,
+  levelFromTotalXp,
+  totalXpToReachLevel,
+  TRAINER_SPRITES,
+  EVOLUTION_TP_COST,
+  getWeekRangeUtc,
+} from "./game-data";
 import type { PokeEntry } from "./pokemon-data";
 import { ALL_POKEMON, rehydratePokemon } from "./pokemon-data";
 import { pickRandomGymLeader } from "./gym-leaders";
@@ -97,7 +104,6 @@ export interface GameState {
   nameReconciled: boolean;
   needsNameReclaim: boolean;
 
-  
   dailyGiftLastClaim: string | null;
   dailyGiftStreak: number;
   guaranteedShinyPending: boolean;
@@ -105,7 +111,6 @@ export interface GameState {
   megaTrophies: { eventId: string; name: string; pokeId: number; claimedAt: string }[];
   claimedMegaRewards: string[];
   pokemon: PokeEntry | null;
-
 
   // progression
   level: number;
@@ -138,7 +143,6 @@ export interface GameState {
   seenQuestions: string[];
   seenCuratedIds: string[];
 
-
   // achievements / progression flags
   flags: string[];
 
@@ -167,7 +171,6 @@ export interface GameState {
   // preferences
   darkMode: boolean;
 
-
   // actions
   setOnboarded: (name: string, pokemon: PokeEntry, trainerSprite: string) => void;
   setFriendCode: (code: string) => void;
@@ -179,7 +182,6 @@ export interface GameState {
   setWhosThatRound: (round: Round, hourKey: number) => void;
   clearWhosThatRound: () => void;
 
-  
   claimDailyGift: () => { itemId: ItemId; qty: number; day: number; shiny: boolean } | null;
   consumeGuaranteedShiny: () => void;
   grantPokeEgg: (n?: number) => void;
@@ -235,7 +237,6 @@ export interface GameState {
   // preferences actions
   setDarkMode: (v: boolean) => void;
 }
-
 
 const defaultStats: PlayerStats = {
   battles: 0,
@@ -328,7 +329,6 @@ export const useGameStore = create<GameState>()(
       darkMode: false,
       setDarkMode: (v) => set({ darkMode: v }),
 
-
       initWeeklyLeague: () => {
         const s = get();
         const { start: weekStartTs } = getWeekRangeUtc();
@@ -348,7 +348,8 @@ export const useGameStore = create<GameState>()(
       startWeeklyLeagueAttempt: () => {
         const s = get();
         if (!s.weeklyLeague) return;
-        if (s.weeklyLeague.status !== "not_started" && s.weeklyLeague.status !== "in_progress") return;
+        if (s.weeklyLeague.status !== "not_started" && s.weeklyLeague.status !== "in_progress")
+          return;
         set({
           weeklyLeague: {
             ...s.weeklyLeague,
@@ -452,9 +453,9 @@ export const useGameStore = create<GameState>()(
       consumeWhosThat: () => {
         set({ whosThatHourKey: Math.floor(Date.now() / 3_600_000) });
       },
-      setWhosThatRound: (round, hourKey) => set({ whosThatActiveRound: round, whosThatRoundHourKey: hourKey }),
+      setWhosThatRound: (round, hourKey) =>
+        set({ whosThatActiveRound: round, whosThatRoundHourKey: hourKey }),
       clearWhosThatRound: () => set({ whosThatActiveRound: null, whosThatRoundHourKey: null }),
-
 
       evolvePartner: (toPokemon) => {
         const s = get();
@@ -545,7 +546,16 @@ export const useGameStore = create<GameState>()(
         const yesterday = yd.toISOString().slice(0, 10);
         const continuing = s.dailyGiftLastClaim === yesterday;
         const day = ((continuing ? s.dailyGiftStreak : 0) % 7) + 1;
-        const commonPool: ItemId[] = ["potion", "xattack", "scope", "superpotion", "xaccuracy", "escape", "quickclaw", "maxpotion"];
+        const commonPool: ItemId[] = [
+          "potion",
+          "xattack",
+          "scope",
+          "superpotion",
+          "xaccuracy",
+          "escape",
+          "quickclaw",
+          "maxpotion",
+        ];
         const premiumPool: ItemId[] = ["candy", "luckyegg", "focusband", "assaultvest"];
         const shiny = day === 7;
         let itemId: ItemId;
@@ -569,7 +579,12 @@ export const useGameStore = create<GameState>()(
       claimMegaChampion: (eventId, name, pokeId) => {
         const s = get();
         if ((s.megaTrophies ?? []).some((t) => t.eventId === eventId)) return false;
-        set({ megaTrophies: [...(s.megaTrophies ?? []), { eventId, name, pokeId, claimedAt: new Date().toISOString() }] });
+        set({
+          megaTrophies: [
+            ...(s.megaTrophies ?? []),
+            { eventId, name, pokeId, claimedAt: new Date().toISOString() },
+          ],
+        });
         return true;
       },
       hatchPokeEgg: () => {
@@ -579,8 +594,11 @@ export const useGameStore = create<GameState>()(
         return true;
       },
       markMegaRewardClaimed: (eventId) =>
-        set((s) => (s.claimedMegaRewards.includes(eventId) ? s : { claimedMegaRewards: [...s.claimedMegaRewards, eventId] })),
-
+        set((s) =>
+          s.claimedMegaRewards.includes(eventId)
+            ? s
+            : { claimedMegaRewards: [...s.claimedMegaRewards, eventId] },
+        ),
 
       startGuestSession: () => {
         const poke = ALL_POKEMON[Math.floor(Math.random() * ALL_POKEMON.length)];
@@ -666,7 +684,15 @@ export const useGameStore = create<GameState>()(
         if (id === "focusband" || id === "quickclaw" || id === "assaultvest") return false;
 
         // Once-per-battle items
-        const ONCE_PER_BATTLE: ItemId[] = ["potion", "superpotion", "maxpotion", "xattack", "scope", "xaccuracy", "escape"];
+        const ONCE_PER_BATTLE: ItemId[] = [
+          "potion",
+          "superpotion",
+          "maxpotion",
+          "xattack",
+          "scope",
+          "xaccuracy",
+          "escape",
+        ];
         if (ONCE_PER_BATTLE.includes(id) && s.usedThisBattle[id]) return false;
 
         // Lucky Egg: one activation per week (Monday 00:00 UTC reset)
@@ -686,8 +712,7 @@ export const useGameStore = create<GameState>()(
           xAttackActive: id === "xattack" ? true : s.xAttackActive,
           luckyEggExpiresAt:
             id === "luckyegg" ? Date.now() + 24 * 60 * 60 * 1000 : s.luckyEggExpiresAt,
-          luckyEggUsedWeek:
-            id === "luckyegg" ? getWeekRangeUtc().start : s.luckyEggUsedWeek,
+          luckyEggUsedWeek: id === "luckyegg" ? getWeekRangeUtc().start : s.luckyEggUsedWeek,
         });
 
         if (id === "candy") {
@@ -877,21 +902,22 @@ export const useGameStore = create<GameState>()(
         nameReconciled: s.nameReconciled,
         needsNameReclaim: s.needsNameReclaim,
 
-        
         dailyGiftLastClaim: s.dailyGiftLastClaim,
         dailyGiftStreak: s.dailyGiftStreak,
         guaranteedShinyPending: s.guaranteedShinyPending,
         pokeEggs: s.pokeEggs,
         megaTrophies: s.megaTrophies,
         claimedMegaRewards: s.claimedMegaRewards,
-
       }),
 
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<GameState>;
         // Migrate legacy dailyResult.pattern (string) -> DailyMark[]
         let dailyResult = p.dailyResult ?? null;
-        if (dailyResult && typeof (dailyResult as unknown as { pattern: unknown }).pattern === "string") {
+        if (
+          dailyResult &&
+          typeof (dailyResult as unknown as { pattern: unknown }).pattern === "string"
+        ) {
           const str = (dailyResult as unknown as { pattern: string }).pattern;
           const marks: DailyMark[] = Array.from(str).map((c) =>
             c === "🟩" ? "correct" : c === "🟥" ? "wrong" : "timeout",

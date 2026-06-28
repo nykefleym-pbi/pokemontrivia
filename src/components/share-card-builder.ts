@@ -64,8 +64,7 @@ export interface TrainerCardShareData {
 export type ShareData = BattleShareData | EvolutionShareData | TrainerCardShareData;
 
 const CARD_SIZE = 1080;
-const SYSTEM_FONT =
-  "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+const SYSTEM_FONT = "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
 export async function buildShareCard(data: ShareData): Promise<string> {
   if (data.type === "evolution") {
@@ -95,14 +94,7 @@ export async function buildShareCard(data: ShareData): Promise<string> {
   ctx.fillRect(0, 0, W, headerH);
 
   // faint radial glow behind partner sprite (right side)
-  const rg = ctx.createRadialGradient(
-    W * 0.74,
-    headerH * 0.6,
-    20,
-    W * 0.74,
-    headerH * 0.6,
-    320,
-  );
+  const rg = ctx.createRadialGradient(W * 0.74, headerH * 0.6, 20, W * 0.74, headerH * 0.6, 320);
   rg.addColorStop(0, "rgba(255,255,255,0.14)");
   rg.addColorStop(1, "rgba(255,255,255,0)");
   ctx.fillStyle = rg;
@@ -118,7 +110,14 @@ export async function buildShareCard(data: ShareData): Promise<string> {
   ctx.textAlign = "right";
   ctx.fillStyle = "#f2d64e";
   ctx.font = `800 28px ${SYSTEM_FONT}`;
-  drawTrackedText(ctx, data.type === "daily-perfect" ? "★ PERFECT" : "★ VICTORY", W - 60, 78, 2, "right");
+  drawTrackedText(
+    ctx,
+    data.type === "daily-perfect" ? "★ PERFECT" : "★ VICTORY",
+    W - 60,
+    78,
+    2,
+    "right",
+  );
 
   // Trainer avatar (circular)
   const avatarD = 150;
@@ -161,7 +160,13 @@ export async function buildShareCard(data: ShareData): Promise<string> {
   ctx.textAlign = "left";
   ctx.fillStyle = "#23252f";
   ctx.font = `800 52px ${SYSTEM_FONT}`;
-  ctx.fillText(data.type === "daily-perfect" ? "Perfect Daily Quest!" : `defeated ${truncate(data.opponentName, 18)}`, 60, y);
+  ctx.fillText(
+    data.type === "daily-perfect"
+      ? "Perfect Daily Quest!"
+      : `defeated ${truncate(data.opponentName, 18)}`,
+    60,
+    y,
+  );
 
   y += 46;
   ctx.fillStyle = "#6f7280";
@@ -188,10 +193,7 @@ export async function buildShareCard(data: ShareData): Promise<string> {
       color: "#3f9d5a",
     },
     {
-      val:
-        data.avgTimeMs && data.avgTimeMs > 0
-          ? `${(data.avgTimeMs / 1000).toFixed(1)}s`
-          : "—s",
+      val: data.avgTimeMs && data.avgTimeMs > 0 ? `${(data.avgTimeMs / 1000).toFixed(1)}s` : "—s",
       label: "AVG TIME",
       color: "#23252f",
     },
@@ -290,7 +292,13 @@ async function buildTrainerCard(data: TrainerCardShareData): Promise<string> {
   ctx.fillText(truncate(data.trainerName, 14), avatarCX + avatarD / 2 + 30, 220);
   ctx.fillStyle = "rgba(255,255,255,0.85)";
   ctx.font = `700 28px ${SYSTEM_FONT}`;
-  drawTrackedText(ctx, `LV ${data.level} · ${data.rank.toUpperCase()}`, avatarCX + avatarD / 2 + 30, 266, 1.5);
+  drawTrackedText(
+    ctx,
+    `LV ${data.level} · ${data.rank.toUpperCase()}`,
+    avatarCX + avatarD / 2 + 30,
+    266,
+    1.5,
+  );
 
   const margin = 60;
   const gap = 30;
@@ -393,7 +401,13 @@ async function buildEvolutionCard(data: EvolutionShareData): Promise<string> {
   ctx.fillText(truncate(data.trainerName, 12), aCX + aD / 2 + 26, 188);
   ctx.fillStyle = "rgba(255,255,255,0.82)";
   ctx.font = `700 23px ${SYSTEM_FONT}`;
-  drawTrackedText(ctx, `LV ${data.level} · ${data.rank.toUpperCase()}`, aCX + aD / 2 + 26, 226, 1.5);
+  drawTrackedText(
+    ctx,
+    `LV ${data.level} · ${data.rank.toUpperCase()}`,
+    aCX + aD / 2 + 26,
+    226,
+    1.5,
+  );
 
   const toSize = 290;
   const toX = 640;
@@ -420,7 +434,11 @@ async function buildEvolutionCard(data: EvolutionShareData): Promise<string> {
   ctx.textAlign = "center";
   ctx.fillStyle = DARK;
   ctx.font = `800 50px ${SYSTEM_FONT}`;
-  ctx.fillText(`${truncate(data.fromName, 12)} evolved into ${truncate(data.toName, 12)}!`, W / 2, 540);
+  ctx.fillText(
+    `${truncate(data.fromName, 12)} evolved into ${truncate(data.toName, 12)}!`,
+    W / 2,
+    540,
+  );
   ctx.fillStyle = "#6f7280";
   ctx.font = `500 27px ${SYSTEM_FONT}`;
   ctx.fillText(formatDate(data.dateISO), W / 2, 584);
@@ -430,7 +448,9 @@ async function buildEvolutionCard(data: EvolutionShareData): Promise<string> {
   ctx.font = `700 22px ${SYSTEM_FONT}`;
   drawTrackedText(ctx, "CAREER STATS", 60, 640, 1.5);
   const hchars = [..."CAREER STATS"];
-  const headW = hchars.map((c) => ctx.measureText(c).width).reduce((a, b) => a + b, 0) + 1.5 * (hchars.length - 1);
+  const headW =
+    hchars.map((c) => ctx.measureText(c).width).reduce((a, b) => a + b, 0) +
+    1.5 * (hchars.length - 1);
   ctx.strokeStyle = "#e6e8ec";
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -439,8 +459,12 @@ async function buildEvolutionCard(data: EvolutionShareData): Promise<string> {
   ctx.stroke();
 
   const winRate = data.statBattles > 0 ? Math.round((data.statWins / data.statBattles) * 100) : 0;
-  const accuracy = data.statAnswered > 0 ? Math.round((data.statCorrect / data.statAnswered) * 100) : 0;
-  const avgTime = data.statAnswered > 0 ? `${(data.statTotalAnswerTime / data.statAnswered / 1000).toFixed(1)}s` : "—s";
+  const accuracy =
+    data.statAnswered > 0 ? Math.round((data.statCorrect / data.statAnswered) * 100) : 0;
+  const avgTime =
+    data.statAnswered > 0
+      ? `${(data.statTotalAnswerTime / data.statAnswered / 1000).toFixed(1)}s`
+      : "—s";
   const chips = [
     { v: `${data.statBattles}`, l: "BATTLES", c: DARK },
     { v: `${data.statWins}`, l: "WINS", c: GREEN },
@@ -624,8 +648,7 @@ function drawTrackedText(
   if (!text) return;
   const chars = [...text];
   const widths = chars.map((c) => ctx.measureText(c).width);
-  const total =
-    widths.reduce((a, b) => a + b, 0) + tracking * (chars.length - 1);
+  const total = widths.reduce((a, b) => a + b, 0) + tracking * (chars.length - 1);
   let startX = x;
   if (align === "right") startX = x - total;
   else if (align === "center") startX = x - total / 2;
