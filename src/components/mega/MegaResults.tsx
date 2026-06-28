@@ -219,14 +219,3 @@ function StatCard({ label, value, big, highlight }: { label: string; value: stri
     </div>
   );
 }
-
-function RewardPill({ label, emoji }: { label: string; emoji: string }) {
-  return (
-    <div className="flex items-center gap-2.5 rounded-2xl px-3.5 py-2.5" style={{ background: "#FBF3DF" }}>
-      <span className="text-2xl">{emoji}</span>
-      <div className="text-[15px] font-extrabold" style={{ color: "#1C2333" }}>
-        {label}
-      </div>
-    </div>
-  );
-}
