@@ -137,7 +137,7 @@ function CombatPanel({
   );
 }
 
-function TimerRing({ timer, maxTime }: { timer: number; maxTime: number }) {
+export function TimerRing({ timer, maxTime }: { timer: number; maxTime: number }) {
   return (
     <div
       className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold shadow-card ${
