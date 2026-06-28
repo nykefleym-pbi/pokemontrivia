@@ -135,61 +135,17 @@ export function MegaResults({
         <StatCard label="TIME" value={fmtTime(timeMs)} />
       </div>
 
-      {/* rewards (win only) */}
-      {win && (
-        <div className="px-6 pt-4.5">
-          <div className="font-pixel" style={{ fontSize: 7, letterSpacing: 1, color: "rgba(255,255,255,0.6)" }}>
-            REWARDS
-          </div>
-          <div className="mt-2.5 flex flex-col gap-2">
-            <div className="grid grid-cols-2 gap-2">
-              <RewardPill label={`+${event.reward.xp} XP`} emoji="✨" />
-              <RewardPill label={`+${event.reward.tp} TP`} emoji="🎓" />
-            </div>
-            {items.length > 0 && (
-              <div className="rounded-2xl p-3.5" style={{ background: "#FBF3DF" }}>
-                <div className="flex items-center gap-2.5">
-                  <span className="text-xl">🎁</span>
-                  <div className="text-[15px] font-extrabold" style={{ color: "#1C2333" }}>
-                    Items earned
-                  </div>
-                </div>
-                <div className="mt-2.5 grid grid-cols-2 gap-x-2 gap-y-1.5">
-                  {items.map((it, i) => (
-                    <div key={`${it.id}-${i}`} className="flex items-center gap-2">
-                      <img src={it.iconUrl} alt={it.name} className="h-6 w-6 [image-rendering:pixelated]" />
-                      <span className="text-[13px] font-bold" style={{ color: "#1C2333" }}>
-                        {it.name}
-                      </span>
-                      <span className="ml-auto text-[13px] font-extrabold" style={{ color: "#6B6E7B" }}>
-                        ×{it.qty}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            <div className="flex items-center gap-3 rounded-2xl px-3.5 py-2.5" style={{ background: "#FBF3DF" }}>
-              <span className="text-2xl">🥚</span>
-              <div className="flex-1 text-[15px] font-extrabold" style={{ color: "#1C2333" }}>
-                Poké Egg
-              </div>
-            </div>
-            <div className="flex items-center gap-3 rounded-2xl px-3.5 py-2.5" style={{ background: "#FBF3DF" }}>
-              <div
-                className="flex h-9 w-9 items-center justify-center rounded-full"
-                style={{ background: "#DDF0E3" }}
-              >
-                <span style={{ color: "#3F9D5A", fontWeight: 900 }}>✓</span>
-              </div>
-              <div className="flex-1 text-[14px] font-extrabold" style={{ color: "#1C2333" }}>
-                {event.baseName} added to Pokédex
-              </div>
-              <PokemonSprite id={event.reward.dexId} shiny={shiny} className="h-8 w-8" />
+      {/* event-end reward note (shown win or loss) */}
+      <div className="px-6 pt-4.5">
+        <div className="rounded-2xl p-3.5" style={{ background: "rgba(242,214,78,0.10)", border: "1px solid rgba(242,214,78,0.35)" }}>
+          <div className="flex items-start gap-2.5">
+            <span className="text-xl leading-none">🏆</span>
+            <div className="text-[13px] font-semibold leading-snug" style={{ color: "rgba(255,255,255,0.85)" }}>
+              Rewards are awarded by your <span className="font-extrabold" style={{ color: "#F2D64E" }}>final rank</span> when the event ends. Come back to the leaderboard after it closes to claim yours.
             </div>
           </div>
         </div>
-      )}
+      </div>
 
       <div className="flex-1" />
 
