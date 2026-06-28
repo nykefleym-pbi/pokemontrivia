@@ -83,7 +83,7 @@ function ProfilePage() {
   const level = useGameStore((s) => s.level);
   const xp = useGameStore((s) => s.xp);
   const stats = useGameStore((s) => s.stats);
-  const inventory = useGameStore((s) => s.inventory);
+  
   const setName = useGameStore((s) => s.setName);
   const setPokemon = useGameStore((s) => s.setPokemon);
   const setTrainerSprite = useGameStore((s) => s.setTrainerSprite);
