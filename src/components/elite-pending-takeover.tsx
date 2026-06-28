@@ -65,7 +65,10 @@ export function ElitePendingTakeover({
             🏅 Region unlock
           </span>
           <span className="inline-flex items-center gap-1 rounded-full border border-poke-yellow/40 bg-poke-dark/50 px-3 py-1 text-[11px] font-semibold text-poke-yellow">
-            +1,000 XP
+            🪙 2,000 Coins
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full border border-poke-yellow/40 bg-poke-dark/50 px-3 py-1 text-[11px] font-semibold text-poke-yellow">
+            🎁 Rare Candy + Lucky Egg
           </span>
         </div>
       </motion.div>
