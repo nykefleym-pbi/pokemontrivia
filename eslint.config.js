@@ -27,5 +27,5 @@ export default tseslint.config(
       ],
     },
   },
-  eslintPluginPrettier,
+  eslintConfigPrettier,
 );
