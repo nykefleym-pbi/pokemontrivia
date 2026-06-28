@@ -222,31 +222,16 @@ function BattlePage() {
     if (!pendingElite) return;
     setPhase("loading");
     try {
-      const resp = await fetch("/api/trivia-elite", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: pendingElite.type,
-          memberName: `${pendingElite.title} ${pendingElite.name}`,
-          difficultyTiers: ["hard", "expert"],
-          curatedTarget: 36,
-          aiCount: 4,
-          seenHashes,
-          seenSamples: seenQuestions.slice(-80),
-          flowSeed: Math.floor(Math.random() * 1_000_000),
-        }),
+      const data = await fetchEliteQuestions({
+        type: pendingElite.type,
+        memberName: `${pendingElite.title} ${pendingElite.name}`,
+        difficultyTiers: ["hard", "expert"],
+        curatedTarget: 36,
+        aiCount: 4,
+        seenHashes,
+        seenSamples: seenQuestions.slice(-80),
+        flowSeed: Math.floor(Math.random() * 1_000_000),
       });
-      if (resp.status === 429) {
-        toast.error("Rate limited.");
-        setPhase("home");
-        return;
-      }
-      if (resp.status === 402) {
-        toast.error("AI credits exhausted.");
-        setPhase("home");
-        return;
-      }
-      const data = (await resp.json()) as { questions: Trivia[] };
       if (!data.questions?.length) {
         toast.error("Couldn't prepare Elite battle.");
         setPhase("home");
@@ -257,6 +242,16 @@ function BattlePage() {
       setQuestions(data.questions);
       setPhase("elite");
     } catch (e) {
+      if (e instanceof ApiError && e.status === 429) {
+        toast.error("Rate limited.");
+        setPhase("home");
+        return;
+      }
+      if (e instanceof ApiError && e.status === 402) {
+        toast.error("AI credits exhausted.");
+        setPhase("home");
+        return;
+      }
       console.error(e);
       toast.error("Couldn't prepare Elite battle.");
       setPhase("home");
@@ -267,8 +262,7 @@ function BattlePage() {
     if (dailyDone) return;
     setPhase("loading");
     try {
-      const resp = await fetch("/api/daily-challenge");
-      const data = (await resp.json()) as { questions: Trivia[] };
+      const data = await fetchDailyChallenge();
       if (!data.questions?.length) {
         toast.error("Daily challenge unavailable. Try again later.");
         setPhase("home");
