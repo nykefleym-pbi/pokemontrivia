@@ -278,7 +278,7 @@ function WhosThatPokemon() {
     }
   }, [phase, round, caught, addXp, grantItem, recordPokedexCapture]);
 
-  const goHome = () => navigate({ to: "/battle" });
+  const goHome = () => navigate({ to: "/battle", search: { autostart: 0 } as never });
 
   const canSubmit = !round
     ? false
