@@ -1421,6 +1421,7 @@ function ResultScreen({
   totalQuestions,
   xpEarned,
   tpEarned,
+  coinsEarned,
   speedBonus,
   partnerName,
   partnerId,
