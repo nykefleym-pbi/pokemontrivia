@@ -1442,6 +1442,7 @@ function ResultScreen({
   totalQuestions: number;
   xpEarned: number;
   tpEarned: number;
+  coinsEarned: number;
   speedBonus: number;
   partnerName: string;
   partnerId: number;
