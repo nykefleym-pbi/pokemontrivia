@@ -57,16 +57,23 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
   const isMyChampion = !!(champion && mine && champion.user_id === mine.user_id);
   const myRank = mine ? rows.findIndex((r) => r.user_id === mine.user_id) + 1 : 0;
 
-  const claimChampion = () => {
+  const claimReward = () => {
     const st = useGameStore.getState();
-    // Claim first (idempotent check-and-set) so rewards can't be granted twice on a double-tap.
-    const ok = st.claimMegaChampion(event.id, event.champion.trophyName, event.megaId);
-    if (!ok) return;
-    st.addXp(event.champion.xp);
-    if (st.pokemon) st.addTrainingPoints(st.pokemon.id, event.champion.tp);
-    const pool: ItemId[] = ["potion", "superpotion", "maxpotion", "xattack", "scope", "xaccuracy", "candy", "luckyegg"];
-    for (let i = 0; i < event.champion.items; i++) st.grantItem(pool[Math.floor(Math.random() * pool.length)], 1);
-    toast.success(`Champion reward claimed! 🏆 ${event.champion.trophyName}`);
+    if (st.claimedMegaRewards.includes(event.id)) return;
+    st.markMegaRewardClaimed(event.id);
+    const rank = myRank > 0 ? myRank : 99;
+    const scale = megaRankScale(rank);
+    st.addXp(Math.round(MEGA_REWARD.xp * scale));
+    st.addCoins(Math.round(MEGA_REWARD.coins * scale));
+    if (st.pokemon) st.addTrainingPoints(st.pokemon.id, Math.round(MEGA_REWARD.tp * scale));
+    if (rank === 1) {
+      const pool: ItemId[] = ["potion", "superpotion", "maxpotion", "xattack", "scope", "xaccuracy", "candy", "luckyegg"];
+      for (let i = 0; i < MEGA_REWARD.items; i++) st.grantItem(pool[Math.floor(Math.random() * pool.length)], 1);
+      st.grantPokeEgg(1);
+      st.recordPokedexCapture(event.baseDexId, false);
+      st.claimMegaChampion(event.id, event.champion.trophyName, event.megaId);
+    }
+    toast.success(rank === 1 ? `Champion rewards claimed! 🏆` : `Rank #${rank} rewards claimed!`);
   };
 
   const Avatar = ({ sprite, size, ring }: { sprite: string; size: number; ring: string }) => (
