@@ -51,7 +51,6 @@ export type { Trivia };
 import { DailyScreen } from "@/components/daily-screen";
 import { ResultScreen } from "@/components/result-screen";
 
-
 const QUESTIONS_PER_SET = 5;
 const TIMER_BASE = 20;
 
