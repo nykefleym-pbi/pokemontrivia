@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useGameStore } from "@/lib/store";
 import { ALL_POKEMON, spriteUrl, type PokeType } from "@/lib/pokemon-data";
 import { ITEMS, type ItemId } from "@/lib/game-data";
+import { WHOS_THAT_XP } from "@/lib/rewards";
 import { PokemonSprite } from "@/components/game-ui";
 import { playCry } from "@/lib/audio";
 
@@ -270,7 +271,7 @@ function WhosThatPokemon() {
   useEffect(() => {
     if (phase === "correct" && round && !claimedRef.current) {
       claimedRef.current = true;
-      addXp(10);
+      addXp(WHOS_THAT_XP);
       grantItem(round.rewardId, 1);
       recordPokedexCapture(caught?.id ?? round.monId, round.isShiny);
     }

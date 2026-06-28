@@ -1835,12 +1835,11 @@ function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">)
             pattern: nextPattern,
           });
           const lvl = useGameStore.getState().level;
-          const dailyXp = dailyXpFor(finalCorrect, total, lvl);
-          if (dailyXp > 0) {
-            useGameStore.getState().addXp(dailyXp);
+          const daily = dailyReward({ correct: finalCorrect, total, level: lvl });
+          if (daily.xp > 0) {
+            useGameStore.getState().addXp(daily.xp);
             const partner = useGameStore.getState().pokemon;
-            if (partner)
-              useGameStore.getState().addTrainingPoints(partner.id, Math.round(0.2 * dailyXp));
+            if (partner) useGameStore.getState().addTrainingPoints(partner.id, daily.tp);
           }
         }
         playSfx("victory");
@@ -2044,7 +2043,7 @@ function DailyResultScreen({
           dateISO: date,
           correctCount: correct,
           totalQuestions: total,
-          xpEarned: dailyXpFor(correct, total, level),
+          xpEarned: dailyReward({ correct, total, level }).xp,
           avgTimeMs,
           level,
           rank: rankForLevel(level),
