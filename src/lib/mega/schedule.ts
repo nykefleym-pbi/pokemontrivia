@@ -11,6 +11,14 @@ export const MEGA_QUESTION_COUNT = 50;
 /** First try + 1 retake. */
 export const MEGA_MAX_ATTEMPTS = 2;
 
+export const MEGA_REWARD = { xp: 2500, coins: 2500, tp: 1000, items: 10 } as const;
+export function megaRankScale(rank: number): number {
+  if (rank === 1) return 1;
+  if (rank === 2) return 0.5;
+  if (rank === 3) return 0.3;
+  return 0.05;
+}
+
 export interface MegaReward {
   xp: number;
   tp: number;
