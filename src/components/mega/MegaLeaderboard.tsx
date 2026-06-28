@@ -37,7 +37,9 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
   const [now, setNow] = useState(Date.now());
 
   const trophies = useGameStore((s) => s.megaTrophies);
+  const claimedRewards = useGameStore((s) => s.claimedMegaRewards);
   const claimed = (trophies ?? []).some((t) => t.eventId === event.id);
+  const rewardClaimed = (claimedRewards ?? []).includes(event.id);
 
   useEffect(() => {
     let on = true;
