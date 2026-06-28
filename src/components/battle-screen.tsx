@@ -1531,7 +1531,7 @@ function ResultScreen({
 
         <div className="mx-auto mt-6 w-full max-w-sm rounded-2xl bg-card p-4 shadow-card">
           <Row label="XP earned" value={`+${xpEarned}`} valueClass="text-primary" />
-          <Row label="Coins earned" value={`+${xpEarned}`} valueClass="text-poke-yellow" />
+          {coinsEarned > 0 && <Row label="Coins earned" value={`+${coinsEarned}`} valueClass="text-poke-yellow" />}
           <Row label={`${partnerName} TP`} value={`+${tpEarned}`} valueClass="text-poke-blue" />
           {speedBonus > 0 && (
             <Row
