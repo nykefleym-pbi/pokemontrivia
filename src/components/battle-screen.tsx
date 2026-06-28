@@ -1690,8 +1690,11 @@ function Row({ label, value, valueClass }: { label: ReactNode; value: ReactNode;
 
 // ----------------------------- Daily Challenge Mode -----------------------------
 
-function dailyXpFor(correct: number, total: number): number {
-  return 15 * correct + (correct === total ? 100 : 0); // e.g. perfect 10/10 = 250; 7/10 = 105
+function dailyXpFor(correct: number, total: number, level: number): number {
+  if (correct < 6) return 0;
+  const levelMult = 1 + 0.05 * (level - 1);
+  const perfectMult = correct === total ? 2 : 1;
+  return Math.round(50 * levelMult * perfectMult);
 }
 
 function DailyScreen({ questions, onExit }: Pick<Props, "questions" | "onExit">) {
