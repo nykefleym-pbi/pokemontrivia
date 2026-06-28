@@ -322,10 +322,6 @@ export const useGameStore = create<GameState>()(
       defeatedEliteRegions: [],
       defeatedElites: [],
       abilityCodex: [],
-      trainingPoints: {},
-      weeklyLeague: null,
-      gymBadges: [],
-      weeklyLeagueHistory: [],
       darkMode: false,
       setDarkMode: (v) => set({ darkMode: v }),
 
