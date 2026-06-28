@@ -224,7 +224,7 @@ function ProfilePage() {
   if (!hasOnboarded || !pokemon) return null;
 
   const rank = rankForLevel(level);
-  const xpProg = xpProgressInLevel(xp);
+  
   const accuracy = stats.answered > 0 ? Math.round((stats.correct / stats.answered) * 100) : 0;
   const avgTime =
     stats.answered > 0 ? Math.round(stats.totalAnswerTime / stats.answered / 100) / 10 : 0;
