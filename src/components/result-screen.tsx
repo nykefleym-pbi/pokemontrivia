@@ -1,8 +1,8 @@
 import { type ReactNode } from "react";
 import { motion } from "framer-motion";
+import { Share2 } from "lucide-react";
 import { PokemonSprite } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
-import shareIcon from "@/assets/share-icon-dark.png.asset.json";
 
 export function ResultScreen({
   won,
@@ -171,14 +171,7 @@ export function ResultScreen({
               className="h-14 w-full rounded-full border-2 border-foreground/15 bg-card font-bold text-foreground hover:bg-card/80"
             >
               <span className="flex items-center gap-2">
-                <img
-                  src={shareIcon.url}
-                  alt=""
-                  className="h-5 w-5"
-                  loading="lazy"
-                  width={20}
-                  height={20}
-                />
+                <Share2 className="h-5 w-5" aria-hidden />
                 Share result
               </span>
             </Button>

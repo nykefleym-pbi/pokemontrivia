@@ -10,7 +10,6 @@ import { TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
 import { trainerQuote } from "@/lib/trainer-quotes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import pokemonLogo from "@/assets/pokemon-logo.png.asset.json";
 import {
   bootstrapSocial,
   isTrainerNameAvailable,
@@ -59,12 +58,12 @@ function SplashPage() {
             {/* hero block */}
             <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-7 pt-[calc(env(safe-area-inset-top)+2rem)] text-center">
               <PokeballEmblem />
-              <img
-                src={pokemonLogo.url}
-                alt="Pokémon"
-                className="mt-6 h-auto w-[168px] select-none"
-                draggable={false}
-              />
+              <div
+                aria-label="Pokémon"
+                className="mt-6 select-none text-[2rem] font-black leading-none tracking-tight text-primary"
+              >
+                Pokémon
+              </div>
               <h1 className="mt-1 text-[2.625rem] font-black leading-none tracking-tight text-foreground">
                 Trivia Battle
               </h1>
@@ -294,10 +293,23 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
         await bootstrapSocial();
         const res = await claimTrainerName(v.name);
         if (!res.ok) {
-          if (res.error === "taken") setNameAvail("taken");
-          else if (res.error === "length" || res.error === "chars") setNameAvail("invalid");
-          else setNameAvail("idle");
-          setNameMsg(claimErrorMessage(res.error));
+          // Hard-block only on legitimate name rejections.
+          if (res.error === "taken") {
+            setNameAvail("taken");
+            setNameMsg(claimErrorMessage(res.error));
+            return;
+          }
+          if (res.error === "length" || res.error === "chars") {
+            setNameAvail("invalid");
+            setNameMsg(claimErrorMessage(res.error));
+            return;
+          }
+          // Backend unreachable (e.g. "network"): don't block play. Reserve the
+          // name locally and let reconcileTrainerName retry once it's back.
+          setClaimedName(v.name);
+          setNameAvail("available");
+          setNameMsg("Name reserved (will sync when online)");
+          setSubstep("trainer");
           return;
         }
         setClaimedName(v.name);
