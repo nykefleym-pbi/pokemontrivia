@@ -58,12 +58,12 @@ function SplashPage() {
             {/* hero block */}
             <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-7 pt-[calc(env(safe-area-inset-top)+2rem)] text-center">
               <PokeballEmblem />
-              <div
-                aria-label="Pokémon"
-                className="mt-6 select-none text-[2rem] font-black leading-none tracking-tight text-primary"
-              >
-                Pokémon
-              </div>
+              <img
+                src="/icons/logo/pokemonLogo.png"
+                alt="Pokémon"
+                className="mt-6 h-auto w-[168px] select-none"
+                draggable={false}
+              />
               <h1 className="mt-1 text-[2.625rem] font-black leading-none tracking-tight text-foreground">
                 Trivia Battle
               </h1>

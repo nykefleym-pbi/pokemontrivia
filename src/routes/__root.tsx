@@ -9,6 +9,49 @@ import { NameReclaimPrompt } from "@/components/NameReclaimPrompt";
 
 import appCss from "../styles.css?url";
 
+// Apple PWA launch ("splash") images. w/h are each device's PORTRAIT CSS-point
+// dimensions; the orientation media feature selects the portrait vs landscape
+// artwork. Files live in public/icons/splash_screens/<base>_<orientation>.png.
+const APPLE_SPLASH: ReadonlyArray<{ base: string; w: number; h: number; r: number }> = [
+  // iPhones
+  { base: "4__iPhone_SE__iPod_touch_5th_generation_and_later", w: 320, h: 568, r: 2 },
+  { base: "iPhone_8__iPhone_7__iPhone_6s__iPhone_6__4.7__iPhone_SE", w: 375, h: 667, r: 2 },
+  { base: "iPhone_8_Plus__iPhone_7_Plus__iPhone_6s_Plus__iPhone_6_Plus", w: 414, h: 736, r: 3 },
+  { base: "iPhone_11__iPhone_XR", w: 414, h: 896, r: 2 },
+  { base: "iPhone_11_Pro_Max__iPhone_XS_Max", w: 414, h: 896, r: 3 },
+  { base: "iPhone_13_mini__iPhone_12_mini__iPhone_11_Pro__iPhone_XS__iPhone_X", w: 375, h: 812, r: 3 },
+  {
+    base: "iPhone_17e__iPhone_16e__iPhone_14__iPhone_13_Pro__iPhone_13__iPhone_12_Pro__iPhone_12",
+    w: 390,
+    h: 844,
+    r: 3,
+  },
+  { base: "iPhone_14_Plus__iPhone_13_Pro_Max__iPhone_12_Pro_Max", w: 428, h: 926, r: 3 },
+  { base: "iPhone_16__iPhone_15_Pro__iPhone_15__iPhone_14_Pro", w: 393, h: 852, r: 3 },
+  { base: "iPhone_16_Plus__iPhone_15_Pro_Max__iPhone_15_Plus__iPhone_14_Pro_Max", w: 430, h: 932, r: 3 },
+  { base: "iPhone_17_Pro__iPhone_17__iPhone_16_Pro", w: 402, h: 874, r: 3 },
+  { base: "iPhone_17_Pro_Max__iPhone_16_Pro_Max", w: 440, h: 956, r: 3 },
+  { base: "iPhone_Air", w: 420, h: 912, r: 3 },
+  // iPads
+  { base: "9.7__iPad_Pro__7.9__iPad_mini__9.7__iPad_Air__9.7__iPad", w: 768, h: 1024, r: 2 },
+  { base: "10.2__iPad", w: 810, h: 1080, r: 2 },
+  { base: "10.5__iPad_Air", w: 834, h: 1112, r: 2 },
+  { base: "8.3__iPad_Mini", w: 744, h: 1133, r: 2 },
+  { base: "10.9__iPad_Air", w: 820, h: 1180, r: 2 },
+  { base: "11__iPad_Pro__10.5__iPad_Pro", w: 834, h: 1194, r: 2 },
+  { base: "11__iPad_Pro_M4", w: 834, h: 1210, r: 2 },
+  { base: "12.9__iPad_Pro", w: 1024, h: 1366, r: 2 },
+  { base: "13__iPad_Pro_M4", w: 1032, h: 1376, r: 2 },
+];
+
+const appleSplashLinks = APPLE_SPLASH.flatMap(({ base, w, h, r }) =>
+  (["portrait", "landscape"] as const).map((orientation) => ({
+    rel: "apple-touch-startup-image",
+    media: `screen and (device-width: ${w}px) and (device-height: ${h}px) and (-webkit-device-pixel-ratio: ${r}) and (orientation: ${orientation})`,
+    href: `/icons/splash_screens/${base}_${orientation}.png`,
+  })),
+);
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -81,6 +124,7 @@ export const Route = createRootRoute({
       { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "apple-touch-icon", href: "/icons/icon-192.png" },
       { rel: "apple-touch-icon", sizes: "512x512", href: "/icons/icon-512.png" },
+      ...appleSplashLinks,
       { rel: "preconnect", href: "https://raw.githubusercontent.com", crossOrigin: "anonymous" },
       { rel: "preconnect", href: "https://pokeapi.co", crossOrigin: "anonymous" },
       { rel: "dns-prefetch", href: "https://raw.githubusercontent.com" },
