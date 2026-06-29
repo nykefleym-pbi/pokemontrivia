@@ -24,3 +24,5 @@
 - **Styling.** Use Tailwind theme tokens defined in `src/styles.css` (`bg-card`, `text-primary`, etc.). Do not hardcode hex values or `text-white`/`bg-black` in components — they bypass theming and break dark mode.
 - **Tests.** Pure functions in `src/lib/` should have `*.test.ts` regression coverage. UI tests are out of scope for now.
 - **No behavior change in refactors.** Each refactor phase keeps observable behavior identical; tests guard the invariants.
+
+<!-- preview-rebuild: 2026-06-29 -->
