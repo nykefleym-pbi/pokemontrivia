@@ -1,9 +1,8 @@
 // Self-contained Vite config (no Lovable build wrapper) for a TanStack Start
-// app deployed as a Cloudflare Worker. Mirrors what the old
-// @lovable.dev/vite-tanstack-config bundled: cloudflare, tanstackStart,
-// viteReact, tailwindcss, tsconfig "@/*" path alias, and React/TanStack dedupe.
+// app deployed to Vercel. The Nitro Vite plugin compiles the server into a
+// Vercel Function (and auto-detects the host: vercel on Vercel, node locally).
 import { defineConfig } from "vite";
-import { cloudflare } from "@cloudflare/vite-plugin";
+import { nitro } from "nitro/vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
@@ -13,7 +12,7 @@ import { VitePWA } from "vite-plugin-pwa";
 export default defineConfig({
   resolve: { dedupe: ["react", "react-dom"] },
   plugins: [
-    cloudflare({ viteEnvironment: { name: "ssr" } }),
+    nitro(),
     tsConfigPaths(),
     tailwindcss(),
     tanstackStart(),
