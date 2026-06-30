@@ -369,111 +369,276 @@ export function playWhosThatShout() {
 }
 
 // ---------------------------------------------------------------------------
-// BGM manager (looping mp3 per context, crossfade)
+// BGM manager — one streamed master track ("Pokemon SFX.mp3"); each context
+// loops a time SEGMENT of it. Win/lose/intro/evolution/item are one-shot
+// segments. Mega + Who's-That keep their own bundled files.
 // ---------------------------------------------------------------------------
 export type BgmContext =
   | "splash"
-  | "home"
+  | "home" // battle hub (level-based)
+  | "dex"
+  | "shop"
+  | "profile"
   | "battle_regular"
+  | "daily"
   | "battle_elite"
   | "weekly_league"
-  | "elite_intro"
-  | "whos_that"
   | "mega"
-  | "leaderboard"
-  | "share";
+  | "whos_that"
+  | "leaderboard";
 
+const MASTER =
+  "https://dvdorceiasaipdvyfhil.supabase.co/storage/v1/object/public/Songs/Pokemon SFX.mp3";
 const SONG = "/song/";
-// Tracks present in /public/song.
-const SPLASH = `${SONG}Pokemon Trivia Battle.mp3`;
-const INSTRUMENTAL = `${SONG}Pokemon Trivia Battle (Instrumental Version).mp3`;
-const REGULAR = `${SONG}Regular Battle.mp3`;
-const ELITE = `${SONG}Elite Four.mp3`;
-const MEGA = `${SONG}Mega Raid.mp3`;
-const WEEKLY = `${SONG}Weekly League.mp3`;
-const BGM_TRACKS: Record<BgmContext, string> = {
-  splash: SPLASH,
-  home: INSTRUMENTAL,
-  battle_regular: REGULAR,
-  battle_elite: ELITE,
-  weekly_league: WEEKLY,
-  elite_intro: ELITE,
-  whos_that: INSTRUMENTAL, // no dedicated loop uploaded; the voice shout plays over it
-  mega: MEGA,
-  leaderboard: MEGA, // reuse the Mega Raid theme
-  share: INSTRUMENTAL,
-};
-// Per-Mega override: event id -> track file (epic theme changes every Mega).
-const MEGA_TRACKS: Record<string, string> = {
-  // "mega-charizard-x-2026-06-23": `${SONG}Mega Charizard X.mp3`,
-};
+const MEGA_FILE = `${SONG}Mega Raid.mp3`;
+const WHOS_THAT_LOOP = `${SONG}Pokemon Trivia Battle (Instrumental Version).mp3`;
+
+type Seg = readonly [number, number]; // [startSec, endSec]
+
+// Battle-hub music by level band (rotates past level 20).
+const BATTLE_HOME: readonly Seg[] = [
+  [131, 209], // L1–3   (2:11–3:29)
+  [534, 665], // L4–6   (8:54–11:05)
+  [1339, 1416], // L7–9 (22:19–23:36)
+  [1554, 1617], // L10–12 (25:54–26:57)
+  [2084, 2193], // L13–15 (34:44–36:33)
+  [2333, 2411], // L16–20 (38:53–40:11)
+];
+function battleHomeSeg(level: number): Seg {
+  const lv = Math.max(1, level);
+  if (lv <= 20) return BATTLE_HOME[Math.min(BATTLE_HOME.length - 1, Math.floor((lv - 1) / 3))];
+  return BATTLE_HOME[Math.floor((lv - 21) / 3) % BATTLE_HOME.length];
+}
+
+const SEG = {
+  splash: [13, 131],
+  dex: [258, 304],
+  shop: [665, 739],
+  profile: [1999, 2084],
+  daily: [407, 497],
+  dailyWin: [497, 534],
+  regular: [923, 1120],
+  regularWin: [1120, 1151],
+  weekly: [1823, 1942],
+  weeklyWin: [1942, 1999],
+  eliteIntro: [3028, 3104],
+  elite: [3104, 3253],
+  eliteWin: [3253, 3317],
+  lose: [1543, 1554],
+  evolution: [2992, 3028],
+  item: [739, 747],
+  leaderboard: [859, 897],
+} as const satisfies Record<string, Seg>;
 
 const MUSIC_VOLUME = 0.35;
-let current: { ctxName: string; el: HTMLAudioElement } | null = null;
 let unlocked = false;
+let activeKey = "";
 
-function fade(el: HTMLAudioElement, to: number, ms: number, onDone?: () => void) {
-  const steps = 16;
-  const from = el.volume;
-  let i = 0;
+// --- master-track element + the active loop/one-shot window ---
+let masterEl: HTMLAudioElement | null = null;
+interface SegWindow {
+  start: number;
+  end: number;
+  loop: boolean;
+  key: string;
+  onEnd?: () => void;
+}
+let win: SegWindow | null = null;
+
+function master(): HTMLAudioElement | null {
+  if (typeof window === "undefined") return null;
+  if (masterEl) return masterEl;
+  const el = new Audio(encodeURI(MASTER));
+  el.preload = "auto";
+  el.volume = MUSIC_VOLUME;
+  masterEl = el;
   const tick = () => {
+    if (masterEl === el && win && el.currentTime >= win.end) {
+      if (win.loop) {
+        try {
+          el.currentTime = win.start;
+        } catch {
+          /* ignore */
+        }
+      } else {
+        const onEnd = win.onEnd;
+        win = null;
+        if (onEnd) onEnd();
+        else el.pause();
+      }
+    }
+    window.requestAnimationFrame(tick);
+  };
+  window.requestAnimationFrame(tick);
+  return el;
+}
+
+function fadeIn(el: HTMLAudioElement) {
+  el.volume = 0;
+  const steps = 12;
+  let i = 0;
+  const step = () => {
     i++;
-    const v = from + (to - from) * (i / steps);
     try {
-      el.volume = Math.max(0, Math.min(1, v));
+      el.volume = Math.min(MUSIC_VOLUME, (MUSIC_VOLUME * i) / steps);
     } catch {
       /* ignore */
     }
-    if (i < steps) window.setTimeout(tick, ms / steps);
-    else onDone?.();
+    if (i < steps) window.setTimeout(step, 30);
   };
-  tick();
+  step();
 }
 
-/** Switch background music to the track for `context` (no-op if already playing it). */
-export function playBgm(context: BgmContext, opts?: { megaEventId?: string }) {
-  if (typeof window === "undefined") return;
-  const src =
-    context === "mega" && opts?.megaEventId && MEGA_TRACKS[opts.megaEventId]
-      ? MEGA_TRACKS[opts.megaEventId]
-      : BGM_TRACKS[context];
-  const key = `${context}:${src}`;
-  if (current?.ctxName === key) {
-    if (!isMusicOn()) stopBgm();
-    return;
-  }
-  // fade out the old track
-  if (current) {
-    const old = current.el;
-    fade(old, 0, 350, () => {
-      old.pause();
-    });
-  }
+function playSeg(seg: Seg, o: { loop: boolean; key: string; onEnd?: () => void }) {
+  const el = master();
+  if (!el) return;
+  stopFile();
+  win = { start: seg[0], end: seg[1], loop: o.loop, key: o.key, onEnd: o.onEnd };
+  const begin = () => {
+    try {
+      el.currentTime = seg[0];
+    } catch {
+      /* ignore */
+    }
+    if (isMusicOn())
+      void el
+        .play()
+        .then(() => {
+          unlocked = true;
+          fadeIn(el);
+        })
+        .catch(() => {});
+  };
+  if (el.readyState >= 1) begin();
+  else el.addEventListener("loadedmetadata", begin, { once: true });
+}
+
+// --- separate-file loop (mega / whos-that) ---
+let fileEl: HTMLAudioElement | null = null;
+function playFile(src: string, key: string) {
+  if (activeKey === key) return;
+  stopMasterPlayback();
+  if (fileEl) fileEl.pause();
   const el = new Audio(encodeURI(src));
   el.loop = true;
-  el.volume = 0;
+  el.volume = MUSIC_VOLUME;
   el.preload = "auto";
-  current = { ctxName: key, el };
-  if (isMusicOn()) {
-    void el
-      .play()
-      .then(() => {
-        unlocked = true;
-        fade(el, MUSIC_VOLUME, 600);
-      })
-      .catch(() => {
-        // autoplay blocked — will start on first user gesture via unlock()
-      });
+  fileEl = el;
+  activeKey = key;
+  if (isMusicOn()) void el.play().then(() => (unlocked = true)).catch(() => {});
+}
+function stopFile() {
+  if (fileEl) {
+    fileEl.pause();
+    fileEl = null;
   }
+}
+function stopMasterPlayback() {
+  if (masterEl) masterEl.pause();
+  win = null;
+}
+
+/** Loop the master-track segment (or bundled file) for `context`. */
+export function playBgm(context: BgmContext, opts?: { level?: number }) {
+  if (typeof window === "undefined") return;
+  if (context === "mega") return playFile(MEGA_FILE, "mega");
+  if (context === "whos_that") return playFile(WHOS_THAT_LOOP, "whos_that");
+  if (context === "battle_elite") {
+    if (activeKey === "elite") return;
+    activeKey = "elite";
+    // intro (once) then loop the Elite Four theme
+    playSeg(SEG.eliteIntro, {
+      loop: false,
+      key: "elite",
+      onEnd: () => playSeg(SEG.elite, { loop: true, key: "elite" }),
+    });
+    return;
+  }
+  let seg: Seg;
+  switch (context) {
+    case "home":
+      seg = battleHomeSeg(opts?.level ?? 1);
+      break;
+    case "splash":
+      seg = SEG.splash;
+      break;
+    case "dex":
+      seg = SEG.dex;
+      break;
+    case "shop":
+      seg = SEG.shop;
+      break;
+    case "profile":
+      seg = SEG.profile;
+      break;
+    case "battle_regular":
+      seg = SEG.regular;
+      break;
+    case "daily":
+      seg = SEG.daily;
+      break;
+    case "weekly_league":
+      seg = SEG.weekly;
+      break;
+    case "leaderboard":
+      seg = SEG.leaderboard;
+      break;
+    default:
+      seg = SEG.splash;
+  }
+  const key = `${context}:${seg[0]}`;
+  if (activeKey === key) return;
+  activeKey = key;
+  playSeg(seg, { loop: true, key });
+}
+
+/** Battle result music: looped win (per mode) or shared lose segment. */
+export function playBattleResult(mode: "daily" | "regular" | "weekly" | "elite", won: boolean) {
+  const winSeg =
+    mode === "daily"
+      ? SEG.dailyWin
+      : mode === "regular"
+        ? SEG.regularWin
+        : mode === "weekly"
+          ? SEG.weeklyWin
+          : SEG.eliteWin;
+  const seg = won ? winSeg : SEG.lose;
+  activeKey = `result:${mode}:${won}`;
+  playSeg(seg, { loop: true, key: activeKey });
+}
+
+// One-shot segment over the current loop, then resume it.
+function oneShotThenResume(seg: Seg) {
+  const prev = win ? { ...win } : null;
+  const prevKey = activeKey;
+  playSeg(seg, {
+    loop: false,
+    key: "oneshot",
+    onEnd: () => {
+      if (prev) {
+        activeKey = prevKey;
+        playSeg([prev.start, prev.end], { loop: prev.loop, key: prevKey });
+      } else if (masterEl) masterEl.pause();
+    },
+  });
+}
+/** Evolution musical cue (plays once, then resumes the prior loop). */
+export function playEvolutionCue() {
+  oneShotThenResume(SEG.evolution);
+}
+/** Potion / item musical cue (plays once, then resumes the prior loop). */
+export function playItemCue() {
+  oneShotThenResume(SEG.item);
 }
 
 export function stopBgm() {
-  if (current) fade(current.el, 0, 250, () => current?.el.pause());
+  if (masterEl) masterEl.pause();
+  if (fileEl) fileEl.pause();
 }
 export function resumeBgm() {
-  if (current && isMusicOn()) {
-    void current.el.play().then(() => fade(current!.el, MUSIC_VOLUME, 400)).catch(() => {});
-  }
+  if (!isMusicOn()) return;
+  if (fileEl) void fileEl.play().catch(() => {});
+  else if (masterEl && win) void masterEl.play().catch(() => {});
 }
 
 /** Call once on the first user gesture to satisfy autoplay policy. */
@@ -482,24 +647,5 @@ export function unlockAudio() {
   unlocked = true;
   const ac = getCtx();
   if (ac && ac.state === "suspended") void ac.resume();
-  if (current && isMusicOn()) {
-    void current.el.play().then(() => fade(current!.el, MUSIC_VOLUME, 500)).catch(() => {});
-  }
+  resumeBgm();
 }
-
-/**
- * AUDIO_ASSETS — tracks in /public/song.
- * Present & wired:
- *   - "Pokemon Trivia Battle (Instrumental Version).mp3"  (home/shop/dex/profile, share, + splash/whos-that/leaderboard fallback)
- *   - "Regular Battle.mp3"  (regular battle, + weekly fallback)
- *   - "Elite Four.mp3"      (Elite Four, + elite-intro fallback)
- *   - "Mega Raid.mp3"       (Mega Raid; per-event overrides via MEGA_TRACKS)
- * Still to add (currently using the fallbacks noted in BGM_TRACKS):
- *   - "Pokemon Trivia Battle.mp3"  — splash/onboarding (the committed file is a 2-byte stub)
- *   - "Weekly League.mp3"
- *   - "Whos That Pokemon.mp3"
- *   - "Leaderboard.mp3"
- *   - "Elite Four Intro.mp3" (optional)
- * When added, point the matching BGM_TRACKS entry back at the new file.
- * Missing files just fall back / stay quiet (handled gracefully).
- */

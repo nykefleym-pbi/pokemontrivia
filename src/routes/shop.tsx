@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { playSfx } from "@/lib/audio";
+import { playSfx, playItemCue } from "@/lib/audio";
 import { Star, ShoppingBag, Minus, Plus } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { ITEMS, type ItemDef, type ItemId } from "@/lib/game-data";
@@ -199,7 +199,8 @@ function ShopPage() {
       );
       return;
     }
-    playSfx("item_use");
+    if (it.id === "potion" || it.id === "superpotion" || it.id === "maxpotion") playItemCue();
+    else playSfx("item_use");
     if (it.id === "candy") toast.success("🍬 +50 TP added to your partner!");
     else if (it.id === "luckyegg") toast.success("🥚 2× XP active for 24 hours!");
     else toast.success(`Used ${it.name}!`);

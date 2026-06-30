@@ -61,8 +61,10 @@ function BattlePage() {
   useEffect(() => {
     switch (phase) {
       case "fighting":
-      case "daily":
         playBgm("battle_regular");
+        break;
+      case "daily":
+        playBgm("daily");
         break;
       case "elite":
         playBgm("battle_elite");
@@ -71,15 +73,15 @@ function BattlePage() {
         playBgm("weekly_league");
         break;
       case "mega":
-        playBgm("mega", { megaEventId: megaEvent?.id });
+        playBgm("mega");
         break;
       case "megaLeaderboard":
         playBgm("leaderboard");
         break;
       default:
-        playBgm("home");
+        playBgm("home", { level });
     }
-  }, [phase, megaEvent?.id]);
+  }, [phase, level]);
   const autoStartedRef = useRef(false);
   const dailyResult = useGameStore((s) => s.dailyResult);
   const today = new Date().toISOString().slice(0, 10);

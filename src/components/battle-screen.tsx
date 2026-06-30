@@ -40,7 +40,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { ItemId } from "@/lib/game-data";
 import { ACHIEVEMENTS, unlockedAchievements } from "@/lib/achievements";
-import { playSfx, revealPokemon } from "@/lib/audio";
+import { playSfx, revealPokemon, playBattleResult } from "@/lib/audio";
 import { type EliteMember, regionCompleted } from "@/lib/elite-four";
 import type { GymLeader } from "@/lib/gym-leaders";
 import { ShareCardDialog } from "@/components/share-card-dialog";
@@ -1002,6 +1002,7 @@ function BattleMode({
     newTrophiesRef.current = unlocked;
 
     playSfx(won ? "victory" : "defeat");
+    playBattleResult(isElite ? "elite" : isWeekly ? "weekly" : "regular", won);
     if (won) {
       setTimeout(() => playSfx("cheer"), 450);
       setTimeout(() => playSfx("reward"), 950);
