@@ -27,9 +27,9 @@ export default defineConfig({
         name: "Pokémon Trivia Battle",
         short_name: "Trivia Battle",
         description:
-          "AI-generated Pokémon trivia battles with type-based combat, evolutions, gym leagues, and shareable victories.",
+          "Pokémon trivia battles with type-based combat, evolutions, gym leagues, and shareable victories.",
         theme_color: "#dc2626",
-        background_color: "#fef3c7",
+        background_color: "#000000",
         display: "standalone",
         orientation: "portrait",
         start_url: "/",
