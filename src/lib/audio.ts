@@ -368,20 +368,24 @@ export type BgmContext =
   | "share";
 
 const SONG = "/song/";
-// Map each context to a track file. Files the user hasn't supplied yet fall back
-// to an available track so nothing 404s silently; see AUDIO_ASSETS below.
-const PRESENT = `${SONG}Pokemon Trivia Battle.mp3`;
+// Tracks present in /public/song.
 const INSTRUMENTAL = `${SONG}Pokemon Trivia Battle (Instrumental Version).mp3`;
+const REGULAR = `${SONG}Regular Battle.mp3`;
+const ELITE = `${SONG}Elite Four.mp3`;
+const MEGA = `${SONG}Mega Raid.mp3`;
+// Contexts whose dedicated track isn't uploaded yet fall back to an existing
+// one so the screen isn't silent. Replace the fallbacks (marked TODO) once the
+// real files are added to /public/song. See AUDIO_ASSETS below.
 const BGM_TRACKS: Record<BgmContext, string> = {
-  splash: PRESENT,
+  splash: INSTRUMENTAL, // TODO: dedicated energetic "Pokemon Trivia Battle.mp3" (current file is an empty stub)
   home: INSTRUMENTAL,
-  battle_regular: `${SONG}Regular Battle.mp3`,
-  battle_elite: `${SONG}Elite Four.mp3`,
-  weekly_league: `${SONG}Weekly League.mp3`,
-  elite_intro: `${SONG}Elite Four Intro.mp3`,
-  whos_that: `${SONG}Whos That Pokemon.mp3`,
-  mega: `${SONG}Mega Raid.mp3`,
-  leaderboard: `${SONG}Leaderboard.mp3`,
+  battle_regular: REGULAR,
+  battle_elite: ELITE,
+  weekly_league: REGULAR, // TODO: "Weekly League.mp3"
+  elite_intro: ELITE,
+  whos_that: INSTRUMENTAL, // TODO: "Whos That Pokemon.mp3"
+  mega: MEGA,
+  leaderboard: INSTRUMENTAL, // TODO: "Leaderboard.mp3"
   share: INSTRUMENTAL,
 };
 // Per-Mega override: event id -> track file (epic theme changes every Mega).
@@ -430,7 +434,7 @@ export function playBgm(context: BgmContext, opts?: { megaEventId?: string }) {
       old.pause();
     });
   }
-  const el = new Audio(src);
+  const el = new Audio(encodeURI(src));
   el.loop = true;
   el.volume = 0;
   el.preload = "auto";
@@ -469,15 +473,18 @@ export function unlockAudio() {
 }
 
 /**
- * AUDIO_ASSETS — drop these mp3s into /public/song to enable every track.
- * Present: "Pokemon Trivia Battle.mp3"
- * Needed:
- *   - "Pokemon Trivia Battle (Instrumental Version).mp3"  (home/shop/dex/profile, share)
- *   - "Regular Battle.mp3"
- *   - "Elite Four.mp3" / "Elite Four Intro.mp3"
+ * AUDIO_ASSETS — tracks in /public/song.
+ * Present & wired:
+ *   - "Pokemon Trivia Battle (Instrumental Version).mp3"  (home/shop/dex/profile, share, + splash/whos-that/leaderboard fallback)
+ *   - "Regular Battle.mp3"  (regular battle, + weekly fallback)
+ *   - "Elite Four.mp3"      (Elite Four, + elite-intro fallback)
+ *   - "Mega Raid.mp3"       (Mega Raid; per-event overrides via MEGA_TRACKS)
+ * Still to add (currently using the fallbacks noted in BGM_TRACKS):
+ *   - "Pokemon Trivia Battle.mp3"  — splash/onboarding (the committed file is a 2-byte stub)
  *   - "Weekly League.mp3"
  *   - "Whos That Pokemon.mp3"
- *   - "Mega Raid.mp3" (+ optional per-event overrides in MEGA_TRACKS)
  *   - "Leaderboard.mp3"
- * Missing files simply won't play (handled gracefully); add them anytime.
+ *   - "Elite Four Intro.mp3" (optional)
+ * When added, point the matching BGM_TRACKS entry back at the new file.
+ * Missing files just fall back / stay quiet (handled gracefully).
  */
