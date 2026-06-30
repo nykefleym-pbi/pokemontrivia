@@ -65,6 +65,7 @@ export function EvolutionScreen({ from, to, onComplete }: Props) {
         setPhase("reveal");
         playSfx("evolution_complete");
         playCry(to.id);
+        setTimeout(() => playSfx("cheer"), 500);
       }, 4500),
     );
     timers.push(setTimeout(() => setPhase("done"), 5500));

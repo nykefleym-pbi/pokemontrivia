@@ -40,7 +40,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { ItemId } from "@/lib/game-data";
 import { ACHIEVEMENTS, unlockedAchievements } from "@/lib/achievements";
-import { playCry, playSfx } from "@/lib/audio";
+import { playSfx, revealPokemon } from "@/lib/audio";
 import { type EliteMember, regionCompleted } from "@/lib/elite-four";
 import type { GymLeader } from "@/lib/gym-leaders";
 import { ShareCardDialog } from "@/components/share-card-dialog";
@@ -488,23 +488,24 @@ function BattleMode({
     if (isElite && eliteMember) {
       playSfx("elite_intro");
       setIntroBanner(`${eliteMember.title} ${eliteMember.name}: "${eliteMember.quote}"`);
-      setTimeout(() => playCry(enemy.pokemon.id), 900);
+      setTimeout(() => revealPokemon(enemy.pokemon.id), 900);
       setTimeout(() => setIntroBanner(`${eliteMember.name} sent out ${enemy.pokemon.name}!`), 2200);
     } else {
       setIntroBanner(`${enemy.name} sent out ${enemy.pokemon.name}!`);
-      playCry(enemy.pokemon.id);
+      revealPokemon(enemy.pokemon.id);
     }
     if (enemy.isShiny) {
+      playSfx("shiny");
       toast.success(`✨ A SHINY ${enemy.pokemon.name} appeared!`, {
         duration: 3000,
         style: { background: "linear-gradient(90deg, #fde68a, #fbbf24)", color: "#1f2937" },
       });
     }
     const introDelay = isElite ? 3600 : 1500;
-    setTimeout(
-      () => setIntroBanner(`Go, ${player.name}!${superEff ? " Type advantage!" : ""}`),
-      introDelay,
-    );
+    setTimeout(() => {
+      setIntroBanner(`Go, ${player.name}!${superEff ? " Type advantage!" : ""}`);
+      revealPokemon(player.id);
+    }, introDelay);
     setTimeout(() => setIntroBanner(null), introDelay + 1300);
     setTimeout(() => loadQuestion(0), introDelay + 1300);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -552,6 +553,7 @@ function BattleMode({
       handleAnswer(-1);
       return;
     }
+    if (timer <= 5) playSfx(timer === 5 ? "timer_warning" : "timer_tick");
     const t = setTimeout(() => setTimer((x) => x - 1), 1000);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps

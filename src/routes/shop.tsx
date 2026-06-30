@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { playSfx } from "@/lib/audio";
 import { Star, ShoppingBag, Minus, Plus } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { ITEMS, type ItemDef, type ItemId } from "@/lib/game-data";
@@ -173,10 +174,13 @@ function ShopPage() {
       bought++;
     }
     if (bought === 0) {
+      playSfx("error");
       toast.error(`Need ${cost * qty} Coins to buy ${qty}× ${item.name}.`);
     } else if (bought < qty) {
+      playSfx("purchase");
       toast.success(`Bought ${bought}× ${item.name} (ran out of Coins).`);
     } else {
+      playSfx("purchase");
       toast.success(`Bought ${qty}× ${item.name}!`);
     }
     setConfirmState(null);
@@ -187,6 +191,7 @@ function ShopPage() {
   function handleUseFromBag(it: ItemDef) {
     const ok = applyItem(it.id);
     if (!ok) {
+      playSfx("error");
       toast.error(
         it.id === "luckyegg"
           ? "Lucky Egg can only be used once per week."
@@ -194,6 +199,7 @@ function ShopPage() {
       );
       return;
     }
+    playSfx("item_use");
     if (it.id === "candy") toast.success("🍬 +50 TP added to your partner!");
     else if (it.id === "luckyegg") toast.success("🥚 2× XP active for 24 hours!");
     else toast.success(`Used ${it.name}!`);

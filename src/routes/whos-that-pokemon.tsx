@@ -5,7 +5,7 @@ import { ALL_POKEMON, spriteUrl, type PokeType } from "@/lib/pokemon-data";
 import { ITEMS, type ItemId } from "@/lib/game-data";
 import { WHOS_THAT_XP } from "@/lib/rewards";
 import { PokemonSprite } from "@/components/game-ui";
-import { playCry } from "@/lib/audio";
+import { playCry, playSfx, playBgm, revealPokemon } from "@/lib/audio";
 import { pokeApiUrls } from "@/lib/api/pokeapi";
 
 export const Route = createFileRoute("/whos-that-pokemon")({
@@ -204,12 +204,18 @@ function WhosThatPokemon() {
   }, [whosThatHourKey, whosThatRoundHourKey, whosThatActiveRound, setWhosThatRound]);
 
   useEffect(() => {
+    playBgm("whos_that");
+  }, []);
+
+  useEffect(() => {
     if ((phase === "correct" || phase === "incorrect") && !burnedRef.current) {
       burnedRef.current = true;
+      playSfx(phase === "correct" ? "correct" : "wrong");
+      if (round) revealPokemon(round.monId);
       consumeWhosThat();
       clearWhosThatRound();
     }
-  }, [phase, consumeWhosThat, clearWhosThatRound]);
+  }, [phase, round, consumeWhosThat, clearWhosThatRound]);
 
   useEffect(() => {
     if (round?.mode !== "5") return;
