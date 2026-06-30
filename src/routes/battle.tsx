@@ -6,6 +6,7 @@ import { PokemonSprite } from "@/components/game-ui";
 import { difficultyForLevel } from "@/lib/game-data";
 import { BattleScreen, type Trivia } from "@/components/battle-screen";
 import { fetchBattleQuestions, fetchEliteQuestions, fetchDailyChallenge } from "@/lib/api/trivia";
+import { playBgm } from "@/lib/audio";
 import { ApiError } from "@/lib/api/client";
 import { MegaRaidScreen } from "@/components/mega/MegaRaidScreen";
 import { MegaLeaderboard } from "@/components/mega/MegaLeaderboard";
@@ -55,6 +56,30 @@ function BattlePage() {
     attempts: number;
   } | null>(null);
   const [battleKey, setBattleKey] = useState(0);
+
+  // Background music per battle phase / mode.
+  useEffect(() => {
+    switch (phase) {
+      case "fighting":
+      case "daily":
+        playBgm("battle_regular");
+        break;
+      case "elite":
+        playBgm("battle_elite");
+        break;
+      case "weekly":
+        playBgm("weekly_league");
+        break;
+      case "mega":
+        playBgm("mega", { megaEventId: megaEvent?.id });
+        break;
+      case "megaLeaderboard":
+        playBgm("leaderboard");
+        break;
+      default:
+        playBgm("home");
+    }
+  }, [phase, megaEvent?.id]);
   const autoStartedRef = useRef(false);
   const dailyResult = useGameStore((s) => s.dailyResult);
   const today = new Date().toISOString().slice(0, 10);

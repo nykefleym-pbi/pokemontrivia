@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useGameStore } from "@/lib/store";
 import { ensureSession, listIncomingFriendRequests, respondFriendRequest } from "@/lib/social";
+import { playSfx } from "@/lib/audio";
 import { trainerSpriteUrl } from "@/lib/game-data";
 
 interface IncomingRequest {
@@ -61,6 +62,7 @@ export function FriendRequestInbox() {
               filter: `to_id=eq.${uid}`,
             },
             () => {
+              playSfx("friend_ping");
               void refresh();
             },
           )

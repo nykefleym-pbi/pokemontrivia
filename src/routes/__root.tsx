@@ -1,5 +1,13 @@
-import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import {
+  Outlet,
+  Link,
+  createRootRoute,
+  HeadContent,
+  Scripts,
+  useRouterState,
+} from "@tanstack/react-router";
 import { useEffect } from "react";
+import { unlockAudio, playSfx, playBgm } from "@/lib/audio";
 import { BottomNav } from "@/components/bottom-nav";
 import { PwaRegister } from "@/components/pwa-register";
 import { useGameStore } from "@/lib/store";
@@ -169,6 +177,28 @@ function RootComponent() {
     if (darkMode) root.classList.add("dark");
     else root.classList.remove("dark");
   }, [darkMode]);
+
+  // Unlock audio on the first user gesture, and play a subtle tap on any
+  // button / link press app-wide.
+  useEffect(() => {
+    const onTap = (e: MouseEvent) => {
+      unlockAudio();
+      const t = e.target as HTMLElement | null;
+      if (t && t.closest('button, [role="button"], a, [role="tab"]')) playSfx("tap");
+    };
+    window.addEventListener("pointerdown", unlockAudio, { once: true });
+    window.addEventListener("click", onTap);
+    return () => window.removeEventListener("click", onTap);
+  }, []);
+
+  // Background music per top-level screen. /battle and /whos-that-pokemon manage
+  // their own (mode-dependent) music.
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  useEffect(() => {
+    if (pathname === "/") playBgm("splash");
+    else if (pathname === "/shop" || pathname === "/pokedex" || pathname === "/profile")
+      playBgm("home");
+  }, [pathname]);
   return (
     <div className="h-[100dvh] w-full overflow-hidden bg-background">
       <div className="mx-auto flex h-[100dvh] w-full max-w-[480px] flex-col overflow-hidden bg-background">

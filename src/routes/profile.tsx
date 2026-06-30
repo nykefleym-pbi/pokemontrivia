@@ -9,6 +9,7 @@ import {
   Search,
   Volume2,
   VolumeX,
+  Music,
   ChevronRight,
   Moon,
   Copy,
@@ -63,7 +64,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ACHIEVEMENTS, unlockedAchievements } from "@/lib/achievements";
 import { GYM_LEADERS } from "@/lib/gym-leaders";
-import { isMuted, setMuted } from "@/lib/audio";
+import { isMusicOn, setMusicOn, isSfxOn, setSfxOn, playSfx } from "@/lib/audio";
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
@@ -168,7 +169,8 @@ function ProfilePage() {
   >("idle");
   const [renameMsg, setRenameMsg] = useState<string>("");
   const [renaming, setRenaming] = useState(false);
-  const [muted, setMutedState] = useState(false);
+  const [musicOn, setMusicState] = useState(true);
+  const [sfxOn, setSfxState] = useState(true);
   const darkMode = useGameStore((s) => s.darkMode);
   const setDarkMode = useGameStore((s) => s.setDarkMode);
 
@@ -177,7 +179,8 @@ function ProfilePage() {
   const [evolvingTo, setEvolvingTo] = useState<PokeEntry | null>(null);
 
   useEffect(() => {
-    setMutedState(isMuted());
+    setMusicState(isMusicOn());
+    setSfxState(isSfxOn());
   }, []);
 
   useEffect(() => {
@@ -682,22 +685,40 @@ function ProfilePage() {
                 <div className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
-                      {muted ? (
-                        <VolumeX className="h-5 w-5 text-foreground" />
-                      ) : (
-                        <Volume2 className="h-5 w-5 text-foreground" />
-                      )}
+                      <Music className="h-5 w-5 text-foreground" />
                     </div>
                     <div>
-                      <div className="text-sm font-semibold text-foreground">Sounds & music</div>
-                      <div className="text-xs text-foreground/55">Battle cries, SFX, BGM</div>
+                      <div className="text-sm font-semibold text-foreground">Music</div>
+                      <div className="text-xs text-foreground/55">Background themes</div>
                     </div>
                   </div>
                   <Switch
-                    checked={!muted}
+                    checked={musicOn}
                     onCheckedChange={(v) => {
-                      setMuted(!v);
-                      setMutedState(!v);
+                      setMusicOn(v);
+                      setMusicState(v);
+                    }}
+                  />
+                </div>
+                <div className="flex items-center justify-between p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
+                      {sfxOn ? (
+                        <Volume2 className="h-5 w-5 text-foreground" />
+                      ) : (
+                        <VolumeX className="h-5 w-5 text-foreground" />
+                      )}
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-foreground">Sound effects</div>
+                      <div className="text-xs text-foreground/55">Battle cries &amp; SFX</div>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={sfxOn}
+                    onCheckedChange={(v) => {
+                      setSfxOn(v);
+                      setSfxState(v);
                     }}
                   />
                 </div>
@@ -712,7 +733,13 @@ function ProfilePage() {
                     </div>
                   </div>
                   {/* TODO: dark theme not yet implemented */}
-                  <Switch checked={darkMode} onCheckedChange={setDarkMode} />
+                  <Switch
+                    checked={darkMode}
+                    onCheckedChange={(v) => {
+                      setDarkMode(v);
+                      if (v) playSfx("darkness");
+                    }}
+                  />
                 </div>
               </div>
             </section>
@@ -783,7 +810,10 @@ function ProfilePage() {
             <section>
               <div className="mb-2 font-pixel-xs uppercase text-destructive/70">Danger zone</div>
               <button
-                onClick={() => setResetOpen(true)}
+                onClick={() => {
+                  playSfx("warning");
+                  setResetOpen(true);
+                }}
                 className="flex w-full items-center gap-3 rounded-3xl bg-card p-4 shadow-card transition active:scale-95"
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-destructive/10">
