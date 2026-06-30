@@ -387,9 +387,10 @@ export type BgmContext =
   | "whos_that"
   | "leaderboard";
 
-const MASTER =
-  "https://dvdorceiasaipdvyfhil.supabase.co/storage/v1/object/public/Songs/Pokemon SFX.mp3";
 const SONG = "/song/";
+// Master soundtrack, served from Vercel static (/public/song). Upload
+// "Pokemon SFX.mp3" there; every BGM context loops a time segment of it.
+const MASTER = `${SONG}Pokemon SFX.mp3`;
 const MEGA_FILE = `${SONG}Mega Raid.mp3`;
 const WHOS_THAT_LOOP = `${SONG}Pokemon Trivia Battle (Instrumental Version).mp3`;
 
