@@ -91,10 +91,17 @@ export async function getMyTrainerName(): Promise<string | null> {
   return name && name.trim() ? name : null;
 }
 
-/** One-time reconciliation for installs that onboarded before server-side claim existed. */
+/**
+ * Ensure the current Supabase backend's profile carries our local trainer name.
+ * Runs once per app load for onboarded, non-guest installs. We intentionally do
+ * NOT skip on the local `nameReconciled` flag: it may have been set against a
+ * previous backend, so we always verify the *current* backend has our name and
+ * re-claim it if missing (e.g. after a backend migration). The check is a single
+ * indexed lookup, so this is cheap.
+ */
 async function reconcileTrainerName(): Promise<void> {
   const s = useGameStore.getState();
-  if (!s.hasOnboarded || s.isGuest || s.nameReconciled) return;
+  if (!s.hasOnboarded || s.isGuest) return;
   const local = (s.trainerName ?? "").trim();
   if (!local) return;
   try {
