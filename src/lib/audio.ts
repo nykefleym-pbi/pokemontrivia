@@ -388,9 +388,9 @@ export type BgmContext =
   | "leaderboard";
 
 const SONG = "/song/";
-// Master soundtrack, served from Vercel static (/public/song). Upload
-// "Pokemon SFX.mp3" there; every BGM context loops a time segment of it.
-const MASTER = `${SONG}Pokemon SFX.mp3`;
+// Master soundtrack streamed from Vercel Blob (CDN, supports range requests);
+// every BGM context loops a time segment of it.
+const MASTER = "https://01puw7ljdvcf8utf.public.blob.vercel-storage.com/Pokemon%20SFX.mp3";
 const MEGA_FILE = `${SONG}Mega Raid.mp3`;
 const WHOS_THAT_LOOP = `${SONG}Pokemon Trivia Battle (Instrumental Version).mp3`;
 
