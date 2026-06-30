@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { PokemonSprite } from "@/components/game-ui";
+import { playSfx } from "@/lib/audio";
 import type { MegaEvent } from "@/lib/mega/schedule";
 
 export interface MegaRewardItem {
@@ -45,6 +47,20 @@ export function MegaResults({
   onViewLeaderboard,
 }: MegaResultsProps) {
   const win = outcome === "win";
+
+  useEffect(() => {
+    playSfx(win ? "victory" : "defeat");
+    if (win) {
+      const a = setTimeout(() => playSfx("cheer"), 450);
+      const b = shiny ? setTimeout(() => playSfx("shiny"), 950) : undefined;
+      return () => {
+        clearTimeout(a);
+        if (b) clearTimeout(b);
+      };
+    }
+    const c = setTimeout(() => playSfx("disappointed"), 450);
+    return () => clearTimeout(c);
+  }, [win, shiny]);
 
   return (
     <div

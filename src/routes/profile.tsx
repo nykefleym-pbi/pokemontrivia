@@ -611,7 +611,13 @@ function ProfilePage() {
       </Sheet>
 
       {/* Trophies sheet */}
-      <Sheet open={trophiesOpen} onOpenChange={setTrophiesOpen}>
+      <Sheet
+        open={trophiesOpen}
+        onOpenChange={(o) => {
+          playSfx(o ? "panel_open" : "panel_close");
+          setTrophiesOpen(o);
+        }}
+      >
         <SheetContent
           side="bottom"
           className="rounded-t-3xl bg-poke-cream max-h-[85vh] overflow-y-auto"
@@ -652,7 +658,13 @@ function ProfilePage() {
       </Sheet>
 
       {/* Badges sheet */}
-      <Sheet open={badgesOpen} onOpenChange={setBadgesOpen}>
+      <Sheet
+        open={badgesOpen}
+        onOpenChange={(o) => {
+          playSfx(o ? "panel_open" : "panel_close");
+          setBadgesOpen(o);
+        }}
+      >
         <SheetContent
           side="bottom"
           className="rounded-t-3xl bg-poke-cream max-h-[85vh] overflow-y-auto"

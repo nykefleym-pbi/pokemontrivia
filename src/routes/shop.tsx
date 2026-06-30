@@ -215,7 +215,10 @@ function ShopPage() {
           <h1 className="font-display-xl text-foreground">PokéMart</h1>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setBagOpen(true)}
+              onClick={() => {
+                playSfx("bag_open");
+                setBagOpen(true);
+              }}
               className="relative flex h-11 w-11 items-center justify-center rounded-full bg-card shadow-card"
               aria-label="Open bag"
             >
