@@ -352,6 +352,22 @@ export function revealPokemon(id: number, delayMs = 320) {
   window.setTimeout(() => playCry(id), delayMs);
 }
 
+// "Who's that Pokémon?!" voice shout (a short recorded clip, not synth).
+let whosThatClip: HTMLAudioElement | null = null;
+export function playWhosThatShout() {
+  if (!isSfxOn() || typeof window === "undefined") return;
+  try {
+    if (!whosThatClip) {
+      whosThatClip = new Audio(encodeURI(`${SONG}Whos that Pokemon.mp3`));
+      whosThatClip.volume = 0.7;
+    }
+    whosThatClip.currentTime = 0;
+    void whosThatClip.play().catch(() => {});
+  } catch {
+    /* ignore */
+  }
+}
+
 // ---------------------------------------------------------------------------
 // BGM manager (looping mp3 per context, crossfade)
 // ---------------------------------------------------------------------------
@@ -369,23 +385,22 @@ export type BgmContext =
 
 const SONG = "/song/";
 // Tracks present in /public/song.
+const SPLASH = `${SONG}Pokemon Trivia Battle.mp3`;
 const INSTRUMENTAL = `${SONG}Pokemon Trivia Battle (Instrumental Version).mp3`;
 const REGULAR = `${SONG}Regular Battle.mp3`;
 const ELITE = `${SONG}Elite Four.mp3`;
 const MEGA = `${SONG}Mega Raid.mp3`;
-// Contexts whose dedicated track isn't uploaded yet fall back to an existing
-// one so the screen isn't silent. Replace the fallbacks (marked TODO) once the
-// real files are added to /public/song. See AUDIO_ASSETS below.
+const WEEKLY = `${SONG}Weekly League.mp3`;
 const BGM_TRACKS: Record<BgmContext, string> = {
-  splash: INSTRUMENTAL, // TODO: dedicated energetic "Pokemon Trivia Battle.mp3" (current file is an empty stub)
+  splash: SPLASH,
   home: INSTRUMENTAL,
   battle_regular: REGULAR,
   battle_elite: ELITE,
-  weekly_league: REGULAR, // TODO: "Weekly League.mp3"
+  weekly_league: WEEKLY,
   elite_intro: ELITE,
-  whos_that: INSTRUMENTAL, // TODO: "Whos That Pokemon.mp3"
+  whos_that: INSTRUMENTAL, // no dedicated loop uploaded; the voice shout plays over it
   mega: MEGA,
-  leaderboard: INSTRUMENTAL, // TODO: "Leaderboard.mp3"
+  leaderboard: MEGA, // reuse the Mega Raid theme
   share: INSTRUMENTAL,
 };
 // Per-Mega override: event id -> track file (epic theme changes every Mega).
