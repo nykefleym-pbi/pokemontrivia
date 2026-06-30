@@ -196,8 +196,9 @@ function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   useEffect(() => {
     if (pathname === "/") playBgm("splash");
-    else if (pathname === "/shop" || pathname === "/pokedex" || pathname === "/profile")
-      playBgm("home");
+    else if (pathname === "/shop") playBgm("shop");
+    else if (pathname === "/pokedex") playBgm("dex");
+    else if (pathname === "/profile") playBgm("profile");
   }, [pathname]);
   return (
     <div className="h-[100dvh] w-full overflow-hidden bg-background">

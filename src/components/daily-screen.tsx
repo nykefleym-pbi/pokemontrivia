@@ -15,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { playSfx } from "@/lib/audio";
+import { playSfx, playBattleResult } from "@/lib/audio";
 import { ShareCardDialog } from "@/components/share-card-dialog";
 import type { ShareData } from "@/components/share-card-builder";
 import type { Trivia } from "@/lib/trivia-core";
@@ -105,6 +105,7 @@ export function DailyScreen({ questions, onExit }: { questions: Trivia[]; onExit
           }
         }
         playSfx("victory");
+        playBattleResult("daily", true);
         setPhase("done");
       } else {
         setChosen(null);

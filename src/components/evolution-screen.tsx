@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PokemonSprite } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
 import { Share2 } from "lucide-react";
-import { playSfx, playCry } from "@/lib/audio";
+import { playSfx, playCry, playEvolutionCue } from "@/lib/audio";
 import type { PokeEntry } from "@/lib/pokemon-data";
 import { useGameStore } from "@/lib/store";
 import { trainerSpriteUrl, rankForLevel } from "@/lib/game-data";
@@ -49,6 +49,7 @@ export function EvolutionScreen({ from, to, onComplete }: Props) {
 
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = [];
+    playEvolutionCue();
     timers.push(
       setTimeout(() => {
         setPhase("glow");
