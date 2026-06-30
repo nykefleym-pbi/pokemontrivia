@@ -13,6 +13,7 @@ import {
 } from "@/lib/mega/schedule";
 import { submitMegaRun } from "@/lib/mega/runs";
 import { revealMegaAnswer } from "@/lib/mega/questions";
+import { playSfx, revealPokemon } from "@/lib/audio";
 import { MegaResults, type MegaRewardItem } from "@/components/mega/MegaResults";
 
 const PLAYER_MAX_HP = 100;
@@ -223,6 +224,7 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
         return;
       }
       const isCorrect = idx !== null && typeof correctIdx === "number" && idx === correctIdx;
+      playSfx(isCorrect ? "correct" : "wrong");
       let nextBoss = bossHp;
       let nextPlayer = playerHp;
       let nextCorrect = correctCount;
@@ -231,6 +233,7 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
         nextBoss = Math.max(0, bossHp - BOSS_DMG * (xAtkArmed ? 2 : 1));
         setCorrectCount(nextCorrect);
         setBossHp(nextBoss);
+        setTimeout(() => playSfx("damage"), 120);
       } else {
         nextPlayer = Math.max(0, playerHp - PLAYER_DMG);
         setPlayerHp(nextPlayer);
@@ -258,9 +261,16 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
       void answer(null);
       return;
     }
+    if (timer <= 5) playSfx(timer === 5 ? "timer_warning" : "timer_tick");
     const t = window.setTimeout(() => setTimer((v) => v - 1), 1000);
     return () => window.clearTimeout(t);
   }, [timer, locked, bagOpen, phase, answer]);
+
+  // Boss cry when the raid screen opens.
+  useEffect(() => {
+    revealPokemon(event.baseDexId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const applyPotion = useCallback(
     (id: ItemId) => {

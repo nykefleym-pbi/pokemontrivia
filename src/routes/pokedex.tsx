@@ -3,7 +3,7 @@ import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Search, Sparkles, X, ArrowRight, Volume2, ChevronLeft } from "lucide-react";
 import { Fragment } from "react";
-import { playCry } from "@/lib/audio";
+import { playCry, playSfx } from "@/lib/audio";
 import { useGameStore } from "@/lib/store";
 import { EggHatch } from "@/components/mega/EggHatch";
 import { ALL_POKEMON, type PokeType } from "@/lib/pokemon-data";
@@ -359,7 +359,12 @@ function PokedexPage() {
                   </button>
                   {entry?.shinyUnlocked && (
                     <button
-                      onClick={() => setShowShiny((v) => !v)}
+                      onClick={() =>
+                        setShowShiny((v) => {
+                          if (!v) playSfx("shiny");
+                          return !v;
+                        })
+                      }
                       className="ml-2 mt-4 inline-flex items-center gap-2 rounded-full border border-poke-yellow/50 px-4 py-2 text-sm font-bold text-foreground active:scale-95"
                     >
                       <Sparkles className="h-4 w-4 text-poke-yellow" /> {showS ? "Normal" : "Shiny"}

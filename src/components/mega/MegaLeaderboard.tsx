@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { trainerSpriteUrl, type ItemId } from "@/lib/game-data";
 import { useGameStore } from "@/lib/store";
 import { toast } from "sonner";
+import { playSfx } from "@/lib/audio";
 import { MEGA_REWARD, megaRankScale, type MegaEvent } from "@/lib/mega/schedule";
 import {
   fetchMegaLeaderboard,
@@ -117,6 +118,7 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
       st.claimMegaChampion(event.id, event.champion.trophyName, event.megaId);
     }
     toast.success(rank === 1 ? `Champion rewards claimed! 🏆` : `Rank #${rank} rewards claimed!`);
+    playSfx("claim_reward");
   };
 
   const Avatar = ({ sprite, size, ring }: { sprite: string; size: number; ring: string }) => (

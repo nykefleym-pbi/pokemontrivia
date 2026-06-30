@@ -429,6 +429,7 @@ function BattleMode({
       triggerAbilityToast(playerAbility);
       return;
     }
+    playSfx(kind === "confused" ? "confused" : "poisoned");
     const cureNeeds = { confused: 2, poisoned: 3 } as const;
     setStatuses((prev) => {
       const without = prev.filter((s) => s.kind !== kind);
@@ -705,6 +706,7 @@ function BattleMode({
       setStreak(newStreak);
       recordAnswer(true, elapsed, newStreak);
       playSfx("correct");
+      setTimeout(() => playSfx("damage"), 120);
 
       // Leech Seed: heal 2
       if (playerAbility.id === "leech-seed") {
@@ -728,6 +730,7 @@ function BattleMode({
       if (lbl && lbl !== lastStreakLabelRef.current) {
         lastStreakLabelRef.current = lbl;
         setStreakBanner(lbl);
+        playSfx("streak");
         setTimeout(() => setStreakBanner(null), 1500);
       }
 
@@ -975,7 +978,9 @@ function BattleMode({
 
     // snapshot achievements before/after
     const before = new Set(unlockedAchievements(useGameStore.getState()));
+    const prevLevel = useGameStore.getState().level;
     endBattle(won, xpAward);
+    if (useGameStore.getState().level > prevLevel) setTimeout(() => playSfx("level"), 1300);
     pushBattleLog({
       opponent: `${enemy.name} (${enemy.pokemon.name})`,
       won,
@@ -998,8 +1003,13 @@ function BattleMode({
 
     playSfx(won ? "victory" : "defeat");
     if (won) {
+      setTimeout(() => playSfx("cheer"), 450);
+      setTimeout(() => playSfx("reward"), 950);
+      if (xpAward > 0) setTimeout(() => playSfx("xp"), 1150);
+      if (newTrophiesRef.current.length) setTimeout(() => playSfx("claim_reward"), 1500);
       toast.success(`Victory! +${xpAward} XP`, { duration: 2500 });
     } else {
+      setTimeout(() => playSfx("disappointed"), 450);
       toast.error(`Defeat — +${xpAward} XP`, { duration: 2500 });
     }
     setPhase("result");
