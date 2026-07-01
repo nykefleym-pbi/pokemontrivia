@@ -229,7 +229,7 @@ export async function buildShareCard(data: ShareData): Promise<string> {
   ctx.textAlign = "left";
   ctx.fillStyle = "#6f7280";
   ctx.font = `700 24px ${SYSTEM_FONT}`;
-  drawTrackedText(ctx, "◓ PLAY.POKETRIVIA.APP", 60, y, 1.5);
+  drawTrackedText(ctx, "◓ POKEMONTRIVIABATTLE.VERCEL.APP", 60, y, 1.5);
 
   ctx.textAlign = "right";
   ctx.fillStyle = "#e23b2e";
@@ -513,7 +513,7 @@ async function buildEvolutionCard(data: EvolutionShareData): Promise<string> {
   ctx.textAlign = "left";
   ctx.fillStyle = "#6f7280";
   ctx.font = `700 22px ${SYSTEM_FONT}`;
-  drawTrackedText(ctx, "◓ PLAY.POKETRIVIA.APP", 60, fy, 1.5);
+  drawTrackedText(ctx, "◓ POKEMONTRIVIABATTLE.VERCEL.APP", 60, fy, 1.5);
   ctx.textAlign = "right";
   ctx.fillStyle = PURPLE;
   ctx.font = `800 22px ${SYSTEM_FONT}`;
