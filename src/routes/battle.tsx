@@ -57,7 +57,10 @@ function BattlePage() {
   } | null>(null);
   const [battleKey, setBattleKey] = useState(0);
 
-  // Background music per battle phase / mode.
+  // Background music per battle phase / mode. Keyed on `phase` only (NOT
+  // level): winning a battle awards XP, which can change `level` mid-battle —
+  // if that re-ran this effect it would restart the battle BGM over the
+  // win/lose result music that playBattleResult() just started.
   useEffect(() => {
     switch (phase) {
       case "fighting":
@@ -81,7 +84,21 @@ function BattlePage() {
       default:
         playBgm("home", { level });
     }
-  }, [phase, level]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
+
+  // Keep the battle-hub band in sync with the player's level, but only while on
+  // the hub (never during a battle) so it can't override result music.
+  useEffect(() => {
+    const inBattle =
+      phase === "fighting" ||
+      phase === "daily" ||
+      phase === "elite" ||
+      phase === "weekly" ||
+      phase === "mega" ||
+      phase === "megaLeaderboard";
+    if (!inBattle) playBgm("home", { level });
+  }, [level, phase]);
   const autoStartedRef = useRef(false);
   const dailyResult = useGameStore((s) => s.dailyResult);
   const today = new Date().toISOString().slice(0, 10);

@@ -40,7 +40,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { ItemId } from "@/lib/game-data";
 import { ACHIEVEMENTS, unlockedAchievements } from "@/lib/achievements";
-import { playSfx, revealPokemon, playBattleResult } from "@/lib/audio";
+import { playSfx, revealPokemon, playBattleResult, playItemCue } from "@/lib/audio";
 import { type EliteMember, regionCompleted } from "@/lib/elite-four";
 import type { GymLeader } from "@/lib/gym-leaders";
 import { ShareCardDialog } from "@/components/share-card-dialog";
@@ -1030,12 +1030,15 @@ function BattleMode({
     toast.success(`${def.emoji} Used ${def.name}!`);
     if (id === "potion") {
       setPlayerHp((hp) => Math.min(playerMaxHp, hp + 30));
+      playItemCue();
     }
     if (id === "superpotion") {
       setPlayerHp((hp) => Math.min(playerMaxHp, hp + 60));
+      playItemCue();
     }
     if (id === "maxpotion") {
       setPlayerHp(playerMaxHp);
+      playItemCue();
     }
     if (id === "scope" && trivia) {
       const wrongs = [0, 1, 2, 3].filter((w) => w !== trivia.correct);

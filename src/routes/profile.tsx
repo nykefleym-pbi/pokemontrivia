@@ -64,7 +64,18 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ACHIEVEMENTS, unlockedAchievements } from "@/lib/achievements";
 import { GYM_LEADERS } from "@/lib/gym-leaders";
-import { isMusicOn, setMusicOn, isSfxOn, setSfxOn, playSfx } from "@/lib/audio";
+import {
+  isMusicOn,
+  setMusicOn,
+  isSfxOn,
+  setSfxOn,
+  playSfx,
+  getMusicVolume,
+  setMusicVolume,
+  getSfxVolume,
+  setSfxVolume,
+} from "@/lib/audio";
+import { Slider } from "@/components/ui/slider";
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
@@ -171,6 +182,8 @@ function ProfilePage() {
   const [renaming, setRenaming] = useState(false);
   const [musicOn, setMusicState] = useState(true);
   const [sfxOn, setSfxState] = useState(true);
+  const [musicVol, setMusicVolState] = useState(35);
+  const [sfxVol, setSfxVolState] = useState(100);
   const darkMode = useGameStore((s) => s.darkMode);
   const setDarkMode = useGameStore((s) => s.setDarkMode);
 
@@ -181,6 +194,8 @@ function ProfilePage() {
   useEffect(() => {
     setMusicState(isMusicOn());
     setSfxState(isSfxOn());
+    setMusicVolState(getMusicVolume());
+    setSfxVolState(getSfxVolume());
   }, []);
 
   useEffect(() => {
@@ -712,6 +727,23 @@ function ProfilePage() {
                     }}
                   />
                 </div>
+                <div className="flex items-center gap-3 p-4">
+                  <div className="text-xs font-semibold text-foreground/55">Music volume</div>
+                  <Slider
+                    className="flex-1"
+                    value={[musicVol]}
+                    min={0}
+                    max={100}
+                    step={1}
+                    onValueChange={(v) => {
+                      setMusicVolState(v[0]);
+                      setMusicVolume(v[0]);
+                    }}
+                  />
+                  <div className="w-10 text-right text-xs font-semibold tabular-nums text-foreground">
+                    {musicVol}%
+                  </div>
+                </div>
                 <div className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
@@ -733,6 +765,24 @@ function ProfilePage() {
                       setSfxState(v);
                     }}
                   />
+                </div>
+                <div className="flex items-center gap-3 p-4">
+                  <div className="text-xs font-semibold text-foreground/55">SFX volume</div>
+                  <Slider
+                    className="flex-1"
+                    value={[sfxVol]}
+                    min={0}
+                    max={100}
+                    step={1}
+                    onValueChange={(v) => {
+                      setSfxVolState(v[0]);
+                      setSfxVolume(v[0]);
+                    }}
+                    onValueCommit={() => playSfx("tap")}
+                  />
+                  <div className="w-10 text-right text-xs font-semibold tabular-nums text-foreground">
+                    {sfxVol}%
+                  </div>
                 </div>
                 <div className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-3">
