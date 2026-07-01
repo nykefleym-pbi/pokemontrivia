@@ -392,7 +392,6 @@ const SONG = "/song/";
 // every BGM context loops a time segment of it.
 const MASTER = "https://01puw7ljdvcf8utf.public.blob.vercel-storage.com/Pokemon%20SFX.mp3";
 const MEGA_FILE = `${SONG}Mega Raid.mp3`;
-const WHOS_THAT_LOOP = `${SONG}Pokemon Trivia Battle (Instrumental Version).mp3`;
 
 type Seg = readonly [number, number]; // [startSec, endSec]
 
@@ -454,18 +453,32 @@ function master(): HTMLAudioElement | null {
   el.volume = MUSIC_VOLUME;
   masterEl = el;
   const tick = () => {
-    if (masterEl === el && win && el.currentTime >= win.end) {
-      if (win.loop) {
+    // Keep playback inside the active [start,end] window. Because seeking a
+    // large remote stream to a far offset before it has buffered is often
+    // ignored (playback starts at 0), we continuously pull it back into the
+    // window here rather than trusting the one-time pre-play seek.
+    if (masterEl === el && win && !el.paused && !el.seeking) {
+      const t = el.currentTime;
+      if (t >= win.end) {
+        if (win.loop) {
+          try {
+            el.currentTime = win.start;
+          } catch {
+            /* ignore */
+          }
+        } else {
+          const onEnd = win.onEnd;
+          win = null;
+          if (onEnd) onEnd();
+          else el.pause();
+        }
+      } else if (t < win.start - 0.5) {
+        // Started before the segment (the initial seek didn't take) — jump in.
         try {
           el.currentTime = win.start;
         } catch {
           /* ignore */
         }
-      } else {
-        const onEnd = win.onEnd;
-        win = null;
-        if (onEnd) onEnd();
-        else el.pause();
       }
     }
     window.requestAnimationFrame(tick);
@@ -490,28 +503,46 @@ function fadeIn(el: HTMLAudioElement) {
   step();
 }
 
+// Position the master element at the start of the active window (best-effort;
+// on a not-yet-buffered remote stream this may be ignored — the rAF watcher
+// then corrects it once playback is underway).
+function seekIntoWindow(el: HTMLAudioElement) {
+  if (!win) return;
+  if (el.currentTime < win.start - 0.5 || el.currentTime >= win.end) {
+    try {
+      el.currentTime = win.start;
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+// Start (or restart) the master track playing the active window. Play is
+// attempted directly so that, when this runs inside a user gesture
+// (unlockAudio / resumeBgm), mobile autoplay policy is satisfied. Seeking is
+// done both before and after play() begins because iOS ignores pre-play seeks.
+function startMaster() {
+  const el = masterEl;
+  if (!el || !win || !isMusicOn()) return;
+  seekIntoWindow(el);
+  void el
+    .play()
+    .then(() => {
+      unlocked = true;
+      seekIntoWindow(el);
+      fadeIn(el);
+    })
+    .catch(() => {
+      // Autoplay blocked — unlockAudio() retries on the first user gesture.
+    });
+}
+
 function playSeg(seg: Seg, o: { loop: boolean; key: string; onEnd?: () => void }) {
   const el = master();
   if (!el) return;
   stopFile();
   win = { start: seg[0], end: seg[1], loop: o.loop, key: o.key, onEnd: o.onEnd };
-  const begin = () => {
-    try {
-      el.currentTime = seg[0];
-    } catch {
-      /* ignore */
-    }
-    if (isMusicOn())
-      void el
-        .play()
-        .then(() => {
-          unlocked = true;
-          fadeIn(el);
-        })
-        .catch(() => {});
-  };
-  if (el.readyState >= 1) begin();
-  else el.addEventListener("loadedmetadata", begin, { once: true });
+  startMaster();
 }
 
 // --- separate-file loop (mega / whos-that) ---
@@ -543,7 +574,13 @@ function stopMasterPlayback() {
 export function playBgm(context: BgmContext, opts?: { level?: number }) {
   if (typeof window === "undefined") return;
   if (context === "mega") return playFile(MEGA_FILE, "mega");
-  if (context === "whos_that") return playFile(WHOS_THAT_LOOP, "whos_that");
+  if (context === "whos_that") {
+    // Who's-That plays no background music — only the voice shout.
+    stopMasterPlayback();
+    stopFile();
+    activeKey = "";
+    return;
+  }
   if (context === "battle_elite") {
     if (activeKey === "elite") return;
     activeKey = "elite";
@@ -639,7 +676,7 @@ export function stopBgm() {
 export function resumeBgm() {
   if (!isMusicOn()) return;
   if (fileEl) void fileEl.play().catch(() => {});
-  else if (masterEl && win) void masterEl.play().catch(() => {});
+  else if (masterEl && win) startMaster();
 }
 
 /** Call once on the first user gesture to satisfy autoplay policy. */
