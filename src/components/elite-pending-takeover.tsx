@@ -15,7 +15,7 @@ export function ElitePendingTakeover({
   loading: boolean;
 }) {
   return (
-    <div className="bg-elite-arena relative flex h-full w-full flex-col overflow-y-auto pl-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))] pb-[calc(env(safe-area-inset-bottom)+5rem)] pt-[calc(env(safe-area-inset-top)+1.5rem)]">
+    <div className="bg-elite-arena relative flex h-full w-full flex-col overflow-y-auto pl-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))] pb-[calc(env(safe-area-inset-bottom)+8rem)] pt-[calc(env(safe-area-inset-top)+1.5rem)]">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-poke-dark/40 via-transparent to-poke-dark/70" />
 
       <motion.div
@@ -77,7 +77,7 @@ export function ElitePendingTakeover({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.25 }}
-        className="relative mx-auto mt-auto flex w-full max-w-xs flex-col gap-2 pt-8"
+        className="relative mx-auto mt-12 mb-auto flex w-full max-w-xs flex-col gap-3 pt-8"
       >
         {loading ? (
           <Skeleton className="h-14 w-full rounded-full" />

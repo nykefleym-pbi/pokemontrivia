@@ -598,32 +598,6 @@ export function playBgm(context: BgmContext, opts?: { level?: number }) {
     return;
   }
 
-  if (context === "battle_elite") {
-    if (musicKey === "elite") return;
-    stopOneShot();
-    if (musicEl) {
-      musicEl.pause();
-      musicEl = null;
-    }
-    musicKey = "elite";
-    currentIsBattle = true;
-    // Play the intro once, then hand off to the looping Elite Four theme.
-    const intro = makeEl(CLIP.eliteIntro, false);
-    musicEl = intro;
-    intro.addEventListener(
-      "ended",
-      () => {
-        if (musicKey !== "elite") return; // context changed during the intro
-        const loop = makeEl(CLIP.elite, true);
-        musicEl = loop;
-        tryPlay(loop, true);
-      },
-      { once: true },
-    );
-    tryPlay(intro, true, false);
-    return;
-  }
-
   switch (context) {
     case "home":
       return loopTrack(homeBand(opts?.level ?? 1), `home:${homeBand(opts?.level ?? 1)}`, false);
@@ -639,6 +613,9 @@ export function playBgm(context: BgmContext, opts?: { level?: number }) {
       return loopTrack(CLIP.leaderboard, "leaderboard", false);
     case "elite_intro":
       return loopTrack(CLIP.eliteIntro, "elite_intro", true);
+    case "battle_elite":
+      // Intro already played on the takeover screen — go straight to the BGM.
+      return loopTrack(CLIP.elite, "elite", true);
     case "battle_regular":
       return loopTrack(CLIP.regular, "regular", true);
     case "daily":
