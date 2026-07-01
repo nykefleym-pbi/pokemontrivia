@@ -444,6 +444,7 @@ export type BgmContext =
   | "battle_regular"
   | "daily"
   | "battle_elite"
+  | "elite_intro" // Elite Four takeover screen (loops the intro)
   | "weekly_league"
   | "mega"
   | "whos_that"
@@ -636,6 +637,8 @@ export function playBgm(context: BgmContext, opts?: { level?: number }) {
       return loopTrack(CLIP.profile, "profile", false);
     case "leaderboard":
       return loopTrack(CLIP.leaderboard, "leaderboard", false);
+    case "elite_intro":
+      return loopTrack(CLIP.eliteIntro, "elite_intro", true);
     case "battle_regular":
       return loopTrack(CLIP.regular, "regular", true);
     case "daily":
