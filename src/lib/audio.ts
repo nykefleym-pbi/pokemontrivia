@@ -388,9 +388,10 @@ export type BgmContext =
   | "leaderboard";
 
 const SONG = "/song/";
-// Master soundtrack streamed from Vercel Blob (CDN, supports range requests);
-// every BGM context loops a time segment of it.
-const MASTER = "https://01puw7ljdvcf8utf.public.blob.vercel-storage.com/Pokemon%20SFX.mp3";
+// Master soundtrack streamed from Supabase Storage (public bucket, supports
+// range requests + CORS); every BGM context loops a time segment of it.
+const MASTER =
+  "https://dvdorceiasaipdvyfhil.supabase.co/storage/v1/object/public/Songs/Pokemon%20SFX.mp3";
 const MEGA_FILE = `${SONG}Mega Raid.mp3`;
 
 type Seg = readonly [number, number]; // [startSec, endSec]
