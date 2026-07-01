@@ -11,6 +11,8 @@
 const MUTE_KEY = "muted";
 const MUSIC_KEY = "music";
 const SFX_KEY = "sfx";
+const MUSIC_VOL_KEY = "musicVol"; // 0..100
+const SFX_VOL_KEY = "sfxVol"; // 0..100
 
 function lsGet(key: string, dflt: boolean): boolean {
   if (typeof window === "undefined") return dflt;
@@ -25,6 +27,25 @@ function lsSet(key: string, v: boolean) {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(key, v ? "1" : "0");
+  } catch {
+    /* ignore */
+  }
+}
+function lsGetNum(key: string, dflt: number): number {
+  if (typeof window === "undefined") return dflt;
+  try {
+    const v = window.localStorage.getItem(key);
+    if (v === null) return dflt;
+    const n = parseInt(v, 10);
+    return Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : dflt;
+  } catch {
+    return dflt;
+  }
+}
+function lsSetNum(key: string, v: number) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, String(Math.max(0, Math.min(100, Math.round(v)))));
   } catch {
     /* ignore */
   }
@@ -46,13 +67,38 @@ export function isMusicOn(): boolean {
 export function setMusicOn(v: boolean) {
   lsSet(MUSIC_KEY, v);
   if (v) resumeBgm();
-  else stopBgm();
+  // Turning music off silences only NON-battle music; battle tracks keep
+  // playing (they're gated by musicAllowed(isBattle), not this toggle).
+  else if (!currentIsBattle) stopBgm();
 }
 export function isSfxOn(): boolean {
   return !isMuted() && lsGet(SFX_KEY, true);
 }
 export function setSfxOn(v: boolean) {
   lsSet(SFX_KEY, v);
+}
+
+// Per-channel volume, 0..100 (%). Defaults preserve the previous tuning:
+// music sits under SFX. Changes apply live.
+export function getMusicVolume(): number {
+  return lsGetNum(MUSIC_VOL_KEY, 35);
+}
+export function setMusicVolume(pct: number) {
+  lsSetNum(MUSIC_VOL_KEY, pct);
+  applyMusicVolume();
+}
+export function getSfxVolume(): number {
+  return lsGetNum(SFX_VOL_KEY, 100);
+}
+export function setSfxVolume(pct: number) {
+  lsSetNum(SFX_VOL_KEY, pct);
+  applySfxVolume();
+}
+function musicVol(): number {
+  return getMusicVolume() / 100;
+}
+function sfxVol(): number {
+  return getSfxVolume() / 100;
 }
 
 // ---------------------------------------------------------------------------
@@ -72,6 +118,20 @@ function getCtx(): AudioContext | null {
   } catch {
     return null;
   }
+}
+
+// Master gain for all synth SFX — scaled by the SFX volume setting.
+let sfxGain: GainNode | null = null;
+function sfxOut(ac: AudioContext): AudioNode {
+  if (!sfxGain || sfxGain.context !== ac) {
+    sfxGain = ac.createGain();
+    sfxGain.gain.value = sfxVol();
+    sfxGain.connect(ac.destination);
+  }
+  return sfxGain;
+}
+function applySfxVolume() {
+  if (sfxGain) sfxGain.gain.value = sfxVol();
 }
 
 // ---------------------------------------------------------------------------
@@ -98,7 +158,7 @@ function tone(ac: AudioContext, o: ToneOpts) {
   gain.gain.setValueAtTime(0.0001, t0);
   gain.gain.exponentialRampToValueAtTime(vol, t0 + atk);
   gain.gain.exponentialRampToValueAtTime(0.0001, t0 + o.dur);
-  osc.connect(gain).connect(ac.destination);
+  osc.connect(gain).connect(sfxOut(ac));
   osc.start(t0);
   osc.stop(t0 + o.dur + 0.02);
 }
@@ -124,7 +184,7 @@ function noise(ac: AudioContext, o: NoiseOpts) {
   const vol = o.vol ?? 0.15;
   gain.gain.setValueAtTime(vol, t0);
   gain.gain.exponentialRampToValueAtTime(0.0001, t0 + o.dur);
-  src.connect(filter).connect(gain).connect(ac.destination);
+  src.connect(filter).connect(gain).connect(sfxOut(ac));
   src.start(t0);
   src.stop(t0 + o.dur + 0.02);
 }
@@ -335,9 +395,9 @@ export function playCry(id: number) {
       a = new Audio(
         `https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/${id}.ogg`,
       );
-      a.volume = 0.4;
       cryCache.set(id, a);
     }
+    a.volume = 0.4 * sfxVol();
     a.currentTime = 0;
     void a.play().catch(() => {});
   } catch {
@@ -359,8 +419,8 @@ export function playWhosThatShout() {
   try {
     if (!whosThatClip) {
       whosThatClip = new Audio(encodeURI(`${SONG}Whos that Pokemon.mp3`));
-      whosThatClip.volume = 0.7;
     }
+    whosThatClip.volume = 0.7 * sfxVol();
     whosThatClip.currentTime = 0;
     void whosThatClip.play().catch(() => {});
   } catch {
@@ -431,33 +491,52 @@ function homeBand(level: number): string {
   return HOME_BANDS[Math.floor((lv - 21) / 3) % HOME_BANDS.length];
 }
 
-const MUSIC_VOLUME = 0.35;
 let unlocked = false;
 
-// The active looping track (what resumeBgm restarts) + a transient one-shot
-// that ducks it (evolution / potion cue). The Elite intro is a one-shot that
-// hands off to the elite loop when it ends.
+// The active looping track (what resumeBgm restarts), a transient one-shot
+// that ducks it (evolution), and a layered overlay that plays on top without
+// stopping the loop (potion cue). The Elite intro is a one-shot that hands off
+// to the elite loop when it ends.
 let musicEl: HTMLAudioElement | null = null;
 let musicKey = ""; // dedupe key for the active loop
-let loopFile = ""; // filename of the active loop (for resume after a one-shot)
+let currentIsBattle = false; // is the active loop battle music?
 let oneShotEl: HTMLAudioElement | null = null;
+let overlayEl: HTMLAudioElement | null = null;
+
+// Whether music may play right now for a track of the given kind. Battle music
+// ignores the Music toggle (only the master mute silences it); non-battle
+// music also respects the Music toggle.
+function musicAllowed(isBattle: boolean): boolean {
+  if (isMuted()) return false;
+  if (isBattle) return true;
+  return lsGet(MUSIC_KEY, true);
+}
 
 function makeEl(file: string, loop: boolean): HTMLAudioElement {
   const el = new Audio(encodeURI(SONG + file));
   el.loop = loop;
   el.preload = "auto";
-  el.volume = MUSIC_VOLUME;
+  el.volume = musicVol();
   return el;
 }
 
+// Apply the current music volume to every live BGM element.
+function applyMusicVolume() {
+  const v = musicVol();
+  if (musicEl) musicEl.volume = v;
+  if (oneShotEl) oneShotEl.volume = v;
+  if (overlayEl) overlayEl.volume = v;
+}
+
 function fadeIn(el: HTMLAudioElement) {
+  const target = musicVol();
   el.volume = 0;
   const steps = 12;
   let i = 0;
   const step = () => {
     i++;
     try {
-      el.volume = Math.min(MUSIC_VOLUME, (MUSIC_VOLUME * i) / steps);
+      el.volume = Math.min(target, (target * i) / steps);
     } catch {
       /* ignore */
     }
@@ -466,8 +545,8 @@ function fadeIn(el: HTMLAudioElement) {
   step();
 }
 
-function tryPlay(el: HTMLAudioElement, fade = true) {
-  if (!isMusicOn()) return;
+function tryPlay(el: HTMLAudioElement, isBattle: boolean, fade = true) {
+  if (!musicAllowed(isBattle)) return;
   void el
     .play()
     .then(() => {
@@ -487,9 +566,10 @@ function stopOneShot() {
 }
 
 // Loop `file` as the active BGM (deduped by `key`).
-function loopTrack(file: string, key: string) {
+function loopTrack(file: string, key: string, isBattle: boolean) {
+  currentIsBattle = isBattle;
   if (musicKey === key && musicEl && !oneShotEl) {
-    if (isMusicOn() && musicEl.paused) tryPlay(musicEl, false);
+    if (musicAllowed(isBattle) && musicEl.paused) tryPlay(musicEl, isBattle, false);
     return;
   }
   stopOneShot();
@@ -498,10 +578,9 @@ function loopTrack(file: string, key: string) {
     musicEl = null;
   }
   musicKey = key;
-  loopFile = file;
   const el = makeEl(file, true);
   musicEl = el;
-  tryPlay(el);
+  tryPlay(el, isBattle);
 }
 
 /** Loop the bundled clip for `context`. */
@@ -514,7 +593,7 @@ export function playBgm(context: BgmContext, opts?: { level?: number }) {
     if (musicEl) musicEl.pause();
     musicEl = null;
     musicKey = "";
-    loopFile = "";
+    currentIsBattle = false;
     return;
   }
 
@@ -526,7 +605,7 @@ export function playBgm(context: BgmContext, opts?: { level?: number }) {
       musicEl = null;
     }
     musicKey = "elite";
-    loopFile = CLIP.elite;
+    currentIsBattle = true;
     // Play the intro once, then hand off to the looping Elite Four theme.
     const intro = makeEl(CLIP.eliteIntro, false);
     musicEl = intro;
@@ -536,37 +615,37 @@ export function playBgm(context: BgmContext, opts?: { level?: number }) {
         if (musicKey !== "elite") return; // context changed during the intro
         const loop = makeEl(CLIP.elite, true);
         musicEl = loop;
-        tryPlay(loop);
+        tryPlay(loop, true);
       },
       { once: true },
     );
-    tryPlay(intro, false);
+    tryPlay(intro, true, false);
     return;
   }
 
   switch (context) {
     case "home":
-      return loopTrack(homeBand(opts?.level ?? 1), `home:${homeBand(opts?.level ?? 1)}`);
+      return loopTrack(homeBand(opts?.level ?? 1), `home:${homeBand(opts?.level ?? 1)}`, false);
     case "splash":
-      return loopTrack(CLIP.splash, "splash");
+      return loopTrack(CLIP.splash, "splash", false);
     case "dex":
-      return loopTrack(CLIP.dex, "dex");
+      return loopTrack(CLIP.dex, "dex", false);
     case "shop":
-      return loopTrack(CLIP.shop, "shop");
+      return loopTrack(CLIP.shop, "shop", false);
     case "profile":
-      return loopTrack(CLIP.profile, "profile");
-    case "battle_regular":
-      return loopTrack(CLIP.regular, "regular");
-    case "daily":
-      return loopTrack(CLIP.daily, "daily");
-    case "weekly_league":
-      return loopTrack(CLIP.weekly, "weekly");
-    case "mega":
-      return loopTrack(CLIP.mega, "mega");
+      return loopTrack(CLIP.profile, "profile", false);
     case "leaderboard":
-      return loopTrack(CLIP.leaderboard, "leaderboard");
+      return loopTrack(CLIP.leaderboard, "leaderboard", false);
+    case "battle_regular":
+      return loopTrack(CLIP.regular, "regular", true);
+    case "daily":
+      return loopTrack(CLIP.daily, "daily", true);
+    case "weekly_league":
+      return loopTrack(CLIP.weekly, "weekly", true);
+    case "mega":
+      return loopTrack(CLIP.mega, "mega", true);
     default:
-      return loopTrack(CLIP.splash, "splash");
+      return loopTrack(CLIP.splash, "splash", false);
   }
 }
 
@@ -581,44 +660,57 @@ export function playBattleResult(mode: "daily" | "regular" | "weekly" | "elite",
           ? CLIP.weeklyWin
           : CLIP.eliteWin;
   const file = won ? winClip : CLIP.lose;
-  loopTrack(file, `result:${mode}:${won}`);
+  // Battle results are part of the battle — count as battle music.
+  loopTrack(file, `result:${mode}:${won}`, true);
 }
 
-// Play a one-shot cue that ducks the current loop, then resumes it.
-function oneShotThenResume(file: string) {
-  const resumeFile = loopFile;
+/** Evolution musical cue (plays once, ducking the loop, then resumes it). */
+export function playEvolutionCue() {
   const resumeKey = musicKey;
+  const resumeBattle = currentIsBattle;
   stopOneShot();
   if (musicEl) musicEl.pause();
-  const el = makeEl(file, false);
+  const el = makeEl(CLIP.evolution, false);
   oneShotEl = el;
   const resume = () => {
     if (oneShotEl === el) oneShotEl = null;
     // Resume the loop only if nothing else took over meanwhile.
-    if (resumeFile && musicKey === resumeKey && musicEl) tryPlay(musicEl, false);
+    if (musicKey === resumeKey && musicEl) tryPlay(musicEl, resumeBattle, false);
   };
   el.addEventListener("ended", resume, { once: true });
   el.addEventListener("error", resume, { once: true });
-  tryPlay(el, false);
+  tryPlay(el, true, false);
 }
 
-/** Evolution musical cue (plays once, then resumes the prior loop). */
-export function playEvolutionCue() {
-  oneShotThenResume(CLIP.evolution);
-}
-/** Potion / item musical cue (plays once, then resumes the prior loop). */
+/** Potion / item cue — layered over the current music (does not stop it). */
 export function playItemCue() {
-  oneShotThenResume(CLIP.item);
+  if (typeof window === "undefined" || isMuted()) return;
+  if (overlayEl) overlayEl.pause();
+  const el = makeEl(CLIP.item, false);
+  overlayEl = el;
+  el.addEventListener(
+    "ended",
+    () => {
+      if (overlayEl === el) overlayEl = null;
+    },
+    { once: true },
+  );
+  void el
+    .play()
+    .then(() => {
+      unlocked = true;
+    })
+    .catch(() => {});
 }
 
 export function stopBgm() {
   if (musicEl) musicEl.pause();
   if (oneShotEl) oneShotEl.pause();
+  if (overlayEl) overlayEl.pause();
 }
 export function resumeBgm() {
-  if (!isMusicOn()) return;
-  if (oneShotEl) tryPlay(oneShotEl, false);
-  else if (musicEl) tryPlay(musicEl, false);
+  if (oneShotEl) tryPlay(oneShotEl, true, false);
+  else if (musicEl) tryPlay(musicEl, currentIsBattle, false);
 }
 
 /** Call once on the first user gesture to satisfy autoplay policy. */
