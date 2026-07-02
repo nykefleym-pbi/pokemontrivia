@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { PokemonSprite } from "@/components/game-ui";
+import { PixelEgg } from "@/components/pixel-icons";
 import { useGameStore } from "@/lib/store";
 import { ALL_POKEMON } from "@/lib/pokemon-data.generated";
 
@@ -45,7 +46,7 @@ export function EggHatch() {
         }}
         aria-label="Poké Eggs"
       >
-        <span className="text-2xl">🥚</span>
+        <PixelEgg className="h-7 w-7" />
         {eggs > 0 && (
           <span
             className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-extrabold text-white"

@@ -25,15 +25,83 @@ they ship.
 
 ## Bug fixes / polish
 
-- [ ] a. Battle tab: make the circular red ring around the trainer sprite
+- [x] a. Battle tab: make the circular red ring around the trainer sprite
       static (not driven by XP).
-- [ ] b. In-battle bag: match the Shop bag's layout when tapped; only show
+- [x] b. In-battle bag: match the Shop bag's layout when tapped; only show
       available items (same behavior as the Shop bag).
-- [ ] c. Shop tab: replace the star icon next to the coin amount with a coin
+- [x] c. Shop tab: replace the star icon next to the coin amount with a coin
       icon.
-- [ ] d. Shop: change the gift icon to a pixelated gift icon (design
+- [x] d. Shop: change the gift icon to a pixelated gift icon (design
       consistency).
-- [ ] e. Pokédex: change the Poké-Egg icon to a pixelated Poké-Egg icon
+- [x] e. Pokédex: change the Poké-Egg icon to a pixelated Poké-Egg icon
       (design consistency).
-- [ ] f. Mega Leaderboard: move the Mega Charizard sprite further left so it
+- [x] f. Mega Leaderboard: move the Mega Charizard sprite further left so it
       isn't so close to the screen edge.
+
+## Plans for complex features (for review — tweak freely)
+
+### 1. Mode-availability notifications
+- **In-app (phase 1):** a red-dot badge on the Battle tab + a bell icon in the
+  hub header listing which modes are ready (Daily not done today, Weekly not
+  attempted, Who's That new hour, Mega attempts left). All state already exists
+  client-side — no backend needed.
+- **Push (phase 2):** Web Push via service worker. Needs a `push_subscriptions`
+  table in Supabase, a VAPID key pair, and a scheduled Edge Function (cron) that
+  sends "Daily Quest is ready!" etc. iOS PWA push works from iOS 16.4+ only when
+  installed to Home Screen. Recommend shipping phase 1 first.
+
+### 2. More items + rebalance
+- New item candidates: Revive (auto once/battle: survive at 25% HP), Ether
+  (+5s once), Berry (auto-heal 15 at <30%, consumable), Amulet Coin (2× coins,
+  1 battle), Repel (skip one question, no penalty, 1/battle).
+- Rebalance pass with the same battle simulator used for abilities; price via
+  coins-per-win-rate-point so no item is strictly best.
+
+### 3. Poké-Egg mechanics (expand current EggHatch)
+- Eggs from Mega Raids (existing) + Day-7 gift + level-up rewards.
+- Hatching requires "steps" = correct answers (e.g. 50); progress bar on the
+  egg shelf. Hatch rolls a Pokémon weighted by rarity, small shiny chance
+  (1/64), grants Pokédex entry + TP candy.
+
+### 4. Partner re-pick limited to captured Pokémon
+- Profile partner picker filters `STARTING_PARTNERS`/all-Pokémon list to ids in
+  `pokedex` (captured). Onboarding keeps the starter list. One-file change +
+  empty-state copy ("Capture Pokémon in battle to unlock them as partners").
+
+### 5. Grow curated_questions past 2000
+- Generate in themed batches (moves, abilities, evolutions, regions, cries,
+  stats) with the existing dedupe hashes; insert via Supabase MCP in chunks;
+  QA pass = sample-review each batch before insert. Target +1000.
+
+### 6. PvP
+- **Async friend battles (build first):** challenger plays a 20-question run,
+  a `pvp_matches` row stores the question set + score; the friend gets an
+  inbox invite, plays the same set, higher total (points + speed + streak +
+  accuracy) wins. Pure Supabase tables + RLS; no realtime infra.
+- **Real-time QR (phase 2):** host screen shows QR with a match id; guest
+  scans → both subscribe to a Supabase Realtime channel; server-frozen
+  question set; per-question countdown sync; disconnect = forfeit after 30s.
+  Meaningfully more work — needs Realtime channels + presence.
+
+### 7. Invite campaign / referral
+- Referral code = existing friend code in a share link
+  (`?ref=CODE`). New user onboards → both sides get rewards (coins + egg).
+  Needs a `referrals` table + RLS and an onboarding hook. Anti-abuse: cap
+  rewards/day, device heuristic.
+
+### 8. Level-up rewards
+- On level change: coins scaled by level, +1 Poké-Egg every 5 levels, item at
+  rank-ups (L6/16/26/51). Reward modal on the battle result screen (level-up
+  already detected there).
+
+### 9. Suggestions / bug report (Settings)
+- Sheet form (category, text, optional email) → `feedback` table in Supabase
+  (insert-only RLS). Zero backend beyond one table; view rows in Supabase.
+
+### 10. What's New card
+- `WHATS_NEW` const (version, title, bullets) in code; carousel card shows
+  while `lastSeenWhatsNew < version`; dismiss stores version in the store.
+
+### 11. Add-friends button in Mega Raid
+- Leaderboard rows for non-friends get a "+" button → sends the existing
+  friend request by trainer id (social lib already supports it).

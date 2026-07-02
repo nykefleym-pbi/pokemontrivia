@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { ItemId } from "@/lib/game-data";
 import { ACHIEVEMENTS, unlockedAchievements } from "@/lib/achievements";
+import { CATEGORIES, CATEGORY_OF, BAG_SHORT_DESC } from "@/lib/item-categories";
 import { playSfx, revealPokemon, playBattleResult, playItemCue } from "@/lib/audio";
 import { type EliteMember, regionCompleted } from "@/lib/elite-four";
 import type { GymLeader } from "@/lib/gym-leaders";
@@ -1486,65 +1487,104 @@ function BattleMode({
                     </SheetTrigger>
                     <SheetContent side="bottom" className="rounded-t-3xl">
                       <SheetHeader>
-                        <SheetTitle>Item Bag</SheetTitle>
+                        <SheetTitle className="text-center font-display-lg text-foreground">
+                          Your Bag
+                        </SheetTitle>
                       </SheetHeader>
-                      <div className="mt-4 grid grid-cols-2 gap-2 pb-6">
-                        {ITEMS.map((it) => {
-                          const owned = inventory[it.id] ?? 0;
-                          const used = usedThisBattle[it.id] ?? false;
-                          const isAuto =
-                            it.id === "focusband" ||
-                            it.id === "quickclaw" ||
-                            it.id === "assaultvest";
-                          const disabled =
-                            isAuto ||
-                            owned <= 0 ||
-                            used ||
-                            ((isWeekly || isElite) && it.id === "escape");
-                          return (
-                            <button
-                              key={it.id}
-                              disabled={disabled}
-                              onClick={() => tryUseItem(it.id)}
-                              className="flex items-start gap-3 rounded-2xl border-2 p-3 text-left transition disabled:opacity-40 enabled:hover:border-primary"
-                            >
-                              <img
-                                src={it.iconUrl}
-                                alt={it.name}
-                                className="sprite h-9 w-9 shrink-0 object-contain"
-                                onError={(e) => {
-                                  const el = e.currentTarget as HTMLImageElement;
-                                  el.replaceWith(
-                                    Object.assign(document.createElement("span"), {
-                                      textContent: it.emoji,
-                                      className: "text-2xl",
-                                    }),
-                                  );
-                                }}
-                              />
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-1.5 text-sm font-semibold">
-                                  {it.name}
-                                  <span className="font-pixel text-[9px] text-primary">
-                                    ×{owned}
-                                  </span>
+                      {(() => {
+                        // Same grouped, owned-only layout as the Shop bag.
+                        const bagGroups = CATEGORIES.map((cat) => ({
+                          ...cat,
+                          items: ITEMS.filter(
+                            (it) => CATEGORY_OF[it.id] === cat.id && (inventory[it.id] ?? 0) > 0,
+                          ),
+                        })).filter((g) => g.items.length > 0);
+                        return (
+                          <div className="my-4 max-h-[65vh] overflow-y-auto">
+                            {bagGroups.length === 0 ? (
+                              <div className="rounded-3xl bg-poke-yellow/15 p-6 text-center">
+                                <div className="mx-auto mb-2 text-4xl">🎒</div>
+                                <div className="font-display-md text-foreground">
+                                  Your bag is empty
                                 </div>
-                                <div className="text-[10px] leading-tight text-muted-foreground">
-                                  {it.desc}
-                                </div>
-                                {isAuto && (
-                                  <div className="text-[10px] text-primary">Auto-activates</div>
-                                )}
-                                {used && !isAuto && (
-                                  <div className="text-[10px] text-destructive">
-                                    Used this battle
-                                  </div>
-                                )}
+                                <p className="mt-1 text-xs text-foreground/60">
+                                  Visit the Shop to stock up on items.
+                                </p>
                               </div>
-                            </button>
-                          );
-                        })}
-                      </div>
+                            ) : (
+                              <div className="space-y-4 pb-2">
+                                {bagGroups.map((group) => (
+                                  <div key={group.id}>
+                                    <div className="mb-2 font-pixel-xs uppercase tracking-wider text-foreground/45">
+                                      {group.label}
+                                    </div>
+                                    <div className="flex flex-col gap-2.5">
+                                      {group.items.map((it) => {
+                                        const owned = inventory[it.id] ?? 0;
+                                        const used = usedThisBattle[it.id] ?? false;
+                                        const isAuto =
+                                          it.id === "focusband" ||
+                                          it.id === "quickclaw" ||
+                                          it.id === "assaultvest";
+                                        const disabled =
+                                          isAuto ||
+                                          used ||
+                                          ((isWeekly || isElite) && it.id === "escape");
+                                        return (
+                                          <button
+                                            key={it.id}
+                                            disabled={disabled}
+                                            onClick={() => tryUseItem(it.id)}
+                                            className="flex items-center gap-3.5 rounded-[20px] bg-card px-4 py-3 text-left shadow-card transition active:scale-[0.99] disabled:opacity-40"
+                                          >
+                                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-primary/[0.08]">
+                                              <img
+                                                src={it.iconUrl}
+                                                alt={it.name}
+                                                className="sprite h-9 w-9 object-contain"
+                                                onError={(e) => {
+                                                  const el = e.currentTarget as HTMLImageElement;
+                                                  el.replaceWith(
+                                                    Object.assign(document.createElement("span"), {
+                                                      textContent: it.emoji,
+                                                      className: "text-2xl",
+                                                    }),
+                                                  );
+                                                }}
+                                              />
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                              <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                                                {it.name}
+                                                <span className="font-pixel text-[9px] text-primary">
+                                                  ×{owned}
+                                                </span>
+                                              </div>
+                                              <div className="text-[11px] leading-tight text-muted-foreground">
+                                                {BAG_SHORT_DESC[it.id] ?? it.desc}
+                                              </div>
+                                              {isAuto && (
+                                                <div className="text-[10px] text-primary">
+                                                  Auto-activates
+                                                </div>
+                                              )}
+                                              {used && !isAuto && (
+                                                <div className="text-[10px] text-destructive">
+                                                  Used this battle
+                                                </div>
+                                              )}
+                                            </div>
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </SheetContent>
                   </Sheet>
                   {ITEMS.filter(

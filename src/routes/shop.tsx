@@ -3,10 +3,12 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { playSfx, playItemCue } from "@/lib/audio";
-import { Star, ShoppingBag, Minus, Plus } from "lucide-react";
+import { Star, Coins, ShoppingBag, Minus, Plus } from "lucide-react";
 import { useGameStore } from "@/lib/store";
-import { ITEMS, type ItemDef, type ItemId } from "@/lib/game-data";
+import { ITEMS, type ItemDef } from "@/lib/game-data";
 import { getAbility } from "@/lib/abilities";
+import { CATEGORIES, CATEGORY_OF, BAG_SHORT_DESC, type ItemCategory } from "@/lib/item-categories";
+import { PixelGift } from "@/components/pixel-icons";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import {
@@ -21,44 +23,7 @@ export const Route = createFileRoute("/shop")({
   component: ShopPage,
 });
 
-type Category = "HEALING" | "BATTLE" | "UTILITY" | "PREMIUM";
-
-const CATEGORY_OF: Record<ItemId, Category> = {
-  potion: "HEALING",
-  superpotion: "HEALING",
-  maxpotion: "HEALING",
-  focusband: "HEALING",
-  xattack: "BATTLE",
-  scope: "BATTLE",
-  xaccuracy: "BATTLE",
-  quickclaw: "BATTLE",
-  assaultvest: "BATTLE",
-  escape: "UTILITY",
-  candy: "PREMIUM",
-  luckyegg: "PREMIUM",
-};
-
-const CATEGORIES: Array<{ id: Category; label: string }> = [
-  { id: "HEALING", label: "Healing" },
-  { id: "BATTLE", label: "Battle" },
-  { id: "UTILITY", label: "Utility" },
-  { id: "PREMIUM", label: "Premium" },
-];
-
-const BAG_SHORT_DESC: Record<string, string> = {
-  potion: "Restore 30 HP",
-  superpotion: "Restore 60 HP",
-  maxpotion: "Fully restore HP",
-  xattack: "+20 damage next answer",
-  scope: "Remove one wrong answer",
-  xaccuracy: "Reveal the correct answer",
-  escape: "Bail out, no XP lost",
-  candy: "+50 TP for your partner",
-  luckyegg: "2× XP for 24 hours",
-  focusband: "Auto: clutch heal at low HP",
-  quickclaw: "Auto: timer reset under 5s",
-  assaultvest: "Auto: ½ damage vs bad matchups",
-};
+type Category = ItemCategory;
 
 function ItemIcon({ item, className }: { item: ItemDef; className: string }) {
   return (
@@ -238,7 +203,7 @@ function ShopPage() {
               )}
             </button>
             <div className="flex items-center gap-1.5 rounded-full bg-poke-yellow px-3.5 py-2 shadow-card">
-              <Star className="h-4 w-4 fill-poke-dark text-foreground" />
+              <Coins className="h-4 w-4 text-foreground" />
               <span className="text-sm font-extrabold text-foreground">
                 {coins.toLocaleString()}
               </span>
@@ -257,7 +222,9 @@ function ShopPage() {
             <span className="absolute right-3 top-3 rounded-full bg-primary px-2.5 py-1 font-pixel-xs uppercase text-white shadow-sm">
               Free
             </span>
-            <div className="shrink-0 text-5xl drop-shadow">🎁</div>
+            <div className="shrink-0 drop-shadow">
+              <PixelGift className="h-12 w-12" />
+            </div>
             <div className="min-w-0 flex-1">
               <div className="font-pixel-xs uppercase text-foreground/70">
                 Daily Gift · Day {giftNextDay}
@@ -284,7 +251,9 @@ function ShopPage() {
           </button>
         ) : (
           <div className="relative mb-5 flex w-full items-center gap-4 overflow-hidden rounded-3xl bg-card p-5 shadow-card">
-            <div className="shrink-0 text-5xl opacity-40 grayscale">🎁</div>
+            <div className="shrink-0 opacity-40 grayscale">
+              <PixelGift className="h-12 w-12" />
+            </div>
             <div className="min-w-0 flex-1">
               <div className="font-pixel-xs uppercase text-foreground/55">
                 Daily Gift · claimed today
