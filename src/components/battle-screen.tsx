@@ -1088,7 +1088,7 @@ function BattleMode({
           dateISO: new Date().toISOString().slice(0, 10),
           badgeName: gymLeader.badge,
           correctCount: correctCountRef.current,
-          totalQuestions: questions.length,
+          totalQuestions: answeredCountRef.current,
           xpEarned: xpAward,
           avgTimeMs: answeredCountRef.current
             ? totalElapsedMsRef.current / answeredCountRef.current
@@ -1119,7 +1119,7 @@ function BattleMode({
         topStreak: maxStreakRef.current,
         topDamage: topDmgRef.current,
         correctCount: correctCountRef.current,
-        totalQuestions: questions.length,
+        totalQuestions: answeredCountRef.current,
         xpEarned: xpAward,
         avgTimeMs: answeredCountRef.current
           ? totalElapsedMsRef.current / answeredCountRef.current
