@@ -2,6 +2,7 @@ import type { GameState } from "@/lib/store";
 import type { StoreSlice } from "@/lib/store/slice";
 import type { ItemId } from "@/lib/game-data";
 import { TRAINER_SPRITES } from "@/lib/game-data";
+import { rollAbilityId } from "@/lib/abilities";
 
 export const createProfileSlice: StoreSlice<
   Pick<
@@ -55,7 +56,14 @@ export const createProfileSlice: StoreSlice<
   setDarkMode: (v) => set({ darkMode: v }),
 
   setOnboarded: (name, pokemon, trainerSprite) =>
-    set({ hasOnboarded: true, isGuest: false, trainerName: name, pokemon, trainerSprite }),
+    set({
+      hasOnboarded: true,
+      isGuest: false,
+      trainerName: name,
+      pokemon,
+      abilityId: rollAbilityId(pokemon.types),
+      trainerSprite,
+    }),
 
   setFriendCode: (code) => set({ friendCode: code }),
   setLastEngagePromptDate: (date) => set({ lastEngagePromptDate: date }),
