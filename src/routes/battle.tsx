@@ -722,177 +722,182 @@ function BattlePage() {
                     className="relative w-[280px] shrink-0 snap-center overflow-hidden rounded-[28px] shadow-[0_18px_40px_-14px_rgba(0,0,0,0.5)]"
                     style={{ background: t.cardBg }}
                   >
-                    <div
-                      className="relative flex h-[200px] items-center justify-center overflow-hidden"
-                      style={{ background: t.hero }}
-                    >
+                    {card.kind !== "whatsnew" && (
                       <div
-                        className="absolute inset-0"
-                        style={{
-                          background: `repeating-conic-gradient(from 0deg at 50% 44%, ${t.ray} 0deg 6deg, transparent 6deg 13deg)`,
-                        }}
-                      />
-                      {card.kind === "mega" && (
-                        <div
-                          className="absolute h-[168px] w-[168px] rounded-full"
-                          style={{
-                            background:
-                              "radial-gradient(circle, rgba(242,214,78,0.42) 0%, rgba(181,52,31,0.18) 55%, transparent 72%)",
-                          }}
-                        />
-                      )}
-                      {card.kind !== "whosthat" && card.kind !== "mega" && (
-                        <div
-                          className="absolute h-[150px] w-[150px] rounded-full"
-                          style={{
-                            background: `radial-gradient(circle, ${t.glow} 0%, transparent 70%)`,
-                          }}
-                        />
-                      )}
-                      {card.kind === "whatsnew" && (
-                        <div className="relative text-[96px] leading-none drop-shadow-[0_10px_14px_rgba(120,80,0,0.35)]">
-                          ✨
-                        </div>
-                      )}
-                      {card.kind === "daily" && (
-                        <PokemonSprite
-                          id={479}
-                          alt="Rotom"
-                          className="sprite relative h-[150px] w-[150px] object-contain drop-shadow-[0_10px_14px_rgba(120,30,0,0.45)]"
-                        />
-                      )}
-                      {card.kind === "weekly" &&
-                        (card.heroSrc ? (
-                          <img
-                            src={card.heroSrc}
-                            alt="Gym Leader"
-                            className="relative h-[150px] w-[150px] object-contain [filter:brightness(0)] [image-rendering:pixelated]"
-                          />
-                        ) : (
-                          <div className="relative text-[110px] leading-none">🏆</div>
-                        ))}
-                      {card.kind === "whosthat" && (
-                        <div
-                          className="relative flex h-[124px] w-[124px] items-center justify-center overflow-hidden rounded-full shadow-[0_10px_26px_-8px_rgba(0,0,0,0.4)]"
-                          style={{
-                            background:
-                              "radial-gradient(circle at 50% 46%, #FFF4D6 0%, #FFD98A 100%)",
-                          }}
-                        >
-                          <PokemonSprite
-                            id={25}
-                            alt="Pikachu"
-                            className="h-[104px] w-[104px] [filter:brightness(0)] [image-rendering:pixelated]"
-                          />
-                        </div>
-                      )}
-                      {card.kind === "mega" && card.heroPokeId && (
-                        <PokemonSprite
-                          id={card.heroPokeId}
-                          alt="Mega Raid boss"
-                          className="sprite relative h-[150px] w-[150px] object-contain drop-shadow-[0_10px_14px_rgba(0,0,0,0.5)]"
-                        />
-                      )}
-                      {card.kind === "megaleaderboard" && (
-                        <>
-                          <div className="absolute top-[44px] flex flex-col items-center">
-                            <div
-                              className="text-[40px] leading-none"
-                              style={{ filter: "drop-shadow(0 6px 10px rgba(0,0,0,0.5))" }}
-                            >
-                              🏆
-                            </div>
-                            <div
-                              className="font-pixel"
-                              style={{ fontSize: 9, color: "var(--brand-gold)", marginTop: 2 }}
-                            >
-                              #1
-                            </div>
-                          </div>
-                          <div className="absolute bottom-0 flex items-end gap-1.5">
-                            <div className="flex flex-col items-center">
-                              <div
-                                className="flex items-center justify-center rounded-full font-pixel"
-                                style={{
-                                  width: 26,
-                                  height: 26,
-                                  background: "#C0C6D4",
-                                  border: "2px solid #fff",
-                                  fontSize: 8,
-                                  color: "var(--brand-ink)",
-                                }}
-                              >
-                                2
-                              </div>
-                              <div
-                                style={{
-                                  marginTop: 5,
-                                  width: 52,
-                                  height: 46,
-                                  background: "linear-gradient(#3A4660,#2A3450)",
-                                  borderRadius: "6px 6px 0 0",
-                                }}
-                              />
-                            </div>
-                            <div className="flex flex-col items-center">
-                              <div
-                                className="flex items-center justify-center rounded-full font-pixel"
-                                style={{
-                                  width: 32,
-                                  height: 32,
-                                  background: "var(--brand-gold)",
-                                  border: "2px solid #fff",
-                                  fontSize: 9,
-                                  color: "var(--brand-ink)",
-                                }}
-                              >
-                                1
-                              </div>
-                              <div
-                                style={{
-                                  marginTop: 5,
-                                  width: 56,
-                                  height: 68,
-                                  background: "linear-gradient(var(--brand-gold),#D9B838)",
-                                  borderRadius: "6px 6px 0 0",
-                                }}
-                              />
-                            </div>
-                            <div className="flex flex-col items-center">
-                              <div
-                                className="flex items-center justify-center rounded-full font-pixel"
-                                style={{
-                                  width: 26,
-                                  height: 26,
-                                  background: "#C8895A",
-                                  border: "2px solid #fff",
-                                  fontSize: 8,
-                                  color: "var(--brand-ink)",
-                                }}
-                              >
-                                3
-                              </div>
-                              <div
-                                style={{
-                                  marginTop: 5,
-                                  width: 52,
-                                  height: 38,
-                                  background: "linear-gradient(#4A3A5C,#34283F)",
-                                  borderRadius: "6px 6px 0 0",
-                                }}
-                              />
-                            </div>
-                          </div>
-                        </>
-                      )}
-                      <div
-                        className="absolute left-4 top-4 rounded-full px-2.5 py-1.5 font-pixel text-[7px] tracking-wider"
-                        style={{ background: t.labelBg, color: t.labelColor }}
+                        className="relative flex h-[200px] items-center justify-center overflow-hidden"
+                        style={{ background: t.hero }}
                       >
-                        {t.label}
+                        <div
+                          className="absolute inset-0"
+                          style={{
+                            background: `repeating-conic-gradient(from 0deg at 50% 44%, ${t.ray} 0deg 6deg, transparent 6deg 13deg)`,
+                          }}
+                        />
+                        {card.kind === "mega" && (
+                          <div
+                            className="absolute h-[168px] w-[168px] rounded-full"
+                            style={{
+                              background:
+                                "radial-gradient(circle, rgba(242,214,78,0.42) 0%, rgba(181,52,31,0.18) 55%, transparent 72%)",
+                            }}
+                          />
+                        )}
+                        {card.kind !== "whosthat" && card.kind !== "mega" && (
+                          <div
+                            className="absolute h-[150px] w-[150px] rounded-full"
+                            style={{
+                              background: `radial-gradient(circle, ${t.glow} 0%, transparent 70%)`,
+                            }}
+                          />
+                        )}
+                        {card.kind === "daily" && (
+                          <PokemonSprite
+                            id={479}
+                            alt="Rotom"
+                            className="sprite relative h-[150px] w-[150px] object-contain drop-shadow-[0_10px_14px_rgba(120,30,0,0.45)]"
+                          />
+                        )}
+                        {card.kind === "weekly" &&
+                          (card.heroSrc ? (
+                            <img
+                              src={card.heroSrc}
+                              alt="Gym Leader"
+                              className="relative h-[150px] w-[150px] object-contain [filter:brightness(0)] [image-rendering:pixelated]"
+                            />
+                          ) : (
+                            <div className="relative text-[110px] leading-none">🏆</div>
+                          ))}
+                        {card.kind === "whosthat" && (
+                          <div
+                            className="relative flex h-[124px] w-[124px] items-center justify-center overflow-hidden rounded-full shadow-[0_10px_26px_-8px_rgba(0,0,0,0.4)]"
+                            style={{
+                              background:
+                                "radial-gradient(circle at 50% 46%, #FFF4D6 0%, #FFD98A 100%)",
+                            }}
+                          >
+                            <PokemonSprite
+                              id={25}
+                              alt="Pikachu"
+                              className="h-[104px] w-[104px] [filter:brightness(0)] [image-rendering:pixelated]"
+                            />
+                          </div>
+                        )}
+                        {card.kind === "mega" && card.heroPokeId && (
+                          <PokemonSprite
+                            id={card.heroPokeId}
+                            alt="Mega Raid boss"
+                            className="sprite relative h-[150px] w-[150px] object-contain drop-shadow-[0_10px_14px_rgba(0,0,0,0.5)]"
+                          />
+                        )}
+                        {card.kind === "megaleaderboard" && (
+                          <>
+                            <div className="absolute top-[44px] flex flex-col items-center">
+                              <div
+                                className="text-[40px] leading-none"
+                                style={{ filter: "drop-shadow(0 6px 10px rgba(0,0,0,0.5))" }}
+                              >
+                                🏆
+                              </div>
+                              <div
+                                className="font-pixel"
+                                style={{ fontSize: 9, color: "var(--brand-gold)", marginTop: 2 }}
+                              >
+                                #1
+                              </div>
+                            </div>
+                            <div className="absolute bottom-0 flex items-end gap-1.5">
+                              <div className="flex flex-col items-center">
+                                <div
+                                  className="flex items-center justify-center rounded-full font-pixel"
+                                  style={{
+                                    width: 26,
+                                    height: 26,
+                                    background: "#C0C6D4",
+                                    border: "2px solid #fff",
+                                    fontSize: 8,
+                                    color: "var(--brand-ink)",
+                                  }}
+                                >
+                                  2
+                                </div>
+                                <div
+                                  style={{
+                                    marginTop: 5,
+                                    width: 52,
+                                    height: 46,
+                                    background: "linear-gradient(#3A4660,#2A3450)",
+                                    borderRadius: "6px 6px 0 0",
+                                  }}
+                                />
+                              </div>
+                              <div className="flex flex-col items-center">
+                                <div
+                                  className="flex items-center justify-center rounded-full font-pixel"
+                                  style={{
+                                    width: 32,
+                                    height: 32,
+                                    background: "var(--brand-gold)",
+                                    border: "2px solid #fff",
+                                    fontSize: 9,
+                                    color: "var(--brand-ink)",
+                                  }}
+                                >
+                                  1
+                                </div>
+                                <div
+                                  style={{
+                                    marginTop: 5,
+                                    width: 56,
+                                    height: 68,
+                                    background: "linear-gradient(var(--brand-gold),#D9B838)",
+                                    borderRadius: "6px 6px 0 0",
+                                  }}
+                                />
+                              </div>
+                              <div className="flex flex-col items-center">
+                                <div
+                                  className="flex items-center justify-center rounded-full font-pixel"
+                                  style={{
+                                    width: 26,
+                                    height: 26,
+                                    background: "#C8895A",
+                                    border: "2px solid #fff",
+                                    fontSize: 8,
+                                    color: "var(--brand-ink)",
+                                  }}
+                                >
+                                  3
+                                </div>
+                                <div
+                                  style={{
+                                    marginTop: 5,
+                                    width: 52,
+                                    height: 38,
+                                    background: "linear-gradient(#4A3A5C,#34283F)",
+                                    borderRadius: "6px 6px 0 0",
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          </>
+                        )}
+                        <div
+                          className="absolute left-4 top-4 rounded-full px-2.5 py-1.5 font-pixel text-[7px] tracking-wider"
+                          style={{ background: t.labelBg, color: t.labelColor }}
+                        >
+                          {t.label}
+                        </div>
                       </div>
-                    </div>
+                    )}
                     <div className="px-5 pb-6 pt-4">
+                      {card.kind === "whatsnew" && (
+                        <div
+                          className="mb-2 inline-flex rounded-full px-2.5 py-1.5 font-pixel text-[7px] tracking-wider"
+                          style={{ background: t.labelBg, color: t.labelColor }}
+                        >
+                          ✨ {t.label}
+                        </div>
+                      )}
                       <div
                         className="text-[21px] font-black leading-tight tracking-tight"
                         style={{ color: t.titleColor }}
