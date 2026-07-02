@@ -113,18 +113,8 @@ export function BattleHome({
           stroke="oklch(0.22 0.04 260 / 0.12)"
           strokeWidth="5"
         />
-        <circle
-          cx="40"
-          cy="40"
-          r="35"
-          fill="none"
-          stroke="var(--color-primary)"
-          strokeWidth="5"
-          strokeLinecap="round"
-          strokeDasharray={2 * Math.PI * 35}
-          strokeDashoffset={2 * Math.PI * 35 * (1 - xpPct / 100)}
-          style={{ transition: "stroke-dashoffset 0.5s ease" }}
-        />
+        {/* Static full ring — XP progress lives in the bar next to the name. */}
+        <circle cx="40" cy="40" r="35" fill="none" stroke="var(--color-primary)" strokeWidth="5" />
       </svg>
       <div className="absolute inset-[6px] flex items-center justify-center overflow-hidden rounded-full bg-card">
         <img
