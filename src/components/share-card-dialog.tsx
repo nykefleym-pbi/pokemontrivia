@@ -56,7 +56,10 @@ export function ShareCardDialog({ open, onClose, data }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="flex h-[100dvh] w-screen max-w-none flex-col gap-0 rounded-none border-0 bg-poke-dark p-0 sm:rounded-none">
+      {/* z-[200]: must sit above full-screen overlays that open this dialog
+          (the evolution screen is fixed at z-[100]); the default z-50 would
+          render it invisibly underneath while still blocking all clicks. */}
+      <DialogContent className="z-[200] flex h-[100dvh] w-screen max-w-none flex-col gap-0 rounded-none border-0 bg-poke-dark p-0 sm:rounded-none">
         <DialogTitle className="sr-only">Share Result</DialogTitle>
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3">

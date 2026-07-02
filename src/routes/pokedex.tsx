@@ -237,7 +237,8 @@ function PokedexPage() {
                 key={p.id}
                 onClick={() => {
                   setDetailId(p.id);
-                  setShowShiny(false);
+                  // Open in shiny form when the shiny is unlocked.
+                  setShowShiny(shiny);
                 }}
                 style={
                   {
@@ -265,6 +266,7 @@ function PokedexPage() {
               >
                 <PokemonSprite
                   id={p.id}
+                  shiny={shiny}
                   alt={got ? p.name : "???"}
                   className={`sprite h-16 w-16 ${got ? "" : "sprite-silhouette"}`}
                 />

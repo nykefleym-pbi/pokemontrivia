@@ -644,30 +644,32 @@ function ProfilePage() {
             <SheetTitle className="font-display-xl text-foreground">Trophies</SheetTitle>
           </SheetHeader>
           <div className="mt-3 space-y-2.5">
-            {ACHIEVEMENTS.map((a) => {
-              const got = unlocked.has(a.id);
-              return (
-                <div
-                  key={a.id}
-                  className={`flex items-center gap-3 rounded-3xl p-4 shadow-card ${got ? "bg-card" : "bg-card/60"}`}
-                >
+            {[...ACHIEVEMENTS]
+              .sort((a, b) => Number(unlocked.has(b.id)) - Number(unlocked.has(a.id)))
+              .map((a) => {
+                const got = unlocked.has(a.id);
+                return (
                   <div
-                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl ${got ? "bg-poke-yellow/25" : "bg-muted"}`}
+                    key={a.id}
+                    className={`flex items-center gap-3 rounded-3xl p-4 shadow-card ${got ? "bg-card" : "bg-card/60"}`}
                   >
-                    {got ? a.icon : "🔒"}
-                  </div>
-                  <div className="min-w-0 flex-1">
                     <div
-                      className={`font-display-md ${got ? "text-foreground" : "text-foreground/50"}`}
+                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl ${got ? "bg-poke-yellow/25" : "bg-muted"}`}
                     >
-                      {a.name}
+                      {got ? a.icon : "🔒"}
                     </div>
-                    <div className="text-xs text-foreground/55">{a.desc}</div>
+                    <div className="min-w-0 flex-1">
+                      <div
+                        className={`font-display-md ${got ? "text-foreground" : "text-foreground/50"}`}
+                      >
+                        {a.name}
+                      </div>
+                      <div className="text-xs text-foreground/55">{a.desc}</div>
+                    </div>
+                    {got && <Check className="h-5 w-5 shrink-0 text-hp-good" />}
                   </div>
-                  {got && <Check className="h-5 w-5 shrink-0 text-hp-good" />}
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         </SheetContent>
       </Sheet>

@@ -300,6 +300,20 @@ async function buildTrainerCard(data: TrainerCardShareData): Promise<string> {
     1.5,
   );
 
+  // Invite line below the avatar, before the stat tiles (link highlighted).
+  {
+    const inviteY = avatarCY + avatarD / 2 + 66;
+    ctx.textAlign = "left";
+    ctx.font = `700 30px ${SYSTEM_FONT}`;
+    const lead = "Let's play at ";
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.fillText(lead, 60, inviteY);
+    const leadW = ctx.measureText(lead).width;
+    ctx.fillStyle = "#f2d64e";
+    ctx.font = `800 30px ${SYSTEM_FONT}`;
+    ctx.fillText("pokemontriviabattle.vercel.app", 60 + leadW, inviteY);
+  }
+
   const margin = 60;
   const gap = 30;
   const tileW = (W - margin * 2 - gap * 2) / 3;
