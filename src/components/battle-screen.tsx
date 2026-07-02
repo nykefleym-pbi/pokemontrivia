@@ -8,6 +8,7 @@ import {
   type EnemyTrainer,
   ITEMS,
   enemyHpForLevel,
+  baseDamageForLevel,
   streakMultiplier,
   streakLabel,
   getTpMultiplier,
@@ -667,8 +668,11 @@ function BattleMode({
       newStreak += 1;
       if (newStreak > maxStreakRef.current) maxStreakRef.current = newStreak;
 
-      // streak multiplier
-      let dmg = Math.round(10 * streakMultiplier(newStreak));
+      // streak multiplier on the rank-scaled base damage. Bosses (elite /
+      // weekly) keep the flat base — their HP-per-question budgets are already
+      // balanced; scaling here would trivialize them at high rank.
+      const baseDmg = isElite || isWeekly ? 10 : baseDamageForLevel(level);
+      let dmg = Math.round(baseDmg * streakMultiplier(newStreak));
       // TP damage boost
       const tpNow = useGameStore.getState().trainingPoints[player.id] ?? 0;
       const tpMult = getTpMultiplier(tpNow);
