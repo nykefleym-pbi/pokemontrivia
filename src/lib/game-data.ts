@@ -176,6 +176,13 @@ export function enemyHpForLevel(level: number): number {
   return 100 + 50 * leagueIndex(level);
 }
 
+// The partner grows stronger with rank: base damage per correct answer scales
+// 10/12/14/16/18 alongside the enemy HP curve (100..300), so high-level
+// regular battles stay winnable within the 20-question budget.
+export function baseDamageForLevel(level: number): number {
+  return 10 + 2 * leagueIndex(level);
+}
+
 export function xpForLevel(level: number): number {
   return 80 + (level - 1) * 40;
 }
