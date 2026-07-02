@@ -141,14 +141,14 @@ export function EggHatch() {
             ) : (
               <div className="mt-4 flex flex-col items-center">
                 <div
-                  className="relative text-[96px] leading-none"
+                  className="relative"
                   style={
                     phase === "hatching"
                       ? { animation: "mega-egg-shake 0.4s ease-in-out infinite" }
                       : undefined
                   }
                 >
-                  🥚
+                  <PixelEgg className="h-24 w-24" />
                 </div>
                 <div className="mt-3 text-[15px] font-bold" style={{ color: "var(--brand-ink)" }}>
                   {eggs > 0 ? `You have ${eggs} Poké Egg${eggs === 1 ? "" : "s"}` : "No eggs yet"}

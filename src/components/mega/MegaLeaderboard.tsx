@@ -166,7 +166,7 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
           alt={event.name}
           crossOrigin="anonymous"
           className="absolute object-contain"
-          style={{ right: 24, top: 40, width: 96, height: 96, opacity: 0.92 }}
+          style={{ right: 48, top: 40, width: 96, height: 96, opacity: 0.92 }}
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).style.display = "none";
           }}
