@@ -195,6 +195,60 @@ export async function addFriendByCode(code: string): Promise<{
   }
 }
 
+/** Send a friend request keyed by the target's user id (e.g. from a leaderboard row). */
+export async function sendFriendRequestById(
+  targetId: string,
+): Promise<{ status?: "pending" | "accepted" | "already_pending"; error?: string }> {
+  const uid = await ensureSession();
+  if (!uid) return { error: "No session yet — try again in a moment." };
+  if (targetId === uid) return { error: "That's you!" };
+  try {
+    const rpc = supabase as unknown as {
+      rpc: (
+        fn: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: unknown; error: { message: string } | null }>;
+    };
+    const { data, error } = await rpc.rpc("send_friend_request_by_id", { _target: targetId });
+    if (error) {
+      console.warn("[social] send_friend_request_by_id failed:", error.message);
+      return { error: "Couldn't send request, try again." };
+    }
+    const r = data as { ok?: boolean; status?: string; error?: string } | null;
+    if (r && r.ok === true) {
+      return { status: (r.status as "pending" | "accepted" | "already_pending") ?? "pending" };
+    }
+    const err = (r && r.error) || "";
+    return {
+      error:
+        err === "already_friends"
+          ? "You're already friends."
+          : err === "self"
+            ? "That's you!"
+            : "Couldn't send request, try again.",
+    };
+  } catch (e) {
+    console.warn("[social] sendFriendRequestById threw:", e);
+    return { error: "Couldn't send request, try again." };
+  }
+}
+
+/** User ids the caller has outgoing pending friend requests to. */
+export async function listPendingRequestTargets(): Promise<Set<string>> {
+  const uid = await ensureSession();
+  if (!uid) return new Set();
+  try {
+    const rpc = supabase as unknown as {
+      rpc: (fn: string) => Promise<{ data: unknown; error: { message: string } | null }>;
+    };
+    const { data, error } = await rpc.rpc("my_pending_request_targets");
+    if (error || !Array.isArray(data)) return new Set();
+    return new Set(data as string[]);
+  } catch {
+    return new Set();
+  }
+}
+
 /** List the caller's pending incoming friend requests with requester display info. */
 export async function listIncomingFriendRequests(): Promise<
   Array<{

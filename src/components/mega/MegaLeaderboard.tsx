@@ -11,6 +11,50 @@ import {
   type MegaRunRow,
   type MegaLeaderboardRow,
 } from "@/lib/mega/runs";
+import {
+  ensureSession,
+  listFriends,
+  listPendingRequestTargets,
+  sendFriendRequestById,
+} from "@/lib/social";
+
+// Small per-row friend action: + (add) / Pending / Friend.
+function FriendChip({ state, onAdd }: { state: "add" | "pending" | "friend"; onAdd: () => void }) {
+  if (state === "friend") {
+    return (
+      <span
+        className="shrink-0 rounded-full px-2 py-1 font-pixel"
+        style={{
+          fontSize: 6,
+          color: "rgba(255,255,255,0.55)",
+          background: "rgba(255,255,255,0.08)",
+        }}
+      >
+        FRIEND
+      </span>
+    );
+  }
+  if (state === "pending") {
+    return (
+      <span
+        className="shrink-0 rounded-full px-2 py-1 font-pixel"
+        style={{ fontSize: 6, color: "var(--brand-gold)", background: "rgba(242,214,78,0.12)" }}
+      >
+        PENDING
+      </span>
+    );
+  }
+  return (
+    <button
+      onClick={onAdd}
+      aria-label="Add friend"
+      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[16px] font-black leading-none transition active:scale-90"
+      style={{ background: "var(--brand-gold)", color: "var(--brand-ink)" }}
+    >
+      +
+    </button>
+  );
+}
 
 function fmtTime(ms: number) {
   const s = Math.max(0, Math.round(ms / 1000));
@@ -84,6 +128,48 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
       clearInterval(t);
     };
   }, [event.id]);
+
+  // Friend states for leaderboard rows (+ / Pending / Friend).
+  const [myUid, setMyUid] = useState<string | null>(null);
+  const [friendIds, setFriendIds] = useState<Set<string>>(new Set());
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    void (async () => {
+      const [uid, friends, pending] = await Promise.all([
+        ensureSession(),
+        listFriends(),
+        listPendingRequestTargets(),
+      ]);
+      setMyUid(uid);
+      setFriendIds(new Set(friends.map((f) => f.id)));
+      setPendingIds(pending);
+    })();
+  }, []);
+  async function addFriend(targetId: string) {
+    setPendingIds((prev) => new Set(prev).add(targetId)); // optimistic
+    const res = await sendFriendRequestById(targetId);
+    if (res.error) {
+      setPendingIds((prev) => {
+        const n = new Set(prev);
+        n.delete(targetId);
+        return n;
+      });
+      toast.error(res.error);
+      return;
+    }
+    playSfx("friend_ping");
+    if (res.status === "accepted") {
+      setFriendIds((prev) => new Set(prev).add(targetId));
+      toast.success("You're now friends!");
+    } else {
+      toast.success("Friend request sent!");
+    }
+  }
+  function friendState(userId: string): "add" | "pending" | "friend" {
+    if (friendIds.has(userId)) return "friend";
+    if (pendingIds.has(userId)) return "pending";
+    return "add";
+  }
 
   const ended = now >= Date.parse(event.endsAt);
   const msLeft = Date.parse(event.endsAt) - now;
@@ -432,6 +518,12 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
                       </div>
                     )}
                   </div>
+                  {!me && r.user_id !== myUid && (
+                    <FriendChip
+                      state={friendState(r.user_id)}
+                      onAdd={() => void addFriend(r.user_id)}
+                    />
+                  )}
                   <div
                     className="text-[17px] font-black"
                     style={{ color: medal === "rgba(255,255,255,0.5)" ? "#fff" : medal }}
@@ -527,6 +619,12 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
                       {r.correct}/{r.total} · {fmtTime(r.time_ms)}
                     </div>
                   </div>
+                  {!me && r.user_id !== myUid && (
+                    <FriendChip
+                      state={friendState(r.user_id)}
+                      onAdd={() => void addFriend(r.user_id)}
+                    />
+                  )}
                   <div className="text-[17px] font-black text-white">{Math.round(r.accuracy)}%</div>
                 </div>
               );

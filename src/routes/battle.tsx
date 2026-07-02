@@ -20,6 +20,7 @@ import {
   type MegaEvent,
 } from "@/lib/mega/schedule";
 import { ensureMegaQuestions } from "@/lib/mega/questions";
+import { WHATS_NEW } from "@/lib/whats-new";
 import { fetchMegaLeaderboard, getMyMegaRun, getMegaAttempts } from "@/lib/mega/runs";
 import { Toaster } from "@/components/ui/sonner";
 import { nextPendingElite, type EliteMember } from "@/lib/elite-four";
@@ -69,12 +70,14 @@ function BattlePage() {
   const dailyDone = dailyResult?.date === today;
   const whosThatHourKey = useGameStore((s) => s.whosThatHourKey);
   const engageDismissCount = useGameStore((s) => s.engageDismissCount);
+  const lastSeenWhatsNew = useGameStore((s) => s.lastSeenWhatsNew);
+  const markWhatsNewSeen = useGameStore((s) => s.markWhatsNewSeen);
   const engageDismissDate = useGameStore((s) => s.engageDismissDate);
   const recordEngageDismiss = useGameStore((s) => s.recordEngageDismiss);
   const engageShownThisSession = useGameStore((s) => s.engageShownThisSession);
   const setEngageShownThisSession = useGameStore((s) => s.setEngageShownThisSession);
   const [engageCards, setEngageCards] = useState<Array<{
-    kind: "daily" | "weekly" | "whosthat" | "mega" | "megaleaderboard";
+    kind: "whatsnew" | "daily" | "weekly" | "whosthat" | "mega" | "megaleaderboard";
     title: string;
     desc: string;
     chip: string;
@@ -438,7 +441,7 @@ function BattlePage() {
     const weeklyStatus = weeklyLeague?.status;
     const leader = weeklyLeague ? findGymLeader(weeklyLeague.gymLeaderId) : null;
     const cards: Array<{
-      kind: "daily" | "weekly" | "whosthat" | "mega" | "megaleaderboard";
+      kind: "whatsnew" | "daily" | "weekly" | "whosthat" | "mega" | "megaleaderboard";
       title: string;
       desc: string;
       chip: string;
@@ -447,6 +450,17 @@ function BattlePage() {
       heroSrc?: string;
       heroPokeId?: number;
     }> = [];
+    // What's New leads the carousel until dismissed (once per release).
+    if (lastSeenWhatsNew < WHATS_NEW.version) {
+      cards.push({
+        kind: "whatsnew",
+        title: WHATS_NEW.title,
+        desc: WHATS_NEW.bullets.join("\n"),
+        chip: `UPDATE ${WHATS_NEW.version}`,
+        cta: "Got it!",
+        onPlay: () => markWhatsNewSeen(WHATS_NEW.version),
+      });
+    }
     const dailyIncluded = !dailyDone;
     if (dailyIncluded) {
       cards.push({
@@ -546,6 +560,8 @@ function BattlePage() {
     engageShownThisSession,
     setEngageShownThisSession,
     hasOnboarded,
+    lastSeenWhatsNew,
+    markWhatsNewSeen,
   ]);
 
   const ENGAGE_THEME: Record<
@@ -636,6 +652,23 @@ function BattlePage() {
       titleColor: "var(--brand-ink)",
       descColor: "var(--brand-slate)",
     },
+    whatsnew: {
+      cardBg: "var(--brand-cream)",
+      hero: "radial-gradient(circle at 50% 40%, #F2D64E 0%, #E8A93C 62%, #C9822A 100%)",
+      ray: "rgba(255,255,255,0.2)",
+      glow: "rgba(255,255,255,0.5)",
+      labelBg: "var(--brand-ink)",
+      labelColor: "var(--brand-gold)",
+      label: "WHAT'S NEW",
+      chipBg: "#F6E6C4",
+      chipColor: "#9A7320",
+      chipStroke: "#B8862A",
+      ctaBg: "var(--brand-red)",
+      ctaColor: "#fff",
+      ctaShadow: "#A82A20",
+      titleColor: "var(--brand-ink)",
+      descColor: "var(--brand-slate)",
+    },
     megaleaderboard: {
       cardBg: "var(--brand-cream)",
       hero: "radial-gradient(circle at 50% 34%, #2E3A5C 0%, var(--brand-ink) 66%)",
@@ -715,6 +748,11 @@ function BattlePage() {
                             background: `radial-gradient(circle, ${t.glow} 0%, transparent 70%)`,
                           }}
                         />
+                      )}
+                      {card.kind === "whatsnew" && (
+                        <div className="relative text-[96px] leading-none drop-shadow-[0_10px_14px_rgba(120,80,0,0.35)]">
+                          ✨
+                        </div>
                       )}
                       {card.kind === "daily" && (
                         <PokemonSprite
@@ -862,7 +900,7 @@ function BattlePage() {
                         {card.title}
                       </div>
                       <div
-                        className="mt-1.5 text-[14px] leading-snug"
+                        className="mt-1.5 whitespace-pre-line text-[14px] leading-snug"
                         style={{ color: t.descColor }}
                       >
                         {card.desc}

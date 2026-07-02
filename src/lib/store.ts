@@ -118,6 +118,9 @@ export interface GameState {
   pokemon: PokeEntry | null;
   /** Rolled ability id (one of the partner's primary-type trio); null = legacy default. */
   abilityId: AbilityId | null;
+  /** Highest WHATS_NEW.version the user has dismissed. */
+  lastSeenWhatsNew: number;
+  markWhatsNewSeen: (version: number) => void;
 
   // progression
   level: number;
@@ -266,6 +269,8 @@ export const useGameStore = create<GameState>()(
       ...createCollectionsSlice(set, get, store),
       pokemon: null,
       abilityId: null,
+      lastSeenWhatsNew: 0,
+      markWhatsNewSeen: (version) => set({ lastSeenWhatsNew: version }),
 
       level: 1,
       peakLevel: 1,
@@ -367,6 +372,15 @@ export const useGameStore = create<GameState>()(
           trainerName: `${poke.name}-${suffix}`,
           pokemon: poke,
           abilityId: rollAbilityId(poke.types),
+          pokedex: {
+            ...get().pokedex,
+            [poke.id]: {
+              pokemonId: poke.id,
+              firstSeenAt: Date.now(),
+              shinyUnlocked: false,
+              defeatCount: 0,
+            },
+          },
           trainerSprite: trainer.id,
         });
       },
@@ -420,7 +434,21 @@ export const useGameStore = create<GameState>()(
           claimedMegaRewards: [],
         }),
 
-      setPokemon: (p) => set({ pokemon: p, abilityId: rollAbilityId(p.types) }),
+      setPokemon: (p) =>
+        set((s) => ({
+          pokemon: p,
+          abilityId: rollAbilityId(p.types),
+          // A chosen partner counts as captured.
+          pokedex: {
+            ...s.pokedex,
+            [p.id]: {
+              pokemonId: p.id,
+              firstSeenAt: s.pokedex[p.id]?.firstSeenAt ?? Date.now(),
+              shinyUnlocked: s.pokedex[p.id]?.shinyUnlocked ?? false,
+              defeatCount: s.pokedex[p.id]?.defeatCount ?? 0,
+            },
+          },
+        })),
 
       startBattle: () =>
         set({
@@ -533,6 +561,7 @@ export const useGameStore = create<GameState>()(
         trainerSprite: s.trainerSprite,
         pokemon: s.pokemon,
         abilityId: s.abilityId,
+        lastSeenWhatsNew: s.lastSeenWhatsNew,
         level: s.level,
         peakLevel: s.peakLevel,
         xp: s.xp,
@@ -602,6 +631,7 @@ export const useGameStore = create<GameState>()(
           coins: migratedCoins,
           pokemon: rehydratePokemon(p.pokemon ?? null),
           abilityId: p.abilityId ?? null,
+          lastSeenWhatsNew: p.lastSeenWhatsNew ?? 0,
           flags: p.flags ?? [],
           battleLog: p.battleLog ?? [],
           dailyResult,

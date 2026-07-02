@@ -9,7 +9,7 @@ they ship.
    Weekly League, Who's That Pokémon, and Mega Raid become available for play.
 2. **More Pokémon items** — add new items; possible rebalance of existing ones.
 3. **Poké-Egg mechanics** — design and implement what eggs do.
-4. **Partner re-pick restriction** — limit re-picking the partner Pokémon to
+4. ~~**Partner re-pick restriction**~~ ✅ shipped — — limit re-picking the partner Pokémon to
    Pokémon already captured in the Pokédex.
 5. **Grow curated_questions beyond 2000+** — add more curated questions.
 6. **PvP mechanics** —
@@ -18,10 +18,10 @@ they ship.
    - Long-distance: asynchronous battle via friend-list invite.
 7. **Invite campaign / referral** — grow the user base.
 8. **Level-up rewards** — grant rewards on level up.
-9. **Suggestions / bug-report form** — "Submit suggestion" / "Report bug"
+9. ~~**Suggestions / bug-report form**~~ ✅ shipped — — "Submit suggestion" / "Report bug"
    entries in Profile → Settings.
-10. **What's New card** — carousel card announcing new features.
-11. **Add-friends button in Mega Raid** — quick friend-adding from the raid.
+10. ~~**What's New card**~~ ✅ shipped — — carousel card announcing new features.
+11. ~~**Add-friends button in Mega Raid**~~ ✅ shipped — — quick friend-adding from the raid.
 
 ## Bug fixes / polish
 
