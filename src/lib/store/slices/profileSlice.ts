@@ -62,6 +62,16 @@ export const createProfileSlice: StoreSlice<
       trainerName: name,
       pokemon,
       abilityId: rollAbilityId(pokemon.types),
+      // The starter counts as captured so the partner picker is never empty.
+      pokedex: {
+        ...get().pokedex,
+        [pokemon.id]: {
+          pokemonId: pokemon.id,
+          firstSeenAt: get().pokedex[pokemon.id]?.firstSeenAt ?? Date.now(),
+          shinyUnlocked: get().pokedex[pokemon.id]?.shinyUnlocked ?? false,
+          defeatCount: get().pokedex[pokemon.id]?.defeatCount ?? 0,
+        },
+      },
       trainerSprite,
     }),
 

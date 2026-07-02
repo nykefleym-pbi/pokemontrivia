@@ -18,8 +18,12 @@ import {
   Loader2,
   IdCard,
   ImageDown,
+  Lightbulb,
+  Bug,
 } from "lucide-react";
 import { ShareCardDialog } from "@/components/share-card-dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { Textarea } from "@/components/ui/textarea";
 import { useGameStore } from "@/lib/store";
 import {
   listFriends,
@@ -33,7 +37,7 @@ import {
 } from "@/lib/social";
 import { validateTrainerName, claimErrorMessage, TRAINER_NAME_MAX } from "@/lib/trainer-name";
 import { rankForLevel, TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
-import { STARTING_PARTNERS, type PokeEntry } from "@/lib/pokemon-data";
+import { ALL_POKEMON, type PokeEntry } from "@/lib/pokemon-data";
 
 import { EvolutionScreen } from "@/components/evolution-screen";
 import { PokemonSprite } from "@/components/game-ui";
@@ -165,6 +169,55 @@ function ProfilePage() {
   }
   const [badgesOpen, setBadgesOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState<null | "suggestion" | "bug">(null);
+  const [feedbackMsg, setFeedbackMsg] = useState("");
+  const [feedbackContact, setFeedbackContact] = useState("");
+  const [sendingFeedback, setSendingFeedback] = useState(false);
+  const lastFeedbackAtRef = React.useRef(0);
+
+  async function submitFeedback() {
+    if (!feedbackOpen || sendingFeedback) return;
+    const msg = feedbackMsg.trim();
+    if (msg.length < 10) {
+      toast.error("Please write at least 10 characters.");
+      return;
+    }
+    if (Date.now() - lastFeedbackAtRef.current < 60_000) {
+      toast.error("Please wait a minute between submissions.");
+      return;
+    }
+    setSendingFeedback(true);
+    try {
+      const { error } = await (
+        supabase as unknown as {
+          from: (t: string) => {
+            insert: (v: Record<string, unknown>) => Promise<{ error: { message: string } | null }>;
+          };
+        }
+      )
+        .from("feedback")
+        .insert({
+          trainer_name: trainerName || null,
+          category: feedbackOpen,
+          message: msg.slice(0, 2000),
+          contact: feedbackContact.trim() || null,
+          app_version: null,
+        });
+      if (error) {
+        toast.error("Couldn't send right now — please try again.");
+        return;
+      }
+      lastFeedbackAtRef.current = Date.now();
+      toast.success(
+        feedbackOpen === "bug" ? "Bug report sent — thank you!" : "Suggestion sent — thank you!",
+      );
+      setFeedbackOpen(null);
+      setFeedbackMsg("");
+      setFeedbackContact("");
+    } finally {
+      setSendingFeedback(false);
+    }
+  }
   const [statsOpen, setStatsOpen] = useState(false);
 
   const [, setEditingName] = useState(false);
@@ -202,13 +255,15 @@ function ProfilePage() {
     if (!hasOnboarded) navigate({ to: "/" });
   }, [hasOnboarded, navigate]);
 
+  // Re-picking is limited to Pokémon captured in the Pokédex (the current
+  // partner always stays available). Onboarding still uses STARTING_PARTNERS.
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return STARTING_PARTNERS.filter((p) => (q ? p.name.toLowerCase().startsWith(q) : true)).slice(
-      0,
-      9,
-    );
-  }, [query]);
+    return ALL_POKEMON.filter(
+      (p) =>
+        (pokedex[p.id] || p.id === pokemon?.id) && (q ? p.name.toLowerCase().startsWith(q) : true),
+    ).slice(0, 9);
+  }, [query, pokedex, pokemon?.id]);
   const trainerResults = useMemo(() => {
     const q = trainerQuery.trim().toLowerCase();
     const pool = TRAINER_SPRITES.filter((t) => !brokenTrainerIds.has(t.id));
@@ -625,6 +680,45 @@ function ProfilePage() {
         </SheetContent>
       </Sheet>
 
+      {/* Feedback sheet */}
+      <Sheet open={feedbackOpen !== null} onOpenChange={(open) => !open && setFeedbackOpen(null)}>
+        <SheetContent side="bottom" className="rounded-t-3xl bg-poke-cream">
+          <SheetHeader>
+            <SheetTitle className="font-display-xl text-foreground">
+              {feedbackOpen === "bug" ? "Report a bug" : "Submit a suggestion"}
+            </SheetTitle>
+          </SheetHeader>
+          <div className="mt-3 space-y-3 pb-4">
+            <Textarea
+              value={feedbackMsg}
+              onChange={(e) => setFeedbackMsg(e.target.value)}
+              maxLength={2000}
+              rows={5}
+              placeholder={
+                feedbackOpen === "bug"
+                  ? "What happened? What did you expect to happen?"
+                  : "What would make the game more fun?"
+              }
+              className="rounded-2xl bg-card"
+            />
+            <Input
+              value={feedbackContact}
+              onChange={(e) => setFeedbackContact(e.target.value)}
+              maxLength={200}
+              placeholder="Contact (optional — email or trainer name)"
+              className="rounded-2xl bg-card"
+            />
+            <Button
+              onClick={() => void submitFeedback()}
+              disabled={sendingFeedback || feedbackMsg.trim().length < 10}
+              className="h-12 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
+            >
+              {sendingFeedback ? "Sending…" : "Send"}
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
+
       {/* Trophies sheet */}
       <Sheet
         open={trophiesOpen}
@@ -805,6 +899,48 @@ function ProfilePage() {
                     }}
                   />
                 </div>
+              </div>
+            </section>
+
+            <section>
+              <div className="mb-2 font-pixel-xs uppercase text-foreground/45">Feedback</div>
+              <div className="overflow-hidden rounded-3xl bg-card shadow-card divide-y divide-border">
+                <button
+                  onClick={() => setFeedbackOpen("suggestion")}
+                  className="flex w-full items-center justify-between p-4 text-left transition active:scale-[0.98]"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
+                      <Lightbulb className="h-5 w-5 text-foreground" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-foreground">
+                        Submit a suggestion
+                      </div>
+                      <div className="text-xs text-foreground/55">
+                        Ideas to make the game better
+                      </div>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-foreground/40" />
+                </button>
+                <button
+                  onClick={() => setFeedbackOpen("bug")}
+                  className="flex w-full items-center justify-between p-4 text-left transition active:scale-[0.98]"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
+                      <Bug className="h-5 w-5 text-foreground" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-foreground">Report a bug</div>
+                      <div className="text-xs text-foreground/55">
+                        Something broken? Tell us about it
+                      </div>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-foreground/40" />
+                </button>
               </div>
             </section>
 
@@ -1037,6 +1173,11 @@ function ProfilePage() {
                 <div className="text-[11px] font-semibold">{p.name}</div>
               </button>
             ))}
+            {results.length === 0 && (
+              <div className="col-span-3 rounded-2xl bg-muted/40 p-5 text-center text-xs text-muted-foreground">
+                Capture Pokémon in battle to unlock them as partners!
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
