@@ -13,7 +13,12 @@ import { MegaLeaderboard } from "@/components/mega/MegaLeaderboard";
 import { BattleHome } from "@/components/battle-home";
 import { ElitePendingTakeover } from "@/components/elite-pending-takeover";
 
-import { fetchActiveMegaEvent, MEGA_MAX_ATTEMPTS, type MegaEvent } from "@/lib/mega/schedule";
+import {
+  fetchActiveMegaEvent,
+  MEGA_MAX_ATTEMPTS,
+  MEGA_WIN_CORRECT,
+  type MegaEvent,
+} from "@/lib/mega/schedule";
 import { ensureMegaQuestions } from "@/lib/mega/questions";
 import { fetchMegaLeaderboard, getMyMegaRun, getMegaAttempts } from "@/lib/mega/runs";
 import { Toaster } from "@/components/ui/sonner";
@@ -54,6 +59,7 @@ function BattlePage() {
     rank: number;
     total: number;
     attempts: number;
+    won: boolean;
   } | null>(null);
   const [battleKey, setBattleKey] = useState(0);
 
@@ -153,7 +159,7 @@ function BattlePage() {
     const ev = await fetchActiveMegaEvent();
     if (!ev) {
       setActiveMega(null);
-      setMegaStats({ rank: 0, total: 0, attempts: 0 });
+      setMegaStats({ rank: 0, total: 0, attempts: 0, won: false });
       return;
     }
     try {
@@ -164,11 +170,12 @@ function BattlePage() {
       const total = board.length;
       const rank = mineRun ? board.findIndex((r) => r.user_id === mineRun.user_id) + 1 : 0;
       const attempts = mineRun?.attempts ?? 0;
+      const won = !!mineRun && mineRun.correct >= MEGA_WIN_CORRECT;
       setActiveMega(ev);
-      setMegaStats({ rank, total, attempts });
+      setMegaStats({ rank, total, attempts, won });
     } catch {
       setActiveMega(ev);
-      setMegaStats({ rank: 0, total: 0, attempts: 0 });
+      setMegaStats({ rank: 0, total: 0, attempts: 0, won: false });
     }
   }, []);
 
@@ -490,7 +497,10 @@ function BattlePage() {
             : "Be the first to set the pace — top 3 earn exclusive rewards.";
       const attemptsUsed = megaStats?.attempts ?? 0;
       const exhausted = attemptsUsed >= MEGA_MAX_ATTEMPTS;
-      if (!exhausted) {
+      // Once the boss is beaten (or tries are used up) stop advertising the
+      // raid; the leaderboard card below stays until the event ends.
+      const beaten = megaStats?.won ?? false;
+      if (!exhausted && !beaten) {
         cards.push({
           kind: "mega",
           title: `${activeMega.name} appeared!`,

@@ -7,6 +7,10 @@ import type { PokeEntry, PokeType } from "@/lib/pokemon-data.generated";
 const db = supabase as unknown as { from: (t: string) => any };
 
 export const MEGA_BOSS_HP = 400;
+/** Boss damage per correct answer. */
+export const MEGA_BOSS_DMG = 10;
+/** Correct answers needed to deplete the boss (a winning run). */
+export const MEGA_WIN_CORRECT = MEGA_BOSS_HP / MEGA_BOSS_DMG;
 export const MEGA_SHINY_CHANCE = 0.1;
 export const MEGA_QUESTION_COUNT = 50;
 /** First try + 1 retake. */
