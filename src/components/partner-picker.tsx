@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { STARTING_PARTNERS, type PokeEntry } from "@/lib/pokemon-data";
-import { getAbility } from "@/lib/abilities";
+import { ABILITY_SETS } from "@/lib/abilities";
 import { PokemonSprite, TypeBadge } from "@/components/game-ui";
 
 interface Props {
@@ -55,8 +55,8 @@ export function PartnerPicker({ onPick, selected, limit = 24 }: Props) {
                   <TypeBadge key={t} type={t} size="sm" />
                 ))}
               </div>
-              <div className="font-pixel text-[8px] text-primary">
-                ⚡ {getAbility(p.types).name}
+              <div className="truncate font-pixel text-[8px] text-primary">
+                ⚡ {ABILITY_SETS[p.types[0]].map((a) => a.name).join(" · ")}
               </div>
             </button>
           );

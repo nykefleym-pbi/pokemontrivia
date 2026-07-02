@@ -9,6 +9,7 @@ import {
   EVOLUTION_TP_COST,
 } from "./game-data";
 import type { PokeEntry } from "./pokemon-data";
+import { rollAbilityId, type AbilityId } from "./abilities";
 import { ALL_POKEMON, rehydratePokemon } from "./pokemon-data";
 import type { Round } from "@/routes/whos-that-pokemon";
 import { createMegaSlice } from "@/lib/store/slices/megaSlice";
@@ -115,6 +116,8 @@ export interface GameState {
   megaTrophies: { eventId: string; name: string; pokeId: number; claimedAt: string }[];
   claimedMegaRewards: string[];
   pokemon: PokeEntry | null;
+  /** Rolled ability id (one of the partner's primary-type trio); null = legacy default. */
+  abilityId: AbilityId | null;
 
   // progression
   level: number;
@@ -262,6 +265,7 @@ export const useGameStore = create<GameState>()(
       ...createItemsSlice(set, get, store),
       ...createCollectionsSlice(set, get, store),
       pokemon: null,
+      abilityId: null,
 
       level: 1,
       peakLevel: 1,
@@ -302,6 +306,12 @@ export const useGameStore = create<GameState>()(
         newTpMap[toPokemon.id] = (newTpMap[toPokemon.id] ?? 0) + remainingTp;
         set({
           pokemon: toPokemon,
+          // Keep the rolled ability across evolution unless the primary type
+          // changed (then re-roll from the new type's trio).
+          abilityId:
+            toPokemon.types[0] === s.pokemon.types[0]
+              ? s.abilityId
+              : rollAbilityId(toPokemon.types),
           trainingPoints: newTpMap,
           pokedex: {
             ...s.pokedex,
@@ -356,6 +366,7 @@ export const useGameStore = create<GameState>()(
           isGuest: true,
           trainerName: `${poke.name}-${suffix}`,
           pokemon: poke,
+          abilityId: rollAbilityId(poke.types),
           trainerSprite: trainer.id,
         });
       },
@@ -366,6 +377,7 @@ export const useGameStore = create<GameState>()(
           trainerName: "",
           trainerSprite: "red",
           pokemon: null,
+          abilityId: null,
           level: 1,
           peakLevel: 1,
           xp: 0,
@@ -408,7 +420,7 @@ export const useGameStore = create<GameState>()(
           claimedMegaRewards: [],
         }),
 
-      setPokemon: (p) => set({ pokemon: p }),
+      setPokemon: (p) => set({ pokemon: p, abilityId: rollAbilityId(p.types) }),
 
       startBattle: () =>
         set({
@@ -520,6 +532,7 @@ export const useGameStore = create<GameState>()(
         trainerName: s.trainerName,
         trainerSprite: s.trainerSprite,
         pokemon: s.pokemon,
+        abilityId: s.abilityId,
         level: s.level,
         peakLevel: s.peakLevel,
         xp: s.xp,
@@ -588,6 +601,7 @@ export const useGameStore = create<GameState>()(
           xp: migratedXp,
           coins: migratedCoins,
           pokemon: rehydratePokemon(p.pokemon ?? null),
+          abilityId: p.abilityId ?? null,
           flags: p.flags ?? [],
           battleLog: p.battleLog ?? [],
           dailyResult,

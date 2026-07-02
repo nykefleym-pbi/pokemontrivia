@@ -305,7 +305,11 @@ function BattleMode({
     return useGameStore.getState().guaranteedShinyPending ? { ...base, isShiny: true } : base;
   });
   const enemyMaxHp = isWeekly ? 250 : isElite ? 200 : enemyHpForLevel(level);
-  const playerAbility = useMemo(() => getAbilityFn(player.types), [player.types]);
+  const abilityId = useGameStore((s) => s.abilityId);
+  const playerAbility = useMemo(
+    () => getAbilityFn(player.types, abilityId),
+    [player.types, abilityId],
+  );
   const playerMaxHp = playerAbility.id === "adaptable" ? 105 : 100;
   const [playerHp, setPlayerHp] = useState(playerMaxHp);
   const [enemyHp, setEnemyHp] = useState(enemyMaxHp);
@@ -376,6 +380,13 @@ function BattleMode({
     hydrationUsed: false,
     cursedBodyPending: null as { hpBefore: number; appliedAt: number } | null,
     triggered: new Set<string>(),
+    // set 2/3 ability state
+    torrentUsed: false,
+    sandForceUsed: 0,
+    moxieBonus: 0,
+    hadWrong: false,
+    lastWasWrong: false,
+    venom: 0,
   });
   const [timer, setTimer] = useState(20);
 
@@ -405,6 +416,10 @@ function BattleMode({
 
   function startPoisonTick() {
     stopPoisonTick();
+    if (playerAbility.id === "magic-guard") {
+      triggerAbilityToast(playerAbility);
+      return;
+    }
     poisonTimerRef.current = setInterval(() => {
       setPlayerHp((hp) => {
         const tick = Math.max(1, Math.floor(playerMaxHp * 0.02));
@@ -431,7 +446,10 @@ function BattleMode({
       return;
     }
     playSfx(kind === "confused" ? "confused" : "poisoned");
-    const cureNeeds = { confused: 2, poisoned: 3 } as const;
+    const cureNeeds = {
+      confused: playerAbility.id === "toxic" ? 1 : 2,
+      poisoned: 3,
+    } as const;
     setStatuses((prev) => {
       const without = prev.filter((s) => s.kind !== kind);
       return [...without, { kind, curesRemaining: cureNeeds[kind], appliedAt: Date.now() }];
@@ -517,6 +535,16 @@ function BattleMode({
     setChosen(null);
     setRevealedWrong(null);
     setRevealedCorrect(null);
+    // Stealth Rock: 3 chip damage to the enemy at the start of every round.
+    if (playerAbility.id === "stealth-rock" && idx > 0 && idx % QUESTIONS_PER_SET === 0) {
+      const chippedHp = Math.max(0, enemyHp - 3);
+      setEnemyHp(chippedHp);
+      triggerAbilityToast(playerAbility);
+      if (chippedHp <= 0) {
+        setTimeout(() => finish(true), 600);
+        return;
+      }
+    }
     const data = questions[idx];
     if (!data) {
       // Out of questions — decide based on remaining HP.
@@ -671,7 +699,8 @@ function BattleMode({
       // streak multiplier on the rank-scaled base damage. Bosses (elite /
       // weekly) keep the flat base — their HP-per-question budgets are already
       // balanced; scaling here would trivialize them at high rank.
-      const baseDmg = isElite || isWeekly ? 10 : baseDamageForLevel(level);
+      let baseDmg = isElite || isWeekly ? 10 : baseDamageForLevel(level);
+      if (playerAbility.id === "dragon-dance") baseDmg += Math.floor(questionIdx / 5);
       let dmg = Math.round(baseDmg * streakMultiplier(newStreak));
       // TP damage boost
       const tpNow = useGameStore.getState().trainingPoints[player.id] ?? 0;
@@ -681,7 +710,12 @@ function BattleMode({
       const elapsedSec = elapsed / 1000;
       const totalTime = TIMER_BASE + bonusTime;
       const speedRatio = Math.max(0, (totalTime - elapsedSec) / totalTime);
-      const speedBonus = Math.round(5 * speedRatio);
+      let speedBonus = Math.round(5 * speedRatio);
+      if (playerAbility.id === "aerilate") {
+        speedBonus = Math.round(speedBonus * 1.5);
+        if (speedBonus > 0) triggerAbilityToast(playerAbility);
+      }
+      if (playerAbility.id === "swift-swim") speedBonus = Math.max(3, speedBonus);
       speedBonusTotalRef.current += speedBonus;
       dmg += speedBonus;
 
@@ -696,11 +730,54 @@ function BattleMode({
         dmg = Math.round(dmg * 1.2);
         triggerAbilityToast(playerAbility);
       }
-      // Guts: +10% dmg if below 50% HP
+      // Guts: +15% dmg if below 50% HP
       if (playerAbility.id === "guts" && playerHp < playerMaxHp / 2) {
-        dmg = Math.round(dmg * 1.1);
+        dmg = Math.round(dmg * 1.15);
         triggerAbilityToast(playerAbility);
       }
+      if (playerAbility.id === "flash-fire") dmg = Math.round(dmg * 1.08);
+      if (playerAbility.id === "no-guard") dmg = Math.round(dmg * 1.18);
+      if (playerAbility.id === "blaze" && playerHp < playerMaxHp * 0.4) {
+        dmg = Math.round(dmg * 1.2);
+        triggerAbilityToast(playerAbility);
+      }
+      if (playerAbility.id === "overgrow" && enemyHp > enemyMaxHp / 2) dmg = Math.round(dmg * 1.12);
+      if (playerAbility.id === "bulldoze" && disadvantaged) {
+        dmg = Math.round(dmg * 1.25);
+        triggerAbilityToast(playerAbility);
+      }
+      if (playerAbility.id === "acrobatics" && playerHp === playerMaxHp)
+        dmg = Math.round(dmg * 1.3);
+      if (playerAbility.id === "berserk" && abilityStateRef.current.hadWrong)
+        dmg = Math.round(dmg * 1.12);
+      if (playerAbility.id === "hex" && statuses.length > 0) {
+        dmg = Math.round(dmg * 1.3);
+        triggerAbilityToast(playerAbility);
+      }
+      if (playerAbility.id === "dark-aura" && (isElite || isWeekly)) dmg = Math.round(dmg * 1.1);
+      if (playerAbility.id === "even-tempo" && !superEff && !disadvantaged && !immune) dmg += 2;
+      if (playerAbility.id === "charge") dmg += 2;
+      if (playerAbility.id === "swarm" && newStreak >= 3) dmg += 3;
+      if (playerAbility.id === "moonblast" && newStreak >= 3) dmg += 4;
+      if (playerAbility.id === "volt-absorb" && elapsedSec <= 5) {
+        dmg += 3;
+        triggerAbilityToast(playerAbility);
+      }
+      if (playerAbility.id === "counter" && abilityStateRef.current.lastWasWrong) {
+        dmg += 4;
+        triggerAbilityToast(playerAbility);
+      }
+      if (playerAbility.id === "moxie") {
+        dmg += abilityStateRef.current.moxieBonus;
+        if (newStreak > 0 && newStreak % 3 === 0) {
+          abilityStateRef.current.moxieBonus += 1;
+          triggerAbilityToast(playerAbility);
+        }
+      }
+      // Poison Touch: venom from the previous correct answer lands now.
+      dmg += abilityStateRef.current.venom;
+      abilityStateRef.current.venom = 0;
+      abilityStateRef.current.lastWasWrong = false;
 
       const newEnemyHp = Math.max(0, enemyHp - dmg);
       if (dmg > topDmgRef.current) topDmgRef.current = dmg;
@@ -715,6 +792,15 @@ function BattleMode({
       // Leech Seed: heal 2
       if (playerAbility.id === "leech-seed") {
         setPlayerHp((hp) => Math.min(playerMaxHp, hp + 2));
+        triggerAbilityToast(playerAbility);
+      }
+      if (playerAbility.id === "poison-touch") abilityStateRef.current.venom = 2;
+      if (playerAbility.id === "ice-body" && correctCountRef.current % 4 === 0) {
+        setPlayerHp((hp) => Math.min(playerMaxHp, hp + 6));
+        triggerAbilityToast(playerAbility);
+      }
+      if (playerAbility.id === "pixie-dust" && newStreak > 0 && newStreak % 3 === 0) {
+        setPlayerHp((hp) => Math.min(playerMaxHp, hp + 5));
         triggerAbilityToast(playerAbility);
       }
       // Cursed Body: restore HP if pending within 5s
@@ -758,6 +844,7 @@ function BattleMode({
       let wrongDmg = 10;
       if (immune) wrongDmg = 5;
       else if (disadvantaged) wrongDmg = 15;
+      if (playerAbility.id === "no-guard") wrongDmg += 2;
       if (assaultVestActiveRef.current) wrongDmg = Math.floor(wrongDmg / 2);
 
       // Ability modifiers (in spec order)
@@ -769,7 +856,19 @@ function BattleMode({
         wrongDmg = Math.floor(wrongDmg * 0.75);
         triggerAbilityToast(playerAbility);
       }
-      if (playerAbility.id === "static" && Math.random() < 0.15) {
+      if (playerAbility.id === "slush-rush" && disadvantaged) {
+        wrongDmg = Math.max(0, wrongDmg - 5);
+        triggerAbilityToast(playerAbility);
+      }
+      if (playerAbility.id === "iron-barbs") {
+        wrongDmg = Math.max(0, wrongDmg - 3);
+        triggerAbilityToast(playerAbility);
+      }
+      if (playerAbility.id === "solid-rock" && wrongDmg > 12) {
+        wrongDmg = 12;
+        triggerAbilityToast(playerAbility);
+      }
+      if (playerAbility.id === "static" && Math.random() < 0.2) {
         wrongDmg = Math.floor(wrongDmg / 2);
         triggerAbilityToast(playerAbility);
       }
@@ -778,11 +877,11 @@ function BattleMode({
         abilityStateRef.current.iceFirstWrongConsumed = true;
         triggerAbilityToast(playerAbility);
       }
-      if (playerAbility.id === "flame-body" && Math.random() < 0.1) {
+      if (playerAbility.id === "flame-body" && Math.random() < 0.15) {
         wrongDmg = 0;
         triggerAbilityToast(playerAbility);
       }
-      if (playerAbility.id === "cute-charm" && Math.random() < 0.05) {
+      if (playerAbility.id === "cute-charm" && Math.random() < 0.15) {
         wrongDmg = 0;
         triggerAbilityToast(playerAbility);
       }
@@ -813,22 +912,71 @@ function BattleMode({
         toast.success("🎽 Focus Band — restored to 50% HP!");
       }
 
+      // Torrent: first drop below 30% HP heals 10 (once per battle)
+      if (
+        playerAbility.id === "torrent" &&
+        !abilityStateRef.current.torrentUsed &&
+        newPlayerHp > 0 &&
+        newPlayerHp < playerMaxHp * 0.3
+      ) {
+        abilityStateRef.current.torrentUsed = true;
+        newPlayerHp = Math.min(playerMaxHp, newPlayerHp + 10);
+        triggerAbilityToast(playerAbility);
+      }
+
       setPlayerHp(newPlayerHp);
       setShakeWho("player");
       setFloatDmg({ who: "player", n: wrongDmg, super: false, speedy: false });
-      setStreak(0);
-      lastStreakLabelRef.current = null;
+      // Sand Force: the first two wrong answers keep the streak alive.
+      const keepStreak =
+        playerAbility.id === "sand-force" && abilityStateRef.current.sandForceUsed < 2;
+      if (keepStreak) {
+        abilityStateRef.current.sandForceUsed += 1;
+        triggerAbilityToast(playerAbility);
+      } else {
+        setStreak(0);
+        lastStreakLabelRef.current = null;
+      }
+      abilityStateRef.current.hadWrong = true;
+      abilityStateRef.current.lastWasWrong = true;
       recordAnswer(false, elapsed, streak);
       playSfx("wrong");
       setTimeout(() => setShakeWho(null), 500);
       setTimeout(() => setFloatDmg(null), 1000);
 
-      // Status thresholds
-      if (wrongStreakRef.current === 2 && !statuses.some((s) => s.kind === "confused")) {
+      // Chip damage to the enemy (Corrosion / Shadow Tag / landed venom)
+      let chip = abilityStateRef.current.venom;
+      abilityStateRef.current.venom = 0;
+      if (playerAbility.id === "corrosion") {
+        chip += 2;
+        triggerAbilityToast(playerAbility);
+      }
+      if (playerAbility.id === "shadow-tag" && wrongDmg > 0) {
+        chip += 2;
+        triggerAbilityToast(playerAbility);
+      }
+      if (chip > 0 && newPlayerHp > 0) {
+        const chippedHp = Math.max(0, enemyHp - chip);
+        setEnemyHp(chippedHp);
+        if (chippedHp <= 0) {
+          setTimeout(() => finish(true), 1400);
+          setPhase("feedback");
+          return;
+        }
+      }
+
+      // Status thresholds (Amnesia delays both by one wrong answer)
+      const confuseAt = playerAbility.id === "amnesia" ? 3 : 2;
+      const poisonAt = playerAbility.id === "amnesia" ? 6 : 5;
+      if (
+        wrongStreakRef.current === confuseAt &&
+        !statuses.some((s) => s.kind === "confused") &&
+        playerAbility.id !== "shield-dust"
+      ) {
         applyStatus("confused");
       }
       if (
-        wrongStreakRef.current === 5 &&
+        wrongStreakRef.current === poisonAt &&
         !statuses.some((s) => s.kind === "poisoned") &&
         playerAbility.id !== "toxic"
       ) {
@@ -875,12 +1023,13 @@ function BattleMode({
       maxStreak: maxStreakRef.current,
     });
 
+    const adjustedCoins = playerAbility.id === "pickup" ? Math.round(coinAward * 1.25) : coinAward;
     setXpEarned(xpAward);
-    setCoinsEarned(coinAward);
+    setCoinsEarned(adjustedCoins);
     setTpEarned(tpAward);
     setResultWon(won);
     if (tpAward > 0) useGameStore.getState().addTrainingPoints(player.id, tpAward);
-    if (coinAward > 0) useGameStore.getState().addCoins(coinAward);
+    if (adjustedCoins > 0) useGameStore.getState().addCoins(adjustedCoins);
 
     // comeback flag — won at low HP
     if (won && playerHp <= 10) {
@@ -1032,12 +1181,13 @@ function BattleMode({
       return;
     }
     toast.success(`${def.emoji} Used ${def.name}!`);
+    const healMult = playerAbility.id === "synthesis" ? 1.5 : 1;
     if (id === "potion") {
-      setPlayerHp((hp) => Math.min(playerMaxHp, hp + 30));
+      setPlayerHp((hp) => Math.min(playerMaxHp, hp + Math.round(30 * healMult)));
       playItemCue();
     }
     if (id === "superpotion") {
-      setPlayerHp((hp) => Math.min(playerMaxHp, hp + 60));
+      setPlayerHp((hp) => Math.min(playerMaxHp, hp + Math.round(60 * healMult)));
       playItemCue();
     }
     if (id === "maxpotion") {

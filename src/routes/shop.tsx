@@ -6,6 +6,7 @@ import { playSfx, playItemCue } from "@/lib/audio";
 import { Star, ShoppingBag, Minus, Plus } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { ITEMS, type ItemDef, type ItemId } from "@/lib/game-data";
+import { getAbility } from "@/lib/abilities";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import {
@@ -89,6 +90,12 @@ function ShopPage() {
   const hasOnboarded = useGameStore((s) => s.hasOnboarded);
   const navigate = useNavigate();
   const coins = useGameStore((s) => s.coins);
+  const partner = useGameStore((s) => s.pokemon);
+  const partnerAbilityId = useGameStore((s) => s.abilityId);
+  // Metalworks ability: regular shop prices are 10% off (featured deals keep
+  // their own bigger discount).
+  const metalworks = !!partner && getAbility(partner.types, partnerAbilityId).id === "metalworks";
+  const priceOf = (cost: number) => (metalworks ? Math.max(1, Math.round(cost * 0.9)) : cost);
   const inventory = useGameStore((s) => s.inventory);
   const buyItem = useGameStore((s) => s.buyItem);
   const applyItem = useGameStore((s) => s.useItem);
@@ -364,14 +371,14 @@ function ShopPage() {
           <div className="flex flex-col gap-3">
             {items.map((item, i) => {
               const owned = inventory[item.id] ?? 0;
-              const canAfford = coins >= item.cost;
+              const canAfford = coins >= priceOf(item.cost);
               return (
                 <motion.button
                   key={item.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.04 }}
-                  onClick={() => setConfirmState({ item, cost: item.cost })}
+                  onClick={() => setConfirmState({ item, cost: priceOf(item.cost) })}
                   className="relative flex w-full items-center gap-4 rounded-3xl bg-card p-5 text-left shadow-card"
                 >
                   <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-poke-yellow/20">
@@ -402,7 +409,7 @@ function ShopPage() {
                         : "bg-muted text-muted-foreground"
                     }`}
                   >
-                    {item.cost.toLocaleString()} Coins
+                    {priceOf(item.cost).toLocaleString()} Coins
                   </span>
                 </motion.button>
               );
