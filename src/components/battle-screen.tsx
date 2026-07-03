@@ -16,7 +16,7 @@ import {
   rankForLevel,
 } from "@/lib/game-data";
 import { battleReward } from "@/lib/rewards";
-import { rollLevelUpRewards, type LevelUpRewards } from "@/lib/level-rewards";
+import { rollLevelUpRewards } from "@/lib/level-rewards";
 
 import {
   isSuperEffective,
@@ -334,7 +334,6 @@ function BattleMode({
   const [confirmExit, setConfirmExit] = useState(false);
   const [resultWon, setResultWon] = useState<boolean | null>(null);
   const [xpEarned, setXpEarned] = useState(0);
-  const [levelUpRewards, setLevelUpRewards] = useState<LevelUpRewards | null>(null);
   const [coinsEarned, setCoinsEarned] = useState(0);
   const [streakBanner, setStreakBanner] = useState<string | null>(null);
   const [lastElapsedMs, setLastElapsedMs] = useState(0);
@@ -1138,12 +1137,14 @@ function BattleMode({
     endBattle(won, xpAward);
     const newLevel = useGameStore.getState().level;
     if (newLevel > prevLevel) {
-      setTimeout(() => playSfx("level"), 1300);
       // Level-up rewards trigger on ANY level gained, win or lose — a small
-      // XP gain from a loss can still cross a level threshold.
+      // XP gain from a loss can still cross a level threshold. The reward
+      // grant happens immediately; the celebration screen is deferred until
+      // the player returns to the battle hub (see LevelUpScreen / battle.tsx)
+      // so it never interrupts a Rematch chain.
       const rewards = rollLevelUpRewards(prevLevel, newLevel);
       if (rewards) {
-        setLevelUpRewards(rewards);
+        useGameStore.getState().mergePendingLevelUp(rewards);
         if (rewards.coins > 0) useGameStore.getState().addCoins(rewards.coins);
         for (const it of rewards.items) useGameStore.getState().grantItem(it.id, it.qty);
         if (rewards.eggs > 0) useGameStore.getState().grantPokeEgg(rewards.eggs);
@@ -1248,7 +1249,6 @@ function BattleMode({
           xpForThisLevel={prog.need}
           levelProgressPct={pct}
           newTrophies={newTrophiesRef.current}
-          levelUpRewards={levelUpRewards}
           missed={missedRef.current}
           onRebattle={() => onExit()}
           onBackHome={() => onExit()}
