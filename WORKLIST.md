@@ -17,7 +17,7 @@ they ship.
      players; highest total points (points + speed + streak + accuracy) wins.
    - Long-distance: asynchronous battle via friend-list invite.
 7. **Invite campaign / referral** — grow the user base.
-8. **Level-up rewards** — grant rewards on level up.
+8. ~~**Level-up rewards**~~ ✅ shipped — grant rewards on level up.
 9. ~~**Suggestions / bug-report form**~~ ✅ shipped — — "Submit suggestion" / "Report bug"
    entries in Profile → Settings.
 10. ~~**What's New card**~~ ✅ shipped — — carousel card announcing new features.
