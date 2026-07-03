@@ -10,6 +10,7 @@ import {
 } from "./game-data";
 import type { PokeEntry } from "./pokemon-data";
 import { rollAbilityId, type AbilityId } from "./abilities";
+import type { LevelUpRewards } from "./level-rewards";
 import { ALL_POKEMON, rehydratePokemon } from "./pokemon-data";
 import type { Round } from "@/routes/whos-that-pokemon";
 import { createMegaSlice } from "@/lib/store/slices/megaSlice";
@@ -140,6 +141,17 @@ export interface GameState {
   scopeRevealedThisBattle: boolean;
   bonusTimeThisBattle: number;
   luckyEggExpiresAt: number;
+  /**
+   * Rewards from a level-up not yet celebrated on the dedicated Level Up
+   * screen. Deliberately transient (not persisted, not reset by a battle
+   * remount/rematch — see mergePendingLevelUp) so leveling up mid-rematch
+   * chain doesn't lose the celebration; it's shown once the player returns
+   * to the battle hub. The underlying coins/items/egg are already granted
+   * the instant the level-up happens — this only tracks what to display.
+   */
+  pendingLevelUp: LevelUpRewards | null;
+  mergePendingLevelUp: (rewards: LevelUpRewards) => void;
+  clearPendingLevelUp: () => void;
   luckyEggUsedWeek: number;
   focusBandUsedWeek: number;
   assaultVestUsedWeek: number;
@@ -281,6 +293,28 @@ export const useGameStore = create<GameState>()(
       inBattle: false,
       battleScreenActive: false,
       setBattleScreenActive: (v) => set({ battleScreenActive: v }),
+      pendingLevelUp: null,
+      mergePendingLevelUp: (rewards) =>
+        set((s) => {
+          const existing = s.pendingLevelUp;
+          if (!existing) return { pendingLevelUp: rewards };
+          const items = new Map(existing.items.map((it) => [it.id, { ...it }]));
+          for (const it of rewards.items) {
+            const cur = items.get(it.id);
+            if (cur) cur.qty += it.qty;
+            else items.set(it.id, { ...it });
+          }
+          return {
+            pendingLevelUp: {
+              fromLevel: Math.min(existing.fromLevel, rewards.fromLevel),
+              toLevel: Math.max(existing.toLevel, rewards.toLevel),
+              coins: existing.coins + rewards.coins,
+              eggs: existing.eggs + rewards.eggs,
+              items: [...items.values()],
+            },
+          };
+        }),
+      clearPendingLevelUp: () => set({ pendingLevelUp: null }),
       setsThisBattle: 0,
       usedThisBattle: {},
       xAttackActive: false,

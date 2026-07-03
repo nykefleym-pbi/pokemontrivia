@@ -12,6 +12,7 @@ import { MegaRaidScreen } from "@/components/mega/MegaRaidScreen";
 import { MegaLeaderboard } from "@/components/mega/MegaLeaderboard";
 import { BattleHome } from "@/components/battle-home";
 import { ElitePendingTakeover } from "@/components/elite-pending-takeover";
+import { LevelUpScreen } from "@/components/level-up-screen";
 
 import {
   fetchActiveMegaEvent,
@@ -69,6 +70,8 @@ function BattlePage() {
   const today = new Date().toISOString().slice(0, 10);
   const dailyDone = dailyResult?.date === today;
   const whosThatHourKey = useGameStore((s) => s.whosThatHourKey);
+  const pendingLevelUp = useGameStore((s) => s.pendingLevelUp);
+  const clearPendingLevelUp = useGameStore((s) => s.clearPendingLevelUp);
   const engageDismissCount = useGameStore((s) => s.engageDismissCount);
   const lastSeenWhatsNew = useGameStore((s) => s.lastSeenWhatsNew);
   const markWhatsNewSeen = useGameStore((s) => s.markWhatsNewSeen);
@@ -1041,6 +1044,8 @@ function BattlePage() {
         />
       ) : phase === "daily" ? (
         <BattleScreen key={battleKey} questions={questions} onExit={exitBattle} mode="daily" />
+      ) : pendingLevelUp ? (
+        <LevelUpScreen rewards={pendingLevelUp} onContinue={clearPendingLevelUp} />
       ) : pendingElite ? (
         <ElitePendingTakeover
           elite={pendingElite}

@@ -5,8 +5,7 @@ import { useGameStore } from "@/lib/store";
 import { toast } from "sonner";
 import { playSfx } from "@/lib/audio";
 import { MEGA_REWARD, megaRankScale, type MegaEvent } from "@/lib/mega/schedule";
-import { rollLevelUpRewards, type LevelUpRewards } from "@/lib/level-rewards";
-import { LevelUpBlock } from "@/components/result-screen";
+import { rollLevelUpRewards } from "@/lib/level-rewards";
 import {
   fetchMegaLeaderboard,
   getMyMegaRun,
@@ -132,7 +131,6 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
   }, [event.id]);
 
   // Friend states for leaderboard rows (+ / Pending / Friend).
-  const [levelUpRewards, setLevelUpRewards] = useState<LevelUpRewards | null>(null);
   const [myUid, setMyUid] = useState<string | null>(null);
   const [friendIds, setFriendIds] = useState<Set<string>>(new Set());
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
@@ -194,7 +192,7 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
     if (newLevel > prevLevel) {
       const rewards = rollLevelUpRewards(prevLevel, newLevel);
       if (rewards) {
-        setLevelUpRewards(rewards);
+        useGameStore.getState().mergePendingLevelUp(rewards);
         if (rewards.coins > 0) useGameStore.getState().addCoins(rewards.coins);
         for (const it of rewards.items) useGameStore.getState().grantItem(it.id, it.qty);
         if (rewards.eggs > 0) useGameStore.getState().grantPokeEgg(rewards.eggs);
@@ -404,7 +402,6 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
                           REWARDS CLAIMED ✓
                         </div>
                       ) : null}
-                      {levelUpRewards && <LevelUpBlock rewards={levelUpRewards} />}
                       {!(rewardClaimed || claimed) && (
                         <button
                           onClick={claimReward}
@@ -461,7 +458,6 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
                       REWARDS CLAIMED ✓
                     </div>
                   ) : null}
-                  {levelUpRewards && <LevelUpBlock rewards={levelUpRewards} />}
                   {!rewardClaimed && (
                     <button
                       onClick={claimReward}
