@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Share2 } from "lucide-react";
 import { PokemonSprite } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
+import type { LevelUpRewards } from "@/lib/level-rewards";
 
 export function ResultScreen({
   won,
@@ -19,6 +20,7 @@ export function ResultScreen({
   currentLevel,
   levelProgressPct,
   newTrophies: _newTrophies,
+  levelUpRewards,
   missed,
   onRebattle,
   onBackHome,
@@ -43,6 +45,7 @@ export function ResultScreen({
   xpForThisLevel: number;
   levelProgressPct: number;
   newTrophies: Array<{ icon: string; name: string }>;
+  levelUpRewards?: LevelUpRewards | null;
   missed: Array<{ question: string; correctAnswer: string; explanation: string }>;
   onRebattle: () => void;
   onBackHome: () => void;
@@ -155,6 +158,8 @@ export function ResultScreen({
           </div>
         </div>
 
+        {levelUpRewards && <LevelUpBlock rewards={levelUpRewards} />}
+
         <div className="mx-auto mt-auto w-full max-w-sm space-y-2 pt-8">
           <Button
             size="lg"
@@ -248,6 +253,8 @@ export function ResultScreen({
         </p>
       </div>
 
+      {levelUpRewards && <LevelUpBlock rewards={levelUpRewards} />}
+
       <div className="mx-auto mt-auto w-full max-w-sm space-y-2 pt-8">
         <Button
           size="lg"
@@ -264,6 +271,38 @@ export function ResultScreen({
         >
           Back home
         </Button>
+      </div>
+    </motion.div>
+  );
+}
+
+function LevelUpBlock({ rewards }: { rewards: LevelUpRewards }) {
+  const spannedMultiple = rewards.toLevel - rewards.fromLevel > 1;
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.94 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: 0.3, type: "spring", stiffness: 160 }}
+      className="mx-auto mt-4 w-full max-w-sm rounded-2xl border-2 border-poke-yellow bg-card p-4 text-center shadow-card"
+    >
+      <div className="font-pixel-xs uppercase tracking-wide text-primary">
+        🎉{" "}
+        {spannedMultiple
+          ? `Level ${rewards.fromLevel} → ${rewards.toLevel}!`
+          : `Level ${rewards.toLevel}!`}
+      </div>
+      <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm font-bold text-foreground">
+        {rewards.coins > 0 && <span className="text-poke-yellow">+{rewards.coins} Coins</span>}
+        {rewards.items.map((it) => (
+          <span key={it.id}>
+            {it.emoji} +{it.qty} {it.name}
+          </span>
+        ))}
+        {rewards.eggs > 0 && (
+          <span>
+            🥚 +{rewards.eggs} Poké Egg{rewards.eggs > 1 ? "s" : ""}
+          </span>
+        )}
       </div>
     </motion.div>
   );
