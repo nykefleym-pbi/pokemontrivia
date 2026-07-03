@@ -1,8 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { playSfx } from "@/lib/audio";
-import { trainerSpriteUrl, rankForLevel } from "@/lib/game-data";
+import { ITEMS, trainerSpriteUrl, rankForLevel } from "@/lib/game-data";
+import { ItemIcon } from "@/components/game-ui";
+import { PixelEgg } from "@/components/pixel-icons";
 import { useGameStore } from "@/lib/store";
 import type { LevelUpRewards } from "@/lib/level-rewards";
 
@@ -128,20 +131,33 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
             <div className="font-pixel-xs uppercase text-foreground/50">Rewards</div>
             <div className="mt-2 space-y-2">
               {rewards.coins > 0 && (
-                <RewardRow index={0} emoji="🪙" label={`+${rewards.coins} Coins`} />
-              )}
-              {rewards.items.map((it, i) => (
                 <RewardRow
-                  key={it.id}
-                  index={i + 1}
-                  emoji={it.emoji}
-                  label={`+${it.qty} ${it.name}`}
+                  index={0}
+                  icon={<Coins className="h-6 w-6 text-poke-yellow" />}
+                  label={`+${rewards.coins} Coins`}
                 />
-              ))}
+              )}
+              {rewards.items.map((it, i) => {
+                const def = ITEMS.find((x) => x.id === it.id);
+                return (
+                  <RewardRow
+                    key={it.id}
+                    index={i + 1}
+                    icon={
+                      def ? (
+                        <ItemIcon item={def} className="h-7 w-7" />
+                      ) : (
+                        <span className="text-xl">{it.emoji}</span>
+                      )
+                    }
+                    label={`+${it.qty} ${it.name}`}
+                  />
+                );
+              })}
               {rewards.eggs > 0 && (
                 <RewardRow
                   index={rewards.items.length + 1}
-                  emoji="🥚"
+                  icon={<PixelEgg className="h-7 w-7" />}
                   label={`+${rewards.eggs} Poké Egg${rewards.eggs > 1 ? "s" : ""}`}
                 />
               )}
@@ -174,7 +190,7 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
   );
 }
 
-function RewardRow({ index, emoji, label }: { index: number; emoji: string; label: string }) {
+function RewardRow({ index, icon, label }: { index: number; icon: ReactNode; label: string }) {
   return (
     <motion.div
       initial={{ opacity: 0, x: -12 }}
@@ -182,7 +198,7 @@ function RewardRow({ index, emoji, label }: { index: number; emoji: string; labe
       transition={{ delay: index * 0.15 }}
       className="flex items-center gap-2.5 rounded-2xl bg-poke-yellow/15 px-3 py-2"
     >
-      <span className="text-xl">{emoji}</span>
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center">{icon}</div>
       <span className="text-sm font-bold text-foreground">{label}</span>
     </motion.div>
   );
