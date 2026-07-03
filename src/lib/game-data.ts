@@ -26,7 +26,18 @@ export type ItemId =
   | "xaccuracy"
   | "focusband"
   | "quickclaw"
-  | "assaultvest";
+  | "assaultvest"
+  | "revive"
+  | "zoomlens"
+  | "oranberry"
+  | "amuletcoin"
+  | "repel"
+  | "expcharm"
+  | "silkscarf"
+  | "kingsrock"
+  | "leftovers"
+  | "metronome"
+  | "luckypunch";
 
 const ICON = (slug: string) =>
   `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${slug}.png`;
@@ -131,6 +142,97 @@ export const ITEMS: ItemDef[] = [
     desc: "Auto: halves damage in battles where the foe is super-effective against you. Once per week.",
     cost: 2000,
     premium: true,
+  },
+  {
+    id: "revive",
+    name: "Revive",
+    emoji: "✨",
+    iconUrl: ICON("revive"),
+    desc: "Auto: survive a knockout at 25% HP. Once per battle.",
+    cost: 1000,
+  },
+  {
+    id: "zoomlens",
+    name: "Zoom Lens",
+    emoji: "🔍",
+    iconUrl: ICON("zoom-lens"),
+    desc: "Narrows one question down to two choices (1 right, 1 wrong). Once per battle.",
+    cost: 200,
+  },
+  {
+    id: "oranberry",
+    name: "Oran Berry",
+    emoji: "🫐",
+    iconUrl: ICON("oran-berry"),
+    desc: "Auto: heals 15 HP the instant HP first drops below 30%. Once per battle.",
+    cost: 600,
+  },
+  {
+    id: "amuletcoin",
+    name: "Amulet Coin",
+    emoji: "🪙",
+    iconUrl: ICON("amulet-coin"),
+    desc: "2× coins earned this battle. Once per battle.",
+    cost: 300,
+  },
+  {
+    id: "repel",
+    name: "Repel",
+    emoji: "🧴",
+    iconUrl: ICON("repel"),
+    desc: "Skip one question with no HP or streak penalty. Once per battle.",
+    cost: 400,
+  },
+  {
+    id: "expcharm",
+    name: "Exp. Charm",
+    emoji: "📿",
+    iconUrl: ICON("exp-charm"),
+    desc: "+25% XP earned this battle. Once per battle.",
+    cost: 400,
+  },
+  {
+    id: "silkscarf",
+    name: "Silk Scarf",
+    emoji: "🧣",
+    iconUrl: ICON("silk-scarf"),
+    desc: "Auto: your first correct answer deals +50% damage (+75% for a Normal-type partner). Once per battle.",
+    cost: 250,
+  },
+  {
+    id: "kingsrock",
+    name: "King's Rock",
+    emoji: "👑",
+    iconUrl: ICON("kings-rock"),
+    desc: "Auto: 50% chance to negate HP loss on a wrong answer, for the whole battle. Once per week.",
+    cost: 2000,
+    premium: true,
+  },
+  {
+    id: "leftovers",
+    name: "Leftovers",
+    emoji: "🍞",
+    iconUrl: ICON("leftovers"),
+    desc: "Auto: heals 5 HP after every correct answer, for the whole battle. Once per week.",
+    cost: 2000,
+    premium: true,
+  },
+  {
+    id: "metronome",
+    name: "Metronome",
+    emoji: "🔁",
+    iconUrl: ICON("metronome"),
+    desc: "Auto: streak multiplier locked at max (3.0×) for the whole battle. Once per week.",
+    cost: 2500,
+    premium: true,
+  },
+  {
+    id: "luckypunch",
+    name: "Lucky Punch",
+    emoji: "🥊",
+    iconUrl: ICON("lucky-punch"),
+    desc: "Double or nothing: 50% chance to double this battle's XP and coins, 50% chance to lose them. Once per battle.",
+    cost: 200,
   },
 ];
 

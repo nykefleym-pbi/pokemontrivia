@@ -16,6 +16,17 @@ export const defaultInventory: Record<ItemId, number> = {
   focusband: 0,
   quickclaw: 0,
   assaultvest: 0,
+  revive: 0,
+  zoomlens: 0,
+  oranberry: 0,
+  amuletcoin: 0,
+  repel: 0,
+  expcharm: 0,
+  silkscarf: 0,
+  kingsrock: 0,
+  leftovers: 0,
+  metronome: 0,
+  luckypunch: 0,
 };
 
 export const createItemsSlice: StoreSlice<
@@ -28,6 +39,9 @@ export const createItemsSlice: StoreSlice<
     | "luckyEggUsedWeek"
     | "focusBandUsedWeek"
     | "assaultVestUsedWeek"
+    | "kingsRockUsedWeek"
+    | "leftoversUsedWeek"
+    | "metronomeUsedWeek"
     | "pokeEggs"
     | "grantItem"
     | "buyItem"
@@ -36,6 +50,12 @@ export const createItemsSlice: StoreSlice<
     | "tryAutoFocusBand"
     | "tryAutoQuickClaw"
     | "tryAutoAssaultVest"
+    | "tryAutoRevive"
+    | "tryAutoOranBerry"
+    | "tryAutoSilkScarf"
+    | "tryAutoKingsRock"
+    | "tryAutoLeftovers"
+    | "tryAutoMetronome"
     | "grantPokeEgg"
     | "hatchPokeEgg"
   >
@@ -47,6 +67,9 @@ export const createItemsSlice: StoreSlice<
   luckyEggUsedWeek: 0,
   focusBandUsedWeek: 0,
   assaultVestUsedWeek: 0,
+  kingsRockUsedWeek: 0,
+  leftoversUsedWeek: 0,
+  metronomeUsedWeek: 0,
   pokeEggs: 0,
 
   tryAutoFocusBand: () => {
@@ -87,6 +110,81 @@ export const createItemsSlice: StoreSlice<
     return true;
   },
 
+  tryAutoRevive: () => {
+    const s = get();
+    if ((s.inventory.revive ?? 0) <= 0) return false;
+    if (s.autoItems.revive === false) return false;
+    if (s.usedThisBattle.revive) return false;
+    set({
+      inventory: { ...s.inventory, revive: (s.inventory.revive ?? 0) - 1 },
+      usedThisBattle: { ...s.usedThisBattle, revive: true },
+    });
+    return true;
+  },
+
+  tryAutoOranBerry: () => {
+    const s = get();
+    if ((s.inventory.oranberry ?? 0) <= 0) return false;
+    if (s.autoItems.oranberry === false) return false;
+    if (s.usedThisBattle.oranberry) return false;
+    set({
+      inventory: { ...s.inventory, oranberry: (s.inventory.oranberry ?? 0) - 1 },
+      usedThisBattle: { ...s.usedThisBattle, oranberry: true },
+    });
+    return true;
+  },
+
+  tryAutoSilkScarf: () => {
+    const s = get();
+    if ((s.inventory.silkscarf ?? 0) <= 0) return false;
+    if (s.autoItems.silkscarf === false) return false;
+    if (s.usedThisBattle.silkscarf) return false;
+    set({
+      inventory: { ...s.inventory, silkscarf: (s.inventory.silkscarf ?? 0) - 1 },
+      usedThisBattle: { ...s.usedThisBattle, silkscarf: true },
+    });
+    return true;
+  },
+
+  tryAutoKingsRock: () => {
+    const s = get();
+    if ((s.inventory.kingsrock ?? 0) <= 0) return false;
+    if (s.autoItems.kingsrock === false) return false;
+    const { start } = getWeekRangeUtc();
+    if (s.kingsRockUsedWeek === start) return false;
+    set({
+      inventory: { ...s.inventory, kingsrock: (s.inventory.kingsrock ?? 0) - 1 },
+      kingsRockUsedWeek: start,
+    });
+    return true;
+  },
+
+  tryAutoLeftovers: () => {
+    const s = get();
+    if ((s.inventory.leftovers ?? 0) <= 0) return false;
+    if (s.autoItems.leftovers === false) return false;
+    const { start } = getWeekRangeUtc();
+    if (s.leftoversUsedWeek === start) return false;
+    set({
+      inventory: { ...s.inventory, leftovers: (s.inventory.leftovers ?? 0) - 1 },
+      leftoversUsedWeek: start,
+    });
+    return true;
+  },
+
+  tryAutoMetronome: () => {
+    const s = get();
+    if ((s.inventory.metronome ?? 0) <= 0) return false;
+    if (s.autoItems.metronome === false) return false;
+    const { start } = getWeekRangeUtc();
+    if (s.metronomeUsedWeek === start) return false;
+    set({
+      inventory: { ...s.inventory, metronome: (s.inventory.metronome ?? 0) - 1 },
+      metronomeUsedWeek: start,
+    });
+    return true;
+  },
+
   toggleAutoItem: (id) => {
     const s = get();
     const enabled = s.autoItems[id] !== false;
@@ -114,7 +212,18 @@ export const createItemsSlice: StoreSlice<
     if (have <= 0) return false;
 
     // Auto-trigger items can't be used manually
-    if (id === "focusband" || id === "quickclaw" || id === "assaultvest") return false;
+    const AUTO_ONLY: ItemId[] = [
+      "focusband",
+      "quickclaw",
+      "assaultvest",
+      "revive",
+      "oranberry",
+      "silkscarf",
+      "kingsrock",
+      "leftovers",
+      "metronome",
+    ];
+    if (AUTO_ONLY.includes(id)) return false;
 
     // Once-per-battle items
     const ONCE_PER_BATTLE: ItemId[] = [
@@ -125,6 +234,11 @@ export const createItemsSlice: StoreSlice<
       "scope",
       "xaccuracy",
       "escape",
+      "zoomlens",
+      "repel",
+      "amuletcoin",
+      "expcharm",
+      "luckypunch",
     ];
     if (ONCE_PER_BATTLE.includes(id) && s.usedThisBattle[id]) return false;
 
@@ -143,6 +257,9 @@ export const createItemsSlice: StoreSlice<
       inventory: nextInventory,
       usedThisBattle: nextUsed,
       xAttackActive: id === "xattack" ? true : s.xAttackActive,
+      amuletCoinActive: id === "amuletcoin" ? true : s.amuletCoinActive,
+      expCharmActive: id === "expcharm" ? true : s.expCharmActive,
+      luckyPunchActive: id === "luckypunch" ? true : s.luckyPunchActive,
       luckyEggExpiresAt: id === "luckyegg" ? Date.now() + 24 * 60 * 60 * 1000 : s.luckyEggExpiresAt,
       luckyEggUsedWeek: id === "luckyegg" ? getWeekRangeUtc().start : s.luckyEggUsedWeek,
     });

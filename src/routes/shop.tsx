@@ -530,7 +530,13 @@ function ShopPage() {
                             const isAuto =
                               it.id === "focusband" ||
                               it.id === "quickclaw" ||
-                              it.id === "assaultvest";
+                              it.id === "assaultvest" ||
+                              it.id === "revive" ||
+                              it.id === "oranberry" ||
+                              it.id === "silkscarf" ||
+                              it.id === "kingsrock" ||
+                              it.id === "leftovers" ||
+                              it.id === "metronome";
                             const autoOn = autoItems[it.id] !== false;
                             return (
                               <div

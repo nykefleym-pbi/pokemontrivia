@@ -256,6 +256,12 @@ function BattleMode({
   const tryAutoFocusBand = useGameStore((s) => s.tryAutoFocusBand);
   const tryAutoQuickClaw = useGameStore((s) => s.tryAutoQuickClaw);
   const tryAutoAssaultVest = useGameStore((s) => s.tryAutoAssaultVest);
+  const tryAutoRevive = useGameStore((s) => s.tryAutoRevive);
+  const tryAutoOranBerry = useGameStore((s) => s.tryAutoOranBerry);
+  const tryAutoSilkScarf = useGameStore((s) => s.tryAutoSilkScarf);
+  const tryAutoKingsRock = useGameStore((s) => s.tryAutoKingsRock);
+  const tryAutoLeftovers = useGameStore((s) => s.tryAutoLeftovers);
+  const tryAutoMetronome = useGameStore((s) => s.tryAutoMetronome);
   const raiseFlag = useGameStore((s) => s.raiseFlag);
   const pushBattleLog = useGameStore((s) => s.pushBattleLog);
   const recordPokedexCapture = useGameStore((s) => s.recordPokedexCapture);
@@ -319,6 +325,7 @@ function BattleMode({
   const [trivia, setTrivia] = useState<Trivia | null>(null);
   const [chosen, setChosen] = useState<number | null>(null);
   const [revealedWrong, setRevealedWrong] = useState<number | null>(null);
+  const [revealedWrong2, setRevealedWrong2] = useState<number | null>(null);
   const [revealedCorrect, setRevealedCorrect] = useState<number | null>(null);
   const [streak, setStreak] = useState(0);
   const [questionIdx, setQuestionIdx] = useState(0);
@@ -358,6 +365,9 @@ function BattleMode({
   );
   const immune = useMemo(() => isPlayerImmune(player, enemy.pokemon), [player, enemy.pokemon]);
   const assaultVestActiveRef = useRef(false);
+  const kingsRockActiveRef = useRef(false);
+  const leftoversActiveRef = useRef(false);
+  const metronomeActiveRef = useRef(false);
 
   // Phase 2: ability + status state
   type StatusKind = "confused" | "poisoned";
@@ -536,6 +546,7 @@ function BattleMode({
   function loadQuestion(idx: number) {
     setChosen(null);
     setRevealedWrong(null);
+    setRevealedWrong2(null);
     setRevealedCorrect(null);
     // Stealth Rock: 3 chip damage to the enemy at the start of every round.
     if (playerAbility.id === "stealth-rock" && idx > 0 && idx % QUESTIONS_PER_SET === 0) {
@@ -572,6 +583,23 @@ function BattleMode({
     if (disadvantaged && tryAutoAssaultVest()) {
       assaultVestActiveRef.current = true;
       toast.success("🦺 Assault Vest — damage halved this battle!");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // King's Rock / Leftovers / Metronome: auto-activate at battle start (whole-battle effect, once per week)
+  useEffect(() => {
+    if (tryAutoKingsRock()) {
+      kingsRockActiveRef.current = true;
+      toast.success("👑 King's Rock — chance to shrug off wrong answers this battle!");
+    }
+    if (tryAutoLeftovers()) {
+      leftoversActiveRef.current = true;
+      toast.success("🍞 Leftovers — healing after every correct answer this battle!");
+    }
+    if (tryAutoMetronome()) {
+      metronomeActiveRef.current = true;
+      toast.success("🔁 Metronome — streak multiplier locked at max this battle!");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -703,7 +731,7 @@ function BattleMode({
       // balanced; scaling here would trivialize them at high rank.
       let baseDmg = isElite || isWeekly ? 10 : baseDamageForLevel(level);
       if (playerAbility.id === "dragon-dance") baseDmg += Math.floor(questionIdx / 5);
-      let dmg = Math.round(baseDmg * streakMultiplier(newStreak));
+      let dmg = Math.round(baseDmg * (metronomeActiveRef.current ? 3.0 : streakMultiplier(newStreak)));
       // TP damage boost
       const tpNow = useGameStore.getState().trainingPoints[player.id] ?? 0;
       const tpMult = getTpMultiplier(tpNow);
@@ -726,6 +754,11 @@ function BattleMode({
       if (xAttackActive) {
         dmg += 20;
         consumeXAttack();
+      }
+      // Silk Scarf: first correct answer this battle deals bonus damage (more for a Normal-type partner)
+      if (tryAutoSilkScarf()) {
+        dmg = Math.round(dmg * (player.types.includes("normal") ? 1.75 : 1.5));
+        toast.success("🧣 Silk Scarf — bonus damage!");
       }
       // Tailwind: +20% dmg on first 3 questions
       if (playerAbility.id === "tailwind" && questionIdx < 3) {
@@ -791,6 +824,11 @@ function BattleMode({
       playSfx("correct");
       setTimeout(() => playSfx("damage"), 120);
 
+      // Leftovers: heal 5 HP after every correct answer, for the whole battle
+      if (leftoversActiveRef.current) {
+        setPlayerHp((hp) => Math.min(playerMaxHp, hp + 5));
+      }
+
       // Leech Seed: heal 2
       if (playerAbility.id === "leech-seed") {
         setPlayerHp((hp) => Math.min(playerMaxHp, hp + 2));
@@ -848,6 +886,8 @@ function BattleMode({
       else if (disadvantaged) wrongDmg = 15;
       if (playerAbility.id === "no-guard") wrongDmg += 2;
       if (assaultVestActiveRef.current) wrongDmg = Math.floor(wrongDmg / 2);
+      // King's Rock: 50% chance to negate HP loss on any wrong answer, for the whole battle
+      if (kingsRockActiveRef.current && Math.random() < 0.5) wrongDmg = 0;
 
       // Ability modifiers (in spec order)
       if (playerAbility.id === "multiscale" && playerHp === playerMaxHp) {
@@ -908,6 +948,12 @@ function BattleMode({
         triggerAbilityToast(playerAbility);
       }
 
+      // Revive: survive a knockout at 25% HP (once per battle, consumes an item)
+      if (newPlayerHp <= 0 && tryAutoRevive()) {
+        newPlayerHp = Math.round(playerMaxHp * 0.25);
+        toast.success("✨ Revive — survived at 25% HP!");
+      }
+
       // Focus Band: auto-heal to 50% when HP is 10 or below (once per week)
       if (newPlayerHp <= 10 && tryAutoFocusBand()) {
         newPlayerHp = Math.round(playerMaxHp * 0.5);
@@ -924,6 +970,12 @@ function BattleMode({
         abilityStateRef.current.torrentUsed = true;
         newPlayerHp = Math.min(playerMaxHp, newPlayerHp + 10);
         triggerAbilityToast(playerAbility);
+      }
+
+      // Oran Berry: auto-heal 15 HP the instant HP first drops below 30% (once per battle)
+      if (newPlayerHp > 0 && newPlayerHp < playerMaxHp * 0.3 && tryAutoOranBerry()) {
+        newPlayerHp = Math.min(playerMaxHp, newPlayerHp + 15);
+        toast.success("🫐 Oran Berry — healed 15 HP!");
       }
 
       setPlayerHp(newPlayerHp);
@@ -1014,16 +1066,32 @@ function BattleMode({
     wrongStreakRef.current = 0;
     abilityStateRef.current.cursedBodyPending = null;
 
-    const {
-      xp: xpAward,
-      coins: coinAward,
-      tp: tpAward,
-    } = battleReward({
+    const reward = battleReward({
       mode: isElite ? "elite" : isWeekly ? "weekly" : "regular",
       won,
       level,
       maxStreak: maxStreakRef.current,
     });
+    let xpAward = reward.xp;
+    let coinAward = reward.coins;
+    const tpAward = reward.tp;
+
+    // Exp. Charm / Amulet Coin / Lucky Punch: applied here before endBattle()
+    // resets these battle-ephemeral flags.
+    const itemState = useGameStore.getState();
+    if (itemState.expCharmActive) xpAward = Math.round(xpAward * 1.25);
+    if (itemState.amuletCoinActive) coinAward *= 2;
+    if (itemState.luckyPunchActive) {
+      if (Math.random() < 0.5) {
+        xpAward *= 2;
+        coinAward *= 2;
+        toast.success("🥊 Lucky Punch — doubled!");
+      } else {
+        xpAward = 0;
+        coinAward = 0;
+        toast.error("🥊 Lucky Punch — nothing this time!");
+      }
+    }
 
     const adjustedCoins = playerAbility.id === "pickup" ? Math.round(coinAward * 1.25) : coinAward;
     setXpEarned(xpAward);
@@ -1214,6 +1282,13 @@ function BattleMode({
       const wrongs = [0, 1, 2, 3].filter((w) => w !== trivia.correct);
       setRevealedWrong(wrongs[Math.floor(Math.random() * wrongs.length)]);
     }
+    if (id === "zoomlens" && trivia) {
+      const wrongs = [0, 1, 2, 3]
+        .filter((w) => w !== trivia.correct)
+        .sort(() => Math.random() - 0.5);
+      setRevealedWrong(wrongs[0]);
+      setRevealedWrong2(wrongs[1]);
+    }
     if (id === "xaccuracy" && trivia) {
       setRevealedCorrect(trivia.correct);
     }
@@ -1221,6 +1296,11 @@ function BattleMode({
       setBagOpen(false);
       abortBattle();
       setTimeout(() => onExit(), 300);
+    }
+    if (id === "repel") {
+      setBagOpen(false);
+      nextQuestion();
+      return;
     }
     setBagOpen(false);
   }
@@ -1452,7 +1532,7 @@ function BattleMode({
                   {trivia.options.map((opt, i) => {
                     const isCorrect = phase === "feedback" && i === trivia.correct;
                     const isWrong = phase === "feedback" && chosen === i && i !== trivia.correct;
-                    const isRevealed = revealedWrong === i;
+                    const isRevealed = revealedWrong === i || revealedWrong2 === i;
                     const isAnswerRevealed = phase === "question" && revealedCorrect === i;
                     return (
                       <button
@@ -1540,7 +1620,13 @@ function BattleMode({
                                         const isAuto =
                                           it.id === "focusband" ||
                                           it.id === "quickclaw" ||
-                                          it.id === "assaultvest";
+                                          it.id === "assaultvest" ||
+                                          it.id === "revive" ||
+                                          it.id === "oranberry" ||
+                                          it.id === "silkscarf" ||
+                                          it.id === "kingsrock" ||
+                                          it.id === "leftovers" ||
+                                          it.id === "metronome";
                                         const disabled =
                                           isAuto ||
                                           used ||
