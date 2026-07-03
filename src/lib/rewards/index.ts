@@ -62,8 +62,10 @@ export function dailyReward(opts: { correct: number; total: number; level: numbe
   return { xp, tp: Math.round(0.2 * xp) };
 }
 
-/** Who's That Pokémon: flat XP per correct identification. */
-export const WHOS_THAT_XP = 10;
+/** Who's That Pokémon: flat XP per correct identification. Matches the
+ * "+100 XP" shown on the correct-answer screen — was previously 10, out of
+ * sync with that label. */
+export const WHOS_THAT_XP = 100;
 
 // NOTE: Mega Raid rewards live in src/lib/mega/schedule.ts (MEGA_REWARD + megaRankScale),
 // kept in the mega domain. See docs/ARCHITECTURE.md.
