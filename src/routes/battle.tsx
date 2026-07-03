@@ -719,7 +719,7 @@ function BattlePage() {
                 return (
                   <div
                     key={card.kind}
-                    className="relative w-[280px] shrink-0 snap-center overflow-hidden rounded-[28px] shadow-[0_18px_40px_-14px_rgba(0,0,0,0.5)]"
+                    className="relative flex w-[280px] shrink-0 snap-center flex-col overflow-hidden rounded-[28px] shadow-[0_18px_40px_-14px_rgba(0,0,0,0.5)]"
                     style={{ background: t.cardBg }}
                   >
                     {card.kind !== "whatsnew" && (
@@ -889,10 +889,10 @@ function BattlePage() {
                         </div>
                       </div>
                     )}
-                    <div className="px-5 pb-6 pt-4">
+                    <div className="flex flex-1 flex-col px-5 pb-6 pt-4">
                       {card.kind === "whatsnew" && (
                         <div
-                          className="mb-2 inline-flex rounded-full px-2.5 py-1.5 font-pixel text-[7px] tracking-wider"
+                          className="mb-2 inline-flex w-fit rounded-full px-2.5 py-1.5 font-pixel text-[7px] tracking-wider"
                           style={{ background: t.labelBg, color: t.labelColor }}
                         >
                           ✨ {t.label}
@@ -904,44 +904,68 @@ function BattlePage() {
                       >
                         {card.title}
                       </div>
-                      <div
-                        className="mt-1.5 whitespace-pre-line text-[14px] leading-snug"
-                        style={{ color: t.descColor }}
-                      >
-                        {card.desc}
+                      {card.kind === "whatsnew" ? (
+                        <ul className="mt-2 space-y-1.5 text-[13.5px] leading-snug">
+                          {card.desc.split("\n").map((line, i) => (
+                            <li
+                              key={i}
+                              className="flex items-start gap-1.5"
+                              style={{ color: t.descColor }}
+                            >
+                              <span
+                                aria-hidden="true"
+                                className="mt-[3px] h-[5px] w-[5px] shrink-0 rounded-full"
+                                style={{ background: t.chipStroke }}
+                              />
+                              <span>{line}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <div
+                          className="mt-1.5 whitespace-pre-line text-[14px] leading-snug"
+                          style={{ color: t.descColor }}
+                        >
+                          {card.desc}
+                        </div>
+                      )}
+                      {/* Bottom-anchored so the CTA lands at the same Y position as
+                          every other carousel card's button, regardless of how much
+                          (or little) content sits above it. */}
+                      <div className="mt-auto">
+                        <div
+                          className="mt-3.5 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5"
+                          style={{ background: t.chipBg }}
+                        >
+                          <svg width="11" height="11" viewBox="0 0 22 22" fill="none">
+                            <circle cx="11" cy="11" r="8.5" stroke={t.chipStroke} strokeWidth="2" />
+                            <path
+                              d="M11 6.5V11l3 2"
+                              stroke={t.chipStroke}
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                            />
+                          </svg>
+                          <span className="font-pixel text-[7px]" style={{ color: t.chipColor }}>
+                            {card.chip}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => {
+                            const p = card.onPlay;
+                            setEngageCards(null);
+                            p();
+                          }}
+                          className="mt-4 flex h-[50px] w-full items-center justify-center rounded-full text-[16px] font-extrabold active:translate-y-0.5"
+                          style={{
+                            background: t.ctaBg,
+                            color: t.ctaColor,
+                            boxShadow: `0 4px 0 ${t.ctaShadow}`,
+                          }}
+                        >
+                          {card.cta}
+                        </button>
                       </div>
-                      <div
-                        className="mt-3.5 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5"
-                        style={{ background: t.chipBg }}
-                      >
-                        <svg width="11" height="11" viewBox="0 0 22 22" fill="none">
-                          <circle cx="11" cy="11" r="8.5" stroke={t.chipStroke} strokeWidth="2" />
-                          <path
-                            d="M11 6.5V11l3 2"
-                            stroke={t.chipStroke}
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                        <span className="font-pixel text-[7px]" style={{ color: t.chipColor }}>
-                          {card.chip}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => {
-                          const p = card.onPlay;
-                          setEngageCards(null);
-                          p();
-                        }}
-                        className="mt-4 flex h-[50px] w-full items-center justify-center rounded-full text-[16px] font-extrabold active:translate-y-0.5"
-                        style={{
-                          background: t.ctaBg,
-                          color: t.ctaColor,
-                          boxShadow: `0 4px 0 ${t.ctaShadow}`,
-                        }}
-                      >
-                        {card.cta}
-                      </button>
                     </div>
                   </div>
                 );

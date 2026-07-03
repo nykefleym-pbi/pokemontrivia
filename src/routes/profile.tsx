@@ -792,8 +792,22 @@ function ProfilePage() {
         </SheetContent>
       </Sheet>
 
-      {/* Settings sheet */}
-      <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
+      {/* Settings sheet. Feedback/Rename/Repick are separate Radix Dialog
+          roots stacked on top of it (not nested in the JSX tree), so Radix's
+          dismissable-layer stack can misattribute the CHILD's closing
+          interaction as an "outside click" on this Sheet too. Guard against
+          that: only let an external close request through when no child
+          overlay is open — an explicit close (the X / Continue button) always
+          still works via setSettingsOpen(false) directly. */}
+      <Sheet
+        open={settingsOpen}
+        onOpenChange={(open) => {
+          if (!open && (feedbackOpen !== null || renameOpen || pickerOpen || trainerPickerOpen)) {
+            return;
+          }
+          setSettingsOpen(open);
+        }}
+      >
         <SheetContent
           side="bottom"
           className="rounded-t-3xl bg-poke-cream max-h-[85vh] overflow-y-auto"
