@@ -20,6 +20,9 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       injectRegister: "auto",
+      strategies: "injectManifest",
+      srcDir: "src",
+      filename: "sw.ts",
       devOptions: {
         enabled: false,
       },
@@ -46,63 +49,13 @@ export default defineConfig({
         ],
         categories: ["games", "entertainment"],
       },
-      workbox: {
+      // Runtime caching now lives in src/sw.ts (injectManifest custom worker),
+      // since generateSW's declarative `workbox.runtimeCaching` can't run
+      // alongside our own push/notificationclick listeners.
+      injectManifest: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
-        navigateFallbackDenylist: [/^\/api\//],
         globIgnores: ["**/badges/**", "**/trainers/**", "**/items/**"],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
-        runtimeCaching: [
-          {
-            urlPattern: ({ request }) => request.mode === "navigate",
-            handler: "NetworkFirst",
-            options: { cacheName: "html", networkTimeoutSeconds: 3 },
-          },
-          {
-            urlPattern: /^.*\/(badges|items|trainers)\/.*\.(png|jpg|jpeg|svg|webp)$/,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "game-sprites",
-              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 365 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-          {
-            urlPattern: /^https:\/\/raw\.githubusercontent\.com\/PokeAPI\/sprites\/.*\.png$/,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "pokeapi-sprites",
-              expiration: { maxEntries: 1500, maxAgeSeconds: 60 * 60 * 24 * 365 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-          {
-            urlPattern: /^https:\/\/pokeapi\.co\/api\/v2\/.*$/,
-            handler: "StaleWhileRevalidate",
-            options: {
-              cacheName: "pokeapi-json",
-              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-          {
-            urlPattern: /^https:\/\/archives\.bulbagarden\.net\/.*\.(png|jpg)$/,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "bulbagarden-sprites",
-              expiration: { maxEntries: 500, maxAgeSeconds: 60 * 60 * 24 * 365 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "google-fonts",
-              expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 365 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-        ],
       },
     }),
   ],

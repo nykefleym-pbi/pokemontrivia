@@ -5,7 +5,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useGameStore } from "@/lib/store";
-import { ensureSession, listIncomingFriendRequests, respondFriendRequest } from "@/lib/social";
+import {
+  ensureSession,
+  listIncomingFriendRequests,
+  respondFriendRequest,
+  notifyFriendAccepted,
+} from "@/lib/social";
 import { playSfx } from "@/lib/audio";
 import { trainerSpriteUrl } from "@/lib/game-data";
 
@@ -101,6 +106,7 @@ export function FriendRequestInbox() {
     });
     if (res.status === "accepted") {
       toast.success(`You're now friends with ${req.trainerName || "trainer"}!`);
+      void notifyFriendAccepted(req.fromId);
       try {
         window.dispatchEvent(new CustomEvent(FRIENDS_REFRESH_EVENT));
       } catch {

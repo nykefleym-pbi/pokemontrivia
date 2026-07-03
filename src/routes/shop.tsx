@@ -10,6 +10,7 @@ import { getAbility } from "@/lib/abilities";
 import { CATEGORIES, CATEGORY_OF, BAG_SHORT_DESC, type ItemCategory } from "@/lib/item-categories";
 import { PixelGift } from "@/components/pixel-icons";
 import { ItemIcon } from "@/components/game-ui";
+import { syncActivity } from "@/lib/social";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import {
@@ -75,6 +76,7 @@ function ShopPage() {
   function handleClaimGift() {
     const res = claimDailyGift();
     if (!res) return;
+    void syncActivity("last_gift_claim");
     const it = ITEMS.find((x) => x.id === res.itemId);
     if (res.shiny) {
       toast.success(

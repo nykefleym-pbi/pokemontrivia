@@ -21,6 +21,7 @@ import { ShareCardDialog } from "@/components/share-card-dialog";
 import type { ShareData } from "@/components/share-card-builder";
 import type { Trivia } from "@/lib/trivia-core";
 import { TimerRing } from "@/components/battle-screen";
+import { syncActivity } from "@/lib/social";
 
 export function DailyScreen({ questions, onExit }: { questions: Trivia[]; onExit: () => void }) {
   const recordDaily = useGameStore((s) => s.recordDaily);
@@ -97,6 +98,7 @@ export function DailyScreen({ questions, onExit }: { questions: Trivia[]; onExit
             timeMs,
             pattern: nextPattern,
           });
+          void syncActivity("last_daily_claim");
           const lvl = useGameStore.getState().level;
           const daily = dailyReward({ correct: finalCorrect, total, level: lvl });
           if (daily.xp > 0) {

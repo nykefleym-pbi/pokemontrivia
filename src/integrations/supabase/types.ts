@@ -62,6 +62,60 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_questions: {
+        Row: {
+          created_at: string
+          date: string
+          questions: Json
+          served_ids: string[]
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          questions: Json
+          served_ids?: string[]
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          questions?: Json
+          served_ids?: string[]
+        }
+        Relationships: []
+      }
+      feedback: {
+        Row: {
+          app_version: string | null
+          category: string
+          contact: string | null
+          created_at: string
+          id: string
+          message: string
+          trainer_name: string | null
+          user_id: string
+        }
+        Insert: {
+          app_version?: string | null
+          category: string
+          contact?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          trainer_name?: string | null
+          user_id?: string
+        }
+        Update: {
+          app_version?: string | null
+          category?: string
+          contact?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          trainer_name?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       friend_requests: {
         Row: {
           created_at: string
@@ -261,7 +315,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "mega_runs_event_fk"
+            foreignKeyName: "mega_runs_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "mega_events"
@@ -282,6 +336,12 @@ export type Database = {
           created_at: string
           friend_code: string
           id: string
+          last_daily_claim: string | null
+          last_gift_claim: string | null
+          last_mega_played: string | null
+          last_reminder_sent: string | null
+          last_weekly_attempt: string | null
+          last_whos_that_played: string | null
           level: number
           pokedex_count: number
           trainer_name: string | null
@@ -294,6 +354,12 @@ export type Database = {
           created_at?: string
           friend_code: string
           id: string
+          last_daily_claim?: string | null
+          last_gift_claim?: string | null
+          last_mega_played?: string | null
+          last_reminder_sent?: string | null
+          last_weekly_attempt?: string | null
+          last_whos_that_played?: string | null
           level?: number
           pokedex_count?: number
           trainer_name?: string | null
@@ -306,6 +372,12 @@ export type Database = {
           created_at?: string
           friend_code?: string
           id?: string
+          last_daily_claim?: string | null
+          last_gift_claim?: string | null
+          last_mega_played?: string | null
+          last_reminder_sent?: string | null
+          last_weekly_attempt?: string | null
+          last_whos_that_played?: string | null
           level?: number
           pokedex_count?: number
           trainer_name?: string | null
@@ -315,27 +387,51 @@ export type Database = {
         }
         Relationships: []
       }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_id?: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      check_curated_answer: {
-        Args: { _chosen_index: number; _question_id: string }
-        Returns: Json
-      }
       claim_trainer_name: { Args: { _name: string }; Returns: Json }
       get_curated_questions: {
         Args: {
-          _category?: string
-          _difficulty?: string
-          _exclude?: string[]
-          _limit?: number
-          _type_theme?: string
+          p_count: number
+          p_difficulties: string[]
+          p_exclude?: string[]
+          p_type_theme?: string
         }
         Returns: {
           category: string
+          correct_index: number
           difficulty: string
+          explanation: string
           id: string
           options: Json
           question: string
@@ -346,9 +442,7 @@ export type Database = {
         Args: { p_event_id: string; p_limit?: number }
         Returns: {
           accuracy: number
-          attempts: number
           correct: number
-          finished_at: string
           level: number
           time_ms: number
           total: number
@@ -364,6 +458,10 @@ export type Database = {
       }
       increment_curated_served: {
         Args: { question_ids: string[] }
+        Returns: undefined
+      }
+      insert_daily_if_absent: {
+        Args: { p_date: string; p_questions: Json; p_served_ids?: string[] }
         Returns: undefined
       }
       insert_mega_questions_if_absent: {
@@ -390,6 +488,12 @@ export type Database = {
           created_at: string
           friend_code: string
           id: string
+          last_daily_claim: string | null
+          last_gift_claim: string | null
+          last_mega_played: string | null
+          last_reminder_sent: string | null
+          last_weekly_attempt: string | null
+          last_whos_that_played: string | null
           level: number
           pokedex_count: number
           trainer_name: string | null
@@ -404,6 +508,29 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      my_pending_request_targets: { Args: never; Returns: string[] }
+      pick_battle_curated: {
+        Args: { p_count: number; p_difficulty: string; p_exclude?: string[] }
+        Returns: {
+          category: string
+          correct_index: number
+          explanation: string
+          id: string
+          options: Json
+          question: string
+        }[]
+      }
+      pick_daily_curated: {
+        Args: { p_easy?: number; p_medium?: number; p_window?: number }
+        Returns: {
+          category: string
+          correct_index: number
+          explanation: string
+          id: string
+          options: Json
+          question: string
+        }[]
+      }
       respond_friend_request: {
         Args: { _accept: boolean; _request_id: string }
         Returns: Json
@@ -413,6 +540,7 @@ export type Database = {
         Returns: Json
       }
       send_friend_request: { Args: { _code: string }; Returns: Json }
+      send_friend_request_by_id: { Args: { _target: string }; Returns: Json }
       submit_mega_run: {
         Args: {
           p_accuracy: number
@@ -566,7 +694,7 @@ export type CompositeTypes<
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    ? DefaultSchema["Enums"][PublicCompositeTypeNameOrOptions]
     : never
 
 export const Constants = {

@@ -63,6 +63,61 @@ export async function syncProfile(): Promise<TrainerProfile | null> {
   return data as TrainerProfile;
 }
 
+export type ActivityField =
+  | "last_daily_claim"
+  | "last_weekly_attempt"
+  | "last_whos_that_played"
+  | "last_mega_played"
+  | "last_gift_claim";
+
+/**
+ * Fire-and-forget: stamp a "last played this mode" timestamp on the caller's
+ * profile row, so the server-side reminder cron can tell who's overdue for a
+ * push without needing to know each device's local state. Silently no-ops if
+ * there's no session yet (guest not yet onboarded) — never blocks gameplay.
+ */
+export async function syncActivity(field: ActivityField): Promise<void> {
+  const uid = await ensureSession();
+  if (!uid) return;
+  const { error } = await db
+    .from("profiles")
+    .update({ [field]: new Date().toISOString() })
+    .eq("id", uid);
+  if (error) console.warn(`[social] syncActivity(${field}) failed:`, error.message);
+}
+
+/**
+ * Fire-and-forget push trigger. The Edge Function independently re-verifies
+ * that the underlying friend_request/friendship actually exists before
+ * sending, so a caller can't use this to push arbitrary notifications.
+ */
+async function notifyPush(
+  kind: "friend_request" | "friend_accepted",
+  toUserId: string,
+  title: string,
+  body: string,
+): Promise<void> {
+  try {
+    const { error } = await supabase.functions.invoke("send-push", {
+      body: { kind, toUserId, title, body },
+    });
+    if (error) console.warn(`[social] notifyPush(${kind}) failed:`, error.message);
+  } catch (e) {
+    console.warn(`[social] notifyPush(${kind}) threw:`, e);
+  }
+}
+
+/** Push the original requester once their friend request has been accepted. */
+export async function notifyFriendAccepted(requesterId: string): Promise<void> {
+  const myName = useGameStore.getState().trainerName || "A trainer";
+  await notifyPush(
+    "friend_accepted",
+    requesterId,
+    "Friend request accepted",
+    `${myName} accepted your friend request!`,
+  );
+}
+
 /** Idempotent app-load bootstrap (runs once). */
 export function bootstrapSocial(): Promise<string | null> {
   if (!bootstrapPromise) {
@@ -175,6 +230,15 @@ export async function addFriendByCode(code: string): Promise<{
     const r = data as { ok?: boolean; status?: string; error?: string } | null;
     if (r && r.ok === true) {
       const status = (r.status as "pending" | "accepted" | "already_pending") ?? "pending";
+      if (status === "pending") {
+        const myName = useGameStore.getState().trainerName || "A trainer";
+        void notifyPush(
+          "friend_request",
+          profile.id,
+          "New friend request",
+          `${myName} wants to be your friend!`,
+        );
+      }
       return { profile, status };
     }
     const err = (r && r.error) || "";
@@ -216,7 +280,17 @@ export async function sendFriendRequestById(
     }
     const r = data as { ok?: boolean; status?: string; error?: string } | null;
     if (r && r.ok === true) {
-      return { status: (r.status as "pending" | "accepted" | "already_pending") ?? "pending" };
+      const status = (r.status as "pending" | "accepted" | "already_pending") ?? "pending";
+      if (status === "pending") {
+        const myName = useGameStore.getState().trainerName || "A trainer";
+        void notifyPush(
+          "friend_request",
+          targetId,
+          "New friend request",
+          `${myName} wants to be your friend!`,
+        );
+      }
+      return { status };
     }
     const err = (r && r.error) || "";
     return {
