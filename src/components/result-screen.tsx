@@ -276,7 +276,9 @@ export function ResultScreen({
   );
 }
 
-function LevelUpBlock({ rewards }: { rewards: LevelUpRewards }) {
+// Exported so Daily Quest and Who's That Pokémon (which also award XP and
+// can trigger a level-up) can show the same reward block.
+export function LevelUpBlock({ rewards }: { rewards: LevelUpRewards }) {
   const spannedMultiple = rewards.toLevel - rewards.fromLevel > 1;
   return (
     <motion.div
