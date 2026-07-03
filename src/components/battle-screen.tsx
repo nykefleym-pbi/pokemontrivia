@@ -28,7 +28,7 @@ import {
 } from "@/lib/pokemon-data";
 import { getAbility as getAbilityFn, type Ability } from "@/lib/abilities";
 import { TutorialOverlay } from "@/components/tutorial-overlay";
-import { TypeBadge, PokemonSprite } from "@/components/game-ui";
+import { TypeBadge, PokemonSprite, ItemIcon } from "@/components/game-ui";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   AlertDialog,
@@ -1553,20 +1553,7 @@ function BattleMode({
                                             className="flex items-center gap-3.5 rounded-[20px] bg-card px-4 py-3 text-left shadow-card transition active:scale-[0.99] disabled:opacity-40"
                                           >
                                             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-primary/[0.08]">
-                                              <img
-                                                src={it.iconUrl}
-                                                alt={it.name}
-                                                className="sprite h-9 w-9 object-contain"
-                                                onError={(e) => {
-                                                  const el = e.currentTarget as HTMLImageElement;
-                                                  el.replaceWith(
-                                                    Object.assign(document.createElement("span"), {
-                                                      textContent: it.emoji,
-                                                      className: "text-2xl",
-                                                    }),
-                                                  );
-                                                }}
-                                              />
+                                              <ItemIcon item={it} className="h-9 w-9" />
                                             </div>
                                             <div className="min-w-0 flex-1">
                                               <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
@@ -1622,20 +1609,7 @@ function BattleMode({
                           onClick={() => tryUseItem(it.id)}
                           className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition active:scale-95 disabled:opacity-40"
                         >
-                          <img
-                            src={it.iconUrl}
-                            alt={it.name}
-                            className="sprite h-8 w-8 object-contain"
-                            onError={(e) => {
-                              const el = e.currentTarget as HTMLImageElement;
-                              el.replaceWith(
-                                Object.assign(document.createElement("span"), {
-                                  textContent: it.emoji,
-                                  className: "text-2xl",
-                                }),
-                              );
-                            }}
-                          />
+                          <ItemIcon item={it} className="h-8 w-8" />
                           <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-poke-dark px-1 font-pixel text-[9px] text-white">
                             {owned}
                           </span>

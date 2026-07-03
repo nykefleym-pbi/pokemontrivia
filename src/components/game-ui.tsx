@@ -2,6 +2,30 @@ import * as React from "react";
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { spriteFallbacks, type PokeType } from "@/lib/pokemon-data";
+import type { ItemDef } from "@/lib/game-data";
+
+/** Item icon (PokeAPI sprite via item.iconUrl), falling back to its emoji if the
+ * image fails to load. Shared by the Shop, in-battle bag, and Level Up screen
+ * so every surface renders items identically. */
+export function ItemIcon({ item, className }: { item: ItemDef; className: string }) {
+  return (
+    <img
+      src={item.iconUrl}
+      alt={item.name}
+      crossOrigin="anonymous"
+      className={`sprite object-contain ${className}`}
+      onError={(e) => {
+        const el = e.currentTarget as HTMLImageElement;
+        el.replaceWith(
+          Object.assign(document.createElement("span"), {
+            textContent: item.emoji,
+            className: "text-3xl",
+          }),
+        );
+      }}
+    />
+  );
+}
 
 const typeColorMap: Record<PokeType, string> = {
   normal: "bg-type-normal",

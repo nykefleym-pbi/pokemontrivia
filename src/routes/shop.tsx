@@ -9,6 +9,7 @@ import { ITEMS, type ItemDef } from "@/lib/game-data";
 import { getAbility } from "@/lib/abilities";
 import { CATEGORIES, CATEGORY_OF, BAG_SHORT_DESC, type ItemCategory } from "@/lib/item-categories";
 import { PixelGift } from "@/components/pixel-icons";
+import { ItemIcon } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import {
@@ -24,26 +25,6 @@ export const Route = createFileRoute("/shop")({
 });
 
 type Category = ItemCategory;
-
-function ItemIcon({ item, className }: { item: ItemDef; className: string }) {
-  return (
-    <img
-      src={item.iconUrl}
-      alt={item.name}
-      crossOrigin="anonymous"
-      className={`sprite object-contain ${className}`}
-      onError={(e) => {
-        const el = e.currentTarget as HTMLImageElement;
-        el.replaceWith(
-          Object.assign(document.createElement("span"), {
-            textContent: item.emoji,
-            className: "text-3xl",
-          }),
-        );
-      }}
-    />
-  );
-}
 
 type ConfirmState = {
   item: ItemDef;

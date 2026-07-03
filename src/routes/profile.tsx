@@ -169,6 +169,23 @@ function ProfilePage() {
   }
   const [badgesOpen, setBadgesOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // Feedback/Rename/Repick are separate Radix Dialog roots stacked on top of
+  // the Settings Sheet (not nested in the JSX tree). Radix processes a single
+  // dismiss gesture (Escape / outside click) by walking the layer stack
+  // top-down and — critically — appears to flush the resulting React state
+  // update between each layer's onOpenChange call, so by the time Settings'
+  // own onOpenChange(false) runs, a state-based "is a child open?" check has
+  // already gone stale (the child's setState already landed). A ref written
+  // synchronously in the SAME handler as the child's close, and cleared only
+  // on the next tick, survives that in-between flush and reliably blocks the
+  // spurious Settings close.
+  const suppressSettingsCloseRef = React.useRef(false);
+  function suppressSettingsClose() {
+    suppressSettingsCloseRef.current = true;
+    setTimeout(() => {
+      suppressSettingsCloseRef.current = false;
+    }, 0);
+  }
   const [feedbackOpen, setFeedbackOpen] = useState<null | "suggestion" | "bug">(null);
   const [feedbackMsg, setFeedbackMsg] = useState("");
   const [feedbackContact, setFeedbackContact] = useState("");
@@ -681,7 +698,15 @@ function ProfilePage() {
       </Sheet>
 
       {/* Feedback sheet */}
-      <Sheet open={feedbackOpen !== null} onOpenChange={(open) => !open && setFeedbackOpen(null)}>
+      <Sheet
+        open={feedbackOpen !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            suppressSettingsClose();
+            setFeedbackOpen(null);
+          }
+        }}
+      >
         <SheetContent side="bottom" className="rounded-t-3xl bg-poke-cream">
           <SheetHeader>
             <SheetTitle className="font-display-xl text-foreground">
@@ -802,9 +827,7 @@ function ProfilePage() {
       <Sheet
         open={settingsOpen}
         onOpenChange={(open) => {
-          if (!open && (feedbackOpen !== null || renameOpen || pickerOpen || trainerPickerOpen)) {
-            return;
-          }
+          if (!open && suppressSettingsCloseRef.current) return;
           setSettingsOpen(open);
         }}
       >
@@ -1068,7 +1091,13 @@ function ProfilePage() {
       </Sheet>
 
       {/* Rename trainer dialog */}
-      <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
+      <Dialog
+        open={renameOpen}
+        onOpenChange={(open) => {
+          if (!open) suppressSettingsClose();
+          setRenameOpen(open);
+        }}
+      >
         <DialogContent className="max-w-xs">
           <DialogHeader>
             <DialogTitle>Rename trainer</DialogTitle>
@@ -1158,7 +1187,13 @@ function ProfilePage() {
       </AlertDialog>
 
       {/* Pokémon picker */}
-      <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
+      <Dialog
+        open={pickerOpen}
+        onOpenChange={(open) => {
+          if (!open) suppressSettingsClose();
+          setPickerOpen(open);
+        }}
+      >
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Change partner</DialogTitle>
@@ -1197,7 +1232,13 @@ function ProfilePage() {
       </Dialog>
 
       {/* Trainer picker */}
-      <Dialog open={trainerPickerOpen} onOpenChange={setTrainerPickerOpen}>
+      <Dialog
+        open={trainerPickerOpen}
+        onOpenChange={(open) => {
+          if (!open) suppressSettingsClose();
+          setTrainerPickerOpen(open);
+        }}
+      >
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Change trainer</DialogTitle>
