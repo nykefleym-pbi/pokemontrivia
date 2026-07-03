@@ -183,8 +183,15 @@ export function baseDamageForLevel(level: number): number {
   return 10 + 2 * leagueIndex(level);
 }
 
+// Linear up through level 51 (Monarch, the final rank) so the climb through
+// every rank feels exactly as it does today. Past that the endless endgame
+// grind gets progressively harder via a quadratic tail, since reward scaling
+// (levelMultiplier, +5%/level) can't keep pace with a linear requirement
+// forever — this keeps leveling meaningfully harder at high levels instead
+// of the difficulty flattening out into a fixed grind forever.
 export function xpForLevel(level: number): number {
-  return 80 + (level - 1) * 40;
+  const overCap = Math.max(0, level - 51);
+  return Math.round(80 + (level - 1) * 40 + 0.5 * overCap * overCap);
 }
 
 export function totalXpToReachLevel(level: number): number {
