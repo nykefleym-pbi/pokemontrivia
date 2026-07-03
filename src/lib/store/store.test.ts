@@ -70,4 +70,39 @@ describe("store composition (slices)", () => {
     expect(typeof useGameStore.getState().addCoins).toBe("function");
     expect(typeof useGameStore.getState().addXp).toBe("function");
   });
+
+  it("items slice action: tryAutoRevive consumes one per battle only", () => {
+    useGameStore.getState().grantItem("revive", 2);
+    expect(useGameStore.getState().tryAutoRevive()).toBe(true);
+    expect(useGameStore.getState().inventory.revive).toBe(1);
+    expect(useGameStore.getState().tryAutoRevive()).toBe(false);
+    useGameStore.getState().startBattle();
+    expect(useGameStore.getState().tryAutoRevive()).toBe(true);
+  });
+
+  it("items slice action: tryAutoKingsRock is gated to once per week", () => {
+    useGameStore.getState().grantItem("kingsrock", 1);
+    expect(useGameStore.getState().tryAutoKingsRock()).toBe(true);
+    expect(useGameStore.getState().tryAutoKingsRock()).toBe(false);
+  });
+
+  it("items slice action: useItem sets amuletCoinActive/expCharmActive/luckyPunchActive", () => {
+    useGameStore.getState().grantItem("amuletcoin", 1);
+    useGameStore.getState().grantItem("expcharm", 1);
+    useGameStore.getState().grantItem("luckypunch", 1);
+    expect(useGameStore.getState().useItem("amuletcoin")).toBe(true);
+    expect(useGameStore.getState().useItem("expcharm")).toBe(true);
+    expect(useGameStore.getState().useItem("luckypunch")).toBe(true);
+    expect(useGameStore.getState().amuletCoinActive).toBe(true);
+    expect(useGameStore.getState().expCharmActive).toBe(true);
+    expect(useGameStore.getState().luckyPunchActive).toBe(true);
+    // Once-per-battle: a second use before the flags are consumed should fail.
+    expect(useGameStore.getState().useItem("amuletcoin")).toBe(false);
+  });
+
+  it("items slice action: auto-only items can't be used manually", () => {
+    useGameStore.getState().grantItem("oranberry", 1);
+    expect(useGameStore.getState().useItem("oranberry")).toBe(false);
+    expect(useGameStore.getState().inventory.oranberry).toBe(1);
+  });
 });

@@ -139,6 +139,9 @@ export interface GameState {
   usedThisBattle: Partial<Record<ItemId, boolean>>;
   xAttackActive: boolean;
   scopeRevealedThisBattle: boolean;
+  amuletCoinActive: boolean;
+  expCharmActive: boolean;
+  luckyPunchActive: boolean;
   bonusTimeThisBattle: number;
   luckyEggExpiresAt: number;
   /**
@@ -155,6 +158,9 @@ export interface GameState {
   luckyEggUsedWeek: number;
   focusBandUsedWeek: number;
   assaultVestUsedWeek: number;
+  kingsRockUsedWeek: number;
+  leftoversUsedWeek: number;
+  metronomeUsedWeek: number;
   autoItems: Partial<Record<ItemId, boolean>>;
   whosThatHourKey: number;
   whosThatActiveRound: Round | null;
@@ -224,6 +230,12 @@ export interface GameState {
   tryAutoFocusBand: () => boolean;
   tryAutoQuickClaw: () => boolean;
   tryAutoAssaultVest: () => boolean;
+  tryAutoRevive: () => boolean;
+  tryAutoOranBerry: () => boolean;
+  tryAutoSilkScarf: () => boolean;
+  tryAutoKingsRock: () => boolean;
+  tryAutoLeftovers: () => boolean;
+  tryAutoMetronome: () => boolean;
   toggleAutoItem: (id: ItemId) => void;
   grantItem: (id: ItemId, qty?: number) => void;
   consumeWhosThat: () => void;
@@ -319,6 +331,9 @@ export const useGameStore = create<GameState>()(
       usedThisBattle: {},
       xAttackActive: false,
       scopeRevealedThisBattle: false,
+      amuletCoinActive: false,
+      expCharmActive: false,
+      luckyPunchActive: false,
       bonusTimeThisBattle: 0,
 
       seenQuestionHashes: [],
@@ -438,11 +453,17 @@ export const useGameStore = create<GameState>()(
           usedThisBattle: {},
           xAttackActive: false,
           scopeRevealedThisBattle: false,
+          amuletCoinActive: false,
+          expCharmActive: false,
+          luckyPunchActive: false,
           bonusTimeThisBattle: 0,
           luckyEggExpiresAt: 0,
           luckyEggUsedWeek: 0,
           focusBandUsedWeek: 0,
           assaultVestUsedWeek: 0,
+          kingsRockUsedWeek: 0,
+          leftoversUsedWeek: 0,
+          metronomeUsedWeek: 0,
           autoItems: {},
           whosThatHourKey: 0,
           whosThatActiveRound: null,
@@ -491,6 +512,9 @@ export const useGameStore = create<GameState>()(
           usedThisBattle: {},
           xAttackActive: false,
           scopeRevealedThisBattle: false,
+          amuletCoinActive: false,
+          expCharmActive: false,
+          luckyPunchActive: false,
           bonusTimeThisBattle: 0,
         }),
 
@@ -499,6 +523,9 @@ export const useGameStore = create<GameState>()(
           inBattle: false,
           xAttackActive: false,
           scopeRevealedThisBattle: false,
+          amuletCoinActive: false,
+          expCharmActive: false,
+          luckyPunchActive: false,
           bonusTimeThisBattle: 0,
         }),
 
@@ -509,6 +536,9 @@ export const useGameStore = create<GameState>()(
           inBattle: false,
           xAttackActive: false,
           scopeRevealedThisBattle: false,
+          amuletCoinActive: false,
+          expCharmActive: false,
+          luckyPunchActive: false,
           bonusTimeThisBattle: 0,
           usedThisBattle: {},
           stats: {
@@ -607,6 +637,9 @@ export const useGameStore = create<GameState>()(
         luckyEggUsedWeek: s.luckyEggUsedWeek,
         focusBandUsedWeek: s.focusBandUsedWeek,
         assaultVestUsedWeek: s.assaultVestUsedWeek,
+        kingsRockUsedWeek: s.kingsRockUsedWeek,
+        leftoversUsedWeek: s.leftoversUsedWeek,
+        metronomeUsedWeek: s.metronomeUsedWeek,
         autoItems: s.autoItems,
         whosThatHourKey: s.whosThatHourKey,
         whosThatActiveRound: s.whosThatActiveRound,
