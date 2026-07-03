@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useGameStore } from "@/lib/store";
 import { dailyReward } from "@/lib/rewards";
+import { rollLevelUpRewards, type LevelUpRewards } from "@/lib/level-rewards";
+import { LevelUpBlock } from "@/components/result-screen";
 import { rankForLevel, trainerSpriteUrl } from "@/lib/game-data";
 import { PokemonSprite, PokeballPattern, type DailyMark } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
@@ -28,6 +30,7 @@ export function DailyScreen({ questions, onExit }: { questions: Trivia[]; onExit
   const [phase, setPhase] = useState<"question" | "feedback" | "done">("question");
   const [chosen, setChosen] = useState<number | null>(null);
   const [pattern, setPattern] = useState<DailyMark[]>([]);
+  const [levelUpRewards, setLevelUpRewards] = useState<LevelUpRewards | null>(null);
   const abortBattle = useGameStore((s) => s.abortBattle);
   const setBattleScreenActive = useGameStore((s) => s.setBattleScreenActive);
   useEffect(() => {
@@ -99,9 +102,20 @@ export function DailyScreen({ questions, onExit }: { questions: Trivia[]; onExit
           const lvl = useGameStore.getState().level;
           const daily = dailyReward({ correct: finalCorrect, total, level: lvl });
           if (daily.xp > 0) {
+            const prevLevel = useGameStore.getState().level;
             useGameStore.getState().addXp(daily.xp);
             const partner = useGameStore.getState().pokemon;
             if (partner) useGameStore.getState().addTrainingPoints(partner.id, daily.tp);
+            const newLevel = useGameStore.getState().level;
+            if (newLevel > prevLevel) {
+              const rewards = rollLevelUpRewards(prevLevel, newLevel);
+              if (rewards) {
+                setLevelUpRewards(rewards);
+                if (rewards.coins > 0) useGameStore.getState().addCoins(rewards.coins);
+                for (const it of rewards.items) useGameStore.getState().grantItem(it.id, it.qty);
+                if (rewards.eggs > 0) useGameStore.getState().grantPokeEgg(rewards.eggs);
+              }
+            }
           }
         }
         playSfx("victory");
@@ -123,6 +137,7 @@ export function DailyScreen({ questions, onExit }: { questions: Trivia[]; onExit
         total={total}
         timeMs={timeMs}
         pattern={pattern}
+        levelUpRewards={levelUpRewards}
         onExit={onExit}
       />
     );
@@ -258,12 +273,14 @@ function DailyResultScreen({
   total,
   timeMs,
   pattern,
+  levelUpRewards,
   onExit,
 }: {
   correct: number;
   total: number;
   timeMs: number;
   pattern: DailyMark[];
+  levelUpRewards: LevelUpRewards | null;
   onExit: () => void;
 }) {
   const date = new Date().toISOString().slice(0, 10);
@@ -370,6 +387,8 @@ function DailyResultScreen({
           <PokeballPattern marks={pattern} />
         </div>
       </div>
+
+      {levelUpRewards && <LevelUpBlock rewards={levelUpRewards} />}
 
       {shareData && (
         <Button

@@ -4,6 +4,8 @@ import { useGameStore } from "@/lib/store";
 import { ALL_POKEMON, spriteUrl, type PokeType } from "@/lib/pokemon-data";
 import { ITEMS, type ItemId } from "@/lib/game-data";
 import { WHOS_THAT_XP } from "@/lib/rewards";
+import { rollLevelUpRewards, type LevelUpRewards } from "@/lib/level-rewards";
+import { LevelUpBlock } from "@/components/result-screen";
 import { PokemonSprite } from "@/components/game-ui";
 import { playCry, playSfx, stopBgm, revealPokemon, playWhosThatShout } from "@/lib/audio";
 import { pokeApiUrls } from "@/lib/api/pokeapi";
@@ -180,6 +182,7 @@ function WhosThatPokemon() {
   const [dexNonce, setDexNonce] = useState(0);
   const [timeLeft, setTimeLeft] = useState(ANSWER_SECONDS);
   const [now, setNow] = useState(Date.now());
+  const [levelUpRewards, setLevelUpRewards] = useState<LevelUpRewards | null>(null);
   const claimedRef = useRef(false);
   const initRef = useRef(false);
   const burnedRef = useRef(false);
@@ -288,9 +291,20 @@ function WhosThatPokemon() {
   useEffect(() => {
     if (phase === "correct" && round && !claimedRef.current) {
       claimedRef.current = true;
+      const prevLevel = useGameStore.getState().level;
       addXp(WHOS_THAT_XP);
       grantItem(round.rewardId, 1);
       recordPokedexCapture(caught?.id ?? round.monId, round.isShiny);
+      const newLevel = useGameStore.getState().level;
+      if (newLevel > prevLevel) {
+        const rewards = rollLevelUpRewards(prevLevel, newLevel);
+        if (rewards) {
+          setLevelUpRewards(rewards);
+          if (rewards.coins > 0) useGameStore.getState().addCoins(rewards.coins);
+          for (const it of rewards.items) useGameStore.getState().grantItem(it.id, it.qty);
+          if (rewards.eggs > 0) useGameStore.getState().grantPokeEgg(rewards.eggs);
+        }
+      }
     }
   }, [phase, round, caught, addXp, grantItem, recordPokedexCapture]);
 
@@ -417,6 +431,7 @@ function WhosThatPokemon() {
             title="Added to Pokédex"
           />
         </div>
+        {levelUpRewards && <LevelUpBlock rewards={levelUpRewards} />}
         <div className="flex-1" />
         <button
           onClick={goHome}
