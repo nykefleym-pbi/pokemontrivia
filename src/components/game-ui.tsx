@@ -8,12 +8,17 @@ import type { ItemDef } from "@/lib/game-data";
  * image fails to load. Shared by the Shop, in-battle bag, and Level Up screen
  * so every surface renders items identically. */
 export function ItemIcon({ item, className }: { item: ItemDef; className: string }) {
+  // Dream World sprites (used by X Accuracy) fill their whole canvas with no
+  // padding, unlike the flat in-game item sprites (~2/3 fill) used by every
+  // other item — pad them down so all items render at a consistent size.
+  const isDreamWorld = item.iconUrl.includes("/dream-world/");
   return (
     <img
       src={item.iconUrl}
       alt={item.name}
       crossOrigin="anonymous"
       className={`sprite object-contain ${className}`}
+      style={isDreamWorld ? { padding: "16.5%", boxSizing: "border-box" } : undefined}
       onError={(e) => {
         const el = e.currentTarget as HTMLImageElement;
         el.replaceWith(
