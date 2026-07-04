@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { ensureSession, syncProfile } from "@/lib/social";
+import { ensureSession, syncProfile, syncActivity } from "@/lib/social";
 
 // Loosely-typed clients so this compiles even before Supabase types regenerate.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase Database type doesn't yet include the mega_* tables; chained query builder needs a loose return.
@@ -113,6 +113,7 @@ export async function submitMegaRun(input: {
   await syncProfile();
   const uid = await ensureSession();
   if (!uid) return { ok: false, error: "No session yet — try again in a moment." };
+  void syncActivity("last_mega_played");
 
   const { data, error } = await rpc.rpc("submit_mega_run", {
     p_event_id: input.eventId,

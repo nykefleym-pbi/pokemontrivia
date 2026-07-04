@@ -8,6 +8,7 @@ import { rollLevelUpRewards } from "@/lib/level-rewards";
 import { PokemonSprite } from "@/components/game-ui";
 import { playCry, playSfx, stopBgm, revealPokemon, playWhosThatShout } from "@/lib/audio";
 import { pokeApiUrls } from "@/lib/api/pokeapi";
+import { syncActivity } from "@/lib/social";
 
 export const Route = createFileRoute("/whos-that-pokemon")({
   component: WhosThatPokemon,
@@ -225,6 +226,7 @@ function WhosThatPokemon() {
       if (round) revealPokemon(round.monId);
       consumeWhosThat();
       clearWhosThatRound();
+      void syncActivity("last_whos_that_played");
     }
   }, [phase, round, consumeWhosThat, clearWhosThatRound]);
 

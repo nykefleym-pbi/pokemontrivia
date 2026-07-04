@@ -20,6 +20,8 @@ import {
   ImageDown,
   Lightbulb,
   Bug,
+  Bell,
+  BellOff,
 } from "lucide-react";
 import { ShareCardDialog } from "@/components/share-card-dialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,6 +37,12 @@ import {
   bootstrapSocial,
   type TrainerProfile,
 } from "@/lib/social";
+import {
+  pushSupported,
+  getPushSubscriptionState,
+  enablePushNotifications,
+  disablePushNotifications,
+} from "@/lib/push";
 import { validateTrainerName, claimErrorMessage, TRAINER_NAME_MAX } from "@/lib/trainer-name";
 import { rankForLevel, TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
 import { ALL_POKEMON, type PokeEntry } from "@/lib/pokemon-data";
@@ -169,6 +177,32 @@ function ProfilePage() {
   }
   const [badgesOpen, setBadgesOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [pushSubscribed, setPushSubscribed] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+  useEffect(() => {
+    if (!settingsOpen) return;
+    void getPushSubscriptionState().then((s) => setPushSubscribed(s.subscribed));
+  }, [settingsOpen]);
+  async function togglePush(next: boolean) {
+    setPushBusy(true);
+    try {
+      if (next) {
+        const res = await enablePushNotifications();
+        if (res.ok) {
+          setPushSubscribed(true);
+          toast.success("🔔 Notifications enabled!");
+        } else {
+          toast.error(res.error ?? "Couldn't enable notifications.");
+        }
+      } else {
+        await disablePushNotifications();
+        setPushSubscribed(false);
+        toast.success("Notifications turned off.");
+      }
+    } finally {
+      setPushBusy(false);
+    }
+  }
   // Feedback/Rename/Repick are separate Radix Dialog roots stacked on top of
   // the Settings Sheet (not nested in the JSX tree). Radix processes a single
   // dismiss gesture (Escape / outside click) by walking the layer stack
@@ -936,6 +970,30 @@ function ProfilePage() {
                     }}
                   />
                 </div>
+                {pushSupported() && (
+                  <div className="flex items-center justify-between p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
+                        {pushSubscribed ? (
+                          <Bell className="h-5 w-5 text-foreground" />
+                        ) : (
+                          <BellOff className="h-5 w-5 text-foreground" />
+                        )}
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-foreground">Notifications</div>
+                        <div className="text-xs text-foreground/55">
+                          Mode reminders, friend requests &amp; more
+                        </div>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={pushSubscribed}
+                      disabled={pushBusy}
+                      onCheckedChange={(v) => void togglePush(v)}
+                    />
+                  </div>
+                )}
               </div>
             </section>
 

@@ -26,6 +26,7 @@ import { fetchMegaLeaderboard, getMyMegaRun, getMegaAttempts } from "@/lib/mega/
 import { Toaster } from "@/components/ui/sonner";
 import { nextPendingElite, type EliteMember } from "@/lib/elite-four";
 import { findGymLeader, type GymLeader } from "@/lib/gym-leaders";
+import { syncActivity } from "@/lib/social";
 
 const ENGAGE_DELAY_MS = 10000; // safety cap: show carousel by now even if mega data never resolves
 
@@ -353,6 +354,7 @@ function BattlePage() {
       }
       markQuestionsSeen(data.questions.map((q) => q.question));
       startWeeklyLeagueAttempt();
+      void syncActivity("last_weekly_attempt");
       setWeeklyOpponent(leader);
       setQuestions(data.questions);
       setPhase("weekly");
