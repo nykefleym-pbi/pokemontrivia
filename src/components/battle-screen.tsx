@@ -23,6 +23,7 @@ import {
   findPokemon,
   isPlayerDisadvantaged,
   isPlayerImmune,
+  canEvolve,
   type PokeEntry,
   type PokeType,
 } from "@/lib/pokemon-data";
@@ -1104,6 +1105,13 @@ function BattleMode({
       coinAward *= 2;
       tpAward *= 2;
       toast.success("🥽 Choice Specs — rewards doubled!");
+    }
+    // Big Nugget: while active, a fully evolved partner's TP rewards convert
+    // straight to coins instead (a fully evolved Pokémon has no more use for TP).
+    if (Date.now() < itemState.bigNuggetExpiresAt && !canEvolve(player) && tpAward > 0) {
+      coinAward += tpAward;
+      tpAward = 0;
+      toast.success("🪙 Big Nugget — TP converted to coins!");
     }
 
     const adjustedCoins = playerAbility.id === "pickup" ? Math.round(coinAward * 1.25) : coinAward;

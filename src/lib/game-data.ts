@@ -45,6 +45,9 @@ export type ItemId =
 const ICON = (slug: string) =>
   `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${slug}.png`;
 
+const DREAM_ICON = (slug: string) =>
+  `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/dream-world/${slug}.png`;
+
 export const ITEMS: ItemDef[] = [
   {
     id: "potion",
@@ -74,7 +77,7 @@ export const ITEMS: ItemDef[] = [
     id: "xaccuracy",
     name: "X Accuracy",
     emoji: "🎯",
-    iconUrl: ICON("x-accuracy"),
+    iconUrl: DREAM_ICON("x-accuracy"),
     desc: "Reveals the correct answer. Once per battle.",
     cost: 500,
   },
@@ -188,7 +191,7 @@ export const ITEMS: ItemDef[] = [
   },
   {
     id: "expcharm",
-    name: "Exp. Charm",
+    name: "Exp. Share",
     emoji: "📿",
     iconUrl: ICON("exp-share"),
     desc: "+25% XP earned this battle. Once per battle.",
@@ -242,7 +245,7 @@ export const ITEMS: ItemDef[] = [
     name: "Big Nugget",
     emoji: "🪙",
     iconUrl: ICON("big-nugget"),
-    desc: "Instantly grants 1,200 coins. Usable anytime.",
+    desc: "Requires a fully evolved partner. Converts all TP earned into coins (1:1) for 3 days. Usable anytime.",
     cost: 1500,
     premium: true,
   },

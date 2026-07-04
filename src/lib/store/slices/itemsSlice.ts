@@ -2,6 +2,9 @@ import type { GameState } from "@/lib/store";
 import type { StoreSlice } from "@/lib/store/slice";
 import type { ItemId } from "@/lib/game-data";
 import { getWeekRangeUtc } from "@/lib/game-data";
+import { canEvolve } from "@/lib/pokemon-data";
+
+export const BIG_NUGGET_DURATION_DAYS = 3;
 
 export const defaultInventory: Record<ItemId, number> = {
   potion: 2,
@@ -39,6 +42,7 @@ export const createItemsSlice: StoreSlice<
     | "itemCooldowns"
     | "autoItems"
     | "luckyEggExpiresAt"
+    | "bigNuggetExpiresAt"
     | "luckyEggUsedWeek"
     | "focusBandUsedWeek"
     | "assaultVestUsedWeek"
@@ -67,6 +71,7 @@ export const createItemsSlice: StoreSlice<
   itemCooldowns: {},
   autoItems: {},
   luckyEggExpiresAt: 0,
+  bigNuggetExpiresAt: 0,
   luckyEggUsedWeek: 0,
   focusBandUsedWeek: 0,
   assaultVestUsedWeek: 0,
@@ -277,6 +282,9 @@ export const createItemsSlice: StoreSlice<
       if (s.luckyEggUsedWeek === start) return false;
     }
 
+    // Big Nugget requires a fully evolved partner to be usable at all.
+    if (id === "bignugget" && canEvolve(s.pokemon)) return false;
+
     const nextInventory = { ...s.inventory, [id]: have - 1 };
     const nextUsed = ONCE_PER_BATTLE.includes(id)
       ? { ...s.usedThisBattle, [id]: true }
@@ -294,14 +302,15 @@ export const createItemsSlice: StoreSlice<
       anyItemUsedThisBattle: true,
       luckyEggExpiresAt: id === "luckyegg" ? Date.now() + 24 * 60 * 60 * 1000 : s.luckyEggExpiresAt,
       luckyEggUsedWeek: id === "luckyegg" ? getWeekRangeUtc().start : s.luckyEggUsedWeek,
+      bigNuggetExpiresAt:
+        id === "bignugget"
+          ? Date.now() + BIG_NUGGET_DURATION_DAYS * 24 * 60 * 60 * 1000
+          : s.bigNuggetExpiresAt,
     });
 
     if (id === "candy") {
       const p = get().pokemon;
       if (p) get().addTrainingPoints(p.id, 50);
-    }
-    if (id === "bignugget") {
-      get().addCoins(1200);
     }
     return true;
   },
