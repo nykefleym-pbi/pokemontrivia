@@ -12,10 +12,11 @@ they ship.
 4. ~~**Partner re-pick restriction**~~ ✅ shipped — — limit re-picking the partner Pokémon to
    Pokémon already captured in the Pokédex.
 5. **Grow curated_questions beyond 2000+** — add more curated questions.
-6. **PvP mechanics** — ~~async friend battles~~ ✅ shipped — challenge a friend
-   from Profile → Friends, both play the same frozen 20-question set, higher
-   composite score wins (no rewards). Real-time face-to-face QR mode is still
-   unbuilt (phase 2, see detail section below).
+6. ~~**PvP mechanics**~~ ✅ shipped — async friend battles (Profile → Friends
+   Challenge button) and Nearby Battle, a real-time face-to-face mode mirroring
+   Pokémon GO's Trainer Battle QR: your friend code doubles as a scannable
+   Battle Code, an in-app camera scan instantly starts a wall-clock-synced
+   match, no rewards.
 7. ~~**Invite campaign / referral**~~ ✅ shipped — grow the user base.
 8. ~~**Level-up rewards**~~ ✅ shipped — grant rewards on level up.
 9. ~~**Suggestions / bug-report form**~~ ✅ shipped — — "Submit suggestion" / "Report bug"
@@ -79,10 +80,15 @@ they ship.
   an inbox invite (`PvpInviteInbox`), plays the same set on `/pvp/$matchId`,
   higher total (points + accuracy + streak + speed) wins. Pure Supabase
   tables + RLS; no realtime infra; no rewards (v1).
-- **Real-time QR (phase 2):** host screen shows QR with a match id; guest
-  scans → both subscribe to a Supabase Realtime channel; server-frozen
-  question set; per-question countdown sync; disconnect = forfeit after 30s.
-  Meaningfully more work — needs Realtime channels + presence.
+- ~~**Nearby Battle (real-time QR)**~~ ✅ shipped — mirrors Pokémon GO's
+  Trainer Battle QR: your friend code doubles as a scannable Battle Code
+  (Profile → PvP → Nearby Battle → My Code); scanning someone's code with the
+  in-app camera (`qrcode`/`jsqr`, `NearbyBattleSheet`) atomically creates an
+  already-active `pvp_live_matches` row (no waiting lobby — you're already
+  face to face); both clients derive the current question from a shared
+  `started_at` wall-clock anchor so questions advance in lockstep
+  (`LivePvpBattleScreen`, `/pvp/live/$matchId`); Realtime Presence forfeits a
+  side that disconnects for 30s; no rewards (v1).
 
 ### 7. Invite campaign / referral
 - ~~Referral code = existing friend code in a share link (`?ref=CODE` /

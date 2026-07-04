@@ -47,6 +47,7 @@ import {
   disablePushNotifications,
 } from "@/lib/push";
 import { createPvpChallenge, listPvpMatches, type PvpMatch } from "@/lib/pvp";
+import { NearbyBattleSheet } from "@/components/NearbyBattleSheet";
 import { fetchBattleQuestions } from "@/lib/api/trivia";
 import { validateTrainerName, claimErrorMessage, TRAINER_NAME_MAX } from "@/lib/trainer-name";
 import {
@@ -147,6 +148,7 @@ function ProfilePage() {
   const [friendToRemove, setFriendToRemove] = useState<TrainerProfile | null>(null);
   const [challengingId, setChallengingId] = useState<string | null>(null);
   const [pvpHistoryOpen, setPvpHistoryOpen] = useState(false);
+  const [nearbyBattleOpen, setNearbyBattleOpen] = useState(false);
   const [pvpMatches, setPvpMatches] = useState<PvpMatch[]>([]);
   const [pvpProfiles, setPvpProfiles] = useState<Record<string, TrainerProfile>>({});
   const [myPvpId, setMyPvpId] = useState<string | null>(null);
@@ -948,6 +950,15 @@ function ProfilePage() {
             <div className="font-pixel-xs text-primary">RECENT MATCHES</div>
             <SheetTitle className="font-display-xl text-foreground">PvP history</SheetTitle>
           </SheetHeader>
+          <Button
+            onClick={() => {
+              setPvpHistoryOpen(false);
+              setNearbyBattleOpen(true);
+            }}
+            className="mt-3 h-12 w-full rounded-full"
+          >
+            <Swords className="mr-1.5 h-4 w-4" /> Nearby Battle
+          </Button>
           <div className="mt-3 space-y-2.5">
             {pvpMatches.length === 0 ? (
               <div className="rounded-3xl bg-card p-6 text-center text-sm text-foreground/55 shadow-card">
@@ -1018,6 +1029,8 @@ function ProfilePage() {
           </div>
         </SheetContent>
       </Sheet>
+
+      <NearbyBattleSheet open={nearbyBattleOpen} onOpenChange={setNearbyBattleOpen} />
 
       {/* Settings sheet. Feedback/Rename/Repick are separate Radix Dialog
           roots stacked on top of it (not nested in the JSX tree), so Radix's

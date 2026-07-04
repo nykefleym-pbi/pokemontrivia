@@ -14,6 +14,7 @@ import { useGameStore } from "@/lib/store";
 import { useEnsureSocial } from "@/lib/social";
 import { FriendRequestInbox } from "@/components/FriendRequestInbox";
 import { PvpInviteInbox } from "@/components/PvpInviteInbox";
+import { LivePvpWatcher } from "@/components/LivePvpWatcher";
 import { NameReclaimPrompt } from "@/components/NameReclaimPrompt";
 
 import appCss from "../styles.css?url";
@@ -209,6 +210,7 @@ function RootComponent() {
       </div>
       <FriendRequestInbox />
       <PvpInviteInbox />
+      <LivePvpWatcher />
       <NameReclaimPrompt />
 
       <PwaRegister />

@@ -414,6 +414,100 @@ export type Database = {
         }
         Relationships: []
       }
+      pvp_live_matches: {
+        Row: {
+          created_at: string
+          expires_at: string
+          guest_completed_at: string | null
+          guest_correct: number | null
+          guest_id: string
+          guest_score: number | null
+          guest_streak: number | null
+          guest_time_ms: number | null
+          guest_total: number | null
+          host_completed_at: string | null
+          host_correct: number | null
+          host_id: string
+          host_score: number | null
+          host_streak: number | null
+          host_time_ms: number | null
+          host_total: number | null
+          id: string
+          questions: Json
+          started_at: string
+          status: string
+          winner_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          guest_completed_at?: string | null
+          guest_correct?: number | null
+          guest_id: string
+          guest_score?: number | null
+          guest_streak?: number | null
+          guest_time_ms?: number | null
+          guest_total?: number | null
+          host_completed_at?: string | null
+          host_correct?: number | null
+          host_id: string
+          host_score?: number | null
+          host_streak?: number | null
+          host_time_ms?: number | null
+          host_total?: number | null
+          id?: string
+          questions: Json
+          started_at: string
+          status?: string
+          winner_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          guest_completed_at?: string | null
+          guest_correct?: number | null
+          guest_id?: string
+          guest_score?: number | null
+          guest_streak?: number | null
+          guest_time_ms?: number | null
+          guest_total?: number | null
+          host_completed_at?: string | null
+          host_correct?: number | null
+          host_id?: string
+          host_score?: number | null
+          host_streak?: number | null
+          host_time_ms?: number | null
+          host_total?: number | null
+          id?: string
+          questions?: Json
+          started_at?: string
+          status?: string
+          winner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pvp_live_matches_guest_id_fkey"
+            columns: ["guest_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pvp_live_matches_host_id_fkey"
+            columns: ["host_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pvp_live_matches_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pvp_matches: {
         Row: {
           challenger_completed_at: string | null
@@ -557,6 +651,7 @@ export type Database = {
         Returns: Json
       }
       decline_pvp_challenge: { Args: { _match_id: string }; Returns: Json }
+      forfeit_live_pvp_match: { Args: { _match_id: string }; Returns: Json }
       get_curated_questions: {
         Args: {
           p_count: number
@@ -740,6 +835,20 @@ export type Database = {
       }
       send_friend_request: { Args: { _code: string }; Returns: Json }
       send_friend_request_by_id: { Args: { _target: string }; Returns: Json }
+      start_live_pvp_match: {
+        Args: { _opponent_code: string; _questions: Json }
+        Returns: Json
+      }
+      submit_live_pvp_result: {
+        Args: {
+          _correct: number
+          _match_id: string
+          _max_streak: number
+          _time_ms: number
+          _total: number
+        }
+        Returns: Json
+      }
       submit_mega_run: {
         Args: {
           p_accuracy: number
