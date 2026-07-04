@@ -12,11 +12,11 @@ they ship.
 4. ~~**Partner re-pick restriction**~~ ✅ shipped — — limit re-picking the partner Pokémon to
    Pokémon already captured in the Pokédex.
 5. **Grow curated_questions beyond 2000+** — add more curated questions.
-6. **PvP mechanics** —
-   - Real-time face-to-face: QR code pulls the same 20 questions for both
-     players; highest total points (points + speed + streak + accuracy) wins.
-   - Long-distance: asynchronous battle via friend-list invite.
-7. **Invite campaign / referral** — grow the user base.
+6. **PvP mechanics** — ~~async friend battles~~ ✅ shipped — challenge a friend
+   from Profile → Friends, both play the same frozen 20-question set, higher
+   composite score wins (no rewards). Real-time face-to-face QR mode is still
+   unbuilt (phase 2, see detail section below).
+7. ~~**Invite campaign / referral**~~ ✅ shipped — grow the user base.
 8. ~~**Level-up rewards**~~ ✅ shipped — grant rewards on level up.
 9. ~~**Suggestions / bug-report form**~~ ✅ shipped — — "Submit suggestion" / "Report bug"
    entries in Profile → Settings.
@@ -74,20 +74,21 @@ they ship.
   QA pass = sample-review each batch before insert. Target +1000.
 
 ### 6. PvP
-- **Async friend battles (build first):** challenger plays a 20-question run,
-  a `pvp_matches` row stores the question set + score; the friend gets an
-  inbox invite, plays the same set, higher total (points + speed + streak +
-  accuracy) wins. Pure Supabase tables + RLS; no realtime infra.
+- ~~**Async friend battles**~~ ✅ shipped — challenger plays a 20-question
+  run, a `pvp_matches` row stores the question set + score; the friend gets
+  an inbox invite (`PvpInviteInbox`), plays the same set on `/pvp/$matchId`,
+  higher total (points + accuracy + streak + speed) wins. Pure Supabase
+  tables + RLS; no realtime infra; no rewards (v1).
 - **Real-time QR (phase 2):** host screen shows QR with a match id; guest
   scans → both subscribe to a Supabase Realtime channel; server-frozen
   question set; per-question countdown sync; disconnect = forfeit after 30s.
   Meaningfully more work — needs Realtime channels + presence.
 
 ### 7. Invite campaign / referral
-- Referral code = existing friend code in a share link
-  (`?ref=CODE`). New user onboards → both sides get rewards (coins + egg).
-  Needs a `referrals` table + RLS and an onboarding hook. Anti-abuse: cap
-  rewards/day, device heuristic.
+- ~~Referral code = existing friend code in a share link (`?ref=CODE` /
+  `/refer?code=`)~~ ✅ shipped — new user onboards → both sides get rewards
+  (coins + egg + 5 random non-premium items). `referrals` table + RLS +
+  onboarding hook.
 
 ### 8. Level-up rewards
 - On level change: coins scaled by level, +1 Poké-Egg every 5 levels, item at

@@ -22,6 +22,7 @@ import {
   Bug,
   Bell,
   BellOff,
+  Swords,
 } from "lucide-react";
 import { ShareCardDialog } from "@/components/share-card-dialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,6 +36,8 @@ import {
   isTrainerNameAvailable,
   claimTrainerName,
   bootstrapSocial,
+  ensureSession,
+  getProfileById,
   type TrainerProfile,
 } from "@/lib/social";
 import {
@@ -43,8 +46,15 @@ import {
   enablePushNotifications,
   disablePushNotifications,
 } from "@/lib/push";
+import { createPvpChallenge, listPvpMatches, type PvpMatch } from "@/lib/pvp";
+import { fetchBattleQuestions } from "@/lib/api/trivia";
 import { validateTrainerName, claimErrorMessage, TRAINER_NAME_MAX } from "@/lib/trainer-name";
-import { rankForLevel, TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
+import {
+  rankForLevel,
+  TRAINER_SPRITES,
+  trainerSpriteUrl,
+  difficultyForLevel,
+} from "@/lib/game-data";
 import { ALL_POKEMON, type PokeEntry } from "@/lib/pokemon-data";
 
 import { EvolutionScreen } from "@/components/evolution-screen";
@@ -115,6 +125,11 @@ function ProfilePage() {
   const trainingPoints = useGameStore((s) => s.trainingPoints);
   const evolvePartner = useGameStore((s) => s.evolvePartner);
   const gymBadges = useGameStore((s) => s.gymBadges);
+  const seenHashes = useGameStore((s) => s.seenQuestionHashes);
+  const seenQuestions = useGameStore((s) => s.seenQuestions);
+  const seenCuratedIds = useGameStore((s) => s.seenCuratedIds);
+  const markQuestionsSeen = useGameStore((s) => s.markQuestionsSeen);
+  const markCuratedSeen = useGameStore((s) => s.markCuratedSeen);
   const unlocked = useMemo(() => {
     const ctx = { stats, flags, peakLevel, pokedex } as Parameters<typeof unlockedAchievements>[0];
     return new Set(unlockedAchievements(ctx));
@@ -130,6 +145,11 @@ function ProfilePage() {
   const [addingFriend, setAddingFriend] = useState(false);
   const [cardShareOpen, setCardShareOpen] = useState(false);
   const [friendToRemove, setFriendToRemove] = useState<TrainerProfile | null>(null);
+  const [challengingId, setChallengingId] = useState<string | null>(null);
+  const [pvpHistoryOpen, setPvpHistoryOpen] = useState(false);
+  const [pvpMatches, setPvpMatches] = useState<PvpMatch[]>([]);
+  const [pvpProfiles, setPvpProfiles] = useState<Record<string, TrainerProfile>>({});
+  const [myPvpId, setMyPvpId] = useState<string | null>(null);
 
   const refreshFriends = React.useCallback(async () => {
     setFriends(await listFriends());
@@ -144,6 +164,54 @@ function ProfilePage() {
     window.addEventListener("poketrivia:friends-refresh", handler);
     return () => window.removeEventListener("poketrivia:friends-refresh", handler);
   }, [refreshFriends]);
+
+  useEffect(() => {
+    if (!pvpHistoryOpen) return;
+    void (async () => {
+      const rows = await listPvpMatches();
+      setPvpMatches(rows);
+      const myId = await ensureSession();
+      setMyPvpId(myId);
+      const otherIds = new Set(
+        rows.map((m) => (m.challengerId === myId ? m.opponentId : m.challengerId)),
+      );
+      const entries = await Promise.all(
+        [...otherIds].map(async (id) => [id, await getProfileById(id)] as const),
+      );
+      const map: Record<string, TrainerProfile> = {};
+      for (const [id, p] of entries) if (p) map[id] = p;
+      setPvpProfiles(map);
+    })();
+  }, [pvpHistoryOpen]);
+
+  async function handleChallenge(friend: TrainerProfile) {
+    if (challengingId) return;
+    setChallengingId(friend.id);
+    try {
+      const data = await fetchBattleQuestions({
+        difficulty: difficultyForLevel(level),
+        seenHashes,
+        seenSamples: seenQuestions.slice(-80),
+        excludeIds: seenCuratedIds.slice(-500),
+        flowSeed: Math.floor(Math.random() * 1_000_000),
+      });
+      if (!data.questions || data.questions.length < 5) {
+        toast.error("Couldn't prepare the challenge. Try again.");
+        return;
+      }
+      markQuestionsSeen(data.questions.map((q) => q.question));
+      markCuratedSeen(data.servedIds ?? []);
+      const res = await createPvpChallenge(friend.id, data.questions);
+      if (!res.ok) {
+        toast.error("Couldn't send the challenge. Try again.");
+        return;
+      }
+      toast.success(`Challenge sent to ${friend.trainer_name || "trainer"}!`);
+      void navigate({ to: "/pvp/$matchId", params: { matchId: res.matchId } });
+    } finally {
+      setChallengingId(null);
+    }
+  }
 
   function handleOpenCard() {
     setCardOpen(true);
@@ -546,8 +614,8 @@ function ProfilePage() {
           </div>
         </div>
 
-        {/* Trophies / Badges / Settings buttons */}
-        <div className="mt-3 grid grid-cols-3 gap-3">
+        {/* Trophies / Badges / PvP / Settings buttons */}
+        <div className="mt-3 grid grid-cols-2 gap-3">
           <button
             onClick={() => setTrophiesOpen(true)}
             className="flex flex-col items-center gap-1 rounded-3xl bg-card p-4 shadow-card transition active:scale-95"
@@ -571,6 +639,16 @@ function ProfilePage() {
             <span className="font-pixel-xs text-foreground/50">
               {gymBadges.length}/{GYM_LEADERS.length}
             </span>
+          </button>
+          <button
+            onClick={() => setPvpHistoryOpen(true)}
+            className="flex flex-col items-center gap-1 rounded-3xl bg-card p-4 shadow-card transition active:scale-95"
+          >
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-destructive/10 text-2xl">
+              <Swords className="h-5 w-5 text-destructive" />
+            </div>
+            <span className="font-display-md text-foreground">PvP</span>
+            <span className="font-pixel-xs text-foreground/50">match history</span>
           </button>
           <button
             onClick={() => setSettingsOpen(true)}
@@ -726,7 +804,13 @@ function ProfilePage() {
                 </div>
               ) : (
                 friends.map((f) => (
-                  <FriendRow key={f.id} friend={f} onRemove={() => setFriendToRemove(f)} />
+                  <FriendRow
+                    key={f.id}
+                    friend={f}
+                    onRemove={() => setFriendToRemove(f)}
+                    onChallenge={() => void handleChallenge(f)}
+                    challengeBusy={challengingId === f.id}
+                  />
                 ))
               )}
             </div>
@@ -850,6 +934,74 @@ function ProfilePage() {
           </SheetHeader>
           <div className="mt-3">
             <BadgesTab />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* PvP match history sheet */}
+      <Sheet open={pvpHistoryOpen} onOpenChange={setPvpHistoryOpen}>
+        <SheetContent
+          side="bottom"
+          className="rounded-t-3xl bg-poke-cream max-h-[85vh] overflow-y-auto"
+        >
+          <SheetHeader>
+            <div className="font-pixel-xs text-primary">RECENT MATCHES</div>
+            <SheetTitle className="font-display-xl text-foreground">PvP history</SheetTitle>
+          </SheetHeader>
+          <div className="mt-3 space-y-2.5">
+            {pvpMatches.length === 0 ? (
+              <div className="rounded-3xl bg-card p-6 text-center text-sm text-foreground/55 shadow-card">
+                No PvP matches yet. Challenge a friend from your Friends list!
+              </div>
+            ) : (
+              pvpMatches.map((m) => {
+                const iAmChallenger = m.challengerId === myPvpId;
+                const opponentId = iAmChallenger ? m.opponentId : m.challengerId;
+                const myScore = iAmChallenger ? m.challengerScore : m.opponentScore;
+                const oppScore = iAmChallenger ? m.opponentScore : m.challengerScore;
+                const opponentName = pvpProfiles[opponentId]?.trainer_name || "Trainer";
+                const label =
+                  m.status !== "completed"
+                    ? m.status === "declined"
+                      ? "Declined"
+                      : m.status === "expired"
+                        ? "Expired"
+                        : "Pending"
+                    : myScore === null || oppScore === null
+                      ? "—"
+                      : myScore > oppScore
+                        ? "Won"
+                        : myScore < oppScore
+                          ? "Lost"
+                          : "Tied";
+                return (
+                  <div
+                    key={m.id}
+                    className="flex items-center justify-between rounded-3xl bg-card p-4 shadow-card"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-display-md text-foreground">
+                        vs {opponentName}
+                      </div>
+                      <div className="text-xs text-foreground/55">
+                        {myScore ?? "—"} : {oppScore ?? "—"}
+                      </div>
+                    </div>
+                    <div
+                      className={`shrink-0 rounded-full px-3 py-1 font-pixel-xs ${
+                        label === "Won"
+                          ? "bg-hp-good/15 text-hp-good"
+                          : label === "Lost"
+                            ? "bg-destructive/10 text-destructive"
+                            : "bg-muted text-foreground/55"
+                      }`}
+                    >
+                      {label}
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </SheetContent>
       </Sheet>

@@ -211,6 +211,16 @@ async function reconcileTrainerName(): Promise<void> {
   }
 }
 
+/** Look up a friend's profile by their user id (RLS allows friends to read each other). */
+export async function getProfileById(userId: string): Promise<TrainerProfile | null> {
+  const { data, error } = await db.from("profiles").select("*").eq("id", userId).single();
+  if (error) {
+    console.warn("[social] getProfileById failed:", error.message);
+    return null;
+  }
+  return data as TrainerProfile | null;
+}
+
 /** Look up a profile by friend code (preview before adding). */
 export async function getProfileByCode(code: string): Promise<TrainerProfile | null> {
   const clean = code.trim().toUpperCase();

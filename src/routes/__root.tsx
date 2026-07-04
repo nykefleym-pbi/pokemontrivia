@@ -13,6 +13,7 @@ import { PwaRegister } from "@/components/pwa-register";
 import { useGameStore } from "@/lib/store";
 import { useEnsureSocial } from "@/lib/social";
 import { FriendRequestInbox } from "@/components/FriendRequestInbox";
+import { PvpInviteInbox } from "@/components/PvpInviteInbox";
 import { NameReclaimPrompt } from "@/components/NameReclaimPrompt";
 
 import appCss from "../styles.css?url";
@@ -207,6 +208,7 @@ function RootComponent() {
         <BottomNav />
       </div>
       <FriendRequestInbox />
+      <PvpInviteInbox />
       <NameReclaimPrompt />
 
       <PwaRegister />
