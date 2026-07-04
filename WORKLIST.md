@@ -5,9 +5,9 @@ they ship.
 
 ## Features
 
-1. **In-app notifications for mode availability** — notify when Daily Quest,
-   Weekly League, Who's That Pokémon, and Mega Raid become available for play.
-2. **More Pokémon items** — add new items; possible rebalance of existing ones.
+1. ~~**Notifications**~~ ✅ shipped — real Web Push (VAPID + service worker):
+   mode-availability reminders, daily promo, friend request sent/accepted.
+2. ~~**More Pokémon items**~~ ✅ shipped — 11 new items, simulation-balanced.
 3. **Poké-Egg mechanics** — design and implement what eggs do.
 4. ~~**Partner re-pick restriction**~~ ✅ shipped — — limit re-picking the partner Pokémon to
    Pokémon already captured in the Pokédex.

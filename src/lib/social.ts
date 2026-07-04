@@ -1,6 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useRef } from "react";
+import { toast } from "sonner";
 import { useGameStore } from "@/lib/store";
+import { rollReferralReward } from "@/lib/referral-rewards";
 
 // Loosely-typed table client so this compiles even before Supabase types regenerate.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase Database type doesn't yet include every table here; chained query builder needs a loose return.
@@ -92,7 +94,7 @@ export async function syncActivity(field: ActivityField): Promise<void> {
  * sending, so a caller can't use this to push arbitrary notifications.
  */
 async function notifyPush(
-  kind: "friend_request" | "friend_accepted",
+  kind: "friend_request" | "friend_accepted" | "referral",
   toUserId: string,
   title: string,
   body: string,
@@ -118,6 +120,31 @@ export async function notifyFriendAccepted(requesterId: string): Promise<void> {
   );
 }
 
+/**
+ * Grant any referrer-side rewards that have accrued since the caller was
+ * last active (people who signed up using their code while they were away).
+ * Rolled and granted locally, same as every other reward in this game.
+ */
+async function collectPendingReferralRewards(): Promise<void> {
+  const count = await claimPendingReferralRewards();
+  if (count <= 0) return;
+  let coins = 0;
+  let eggs = 0;
+  let itemCount = 0;
+  for (let i = 0; i < count; i++) {
+    const reward = rollReferralReward();
+    coins += reward.coins;
+    eggs += reward.eggs;
+    itemCount += reward.items.length;
+    useGameStore.getState().addCoins(reward.coins);
+    useGameStore.getState().grantPokeEgg(reward.eggs);
+    for (const it of reward.items) useGameStore.getState().grantItem(it.id, it.qty);
+  }
+  toast.success(
+    `🎉 ${count} friend${count > 1 ? "s" : ""} joined using your invite! +${coins} coins, +${eggs} Poké Egg${eggs === 1 ? "" : "s"}, +${itemCount} items!`,
+  );
+}
+
 /** Idempotent app-load bootstrap (runs once). */
 export function bootstrapSocial(): Promise<string | null> {
   if (!bootstrapPromise) {
@@ -126,6 +153,7 @@ export function bootstrapSocial(): Promise<string | null> {
       if (uid) {
         await syncProfile();
         await reconcileTrainerName();
+        void collectPendingReferralRewards();
       }
       return uid;
     })();
@@ -466,6 +494,85 @@ export async function claimTrainerName(
   } catch (e) {
     console.warn("[social] claimTrainerName threw:", e);
     return { ok: false, error: "network" };
+  }
+}
+
+/**
+ * Claim a referral by the referrer's friend code — called once, right after
+ * a new user finishes onboarding. Grants the new user's own reward locally
+ * on success; the referrer's reward is collected separately, lazily, via
+ * claimPendingReferralRewards() next time they open the app.
+ */
+export async function claimReferral(
+  code: string,
+): Promise<{ ok: true; referrerRewarded: boolean } | { ok: false; error: string }> {
+  try {
+    const rpc = supabase as unknown as {
+      rpc: (
+        fn: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: unknown; error: { message: string } | null }>;
+    };
+    const { data, error } = await rpc.rpc("claim_referral", { _code: code.trim().toUpperCase() });
+    if (error) {
+      console.warn("[social] claimReferral failed:", error.message);
+      return { ok: false, error: "network" };
+    }
+    const result = data as { ok?: boolean; referrerRewarded?: boolean; error?: string } | null;
+    if (result && result.ok === true) {
+      if (result.referrerRewarded) {
+        // Best-effort: tell the referrer their invite converted. Failing
+        // silently is fine — they'll still collect the reward itself via
+        // claimPendingReferralRewards() next time they open the app.
+        const myName = useGameStore.getState().trainerName || "A trainer";
+        const rpc2 = supabase as unknown as {
+          rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown }>;
+        };
+        void rpc2
+          .rpc("lookup_profile_by_code", { _code: code.trim().toUpperCase() })
+          .then(({ data: referrer }) => {
+            const referrerId = (referrer as { id?: string } | null)?.id;
+            if (referrerId) {
+              void notifyPush(
+                "referral",
+                referrerId,
+                "Referral bonus!",
+                `${myName} joined using your invite — check your rewards!`,
+              );
+            }
+          });
+      }
+      return { ok: true, referrerRewarded: result.referrerRewarded ?? false };
+    }
+    return { ok: false, error: (result && result.error) || "network" };
+  } catch (e) {
+    console.warn("[social] claimReferral threw:", e);
+    return { ok: false, error: "network" };
+  }
+}
+
+/**
+ * Collect any of the caller's un-claimed referrer-side rewards (people who
+ * signed up using their code while they weren't around). Returns how many
+ * reward-bundles the client should roll and grant locally.
+ */
+export async function claimPendingReferralRewards(): Promise<number> {
+  const uid = await ensureSession();
+  if (!uid) return 0;
+  try {
+    const rpc = supabase as unknown as {
+      rpc: (fn: string) => Promise<{ data: unknown; error: { message: string } | null }>;
+    };
+    const { data, error } = await rpc.rpc("claim_pending_referral_rewards");
+    if (error) {
+      console.warn("[social] claimPendingReferralRewards failed:", error.message);
+      return 0;
+    }
+    const result = data as { ok?: boolean; count?: number } | null;
+    return result?.ok ? (result.count ?? 0) : 0;
+  } catch (e) {
+    console.warn("[social] claimPendingReferralRewards threw:", e);
+    return 0;
   }
 }
 
