@@ -253,6 +253,8 @@ function BattleMode({
   const bonusTime = useGameStore((s) => s.bonusTimeThisBattle);
   const inventory = useGameStore((s) => s.inventory);
   const usedThisBattle = useGameStore((s) => s.usedThisBattle);
+  const choiceSpecsActive = useGameStore((s) => s.choiceSpecsActive);
+  const anyItemUsedThisBattle = useGameStore((s) => s.anyItemUsedThisBattle);
   const tryAutoFocusBand = useGameStore((s) => s.tryAutoFocusBand);
   const tryAutoQuickClaw = useGameStore((s) => s.tryAutoQuickClaw);
   const tryAutoAssaultVest = useGameStore((s) => s.tryAutoAssaultVest);
@@ -1074,10 +1076,10 @@ function BattleMode({
     });
     let xpAward = reward.xp;
     let coinAward = reward.coins;
-    const tpAward = reward.tp;
+    let tpAward = reward.tp;
 
-    // Exp. Charm / Amulet Coin / Lucky Punch: applied here before endBattle()
-    // resets these battle-ephemeral flags.
+    // Exp. Charm / Amulet Coin / Lucky Punch / Star Piece / Choice Specs:
+    // applied here before endBattle() resets these battle-ephemeral flags.
     const itemState = useGameStore.getState();
     if (itemState.expCharmActive) xpAward = Math.round(xpAward * 1.25);
     if (itemState.amuletCoinActive) coinAward *= 2;
@@ -1091,6 +1093,17 @@ function BattleMode({
         coinAward = 0;
         toast.error("🥊 Lucky Punch — nothing this time!");
       }
+    }
+    if (itemState.starPieceActive && won) {
+      xpAward = Math.round(xpAward * 1.5);
+      coinAward = Math.round(coinAward * 1.5);
+      toast.success("⭐ Star Piece — win rewards boosted!");
+    }
+    if (itemState.choiceSpecsActive) {
+      xpAward *= 2;
+      coinAward *= 2;
+      tpAward *= 2;
+      toast.success("🥽 Choice Specs — rewards doubled!");
     }
 
     const adjustedCoins = playerAbility.id === "pickup" ? Math.round(coinAward * 1.25) : coinAward;
@@ -1630,7 +1643,9 @@ function BattleMode({
                                         const disabled =
                                           isAuto ||
                                           used ||
-                                          ((isWeekly || isElite) && it.id === "escape");
+                                          ((isWeekly || isElite) && it.id === "escape") ||
+                                          (choiceSpecsActive && it.id !== "choicespecs") ||
+                                          (it.id === "choicespecs" && anyItemUsedThisBattle);
                                         return (
                                           <button
                                             key={it.id}
@@ -1687,7 +1702,11 @@ function BattleMode({
                       const owned = inventory[it.id] ?? 0;
                       const used = usedThisBattle[it.id] ?? false;
                       const disabled =
-                        owned <= 0 || used || ((isWeekly || isElite) && it.id === "escape");
+                        owned <= 0 ||
+                        used ||
+                        ((isWeekly || isElite) && it.id === "escape") ||
+                        (choiceSpecsActive && it.id !== "choicespecs") ||
+                        (it.id === "choicespecs" && anyItemUsedThisBattle);
                       return (
                         <button
                           key={it.id}

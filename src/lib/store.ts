@@ -142,6 +142,11 @@ export interface GameState {
   amuletCoinActive: boolean;
   expCharmActive: boolean;
   luckyPunchActive: boolean;
+  starPieceActive: boolean;
+  choiceSpecsActive: boolean;
+  /** True once ANY item (auto or manual) has been used this battle — tracked
+   * specifically so Choice Specs can enforce "must be the only item used". */
+  anyItemUsedThisBattle: boolean;
   bonusTimeThisBattle: number;
   luckyEggExpiresAt: number;
   /**
@@ -334,6 +339,9 @@ export const useGameStore = create<GameState>()(
       amuletCoinActive: false,
       expCharmActive: false,
       luckyPunchActive: false,
+      starPieceActive: false,
+      choiceSpecsActive: false,
+      anyItemUsedThisBattle: false,
       bonusTimeThisBattle: 0,
 
       seenQuestionHashes: [],
@@ -456,6 +464,9 @@ export const useGameStore = create<GameState>()(
           amuletCoinActive: false,
           expCharmActive: false,
           luckyPunchActive: false,
+          starPieceActive: false,
+          choiceSpecsActive: false,
+          anyItemUsedThisBattle: false,
           bonusTimeThisBattle: 0,
           luckyEggExpiresAt: 0,
           luckyEggUsedWeek: 0,
@@ -515,6 +526,9 @@ export const useGameStore = create<GameState>()(
           amuletCoinActive: false,
           expCharmActive: false,
           luckyPunchActive: false,
+          starPieceActive: false,
+          choiceSpecsActive: false,
+          anyItemUsedThisBattle: false,
           bonusTimeThisBattle: 0,
         }),
 
@@ -526,6 +540,9 @@ export const useGameStore = create<GameState>()(
           amuletCoinActive: false,
           expCharmActive: false,
           luckyPunchActive: false,
+          starPieceActive: false,
+          choiceSpecsActive: false,
+          anyItemUsedThisBattle: false,
           bonusTimeThisBattle: 0,
         }),
 
@@ -539,6 +556,9 @@ export const useGameStore = create<GameState>()(
           amuletCoinActive: false,
           expCharmActive: false,
           luckyPunchActive: false,
+          starPieceActive: false,
+          choiceSpecsActive: false,
+          anyItemUsedThisBattle: false,
           bonusTimeThisBattle: 0,
           usedThisBattle: {},
           stats: {

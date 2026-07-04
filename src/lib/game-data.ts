@@ -37,7 +37,10 @@ export type ItemId =
   | "kingsrock"
   | "leftovers"
   | "metronome"
-  | "luckypunch";
+  | "luckypunch"
+  | "bignugget"
+  | "starpiece"
+  | "choicespecs";
 
 const ICON = (slug: string) =>
   `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${slug}.png`;
@@ -187,7 +190,7 @@ export const ITEMS: ItemDef[] = [
     id: "expcharm",
     name: "Exp. Charm",
     emoji: "📿",
-    iconUrl: ICON("exp-charm"),
+    iconUrl: ICON("exp-share"),
     desc: "+25% XP earned this battle. Once per battle.",
     cost: 400,
   },
@@ -233,6 +236,31 @@ export const ITEMS: ItemDef[] = [
     iconUrl: ICON("lucky-punch"),
     desc: "Double or nothing: 50% chance to double this battle's XP and coins, 50% chance to lose them. Once per battle.",
     cost: 200,
+  },
+  {
+    id: "bignugget",
+    name: "Big Nugget",
+    emoji: "🪙",
+    iconUrl: ICON("big-nugget"),
+    desc: "Instantly grants 1,200 coins. Usable anytime.",
+    cost: 1500,
+    premium: true,
+  },
+  {
+    id: "starpiece",
+    name: "Star Piece",
+    emoji: "⭐",
+    iconUrl: ICON("star-piece"),
+    desc: "+50% coins and XP earned this battle, if you win. Once per battle.",
+    cost: 350,
+  },
+  {
+    id: "choicespecs",
+    name: "Choice Specs",
+    emoji: "🥽",
+    iconUrl: ICON("choice-specs"),
+    desc: "Double this battle's coins, XP, and TP — but it must be the only item you use this battle. Can't be used if another item was used first, and locks out every other item afterward. Once per battle.",
+    cost: 800,
   },
 ];
 
