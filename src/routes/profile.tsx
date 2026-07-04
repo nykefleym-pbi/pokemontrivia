@@ -636,7 +636,7 @@ function ProfilePage() {
                   size="sm"
                   onClick={() => {
                     const link = friendCode
-                      ? `https://pokemontriviabattle.vercel.app/?ref=${friendCode}`
+                      ? `https://pokemontriviabattle.vercel.app/refer?code=${friendCode}`
                       : "https://pokemontriviabattle.vercel.app/";
                     const text = `Add me on Pokémon Trivia Battle! Friend code: ${friendCode}\n${link}`;
                     if (navigator.share) navigator.share({ text }).catch(() => {});
