@@ -14,7 +14,13 @@ export const Route = createFileRoute("/pvp/$matchId")({
   component: PvpMatchPage,
 });
 
-type Phase = "loading" | "not_found" | "playing" | "waiting" | "result";
+type Phase = "loading" | "not_found" | "playing" | "waiting" | "inactive" | "submit_error" | "result";
+
+function phaseForCompletedSide(status: PvpMatch["status"]): Phase {
+  if (status === "completed") return "result";
+  if (status === "declined" || status === "expired") return "inactive";
+  return "waiting";
+}
 
 function PvpMatchPage() {
   const { matchId } = Route.useParams();
@@ -25,6 +31,7 @@ function PvpMatchPage() {
   const [myId, setMyId] = useState<string | null>(null);
   const [opponentProfile, setOpponentProfile] = useState<TrainerProfile | null>(null);
   const [myScore, setMyScore] = useState<number | null>(null);
+  const [pendingResult, setPendingResult] = useState<PvpBattleResult | null>(null);
 
   useEffect(() => {
     if (!hasOnboarded) {
@@ -47,7 +54,7 @@ function PvpMatchPage() {
         uid === m.challengerId ? m.challengerCompletedAt !== null : m.opponentCompletedAt !== null;
       if (iCompleted) {
         setMyScore(uid === m.challengerId ? m.challengerScore : m.opponentScore);
-        setPhase(m.status === "completed" ? "result" : "waiting");
+        setPhase(phaseForCompletedSide(m.status));
       } else if (m.status !== "pending") {
         setPhase("not_found");
       } else {
@@ -74,13 +81,15 @@ function PvpMatchPage() {
     );
     if (!res.ok) {
       toast.error("Couldn't submit your result. Try again.");
-      setPhase("not_found");
+      setPendingResult(result);
+      setPhase("submit_error");
       return;
     }
+    setPendingResult(null);
     setMyScore(res.score);
     const fresh = await getPvpMatch(matchId);
     setMatch(fresh);
-    setPhase(fresh?.status === "completed" ? "result" : "waiting");
+    setPhase(fresh ? phaseForCompletedSide(fresh.status) : "not_found");
   }
 
   if (!hasOnboarded) return null;
@@ -106,6 +115,39 @@ function PvpMatchPage() {
 
   if (phase === "playing" && match) {
     return <PvpBattleScreen questions={match.questions} onFinish={handleFinish} />;
+  }
+
+  if (phase === "submit_error") {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-poke-cream px-6 text-center">
+        <div className="font-display text-lg text-foreground">
+          Couldn't submit your result — your answers are still saved here.
+        </div>
+        <Button
+          onClick={() => {
+            if (pendingResult) void handleFinish(pendingResult);
+          }}
+        >
+          Try again
+        </Button>
+      </div>
+    );
+  }
+
+  if (phase === "inactive") {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-poke-cream px-6 text-center">
+        <div className="font-display text-lg text-foreground">
+          {match?.status === "declined"
+            ? "Your opponent declined this challenge."
+            : "This challenge expired."}
+        </div>
+        {myScore !== null && (
+          <div className="font-pixel-xs text-foreground/60">Your score: {myScore}</div>
+        )}
+        <Button onClick={() => navigate({ to: "/profile" })}>Back to Profile</Button>
+      </div>
+    );
   }
 
   const iAmChallenger = myId === match?.challengerId;

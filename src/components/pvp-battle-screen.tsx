@@ -118,9 +118,9 @@ export function PvpBattleScreen({ questions, onFinish }: Props) {
               onClick={() => handleAnswer(i)}
               className={`rounded-2xl border-2 px-4 py-3 text-left font-display text-base transition-colors ${
                 showState && isCorrectOpt
-                  ? "border-green-500 bg-green-100 text-green-900"
+                  ? "border-hp-good bg-hp-good/15 text-hp-good"
                   : showState && isSelected && !isCorrectOpt
-                    ? "border-red-500 bg-red-100 text-red-900"
+                    ? "border-destructive bg-destructive/10 text-destructive"
                     : "border-border bg-card text-foreground"
               }`}
             >
