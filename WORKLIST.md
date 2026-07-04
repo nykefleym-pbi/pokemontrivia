@@ -11,7 +11,8 @@ they ship.
 3. **Poké-Egg mechanics** — design and implement what eggs do.
 4. ~~**Partner re-pick restriction**~~ ✅ shipped — — limit re-picking the partner Pokémon to
    Pokémon already captured in the Pokédex.
-5. **Grow curated_questions beyond 2000+** — add more curated questions.
+5. ~~**Grow curated_questions beyond 2000+**~~ ✅ shipped — 464 new questions
+   across dex stats, TCG, games, anime, and competitive play (2,275 → 2,739 rows).
 6. ~~**PvP mechanics**~~ ✅ shipped — async friend battles (Profile → Friends
    Challenge button) and Nearby Battle, a real-time face-to-face mode mirroring
    Pokémon GO's Trainer Battle QR: your friend code doubles as a scannable
@@ -70,9 +71,12 @@ they ship.
   empty-state copy ("Capture Pokémon in battle to unlock them as partners").
 
 ### 5. Grow curated_questions past 2000
-- Generate in themed batches (moves, abilities, evolutions, regions, cries,
-  stats) with the existing dedupe hashes; insert via Supabase MCP in chunks;
-  QA pass = sample-review each batch before insert. Target +1000.
+- ~~Generate in themed batches~~ ✅ shipped — 464 new questions added across
+  7 source domains (Pokédex/abilities stats, TCG rules & sets, mainline
+  games & features, anime characters & movies, competitive VGC/format
+  terms), inserted via Supabase MCP in per-domain batches with a Node
+  validator (uniqueness, 4-option/1-correct shape, no answer-leakage) and
+  spot-checked before each insert. Table grew from 2,275 → 2,739 rows.
 
 ### 6. PvP
 - ~~**Async friend battles**~~ ✅ shipped — challenger plays a 20-question
