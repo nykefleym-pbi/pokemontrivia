@@ -20,7 +20,14 @@ webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
 type Kind =
-  "friend_request" | "friend_accepted" | "referral" | "daily_promo" | "mode_reminder" | "broadcast";
+  | "friend_request"
+  | "friend_accepted"
+  | "referral"
+  | "pvp_challenge"
+  | "pvp_result"
+  | "daily_promo"
+  | "mode_reminder"
+  | "broadcast";
 
 interface Body {
   kind: Kind;
@@ -96,6 +103,28 @@ async function authorize(req: Request, payload: Body): Promise<string | null> {
     if (!data || data.length === 0) return "no matching referral";
   }
 
+  if (payload.kind === "pvp_challenge") {
+    const { data } = await admin
+      .from("pvp_matches")
+      .select("id")
+      .eq("challenger_id", callerId)
+      .eq("opponent_id", payload.toUserId)
+      .eq("status", "pending")
+      .limit(1);
+    if (!data || data.length === 0) return "no matching pvp challenge";
+  }
+
+  if (payload.kind === "pvp_result") {
+    const { data } = await admin
+      .from("pvp_matches")
+      .select("id")
+      .or(
+        `and(challenger_id.eq.${callerId},opponent_id.eq.${payload.toUserId}),and(opponent_id.eq.${callerId},challenger_id.eq.${payload.toUserId})`,
+      )
+      .limit(1);
+    if (!data || data.length === 0) return "no matching pvp match";
+  }
+
   return null;
 }
 
@@ -121,6 +150,8 @@ Deno.serve(async (req) => {
     payload.kind === "friend_request" ||
     payload.kind === "friend_accepted" ||
     payload.kind === "referral" ||
+    payload.kind === "pvp_challenge" ||
+    payload.kind === "pvp_result" ||
     payload.kind === "mode_reminder"
   ) {
     query = query.eq("user_id", payload.toUserId!);

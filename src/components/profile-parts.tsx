@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Users, X } from "lucide-react";
+import { Swords, Users, X } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { EVOLUTION_TP_COST, getTpMultiplier } from "@/lib/game-data";
 import { canEvolve, getEvolutionTargets, type PokeEntry } from "@/lib/pokemon-data";
@@ -125,7 +125,17 @@ export function CardStat({ label, value }: { label: string; value: string | numb
   );
 }
 
-export function FriendRow({ friend, onRemove }: { friend: TrainerProfile; onRemove: () => void }) {
+export function FriendRow({
+  friend,
+  onRemove,
+  onChallenge,
+  challengeBusy,
+}: {
+  friend: TrainerProfile;
+  onRemove: () => void;
+  onChallenge?: () => void;
+  challengeBusy?: boolean;
+}) {
   return (
     <div className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-card">
       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-muted">
@@ -137,6 +147,16 @@ export function FriendRow({ friend, onRemove }: { friend: TrainerProfile; onRemo
           LV {friend.level} · {friend.pokedex_count} caught
         </div>
       </div>
+      {onChallenge && (
+        <button
+          onClick={onChallenge}
+          disabled={challengeBusy}
+          aria-label="Challenge to PvP"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary transition active:scale-95 disabled:opacity-50"
+        >
+          <Swords className="h-4 w-4" />
+        </button>
+      )}
       <button
         onClick={onRemove}
         className="flex h-9 w-9 items-center justify-center rounded-full bg-destructive/10 text-destructive transition active:scale-95"

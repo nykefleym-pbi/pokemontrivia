@@ -414,6 +414,97 @@ export type Database = {
         }
         Relationships: []
       }
+      pvp_matches: {
+        Row: {
+          challenger_completed_at: string | null
+          challenger_correct: number | null
+          challenger_id: string
+          challenger_score: number | null
+          challenger_streak: number | null
+          challenger_time_ms: number | null
+          challenger_total: number | null
+          created_at: string
+          expires_at: string
+          id: string
+          opponent_completed_at: string | null
+          opponent_correct: number | null
+          opponent_id: string
+          opponent_score: number | null
+          opponent_streak: number | null
+          opponent_time_ms: number | null
+          opponent_total: number | null
+          questions: Json
+          status: string
+          winner_id: string | null
+        }
+        Insert: {
+          challenger_completed_at?: string | null
+          challenger_correct?: number | null
+          challenger_id: string
+          challenger_score?: number | null
+          challenger_streak?: number | null
+          challenger_time_ms?: number | null
+          challenger_total?: number | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          opponent_completed_at?: string | null
+          opponent_correct?: number | null
+          opponent_id: string
+          opponent_score?: number | null
+          opponent_streak?: number | null
+          opponent_time_ms?: number | null
+          opponent_total?: number | null
+          questions: Json
+          status?: string
+          winner_id?: string | null
+        }
+        Update: {
+          challenger_completed_at?: string | null
+          challenger_correct?: number | null
+          challenger_id?: string
+          challenger_score?: number | null
+          challenger_streak?: number | null
+          challenger_time_ms?: number | null
+          challenger_total?: number | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          opponent_completed_at?: string | null
+          opponent_correct?: number | null
+          opponent_id?: string
+          opponent_score?: number | null
+          opponent_streak?: number | null
+          opponent_time_ms?: number | null
+          opponent_total?: number | null
+          questions?: Json
+          status?: string
+          winner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pvp_matches_challenger_id_fkey"
+            columns: ["challenger_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pvp_matches_opponent_id_fkey"
+            columns: ["opponent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pvp_matches_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       referrals: {
         Row: {
           created_at: string
@@ -461,6 +552,11 @@ export type Database = {
       claim_pending_referral_rewards: { Args: never; Returns: Json }
       claim_referral: { Args: { _code: string }; Returns: Json }
       claim_trainer_name: { Args: { _name: string }; Returns: Json }
+      create_pvp_challenge: {
+        Args: { _opponent_id: string; _questions: Json }
+        Returns: Json
+      }
+      decline_pvp_challenge: { Args: { _match_id: string }; Returns: Json }
       get_curated_questions: {
         Args: {
           p_count: number
@@ -547,6 +643,68 @@ export type Database = {
           to: "profiles"
           isOneToOne: true
           isSetofReturn: false
+        }
+      }
+      list_pvp_invites: {
+        Args: never
+        Returns: {
+          challenger_completed_at: string | null
+          challenger_correct: number | null
+          challenger_id: string
+          challenger_score: number | null
+          challenger_streak: number | null
+          challenger_time_ms: number | null
+          challenger_total: number | null
+          created_at: string
+          expires_at: string
+          id: string
+          opponent_completed_at: string | null
+          opponent_correct: number | null
+          opponent_id: string
+          opponent_score: number | null
+          opponent_streak: number | null
+          opponent_time_ms: number | null
+          opponent_total: number | null
+          questions: Json
+          status: string
+          winner_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "pvp_matches"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      list_pvp_matches: {
+        Args: never
+        Returns: {
+          challenger_completed_at: string | null
+          challenger_correct: number | null
+          challenger_id: string
+          challenger_score: number | null
+          challenger_streak: number | null
+          challenger_time_ms: number | null
+          challenger_total: number | null
+          created_at: string
+          expires_at: string
+          id: string
+          opponent_completed_at: string | null
+          opponent_correct: number | null
+          opponent_id: string
+          opponent_score: number | null
+          opponent_streak: number | null
+          opponent_time_ms: number | null
+          opponent_total: number | null
+          questions: Json
+          status: string
+          winner_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "pvp_matches"
+          isOneToOne: false
+          isSetofReturn: true
         }
       }
       my_pending_request_targets: { Args: never; Returns: string[] }
