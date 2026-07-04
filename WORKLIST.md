@@ -12,7 +12,9 @@ they ship.
 4. ~~**Partner re-pick restriction**~~ ✅ shipped — — limit re-picking the partner Pokémon to
    Pokémon already captured in the Pokédex.
 5. ~~**Grow curated_questions beyond 2000+**~~ ✅ shipped — 464 new questions
-   across dex stats, TCG, games, anime, and competitive play (2,275 → 2,739 rows).
+   across dex stats, TCG, games, anime, and competitive play (2,275 → 2,739 rows),
+   then 1,411 more across 7 source domains (2,275 → 3,686 rows), then 314 more
+   from Pokémon Unite/GO/Snap/TCG Pocket/Sleep to reach exactly 4,000 rows.
 6. ~~**PvP mechanics**~~ ✅ shipped — async friend battles (Profile → Friends
    Challenge button) and Nearby Battle, a real-time face-to-face mode mirroring
    Pokémon GO's Trainer Battle QR: your friend code doubles as a scannable
@@ -24,6 +26,10 @@ they ship.
    entries in Profile → Settings.
 10. ~~**What's New card**~~ ✅ shipped — — carousel card announcing new features.
 11. ~~**Add-friends button in Mega Raid**~~ ✅ shipped — — quick friend-adding from the raid.
+12. ~~**Item icon fixes + 3 new items**~~ ✅ shipped — fixed Exp Charm's broken
+    PokeAPI sprite (pointed at Exp. Share instead); added Big Nugget (instant
+    coins), Star Piece (+50% win rewards), and Choice Specs (2× rewards, but
+    must be the only item used that battle).
 
 ## Bug fixes / polish
 
@@ -79,6 +85,11 @@ they ship.
   Node validator (uniqueness, 4-option/1-correct shape, no answer-leakage)
   and spot-checked/fact-corrected before each insert. Table grew from
   2,275 → 3,686 rows.
+- ~~Top up to exactly 4,000~~ ✅ shipped — 314 more questions focused on the
+  spin-off titles Pokémon Unite, Pokémon GO, Pokémon Snap, Pokémon TCG Pocket,
+  and Pokémon Sleep, same validated pipeline (uniqueness + dedup-checked
+  against the full existing table before insert). Table grew from
+  3,686 → 4,000 rows.
 
 ### 6. PvP
 - ~~**Async friend battles**~~ ✅ shipped — challenger plays a 20-question
