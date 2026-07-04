@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WhosThatPokemonRouteImport } from './routes/whos-that-pokemon'
 import { Route as ShopRouteImport } from './routes/shop'
+import { Route as ReferRouteImport } from './routes/refer'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PokedexRouteImport } from './routes/pokedex'
 import { Route as BattleRouteImport } from './routes/battle'
@@ -29,6 +30,11 @@ const WhosThatPokemonRoute = WhosThatPokemonRouteImport.update({
 const ShopRoute = ShopRouteImport.update({
   id: '/shop',
   path: '/shop',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReferRoute = ReferRouteImport.update({
+  id: '/refer',
+  path: '/refer',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/battle': typeof BattleRoute
   '/pokedex': typeof PokedexRoute
   '/profile': typeof ProfileRoute
+  '/refer': typeof ReferRoute
   '/shop': typeof ShopRoute
   '/whos-that-pokemon': typeof WhosThatPokemonRoute
   '/api/daily-challenge': typeof ApiDailyChallengeRoute
@@ -95,6 +102,7 @@ export interface FileRoutesByTo {
   '/battle': typeof BattleRoute
   '/pokedex': typeof PokedexRoute
   '/profile': typeof ProfileRoute
+  '/refer': typeof ReferRoute
   '/shop': typeof ShopRoute
   '/whos-that-pokemon': typeof WhosThatPokemonRoute
   '/api/daily-challenge': typeof ApiDailyChallengeRoute
@@ -109,6 +117,7 @@ export interface FileRoutesById {
   '/battle': typeof BattleRoute
   '/pokedex': typeof PokedexRoute
   '/profile': typeof ProfileRoute
+  '/refer': typeof ReferRoute
   '/shop': typeof ShopRoute
   '/whos-that-pokemon': typeof WhosThatPokemonRoute
   '/api/daily-challenge': typeof ApiDailyChallengeRoute
@@ -124,6 +133,7 @@ export interface FileRouteTypes {
     | '/battle'
     | '/pokedex'
     | '/profile'
+    | '/refer'
     | '/shop'
     | '/whos-that-pokemon'
     | '/api/daily-challenge'
@@ -137,6 +147,7 @@ export interface FileRouteTypes {
     | '/battle'
     | '/pokedex'
     | '/profile'
+    | '/refer'
     | '/shop'
     | '/whos-that-pokemon'
     | '/api/daily-challenge'
@@ -150,6 +161,7 @@ export interface FileRouteTypes {
     | '/battle'
     | '/pokedex'
     | '/profile'
+    | '/refer'
     | '/shop'
     | '/whos-that-pokemon'
     | '/api/daily-challenge'
@@ -164,6 +176,7 @@ export interface RootRouteChildren {
   BattleRoute: typeof BattleRoute
   PokedexRoute: typeof PokedexRoute
   ProfileRoute: typeof ProfileRoute
+  ReferRoute: typeof ReferRoute
   ShopRoute: typeof ShopRoute
   WhosThatPokemonRoute: typeof WhosThatPokemonRoute
   ApiDailyChallengeRoute: typeof ApiDailyChallengeRoute
@@ -187,6 +200,13 @@ declare module '@tanstack/react-router' {
       path: '/shop'
       fullPath: '/shop'
       preLoaderRoute: typeof ShopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/refer': {
+      id: '/refer'
+      path: '/refer'
+      fullPath: '/refer'
+      preLoaderRoute: typeof ReferRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -260,6 +280,7 @@ const rootRouteChildren: RootRouteChildren = {
   BattleRoute: BattleRoute,
   PokedexRoute: PokedexRoute,
   ProfileRoute: ProfileRoute,
+  ReferRoute: ReferRoute,
   ShopRoute: ShopRoute,
   WhosThatPokemonRoute: WhosThatPokemonRoute,
   ApiDailyChallengeRoute: ApiDailyChallengeRoute,

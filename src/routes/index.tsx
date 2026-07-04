@@ -30,8 +30,12 @@ export const Route = createFileRoute("/")({
 function SplashPage() {
   const hasOnboarded = useGameStore((s) => s.hasOnboarded);
   const navigate = useNavigate();
-  const [step, setStep] = useState<"splash" | "create">("splash");
   const { ref: refCode } = Route.useSearch();
+  // Arriving via a referral link — jump straight into trainer creation
+  // instead of making them pick "New Trainer" vs "Play as Guest" first,
+  // since only creating a named trainer earns the referral reward and the
+  // whole point of the link is "come play," not "consider your options."
+  const [step, setStep] = useState<"splash" | "create">(refCode ? "create" : "splash");
 
   useEffect(() => {
     if (hasOnboarded) {
