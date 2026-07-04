@@ -974,17 +974,16 @@ function ProfilePage() {
                         : myScore < oppScore
                           ? "Lost"
                           : "Tied";
-                return (
-                  <div
-                    key={m.id}
-                    className="flex items-center justify-between rounded-3xl bg-card p-4 shadow-card"
-                  >
+                const resumable = m.status === "pending";
+                const row = (
+                  <div className="flex items-center justify-between rounded-3xl bg-card p-4 shadow-card">
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-display-md text-foreground">
                         vs {opponentName}
                       </div>
                       <div className="text-xs text-foreground/55">
                         {myScore ?? "—"} : {oppScore ?? "—"}
+                        {resumable ? " · tap to resume" : ""}
                       </div>
                     </div>
                     <div
@@ -999,6 +998,20 @@ function ProfilePage() {
                       {label}
                     </div>
                   </div>
+                );
+                return resumable ? (
+                  <button
+                    key={m.id}
+                    className="block w-full text-left transition active:scale-[0.98]"
+                    onClick={() => {
+                      setPvpHistoryOpen(false);
+                      void navigate({ to: "/pvp/$matchId", params: { matchId: m.id } });
+                    }}
+                  >
+                    {row}
+                  </button>
+                ) : (
+                  <div key={m.id}>{row}</div>
                 );
               })
             )}
