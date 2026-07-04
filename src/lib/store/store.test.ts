@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { useGameStore } from "@/lib/store";
+import { findPokemon } from "@/lib/pokemon-data";
 import type { Round } from "@/routes/whos-that-pokemon";
 
 beforeEach(() => {
@@ -100,11 +101,13 @@ describe("store composition (slices)", () => {
     expect(useGameStore.getState().useItem("amuletcoin")).toBe(false);
   });
 
-  it("items slice action: bignugget grants 1,200 coins on use", () => {
-    useGameStore.getState().grantItem("bignugget", 1);
-    const before = useGameStore.getState().coins;
+  it("items slice action: bignugget requires a fully evolved partner", () => {
+    useGameStore.getState().grantItem("bignugget", 2);
+    useGameStore.setState({ pokemon: findPokemon(1) ?? null }); // Bulbasaur — can still evolve
+    expect(useGameStore.getState().useItem("bignugget")).toBe(false);
+    useGameStore.setState({ pokemon: findPokemon(3) ?? null }); // Venusaur — fully evolved
     expect(useGameStore.getState().useItem("bignugget")).toBe(true);
-    expect(useGameStore.getState().coins).toBe(before + 1200);
+    expect(useGameStore.getState().bigNuggetExpiresAt).toBeGreaterThan(Date.now());
   });
 
   it("items slice action: starpiece sets starPieceActive", () => {

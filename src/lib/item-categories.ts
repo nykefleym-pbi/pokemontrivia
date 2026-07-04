@@ -64,7 +64,7 @@ export const BAG_SHORT_DESC: Record<string, string> = {
   leftovers: "Auto: heal 5 HP per correct answer",
   metronome: "Auto: streak locked at max",
   luckypunch: "Double or nothing: 2× or 0 XP/coins",
-  bignugget: "Instantly grants 1,200 coins",
+  bignugget: "3 days: fully-evolved TP → coins",
   starpiece: "+50% coins & XP if you win",
   choicespecs: "2× rewards, only item usable",
 };

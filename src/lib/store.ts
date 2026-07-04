@@ -149,6 +149,7 @@ export interface GameState {
   anyItemUsedThisBattle: boolean;
   bonusTimeThisBattle: number;
   luckyEggExpiresAt: number;
+  bigNuggetExpiresAt: number;
   /**
    * Rewards from a level-up not yet celebrated on the dedicated Level Up
    * screen. Deliberately transient (not persisted, not reset by a battle
@@ -469,6 +470,7 @@ export const useGameStore = create<GameState>()(
           anyItemUsedThisBattle: false,
           bonusTimeThisBattle: 0,
           luckyEggExpiresAt: 0,
+          bigNuggetExpiresAt: 0,
           luckyEggUsedWeek: 0,
           focusBandUsedWeek: 0,
           assaultVestUsedWeek: 0,
@@ -654,6 +656,7 @@ export const useGameStore = create<GameState>()(
         inventory: s.inventory,
         itemCooldowns: s.itemCooldowns,
         luckyEggExpiresAt: s.luckyEggExpiresAt,
+        bigNuggetExpiresAt: s.bigNuggetExpiresAt,
         luckyEggUsedWeek: s.luckyEggUsedWeek,
         focusBandUsedWeek: s.focusBandUsedWeek,
         assaultVestUsedWeek: s.assaultVestUsedWeek,

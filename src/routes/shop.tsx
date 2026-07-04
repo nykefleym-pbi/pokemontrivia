@@ -150,7 +150,9 @@ function ShopPage() {
       toast.error(
         it.id === "luckyegg"
           ? "Lucky Egg can only be used once per week."
-          : `Can't use ${it.name} right now.`,
+          : it.id === "bignugget"
+            ? "Big Nugget requires a fully evolved partner."
+            : `Can't use ${it.name} right now.`,
       );
       return;
     }
@@ -158,7 +160,7 @@ function ShopPage() {
     else playSfx("item_use");
     if (it.id === "candy") toast.success("🍬 +50 TP added to your partner!");
     else if (it.id === "luckyegg") toast.success("🥚 2× XP active for 24 hours!");
-    else if (it.id === "bignugget") toast.success("🪙 +1,200 coins!");
+    else if (it.id === "bignugget") toast.success("🪙 TP → coins for the next 3 days!");
     else toast.success(`Used ${it.name}!`);
   }
 
