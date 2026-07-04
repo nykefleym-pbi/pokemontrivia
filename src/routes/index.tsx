@@ -15,18 +15,23 @@ import {
   bootstrapSocial,
   isTrainerNameAvailable,
   claimTrainerName,
+  claimReferral,
   syncProfile,
 } from "@/lib/social";
+import { rollReferralReward } from "@/lib/referral-rewards";
 import { validateTrainerName, claimErrorMessage, TRAINER_NAME_MAX } from "@/lib/trainer-name";
 
 export const Route = createFileRoute("/")({
   component: SplashPage,
+  validateSearch: (s: Record<string, unknown>): { ref?: string } =>
+    typeof s.ref === "string" ? { ref: s.ref } : {},
 });
 
 function SplashPage() {
   const hasOnboarded = useGameStore((s) => s.hasOnboarded);
   const navigate = useNavigate();
   const [step, setStep] = useState<"splash" | "create">("splash");
+  const { ref: refCode } = Route.useSearch();
 
   useEffect(() => {
     if (hasOnboarded) {
@@ -109,7 +114,7 @@ function SplashPage() {
                 "radial-gradient(circle at 15% 12%, oklch(0.9 0.13 95 / 0.55) 0%, transparent 42%), radial-gradient(circle at 88% 90%, oklch(0.62 0.22 25 / 0.16) 0%, transparent 48%), linear-gradient(168deg, oklch(0.975 0.025 95) 0%, oklch(0.93 0.05 230) 100%)",
             }}
           >
-            <TrainerCreate onBack={() => setStep("splash")} />
+            <TrainerCreate onBack={() => setStep("splash")} refCode={refCode} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -199,7 +204,7 @@ const TYPE_BG: Record<string, string> = {
   steel: "bg-slate-400",
 };
 
-function TrainerCreate({ onBack }: { onBack: () => void }) {
+function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: string }) {
   const [substep, setSubstep] = useState<Step>("name");
   const [name, setName] = useState("");
   const [trainerSprite, setTrainerSprite] = useState<string>("red");
@@ -329,7 +334,19 @@ function TrainerCreate({ onBack }: { onBack: () => void }) {
     useGameStore.getState().setNameReconciled(true);
     const rolled = getAbilityById(useGameStore.getState().abilityId);
     if (rolled) toast.success(`⚡ ${pick.name} has the ${rolled.name} ability!`);
-    void syncProfile();
+    void syncProfile().then(async () => {
+      if (!refCode) return;
+      const res = await claimReferral(refCode);
+      if (res.ok) {
+        const reward = rollReferralReward();
+        useGameStore.getState().addCoins(reward.coins);
+        useGameStore.getState().grantPokeEgg(reward.eggs);
+        for (const it of reward.items) useGameStore.getState().grantItem(it.id, it.qty);
+        toast.success(
+          `🎉 Referral bonus! +${reward.coins} coins, +${reward.eggs} Poké Egg, +${reward.items.length} items!`,
+        );
+      }
+    });
     navigate({ to: "/battle", search: { autostart: 0 } as never });
   }
 

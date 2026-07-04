@@ -19,7 +19,8 @@ webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-type Kind = "friend_request" | "friend_accepted" | "daily_promo" | "mode_reminder" | "broadcast";
+type Kind =
+  "friend_request" | "friend_accepted" | "referral" | "daily_promo" | "mode_reminder" | "broadcast";
 
 interface Body {
   kind: Kind;
@@ -47,7 +48,11 @@ async function getCallerId(req: Request): Promise<string | null> {
 }
 
 async function authorize(req: Request, payload: Body): Promise<string | null> {
-  if (payload.kind === "daily_promo" || payload.kind === "mode_reminder" || payload.kind === "broadcast") {
+  if (
+    payload.kind === "daily_promo" ||
+    payload.kind === "mode_reminder" ||
+    payload.kind === "broadcast"
+  ) {
     const secret = req.headers.get("X-Cron-Secret");
     if (!CRON_SECRET || secret !== CRON_SECRET) return "unauthorized: bad cron secret";
     return null;
@@ -81,6 +86,16 @@ async function authorize(req: Request, payload: Body): Promise<string | null> {
     if (!data || data.length === 0) return "no matching friendship";
   }
 
+  if (payload.kind === "referral") {
+    const { data } = await admin
+      .from("referrals")
+      .select("id")
+      .eq("referrer_id", payload.toUserId)
+      .eq("referred_id", callerId)
+      .limit(1);
+    if (!data || data.length === 0) return "no matching referral";
+  }
+
   return null;
 }
 
@@ -102,7 +117,12 @@ Deno.serve(async (req) => {
   if (authError) return json({ error: authError }, 403);
 
   let query = admin.from("push_subscriptions").select("id, user_id, endpoint, p256dh, auth");
-  if (payload.kind === "friend_request" || payload.kind === "friend_accepted" || payload.kind === "mode_reminder") {
+  if (
+    payload.kind === "friend_request" ||
+    payload.kind === "friend_accepted" ||
+    payload.kind === "referral" ||
+    payload.kind === "mode_reminder"
+  ) {
     query = query.eq("user_id", payload.toUserId!);
   }
   const { data: subs, error } = await query;
