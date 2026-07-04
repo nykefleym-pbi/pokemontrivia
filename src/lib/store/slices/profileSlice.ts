@@ -109,8 +109,16 @@ export const createProfileSlice: StoreSlice<
       "escape",
       "quickclaw",
       "maxpotion",
+      "starpiece",
     ];
-    const premiumPool: ItemId[] = ["candy", "luckyegg", "focusband", "assaultvest"];
+    const premiumPool: ItemId[] = [
+      "candy",
+      "luckyegg",
+      "focusband",
+      "assaultvest",
+      "bignugget",
+      "choicespecs",
+    ];
     const shiny = day === 7;
     let itemId: ItemId;
     let qty = 1;

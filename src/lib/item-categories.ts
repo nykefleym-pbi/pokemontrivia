@@ -23,11 +23,14 @@ export const CATEGORY_OF: Record<ItemId, ItemCategory> = {
   repel: "UTILITY",
   expcharm: "UTILITY",
   luckypunch: "UTILITY",
+  starpiece: "UTILITY",
+  choicespecs: "UTILITY",
   candy: "PREMIUM",
   luckyegg: "PREMIUM",
   kingsrock: "PREMIUM",
   leftovers: "PREMIUM",
   metronome: "PREMIUM",
+  bignugget: "PREMIUM",
 };
 
 export const CATEGORIES: Array<{ id: ItemCategory; label: string }> = [
@@ -61,4 +64,7 @@ export const BAG_SHORT_DESC: Record<string, string> = {
   leftovers: "Auto: heal 5 HP per correct answer",
   metronome: "Auto: streak locked at max",
   luckypunch: "Double or nothing: 2× or 0 XP/coins",
+  bignugget: "Instantly grants 1,200 coins",
+  starpiece: "+50% coins & XP if you win",
+  choicespecs: "2× rewards, only item usable",
 };

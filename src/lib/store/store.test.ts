@@ -100,6 +100,38 @@ describe("store composition (slices)", () => {
     expect(useGameStore.getState().useItem("amuletcoin")).toBe(false);
   });
 
+  it("items slice action: bignugget grants 1,200 coins on use", () => {
+    useGameStore.getState().grantItem("bignugget", 1);
+    const before = useGameStore.getState().coins;
+    expect(useGameStore.getState().useItem("bignugget")).toBe(true);
+    expect(useGameStore.getState().coins).toBe(before + 1200);
+  });
+
+  it("items slice action: starpiece sets starPieceActive", () => {
+    useGameStore.getState().grantItem("starpiece", 1);
+    expect(useGameStore.getState().useItem("starpiece")).toBe(true);
+    expect(useGameStore.getState().starPieceActive).toBe(true);
+  });
+
+  it("items slice action: choicespecs cannot be used after another item, and blocks all items after itself", () => {
+    useGameStore.getState().grantItem("potion", 1);
+    useGameStore.getState().grantItem("choicespecs", 1);
+    useGameStore.getState().grantItem("xattack", 1);
+    // Using another item first should permanently block Choice Specs this battle.
+    expect(useGameStore.getState().useItem("potion")).toBe(true);
+    expect(useGameStore.getState().useItem("choicespecs")).toBe(false);
+
+    useGameStore.getState().startBattle();
+    useGameStore.getState().grantItem("choicespecs", 1);
+    useGameStore.getState().grantItem("xattack", 1);
+    useGameStore.getState().grantItem("quickclaw", 1);
+    // Choice Specs used first should succeed and then block every other item.
+    expect(useGameStore.getState().useItem("choicespecs")).toBe(true);
+    expect(useGameStore.getState().choiceSpecsActive).toBe(true);
+    expect(useGameStore.getState().useItem("xattack")).toBe(false);
+    expect(useGameStore.getState().tryAutoQuickClaw()).toBe(false);
+  });
+
   it("items slice action: auto-only items can't be used manually", () => {
     useGameStore.getState().grantItem("oranberry", 1);
     expect(useGameStore.getState().useItem("oranberry")).toBe(false);

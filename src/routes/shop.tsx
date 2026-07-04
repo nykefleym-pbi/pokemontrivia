@@ -158,6 +158,7 @@ function ShopPage() {
     else playSfx("item_use");
     if (it.id === "candy") toast.success("🍬 +50 TP added to your partner!");
     else if (it.id === "luckyegg") toast.success("🥚 2× XP active for 24 hours!");
+    else if (it.id === "bignugget") toast.success("🪙 +1,200 coins!");
     else toast.success(`Used ${it.name}!`);
   }
 
@@ -528,7 +529,8 @@ function ShopPage() {
                         <div className="flex flex-col gap-2.5">
                           {group.items.map((it) => {
                             const n = inventory[it.id] ?? 0;
-                            const isUsable = it.id === "candy" || it.id === "luckyegg";
+                            const isUsable =
+                              it.id === "candy" || it.id === "luckyegg" || it.id === "bignugget";
                             const isAuto =
                               it.id === "focusband" ||
                               it.id === "quickclaw" ||
