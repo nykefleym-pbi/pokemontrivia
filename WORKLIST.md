@@ -71,12 +71,14 @@ they ship.
   empty-state copy ("Capture Pokémon in battle to unlock them as partners").
 
 ### 5. Grow curated_questions past 2000
-- ~~Generate in themed batches~~ ✅ shipped — 464 new questions added across
-  7 source domains (Pokédex/abilities stats, TCG rules & sets, mainline
-  games & features, anime characters & movies, competitive VGC/format
-  terms), inserted via Supabase MCP in per-domain batches with a Node
-  validator (uniqueness, 4-option/1-correct shape, no answer-leakage) and
-  spot-checked before each insert. Table grew from 2,275 → 2,739 rows.
+- ~~Generate in themed batches~~ ✅ shipped — 1,411 new questions added across
+  the 7 requested source domains (official Pokédex/profile facts,
+  Bulbapedia-style regional/game lore, dex stats & abilities, TCG rules &
+  sets, mainline games & features, anime characters & movies, competitive
+  VGC/format terms), inserted via Supabase MCP in per-domain batches with a
+  Node validator (uniqueness, 4-option/1-correct shape, no answer-leakage)
+  and spot-checked/fact-corrected before each insert. Table grew from
+  2,275 → 3,686 rows.
 
 ### 6. PvP
 - ~~**Async friend battles**~~ ✅ shipped — challenger plays a 20-question
