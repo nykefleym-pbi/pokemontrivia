@@ -2,9 +2,26 @@ import type { ItemId } from "@/lib/game-data";
 
 // Shared item categorisation used by the Shop bag and the in-battle bag so
 // both render the same grouped layout.
-export type ItemCategory = "HEALING" | "BATTLE" | "UTILITY" | "PREMIUM";
+// "BERRY" is deliberately omitted from CATEGORIES below so berries never render
+// as a tab in the Solo shop / in-battle bag; the Nearby-Battle screen renders
+// them through its own dedicated berry bag.
+export type ItemCategory = "HEALING" | "BATTLE" | "UTILITY" | "PREMIUM" | "BERRY";
 
 export const CATEGORY_OF: Record<ItemId, ItemCategory> = {
+  cheriberry: "BERRY",
+  chestoberry: "BERRY",
+  pechaberry: "BERRY",
+  rawstberry: "BERRY",
+  persimberry: "BERRY",
+  lumberry: "BERRY",
+  liechiberry: "BERRY",
+  ganlonberry: "BERRY",
+  salacberry: "BERRY",
+  starfberry: "BERRY",
+  tangaberry: "BERRY",
+  kasibberry: "BERRY",
+  chopleberry: "BERRY",
+  colburberry: "BERRY",
   potion: "HEALING",
   superpotion: "HEALING",
   maxpotion: "HEALING",

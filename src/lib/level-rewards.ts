@@ -3,7 +3,7 @@ import { levelMultiplier } from "@/lib/rewards";
 
 // Items eligible for the "1 random premium item" milestone bonus.
 const PREMIUM_ITEM_IDS: ItemId[] = ["candy", "luckyegg", "focusband", "assaultvest", "bignugget"];
-const NON_PREMIUM_ITEMS = ITEMS.filter((i) => !i.premium);
+const NON_PREMIUM_ITEMS = ITEMS.filter((i) => !i.premium && !i.pvpOnly);
 
 export interface LevelUpItemGrant {
   id: ItemId;

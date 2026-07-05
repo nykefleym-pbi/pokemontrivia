@@ -23,7 +23,8 @@ they ship.
    Challenge button) and Nearby Battle, a real-time face-to-face mode mirroring
    Pokémon GO's Trainer Battle QR: your friend code doubles as a scannable
    Battle Code, an in-app camera scan instantly starts a wall-clock-synced
-   match, no rewards.
+   match. Nearby Battle later reworked into a full HP/stats/status/berry
+   battle — see #16/#17 below.
 7. ~~**Invite campaign / referral**~~ ✅ shipped — grow the user base.
 8. ~~**Level-up rewards**~~ ✅ shipped — grant rewards on level up.
 9. ~~**Suggestions / bug-report form**~~ ✅ shipped — — "Submit suggestion" / "Report bug"
@@ -38,19 +39,31 @@ they ship.
     roster, pending review); implementation on hold until #15 (stats) and
     #16 (status conditions) land, since several drafted abilities lean on
     defense/shield mechanics that don't exist yet.
-14. **Status conditions** — design the full set of Pokémon-style status
-    conditions (burn, paralysis, poison, sleep, freeze, confusion, etc.) and
-    how each maps to a trivia-battle mechanic. Design for review, not yet
-    implemented.
-15. **PvP stats: Attack / Defense / Crit Rate** — regular battle currently
-    only tracks HP + damage multipliers; add Attack/Defense/Crit Rate stats
-    (same base values for every Pokémon) that can be buffed/debuffed mid-PvP-battle
-    like HP already is. Plan for review, not yet implemented.
-16. **PvP-specific items (berries etc.)** — new item category that
-    manipulates Attack/Defense/Crit/timer/status conditions on your partner
-    or the opponent's Pokémon during PvP. Depends on #15 (stats) and #14
-    (status conditions) landing first. Design for review, not yet
-    implemented.
+14. ~~**Status conditions**~~ ✅ shipped — Burn, Paralysis, Sleep, Freeze,
+    Poison/Badly Poisoned, and Confusion, shared between Solo and Nearby
+    Battle via a store-level `battleStatuses`/`opponentStatuses` system (one
+    major status at a time; Confusion is the sole stacking volatile). Solo's
+    prior local-state confused/poisoned behavior is unchanged.
+15. ~~**PvP stats: Attack / Defense / Speed / Crit Rate**~~ ✅ shipped —
+    Nearby-Battle-only stat stages (−3…+3, ±10%/stage), flat/uniform baseline
+    for every Pokémon, buffable/debuffable mid-battle via items. Solo keeps
+    its existing HP/damage system untouched.
+16. ~~**Nearby Battle → real-time HP-endurance rework**~~ ✅ shipped — Nearby
+    Battle is now a turn-based HP battle over 20 questions (sudden-KO on 0
+    HP; otherwise higher HP wins, tiebreak accuracy then avg answer time),
+    server-authoritative via `submit_pvp_live_answer` + a real-time
+    `pvp_live_effects` broadcast so items/berries affect the live opponent.
+    Async PvP (`pvp_matches`) is explicitly untouched.
+17. ~~**PvP-specific items (berries)**~~ ✅ shipped — 14 PvP-exclusive berries
+    (cures, self-buffs, opponent-facing debuffs), gated out of Solo's
+    shop/reward pools; 5 random berries drop per completed Nearby Battle
+    (win or loss), plus a one-time starter Lum Berry for new PvP players.
+    Follow-ups not yet done: the ~20 existing auto-items/reward-multiplier
+    items aren't wired into the live HP loop yet (still work in Solo/Shop);
+    inventory isn't server-synced (item RPC validates the catalog + the
+    3-item cap, not ownership); only Chople Berry currently inflicts a
+    status in live battle; HP/damage/Speed-timer numbers are initial values
+    pending a balance pass.
 
 ## Bug fixes / polish
 

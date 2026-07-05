@@ -100,7 +100,9 @@ function ShopPage() {
 
   const featured = useMemo(() => {
     const day = Math.floor(Date.now() / 86_400_000);
-    const item = ITEMS[day % ITEMS.length];
+    // Berries are Nearby-Battle-only drops; never feature them in the Solo shop.
+    const shoppable = ITEMS.filter((it) => !it.pvpOnly);
+    const item = shoppable[day % shoppable.length];
     const steps = [20, 25, 30, 35, 40, 45, 50];
     const discountPct = steps[day % steps.length];
     const discountedCost = Math.max(1, Math.round((item.cost * (100 - discountPct)) / 100));

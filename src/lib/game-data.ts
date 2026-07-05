@@ -5,6 +5,54 @@ import { isLegendaryOrMythical } from "./legendary-data";
 
 export type { TrainerSprite };
 
+/**
+ * Status conditions shared by Solo and Nearby-Battle PvP. `confused` and
+ * `poisoned` are the two originally implemented (as local state) in solo
+ * battle-screen; the rest were added for the PvP HP-endurance rework and are
+ * available to both modes through the shared store `battleStatuses` field.
+ */
+export type StatusKind =
+  | "confused"
+  | "poisoned"
+  | "badly-poisoned"
+  | "burn"
+  | "paralysis"
+  | "sleep"
+  | "freeze";
+
+/** The four Nearby-Battle-only combat stats that fluctuate via stat stages. */
+export type PvpStat = "attack" | "defense" | "speed" | "crit";
+
+export const STATUS_META: Record<
+  StatusKind,
+  { emoji: string; label: string; major: boolean; defaultCures: number }
+> = {
+  // Volatile — stacks with everything, low magnitude. 2 cures (1 with `toxic`).
+  confused: { emoji: "🌀", label: "Confused", major: false, defaultCures: 2 },
+  // Major DoT. 3 cures in solo.
+  poisoned: { emoji: "☠️", label: "Poisoned", major: true, defaultCures: 3 },
+  // Ramping Toxic tier. Longer (5) and only fully removed by a cure item.
+  "badly-poisoned": { emoji: "☠️☠️", label: "Badly Poisoned", major: true, defaultCures: 5 },
+  // −15% correct-answer output + (PvP) −1 Attack stage. Waits out over 3.
+  burn: { emoji: "🔥", label: "Burn", major: true, defaultCures: 3 },
+  // Shorter timer + chance to short an input. 3 questions.
+  paralysis: { emoji: "⚡", label: "Paralysis", major: true, defaultCures: 3 },
+  // Buttons locked for first ~40% of timer. 1–2 questions, self-clears.
+  sleep: { emoji: "😴", label: "Asleep", major: true, defaultCures: 2 },
+  // Skip the current question; ~30% thaw/question, guaranteed after 2.
+  freeze: { emoji: "❄️", label: "Frozen", major: true, defaultCures: 2 },
+};
+
+/** Hard-lockout majors that are mutually exclusive with each other. */
+export const HARD_LOCKOUT_STATUSES: StatusKind[] = ["sleep", "freeze", "paralysis"];
+
+export type BerryEffect =
+  | { type: "cureStatus"; status: StatusKind | "any" }
+  | { type: "immunity"; questions: number }
+  | { type: "statStage"; stat: PvpStat; delta: number; questions: number }
+  | { type: "randomStatStage"; delta: number; questions: number }
+  | { type: "inflictStatus"; status: StatusKind; questions: number };
+
 export interface ItemDef {
   id: ItemId;
   name: string;
@@ -13,6 +61,12 @@ export interface ItemDef {
   desc: string;
   cost: number;
   premium?: boolean;
+  /** True for the berry catalog. Berries are Nearby-Battle-PvP-only. */
+  isBerry?: boolean;
+  /** Hides the item from Solo shop/bag and reward pools; only granted/usable in Nearby Battle. */
+  pvpOnly?: boolean;
+  /** Structured effect metadata for berries so the Nearby-Battle loop can apply them. */
+  berry?: { target: "self" | "opponent"; effect: BerryEffect };
 }
 
 export type ItemId =
@@ -41,7 +95,22 @@ export type ItemId =
   | "luckypunch"
   | "bignugget"
   | "starpiece"
-  | "choicespecs";
+  | "choicespecs"
+  // Nearby-Battle PvP berries (drop-only, pvpOnly)
+  | "cheriberry"
+  | "chestoberry"
+  | "pechaberry"
+  | "rawstberry"
+  | "persimberry"
+  | "lumberry"
+  | "liechiberry"
+  | "ganlonberry"
+  | "salacberry"
+  | "starfberry"
+  | "tangaberry"
+  | "kasibberry"
+  | "chopleberry"
+  | "colburberry";
 
 const ICON = (slug: string) =>
   `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${slug}.png`;
@@ -266,7 +335,214 @@ export const ITEMS: ItemDef[] = [
     desc: "Double this battle's coins, XP, and TP — but it must be the only item you use this battle. Can't be used if another item was used first, and locks out every other item afterward. Once per battle.",
     cost: 800,
   },
+
+  // ── Nearby-Battle PvP berries (drop-only, pvpOnly) ──────────────────────
+  {
+    id: "cheriberry",
+    name: "Cheri Berry",
+    emoji: "🍒",
+    iconUrl: ICON("cheri-berry"),
+    desc: "Cures Paralysis on yourself. (Nearby Battle only.)",
+    cost: 0,
+    isBerry: true,
+    pvpOnly: true,
+    berry: { target: "self", effect: { type: "cureStatus", status: "paralysis" } },
+  },
+  {
+    id: "chestoberry",
+    name: "Chesto Berry",
+    emoji: "🫐",
+    iconUrl: ICON("chesto-berry"),
+    desc: "Shakes off Sleep on yourself. (Nearby Battle only.)",
+    cost: 0,
+    isBerry: true,
+    pvpOnly: true,
+    berry: { target: "self", effect: { type: "cureStatus", status: "sleep" } },
+  },
+  {
+    id: "pechaberry",
+    name: "Pecha Berry",
+    emoji: "🍑",
+    iconUrl: ICON("pecha-berry"),
+    desc: "Neutralises Poison / Badly Poisoned on yourself. (Nearby Battle only.)",
+    cost: 0,
+    isBerry: true,
+    pvpOnly: true,
+    berry: { target: "self", effect: { type: "cureStatus", status: "poisoned" } },
+  },
+  {
+    id: "rawstberry",
+    name: "Rawst Berry",
+    emoji: "🍃",
+    iconUrl: ICON("rawst-berry"),
+    desc: "Soothes Burn on yourself (removes its −15% and −1 Attack). (Nearby Battle only.)",
+    cost: 0,
+    isBerry: true,
+    pvpOnly: true,
+    berry: { target: "self", effect: { type: "cureStatus", status: "burn" } },
+  },
+  {
+    id: "persimberry",
+    name: "Persim Berry",
+    emoji: "🫐",
+    iconUrl: ICON("persim-berry"),
+    desc: "Restores focus — cures Confusion on yourself. (Nearby Battle only.)",
+    cost: 0,
+    isBerry: true,
+    pvpOnly: true,
+    berry: { target: "self", effect: { type: "cureStatus", status: "confused" } },
+  },
+  {
+    id: "lumberry",
+    name: "Lum Berry",
+    emoji: "🟢",
+    iconUrl: ICON("lum-berry"),
+    desc: "Cures any one status on yourself and grants 1 question of status immunity. (Nearby Battle only.)",
+    cost: 0,
+    premium: true,
+    isBerry: true,
+    pvpOnly: true,
+    berry: { target: "self", effect: { type: "cureStatus", status: "any" } },
+  },
+  {
+    id: "liechiberry",
+    name: "Liechi Berry",
+    emoji: "🔴",
+    iconUrl: ICON("liechi-berry"),
+    desc: "+1 Attack stage for 3 questions. (Nearby Battle only.)",
+    cost: 0,
+    isBerry: true,
+    pvpOnly: true,
+    berry: { target: "self", effect: { type: "statStage", stat: "attack", delta: 1, questions: 3 } },
+  },
+  {
+    id: "ganlonberry",
+    name: "Ganlon Berry",
+    emoji: "🔵",
+    iconUrl: ICON("ganlon-berry"),
+    desc: "+1 Defense stage for 3 questions. (Nearby Battle only.)",
+    cost: 0,
+    isBerry: true,
+    pvpOnly: true,
+    berry: {
+      target: "self",
+      effect: { type: "statStage", stat: "defense", delta: 1, questions: 3 },
+    },
+  },
+  {
+    id: "salacberry",
+    name: "Salac Berry",
+    emoji: "🟡",
+    iconUrl: ICON("salac-berry"),
+    // Reworked: was a self timer/Speed boost; now an opponent-facing Speed debuff
+    // (no timer-based berries now that Speed is a real stat).
+    desc: "Drags at your rival's reflexes — −1 Speed stage on the opponent for 3 questions. (Nearby Battle only.)",
+    cost: 0,
+    isBerry: true,
+    pvpOnly: true,
+    berry: {
+      target: "opponent",
+      effect: { type: "statStage", stat: "speed", delta: -1, questions: 3 },
+    },
+  },
+  {
+    id: "starfberry",
+    name: "Starf Berry",
+    emoji: "⭐",
+    iconUrl: ICON("starf-berry"),
+    desc: "Randomly unleashes power — +2 to a random stat (Atk/Def/Spd/Crit) for 3 questions. (Nearby Battle only.)",
+    cost: 0,
+    premium: true,
+    isBerry: true,
+    pvpOnly: true,
+    berry: { target: "self", effect: { type: "randomStatStage", delta: 2, questions: 3 } },
+  },
+  {
+    id: "tangaberry",
+    name: "Tanga Berry",
+    emoji: "🟠",
+    iconUrl: ICON("tanga-berry"),
+    desc: "Snares a rival — −1 Attack stage on the opponent for 3 questions. (Nearby Battle only.)",
+    cost: 0,
+    isBerry: true,
+    pvpOnly: true,
+    berry: {
+      target: "opponent",
+      effect: { type: "statStage", stat: "attack", delta: -1, questions: 3 },
+    },
+  },
+  {
+    id: "kasibberry",
+    name: "Kasib Berry",
+    emoji: "🟣",
+    iconUrl: ICON("kasib-berry"),
+    desc: "Clouds a rival's guard — −1 Defense stage on the opponent for 3 questions. (Nearby Battle only.)",
+    cost: 0,
+    isBerry: true,
+    pvpOnly: true,
+    berry: {
+      target: "opponent",
+      effect: { type: "statStage", stat: "defense", delta: -1, questions: 3 },
+    },
+  },
+  {
+    id: "chopleberry",
+    name: "Chople Berry",
+    emoji: "🌶️",
+    iconUrl: ICON("chople-berry"),
+    desc: "Scrambles a rival's senses — inflicts Confusion on the opponent for 2 questions. (Nearby Battle only.)",
+    cost: 0,
+    isBerry: true,
+    pvpOnly: true,
+    berry: {
+      target: "opponent",
+      effect: { type: "inflictStatus", status: "confused", questions: 2 },
+    },
+  },
+  {
+    id: "colburberry",
+    name: "Colbur Berry",
+    emoji: "⚫",
+    iconUrl: ICON("colbur-berry"),
+    // Reworked: was a −3s opponent timer (Paralysis-lite); now a stronger
+    // opponent Speed-stage debuff (no timer-based berries).
+    desc: "Drags hard at a rival's clock — −2 Speed stage on the opponent for 3 questions. (Nearby Battle only.)",
+    cost: 0,
+    isBerry: true,
+    pvpOnly: true,
+    berry: {
+      target: "opponent",
+      effect: { type: "statStage", stat: "speed", delta: -2, questions: 3 },
+    },
+  },
 ];
+
+/** Every berry id, in catalog order. */
+export const BERRY_IDS: ItemId[] = ITEMS.filter((i) => i.isBerry).map((i) => i.id);
+
+/**
+ * The berry drop pool for a completed Nearby Battle. Excludes the two premium
+ * berries (Lum, Starf) so those stay rarity-gated. Five berries are rolled
+ * (with replacement) from this pool per battle played — see `rollBerryDrops`.
+ */
+export const NEARBY_BERRY_DROP_POOL: ItemId[] = ITEMS.filter(
+  (i) => i.isBerry && !i.premium,
+).map((i) => i.id);
+
+/** Number of berries granted per completed Nearby Battle (win or loss). */
+export const BERRIES_PER_NEARBY_BATTLE = 5;
+
+/** One-time starter berry granted the first time a player enters Nearby Battle. */
+export const STARTER_PVP_BERRY: ItemId = "lumberry";
+
+/** Roll `BERRIES_PER_NEARBY_BATTLE` random berries from the common drop pool. */
+export function rollBerryDrops(rng: () => number = Math.random): ItemId[] {
+  const out: ItemId[] = [];
+  for (let i = 0; i < BERRIES_PER_NEARBY_BATTLE; i++) {
+    out.push(NEARBY_BERRY_DROP_POOL[Math.floor(rng() * NEARBY_BERRY_DROP_POOL.length)]);
+  }
+  return out;
+}
 
 // Trainer roster scraped from Bulbagarden (Gen III/IV/V + Pokémon Masters).
 export const TRAINER_SPRITES: TrainerSprite[] = RAW_TRAINERS;

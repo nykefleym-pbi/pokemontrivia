@@ -1,6 +1,6 @@
 import { ITEMS, type ItemId } from "@/lib/game-data";
 
-const NON_PREMIUM_ITEMS = ITEMS.filter((i) => !i.premium);
+const NON_PREMIUM_ITEMS = ITEMS.filter((i) => !i.premium && !i.pvpOnly);
 
 const REFERRAL_COINS = 500;
 const REFERRAL_EGGS = 1;

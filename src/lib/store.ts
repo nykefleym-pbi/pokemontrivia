@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type { ItemId, EggProgressMode, PokeEgg } from "./game-data";
+import type { ItemId, EggProgressMode, PokeEgg, StatusKind, PvpStat } from "./game-data";
 import {
   ITEMS,
   levelFromTotalXp,
@@ -10,7 +10,9 @@ import {
   EGG_HATCH_REQUIRED,
   currentPlayStreakDays,
   streakProgressBonus,
+  STATUS_META,
 } from "./game-data";
+import { clampStage } from "./pvp-combat";
 import type { PokeEntry } from "./pokemon-data";
 import { rollAbilityId, type AbilityId } from "./abilities";
 import type { LevelUpRewards } from "./level-rewards";
@@ -55,6 +57,30 @@ export interface PlayerStats {
   bestStreak: number;
   totalAnswerTime: number;
 }
+
+/**
+ * A status condition active on a combatant. Lifted out of `battle-screen.tsx`'s
+ * local component state so Solo and Nearby-Battle PvP share one representation.
+ * The `curesRemaining` countdown is the model that already worked for solo
+ * confused/poisoned — statuses clear when it reaches 0.
+ */
+export interface ActiveStatus {
+  kind: StatusKind;
+  curesRemaining: number;
+  appliedAt: number;
+}
+
+export type StatusTarget = "self" | "opponent";
+
+/** Nearby-Battle PvP stat stages (self + mirrored opponent), −3..+3 each. */
+export interface PvpStatStages {
+  attack: number;
+  defense: number;
+  speed: number;
+  crit: number;
+}
+
+const zeroStages = (): PvpStatStages => ({ attack: 0, defense: 0, speed: 0, crit: 0 });
 
 export interface BattleLogItem {
   setsCompleted: number;
@@ -157,6 +183,22 @@ export interface GameState {
    * capped at MAX_ITEMS_PER_BATTLE so items can't be spammed/stacked. */
   itemsUsedThisBattleCount: number;
   bonusTimeThisBattle: number;
+
+  // ── Shared status system (Solo + Nearby-Battle PvP) — ephemeral ──────────
+  /** Status conditions on the local player. Ephemeral; never persisted. */
+  battleStatuses: ActiveStatus[];
+  /** Status conditions on the live opponent (Nearby Battle only). Ephemeral. */
+  opponentStatuses: ActiveStatus[];
+
+  // ── Nearby-Battle PvP stat stages (self + opponent) — ephemeral ──────────
+  myStages: PvpStatStages;
+  oppStages: PvpStatStages;
+
+  // ── Persisted PvP flags ──────────────────────────────────────────────────
+  /** Has the one-time starter Lum Berry been granted (first Nearby Battle entry)? */
+  starterPvpBerryGranted: boolean;
+  /** Has the player ever entered Nearby Battle (gates the starter-berry grant)? */
+  hasEnteredNearbyBattle: boolean;
   luckyEggExpiresAt: number;
   bigNuggetExpiresAt: number;
   /**
@@ -265,6 +307,24 @@ export interface GameState {
   completeSet: () => void;
   consumeXAttack: () => void;
   consumeScope: () => void;
+
+  // ── Shared status actions ────────────────────────────────────────────────
+  /** Apply/refresh a status. Enforces the global stacking rule: one major
+   * status at a time (a new major replaces an old one); Confusion is the sole
+   * volatile and coexists with any major. */
+  applyBattleStatus: (status: ActiveStatus, target?: StatusTarget) => void;
+  /** Tick one cure off a status. Returns true if this tick cleared it. */
+  tickBattleStatusCure: (kind: StatusKind, target?: StatusTarget) => boolean;
+  clearBattleStatus: (kind: StatusKind, target?: StatusTarget) => void;
+  clearAllBattleStatuses: (target?: StatusTarget) => void;
+
+  // ── Nearby-Battle PvP stat-stage actions ─────────────────────────────────
+  /** Adjust a stat stage (clamped to −3..+3). `who` = whose stats to change. */
+  bumpPvpStage: (who: StatusTarget, stat: PvpStat, delta: number) => void;
+  resetPvpStages: () => void;
+  /** Marks Nearby Battle as entered. Returns true the first time (so the caller
+   * can grant the one-time starter Lum Berry). */
+  markNearbyBattleEntered: () => boolean;
   addXp: (amount: number) => void;
   addCoins: (n: number) => void;
   raiseFlag: (name: string) => void;
@@ -356,6 +416,12 @@ export const useGameStore = create<GameState>()(
       anyItemUsedThisBattle: false,
       itemsUsedThisBattleCount: 0,
       bonusTimeThisBattle: 0,
+      battleStatuses: [],
+      opponentStatuses: [],
+      myStages: zeroStages(),
+      oppStages: zeroStages(),
+      starterPvpBerryGranted: false,
+      hasEnteredNearbyBattle: false,
 
       seenQuestionHashes: [],
       seenQuestions: [],
@@ -482,6 +548,12 @@ export const useGameStore = create<GameState>()(
           anyItemUsedThisBattle: false,
           itemsUsedThisBattleCount: 0,
           bonusTimeThisBattle: 0,
+          battleStatuses: [],
+          opponentStatuses: [],
+          myStages: zeroStages(),
+          oppStages: zeroStages(),
+          starterPvpBerryGranted: false,
+          hasEnteredNearbyBattle: false,
           luckyEggExpiresAt: 0,
           bigNuggetExpiresAt: 0,
           luckyEggUsedWeek: 0,
@@ -547,6 +619,10 @@ export const useGameStore = create<GameState>()(
           anyItemUsedThisBattle: false,
           itemsUsedThisBattleCount: 0,
           bonusTimeThisBattle: 0,
+          battleStatuses: [],
+          opponentStatuses: [],
+          myStages: zeroStages(),
+          oppStages: zeroStages(),
         }),
 
       abortBattle: () =>
@@ -562,6 +638,10 @@ export const useGameStore = create<GameState>()(
           anyItemUsedThisBattle: false,
           itemsUsedThisBattleCount: 0,
           bonusTimeThisBattle: 0,
+          battleStatuses: [],
+          opponentStatuses: [],
+          myStages: zeroStages(),
+          oppStages: zeroStages(),
         }),
 
       endBattle: (won, xpGained) => {
@@ -579,6 +659,10 @@ export const useGameStore = create<GameState>()(
           anyItemUsedThisBattle: false,
           itemsUsedThisBattleCount: 0,
           bonusTimeThisBattle: 0,
+          battleStatuses: [],
+          opponentStatuses: [],
+          myStages: zeroStages(),
+          oppStages: zeroStages(),
           usedThisBattle: {},
           stats: {
             ...s.stats,
@@ -632,6 +716,60 @@ export const useGameStore = create<GameState>()(
 
       consumeXAttack: () => set({ xAttackActive: false }),
       consumeScope: () => set({ scopeRevealedThisBattle: false }),
+
+      applyBattleStatus: (status, target = "self") => {
+        const key = target === "self" ? "battleStatuses" : "opponentStatuses";
+        set((s) => {
+          const prev = s[key];
+          // Replace an existing instance of the same kind (refresh, not stack).
+          let list = prev.filter((x) => x.kind !== status.kind);
+          // One major status at a time: a new major evicts other majors.
+          // Confusion (the sole volatile) coexists with everything.
+          if (STATUS_META[status.kind].major) {
+            list = list.filter((x) => !STATUS_META[x.kind].major);
+          }
+          return { [key]: [...list, status] } as Partial<GameState>;
+        });
+      },
+
+      tickBattleStatusCure: (kind, target = "self") => {
+        const key = target === "self" ? "battleStatuses" : "opponentStatuses";
+        const prev = get()[key];
+        const willClear = prev.some((s) => s.kind === kind && s.curesRemaining === 1);
+        const updated = prev
+          .map((s) => (s.kind === kind ? { ...s, curesRemaining: s.curesRemaining - 1 } : s))
+          .filter((s) => s.curesRemaining > 0);
+        set({ [key]: updated } as Partial<GameState>);
+        return willClear;
+      },
+
+      clearBattleStatus: (kind, target = "self") => {
+        const key = target === "self" ? "battleStatuses" : "opponentStatuses";
+        set((s) => ({ [key]: s[key].filter((x) => x.kind !== kind) }) as Partial<GameState>);
+      },
+
+      clearAllBattleStatuses: (target = "self") => {
+        const key = target === "self" ? "battleStatuses" : "opponentStatuses";
+        set({ [key]: [] } as Partial<GameState>);
+      },
+
+      bumpPvpStage: (who, stat, delta) => {
+        const key = who === "self" ? "myStages" : "oppStages";
+        set((s) => {
+          const cur = s[key];
+          const next = clampStage(cur[stat] + delta);
+          return { [key]: { ...cur, [stat]: next } } as Partial<GameState>;
+        });
+      },
+
+      resetPvpStages: () => set({ myStages: zeroStages(), oppStages: zeroStages() }),
+
+      markNearbyBattleEntered: () => {
+        const s = get();
+        const first = !s.hasEnteredNearbyBattle;
+        if (first) set({ hasEnteredNearbyBattle: true });
+        return first;
+      },
 
       raiseFlag: (name) => {
         const s = get();
@@ -730,6 +868,9 @@ export const useGameStore = create<GameState>()(
         pokeEggs: s.pokeEggs,
         megaTrophies: s.megaTrophies,
         claimedMegaRewards: s.claimedMegaRewards,
+        // PvP flags (ephemeral status/stat-stage fields are intentionally excluded).
+        starterPvpBerryGranted: s.starterPvpBerryGranted,
+        hasEnteredNearbyBattle: s.hasEnteredNearbyBattle,
       }),
 
       merge: (persisted, current) => {
@@ -780,6 +921,8 @@ export const useGameStore = create<GameState>()(
           weeklyLeague: p.weeklyLeague ?? null,
           gymBadges: p.gymBadges ?? [],
           weeklyLeagueHistory: p.weeklyLeagueHistory ?? [],
+          starterPvpBerryGranted: p.starterPvpBerryGranted ?? false,
+          hasEnteredNearbyBattle: p.hasEnteredNearbyBattle ?? false,
         };
       },
     },
