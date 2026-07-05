@@ -137,7 +137,12 @@ export interface LivePvpEffect {
   questionIndex: number;
   sourceId: string;
   target: "self" | "opponent";
-  itemId: ItemId;
+  /** Present for item uses; null for signature-ability activations. */
+  itemId: ItemId | null;
+  /** "item" (a berry/potion) or "ability" (a Legendary/Mythical signature move). */
+  source: "item" | "ability";
+  /** Partner dex id for ability activations (the client resolves the move name). */
+  pokemonId: number | null;
   kind: "stat_stage" | "status" | "cure" | "immunity" | "heal";
   payload: Record<string, unknown>;
   createdAt: string;
@@ -364,6 +369,78 @@ export async function applyPvpLiveItem(
   }
 }
 
+/**
+ * Apply a Legendary/Mythical partner's signature ability for a phase. The
+ * server looks up the fixed magnitude from the `pvp_signature_effects` catalog
+ * by partner dex id (the client can't supply a magnitude — same trust model as
+ * berries), mutates the authoritative row, and logs to `pvp_live_effects` with
+ * source='ability' for the opponent's toast. `_phase` is "battle_start" (one
+ * standing buff per side) or "post_answer" (a triggered effect). `scaleCount`
+ * feeds pokedex-scaled abilities (Fezandipiti). Returns the resolved state, or
+ * a noop when nothing applied (already-started battle_start, or no catalog row
+ * — e.g. a damage-calc/bespoke/manual ability that has no server effect).
+ */
+export async function applyPvpSignatureEffect(
+  matchId: string,
+  questionIndex: number,
+  pokemonId: number,
+  phase: "battle_start" | "post_answer",
+  scaleCount = 0,
+): Promise<
+  | {
+      ok: true;
+      noop?: boolean;
+      hostHp?: number;
+      guestHp?: number;
+      hostStages?: PvpStatStages;
+      guestStages?: PvpStatStages;
+      hostStatuses?: ActiveStatus[];
+      guestStatuses?: ActiveStatus[];
+    }
+  | { ok: false; error: string }
+> {
+  try {
+    const { data, error } = await rpc.rpc("apply_pvp_signature_effect", {
+      _match_id: matchId,
+      _question_index: questionIndex,
+      _pokemon_id: pokemonId,
+      _phase: phase,
+      _scale_count: scaleCount,
+    });
+    if (error) {
+      console.warn("[pvp-live] applyPvpSignatureEffect failed:", error.message);
+      return { ok: false, error: "network" };
+    }
+    const r = data as {
+      ok?: boolean;
+      noop?: boolean;
+      hostHp?: number;
+      guestHp?: number;
+      hostStages?: PvpStatStages;
+      guestStages?: PvpStatStages;
+      hostStatuses?: ActiveStatus[];
+      guestStatuses?: ActiveStatus[];
+      error?: string;
+    } | null;
+    if (r && r.ok === true) {
+      return {
+        ok: true,
+        noop: r.noop,
+        hostHp: r.hostHp,
+        guestHp: r.guestHp,
+        hostStages: r.hostStages,
+        guestStages: r.guestStages,
+        hostStatuses: r.hostStatuses,
+        guestStatuses: r.guestStatuses,
+      };
+    }
+    return { ok: false, error: (r && r.error) || "network" };
+  } catch (e) {
+    console.warn("[pvp-live] applyPvpSignatureEffect threw:", e);
+    return { ok: false, error: "network" };
+  }
+}
+
 /** Subscribe to item/berry-effect events for a match (both self and opponent
  * uses are logged; the caller filters by sourceId). Returns an unsubscribe fn. */
 export function subscribeToLivePvpEffects(
@@ -383,7 +460,9 @@ export function subscribeToLivePvpEffects(
           questionIndex: row.question_index as number,
           sourceId: row.source_id as string,
           target: row.target as "self" | "opponent",
-          itemId: row.item_id as ItemId,
+          itemId: (row.item_id as ItemId | null) ?? null,
+          source: (row.source as "item" | "ability" | undefined) ?? "item",
+          pokemonId: (row.pokemon_id as number | null) ?? null,
           kind: row.kind as LivePvpEffect["kind"],
           payload: (row.payload as Record<string, unknown>) ?? {},
           createdAt: row.created_at as string,

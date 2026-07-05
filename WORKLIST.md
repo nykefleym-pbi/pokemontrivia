@@ -35,10 +35,13 @@ they ship.
     PokeAPI sprite (pointed at Exp. Share instead); added Big Nugget (instant
     coins), Star Piece (+50% win rewards), and Choice Specs (2× rewards, but
     must be the only item used that battle).
-13. **Legendary/Mythical signature abilities** — design drafted (91-Pokémon
-    roster, pending review); implementation on hold until #15 (stats) and
-    #16 (status conditions) land, since several drafted abilities lean on
-    defense/shield mechanics that don't exist yet.
+13. **Legendary/Mythical signature abilities** — v2 design approved and in
+    progress: 100-Pokémon roster reworked around the real shipped PvP
+    stat-stage/status systems (v1 was pre-mechanics and inaccurate). Scoped to
+    **PvP (Nearby Battle) only** — Solo has no Attack/Defense/Speed/Crit stats
+    so the abilities don't apply there (may revisit if Solo ever gets stats).
+    Displays the Signature Move name in the UI (not a separate ability name).
+    Implementation in progress via a data-driven ability-effect engine.
 14. ~~**Status conditions**~~ ✅ shipped — Burn, Paralysis, Sleep, Freeze,
     Poison/Badly Poisoned, and Confusion, shared between Solo and Nearby
     Battle via a store-level `battleStatuses`/`opponentStatuses` system (one

@@ -16,6 +16,7 @@ import { getProfileById, ensureSession, type TrainerProfile } from "@/lib/social
 import { supabase } from "@/integrations/supabase/client";
 import { playBgm } from "@/lib/audio";
 import { trainerSpriteUrl, ITEMS, rollBerryDrops, STARTER_PVP_BERRY } from "@/lib/game-data";
+import { signatureMoveName } from "@/lib/signature-abilities";
 
 export const Route = createFileRoute("/pvp/live/$matchId")({
   component: LivePvpMatchPage,
@@ -181,12 +182,25 @@ function LivePvpMatchPage() {
     };
   }, [matchId, hasOnboarded]);
 
-  // Item/berry effect attribution toasts — shows what the OPPONENT used
-  // against us (our own uses already toast locally in the battle screen).
+  // Item/berry AND signature-ability effect attribution toasts — shows what
+  // the OPPONENT used/triggered against us (our own uses already toast
+  // locally in the battle screen). Ability toasts always show the Signature
+  // Move name (never the internal key) resolved locally from the partner
+  // dex id — the move name itself is never trusted from the wire.
   useEffect(() => {
     if (!hasOnboarded || !myId) return;
     return subscribeToLivePvpEffects(matchId, (effect: LivePvpEffect) => {
       if (effect.sourceId === myId) return;
+      if (effect.source === "ability") {
+        const move = signatureMoveName(effect.pokemonId);
+        if (!move) return;
+        toast.warning(
+          effect.target === "opponent"
+            ? `✨ Opponent's ${move} activates — you're affected!`
+            : `✨ Opponent's ${move} activates!`,
+        );
+        return;
+      }
       const def = ITEMS.find((i) => i.id === effect.itemId);
       if (!def) return;
       if (effect.target === "opponent") {

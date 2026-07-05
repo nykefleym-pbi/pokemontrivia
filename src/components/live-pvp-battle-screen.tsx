@@ -12,7 +12,20 @@ import {
   PVP_MAX_HP,
   PVP_QUESTIONS,
 } from "@/lib/pvp-combat";
-import { submitPvpLiveAnswer, applyPvpLiveItem, type LivePvpMatch } from "@/lib/pvp-live";
+import {
+  submitPvpLiveAnswer,
+  applyPvpLiveItem,
+  applyPvpSignatureEffect,
+  type LivePvpMatch,
+} from "@/lib/pvp-live";
+import {
+  signatureAbilityFor,
+  signatureMoveName,
+  evaluateHitModifiers,
+  evaluatePostAnswer,
+  evaluateBattleStart,
+  type SignatureContext,
+} from "@/lib/signature-abilities";
 import { TimerRing } from "@/components/battle-screen";
 
 export interface LivePvpBattleResult {
@@ -162,6 +175,12 @@ export function LivePvpBattleScreen({
   const inventory = useGameStore((s) => s.inventory);
   const tickBattleStatusCure = useGameStore((s) => s.tickBattleStatusCure);
 
+  // Legendary/Mythical partner signature ability (null for non-legendary
+  // partners — they get nothing extra, exactly as before).
+  const partnerId = useGameStore((s) => s.pokemon?.id ?? null);
+  const pokedexCount = useGameStore((s) => Object.keys(s.pokedex).length);
+  const ability = useMemo(() => signatureAbilityFor(partnerId), [partnerId]);
+
   const startedAtMs = useRef(new Date(startedAt).getTime()).current;
   const [now, setNow] = useState(() => Date.now());
   const [displayedIndex, setDisplayedIndex] = useState(-1);
@@ -175,6 +194,31 @@ export function LivePvpBattleScreen({
   const finishedRef = useRef(false);
   const itemsUsedRef = useRef(amIHost ? match.hostItemsUsed : match.guestItemsUsed);
   const questionStartRef = useRef(0);
+
+  // Signature-ability bookkeeping (drives the pure evaluators in
+  // signature-abilities.ts). Kept in refs so they survive re-renders without
+  // re-triggering effects.
+  const prevCorrectRef = useRef(false);
+  const prevElapsedRef = useRef(Number.MAX_SAFE_INTEGER);
+  const correctCountRef = useRef(0);
+  const answeredCategoriesRef = useRef<Set<string>>(new Set());
+  const battleStartFiredRef = useRef(false);
+
+  // Apply the partner's battle-start standing buff exactly once (server guards
+  // against a double-apply via host/guest_ability_started too).
+  useEffect(() => {
+    if (battleStartFiredRef.current || !ability || ability.wiring !== "battle_start") return;
+    if (evaluateBattleStart(ability, pokedexCount).length === 0) return;
+    battleStartFiredRef.current = true;
+    void applyPvpSignatureEffect(matchId, 0, partnerId as number, "battle_start", pokedexCount).then(
+      (res) => {
+        if (res.ok && !res.noop) {
+          const move = signatureMoveName(partnerId);
+          if (move) toast.success(`✨ ${move} — ${partnerId ? "your partner powers up!" : ""}`.trim());
+        }
+      },
+    );
+  }, [ability, matchId, partnerId, pokedexCount]);
 
   // Keep local HP/items mirrors in sync with the authoritative row (updates
   // arrive via the parent route's postgres_changes subscription on `match`).
@@ -231,6 +275,32 @@ export function LivePvpBattleScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idx]);
 
+  function buildSigContext(
+    idxAtAnswer: number,
+    correct: boolean,
+    streakAfter: number,
+    elapsedMs: number,
+    totalMs: number,
+    category: string,
+  ): SignatureContext {
+    return {
+      questionIndex: idxAtAnswer,
+      correct,
+      prevCorrect: prevCorrectRef.current,
+      streak: streakAfter,
+      streakBefore: streak,
+      correctCount: correctCountRef.current,
+      answerElapsedMs: elapsedMs,
+      prevAnswerElapsedMs: prevElapsedRef.current,
+      personalTimerMs: totalMs,
+      selfHpPct: myHp / PVP_MAX_HP,
+      oppHpPct: oppHp / PVP_MAX_HP,
+      newCategory: !answeredCategoriesRef.current.has(category),
+      pokedexCount,
+      oppDefenseStage: oppStages.defense,
+    };
+  }
+
   async function resolveQuestion(idxAtAnswer: number, correct: boolean, elapsedMs: number) {
     if (finishedRef.current) return;
     let dmg = 0;
@@ -249,20 +319,33 @@ export function LivePvpBattleScreen({
       } else {
         const nextStreak = streak + 1;
         setStreak(nextStreak);
+        correctCountRef.current += 1;
         const totalMs = personalTimerMs;
         const speedRatio = Math.max(0, (totalMs - elapsedMs) / totalMs);
         const firstHalf = elapsedMs <= totalMs / 2;
         const burned = myStatuses.some((s) => s.kind === "burn");
+        const category = questions[idxAtAnswer]?.category ?? "";
+
+        // Fold the partner's passive_damage signature modifiers into THIS hit
+        // (ignore-defense / bonus Attack / bonus Crit / double-strike). Damage
+        // is client-computed and server-clamped, so this needs no round trip.
+        const sigCtx = buildSigContext(idxAtAnswer, true, nextStreak, elapsedMs, totalMs, category);
+        const mods = evaluateHitModifiers(ability, sigCtx);
+        const baseAttack = mods.ignoreOwnNegativeStages
+          ? Math.max(0, myStages.attack)
+          : myStages.attack;
+        const baseCrit = mods.ignoreOwnNegativeStages ? Math.max(0, myStages.crit) : myStages.crit;
         const { dmg: computed } = computePvpDamage({
           streak: nextStreak,
           speedRatio,
-          attackStage: myStages.attack,
-          defenseStage: oppStages.defense,
-          critStage: myStages.crit,
+          attackStage: baseAttack + mods.bonusAttackStage,
+          defenseStage: mods.ignoreOppDefenseStage ? 0 : oppStages.defense,
+          critStage: baseCrit + mods.bonusCritStage,
           firstHalf,
           burned,
         });
-        dmg = computed;
+        dmg = computed + (mods.secondHitFraction ? Math.round(computed * mods.secondHitFraction) : 0);
+        answeredCategoriesRef.current.add(category);
         playSfx("correct");
       }
     } else {
@@ -277,6 +360,46 @@ export function LivePvpBattleScreen({
     tickBattleStatusCure("burn");
     tickBattleStatusCure("paralysis");
     tickBattleStatusCure("sleep");
+
+    // Evaluate the partner's post_answer signature ability (stat bumps,
+    // statuses, heals, drains, hampers — including any `chance` roll) and,
+    // if it fires, apply it through the SAME server-validated RPC path as
+    // berries: the client only names WHICH partner/phase fired, and the
+    // server looks up the fixed magnitude from `pvp_signature_effects`.
+    if (!frozen && ability && ability.wiring === "post_answer") {
+      const totalMs = personalTimerMs;
+      const category = questions[idxAtAnswer]?.category ?? "";
+      const sigCtx = buildSigContext(idxAtAnswer, correct, correct ? streak + 1 : 0, elapsedMs, totalMs, category);
+      const postEffects = evaluatePostAnswer(ability, sigCtx);
+      if (postEffects.length > 0) {
+        void applyPvpSignatureEffect(matchId, idxAtAnswer, partnerId as number, "post_answer").then(
+          (abilityRes) => {
+            if (abilityRes.ok && !abilityRes.noop) {
+              if (abilityRes.hostStages) {
+                useGameStore.setState({
+                  myStages: amIHost ? abilityRes.hostStages : abilityRes.guestStages,
+                  oppStages: amIHost ? abilityRes.guestStages : abilityRes.hostStages,
+                  battleStatuses: amIHost ? abilityRes.hostStatuses : abilityRes.guestStatuses,
+                  opponentStatuses: amIHost ? abilityRes.guestStatuses : abilityRes.hostStatuses,
+                });
+              }
+              if (typeof abilityRes.hostHp === "number") {
+                setMyHp(amIHost ? abilityRes.hostHp : abilityRes.guestHp!);
+                setOppHp(amIHost ? abilityRes.guestHp! : abilityRes.hostHp);
+              }
+              const move = signatureMoveName(partnerId);
+              if (move) toast.success(`✨ ${move} activates!`);
+            }
+          },
+        );
+      }
+      // Client-only hamper effects (option scramble / hide / highlight) have no
+      // server magnitude to trust — they're purely cosmetic UI disruption on
+      // the OPPONENT's own screen, so nothing to apply on this client.
+    }
+
+    prevCorrectRef.current = correct;
+    prevElapsedRef.current = elapsedMs;
 
     const res = await submitPvpLiveAnswer(matchId, idxAtAnswer, correct, dmg, selfDmg, elapsedMs);
     if (res.ok) {
