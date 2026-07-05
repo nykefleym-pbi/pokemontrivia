@@ -19,11 +19,18 @@ function flatten(e: SignatureEffect, out: SignatureEffect[]): void {
 }
 
 function rowsFor(a: SignatureAbility): Row[] {
-  if (a.wiring !== "battle_start" && a.wiring !== "post_answer") return [];
+  // battle_start / post_answer effects apply automatically; manual effects fire
+  // on the player's Fire tap. All three route through the same server RPC.
+  if (a.wiring !== "battle_start" && a.wiring !== "post_answer" && a.wiring !== "manual") return [];
   const flat: SignatureEffect[] = [];
   flatten(a.effect, flat);
   const rows: Row[] = [];
   let idx = 0;
+  // Manual abilities carry their per-battle use cap on each emitted row so the
+  // server can enforce it without a companion table.
+  const uses = a.wiring === "manual" && a.trigger.type === "manual" ? a.trigger.usesPerBattle : 0;
+  const withUses = (payload: Record<string, unknown>) =>
+    JSON.stringify(uses > 0 ? { ...payload, uses } : payload);
   // pokedex_scaling stores per/max; server computes the clamped delta.
   if (a.trigger.type === "pokedex_scaling") {
     rows.push({
@@ -44,7 +51,7 @@ function rowsFor(a: SignatureAbility): Row[] {
         phase: a.wiring,
         target: e.target,
         kind: "stat_stage",
-        payload: JSON.stringify({ stat: e.stat, delta: e.delta }),
+        payload: withUses({ stat: e.stat, delta: e.delta }),
       });
     } else if (e.type === "status") {
       rows.push({
@@ -53,7 +60,7 @@ function rowsFor(a: SignatureAbility): Row[] {
         phase: a.wiring,
         target: e.target,
         kind: "status",
-        payload: JSON.stringify({ status: e.status, questions: e.questions }),
+        payload: withUses({ status: e.status, questions: e.questions }),
       });
     } else if (e.type === "cure") {
       rows.push({
@@ -62,7 +69,7 @@ function rowsFor(a: SignatureAbility): Row[] {
         phase: a.wiring,
         target: e.target,
         kind: "cure",
-        payload: JSON.stringify({ status: e.status }),
+        payload: withUses({ status: e.status }),
       });
     } else if (e.type === "heal") {
       rows.push({
@@ -71,7 +78,7 @@ function rowsFor(a: SignatureAbility): Row[] {
         phase: a.wiring,
         target: e.target,
         kind: "heal",
-        payload: JSON.stringify({ amount: e.amount }),
+        payload: withUses({ amount: e.amount }),
       });
     } else if (e.type === "drain") {
       rows.push({
@@ -80,7 +87,7 @@ function rowsFor(a: SignatureAbility): Row[] {
         phase: a.wiring,
         target: "opponent",
         kind: "drain",
-        payload: JSON.stringify({ amount: e.amount }),
+        payload: withUses({ amount: e.amount }),
       });
     }
     // stat_stage with a computed stat (highest_self, etc.) is stored as-is; the

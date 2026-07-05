@@ -6,6 +6,9 @@ import {
   evaluateHitModifiers,
   evaluatePostAnswer,
   evaluateBattleStart,
+  hasServerManualEffect,
+  manualUsesPerBattle,
+  SERVER_FIREABLE_MANUAL_IDS,
   checkCatalogIntegrity,
   NO_HIT_MODIFIERS,
   type SignatureContext,
@@ -39,9 +42,28 @@ describe("catalog integrity", () => {
     expect(checkCatalogIntegrity(ALL_LEGENDARY_MYTHICAL_IDS)).toEqual([]);
   });
 
-  it("covers all 95 roster ids", () => {
-    expect(ALL_LEGENDARY_MYTHICAL_IDS.length).toBe(95);
-    expect(Object.keys(SIGNATURE_ABILITIES).length).toBe(95);
+  it("covers all 104 roster ids", () => {
+    expect(ALL_LEGENDARY_MYTHICAL_IDS.length).toBe(104);
+    expect(Object.keys(SIGNATURE_ABILITIES).length).toBe(104);
+  });
+
+  it("the 8 formerly-missing species now have ability entries", () => {
+    const added = [772, 773, 1009, 1010, 1020, 1021, 1022, 1023];
+    for (const id of added) {
+      expect(SIGNATURE_ABILITIES[id]).toBeTruthy();
+      expect(SIGNATURE_ABILITIES[id].pokemonId).toBe(id);
+    }
+    expect(SIGNATURE_ABILITIES[772].signatureMove).toBe("Multi-Attack");
+    expect(SIGNATURE_ABILITIES[1023].signatureMove).toBe("Tachyon Cutter");
+  });
+
+  it("both Calyrex Rider formes are distinct hatchable entries", () => {
+    // Ice Rider keeps dex 898; Shadow Rider gets synthetic id 10194.
+    expect(SIGNATURE_ABILITIES[898].signatureMove).toBe("Glacial Lance");
+    expect(SIGNATURE_ABILITIES[898].internalKey).toBe("as_one_glacial_reign");
+    expect(SIGNATURE_ABILITIES[10194].signatureMove).toBe("Astral Barrage");
+    expect(SIGNATURE_ABILITIES[10194].internalKey).toBe("as_one_spectral_reign");
+    expect(SIGNATURE_ABILITIES[898].internalKey).not.toBe(SIGNATURE_ABILITIES[10194].internalKey);
   });
 
   it("the four Sacred Sword users all display 'Sacred Sword' but have distinct internalKeys", () => {
@@ -191,6 +213,32 @@ describe("evaluateBattleStart (battle_start family)", () => {
     const fx = evaluateBattleStart(SIGNATURE_ABILITIES[790], 0) as StatStageEffect[];
     expect(fx.find((e) => e.stat === "defense")?.delta).toBe(2);
     expect(fx.find((e) => e.stat === "attack")?.delta).toBe(-1);
+  });
+});
+
+describe("manual charge-and-fire abilities", () => {
+  it("exposes a Fire button only for manual abilities with a server effect", () => {
+    // Aeroblast (249) fires -2 opp Speed → server-fireable.
+    expect(hasServerManualEffect(SIGNATURE_ABILITIES[249])).toBe(true);
+    // Psystrike (150) fires a damage-calc one-hit modifier → NOT server-fireable.
+    expect(hasServerManualEffect(SIGNATURE_ABILITIES[150])).toBe(false);
+    // Dragon Ascent (384) is damage-calc only after the refactor → not fireable.
+    expect(hasServerManualEffect(SIGNATURE_ABILITIES[384])).toBe(false);
+    // Non-manual abilities are never server-fireable.
+    expect(hasServerManualEffect(SIGNATURE_ABILITIES[638])).toBe(false);
+    expect(hasServerManualEffect(null)).toBe(false);
+  });
+
+  it("reports the per-battle use cap", () => {
+    expect(manualUsesPerBattle(SIGNATURE_ABILITIES[249])).toBe(2); // Aeroblast
+    expect(manualUsesPerBattle(SIGNATURE_ABILITIES[380])).toBe(1); // Mist Ball
+    expect(manualUsesPerBattle(SIGNATURE_ABILITIES[638])).toBe(0); // passive
+  });
+
+  it("SERVER_FIREABLE_MANUAL_IDS matches the 11 server-catalogued manual abilities", () => {
+    expect([...SERVER_FIREABLE_MANUAL_IDS]).toEqual([
+      249, 380, 381, 483, 484, 491, 492, 648, 1002, 1003, 1024,
+    ]);
   });
 });
 

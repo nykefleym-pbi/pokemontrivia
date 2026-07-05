@@ -2,7 +2,40 @@
 import { ALL_POKEMON as GENERATED, type PokeEntry, type PokeType } from "./pokemon-data.generated";
 
 export type { PokeEntry, PokeType };
-export const ALL_POKEMON: PokeEntry[] = GENERATED;
+
+/**
+ * Synthetic dex ids for alternate formes that share a National Dex number in
+ * mainline but need to be independently hatchable/partnerable roster entries.
+ *
+ * PRECEDENT (set here): the generated species dataset (pokemon-data.generated.ts)
+ * is one-entry-per-National-Dex-number and must not be hand-edited. When a forme
+ * needs its own roster identity, we mint a synthetic id equal to PokeAPI's own
+ * *form* id (the 10000-block), which conveniently already resolves to a real
+ * sprite at `.../sprites/pokemon/<formId>.png`, so `spriteUrl()` needs no special
+ * casing. The base dex number keeps the "default" forme.
+ *
+ * First (and currently only) case: Calyrex. Dex 898 stays bound to ICE RIDER
+ * Calyrex (Glacial Lance / As One — Glacial Reign, unchanged). Shadow Rider
+ * Calyrex is minted here as id 10194 (PokeAPI's calyrex-shadow form id) with its
+ * own name/types/sprite and its own signature ability (Astral Barrage / As One —
+ * Spectral Reign). Both are separate hatchable entries.
+ */
+export const CALYREX_SHADOW_RIDER_ID = 10194;
+
+const SYNTHETIC_FORME_ENTRIES: PokeEntry[] = [
+  {
+    id: CALYREX_SHADOW_RIDER_ID,
+    slug: "calyrex-shadow",
+    name: "Shadow Rider Calyrex",
+    types: ["psychic", "ghost"],
+    evolvesFromId: null,
+    evolvesToIds: [],
+    evolutionStage: 1,
+    isFullyEvolved: true,
+  },
+];
+
+export const ALL_POKEMON: PokeEntry[] = [...GENERATED, ...SYNTHETIC_FORME_ENTRIES];
 // Back-compat alias
 export const GEN1_POKEMON: PokeEntry[] = GENERATED.filter((p) => p.id <= 151);
 
