@@ -8,7 +8,11 @@ they ship.
 1. ~~**Notifications**~~ ✅ shipped — real Web Push (VAPID + service worker):
    mode-availability reminders, daily promo, friend request sent/accepted.
 2. ~~**More Pokémon items**~~ ✅ shipped — 11 new items, simulation-balanced.
-3. **Poké-Egg mechanics** — design and implement what eggs do.
+3. ~~**Poké-Egg mechanics**~~ ✅ shipped — Legendary/Mythical exclusivity (only
+   obtainable via egg, excluded from all enemy pools with one documented Mega
+   Raid exception), per-egg hatch progress based on modes played boosted by
+   day-streak, hatch grants a Rare Candy, Legendary/Mythical partners get a
+   data-driven type-colored frame (no glow) wrapping the whole partner card.
 4. ~~**Partner re-pick restriction**~~ ✅ shipped — — limit re-picking the partner Pokémon to
    Pokémon already captured in the Pokédex.
 5. ~~**Grow curated_questions beyond 2000+**~~ ✅ shipped — 464 new questions
@@ -30,6 +34,23 @@ they ship.
     PokeAPI sprite (pointed at Exp. Share instead); added Big Nugget (instant
     coins), Star Piece (+50% win rewards), and Choice Specs (2× rewards, but
     must be the only item used that battle).
+13. **Legendary/Mythical signature abilities** — design drafted (91-Pokémon
+    roster, pending review); implementation on hold until #15 (stats) and
+    #16 (status conditions) land, since several drafted abilities lean on
+    defense/shield mechanics that don't exist yet.
+14. **Status conditions** — design the full set of Pokémon-style status
+    conditions (burn, paralysis, poison, sleep, freeze, confusion, etc.) and
+    how each maps to a trivia-battle mechanic. Design for review, not yet
+    implemented.
+15. **PvP stats: Attack / Defense / Crit Rate** — regular battle currently
+    only tracks HP + damage multipliers; add Attack/Defense/Crit Rate stats
+    (same base values for every Pokémon) that can be buffed/debuffed mid-PvP-battle
+    like HP already is. Plan for review, not yet implemented.
+16. **PvP-specific items (berries etc.)** — new item category that
+    manipulates Attack/Defense/Crit/timer/status conditions on your partner
+    or the opponent's Pokémon during PvP. Depends on #15 (stats) and #14
+    (status conditions) landing first. Design for review, not yet
+    implemented.
 
 ## Bug fixes / polish
 
