@@ -7,8 +7,12 @@ import {
   evaluatePostAnswer,
   evaluateBattleStart,
   hasServerManualEffect,
+  hasClientManualHit,
+  manualHitModifiers,
+  mergeHitModifiers,
   manualUsesPerBattle,
   SERVER_FIREABLE_MANUAL_IDS,
+  CLIENT_HIT_MANUAL_IDS,
   checkCatalogIntegrity,
   NO_HIT_MODIFIERS,
   type SignatureContext,
@@ -239,6 +243,46 @@ describe("manual charge-and-fire abilities", () => {
     expect([...SERVER_FIREABLE_MANUAL_IDS]).toEqual([
       249, 380, 381, 483, 484, 491, 492, 648, 1002, 1003, 1024,
     ]);
+  });
+});
+
+describe("client-armed one-hit manual abilities (Psystrike / Dragon Ascent / Shadow Force)", () => {
+  it("Psystrike arms an ignore-defense + ignore-own-negatives one-hit modifier", () => {
+    const mods = manualHitModifiers(SIGNATURE_ABILITIES[150]);
+    expect(mods).not.toBeNull();
+    expect(mods!.ignoreOppDefenseStage).toBe(true);
+    expect(mods!.ignoreOwnNegativeStages).toBe(true);
+    expect(hasClientManualHit(SIGNATURE_ABILITIES[150])).toBe(true);
+  });
+
+  it("Dragon Ascent arms +3 Crit / +1 Attack for one hit", () => {
+    const mods = manualHitModifiers(SIGNATURE_ABILITIES[384]);
+    expect(mods).toMatchObject({ bonusCritStage: 3, bonusAttackStage: 1 });
+  });
+
+  it("Giratina's Shadow Force arms ignore-defense + 2 Crit for one hit", () => {
+    const mods = manualHitModifiers(SIGNATURE_ABILITIES[487]);
+    expect(mods).toMatchObject({ ignoreOppDefenseStage: true, bonusCritStage: 2 });
+  });
+
+  it("server-fireable and passive manual/other abilities do NOT arm a client hit", () => {
+    expect(manualHitModifiers(SIGNATURE_ABILITIES[249])).toBeNull(); // Aeroblast (server)
+    expect(manualHitModifiers(SIGNATURE_ABILITIES[484])).toBeNull(); // Spacial Rend (server)
+    expect(manualHitModifiers(SIGNATURE_ABILITIES[638])).toBeNull(); // Cobalion (passive)
+    expect(manualHitModifiers(null)).toBeNull();
+  });
+
+  it("CLIENT_HIT_MANUAL_IDS is exactly the three damage-calc manual moves", () => {
+    expect([...CLIENT_HIT_MANUAL_IDS]).toEqual([150, 384, 487]);
+  });
+
+  it("mergeHitModifiers folds an armed modifier on top of passive modifiers", () => {
+    const merged = mergeHitModifiers(
+      { ...NO_HIT_MODIFIERS, bonusCritStage: 1 },
+      { ...NO_HIT_MODIFIERS, bonusCritStage: 2, ignoreOppDefenseStage: true },
+    );
+    expect(merged.bonusCritStage).toBe(3);
+    expect(merged.ignoreOppDefenseStage).toBe(true);
   });
 });
 

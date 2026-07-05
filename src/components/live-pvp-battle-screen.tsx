@@ -25,6 +25,9 @@ import {
   evaluatePostAnswer,
   evaluateBattleStart,
   hasServerManualEffect,
+  hasClientManualHit,
+  manualHitModifiers,
+  mergeHitModifiers,
   manualUsesPerBattle,
   type SignatureContext,
 } from "@/lib/signature-abilities";
@@ -201,7 +204,18 @@ export function LivePvpBattleScreen({
   const [manualFiresUsed, setManualFiresUsed] = useState(0);
   const [manualFiring, setManualFiring] = useState(false);
   const manualCap = manualUsesPerBattle(ability);
-  const manualFireable = !!ability && hasServerManualEffect(ability) && manualCap > 0;
+  // A manual ability is fireable if it either routes a server-catalog effect
+  // (Aeroblast, Mist Ball, …) OR arms a client-side one-hit damage modifier
+  // (Psystrike, Dragon Ascent, Giratina's Shadow Force — no server round trip;
+  // damage is client-computed and server-clamped like any passive_damage hit).
+  const isClientHitManual = !!ability && hasClientManualHit(ability);
+  const manualFireable =
+    !!ability && manualCap > 0 && (hasServerManualEffect(ability) || isClientHitManual);
+  // Client-armed one-hit modifiers waiting to be folded into the NEXT correct
+  // answer (set when the player Fires a client-hit manual move; consumed on the
+  // next correct answer). Kept in a ref so it survives re-renders.
+  const armedHitRef = useRef<ReturnType<typeof manualHitModifiers> | null>(null);
+  const [armedHit, setArmedHit] = useState(false);
 
   const finishedRef = useRef(false);
   const itemsUsedRef = useRef(amIHost ? match.hostItemsUsed : match.guestItemsUsed);
@@ -342,7 +356,15 @@ export function LivePvpBattleScreen({
         // (ignore-defense / bonus Attack / bonus Crit / double-strike). Damage
         // is client-computed and server-clamped, so this needs no round trip.
         const sigCtx = buildSigContext(idxAtAnswer, true, nextStreak, elapsedMs, totalMs, category);
-        const mods = evaluateHitModifiers(ability, sigCtx);
+        let mods = evaluateHitModifiers(ability, sigCtx);
+        // Fold in any armed client-side manual one-hit modifier (Psystrike /
+        // Dragon Ascent / Shadow Force), then disarm — it applies to this one
+        // correct answer only.
+        if (armedHitRef.current) {
+          mods = mergeHitModifiers(mods, armedHitRef.current);
+          armedHitRef.current = null;
+          setArmedHit(false);
+        }
         const baseAttack = mods.ignoreOwnNegativeStages
           ? Math.max(0, myStages.attack)
           : myStages.attack;
@@ -497,6 +519,22 @@ export function LivePvpBattleScreen({
   async function handleFireSignature() {
     if (!manualFireable || manualFiring || partnerId == null) return;
     if (manualFiresUsed >= manualCap || finishedRef.current) return;
+
+    // Client-armed one-hit abilities (Psystrike / Dragon Ascent / Shadow Force):
+    // no server round trip — arm the modifier onto the next correct answer. The
+    // per-battle cap is purely local (the payoff is a client-computed,
+    // server-clamped damage number, exactly like a passive_damage hit).
+    if (isClientHitManual) {
+      if (armedHitRef.current) return; // already armed and waiting
+      armedHitRef.current = manualHitModifiers(ability);
+      setArmedHit(true);
+      setManualFiresUsed((n) => n + 1);
+      playSfx("item_use");
+      const move = signatureMoveName(partnerId);
+      if (move) toast.success(`✨ ${move} — armed! Your next correct answer strikes hard.`);
+      return;
+    }
+
     setManualFiring(true);
     // Same server-validated path as berries: the client only names WHICH
     // partner fired; the server looks up the fixed magnitude by dex id and
@@ -582,13 +620,13 @@ export function LivePvpBattleScreen({
           {manualFireable && (
             <button
               onClick={() => void handleFireSignature()}
-              disabled={manualFiring || manualFiresUsed >= manualCap || frozen}
+              disabled={manualFiring || manualFiresUsed >= manualCap || frozen || armedHit}
               title={signatureMoveName(partnerId) ?? "Signature move"}
               className="flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-sm font-bold text-primary-foreground shadow-card disabled:opacity-40"
             >
-              ⚡ {signatureMoveName(partnerId)}
+              {armedHit ? "✨" : "⚡"} {signatureMoveName(partnerId)}
               <span className="tabular-nums opacity-80">
-                {Math.max(0, manualCap - manualFiresUsed)}/{manualCap}
+                {armedHit ? "armed" : `${Math.max(0, manualCap - manualFiresUsed)}/${manualCap}`}
               </span>
             </button>
           )}
