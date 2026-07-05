@@ -1,12 +1,15 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type { ItemId } from "./game-data";
+import type { ItemId, EggProgressMode, PokeEgg } from "./game-data";
 import {
   ITEMS,
   levelFromTotalXp,
   totalXpToReachLevel,
   TRAINER_SPRITES,
   EVOLUTION_TP_COST,
+  EGG_HATCH_REQUIRED,
+  currentPlayStreakDays,
+  streakProgressBonus,
 } from "./game-data";
 import type { PokeEntry } from "./pokemon-data";
 import { rollAbilityId, type AbilityId } from "./abilities";
@@ -63,6 +66,9 @@ export interface BattleLogEntry {
   xpGained: number;
   bestStreak: number;
   timestamp: number;
+  /** Which mode this came from, for Poké Egg hatch-progress tracking. Missing
+   * on legacy entries (all of which came from regular/weekly/daily battle). */
+  mode?: EggProgressMode;
 }
 
 export type DailyMark = "correct" | "wrong" | "timeout";
@@ -113,7 +119,7 @@ export interface GameState {
   dailyGiftLastClaim: string | null;
   dailyGiftStreak: number;
   guaranteedShinyPending: boolean;
-  pokeEggs: number;
+  pokeEggs: PokeEgg[];
   megaTrophies: { eventId: string; name: string; pokeId: number; claimedAt: string }[];
   claimedMegaRewards: string[];
   pokemon: PokeEntry | null;
@@ -223,7 +229,9 @@ export interface GameState {
   consumeGuaranteedShiny: () => void;
   grantPokeEgg: (n?: number) => void;
   claimMegaChampion: (eventId: string, name: string, pokeId: number) => boolean;
-  hatchPokeEgg: () => boolean;
+  /** Hatches a specific egg (must be at/above its required progress). Returns
+   * false if the egg doesn't exist or isn't ready yet. */
+  hatchPokeEgg: (eggId: string) => boolean;
   markMegaRewardClaimed: (eventId: string) => void;
   startGuestSession: () => void;
 
@@ -505,6 +513,7 @@ export const useGameStore = create<GameState>()(
           gymBadges: [],
           weeklyLeagueHistory: [],
           claimedMegaRewards: [],
+          pokeEggs: [],
         }),
 
       setPokemon: (p) =>
@@ -634,7 +643,25 @@ export const useGameStore = create<GameState>()(
 
       pushBattleLog: (e) => {
         const s = get();
-        set({ battleLog: [e, ...s.battleLog].slice(0, 100) });
+        const nextLog = [e, ...s.battleLog].slice(0, 300);
+        const mode = e.mode ?? "battle";
+        const today = new Date(e.timestamp).toISOString().slice(0, 10);
+        // At most one mode-completion per calendar day counts toward egg progress,
+        // so the same mode can't be farmed for repeated bonuses.
+        const alreadyCountedToday = s.battleLog.some(
+          (x) =>
+            (x.mode ?? "battle") === mode &&
+            new Date(x.timestamp).toISOString().slice(0, 10) === today,
+        );
+        let nextEggs = s.pokeEggs;
+        if (!alreadyCountedToday && s.pokeEggs.some((egg) => egg.progress < egg.required)) {
+          const bonus = streakProgressBonus(currentPlayStreakDays(nextLog));
+          nextEggs = s.pokeEggs.map((egg) => ({
+            ...egg,
+            progress: Math.min(egg.required, egg.progress + bonus),
+          }));
+        }
+        set({ battleLog: nextLog, pokeEggs: nextEggs });
       },
     }),
 
@@ -722,11 +749,23 @@ export const useGameStore = create<GameState>()(
         const peak = p.peakLevel ?? 1;
         const migratedXp = Math.max(p.xp ?? 0, totalXpToReachLevel(peak));
         const migratedCoins = p.coins ?? p.xp ?? 0;
+        // Migrate legacy pokeEggs (a plain count) -> PokeEgg[] with fresh progress.
+        const rawEggs = p.pokeEggs as unknown;
+        const pokeEggs: PokeEgg[] =
+          typeof rawEggs === "number"
+            ? Array.from({ length: rawEggs }, (_, i) => ({
+                id: `legacy-${i}-${Date.now()}`,
+                grantedAt: Date.now(),
+                progress: 0,
+                required: EGG_HATCH_REQUIRED,
+              }))
+            : ((rawEggs as PokeEgg[] | undefined) ?? []);
         return {
           ...current,
           ...p,
           xp: migratedXp,
           coins: migratedCoins,
+          pokeEggs,
           pokemon: rehydratePokemon(p.pokemon ?? null),
           abilityId: p.abilityId ?? null,
           lastSeenWhatsNew: p.lastSeenWhatsNew ?? 0,

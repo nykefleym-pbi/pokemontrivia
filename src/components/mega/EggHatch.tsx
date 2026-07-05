@@ -2,36 +2,44 @@ import { useState } from "react";
 import { PokemonSprite } from "@/components/game-ui";
 import { PixelEgg } from "@/components/pixel-icons";
 import { useGameStore } from "@/lib/store";
-import { ALL_POKEMON } from "@/lib/pokemon-data.generated";
+import { findPokemon } from "@/lib/pokemon-data";
+import { ALL_LEGENDARY_MYTHICAL_IDS } from "@/lib/legendary-data";
 
 const SHINY_CHANCE = 0.1;
 
 /**
- * Poké Egg shelf + hatch flow. Eggs are earned from Mega Raid wins; hatching one
- * adds a random Pokémon to the Pokédex (with a shiny chance). Mount anywhere.
+ * Poké Egg shelf + hatch flow. Eggs are earned from Mega Raid champion wins,
+ * every-10th level-up, and referrals; each egg fills its own progress bar as
+ * you play different game modes (boosted by your day streak) and, once full,
+ * hatches into a random Legendary or Mythical Pokémon — the only way to
+ * obtain one. Mount anywhere.
  */
 export function EggHatch() {
-  const eggs = useGameStore((s) => s.pokeEggs ?? 0);
+  const eggs = useGameStore((s) => s.pokeEggs);
   const [open, setOpen] = useState(false);
-  const [phase, setPhase] = useState<"idle" | "hatching" | "done">("idle");
+  const [hatchingId, setHatchingId] = useState<string | null>(null);
   const [result, setResult] = useState<{ id: number; name: string; shiny: boolean } | null>(null);
 
   const close = () => {
     setOpen(false);
-    setPhase("idle");
+    setHatchingId(null);
     setResult(null);
   };
 
-  const hatch = () => {
+  const hatch = (eggId: string) => {
     const st = useGameStore.getState();
-    if (!st.hatchPokeEgg()) return;
-    const p = ALL_POKEMON[Math.floor(Math.random() * ALL_POKEMON.length)];
+    if (!st.hatchPokeEgg(eggId)) return;
+    const pokeId =
+      ALL_LEGENDARY_MYTHICAL_IDS[Math.floor(Math.random() * ALL_LEGENDARY_MYTHICAL_IDS.length)];
+    const p = findPokemon(pokeId);
+    if (!p) return;
     const shiny = Math.random() < SHINY_CHANCE;
-    setPhase("hatching");
+    setHatchingId(eggId);
     window.setTimeout(() => {
       st.recordPokedexCapture(p.id, shiny);
+      st.grantItem("candy", 1);
       setResult({ id: p.id, name: p.name, shiny });
-      setPhase("done");
+      setHatchingId(null);
     }, 1200);
   };
 
@@ -43,9 +51,9 @@ export function EggHatch() {
         aria-label="Poké Eggs"
       >
         <PixelEgg className="h-7 w-7" />
-        {eggs > 0 && (
+        {eggs.length > 0 && (
           <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-poke-dark px-1 text-[11px] font-extrabold text-white">
-            {eggs}
+            {eggs.length}
           </span>
         )}
       </button>
@@ -77,7 +85,7 @@ export function EggHatch() {
 
             <div className="font-pixel text-[8px] tracking-wide text-brand-amber">POKÉ EGGS</div>
 
-            {phase === "done" && result ? (
+            {result ? (
               <div className="mt-4 flex flex-col items-center">
                 <div
                   className={`font-pixel text-[8px] ${result.shiny ? "text-brand-amber" : "text-green-600 dark:text-green-400"}`}
@@ -100,17 +108,10 @@ export function EggHatch() {
                 </div>
                 <div className="mt-1 text-[22px] font-black text-foreground">{result.name}</div>
                 <div className="mt-1 text-[13px] font-semibold text-muted-foreground">
-                  Added to your Pokédex!
+                  Added to your Pokédex! You also got a 🍬 Rare Candy.
                 </div>
                 <button
-                  onClick={
-                    eggs > 0
-                      ? () => {
-                          setPhase("idle");
-                          setResult(null);
-                        }
-                      : close
-                  }
+                  onClick={() => setResult(null)}
                   className="mt-5 flex h-12 w-full items-center justify-center rounded-full text-[15px] font-extrabold"
                   style={{
                     background: "linear-gradient(95deg, var(--brand-gold), var(--brand-amber))",
@@ -118,41 +119,72 @@ export function EggHatch() {
                     boxShadow: "0 3px 0 var(--brand-gold-shadow)",
                   }}
                 >
-                  {eggs > 0 ? `Hatch another (${eggs} left)` : "Done"}
+                  Done
                 </button>
               </div>
-            ) : (
+            ) : eggs.length === 0 ? (
               <div className="mt-4 flex flex-col items-center">
-                <div
-                  className="relative"
-                  style={
-                    phase === "hatching"
-                      ? { animation: "mega-egg-shake 0.4s ease-in-out infinite" }
-                      : undefined
-                  }
-                >
-                  <PixelEgg className="h-24 w-24" />
-                </div>
-                <div className="mt-3 text-[15px] font-bold text-foreground">
-                  {eggs > 0 ? `You have ${eggs} Poké Egg${eggs === 1 ? "" : "s"}` : "No eggs yet"}
-                </div>
+                <PixelEgg className="h-24 w-24" />
+                <div className="mt-3 text-[15px] font-bold text-foreground">No eggs yet</div>
                 <div className="mt-1 text-[13px] text-muted-foreground">
-                  {eggs > 0
-                    ? "Hatch one to add a Pokémon to your Pokédex."
-                    : "Win Mega Raids to earn Poké Eggs."}
+                  Win a Mega Raid, level up, or refer a friend to earn a Poké Egg. Each egg only
+                  hatches a Legendary or Mythical Pokémon — the only way to get one.
                 </div>
-                <button
-                  onClick={hatch}
-                  disabled={eggs <= 0 || phase === "hatching"}
-                  className="mt-5 flex h-12 w-full items-center justify-center rounded-full text-[15px] font-extrabold disabled:opacity-50"
-                  style={{
-                    background: "linear-gradient(95deg, var(--brand-gold), var(--brand-amber))",
-                    color: "var(--brand-ink)",
-                    boxShadow: "0 3px 0 var(--brand-gold-shadow)",
-                  }}
-                >
-                  {phase === "hatching" ? "Hatching…" : "Hatch an Egg"}
-                </button>
+              </div>
+            ) : (
+              <div className="mt-4 flex max-h-[60vh] flex-col gap-3 overflow-y-auto">
+                {eggs.map((egg) => {
+                  const ready = egg.progress >= egg.required;
+                  const pct = Math.min(100, Math.round((egg.progress / egg.required) * 100));
+                  return (
+                    <div key={egg.id} className="rounded-2xl bg-muted/50 p-3">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="relative shrink-0"
+                          style={
+                            hatchingId === egg.id
+                              ? { animation: "mega-egg-shake 0.4s ease-in-out infinite" }
+                              : undefined
+                          }
+                        >
+                          <PixelEgg className="h-12 w-12" />
+                        </div>
+                        <div className="min-w-0 flex-1 text-left">
+                          <div className="h-2.5 overflow-hidden rounded-full bg-background">
+                            <div
+                              className="h-full rounded-full"
+                              style={{
+                                width: `${pct}%`,
+                                background:
+                                  "linear-gradient(95deg, var(--brand-gold), var(--brand-amber))",
+                              }}
+                            />
+                          </div>
+                          <div className="mt-1 text-[11px] font-semibold text-muted-foreground">
+                            {ready ? "Ready to hatch!" : `${egg.progress}/${egg.required} progress`}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => hatch(egg.id)}
+                        disabled={!ready || hatchingId !== null}
+                        className="mt-3 flex h-10 w-full items-center justify-center rounded-full text-[13px] font-extrabold disabled:opacity-50"
+                        style={{
+                          background: ready
+                            ? "linear-gradient(95deg, var(--brand-gold), var(--brand-amber))"
+                            : "var(--muted)",
+                          color: ready ? "var(--brand-ink)" : "var(--muted-foreground)",
+                          boxShadow: ready ? "0 3px 0 var(--brand-gold-shadow)" : undefined,
+                        }}
+                      >
+                        {hatchingId === egg.id ? "Hatching…" : "Hatch"}
+                      </button>
+                    </div>
+                  );
+                })}
+                <div className="text-[11px] text-muted-foreground">
+                  Play different modes to fill progress — a longer day streak boosts each one.
+                </div>
               </div>
             )}
           </div>

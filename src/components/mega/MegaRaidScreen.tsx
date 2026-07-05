@@ -171,6 +171,14 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
         attempts,
         items: [],
       });
+      useGameStore.getState().pushBattleLog({
+        opponent: event.name,
+        won,
+        xpGained: 0,
+        bestStreak: 0,
+        timestamp: Date.now(),
+        mode: "mega",
+      });
       setPhase("result");
     },
     [event, total],

@@ -1,7 +1,7 @@
 import type { GameState } from "@/lib/store";
 import type { StoreSlice } from "@/lib/store/slice";
 import type { ItemId } from "@/lib/game-data";
-import { getWeekRangeUtc } from "@/lib/game-data";
+import { getWeekRangeUtc, EGG_HATCH_REQUIRED } from "@/lib/game-data";
 import { canEvolve } from "@/lib/pokemon-data";
 
 export const BIG_NUGGET_DURATION_DAYS = 3;
@@ -80,7 +80,7 @@ export const createItemsSlice: StoreSlice<
   kingsRockUsedWeek: 0,
   leftoversUsedWeek: 0,
   metronomeUsedWeek: 0,
-  pokeEggs: 0,
+  pokeEggs: [],
 
   tryAutoFocusBand: () => {
     const s = get();
@@ -341,11 +341,23 @@ export const createItemsSlice: StoreSlice<
     return true;
   },
 
-  grantPokeEgg: (n = 1) => set((s) => ({ pokeEggs: (s.pokeEggs ?? 0) + n })),
-  hatchPokeEgg: () => {
+  grantPokeEgg: (n = 1) =>
+    set((s) => ({
+      pokeEggs: [
+        ...s.pokeEggs,
+        ...Array.from({ length: n }, (_, i) => ({
+          id: `${Date.now()}-${s.pokeEggs.length + i}-${Math.random().toString(36).slice(2, 8)}`,
+          grantedAt: Date.now(),
+          progress: 0,
+          required: EGG_HATCH_REQUIRED,
+        })),
+      ],
+    })),
+  hatchPokeEgg: (eggId) => {
     const s = get();
-    if ((s.pokeEggs ?? 0) <= 0) return false;
-    set({ pokeEggs: s.pokeEggs - 1 });
+    const egg = s.pokeEggs.find((e) => e.id === eggId);
+    if (!egg || egg.progress < egg.required) return false;
+    set({ pokeEggs: s.pokeEggs.filter((e) => e.id !== eggId) });
     return true;
   },
 });

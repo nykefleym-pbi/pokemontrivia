@@ -154,4 +154,79 @@ describe("store composition (slices)", () => {
     expect(useGameStore.getState().useItem("oranberry")).toBe(false);
     expect(useGameStore.getState().inventory.oranberry).toBe(1);
   });
+
+  it("poke egg: grantPokeEgg creates a fresh, unhatched egg", () => {
+    useGameStore.getState().grantPokeEgg(1);
+    const eggs = useGameStore.getState().pokeEggs;
+    expect(eggs.length).toBe(1);
+    expect(eggs[0].progress).toBe(0);
+    expect(eggs[0].required).toBeGreaterThan(0);
+  });
+
+  it("poke egg: pushBattleLog grants progress to held eggs, capped at required", () => {
+    useGameStore.getState().grantPokeEgg(1);
+    useGameStore.getState().pushBattleLog({
+      opponent: "Test",
+      won: true,
+      xpGained: 0,
+      bestStreak: 0,
+      timestamp: Date.now(),
+      mode: "battle",
+    });
+    const egg = useGameStore.getState().pokeEggs[0];
+    expect(egg.progress).toBeGreaterThan(0);
+    expect(egg.progress).toBeLessThanOrEqual(egg.required);
+  });
+
+  it("poke egg: the same mode only grants progress once per calendar day", () => {
+    useGameStore.getState().grantPokeEgg(1);
+    const push = () =>
+      useGameStore.getState().pushBattleLog({
+        opponent: "Test",
+        won: true,
+        xpGained: 0,
+        bestStreak: 0,
+        timestamp: Date.now(),
+        mode: "battle",
+      });
+    push();
+    const afterFirst = useGameStore.getState().pokeEggs[0].progress;
+    push();
+    const afterSecond = useGameStore.getState().pokeEggs[0].progress;
+    expect(afterSecond).toBe(afterFirst);
+  });
+
+  it("poke egg: different modes on the same day each grant progress", () => {
+    useGameStore.getState().grantPokeEgg(1);
+    useGameStore.getState().pushBattleLog({
+      opponent: "Test",
+      won: true,
+      xpGained: 0,
+      bestStreak: 0,
+      timestamp: Date.now(),
+      mode: "battle",
+    });
+    const afterBattle = useGameStore.getState().pokeEggs[0].progress;
+    useGameStore.getState().pushBattleLog({
+      opponent: "Test",
+      won: true,
+      xpGained: 0,
+      bestStreak: 0,
+      timestamp: Date.now(),
+      mode: "weekly",
+    });
+    const afterWeekly = useGameStore.getState().pokeEggs[0].progress;
+    expect(afterWeekly).toBeGreaterThan(afterBattle);
+  });
+
+  it("poke egg: hatchPokeEgg fails below the requirement and succeeds once ready", () => {
+    useGameStore.getState().grantPokeEgg(1);
+    const eggId = useGameStore.getState().pokeEggs[0].id;
+    expect(useGameStore.getState().hatchPokeEgg(eggId)).toBe(false);
+    useGameStore.setState((s) => ({
+      pokeEggs: s.pokeEggs.map((e) => ({ ...e, progress: e.required })),
+    }));
+    expect(useGameStore.getState().hatchPokeEgg(eggId)).toBe(true);
+    expect(useGameStore.getState().pokeEggs.length).toBe(0);
+  });
 });

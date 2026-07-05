@@ -1248,6 +1248,7 @@ function BattleMode({
       xpGained: xpAward,
       bestStreak: maxStreakRef.current,
       timestamp: Date.now(),
+      mode: isElite ? "elite" : isWeekly ? "weekly" : "battle",
     });
     const after = unlockedAchievements(useGameStore.getState());
     const unlocked: Array<{ icon: string; name: string }> = [];

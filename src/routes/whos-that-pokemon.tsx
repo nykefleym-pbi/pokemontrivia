@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useGameStore } from "@/lib/store";
 import { ALL_POKEMON, spriteUrl, type PokeType } from "@/lib/pokemon-data";
+import { isLegendaryOrMythical } from "@/lib/legendary-data";
 import { ITEMS, type ItemId } from "@/lib/game-data";
 import { WHOS_THAT_XP } from "@/lib/rewards";
 import { rollLevelUpRewards } from "@/lib/level-rewards";
@@ -133,8 +134,12 @@ interface DexEntry {
   heightM: string;
 }
 
+// Legendary/Mythical Pokémon are Poké-Egg exclusive — never a round's answer,
+// since a correct guess here grants a Pokédex capture.
+const ROUND_POOL = ALL_POKEMON.filter((p) => !isLegendaryOrMythical(p.id));
+
 function makeRound(): Round {
-  const mon = ALL_POKEMON[Math.floor(Math.random() * ALL_POKEMON.length)];
+  const mon = ROUND_POOL[Math.floor(Math.random() * ROUND_POOL.length)];
   const reward = REWARD_POOL[Math.floor(Math.random() * REWARD_POOL.length)];
   const mode = (["1A", "1B", "2", "3", "4", "5"] as Mode[])[Math.floor(Math.random() * 6)];
   const others = sample(
@@ -295,6 +300,14 @@ function WhosThatPokemon() {
       addXp(WHOS_THAT_XP);
       grantItem(round.rewardId, 1);
       recordPokedexCapture(caught?.id ?? round.monId, round.isShiny);
+      useGameStore.getState().pushBattleLog({
+        opponent: "Who's That Pokémon",
+        won: true,
+        xpGained: WHOS_THAT_XP,
+        bestStreak: 0,
+        timestamp: Date.now(),
+        mode: "whosthat",
+      });
       const newLevel = useGameStore.getState().level;
       if (newLevel > prevLevel) {
         const rewards = rollLevelUpRewards(prevLevel, newLevel);

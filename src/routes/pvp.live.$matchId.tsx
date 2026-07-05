@@ -196,6 +196,14 @@ function LivePvpMatchPage() {
     }
     setPendingResult(null);
     setMyScore(res.score);
+    useGameStore.getState().pushBattleLog({
+      opponent: "Nearby Battle",
+      won: result.correct > result.total / 2,
+      xpGained: 0,
+      bestStreak: result.maxStreak,
+      timestamp: Date.now(),
+      mode: "nearby",
+    });
     const fresh = await getLivePvpMatch(matchId);
     if (!fresh) {
       setPhase("not_found");
