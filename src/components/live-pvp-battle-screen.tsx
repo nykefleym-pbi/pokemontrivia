@@ -24,6 +24,8 @@ import {
   evaluateHitModifiers,
   evaluatePostAnswer,
   evaluateBattleStart,
+  hasServerManualEffect,
+  manualUsesPerBattle,
   type SignatureContext,
 } from "@/lib/signature-abilities";
 import { TimerRing } from "@/components/battle-screen";
@@ -190,6 +192,16 @@ export function LivePvpBattleScreen({
   const [oppHp, setOppHp] = useState(amIHost ? match.guestHp : match.hostHp);
   const [bagOpen, setBagOpen] = useState(false);
   const [frozen, setFrozen] = useState(false);
+  // Manual "charge and fire" signature abilities: a generic charge indicator +
+  // Fire button (reusing the bag's visual language) for Legendary/Mythical
+  // partners whose signature move is player-fired and decomposes to a
+  // server-catalog effect (Aeroblast, Roar of Time, Ruination burst, etc.). The
+  // server enforces the per-battle use cap; this local counter only drives the
+  // button's enabled/label state.
+  const [manualFiresUsed, setManualFiresUsed] = useState(0);
+  const [manualFiring, setManualFiring] = useState(false);
+  const manualCap = manualUsesPerBattle(ability);
+  const manualFireable = !!ability && hasServerManualEffect(ability) && manualCap > 0;
 
   const finishedRef = useRef(false);
   const itemsUsedRef = useRef(amIHost ? match.hostItemsUsed : match.guestItemsUsed);
@@ -482,6 +494,49 @@ export function LivePvpBattleScreen({
     setBagOpen(false);
   }
 
+  async function handleFireSignature() {
+    if (!manualFireable || manualFiring || partnerId == null) return;
+    if (manualFiresUsed >= manualCap || finishedRef.current) return;
+    setManualFiring(true);
+    // Same server-validated path as berries: the client only names WHICH
+    // partner fired; the server looks up the fixed magnitude by dex id and
+    // enforces the per-battle cap (returns noop/'no_charges' if exceeded).
+    const res = await applyPvpSignatureEffect(
+      matchId,
+      Math.max(0, displayedIndex),
+      partnerId,
+      "manual",
+      pokedexCount,
+    );
+    setManualFiring(false);
+    if (!res.ok) {
+      toast.error("Couldn't fire that move — try again.");
+      return;
+    }
+    if (res.noop) {
+      // Server-enforced cap reached (or nothing to apply) — sync the local
+      // counter so the button disables.
+      setManualFiresUsed(manualCap);
+      return;
+    }
+    setManualFiresUsed((n) => n + 1);
+    if (res.hostStages) {
+      useGameStore.setState({
+        myStages: amIHost ? res.hostStages : res.guestStages!,
+        oppStages: amIHost ? res.guestStages! : res.hostStages,
+        battleStatuses: amIHost ? res.hostStatuses! : res.guestStatuses!,
+        opponentStatuses: amIHost ? res.guestStatuses! : res.hostStatuses!,
+      });
+    }
+    if (typeof res.hostHp === "number") {
+      setMyHp(amIHost ? res.hostHp : res.guestHp!);
+      setOppHp(amIHost ? res.guestHp! : res.hostHp);
+    }
+    playSfx("item_use");
+    const move = signatureMoveName(partnerId);
+    if (move) toast.success(`✨ ${move} unleashed!`);
+  }
+
   if (idx < 0) {
     const secsLeft = Math.max(0, Math.ceil(-elapsed / 1000));
     return (
@@ -524,6 +579,19 @@ export function LivePvpBattleScreen({
         </div>
         <div className="flex items-center gap-2">
           <TimerRing timer={Math.ceil(msLeft / 1000)} maxTime={Math.ceil(personalTimerMs / 1000)} />
+          {manualFireable && (
+            <button
+              onClick={() => void handleFireSignature()}
+              disabled={manualFiring || manualFiresUsed >= manualCap || frozen}
+              title={signatureMoveName(partnerId) ?? "Signature move"}
+              className="flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-sm font-bold text-primary-foreground shadow-card disabled:opacity-40"
+            >
+              ⚡ {signatureMoveName(partnerId)}
+              <span className="tabular-nums opacity-80">
+                {Math.max(0, manualCap - manualFiresUsed)}/{manualCap}
+              </span>
+            </button>
+          )}
           <button
             onClick={() => setBagOpen(true)}
             className="rounded-full bg-card px-3 py-1.5 text-sm font-bold shadow-card"

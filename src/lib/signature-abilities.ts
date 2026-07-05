@@ -20,12 +20,15 @@ import { isLegendaryOrMythical, isMascotTier } from "./legendary-data";
  * `internalKey` is a code-only identifier used to disambiguate the four Sacred
  * Sword users / three Ruination users etc. — never shown to the player.
  *
- * ROSTER NOTE: `ALL_LEGENDARY_MYTHICAL_IDS` holds 95 ids (not the 100 the v2
- * doc assumed). 90 doc entries map to a real id; 5 ids without a doc entry
- * (494 Victini, 803-806 Ultra Beasts) get on-theme fill designs flagged
- * `docGap: true`. Eight doc entries whose species are not in the roster
- * (Type: Null, Silvally, Walking Wake, Iron Leaves, Gouging Fire, Raging Bolt,
- * Iron Boulder, Iron Crown) are therefore not implemented.
+ * ROSTER NOTE: `ALL_LEGENDARY_MYTHICAL_IDS` holds 104 ids. 5 ids without a doc
+ * entry (494 Victini, 803-806 Ultra Beasts) get on-theme fill designs flagged
+ * `docGap: true`. The eight species that used to be missing from the roster
+ * (772 Type: Null, 773 Silvally, 1009 Walking Wake, 1010 Iron Leaves, 1020
+ * Gouging Fire, 1021 Raging Bolt, 1022 Iron Boulder, 1023 Iron Crown) are now
+ * present and mapped to their v2 doc entries. Calyrex ships as TWO independent
+ * roster entries: dex 898 = Ice Rider Calyrex (As One — Glacial Reign), synthetic
+ * id 10194 = Shadow Rider Calyrex (As One — Spectral Reign); see
+ * CALYREX_SHADOW_RIDER_ID in pokemon-data.ts for the forme-id precedent.
  */
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -418,9 +421,9 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     internalKey: "sky_splitting_ascent",
     rarity: 5,
     trigger: { type: "manual", usesPerBattle: 1 },
-    effect: compound({ type: "damage_calc", bonusCritStage: 3, bonusAttackStage: 1 }, selfStage("defense", -2, 1)),
+    effect: { type: "damage_calc", bonusCritStage: 3, bonusAttackStage: 1 },
     wiring: "manual",
-    note: "Passive Air Lock (negate opponent weather/field stage engines) is a bespoke always-on secondary.",
+    note: "Ascent = a damage-calc manual (arms the NEXT correct answer for +3 Crit/+1 Atk); the self -2 Def-for-1q backlash and passive Air Lock (negate opponent weather/field engines) are bespoke secondaries. Not server-fireable (its payoff is a client-side one-hit modifier, like Psystrike) — no Fire button until damage-calc arming lands.",
   },
   385: {
     pokemonId: 385,
@@ -480,9 +483,9 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     internalKey: "roar_of_time",
     rarity: 4,
     trigger: { type: "manual", usesPerBattle: 2 },
-    effect: compound(selfStage("speed", 2, 1), selfStage("speed", -1, 1)),
+    effect: selfStage("speed", 2, 1),
     wiring: "manual",
-    note: "+2 Speed this question, -1 next (recharge). Charges 1 per 5 correct, cap 2.",
+    note: "Fire = +2 Speed (clutch time). The -1-Speed next-question recharge is a bespoke follow-up (persistent-stage system can't auto-expire a one-question delta). Charges 1 per 5 correct, cap 2.",
   },
   484: {
     pokemonId: 484,
@@ -566,9 +569,9 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     internalKey: "seed_flare",
     rarity: 3,
     trigger: { type: "manual", usesPerBattle: 1 },
-    effect: oppStatus("burn", 3, 0.4),
+    effect: oppStage("defense", -2, 3),
     wiring: "manual",
-    note: "40% base (60% on a 3+ streak) to inflict -2 Def; encoded as opp Defense debuff below. Chance-on-streak is bespoke.",
+    note: "Seed Flare: on fire, -2 opp Defense (Sp. Def crash). The 40%/60%-on-streak land chance is rolled client-side before the fire request; chance-on-streak is bespoke.",
   },
   493: {
     pokemonId: 493,
@@ -778,6 +781,26 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
   },
 
   // ── Generation VII ────────────────────────────────────────────────────────
+  772: {
+    pokemonId: 772,
+    signatureMove: "Multi-Attack",
+    internalKey: "chained_vigor",
+    rarity: 2,
+    trigger: { type: "battle_start" },
+    effect: selfStage("attack", 1, "passive"),
+    wiring: "bespoke",
+    note: "Type: Null — Chained Vigor: a single locked +1 Attack on ONE preset category only (chosen at start, no adaptation). Category-gating is bespoke; the restrained shadow of Silvally.",
+  },
+  773: {
+    pokemonId: 773,
+    signatureMove: "Multi-Attack",
+    internalKey: "rks_adaptation",
+    rarity: 3,
+    trigger: { type: "battle_start" },
+    effect: compound(selfStage("attack", 1, "passive"), selfStage("crit", 1, "passive")),
+    wiring: "bespoke",
+    note: "Silvally — RKS Adaptation: attune to the battle's dominant category (+1 Atk & +1 Crit on it) with one mid-battle re-attune. Category-attune + swap is bespoke.",
+  },
   785: {
     pokemonId: 785,
     signatureMove: "Nature's Madness",
@@ -1079,7 +1102,17 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     trigger: { type: "cooldown", everyN: 4 },
     effect: compound(oppStage("speed", -2, 2), { type: "heal", target: "self", amount: 3 }),
     wiring: "post_answer",
-    note: "Dex id 898 bound to ICE RIDER Calyrex (As One — Glacial Reign) per impl-note #8. Base Calyrex (Heal Pulse/Unnerve) and Shadow Rider (As One — Spectral Reign) are the documented alternate formes. Ramp (+1 Atk every 2 correct) + Unnerve are bespoke secondaries. OPEN DESIGN CALL: confirm which Calyrex forme owns dex 898.",
+    note: "Dex id 898 = ICE RIDER Calyrex (As One — Glacial Reign), unchanged. Shadow Rider Calyrex is a separate roster entry under synthetic id 10194 (below). Ramp (+1 Atk every 2 correct) + Unnerve are bespoke secondaries.",
+  },
+  10194: {
+    pokemonId: 10194,
+    signatureMove: "Astral Barrage",
+    internalKey: "as_one_spectral_reign",
+    rarity: 4,
+    trigger: { type: "on_correct" },
+    effect: { type: "drain", amount: 3 },
+    wiring: "post_answer",
+    note: "SHADOW RIDER Calyrex (synthetic forme id 10194; Ice Rider keeps dex 898). As One — Spectral Reign: Grim Neigh drains ~3 HP each correct answer. +1 Speed every 2 correct + once-per-4q Unnerve/barrage (~7 HP drain) are bespoke secondaries. Distinct from Spectrier (897, drain 2) as the stronger fusion.",
   },
 
   // ── Generation IX ─────────────────────────────────────────────────────────
@@ -1143,6 +1176,26 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     wiring: "post_answer",
     note: "Hadron Engine (opp -1 Speed while you lead) + once-per-battle 2-category preview are bespoke secondaries.",
   },
+  1009: {
+    pokemonId: 1009,
+    signatureMove: "Hydro Steam",
+    internalKey: "hydro_steam",
+    rarity: 3,
+    trigger: { type: "bespoke", note: "Active only under adversity: opponent holds any positive stage OR leads on HP." },
+    effect: selfStage("attack", 2, "one_hit"),
+    wiring: "bespoke",
+    note: "Walking Wake — Hydro Steam: +2 Attack on correct answers WHILE the opponent is buffed or leading (dead weight when you're ahead). Protosynthesis (fast answers boost highest stat) is a bespoke secondary. Adversity gating is bespoke.",
+  },
+  1010: {
+    pokemonId: 1010,
+    signatureMove: "Psyblade",
+    internalKey: "psyblade",
+    rarity: 3,
+    trigger: { type: "bespoke", note: "Active only while any terrain/field effect is present." },
+    effect: compound({ type: "damage_calc", bonusAttackStage: 1, bonusCritStage: 1 }),
+    wiring: "bespoke",
+    note: "Iron Leaves — Psyblade: +1 Atk & +1 Crit on correct answers WHILE any terrain/field effect is active (yours or a teammate's). Quark Drive (fast answers boost highest stat) is a bespoke secondary. Terrain gating is bespoke.",
+  },
   1014: {
     pokemonId: 1014,
     signatureMove: "Upper Hand",
@@ -1182,6 +1235,46 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     effect: selfStage("crit", 1, "passive"),
     wiring: "bespoke",
     note: "Mask loadout (Teal/Wellspring/Hearthflame/Cornerstone) + baseline crit + Embody Aspect; default crit passive encoded. Mask choice is bespoke.",
+  },
+  1020: {
+    pokemonId: 1020,
+    signatureMove: "Burning Bulwark",
+    internalKey: "burning_bulwark",
+    rarity: 3,
+    trigger: { type: "bespoke", note: "Reactive: arm a bulwark once every 4 questions; blocks the next wrong answer + reflects an inflicted debuff as Burn." },
+    effect: oppStatus("burn", 3),
+    wiring: "bespoke",
+    note: "Gouging Fire — Burning Bulwark: once per 4q, your next wrong answer takes 0 HP damage, and if the opponent inflicted a status/debuff on you that question it is reflected back as Burn. Reactive protect + reflect is bespoke.",
+  },
+  1021: {
+    pokemonId: 1021,
+    signatureMove: "Thunderclap",
+    internalKey: "thunderclap",
+    rarity: 3,
+    trigger: { type: "bespoke", note: "Reactive to the opponent answering correctly; once every 4 questions." },
+    effect: compound(selfStage("attack", 1, "one_hit"), oppStage("attack", -1, 1)),
+    wiring: "bespoke",
+    note: "Raging Bolt — Thunderclap: once per 4q, if the opponent answers correctly you pre-empt for +1 Atk (this exchange) and -1 Atk on them (1q); whiffs if they're idle/wrong. Protosynthesis (fast answers boost highest stat) is a bespoke secondary.",
+  },
+  1022: {
+    pokemonId: 1022,
+    signatureMove: "Mighty Cleave",
+    internalKey: "mighty_cleave",
+    rarity: 3,
+    trigger: { type: "cooldown", everyN: 4 },
+    effect: ignoreDef(),
+    wiring: "passive_damage",
+    note: "Iron Boulder — Mighty Cleave: once every 4 questions your correct answer ignores the opponent's Defense stage. The extra -1 Def strip + Quark Drive are bespoke secondaries.",
+  },
+  1023: {
+    pokemonId: 1023,
+    signatureMove: "Tachyon Cutter",
+    internalKey: "tachyon_cutter",
+    rarity: 3,
+    trigger: { type: "cooldown", everyN: 4 },
+    effect: { type: "damage_calc", secondHitFraction: 0.15 },
+    wiring: "passive_damage",
+    note: "Iron Crown — Tachyon Cutter: once every 4 questions your correct answer strikes twice (full, then +15%). The 'no-miss' refund-on-wrong safety net + Quark Drive are bespoke secondaries.",
   },
   1024: {
     pokemonId: 1024,
@@ -1455,7 +1548,45 @@ export function evaluateBattleStart(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Build-time integrity (mirrors impl-note #6, adapted to the real 95-id roster)
+// Manual ("charge and fire") abilities
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// A subset of manual abilities decompose entirely into server-catalog effects
+// (stat_stage / status / cure / heal / drain) — Aeroblast, Mist Ball, Luster
+// Purge, Dark Void, Seed Flare, Relic Song, the Ruination burst pair, Tera
+// Starstorm, etc. These are "server-fireable": the live battle screen shows a
+// generic charge/Fire affordance and, on tap, calls the SAME server-validated
+// RPC as berries with phase="manual" (magnitude looked up server-side by dex
+// id; the server enforces the per-battle use cap). Manual abilities whose fire
+// payoff is a damage-calc/one-hit modifier (Psystrike, Spacial Rend, Roar of
+// Time, Dragon Ascent) or a bespoke multi-stage sequence (Geomancy, Dynamax
+// Cannon, Thunder Cage) are NOT server-fireable yet and are handled elsewhere /
+// documented as follow-up — `hasServerManualEffect` returns false for them so
+// no dead Fire button is shown.
+
+/** True when a manual ability applies at least one server-catalog effect on
+ * fire (i.e. `apply_pvp_signature_effect(phase="manual")` will do something). */
+export function hasServerManualEffect(ability: SignatureAbility | null): boolean {
+  if (!ability || ability.wiring !== "manual") return false;
+  const out: SignatureEffect[] = [];
+  collectApplicable(ability.effect, out);
+  return out.length > 0;
+}
+
+/** Per-battle use cap for a manual ability (0 if not manual). */
+export function manualUsesPerBattle(ability: SignatureAbility | null): number {
+  if (!ability || ability.trigger.type !== "manual") return 0;
+  return ability.trigger.usesPerBattle;
+}
+
+/** Ids whose manual ability the live screen exposes a Fire button for. */
+export const SERVER_FIREABLE_MANUAL_IDS: readonly number[] = Object.values(SIGNATURE_ABILITIES)
+  .filter((a) => hasServerManualEffect(a))
+  .map((a) => a.pokemonId)
+  .sort((a, b) => a - b);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Build-time integrity (mirrors impl-note #6, adapted to the real roster)
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**

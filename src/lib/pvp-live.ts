@@ -384,12 +384,13 @@ export async function applyPvpSignatureEffect(
   matchId: string,
   questionIndex: number,
   pokemonId: number,
-  phase: "battle_start" | "post_answer",
+  phase: "battle_start" | "post_answer" | "manual",
   scaleCount = 0,
 ): Promise<
   | {
       ok: true;
       noop?: boolean;
+      reason?: string;
       hostHp?: number;
       guestHp?: number;
       hostStages?: PvpStatStages;
@@ -414,6 +415,7 @@ export async function applyPvpSignatureEffect(
     const r = data as {
       ok?: boolean;
       noop?: boolean;
+      reason?: string;
       hostHp?: number;
       guestHp?: number;
       hostStages?: PvpStatStages;
@@ -426,6 +428,7 @@ export async function applyPvpSignatureEffect(
       return {
         ok: true,
         noop: r.noop,
+        reason: r.reason,
         hostHp: r.hostHp,
         guestHp: r.guestHp,
         hostStages: r.hostStages,

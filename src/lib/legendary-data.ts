@@ -16,12 +16,17 @@ export const LEGENDARY_IDS: readonly number[] = [
   638, 639, 640, 641, 642, 643, 644, 645, 646,
   // Gen 6
   716, 717, 718,
-  // Gen 7 (includes Ultra Beasts, which carry the same legendary encounter flag in-game)
-  785, 786, 787, 788, 789, 790, 791, 792, 800, 803, 804, 805, 806,
+  // Gen 7 (includes Ultra Beasts, which carry the same legendary encounter flag in-game;
+  // Type: Null / Silvally are the synthetic-trio prototype line, grouped Legendary per the v2 roster)
+  772, 773, 785, 786, 787, 788, 789, 790, 791, 792, 800, 803, 804, 805, 806,
   // Gen 8
   888, 889, 890, 891, 892, 894, 895, 896, 897, 898,
-  // Gen 9
-  1001, 1002, 1003, 1004, 1007, 1008, 1014, 1015, 1016, 1017, 1024,
+  // Shadow Rider Calyrex — synthetic forme id (PokeAPI form id 10194); Ice Rider
+  // keeps dex 898. See CALYREX_SHADOW_RIDER_ID in pokemon-data.ts.
+  10194,
+  // Gen 9 (Paradox Pokémon 1009-1023 carry the same legendary encounter flag in-game)
+  1001, 1002, 1003, 1004, 1007, 1008, 1009, 1010, 1014, 1015, 1016, 1017, 1020, 1021, 1022, 1023,
+  1024,
 ];
 
 export const MYTHICAL_IDS: readonly number[] = [
