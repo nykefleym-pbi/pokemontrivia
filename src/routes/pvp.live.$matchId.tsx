@@ -6,15 +6,16 @@ import { PokeballSpinner } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
 import {
   getLivePvpMatch,
-  submitLivePvpResult,
   forfeitLivePvpMatch,
+  subscribeToLivePvpEffects,
   type LivePvpMatch,
+  type LivePvpEffect,
 } from "@/lib/pvp-live";
-import { getProfileById, ensureSession, type TrainerProfile } from "@/lib/social";
 import { LivePvpBattleScreen, type LivePvpBattleResult } from "@/components/live-pvp-battle-screen";
+import { getProfileById, ensureSession, type TrainerProfile } from "@/lib/social";
 import { supabase } from "@/integrations/supabase/client";
 import { playBgm } from "@/lib/audio";
-import { trainerSpriteUrl } from "@/lib/game-data";
+import { trainerSpriteUrl, ITEMS, rollBerryDrops, STARTER_PVP_BERRY } from "@/lib/game-data";
 
 export const Route = createFileRoute("/pvp/live/$matchId")({
   component: LivePvpMatchPage,
@@ -26,16 +27,14 @@ type Phase =
   | "loading"
   | "not_found"
   | "battle"
-  | "waiting"
-  | "submit_error"
   | "result"
   | "forfeit_won"
   | "forfeit_lost";
 
-function phaseFor(m: LivePvpMatch, myId: string, iCompleted: boolean): Phase {
-  if (m.status === "forfeited") return m.winnerId === myId ? "forfeit_won" : "forfeit_lost";
+function phaseFor(m: LivePvpMatch): Phase {
+  if (m.status === "forfeited") return "forfeit_lost"; // resolved below via winnerId check
   if (m.status === "completed") return "result";
-  return iCompleted ? "waiting" : "battle";
+  return "battle";
 }
 
 function LivePvpMatchPage() {
@@ -46,11 +45,10 @@ function LivePvpMatchPage() {
   const [match, setMatch] = useState<LivePvpMatch | null>(null);
   const [myId, setMyId] = useState<string | null>(null);
   const [opponentProfile, setOpponentProfile] = useState<TrainerProfile | null>(null);
-  const [myScore, setMyScore] = useState<number | null>(null);
-  const [pendingResult, setPendingResult] = useState<LivePvpBattleResult | null>(null);
 
   const matchRef = useRef<LivePvpMatch | null>(null);
   const myIdRef = useRef<string | null>(null);
+  const rewardsGrantedRef = useRef(false);
   matchRef.current = match;
   myIdRef.current = myId;
 
@@ -70,8 +68,22 @@ function LivePvpMatchPage() {
       setMatch(m);
       const opponentId = uid === m.hostId ? m.guestId : m.hostId;
       void getProfileById(opponentId).then(setOpponentProfile);
-      const iCompleted = uid === m.hostId ? m.hostCompletedAt !== null : m.guestCompletedAt !== null;
-      setPhase(phaseFor(m, uid, iCompleted));
+
+      // One-time starter Lum Berry the first time a player ever enters Nearby
+      // Battle, so they can cure one status in their first game.
+      if (useGameStore.getState().markNearbyBattleEntered()) {
+        useGameStore.getState().grantItem(STARTER_PVP_BERRY, 1);
+        const berry = ITEMS.find((i) => i.id === STARTER_PVP_BERRY);
+        toast.success(`${berry?.emoji ?? "🟢"} You received a starter ${berry?.name ?? "Lum Berry"}!`);
+      }
+
+      setPhase(
+        m.status === "forfeited"
+          ? m.winnerId === uid
+            ? "forfeit_won"
+            : "forfeit_lost"
+          : phaseFor(m),
+      );
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchId, hasOnboarded]);
@@ -80,8 +92,9 @@ function LivePvpMatchPage() {
     playBgm("battle_regular");
   }, []);
 
-  // Live row updates: catch the opponent finishing, forfeiting, or the match
-  // completing while we're mid-quiz.
+  // Live row updates: HP/stages/statuses/completion/forfeit all flow through
+  // this single postgres_changes subscription (pvp_live_matches was already
+  // in the realtime publication; the new HP columns ride the same channel).
   useEffect(() => {
     if (!hasOnboarded) return;
     const channel = supabase
@@ -115,15 +128,47 @@ function LivePvpMatchPage() {
             winnerId: row.winner_id as string | null,
             createdAt: row.created_at as string,
             expiresAt: row.expires_at as string,
+            hostHp: (row.host_hp as number) ?? 120,
+            guestHp: (row.guest_hp as number) ?? 120,
+            hostStages: (row.host_stages as LivePvpMatch["hostStages"]) ?? {
+              attack: 0,
+              defense: 0,
+              speed: 0,
+              crit: 0,
+            },
+            guestStages: (row.guest_stages as LivePvpMatch["guestStages"]) ?? {
+              attack: 0,
+              defense: 0,
+              speed: 0,
+              crit: 0,
+            },
+            hostStatuses: (row.host_statuses as LivePvpMatch["hostStatuses"]) ?? [],
+            guestStatuses: (row.guest_statuses as LivePvpMatch["guestStatuses"]) ?? [],
+            hostCorrectLive: (row.host_correct_live as number) ?? 0,
+            guestCorrectLive: (row.guest_correct_live as number) ?? 0,
+            hostAnsweredLive: (row.host_answered_live as number) ?? 0,
+            guestAnsweredLive: (row.guest_answered_live as number) ?? 0,
+            hostTimeMsLive: (row.host_time_ms_live as number) ?? 0,
+            guestTimeMsLive: (row.guest_time_ms_live as number) ?? 0,
+            hostItemsUsed: (row.host_items_used as number) ?? 0,
+            guestItemsUsed: (row.guest_items_used as number) ?? 0,
+            liveResolvedAt: row.live_resolved_at as string | null,
           };
           setMatch(updated);
-          const iCompleted =
-            uid === updated.hostId ? updated.hostCompletedAt !== null : updated.guestCompletedAt !== null;
-          // Don't yank the player out of an in-progress quiz just because the
-          // row changed (e.g. opponent submitting doesn't affect my status);
-          // only override when the match is no longer simply "active&mine to play".
-          const next = phaseFor(updated, uid, iCompleted);
-          setPhase((prev) => (prev === "battle" && next === "battle" ? prev : next));
+          if (updated.status === "forfeited") {
+            setPhase(updated.winnerId === uid ? "forfeit_won" : "forfeit_lost");
+          } else if (updated.status === "completed") {
+            setPhase("result");
+          }
+          // Sync self/opponent stat stages + statuses into the shared store so
+          // the battle screen (and any other consumer) reads one source of truth.
+          const amIHost = uid === updated.hostId;
+          useGameStore.setState({
+            myStages: amIHost ? updated.hostStages : updated.guestStages,
+            oppStages: amIHost ? updated.guestStages : updated.hostStages,
+            battleStatuses: amIHost ? updated.hostStatuses : updated.guestStatuses,
+            opponentStatuses: amIHost ? updated.guestStatuses : updated.hostStatuses,
+          });
         },
       )
       .subscribe();
@@ -135,6 +180,22 @@ function LivePvpMatchPage() {
       }
     };
   }, [matchId, hasOnboarded]);
+
+  // Item/berry effect attribution toasts — shows what the OPPONENT used
+  // against us (our own uses already toast locally in the battle screen).
+  useEffect(() => {
+    if (!hasOnboarded || !myId) return;
+    return subscribeToLivePvpEffects(matchId, (effect: LivePvpEffect) => {
+      if (effect.sourceId === myId) return;
+      const def = ITEMS.find((i) => i.id === effect.itemId);
+      if (!def) return;
+      if (effect.target === "opponent") {
+        toast.warning(`${def.emoji} Opponent used ${def.name} — you're affected!`);
+      } else {
+        toast.info(`${def.emoji} Opponent used ${def.name}.`);
+      }
+    });
+  }, [hasOnboarded, myId, matchId]);
 
   // Presence: forfeit the opponent after 30s of them being gone mid-match.
   useEffect(() => {
@@ -179,39 +240,34 @@ function LivePvpMatchPage() {
     };
   }, [hasOnboarded, myId, match, matchId]);
 
-  async function handleFinish(result: LivePvpBattleResult) {
-    if (!match || !myId) return;
-    const res = await submitLivePvpResult(
-      matchId,
-      result.correct,
-      result.total,
-      result.timeMs,
-      result.maxStreak,
-    );
-    if (!res.ok) {
-      toast.error("Couldn't submit your result. Try again.");
-      setPendingResult(result);
-      setPhase("submit_error");
-      return;
-    }
-    setPendingResult(null);
-    setMyScore(res.score);
+  // Grant the per-battle berry drops exactly once, whenever the match reaches
+  // a terminal phase (win, loss, or forfeit either way) — "5 berries per
+  // completed battle played" applies regardless of win/loss.
+  useEffect(() => {
+    if (rewardsGrantedRef.current) return;
+    if (phase !== "result" && phase !== "forfeit_won" && phase !== "forfeit_lost") return;
+    rewardsGrantedRef.current = true;
+    const drops = rollBerryDrops();
+    for (const id of drops) useGameStore.getState().grantItem(id, 1);
+    const won =
+      phase === "forfeit_won" ||
+      (phase === "result" && match?.winnerId === myId);
     useGameStore.getState().pushBattleLog({
-      opponent: "Nearby Battle",
-      won: result.correct > result.total / 2,
+      opponent: opponentProfile?.trainer_name || "Nearby Battle",
+      won,
       xpGained: 0,
-      bestStreak: result.maxStreak,
+      bestStreak: 0,
       timestamp: Date.now(),
       mode: "nearby",
     });
-    const fresh = await getLivePvpMatch(matchId);
-    if (!fresh) {
-      setPhase("not_found");
-      return;
-    }
-    setMatch(fresh);
-    const iCompleted = myId === fresh.hostId ? fresh.hostCompletedAt !== null : fresh.guestCompletedAt !== null;
-    setPhase(phaseFor(fresh, myId, iCompleted));
+    toast.success(`🍒 You picked up ${drops.length} berries from this battle!`);
+  }, [phase, match, myId, opponentProfile]);
+
+  function handleFinish(result: LivePvpBattleResult) {
+    // The server has already resolved status/winner_id by the time onFinish
+    // fires (submitPvpLiveAnswer only reports resolved:true once it has);
+    // the row-update subscription above will flip `phase` to "result".
+    void result;
   }
 
   if (!hasOnboarded) return null;
@@ -235,38 +291,26 @@ function LivePvpMatchPage() {
     );
   }
 
-  if (phase === "battle" && match) {
+  if (phase === "battle" && match && myId) {
     return (
       <LivePvpBattleScreen
+        matchId={matchId}
         questions={match.questions}
         startedAt={match.startedAt}
+        myId={myId}
+        hostId={match.hostId}
+        match={match}
+        opponentName={opponentProfile?.trainer_name || "Opponent"}
         onFinish={handleFinish}
       />
     );
   }
 
-  if (phase === "submit_error") {
-    return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-poke-cream px-6 text-center">
-        <div className="font-display text-lg text-foreground">
-          Couldn't submit your result — your answers are still saved here.
-        </div>
-        <Button
-          onClick={() => {
-            if (pendingResult) void handleFinish(pendingResult);
-          }}
-        >
-          Try again
-        </Button>
-      </div>
-    );
-  }
-
   const iAmHost = myId === match?.hostId;
-  const myFinal = match ? (iAmHost ? match.hostScore : match.guestScore) : myScore;
-  const oppFinal = match ? (iAmHost ? match.guestScore : match.hostScore) : null;
-  const won = phase === "result" && myFinal !== null && oppFinal !== null && myFinal > oppFinal;
-  const tied = phase === "result" && myFinal !== null && oppFinal !== null && myFinal === oppFinal;
+  const myFinalHp = match ? (iAmHost ? match.hostHp : match.guestHp) : null;
+  const oppFinalHp = match ? (iAmHost ? match.guestHp : match.hostHp) : null;
+  const won = phase === "result" && match?.winnerId === myId;
+  const tied = phase === "result" && match?.winnerId === null && match.status === "completed";
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 bg-poke-cream px-6 text-center">
@@ -275,14 +319,7 @@ function LivePvpMatchPage() {
         alt=""
         className="sprite h-24 w-24 object-contain"
       />
-      {phase === "waiting" ? (
-        <>
-          <div className="font-display-xl text-foreground">Your score: {myFinal ?? myScore}</div>
-          <div className="font-pixel-xs text-foreground/60">
-            Waiting for {opponentProfile?.trainer_name || "your opponent"} to finish…
-          </div>
-        </>
-      ) : phase === "forfeit_won" ? (
+      {phase === "forfeit_won" ? (
         <>
           <div className="font-display-xl text-foreground">You won! 🎉</div>
           <div className="font-pixel-xs text-foreground/60">
@@ -297,7 +334,8 @@ function LivePvpMatchPage() {
             {won ? "You won! 🎉" : tied ? "It's a tie!" : "You lost this one."}
           </div>
           <div className="font-pixel-xs text-foreground/60">
-            You: {myFinal} · {opponentProfile?.trainer_name || "Opponent"}: {oppFinal}
+            You: {myFinalHp ?? "—"} HP · {opponentProfile?.trainer_name || "Opponent"}:{" "}
+            {oppFinalHp ?? "—"} HP
           </div>
         </>
       )}
