@@ -135,6 +135,20 @@ describe("store composition (slices)", () => {
     expect(useGameStore.getState().tryAutoQuickClaw()).toBe(false);
   });
 
+  it("items slice action: at most MAX_ITEMS_PER_BATTLE items (manual + auto combined) can be used per battle", () => {
+    useGameStore.getState().startBattle();
+    useGameStore.getState().grantItem("potion", 1);
+    useGameStore.getState().grantItem("xattack", 1);
+    useGameStore.getState().grantItem("quickclaw", 1);
+    useGameStore.getState().grantItem("scope", 1);
+    expect(useGameStore.getState().useItem("potion")).toBe(true);
+    expect(useGameStore.getState().useItem("xattack")).toBe(true);
+    // Auto-triggered items count toward the same cap as manual ones.
+    expect(useGameStore.getState().tryAutoQuickClaw()).toBe(true);
+    expect(useGameStore.getState().itemsUsedThisBattleCount).toBe(3);
+    expect(useGameStore.getState().useItem("scope")).toBe(false);
+  });
+
   it("items slice action: auto-only items can't be used manually", () => {
     useGameStore.getState().grantItem("oranberry", 1);
     expect(useGameStore.getState().useItem("oranberry")).toBe(false);

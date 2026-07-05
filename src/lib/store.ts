@@ -147,6 +147,9 @@ export interface GameState {
   /** True once ANY item (auto or manual) has been used this battle — tracked
    * specifically so Choice Specs can enforce "must be the only item used". */
   anyItemUsedThisBattle: boolean;
+  /** Total items activated this battle (manual + auto-triggered combined),
+   * capped at MAX_ITEMS_PER_BATTLE so items can't be spammed/stacked. */
+  itemsUsedThisBattleCount: number;
   bonusTimeThisBattle: number;
   luckyEggExpiresAt: number;
   bigNuggetExpiresAt: number;
@@ -343,6 +346,7 @@ export const useGameStore = create<GameState>()(
       starPieceActive: false,
       choiceSpecsActive: false,
       anyItemUsedThisBattle: false,
+      itemsUsedThisBattleCount: 0,
       bonusTimeThisBattle: 0,
 
       seenQuestionHashes: [],
@@ -468,6 +472,7 @@ export const useGameStore = create<GameState>()(
           starPieceActive: false,
           choiceSpecsActive: false,
           anyItemUsedThisBattle: false,
+          itemsUsedThisBattleCount: 0,
           bonusTimeThisBattle: 0,
           luckyEggExpiresAt: 0,
           bigNuggetExpiresAt: 0,
@@ -531,6 +536,7 @@ export const useGameStore = create<GameState>()(
           starPieceActive: false,
           choiceSpecsActive: false,
           anyItemUsedThisBattle: false,
+          itemsUsedThisBattleCount: 0,
           bonusTimeThisBattle: 0,
         }),
 
@@ -545,6 +551,7 @@ export const useGameStore = create<GameState>()(
           starPieceActive: false,
           choiceSpecsActive: false,
           anyItemUsedThisBattle: false,
+          itemsUsedThisBattleCount: 0,
           bonusTimeThisBattle: 0,
         }),
 
@@ -561,6 +568,7 @@ export const useGameStore = create<GameState>()(
           starPieceActive: false,
           choiceSpecsActive: false,
           anyItemUsedThisBattle: false,
+          itemsUsedThisBattleCount: 0,
           bonusTimeThisBattle: 0,
           usedThisBattle: {},
           stats: {

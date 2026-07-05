@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { Backpack, Sparkles, Crown } from "lucide-react";
 import { useGameStore, getItemDef } from "@/lib/store";
+import { MAX_ITEMS_PER_BATTLE } from "@/lib/store/slices/itemsSlice";
 import {
   pickRandomEnemy,
   type EnemyTrainer,
@@ -256,6 +257,8 @@ function BattleMode({
   const usedThisBattle = useGameStore((s) => s.usedThisBattle);
   const choiceSpecsActive = useGameStore((s) => s.choiceSpecsActive);
   const anyItemUsedThisBattle = useGameStore((s) => s.anyItemUsedThisBattle);
+  const itemsUsedThisBattleCount = useGameStore((s) => s.itemsUsedThisBattleCount);
+  const itemCapReached = itemsUsedThisBattleCount >= MAX_ITEMS_PER_BATTLE;
   const tryAutoFocusBand = useGameStore((s) => s.tryAutoFocusBand);
   const tryAutoQuickClaw = useGameStore((s) => s.tryAutoQuickClaw);
   const tryAutoAssaultVest = useGameStore((s) => s.tryAutoAssaultVest);
@@ -1280,6 +1283,10 @@ function BattleMode({
       toast.error("Escape Rope can't be used in the Weekly League or Elite Four.");
       return;
     }
+    if (itemCapReached) {
+      toast.error(`Already used ${MAX_ITEMS_PER_BATTLE} items this battle — that's the max.`);
+      return;
+    }
     const ok = applyItem(id);
     if (!ok) {
       toast.error(`Cannot use ${def.name} right now.`);
@@ -1606,6 +1613,9 @@ function BattleMode({
                         <SheetTitle className="text-center font-display-lg text-foreground">
                           Your Bag
                         </SheetTitle>
+                        <div className="text-center text-xs font-semibold text-muted-foreground">
+                          {itemsUsedThisBattleCount}/{MAX_ITEMS_PER_BATTLE} items used this battle
+                        </div>
                       </SheetHeader>
                       {(() => {
                         // Same grouped, owned-only layout as the Shop bag.
@@ -1653,7 +1663,8 @@ function BattleMode({
                                           used ||
                                           ((isWeekly || isElite) && it.id === "escape") ||
                                           (choiceSpecsActive && it.id !== "choicespecs") ||
-                                          (it.id === "choicespecs" && anyItemUsedThisBattle);
+                                          (it.id === "choicespecs" && anyItemUsedThisBattle) ||
+                                          itemCapReached;
                                         return (
                                           <button
                                             key={it.id}
@@ -1714,7 +1725,8 @@ function BattleMode({
                         used ||
                         ((isWeekly || isElite) && it.id === "escape") ||
                         (choiceSpecsActive && it.id !== "choicespecs") ||
-                        (it.id === "choicespecs" && anyItemUsedThisBattle);
+                        (it.id === "choicespecs" && anyItemUsedThisBattle) ||
+                        itemCapReached;
                       return (
                         <button
                           key={it.id}
