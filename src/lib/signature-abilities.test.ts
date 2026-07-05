@@ -16,6 +16,7 @@ import {
   checkCatalogIntegrity,
   NO_HIT_MODIFIERS,
   type SignatureContext,
+  type SignatureAbility,
   type StatStageEffect,
   type StatusEffect,
 } from "./signature-abilities";
@@ -35,6 +36,7 @@ function ctx(over: Partial<SignatureContext> = {}): SignatureContext {
     selfHpPct: 1,
     oppHpPct: 1,
     newCategory: false,
+    questionCategory: "Science",
     pokedexCount: 0,
     oppDefenseStage: 0,
     ...over,
@@ -239,10 +241,57 @@ describe("manual charge-and-fire abilities", () => {
     expect(manualUsesPerBattle(SIGNATURE_ABILITIES[638])).toBe(0); // passive
   });
 
-  it("SERVER_FIREABLE_MANUAL_IDS matches the 11 server-catalogued manual abilities", () => {
+  it("SERVER_FIREABLE_MANUAL_IDS matches the 13 server-catalogued manual abilities", () => {
+    // Includes Phase 2 additions: Cresselia (488, cleanse) and Manaphy (490, swap_stages).
     expect([...SERVER_FIREABLE_MANUAL_IDS]).toEqual([
-      249, 380, 381, 483, 484, 491, 492, 648, 1002, 1003, 1024,
+      249, 380, 381, 483, 484, 488, 490, 491, 492, 648, 1002, 1003, 1024,
     ]);
+  });
+
+  it("Cresselia (488) and Manaphy (490) are now server-fireable manual, not bespoke", () => {
+    expect(SIGNATURE_ABILITIES[488].wiring).toBe("manual");
+    expect(SIGNATURE_ABILITIES[488].effect).toEqual({ type: "cleanse", hpCostPct: 15 });
+    expect(hasServerManualEffect(SIGNATURE_ABILITIES[488])).toBe(true);
+    expect(manualHitModifiers(SIGNATURE_ABILITIES[488])).toBeNull(); // server owns the fire
+
+    expect(SIGNATURE_ABILITIES[490].wiring).toBe("manual");
+    expect(SIGNATURE_ABILITIES[490].effect).toEqual({ type: "swap_stages" });
+    expect(hasServerManualEffect(SIGNATURE_ABILITIES[490])).toBe(true);
+    expect(manualHitModifiers(SIGNATURE_ABILITIES[490])).toBeNull();
+  });
+});
+
+describe("question-category trigger primitive (Phase 3)", () => {
+  it("Koraidon's Collision Course spikes only on the first correct of a NEW category", () => {
+    const koraidon = SIGNATURE_ABILITIES[1007];
+    expect(koraidon.wiring).toBe("passive_damage");
+    expect(koraidon.trigger).toEqual({ type: "new_category" });
+    const spike = evaluateHitModifiers(koraidon, ctx({ newCategory: true }));
+    expect(spike).toMatchObject({ bonusAttackStage: 1, bonusCritStage: 1 });
+    const repeat = evaluateHitModifiers(koraidon, ctx({ newCategory: false }));
+    expect(repeat).toEqual(NO_HIT_MODIFIERS);
+    // Only on correct answers.
+    expect(evaluateHitModifiers(koraidon, ctx({ newCategory: true, correct: false }))).toEqual(
+      NO_HIT_MODIFIERS,
+    );
+  });
+
+  it("question_category_is fires a post_answer effect only when the category matches", () => {
+    const probe: SignatureAbility = {
+      pokemonId: 999999,
+      signatureMove: "Probe",
+      internalKey: "probe_category",
+      rarity: 1,
+      trigger: { type: "question_category_is", category: "History" },
+      effect: { type: "stat_stage", target: "self", stat: "attack", delta: 1, duration: "passive" },
+      wiring: "post_answer",
+    };
+    expect(evaluatePostAnswer(probe, ctx({ questionCategory: "History" })).length).toBe(1);
+    expect(evaluatePostAnswer(probe, ctx({ questionCategory: "Science" })).length).toBe(0);
+    // Not on a wrong answer.
+    expect(
+      evaluatePostAnswer(probe, ctx({ questionCategory: "History", correct: false })).length,
+    ).toBe(0);
   });
 });
 
