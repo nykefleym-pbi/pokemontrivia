@@ -268,7 +268,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     trigger: { type: "manual", usesPerBattle: 1 },
     effect: ignoreDef({ ignoreOwnNegativeStages: true }),
     wiring: "manual",
-    note: "Auto-fires on the last question if unused (bespoke auto-fire not wired).",
+    note: "Fire arms a client-side one-hit modifier (manualHitModifiers) folded into the next correct answer's damage calc — ignore opp Defense + own negative stages. Auto-fire-on-last-question if unused is a bespoke secondary, not wired.",
   },
   151: {
     pokemonId: 151,
@@ -423,7 +423,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     trigger: { type: "manual", usesPerBattle: 1 },
     effect: { type: "damage_calc", bonusCritStage: 3, bonusAttackStage: 1 },
     wiring: "manual",
-    note: "Ascent = a damage-calc manual (arms the NEXT correct answer for +3 Crit/+1 Atk); the self -2 Def-for-1q backlash and passive Air Lock (negate opponent weather/field engines) are bespoke secondaries. Not server-fireable (its payoff is a client-side one-hit modifier, like Psystrike) — no Fire button until damage-calc arming lands.",
+    note: "Fire arms a client-side one-hit modifier (manualHitModifiers) onto the next correct answer: +3 Crit / +1 Atk. The self -2 Def-for-1q backlash and passive Air Lock (negate opponent weather/field engines) are bespoke secondaries, not wired.",
   },
   385: {
     pokemonId: 385,
@@ -524,7 +524,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     trigger: { type: "manual", usesPerBattle: 1 },
     effect: ignoreDef({ bonusCritStage: 2 }),
     wiring: "bespoke",
-    note: "Vanish (skip current question, untargetable), then next correct answer ignores Def + crit.",
+    note: "Fire arms a client-side one-hit modifier (manualHitModifiers) onto the next correct answer: ignore opp Defense + 2 Crit. The vanish (skip current question, untargetable) opening is a bespoke secondary, not wired.",
   },
   488: {
     pokemonId: 488,
@@ -714,8 +714,8 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     rarity: 3,
     trigger: { type: "battle_start" },
     effect: selfStage("speed", 1, "passive"),
-    wiring: "bespoke",
-    note: "Drive loadout (Shock/Burn/Chill/Douse) with one hot-swap; default Shock encoded. Drive choice + swap is bespoke.",
+    wiring: "battle_start",
+    note: "Genesect — Techno Blast: standing +1 Speed at battle start (default Shock drive encoded). The Drive loadout choice (Shock/Burn/Chill/Douse) + one mid-battle hot-swap is a bespoke secondary, not wired.",
   },
 
   // ── Generation VI ─────────────────────────────────────────────────────────
@@ -1233,8 +1233,8 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     rarity: 4,
     trigger: { type: "battle_start" },
     effect: selfStage("crit", 1, "passive"),
-    wiring: "bespoke",
-    note: "Mask loadout (Teal/Wellspring/Hearthflame/Cornerstone) + baseline crit + Embody Aspect; default crit passive encoded. Mask choice is bespoke.",
+    wiring: "battle_start",
+    note: "Ogerpon — Ivy Cudgel: standing +1 Crit at battle start (baseline Teal Mask encoded). The Mask loadout (Teal/Wellspring/Hearthflame/Cornerstone) + Embody Aspect swap is a bespoke secondary, not wired.",
   },
   1020: {
     pokemonId: 1020,
@@ -1578,6 +1578,69 @@ export function manualUsesPerBattle(ability: SignatureAbility | null): number {
   if (!ability || ability.trigger.type !== "manual") return 0;
   return ability.trigger.usesPerBattle;
 }
+
+/** Merge two sets of hit modifiers (used to fold an armed manual one-hit
+ * modifier on top of any passive_damage modifiers for the same answer). */
+export function mergeHitModifiers(a: HitModifiers, b: HitModifiers): HitModifiers {
+  return {
+    ignoreOppDefenseStage: a.ignoreOppDefenseStage || b.ignoreOppDefenseStage,
+    ignoreOwnNegativeStages: a.ignoreOwnNegativeStages || b.ignoreOwnNegativeStages,
+    bonusAttackStage: a.bonusAttackStage + b.bonusAttackStage,
+    bonusCritStage: a.bonusCritStage + b.bonusCritStage,
+    // A second-hit fraction doesn't sum meaningfully; the larger wins.
+    secondHitFraction: Math.max(a.secondHitFraction, b.secondHitFraction),
+  };
+}
+
+/**
+ * For a player-fired ability whose Fire payoff is a CLIENT-side one-hit
+ * damage-calc modifier (Psystrike, Dragon Ascent, Giratina's Shadow Force) —
+ * i.e. it has `damage_calc` sub-effects but NO server-catalog effect to route
+ * through the RPC. Pressing Fire "arms" these modifiers onto the player's next
+ * correct answer (folded into `computePvpDamage`, exactly like a passive_damage
+ * ability — damage is client-computed and server-clamped, so no round trip and
+ * no new trust surface). Returns the folded modifiers, or null if this ability
+ * isn't a client-armed manual hit.
+ */
+export function manualHitModifiers(ability: SignatureAbility | null): HitModifiers | null {
+  if (!ability || ability.trigger.type !== "manual") return null;
+  // If it applies a server-catalog effect, the server RPC owns its Fire.
+  if (hasServerManualEffect(ability)) return null;
+  // Only arm when the Fire payoff is EXCLUSIVELY a damage-calc modifier — an
+  // ability with a bespoke/stat sub-effect (e.g. Spectral Thief's stat-steal)
+  // isn't faithfully served by arming only its damage-calc slice.
+  const flat: SignatureEffect[] = [];
+  const flatten = (e: SignatureEffect): void => {
+    if (e.type === "compound") e.effects.forEach(flatten);
+    else flat.push(e);
+  };
+  flatten(ability.effect);
+  if (flat.length === 0 || flat.some((e) => e.type !== "damage_calc")) return null;
+  const calcs: DamageCalcEffect[] = [];
+  collectDamageCalc(ability.effect, calcs);
+  if (calcs.length === 0) return null;
+  const mods: HitModifiers = { ...NO_HIT_MODIFIERS };
+  for (const c of calcs) {
+    if (c.ignoreOppDefenseStage) mods.ignoreOppDefenseStage = true;
+    if (c.ignoreOwnNegativeStages) mods.ignoreOwnNegativeStages = true;
+    if (c.bonusAttackStage) mods.bonusAttackStage += c.bonusAttackStage;
+    if (c.bonusCritStage) mods.bonusCritStage += c.bonusCritStage;
+    if (c.secondHitFraction) mods.secondHitFraction = c.secondHitFraction;
+  }
+  return mods;
+}
+
+/** True when a manual ability's Fire arms a client-side one-hit damage modifier
+ * (rather than routing a server-catalog effect). */
+export function hasClientManualHit(ability: SignatureAbility | null): boolean {
+  return manualHitModifiers(ability) !== null;
+}
+
+/** Ids whose manual ability arms a client-side one-hit modifier on Fire. */
+export const CLIENT_HIT_MANUAL_IDS: readonly number[] = Object.values(SIGNATURE_ABILITIES)
+  .filter((a) => a.trigger.type === "manual" && hasClientManualHit(a))
+  .map((a) => a.pokemonId)
+  .sort((a, b) => a - b);
 
 /** Ids whose manual ability the live screen exposes a Fire button for. */
 export const SERVER_FIREABLE_MANUAL_IDS: readonly number[] = Object.values(SIGNATURE_ABILITIES)
