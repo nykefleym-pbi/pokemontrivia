@@ -5,6 +5,8 @@ import { getWeekRangeUtc } from "@/lib/game-data";
 import { canEvolve } from "@/lib/pokemon-data";
 
 export const BIG_NUGGET_DURATION_DAYS = 3;
+/** Total items (manual + auto-triggered combined) allowed per battle. */
+export const MAX_ITEMS_PER_BATTLE = 3;
 
 export const defaultInventory: Record<ItemId, number> = {
   potion: 2,
@@ -83,6 +85,7 @@ export const createItemsSlice: StoreSlice<
   tryAutoFocusBand: () => {
     const s = get();
     if (s.choiceSpecsActive) return false;
+    if (s.itemsUsedThisBattleCount >= MAX_ITEMS_PER_BATTLE) return false;
     if ((s.inventory.focusband ?? 0) <= 0) return false;
     if (s.autoItems.focusband === false) return false;
     const { start } = getWeekRangeUtc();
@@ -91,6 +94,7 @@ export const createItemsSlice: StoreSlice<
       inventory: { ...s.inventory, focusband: (s.inventory.focusband ?? 0) - 1 },
       focusBandUsedWeek: start,
       anyItemUsedThisBattle: true,
+      itemsUsedThisBattleCount: s.itemsUsedThisBattleCount + 1,
     });
     return true;
   },
@@ -98,6 +102,7 @@ export const createItemsSlice: StoreSlice<
   tryAutoQuickClaw: () => {
     const s = get();
     if (s.choiceSpecsActive) return false;
+    if (s.itemsUsedThisBattleCount >= MAX_ITEMS_PER_BATTLE) return false;
     if ((s.inventory.quickclaw ?? 0) <= 0) return false;
     if (s.autoItems.quickclaw === false) return false;
     if (s.usedThisBattle.quickclaw) return false;
@@ -105,6 +110,7 @@ export const createItemsSlice: StoreSlice<
       inventory: { ...s.inventory, quickclaw: (s.inventory.quickclaw ?? 0) - 1 },
       usedThisBattle: { ...s.usedThisBattle, quickclaw: true },
       anyItemUsedThisBattle: true,
+      itemsUsedThisBattleCount: s.itemsUsedThisBattleCount + 1,
     });
     return true;
   },
@@ -112,6 +118,7 @@ export const createItemsSlice: StoreSlice<
   tryAutoAssaultVest: () => {
     const s = get();
     if (s.choiceSpecsActive) return false;
+    if (s.itemsUsedThisBattleCount >= MAX_ITEMS_PER_BATTLE) return false;
     if ((s.inventory.assaultvest ?? 0) <= 0) return false;
     if (s.autoItems.assaultvest === false) return false;
     const { start } = getWeekRangeUtc();
@@ -120,6 +127,7 @@ export const createItemsSlice: StoreSlice<
       inventory: { ...s.inventory, assaultvest: (s.inventory.assaultvest ?? 0) - 1 },
       assaultVestUsedWeek: start,
       anyItemUsedThisBattle: true,
+      itemsUsedThisBattleCount: s.itemsUsedThisBattleCount + 1,
     });
     return true;
   },
@@ -127,6 +135,7 @@ export const createItemsSlice: StoreSlice<
   tryAutoRevive: () => {
     const s = get();
     if (s.choiceSpecsActive) return false;
+    if (s.itemsUsedThisBattleCount >= MAX_ITEMS_PER_BATTLE) return false;
     if ((s.inventory.revive ?? 0) <= 0) return false;
     if (s.autoItems.revive === false) return false;
     if (s.usedThisBattle.revive) return false;
@@ -134,6 +143,7 @@ export const createItemsSlice: StoreSlice<
       inventory: { ...s.inventory, revive: (s.inventory.revive ?? 0) - 1 },
       usedThisBattle: { ...s.usedThisBattle, revive: true },
       anyItemUsedThisBattle: true,
+      itemsUsedThisBattleCount: s.itemsUsedThisBattleCount + 1,
     });
     return true;
   },
@@ -141,6 +151,7 @@ export const createItemsSlice: StoreSlice<
   tryAutoOranBerry: () => {
     const s = get();
     if (s.choiceSpecsActive) return false;
+    if (s.itemsUsedThisBattleCount >= MAX_ITEMS_PER_BATTLE) return false;
     if ((s.inventory.oranberry ?? 0) <= 0) return false;
     if (s.autoItems.oranberry === false) return false;
     if (s.usedThisBattle.oranberry) return false;
@@ -148,6 +159,7 @@ export const createItemsSlice: StoreSlice<
       inventory: { ...s.inventory, oranberry: (s.inventory.oranberry ?? 0) - 1 },
       usedThisBattle: { ...s.usedThisBattle, oranberry: true },
       anyItemUsedThisBattle: true,
+      itemsUsedThisBattleCount: s.itemsUsedThisBattleCount + 1,
     });
     return true;
   },
@@ -155,6 +167,7 @@ export const createItemsSlice: StoreSlice<
   tryAutoSilkScarf: () => {
     const s = get();
     if (s.choiceSpecsActive) return false;
+    if (s.itemsUsedThisBattleCount >= MAX_ITEMS_PER_BATTLE) return false;
     if ((s.inventory.silkscarf ?? 0) <= 0) return false;
     if (s.autoItems.silkscarf === false) return false;
     if (s.usedThisBattle.silkscarf) return false;
@@ -162,6 +175,7 @@ export const createItemsSlice: StoreSlice<
       inventory: { ...s.inventory, silkscarf: (s.inventory.silkscarf ?? 0) - 1 },
       usedThisBattle: { ...s.usedThisBattle, silkscarf: true },
       anyItemUsedThisBattle: true,
+      itemsUsedThisBattleCount: s.itemsUsedThisBattleCount + 1,
     });
     return true;
   },
@@ -169,6 +183,7 @@ export const createItemsSlice: StoreSlice<
   tryAutoKingsRock: () => {
     const s = get();
     if (s.choiceSpecsActive) return false;
+    if (s.itemsUsedThisBattleCount >= MAX_ITEMS_PER_BATTLE) return false;
     if ((s.inventory.kingsrock ?? 0) <= 0) return false;
     if (s.autoItems.kingsrock === false) return false;
     const { start } = getWeekRangeUtc();
@@ -177,6 +192,7 @@ export const createItemsSlice: StoreSlice<
       inventory: { ...s.inventory, kingsrock: (s.inventory.kingsrock ?? 0) - 1 },
       kingsRockUsedWeek: start,
       anyItemUsedThisBattle: true,
+      itemsUsedThisBattleCount: s.itemsUsedThisBattleCount + 1,
     });
     return true;
   },
@@ -184,6 +200,7 @@ export const createItemsSlice: StoreSlice<
   tryAutoLeftovers: () => {
     const s = get();
     if (s.choiceSpecsActive) return false;
+    if (s.itemsUsedThisBattleCount >= MAX_ITEMS_PER_BATTLE) return false;
     if ((s.inventory.leftovers ?? 0) <= 0) return false;
     if (s.autoItems.leftovers === false) return false;
     const { start } = getWeekRangeUtc();
@@ -192,6 +209,7 @@ export const createItemsSlice: StoreSlice<
       inventory: { ...s.inventory, leftovers: (s.inventory.leftovers ?? 0) - 1 },
       leftoversUsedWeek: start,
       anyItemUsedThisBattle: true,
+      itemsUsedThisBattleCount: s.itemsUsedThisBattleCount + 1,
     });
     return true;
   },
@@ -199,6 +217,7 @@ export const createItemsSlice: StoreSlice<
   tryAutoMetronome: () => {
     const s = get();
     if (s.choiceSpecsActive) return false;
+    if (s.itemsUsedThisBattleCount >= MAX_ITEMS_PER_BATTLE) return false;
     if ((s.inventory.metronome ?? 0) <= 0) return false;
     if (s.autoItems.metronome === false) return false;
     const { start } = getWeekRangeUtc();
@@ -207,6 +226,7 @@ export const createItemsSlice: StoreSlice<
       inventory: { ...s.inventory, metronome: (s.inventory.metronome ?? 0) - 1 },
       metronomeUsedWeek: start,
       anyItemUsedThisBattle: true,
+      itemsUsedThisBattleCount: s.itemsUsedThisBattleCount + 1,
     });
     return true;
   },
@@ -242,6 +262,9 @@ export const createItemsSlice: StoreSlice<
     // (auto or manual) already went off first.
     if (s.choiceSpecsActive && id !== "choicespecs") return false;
     if (id === "choicespecs" && s.anyItemUsedThisBattle) return false;
+
+    // At most MAX_ITEMS_PER_BATTLE items (manual + auto combined) per battle.
+    if (s.inBattle && s.itemsUsedThisBattleCount >= MAX_ITEMS_PER_BATTLE) return false;
 
     // Auto-trigger items can't be used manually
     const AUTO_ONLY: ItemId[] = [
@@ -300,6 +323,9 @@ export const createItemsSlice: StoreSlice<
       starPieceActive: id === "starpiece" ? true : s.starPieceActive,
       choiceSpecsActive: id === "choicespecs" ? true : s.choiceSpecsActive,
       anyItemUsedThisBattle: true,
+      itemsUsedThisBattleCount: s.inBattle
+        ? s.itemsUsedThisBattleCount + 1
+        : s.itemsUsedThisBattleCount,
       luckyEggExpiresAt: id === "luckyegg" ? Date.now() + 24 * 60 * 60 * 1000 : s.luckyEggExpiresAt,
       luckyEggUsedWeek: id === "luckyegg" ? getWeekRangeUtc().start : s.luckyEggUsedWeek,
       bigNuggetExpiresAt:
