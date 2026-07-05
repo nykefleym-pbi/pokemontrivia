@@ -322,6 +322,7 @@ export function LivePvpBattleScreen({
       selfHpPct: myHp / PVP_MAX_HP,
       oppHpPct: oppHp / PVP_MAX_HP,
       newCategory: !answeredCategoriesRef.current.has(category),
+      questionCategory: category,
       pokedexCount,
       oppDefenseStage: oppStages.defense,
     };

@@ -78,6 +78,10 @@ export type SignatureTrigger =
   | { type: "opponent_correct" }
   /** Reactive to the opponent answering wrong. */
   | { type: "opponent_wrong" }
+  /** First correct answer on a category not answered correctly before. */
+  | { type: "new_category" }
+  /** Correct answer whose question category matches `category` exactly. */
+  | { type: "question_category_is"; category: string }
   /** Standing Attack stage scaling with total Pokédex entries captured. */
   | { type: "pokedex_scaling"; per: number; max: number }
   /** Auto every N questions (cooldown rotation), optional roll. */
@@ -162,6 +166,18 @@ export interface BespokeEffect {
   type: "bespoke";
   note: string;
 }
+/** Manaphy — Heart Swap: server swaps the caller's lowest (most negative) stage
+ * onto the opponent and takes their highest (most positive) onto the caller.
+ * Magnitude is entirely server-computed from both live stage maps. */
+export interface SwapStagesEffect {
+  type: "swap_stages";
+}
+/** Cresselia — Lunar Dance: spend `hpCostPct`% of current HP to cure all
+ * statuses and reset any negative Attack/Defense/Speed stages back to 0. */
+export interface CleanseEffect {
+  type: "cleanse";
+  hpCostPct: number;
+}
 export interface CompoundEffect {
   type: "compound";
   effects: SignatureEffect[];
@@ -178,6 +194,8 @@ export type SignatureEffect =
   | HamperEffect
   | HelpEffect
   | BespokeEffect
+  | SwapStagesEffect
+  | CleanseEffect
   | CompoundEffect;
 
 export interface SignatureAbility {
@@ -532,8 +550,9 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     internalKey: "lunar_dance",
     rarity: 3,
     trigger: { type: "manual", usesPerBattle: 1 },
-    effect: { type: "bespoke", note: "Spend 15% HP: cure all statuses + reset negative stages to 0." },
-    wiring: "bespoke",
+    effect: { type: "cleanse", hpCostPct: 15 },
+    wiring: "manual",
+    note: "Spend 15% current HP: cure all statuses + reset negative Atk/Def/Spd stages to 0. Server-computed (cleanse kind).",
   },
   489: {
     pokemonId: 489,
@@ -550,8 +569,9 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     internalKey: "heart_swap",
     rarity: 3,
     trigger: { type: "manual", usesPerBattle: 1 },
-    effect: { type: "bespoke", note: "Give opp your lowest stage, take their highest. Cancels in mirror." },
-    wiring: "bespoke",
+    effect: { type: "swap_stages" },
+    wiring: "manual",
+    note: "Give opp your lowest (most negative) stage, take their highest (most positive). Server-computed (swap_stages kind); cancels in a mirror if both fire the same question.",
   },
   491: {
     pokemonId: 491,
@@ -1161,10 +1181,10 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     signatureMove: "Collision Course",
     internalKey: "collision_course",
     rarity: 5,
-    trigger: { type: "bespoke", note: "First correct answer on each NEW category." },
+    trigger: { type: "new_category" },
     effect: { type: "damage_calc", bonusAttackStage: 1, bonusCritStage: 1 },
-    wiring: "bespoke",
-    note: "Per-new-category spike; Orichalcum Pulse (+1 Atk standing while leading on HP) is a bespoke conditional passive.",
+    wiring: "passive_damage",
+    note: "Per-new-category spike: the first correct answer on each new question category hits harder (+1 Atk & +1 Crit for that hit). Orichalcum Pulse (+1 Atk standing while leading on HP) remains a bespoke conditional passive.",
   },
   1008: {
     pokemonId: 1008,
@@ -1344,6 +1364,8 @@ export interface SignatureContext {
   oppHpPct: number;
   /** Is this question's category one not answered correctly before? */
   newCategory: boolean;
+  /** The current question's category tag (for question_category_is). */
+  questionCategory: string;
   /** Total Pokédex entries captured (for pokedex_scaling). */
   pokedexCount: number;
   /** Opponent's current Defense stage (for conditional ignore-defense). */
@@ -1402,6 +1424,10 @@ function hitTriggerHolds(trigger: SignatureTrigger, ctx: SignatureContext): bool
       );
     case "cooldown":
       return trigger.chance == null && (ctx.questionIndex + 1) % trigger.everyN === 0;
+    case "new_category":
+      return ctx.newCategory;
+    case "question_category_is":
+      return ctx.questionCategory === trigger.category;
     default:
       return false;
   }
@@ -1492,6 +1518,10 @@ function postTriggerFires(
       );
     case "cooldown":
       return (ctx.questionIndex + 1) % trigger.everyN === 0 && roll(trigger.chance);
+    case "new_category":
+      return ctx.correct && ctx.newCategory;
+    case "question_category_is":
+      return ctx.correct && ctx.questionCategory === trigger.category;
     case "opponent_correct":
       return ctx.opponentAnsweredCorrect === true;
     case "opponent_wrong":
