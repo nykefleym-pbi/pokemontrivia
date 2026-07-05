@@ -1,6 +1,7 @@
 import type { PokeEntry } from "./pokemon-data";
 import { ALL_POKEMON } from "./pokemon-data";
 import { TRAINER_SPRITES as RAW_TRAINERS, type TrainerSprite } from "./trainer-data.generated";
+import { isLegendaryOrMythical } from "./legendary-data";
 
 export type { TrainerSprite };
 
@@ -437,6 +438,53 @@ export function getCurrentWeekStartUtc(): number {
   return monday.getTime();
 }
 
+// --- Poké Egg hatching (Legendary/Mythical exclusive) ---
+
+/** Distinct game modes that count toward Poké Egg hatch progress. Capped at
+ * one contribution per mode per day so a single mode can't be farmed. */
+export type EggProgressMode =
+  | "battle"
+  | "weekly"
+  | "daily"
+  | "elite"
+  | "mega"
+  | "pvp"
+  | "nearby"
+  | "whosthat";
+
+export interface PokeEgg {
+  id: string;
+  grantedAt: number;
+  progress: number;
+  required: number;
+}
+
+/** Progress points needed to hatch a Poké Egg. */
+export const EGG_HATCH_REQUIRED = 20;
+
+/** Days played in a row, counting today, derived the same way as the Profile
+ * heatmap's week-streak but with unbounded lookback. Accepts any timestamped
+ * log (battleLog) rather than importing GameState to avoid a circular import. */
+export function currentPlayStreakDays(log: Array<{ timestamp: number }>): number {
+  const days = new Set(log.map((e) => new Date(e.timestamp).toISOString().slice(0, 10)));
+  let n = 0;
+  const d = new Date();
+  while (days.has(d.toISOString().slice(0, 10))) {
+    n++;
+    d.setDate(d.getDate() - 1);
+  }
+  return n;
+}
+
+/** Egg-progress points granted per qualifying mode completion, boosted by streak. */
+export function streakProgressBonus(streakDays: number): number {
+  if (streakDays >= 30) return 5;
+  if (streakDays >= 14) return 4;
+  if (streakDays >= 7) return 3;
+  if (streakDays >= 3) return 2;
+  return 1;
+}
+
 export function getWeekRangeUtc(): { start: number; end: number; nextStart: number } {
   const start = getCurrentWeekStartUtc();
   const end = start + 7 * 24 * 60 * 60 * 1000 - 1;
@@ -452,10 +500,8 @@ export function getTpMultiplier(tp: number): number {
   return mult;
 }
 
-// Use a wide pool: skip pre-evolutions by simple heuristic — favor higher-id Pokémon
-// of each evolution family. For simplicity, pick from all Pokémon with id divisible-friendly
-// and exclude obvious first-stage names. Good enough as a runtime pick.
-const ENEMY_POOL: PokeEntry[] = ALL_POKEMON;
+// Legendary/Mythical Pokémon are Poké-Egg exclusive — never a battle opponent.
+const ENEMY_POOL: PokeEntry[] = ALL_POKEMON.filter((p) => !isLegendaryOrMythical(p.id));
 
 export function pickRandomEnemy(): EnemyTrainer {
   const trainer = RAW_TRAINERS[Math.floor(Math.random() * RAW_TRAINERS.length)];

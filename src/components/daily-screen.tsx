@@ -99,6 +99,14 @@ export function DailyScreen({ questions, onExit }: { questions: Trivia[]; onExit
             pattern: nextPattern,
           });
           void syncActivity("last_daily_claim");
+          useGameStore.getState().pushBattleLog({
+            opponent: "Daily Quest",
+            won: true,
+            xpGained: 0,
+            bestStreak: 0,
+            timestamp: Date.now(),
+            mode: "daily",
+          });
           const lvl = useGameStore.getState().level;
           const daily = dailyReward({ correct: finalCorrect, total, level: lvl });
           if (daily.xp > 0) {

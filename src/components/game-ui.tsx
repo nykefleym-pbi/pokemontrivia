@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { spriteFallbacks, type PokeType } from "@/lib/pokemon-data";
 import type { ItemDef } from "@/lib/game-data";
+import { legendaryCategory, isMascotTier } from "@/lib/legendary-data";
 
 /** Item icon (PokeAPI sprite via item.iconUrl), falling back to its emoji if the
  * image fails to load. Shared by the Shop, in-battle bag, and Level Up screen
@@ -72,6 +73,75 @@ export const TypeBadge = React.memo(function TypeBadge({
     </span>
   );
 });
+
+/**
+ * Bordered status-frame for a Legendary/Mythical partner sprite, styled after
+ * classic Pokémon summary-screen frames (ornamented corners, no glow). Color
+ * comes from the Pokémon's own type(s); Mythicals get a star corner instead of
+ * a diamond, and box-art "mascot" Legendaries/Mythicals get an added gold ring.
+ * Non-legendary Pokémon render with no frame at all (children passed through).
+ */
+export function LegendaryFrame({
+  pokemonId,
+  types,
+  size = 80,
+  children,
+}: {
+  pokemonId: number;
+  types: PokeType[];
+  size?: number;
+  children: React.ReactNode;
+}) {
+  const category = legendaryCategory(pokemonId);
+  if (!category) return <>{children}</>;
+  const primary = types[0] ?? "normal";
+  const secondary = types[1] ?? primary;
+  const mascot = isMascotTier(pokemonId);
+  const corner = category === "mythical" ? "✦" : "◆";
+  const cornerColor = mascot ? "var(--brand-gold)" : `var(--type-${primary})`;
+  return (
+    <div
+      className="relative inline-flex shrink-0 items-center justify-center rounded-2xl p-[3px]"
+      style={{
+        width: size + 14,
+        height: size + 14,
+        background: `linear-gradient(135deg, var(--type-${primary}), var(--type-${secondary}))`,
+        boxShadow: mascot ? "0 0 0 2px var(--brand-gold)" : undefined,
+      }}
+    >
+      <div
+        className="flex items-center justify-center rounded-[13px] bg-card"
+        style={{ width: size, height: size }}
+      >
+        {children}
+      </div>
+      <span
+        className="absolute -left-1 -top-1 text-[11px] leading-none"
+        style={{ color: cornerColor }}
+      >
+        {corner}
+      </span>
+      <span
+        className="absolute -right-1 -top-1 text-[11px] leading-none"
+        style={{ color: cornerColor }}
+      >
+        {corner}
+      </span>
+      <span
+        className="absolute -bottom-1 -left-1 text-[11px] leading-none"
+        style={{ color: cornerColor }}
+      >
+        {corner}
+      </span>
+      <span
+        className="absolute -bottom-1 -right-1 text-[11px] leading-none"
+        style={{ color: cornerColor }}
+      >
+        {corner}
+      </span>
+    </div>
+  );
+}
 
 export const HpBar = React.memo(function HpBar({
   hp,

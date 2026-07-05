@@ -212,6 +212,9 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
       for (let i = 0; i < MEGA_REWARD.items; i++)
         st.grantItem(pool[Math.floor(Math.random() * pool.length)], 1);
       st.grantPokeEgg(1);
+      // Intentional exception to the "Legendary/Mythical are egg-exclusive" rule:
+      // a Mega Raid champion always earns the boss's base-form Pokédex entry,
+      // even if that base form is Legendary/Mythical.
       st.recordPokedexCapture(event.baseDexId, false);
       st.claimMegaChampion(event.id, event.champion.trophyName, event.megaId);
     }

@@ -5,7 +5,7 @@ import { EVOLUTION_TP_COST, getTpMultiplier } from "@/lib/game-data";
 import { canEvolve, getEvolutionTargets, type PokeEntry } from "@/lib/pokemon-data";
 import { type TrainerProfile } from "@/lib/social";
 import { GYM_LEADERS, type GymLeader } from "@/lib/gym-leaders";
-import { TypeBadge, PokemonSprite } from "@/components/game-ui";
+import { TypeBadge, PokemonSprite, LegendaryFrame } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -40,7 +40,9 @@ export function PartnerCard({
     <div className="mt-3 rounded-3xl bg-card p-4 shadow-card">
       <div className="flex items-center gap-4">
         <div className="shrink-0">
-          <PokemonSprite id={pokemon.id} alt={pokemon.name} className="sprite h-20 w-20" />
+          <LegendaryFrame pokemonId={pokemon.id} types={pokemon.types ?? []} size={80}>
+            <PokemonSprite id={pokemon.id} alt={pokemon.name} className="sprite h-20 w-20" />
+          </LegendaryFrame>
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">

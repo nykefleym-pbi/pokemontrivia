@@ -87,6 +87,14 @@ function PvpMatchPage() {
     }
     setPendingResult(null);
     setMyScore(res.score);
+    useGameStore.getState().pushBattleLog({
+      opponent: "PvP Battle",
+      won: result.correct > result.total / 2,
+      xpGained: 0,
+      bestStreak: result.maxStreak,
+      timestamp: Date.now(),
+      mode: "pvp",
+    });
     const fresh = await getPvpMatch(matchId);
     setMatch(fresh);
     setPhase(fresh ? phaseForCompletedSide(fresh.status) : "not_found");
