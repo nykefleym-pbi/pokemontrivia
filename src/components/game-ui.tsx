@@ -75,22 +75,23 @@ export const TypeBadge = React.memo(function TypeBadge({
 });
 
 /**
- * Bordered status-frame for a Legendary/Mythical partner sprite, styled after
- * classic Pokémon summary-screen frames (ornamented corners, no glow). Color
- * comes from the Pokémon's own type(s); Mythicals get a star corner instead of
- * a diamond, and box-art "mascot" Legendaries/Mythicals get an added gold ring.
+ * Bordered status-frame for a Legendary/Mythical partner card, styled after
+ * classic Pokémon summary-screen frames (ornamented corners, no glow). Wraps
+ * the whole card (not just the sprite) in a type-colored border. Color comes
+ * from the Pokémon's own type(s); Mythicals get a star corner instead of a
+ * diamond, and box-art "mascot" Legendaries/Mythicals get an added gold ring.
  * Non-legendary Pokémon render with no frame at all (children passed through).
  */
 export function LegendaryFrame({
   pokemonId,
   types,
-  size = 80,
   children,
+  className,
 }: {
   pokemonId: number;
   types: PokeType[];
-  size?: number;
   children: React.ReactNode;
+  className?: string;
 }) {
   const category = legendaryCategory(pokemonId);
   if (!category) return <>{children}</>;
@@ -101,40 +102,33 @@ export function LegendaryFrame({
   const cornerColor = mascot ? "var(--brand-gold)" : `var(--type-${primary})`;
   return (
     <div
-      className="relative inline-flex shrink-0 items-center justify-center rounded-2xl p-[3px]"
+      className={`relative rounded-[28px] p-[3px] ${className ?? ""}`}
       style={{
-        width: size + 14,
-        height: size + 14,
         background: `linear-gradient(135deg, var(--type-${primary}), var(--type-${secondary}))`,
         boxShadow: mascot ? "0 0 0 2px var(--brand-gold)" : undefined,
       }}
     >
-      <div
-        className="flex items-center justify-center rounded-[13px] bg-card"
-        style={{ width: size, height: size }}
-      >
-        {children}
-      </div>
+      <div className="rounded-[25px]">{children}</div>
       <span
-        className="absolute -left-1 -top-1 text-[11px] leading-none"
+        className="absolute -left-1 -top-1 text-sm leading-none"
         style={{ color: cornerColor }}
       >
         {corner}
       </span>
       <span
-        className="absolute -right-1 -top-1 text-[11px] leading-none"
+        className="absolute -right-1 -top-1 text-sm leading-none"
         style={{ color: cornerColor }}
       >
         {corner}
       </span>
       <span
-        className="absolute -bottom-1 -left-1 text-[11px] leading-none"
+        className="absolute -bottom-1 -left-1 text-sm leading-none"
         style={{ color: cornerColor }}
       >
         {corner}
       </span>
       <span
-        className="absolute -bottom-1 -right-1 text-[11px] leading-none"
+        className="absolute -bottom-1 -right-1 text-sm leading-none"
         style={{ color: cornerColor }}
       >
         {corner}

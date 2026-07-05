@@ -37,12 +37,11 @@ export function PartnerCard({
   }
 
   return (
-    <div className="mt-3 rounded-3xl bg-card p-4 shadow-card">
+    <LegendaryFrame pokemonId={pokemon.id} types={pokemon.types ?? []} className="mt-3">
+    <div className="rounded-3xl bg-card p-4 shadow-card">
       <div className="flex items-center gap-4">
         <div className="shrink-0">
-          <LegendaryFrame pokemonId={pokemon.id} types={pokemon.types ?? []} size={80}>
-            <PokemonSprite id={pokemon.id} alt={pokemon.name} className="sprite h-20 w-20" />
-          </LegendaryFrame>
+          <PokemonSprite id={pokemon.id} alt={pokemon.name} className="sprite h-20 w-20" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -115,6 +114,7 @@ export function PartnerCard({
         </DialogContent>
       </Dialog>
     </div>
+    </LegendaryFrame>
   );
 }
 
