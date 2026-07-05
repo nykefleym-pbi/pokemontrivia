@@ -35,6 +35,21 @@ export const defaultInventory: Record<ItemId, number> = {
   bignugget: 0,
   starpiece: 0,
   choicespecs: 0,
+  // Nearby-Battle PvP berries — never granted in Solo; drop-only in Nearby Battle.
+  cheriberry: 0,
+  chestoberry: 0,
+  pechaberry: 0,
+  rawstberry: 0,
+  persimberry: 0,
+  lumberry: 0,
+  liechiberry: 0,
+  ganlonberry: 0,
+  salacberry: 0,
+  starfberry: 0,
+  tangaberry: 0,
+  kasibberry: 0,
+  chopleberry: 0,
+  colburberry: 0,
 };
 
 export const createItemsSlice: StoreSlice<

@@ -42,7 +42,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import type { ItemId } from "@/lib/game-data";
+import type { ItemId, StatusKind } from "@/lib/game-data";
 import { ACHIEVEMENTS, unlockedAchievements } from "@/lib/achievements";
 import { CATEGORIES, CATEGORY_OF, BAG_SHORT_DESC } from "@/lib/item-categories";
 import { playSfx, revealPokemon, playBattleResult, playItemCue } from "@/lib/audio";
@@ -50,7 +50,7 @@ import { type EliteMember, regionCompleted } from "@/lib/elite-four";
 import type { GymLeader } from "@/lib/gym-leaders";
 import { ShareCardDialog } from "@/components/share-card-dialog";
 import type { ShareData } from "@/components/share-card-builder";
-import { trainerSpriteUrl } from "@/lib/game-data";
+import { trainerSpriteUrl, STATUS_META } from "@/lib/game-data";
 import type { Trivia } from "@/lib/trivia-core";
 export type { Trivia };
 import { DailyScreen } from "@/components/daily-screen";
@@ -77,7 +77,7 @@ function CombatPanel({
   types: PokeType[];
   hp: number;
   maxHp: number;
-  statuses: Array<{ kind: "confused" | "poisoned" }>;
+  statuses: Array<{ kind: StatusKind }>;
   abilityName: string | null;
   immune: boolean;
   disadvantaged: boolean;
@@ -132,7 +132,7 @@ function CombatPanel({
                 key={s.kind}
                 className={`rounded-full px-1.5 py-[1px] font-pixel-xs ${s.kind === "confused" ? "bg-poke-yellow/30 text-foreground" : "bg-purple-500/20 text-purple-700"}`}
               >
-                {s.kind === "confused" ? "🌀" : "☠️"}
+                {STATUS_META[s.kind].emoji}
               </span>
             ))}
           </div>
@@ -278,6 +278,13 @@ function BattleMode({
   const isWeekly = !!gymLeader;
   const recordWeeklyLeagueResult = useGameStore((s) => s.recordWeeklyLeagueResult);
 
+  // Shared status system (lifted from local component state into the store so
+  // Solo and Nearby-Battle PvP share one representation).
+  const statuses = useGameStore((s) => s.battleStatuses);
+  const applyBattleStatus = useGameStore((s) => s.applyBattleStatus);
+  const tickBattleStatusCure = useGameStore((s) => s.tickBattleStatusCure);
+  const clearAllBattleStatuses = useGameStore((s) => s.clearAllBattleStatuses);
+
   const [enemy] = useState<EnemyTrainer>(() => {
     if (gymLeader) {
       const poke: PokeEntry = findPokemon(gymLeader.signaturePokemonId) ?? {
@@ -375,14 +382,9 @@ function BattleMode({
   const leftoversActiveRef = useRef(false);
   const metronomeActiveRef = useRef(false);
 
-  // Phase 2: ability + status state
+  // Phase 2: ability + status state. `statuses` now lives in the store
+  // (`battleStatuses`); solo only ever applies "confused" / "poisoned".
   type StatusKind = "confused" | "poisoned";
-  interface ActiveStatus {
-    kind: StatusKind;
-    curesRemaining: number;
-    appliedAt: number;
-  }
-  const [statuses, setStatuses] = useState<ActiveStatus[]>([]);
   const wrongStreakRef = useRef(0);
   const missedRef = useRef<Array<{ question: string; correctAnswer: string; explanation: string }>>(
     [],
@@ -468,10 +470,7 @@ function BattleMode({
       confused: playerAbility.id === "toxic" ? 1 : 2,
       poisoned: 3,
     } as const;
-    setStatuses((prev) => {
-      const without = prev.filter((s) => s.kind !== kind);
-      return [...without, { kind, curesRemaining: cureNeeds[kind], appliedAt: Date.now() }];
-    });
+    applyBattleStatus({ kind, curesRemaining: cureNeeds[kind], appliedAt: Date.now() });
     if (kind === "confused") {
       toast.warning("🌀 Confused! Some correct answers may miss.");
     } else {
@@ -481,20 +480,14 @@ function BattleMode({
   }
 
   function tickStatusCure(kind: StatusKind) {
-    setStatuses((prev) => {
-      const willClear = prev.some((s) => s.kind === kind && s.curesRemaining === 1);
-      const updated = prev
-        .map((s) => (s.kind === kind ? { ...s, curesRemaining: s.curesRemaining - 1 } : s))
-        .filter((s) => s.curesRemaining > 0);
-      if (willClear) {
-        if (kind === "confused") toast.success("Snapped out of confusion!");
-        if (kind === "poisoned") {
-          toast.success("Recovered from poison!");
-          stopPoisonTick();
-        }
+    const willClear = tickBattleStatusCure(kind);
+    if (willClear) {
+      if (kind === "confused") toast.success("Snapped out of confusion!");
+      if (kind === "poisoned") {
+        toast.success("Recovered from poison!");
+        stopPoisonTick();
       }
-      return updated;
-    });
+    }
   }
 
   // Tutorial state — only in regular battles, never Elite
@@ -646,6 +639,9 @@ function BattleMode({
 
   // Phase 2: ability onBattleStart effects (run once)
   useEffect(() => {
+    // Fresh start: clear any status left in the store from a prior battle/remount
+    // (preserves the old local-useState([]) semantics on rematch).
+    clearAllBattleStatuses();
     if (playerAbility.id === "intimidate") {
       setEnemyHp(Math.floor(enemyMaxHp * 0.9));
     }
@@ -1068,7 +1064,7 @@ function BattleMode({
     battleEndedRef.current = true;
     // Clear Phase 2 battle-scoped state
     stopPoisonTick();
-    setStatuses([]);
+    clearAllBattleStatuses();
     wrongStreakRef.current = 0;
     abilityStateRef.current.cursedBodyPending = null;
 

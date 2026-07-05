@@ -219,6 +219,53 @@ describe("store composition (slices)", () => {
     expect(afterWeekly).toBeGreaterThan(afterBattle);
   });
 
+  it("status: applyBattleStatus / tickBattleStatusCure round-trip and clear", () => {
+    useGameStore.getState().applyBattleStatus({ kind: "poisoned", curesRemaining: 3, appliedAt: 0 });
+    expect(useGameStore.getState().battleStatuses.map((s) => s.kind)).toContain("poisoned");
+    // Two ticks don't clear a 3-cure status; the third does.
+    expect(useGameStore.getState().tickBattleStatusCure("poisoned")).toBe(false);
+    expect(useGameStore.getState().tickBattleStatusCure("poisoned")).toBe(false);
+    expect(useGameStore.getState().tickBattleStatusCure("poisoned")).toBe(true);
+    expect(useGameStore.getState().battleStatuses.length).toBe(0);
+  });
+
+  it("status: one major at a time, but Confusion (volatile) coexists", () => {
+    useGameStore.getState().applyBattleStatus({ kind: "confused", curesRemaining: 2, appliedAt: 0 });
+    useGameStore.getState().applyBattleStatus({ kind: "poisoned", curesRemaining: 3, appliedAt: 0 });
+    // A new major evicts the old major but keeps the volatile confusion.
+    useGameStore.getState().applyBattleStatus({ kind: "burn", curesRemaining: 3, appliedAt: 0 });
+    const kinds = useGameStore.getState().battleStatuses.map((s) => s.kind).sort();
+    expect(kinds).toEqual(["burn", "confused"]);
+  });
+
+  it("status: opponent statuses are tracked separately from self", () => {
+    useGameStore.getState().applyBattleStatus({ kind: "burn", curesRemaining: 3, appliedAt: 0 }, "opponent");
+    expect(useGameStore.getState().opponentStatuses.map((s) => s.kind)).toEqual(["burn"]);
+    expect(useGameStore.getState().battleStatuses.length).toBe(0);
+  });
+
+  it("status + stages: reset by startBattle (5-place reset)", () => {
+    useGameStore.getState().applyBattleStatus({ kind: "burn", curesRemaining: 3, appliedAt: 0 });
+    useGameStore.getState().bumpPvpStage("self", "attack", 2);
+    useGameStore.getState().startBattle();
+    expect(useGameStore.getState().battleStatuses).toEqual([]);
+    expect(useGameStore.getState().myStages.attack).toBe(0);
+  });
+
+  it("stages: bumpPvpStage clamps to -3..+3", () => {
+    useGameStore.getState().bumpPvpStage("self", "attack", 5);
+    expect(useGameStore.getState().myStages.attack).toBe(3);
+    useGameStore.getState().bumpPvpStage("opponent", "speed", -9);
+    expect(useGameStore.getState().oppStages.speed).toBe(-3);
+  });
+
+  it("pvp flags: markNearbyBattleEntered returns true only the first time", () => {
+    expect(useGameStore.getState().hasEnteredNearbyBattle).toBe(false);
+    expect(useGameStore.getState().markNearbyBattleEntered()).toBe(true);
+    expect(useGameStore.getState().markNearbyBattleEntered()).toBe(false);
+    expect(useGameStore.getState().hasEnteredNearbyBattle).toBe(true);
+  });
+
   it("poke egg: hatchPokeEgg fails below the requirement and succeeds once ready", () => {
     useGameStore.getState().grantPokeEgg(1);
     const eggId = useGameStore.getState().pokeEggs[0].id;

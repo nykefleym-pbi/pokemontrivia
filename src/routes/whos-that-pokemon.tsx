@@ -81,7 +81,8 @@ const TYPE_TEXT: Record<PokeType, string> = {
   fairy: "text-pink-400",
 };
 
-const REWARD_POOL = ITEMS.filter((i) => !i.premium);
+// Exclude premium and Nearby-Battle-only berries from the mini-game reward pool.
+const REWARD_POOL = ITEMS.filter((i) => !i.premium && !i.pvpOnly);
 
 function normalizeName(s: string): string {
   return s
