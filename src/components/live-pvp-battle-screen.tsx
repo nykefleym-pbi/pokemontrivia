@@ -17,8 +17,19 @@ import {
   applyPvpLiveItem,
   applyPvpSignatureEffect,
   setLivePvpTransform,
+  submitBotPvpMove,
+  applyBotPvpSignatureEffect,
+  applyBotPvpLiveItem,
   type LivePvpMatch,
 } from "@/lib/pvp-live";
+import {
+  rollBotProfile,
+  botAnswersCorrectly,
+  botAnswerTimeMs,
+  botShouldFireAbility,
+  botShouldUseItem,
+  type BotProfile,
+} from "@/lib/pvp-bot";
 import {
   signatureAbilityFor,
   signatureMoveName,
@@ -257,6 +268,15 @@ export function LivePvpBattleScreen({
   const finishedRef = useRef(false);
   const itemsUsedRef = useRef(amIHost ? match.hostItemsUsed : match.guestItemsUsed);
   const questionStartRef = useRef(0);
+
+  // Training-vs-Bot: the human is always the host and drives the bot (guest)
+  // locally. The bot's skill profile is rolled once per match; its per-question
+  // move + optional ability/item are submitted through the bot RPCs. The human's
+  // own play path (above/below) is completely untouched.
+  const botProfileRef = useRef<BotProfile | null>(null);
+  const botStreakRef = useRef(0);
+  const botLastIdxRef = useRef(-1);
+  const botBattleStartRef = useRef(false);
 
   // Signature-ability bookkeeping (drives the pure evaluators in
   // signature-abilities.ts). Kept in refs so they survive re-renders without
@@ -713,6 +733,88 @@ export function LivePvpBattleScreen({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayedIndex, selected, now, frozen]);
+
+  // Bot driver — battle-start standing buff (once). No-op for a non-bot match
+  // or a bot whose partner has no battle_start ability.
+  useEffect(() => {
+    if (!match.isBotMatch || botBattleStartRef.current) return;
+    const botPartnerId = match.guestPartnerId;
+    if (botPartnerId == null) return;
+    botBattleStartRef.current = true;
+    const botAbility = signatureAbilityFor(botPartnerId);
+    if (!botAbility || botAbility.wiring !== "battle_start") return;
+    if (evaluateBattleStart(botAbility, 0).length === 0) return;
+    void applyBotPvpSignatureEffect(matchId, 0, botPartnerId, "battle_start");
+  }, [match.isBotMatch, match.guestPartnerId, matchId]);
+
+  // Bot driver — one move per question. The bot answers on its own delay, deals
+  // client-computed / server-clamped damage (respecting its stat stages + Burn,
+  // exactly like a human), and may fire its signature ability or heal. Its own
+  // HP damage, ability debuffs, and item effects all land on the authoritative
+  // row, so the human's defensive/debuff play still matters; the bot doesn't
+  // model skipping its own turn for Freeze/Sleep/Paralysis (training simplification).
+  useEffect(() => {
+    if (!match.isBotMatch || displayedIndex < 0 || finishedRef.current) return;
+    if (botLastIdxRef.current >= displayedIndex) return;
+    botLastIdxRef.current = displayedIndex;
+    if (!botProfileRef.current) botProfileRef.current = rollBotProfile();
+    const p = botProfileRef.current;
+    const botPartnerId = match.guestPartnerId;
+    const botAbility = botPartnerId != null ? signatureAbilityFor(botPartnerId) : null;
+    const idxAtAnswer = displayedIndex;
+    const correct = botAnswersCorrectly(p);
+    const timeMs = botAnswerTimeMs(p);
+    const submitAt = Math.min(timeMs, Math.max(0, personalTimerMs - 250));
+    const t = setTimeout(() => {
+      if (finishedRef.current) return;
+      let dmg = 0;
+      if (correct) {
+        const next = botStreakRef.current + 1;
+        botStreakRef.current = next;
+        const totalMs = timerMsForSpeedStage(oppStages.speed, PVP_BASE_TIMER_MS);
+        const speedRatio = Math.max(0, (totalMs - timeMs) / totalMs);
+        const firstHalf = timeMs <= totalMs / 2;
+        const burned = oppStatuses.some((s) => s.kind === "burn");
+        const { dmg: computed } = computePvpDamage({
+          streak: next,
+          speedRatio,
+          attackStage: oppStages.attack,
+          defenseStage: myStages.defense,
+          critStage: oppStages.crit,
+          firstHalf,
+          burned,
+        });
+        dmg = computed;
+      } else {
+        botStreakRef.current = 0;
+      }
+      void submitBotPvpMove(matchId, idxAtAnswer, correct, dmg, timeMs).then((res) => {
+        if (res.ok && res.resolved && !finishedRef.current) {
+          finishedRef.current = true;
+          const won = res.winnerId ? res.winnerId === myId : null;
+          onFinish({ resolved: true, won, hp: res.hostHp, oppHp: res.guestHp });
+        }
+      });
+      if (
+        botPartnerId != null &&
+        botAbility &&
+        botAbility.wiring === "post_answer" &&
+        botShouldFireAbility(p, { answeredCorrectly: correct, hasAbility: true })
+      ) {
+        void applyBotPvpSignatureEffect(matchId, idxAtAnswer, botPartnerId, "post_answer");
+      }
+      if (
+        botShouldUseItem(p, {
+          hpPct: oppHp / PVP_MAX_HP,
+          itemsRemaining: MAX_ITEMS_PER_BATTLE - match.guestItemsUsed,
+        })
+      ) {
+        void applyBotPvpLiveItem(matchId, idxAtAnswer, "superpotion");
+      }
+    }, submitAt);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayedIndex, match.isBotMatch]);
 
   async function handleUseItem(itemId: ItemId) {
     if (itemsUsedRef.current >= MAX_ITEMS_PER_BATTLE) {

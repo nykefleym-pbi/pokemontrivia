@@ -47,6 +47,7 @@ import {
   disablePushNotifications,
 } from "@/lib/push";
 import { createPvpChallenge, listPvpMatches, type PvpMatch } from "@/lib/pvp";
+import { startBotPvpMatch } from "@/lib/pvp-live";
 import { NearbyBattleSheet } from "@/components/NearbyBattleSheet";
 import { fetchBattleQuestions } from "@/lib/api/trivia";
 import { validateTrainerName, claimErrorMessage, TRAINER_NAME_MAX } from "@/lib/trainer-name";
@@ -149,6 +150,7 @@ function ProfilePage() {
   const [challengingId, setChallengingId] = useState<string | null>(null);
   const [pvpHistoryOpen, setPvpHistoryOpen] = useState(false);
   const [nearbyBattleOpen, setNearbyBattleOpen] = useState(false);
+  const [trainingBusy, setTrainingBusy] = useState(false);
   const [pvpMatches, setPvpMatches] = useState<PvpMatch[]>([]);
   const [pvpProfiles, setPvpProfiles] = useState<Record<string, TrainerProfile>>({});
   const [myPvpId, setMyPvpId] = useState<string | null>(null);
@@ -950,15 +952,61 @@ function ProfilePage() {
             <div className="font-pixel-xs text-primary">RECENT MATCHES</div>
             <SheetTitle className="font-display-xl text-foreground">PvP history</SheetTitle>
           </SheetHeader>
-          <Button
-            onClick={() => {
-              setPvpHistoryOpen(false);
-              setNearbyBattleOpen(true);
-            }}
-            className="mt-3 h-12 w-full rounded-full"
-          >
-            <Swords className="mr-1.5 h-4 w-4" /> Nearby Battle
-          </Button>
+          <div className="mt-3 flex gap-2">
+            <Button
+              onClick={() => {
+                setPvpHistoryOpen(false);
+                setNearbyBattleOpen(true);
+              }}
+              className="h-12 flex-1 rounded-full"
+            >
+              <Swords className="mr-1.5 h-4 w-4" /> Nearby Battle
+            </Button>
+            <Button
+              variant="secondary"
+              disabled={trainingBusy}
+              onClick={async () => {
+                if (trainingBusy) return;
+                setTrainingBusy(true);
+                try {
+                  const s = useGameStore.getState();
+                  const data = await fetchBattleQuestions({
+                    difficulty: difficultyForLevel(s.level),
+                    seenHashes: s.seenQuestionHashes,
+                    seenSamples: s.seenQuestions.slice(-80),
+                    excludeIds: s.seenCuratedIds.slice(-500),
+                    flowSeed: Math.floor(Math.random() * 1_000_000),
+                  });
+                  if (!data.questions || data.questions.length < 5) {
+                    toast.error("Couldn't prepare the battle. Try again.");
+                    return;
+                  }
+                  const res = await startBotPvpMatch(data.questions, s.pokemon?.id ?? null);
+                  if (!res.ok) {
+                    toast.error("Couldn't start training. Try again.");
+                    return;
+                  }
+                  s.markQuestionsSeen(data.questions.map((q) => q.question));
+                  s.markCuratedSeen(data.servedIds ?? []);
+                  setPvpHistoryOpen(false);
+                  void navigate({ to: "/pvp/live/$matchId", params: { matchId: res.matchId } });
+                } catch (e) {
+                  console.warn("[profile] startTraining failed:", e);
+                  toast.error("Couldn't start training. Try again.");
+                } finally {
+                  setTrainingBusy(false);
+                }
+              }}
+              className="h-12 flex-1 rounded-full"
+            >
+              {trainingBusy ? (
+                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+              ) : (
+                <Swords className="mr-1.5 h-4 w-4" />
+              )}{" "}
+              Training
+            </Button>
+          </div>
           <div className="mt-3 space-y-2.5">
             {pvpMatches.length === 0 ? (
               <div className="rounded-3xl bg-card p-6 text-center text-sm text-foreground/55 shadow-card">
