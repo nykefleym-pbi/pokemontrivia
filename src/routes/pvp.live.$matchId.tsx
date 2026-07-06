@@ -8,6 +8,7 @@ import {
   getLivePvpMatch,
   forfeitLivePvpMatch,
   subscribeToLivePvpEffects,
+  setLivePvpPartner,
   type LivePvpMatch,
   type LivePvpEffect,
 } from "@/lib/pvp-live";
@@ -69,6 +70,22 @@ function LivePvpMatchPage() {
       setMatch(m);
       const opponentId = uid === m.hostId ? m.guestId : m.hostId;
       void getProfileById(opponentId).then(setOpponentProfile);
+
+      // Phase 1: register this side's partner dex id so identity-dependent
+      // abilities (Mew's Transform, weather-conflict resolution) can resolve.
+      // The host's is already stored at match creation; this is a harmless
+      // idempotent no-op for the host and the real write for the guest. Refresh
+      // the local row with the returned ids so both sides are known ASAP.
+      const myPartnerId = useGameStore.getState().pokemon?.id ?? null;
+      void setLivePvpPartner(matchId, myPartnerId).then((res) => {
+        if (res.ok) {
+          setMatch((prev) =>
+            prev
+              ? { ...prev, hostPartnerId: res.hostPartnerId, guestPartnerId: res.guestPartnerId }
+              : prev,
+          );
+        }
+      });
 
       // One-time starter Lum Berry the first time a player ever enters Nearby
       // Battle, so they can cure one status in their first game.
@@ -154,6 +171,14 @@ function LivePvpMatchPage() {
             hostItemsUsed: (row.host_items_used as number) ?? 0,
             guestItemsUsed: (row.guest_items_used as number) ?? 0,
             liveResolvedAt: row.live_resolved_at as string | null,
+            hostPartnerId:
+              (row.host_partner_id as number | null) ?? matchRef.current?.hostPartnerId ?? null,
+            guestPartnerId:
+              (row.guest_partner_id as number | null) ?? matchRef.current?.guestPartnerId ?? null,
+            hostSuppressedUntil: (row.host_suppressed_until as number) ?? 0,
+            guestSuppressedUntil: (row.guest_suppressed_until as number) ?? 0,
+            weatherOwner:
+              (row.weather_owner as "host" | "guest" | null) ?? matchRef.current?.weatherOwner ?? null,
           };
           setMatch(updated);
           if (updated.status === "forfeited") {

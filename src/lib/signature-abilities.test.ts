@@ -15,12 +15,16 @@ import {
   CLIENT_HIT_MANUAL_IDS,
   checkCatalogIntegrity,
   NO_HIT_MODIFIERS,
+  resolveMewTransform,
+  MEW_ID,
+  NON_MASCOT_ABILITY_IDS,
+  RATING_THREE_ABILITY_IDS,
   type SignatureContext,
   type SignatureAbility,
   type StatStageEffect,
   type StatusEffect,
 } from "./signature-abilities";
-import { ALL_LEGENDARY_MYTHICAL_IDS } from "./legendary-data";
+import { ALL_LEGENDARY_MYTHICAL_IDS, isMascotTier } from "./legendary-data";
 
 function ctx(over: Partial<SignatureContext> = {}): SignatureContext {
   return {
@@ -241,11 +245,23 @@ describe("manual charge-and-fire abilities", () => {
     expect(manualUsesPerBattle(SIGNATURE_ABILITIES[638])).toBe(0); // passive
   });
 
-  it("SERVER_FIREABLE_MANUAL_IDS matches the 13 server-catalogued manual abilities", () => {
-    // Includes Phase 2 additions: Cresselia (488, cleanse) and Manaphy (490, swap_stages).
+  it("SERVER_FIREABLE_MANUAL_IDS matches the server-catalogued manual abilities", () => {
+    // Includes Phase 2 additions Cresselia (488, cleanse) / Manaphy (490,
+    // swap_stages) and the Phase 4 ability-suppressors Heatran (485),
+    // Zygarde (718), Regieleki (894) and Pecharunt (1025).
     expect([...SERVER_FIREABLE_MANUAL_IDS]).toEqual([
-      249, 380, 381, 483, 484, 488, 490, 491, 492, 648, 1002, 1003, 1024,
+      249, 380, 381, 483, 484, 485, 488, 490, 491, 492, 648, 718, 894, 1002, 1003, 1024, 1025,
     ]);
+  });
+
+  it("the four ability-suppressors are wired as server-fireable manual (Phase 4)", () => {
+    for (const id of [485, 718, 894, 1025]) {
+      expect(SIGNATURE_ABILITIES[id].wiring).toBe("manual");
+      expect(hasServerManualEffect(SIGNATURE_ABILITIES[id])).toBe(true);
+      expect(manualUsesPerBattle(SIGNATURE_ABILITIES[id])).toBe(1);
+      // They arm no client-side one-hit modifier — the server owns the fire.
+      expect(manualHitModifiers(SIGNATURE_ABILITIES[id])).toBeNull();
+    }
   });
 
   it("Cresselia (488) and Manaphy (490) are now server-fireable manual, not bespoke", () => {
@@ -346,5 +362,50 @@ describe("bespoke & doc-gap bookkeeping", () => {
 
   it("Mew's Transform is bespoke (copy opponent ability at start)", () => {
     expect(SIGNATURE_ABILITIES[151].wiring).toBe("bespoke");
+  });
+});
+
+describe("Mew — Transform copy resolution (Phase 2)", () => {
+  const rng = (v: number) => () => v;
+
+  it("copies a non-mascot opponent ability outright", () => {
+    // 244 Entei (rarity 3, non-mascot) — copied as-is.
+    expect(resolveMewTransform(244, rng(0.5))).toBe(244);
+    // 718 Zygarde (rarity 3, non-mascot).
+    expect(resolveMewTransform(718, rng(0.1))).toBe(718);
+  });
+
+  it("cannot copy a mascot (rating-5) ability — rolls a random rating-3 instead", () => {
+    // 384 Rayquaza is mascot rating-5. Result must be a rating-3 id, never 384.
+    const picked = resolveMewTransform(384, rng(0));
+    expect(picked).not.toBe(384);
+    expect(RATING_THREE_ABILITY_IDS).toContain(picked);
+    expect(SIGNATURE_ABILITIES[picked!].rarity).toBe(3);
+    // A different rng lands on a different rating-3 id (deterministic pick).
+    const last = resolveMewTransform(384, rng(0.999));
+    expect(RATING_THREE_ABILITY_IDS).toContain(last);
+  });
+
+  it("with no opponent ability (non-legendary or unknown), gains a random non-mascot roster ability", () => {
+    const a = resolveMewTransform(null, rng(0));
+    const b = resolveMewTransform(undefined, rng(0.999));
+    for (const picked of [a, b]) {
+      expect(picked).not.toBeNull();
+      expect(NON_MASCOT_ABILITY_IDS).toContain(picked);
+      // never a mascot-tier ability, never Mew itself.
+      expect(picked).not.toBe(MEW_ID);
+      expect(isMascotTier(picked!) && SIGNATURE_ABILITIES[picked!].rarity >= 5).toBe(false);
+    }
+    // A pikachu-tier non-legendary partner id (25) has no ability → fallback.
+    expect(NON_MASCOT_ABILITY_IDS).toContain(resolveMewTransform(25, rng(0.3)));
+  });
+
+  it("never copies Mew itself, and both pools exclude Mew and mascots", () => {
+    expect(NON_MASCOT_ABILITY_IDS).not.toContain(MEW_ID);
+    expect(RATING_THREE_ABILITY_IDS).not.toContain(MEW_ID);
+    // Every id the copy can resolve to is a real catalog entry.
+    for (const id of [...NON_MASCOT_ABILITY_IDS, ...RATING_THREE_ABILITY_IDS]) {
+      expect(SIGNATURE_ABILITIES[id]).toBeDefined();
+    }
   });
 });

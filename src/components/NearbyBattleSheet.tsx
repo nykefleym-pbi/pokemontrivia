@@ -95,6 +95,7 @@ export function NearbyBattleSheet({ open, onOpenChange }: Props) {
 function ScanPanel({ active, onClose }: { active: boolean; onClose: () => void }) {
   const navigate = useNavigate();
   const level = useGameStore((s) => s.level);
+  const partnerId = useGameStore((s) => s.pokemon?.id ?? null);
   const friendCode = useGameStore((s) => s.friendCode);
   const seenHashes = useGameStore((s) => s.seenQuestionHashes);
   const seenQuestions = useGameStore((s) => s.seenQuestions);
@@ -144,7 +145,7 @@ function ScanPanel({ active, onClose }: { active: boolean; onClose: () => void }
           startingRef.current = false;
           return;
         }
-        const res = await startLivePvpMatch(clean, data.questions);
+        const res = await startLivePvpMatch(clean, data.questions, partnerId);
         if (!res.ok) {
           const msg =
             res.error === "not_found"
@@ -169,6 +170,7 @@ function ScanPanel({ active, onClose }: { active: boolean; onClose: () => void }
     [
       friendCode,
       level,
+      partnerId,
       seenHashes,
       seenQuestions,
       seenCuratedIds,

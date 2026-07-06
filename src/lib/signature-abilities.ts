@@ -521,8 +521,8 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     rarity: 3,
     trigger: { type: "manual", usesPerBattle: 1 },
     effect: compound(oppStatus("badly-poisoned", 3), { type: "bespoke", note: "Ability-lock opponent 3q." }),
-    wiring: "bespoke",
-    note: "Trap: opponent can't activate their ability for 3 questions + Badly Poisoned.",
+    wiring: "manual",
+    note: "Phase 4 (wired): manual fire locks the opponent's signature ability for 3 questions (server suppress_ability) + Badly Poisoned. The 2 flat chip/question is not modelled.",
   },
   486: {
     pokemonId: 486,
@@ -766,8 +766,8 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     rarity: 3,
     trigger: { type: "manual", usesPerBattle: 1 },
     effect: compound(oppStage("speed", -1, 3), { type: "bespoke", note: "Ability/escape lock 3q." }),
-    wiring: "bespoke",
-    note: "Bind 3q (4 if 10+ correct): lock opponent abilities + -1 Speed/question.",
+    wiring: "manual",
+    note: "Phase 4 (wired): manual fire binds the opponent's signature ability for 3 questions (server suppress_ability) + -1 Speed. The 10+-correct duration extension to 4q is not modelled.",
   },
   719: {
     pokemonId: 719,
@@ -1081,8 +1081,8 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     rarity: 3,
     trigger: { type: "manual", usesPerBattle: 1 },
     effect: oppStatus("paralysis", 3),
-    wiring: "bespoke",
-    note: "Cage 3q: Paralysis + ability/cooldown freeze; Transistor (your sub-5s answers +1 Atk while caged) is bespoke.",
+    wiring: "manual",
+    note: "Phase 4 (wired): manual fire cages the opponent's signature ability for 3 questions (server suppress_ability) + Paralysis. Transistor (your sub-5s answers +1 Atk while caged) remains bespoke.",
   },
   895: {
     pokemonId: 895,
@@ -1313,8 +1313,8 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     rarity: 4,
     trigger: { type: "manual", usesPerBattle: 1 },
     effect: compound(oppStatus("badly-poisoned", 3), { type: "hamper", mode: "force_mistap" }),
-    wiring: "bespoke",
-    note: "Badly Poison + 3q bind (block cure + ability); Poison Puppeteer (scramble + force mis-tap) only if opponent already statused.",
+    wiring: "manual",
+    note: "Phase 4 (wired): manual fire binds the opponent's signature ability for 3 questions (server suppress_ability) + Badly Poisoned. Poison Puppeteer (scramble + force mis-tap, only if the opponent was already statused) remains a client-only bespoke secondary.",
   },
 };
 
@@ -1333,6 +1333,58 @@ export function signatureAbilityFor(pokemonId: number | null | undefined): Signa
 /** UI display name for a partner's signature move (or null). */
 export function signatureMoveName(pokemonId: number | null | undefined): string | null {
   return signatureAbilityFor(pokemonId)?.signatureMove ?? null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mew — Transform (dex 151): become the OPPONENT's ability for the battle
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Mew's own dex id — never a valid Transform target (can't copy itself). */
+export const MEW_ID = 151;
+
+/** Every real ability id that is NOT mascot-tier (rating-5) and not Mew — the
+ * pool Transform draws from when the opponent has no signature ability. */
+export const NON_MASCOT_ABILITY_IDS: readonly number[] = Object.values(SIGNATURE_ABILITIES)
+  .filter((a) => a.pokemonId !== MEW_ID && !(isMascotTier(a.pokemonId) && a.rarity >= 5))
+  .map((a) => a.pokemonId)
+  .sort((a, b) => a - b);
+
+/** Rating-3 ability ids (the pool Transform falls back to when the opponent's
+ * ability is mascot-tier and can't be copied). */
+export const RATING_THREE_ABILITY_IDS: readonly number[] = Object.values(SIGNATURE_ABILITIES)
+  .filter((a) => a.pokemonId !== MEW_ID && a.rarity === 3)
+  .map((a) => a.pokemonId)
+  .sort((a, b) => a - b);
+
+/**
+ * Resolve which ability Mew "becomes" this battle, given the OPPONENT's partner
+ * dex id (now known via Phase 1's `*_partner_id` columns). Pure and
+ * deterministic given `rng`. Rules (from the v2 doc's Mew/Transform entry):
+ *   • opponent runs a non-mascot signature ability  → copy it outright.
+ *   • opponent runs a MASCOT (rating-5) ability      → can't copy; roll a
+ *       random rating-3 ability instead (ceiling cap).
+ *   • opponent has NO signature ability (non-Legendary partner, or unknown) →
+ *       gain a random non-mascot ability from the roster (documented fallback).
+ * Returns the dex id Mew should run all its evaluations / server lookups as, or
+ * null only if a pool is somehow empty (defensive; never in practice).
+ */
+export function resolveMewTransform(
+  opponentPartnerId: number | null | undefined,
+  rng: () => number = Math.random,
+): number | null {
+  const pick = (pool: readonly number[]): number | null =>
+    pool.length === 0 ? null : pool[Math.floor(rng() * pool.length) % pool.length];
+
+  const oppAbility = signatureAbilityFor(opponentPartnerId);
+  if (!oppAbility) {
+    // No opponent ability to copy — gain a random non-mascot roster ability.
+    return pick(NON_MASCOT_ABILITY_IDS);
+  }
+  if (isMascotTier(oppAbility.pokemonId) && oppAbility.rarity >= 5) {
+    // Can't copy a mascot-tier ability — roll a random rating-3 instead.
+    return pick(RATING_THREE_ABILITY_IDS);
+  }
+  return oppAbility.pokemonId;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
