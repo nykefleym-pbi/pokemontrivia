@@ -29,8 +29,12 @@ import {
   manualHitModifiers,
   mergeHitModifiers,
   manualUsesPerBattle,
+  resolveMewTransform,
+  MEW_ID,
+  NO_HIT_MODIFIERS,
   type SignatureContext,
 } from "@/lib/signature-abilities";
+import { isWeatherStatSource, isMyWeatherActive } from "@/lib/pvp-weather";
 import { TimerRing } from "@/components/battle-screen";
 
 export interface LivePvpBattleResult {
@@ -182,8 +186,27 @@ export function LivePvpBattleScreen({
 
   // Legendary/Mythical partner signature ability (null for non-legendary
   // partners — they get nothing extra, exactly as before).
-  const partnerId = useGameStore((s) => s.pokemon?.id ?? null);
+  const rawPartnerId = useGameStore((s) => s.pokemon?.id ?? null);
   const pokedexCount = useGameStore((s) => Object.keys(s.pokedex).length);
+
+  // Phase 2 — Mew's Transform (dex 151): at battle start, once the OPPONENT's
+  // partner dex id is known (Phase 1 columns), Mew copies their ability and runs
+  // it as its own for the whole battle. Resolved exactly once and locked in a
+  // ref so it never re-rolls. For every non-Mew partner this is a no-op and
+  // `effectivePartnerId === rawPartnerId`.
+  const opponentPartnerId = amIHost ? match.guestPartnerId : match.hostPartnerId;
+  // Phase 4 — my signature ability is suppressed while my current question index
+  // is below the lift index the opponent's Heatran/Zygarde/Regieleki/Pecharunt
+  // set on me. Server enforces this too; the client mirrors it to skip auto
+  // evaluation, disable the Fire button, and show a distinct locked toast.
+  const mySuppressedUntil = amIHost ? match.hostSuppressedUntil : match.guestSuppressedUntil;
+  const suppressToastedForRef = useRef(-1);
+  const weatherNegatedToastedRef = useRef(false);
+  const transformResolvedRef = useRef(false);
+  const [transformTargetId, setTransformTargetId] = useState<number | null>(null);
+
+  // The dex id Mew actually runs as (itself until Transform resolves).
+  const partnerId = rawPartnerId === MEW_ID && transformTargetId != null ? transformTargetId : rawPartnerId;
   const ability = useMemo(() => signatureAbilityFor(partnerId), [partnerId]);
 
   const startedAtMs = useRef(new Date(startedAt).getTime()).current;
@@ -229,6 +252,22 @@ export function LivePvpBattleScreen({
   const correctCountRef = useRef(0);
   const answeredCategoriesRef = useRef<Set<string>>(new Set());
   const battleStartFiredRef = useRef(false);
+
+  // Phase 2 — resolve Mew's Transform once the opponent's identity is known.
+  useEffect(() => {
+    if (rawPartnerId !== MEW_ID || transformResolvedRef.current) return;
+    // Wait until we actually know the opponent's partner id (the guest registers
+    // it on mount). A `null` that persists past the first battle question is a
+    // settled non-legendary opponent, which resolveMewTransform reads as "no
+    // ability → random roster ability".
+    if (opponentPartnerId == null && displayedIndex < 0) return;
+    transformResolvedRef.current = true;
+    const target = resolveMewTransform(opponentPartnerId);
+    setTransformTargetId(target);
+    const move = signatureMoveName(target);
+    if (move) toast.success(`✨ Transform — Mew copies ${move}!`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawPartnerId, opponentPartnerId, displayedIndex]);
 
   // Apply the partner's battle-start standing buff exactly once (server guards
   // against a double-apply via host/guest_ability_started too).
@@ -356,12 +395,15 @@ export function LivePvpBattleScreen({
         // Fold the partner's passive_damage signature modifiers into THIS hit
         // (ignore-defense / bonus Attack / bonus Crit / double-strike). Damage
         // is client-computed and server-clamped, so this needs no round trip.
+        const suppressed = idxAtAnswer < mySuppressedUntil;
         const sigCtx = buildSigContext(idxAtAnswer, true, nextStreak, elapsedMs, totalMs, category);
-        let mods = evaluateHitModifiers(ability, sigCtx);
+        // Phase 4: while suppressed, the partner's passive/armed signature
+        // modifiers don't apply (the ability is locked).
+        let mods = suppressed ? NO_HIT_MODIFIERS : evaluateHitModifiers(ability, sigCtx);
         // Fold in any armed client-side manual one-hit modifier (Psystrike /
         // Dragon Ascent / Shadow Force), then disarm — it applies to this one
         // correct answer only.
-        if (armedHitRef.current) {
+        if (!suppressed && armedHitRef.current) {
           mods = mergeHitModifiers(mods, armedHitRef.current);
           armedHitRef.current = null;
           setArmedHit(false);
@@ -401,12 +443,41 @@ export function LivePvpBattleScreen({
     // if it fires, apply it through the SAME server-validated RPC path as
     // berries: the client only names WHICH partner/phase fired, and the
     // server looks up the fixed magnitude from `pvp_signature_effects`.
-    if (!frozen && ability && ability.wiring === "post_answer") {
+    const suppressedNow = idxAtAnswer < mySuppressedUntil;
+    if (!frozen && suppressedNow && ability && ability.wiring === "post_answer") {
+      // Ability locked this question — show a distinct toast at most once per
+      // suppression window, and consume no resource.
+      if (suppressToastedForRef.current !== mySuppressedUntil) {
+        suppressToastedForRef.current = mySuppressedUntil;
+        const move = signatureMoveName(partnerId);
+        toast.warning(`🔒 ${move ?? "Your signature move"} is suppressed!`);
+      }
+    } else if (!frozen && ability && ability.wiring === "post_answer") {
       const totalMs = personalTimerMs;
       const category = questions[idxAtAnswer]?.category ?? "";
       const sigCtx = buildSigContext(idxAtAnswer, correct, correct ? streak + 1 : 0, elapsedMs, totalMs, category);
       const postEffects = evaluatePostAnswer(ability, sigCtx);
-      if (postEffects.length > 0) {
+      // Phase 5: if this partner is a weather stat source (Kyogre/Groudon) and
+      // its weather isn't currently active (negated by an on-field Rayquaza, or
+      // suppressed as the non-owner in a Kyogre-vs-Groudon match), don't fire —
+      // the server would refuse the weather effect anyway. Show the Air Lock
+      // note once when Rayquaza is what negated it.
+      const weatherGatedOut =
+        isWeatherStatSource(partnerId) &&
+        !isMyWeatherActive(amIHost ? "host" : "guest", partnerId, {
+          hostPartnerId: match.hostPartnerId,
+          guestPartnerId: match.guestPartnerId,
+          weatherOwner: match.weatherOwner,
+        });
+      if (postEffects.length > 0 && weatherGatedOut) {
+        if (
+          !weatherNegatedToastedRef.current &&
+          (match.hostPartnerId === 384 || match.guestPartnerId === 384)
+        ) {
+          weatherNegatedToastedRef.current = true;
+          toast.warning("🌪️ Air Lock — Rayquaza negates the weather!");
+        }
+      } else if (postEffects.length > 0) {
         void applyPvpSignatureEffect(matchId, idxAtAnswer, partnerId as number, "post_answer").then(
           (abilityRes) => {
             if (abilityRes.ok && !abilityRes.noop) {
@@ -520,6 +591,13 @@ export function LivePvpBattleScreen({
   async function handleFireSignature() {
     if (!manualFireable || manualFiring || partnerId == null) return;
     if (manualFiresUsed >= manualCap || finishedRef.current) return;
+    // Phase 4: a suppressed player can't fire — no charge is spent (the server
+    // also refuses), and we surface a distinct locked toast.
+    if (displayedIndex >= 0 && displayedIndex < mySuppressedUntil) {
+      const move = signatureMoveName(partnerId);
+      toast.warning(`🔒 ${move ?? "Your signature move"} is suppressed!`);
+      return;
+    }
 
     // Client-armed one-hit abilities (Psystrike / Dragon Ascent / Shadow Force):
     // no server round trip — arm the modifier onto the next correct answer. The
@@ -621,13 +699,24 @@ export function LivePvpBattleScreen({
           {manualFireable && (
             <button
               onClick={() => void handleFireSignature()}
-              disabled={manualFiring || manualFiresUsed >= manualCap || frozen || armedHit}
+              disabled={
+                manualFiring ||
+                manualFiresUsed >= manualCap ||
+                frozen ||
+                armedHit ||
+                displayedIndex < mySuppressedUntil
+              }
               title={signatureMoveName(partnerId) ?? "Signature move"}
               className="flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-sm font-bold text-primary-foreground shadow-card disabled:opacity-40"
             >
-              {armedHit ? "✨" : "⚡"} {signatureMoveName(partnerId)}
+              {displayedIndex < mySuppressedUntil ? "🔒" : armedHit ? "✨" : "⚡"}{" "}
+              {signatureMoveName(partnerId)}
               <span className="tabular-nums opacity-80">
-                {armedHit ? "armed" : `${Math.max(0, manualCap - manualFiresUsed)}/${manualCap}`}
+                {displayedIndex < mySuppressedUntil
+                  ? "locked"
+                  : armedHit
+                    ? "armed"
+                    : `${Math.max(0, manualCap - manualFiresUsed)}/${manualCap}`}
               </span>
             </button>
           )}

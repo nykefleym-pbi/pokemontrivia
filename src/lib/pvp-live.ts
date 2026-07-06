@@ -49,6 +49,18 @@ export interface LivePvpMatch {
   hostItemsUsed: number;
   guestItemsUsed: number;
   liveResolvedAt: string | null;
+  /** Each side's Legendary/Mythical partner dex id (null for a non-legendary
+   * partner or a legacy row). Powers identity-dependent abilities (Mew's
+   * Transform, weather-conflict resolution). */
+  hostPartnerId: number | null;
+  guestPartnerId: number | null;
+  /** Question index at which each side's signature-ability suppression lifts
+   * (0 = not suppressed). A side is locked while its current question index is
+   * below this value (Phase 4: Heatran/Zygarde/Regieleki/Pecharunt). */
+  hostSuppressedUntil: number;
+  guestSuppressedUntil: number;
+  /** Which side most recently (re-)established weather (Phase 5), or null. */
+  weatherOwner: "host" | "guest" | null;
 }
 
 interface LivePvpMatchRow {
@@ -88,6 +100,11 @@ interface LivePvpMatchRow {
   host_items_used: number;
   guest_items_used: number;
   live_resolved_at: string | null;
+  host_partner_id: number | null;
+  guest_partner_id: number | null;
+  host_suppressed_until: number;
+  guest_suppressed_until: number;
+  weather_owner: "host" | "guest" | null;
 }
 
 function fromRow(r: LivePvpMatchRow): LivePvpMatch {
@@ -128,6 +145,11 @@ function fromRow(r: LivePvpMatchRow): LivePvpMatch {
     hostItemsUsed: r.host_items_used ?? 0,
     guestItemsUsed: r.guest_items_used ?? 0,
     liveResolvedAt: r.live_resolved_at,
+    hostPartnerId: r.host_partner_id ?? null,
+    guestPartnerId: r.guest_partner_id ?? null,
+    hostSuppressedUntil: r.host_suppressed_until ?? 0,
+    guestSuppressedUntil: r.guest_suppressed_until ?? 0,
+    weatherOwner: r.weather_owner ?? null,
   };
 }
 
@@ -159,6 +181,7 @@ const rpc = supabase as unknown as { rpc: Rpc };
 export async function startLivePvpMatch(
   opponentCode: string,
   questions: Trivia[],
+  partnerId?: number | null,
 ): Promise<
   | { ok: true; matchId: string; startedAt: string; opponent: LiveOpponentPreview }
   | { ok: false; error: string }
@@ -167,6 +190,7 @@ export async function startLivePvpMatch(
     const { data, error } = await rpc.rpc("start_live_pvp_match", {
       _opponent_code: opponentCode.trim().toUpperCase(),
       _questions: questions,
+      _partner_id: partnerId ?? null,
     });
     if (error) {
       console.warn("[pvp-live] startLivePvpMatch failed:", error.message);
@@ -185,6 +209,51 @@ export async function startLivePvpMatch(
     return { ok: false, error: (r && r.error) || "network" };
   } catch (e) {
     console.warn("[pvp-live] startLivePvpMatch threw:", e);
+    return { ok: false, error: "network" };
+  }
+}
+
+/**
+ * Register the caller's own partner dex id on a match (Phase 1). The scanner's
+ * partner is already stored by start_live_pvp_match; the guest calls this on
+ * mount so both sides' partner ids are known before either fires an ability
+ * that depends on the opponent's identity. Idempotent server-side (only writes
+ * when the side is currently null). Returns whether both sides are now known.
+ */
+export async function setLivePvpPartner(
+  matchId: string,
+  partnerId: number | null,
+): Promise<
+  | { ok: true; hostPartnerId: number | null; guestPartnerId: number | null; bothKnown: boolean }
+  | { ok: false; error: string }
+> {
+  try {
+    const { data, error } = await rpc.rpc("set_live_pvp_partner", {
+      _match_id: matchId,
+      _partner_id: partnerId ?? null,
+    });
+    if (error) {
+      console.warn("[pvp-live] setLivePvpPartner failed:", error.message);
+      return { ok: false, error: "network" };
+    }
+    const r = data as {
+      ok?: boolean;
+      hostPartnerId?: number | null;
+      guestPartnerId?: number | null;
+      bothKnown?: boolean;
+      error?: string;
+    } | null;
+    if (r && r.ok === true) {
+      return {
+        ok: true,
+        hostPartnerId: r.hostPartnerId ?? null,
+        guestPartnerId: r.guestPartnerId ?? null,
+        bothKnown: !!r.bothKnown,
+      };
+    }
+    return { ok: false, error: (r && r.error) || "network" };
+  } catch (e) {
+    console.warn("[pvp-live] setLivePvpPartner threw:", e);
     return { ok: false, error: "network" };
   }
 }
@@ -397,6 +466,8 @@ export async function applyPvpSignatureEffect(
       guestStages?: PvpStatStages;
       hostStatuses?: ActiveStatus[];
       guestStatuses?: ActiveStatus[];
+      hostSuppressedUntil?: number;
+      guestSuppressedUntil?: number;
     }
   | { ok: false; error: string }
 > {
@@ -422,6 +493,8 @@ export async function applyPvpSignatureEffect(
       guestStages?: PvpStatStages;
       hostStatuses?: ActiveStatus[];
       guestStatuses?: ActiveStatus[];
+      hostSuppressedUntil?: number;
+      guestSuppressedUntil?: number;
       error?: string;
     } | null;
     if (r && r.ok === true) {
@@ -435,6 +508,8 @@ export async function applyPvpSignatureEffect(
         guestStages: r.guestStages,
         hostStatuses: r.hostStatuses,
         guestStatuses: r.guestStatuses,
+        hostSuppressedUntil: r.hostSuppressedUntil,
+        guestSuppressedUntil: r.guestSuppressedUntil,
       };
     }
     return { ok: false, error: (r && r.error) || "network" };
