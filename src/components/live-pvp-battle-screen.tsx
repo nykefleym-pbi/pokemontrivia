@@ -16,6 +16,7 @@ import {
   submitPvpLiveAnswer,
   applyPvpLiveItem,
   applyPvpSignatureEffect,
+  setLivePvpTransform,
   type LivePvpMatch,
 } from "@/lib/pvp-live";
 import {
@@ -301,9 +302,22 @@ export function LivePvpBattleScreen({
     if (opponentPartnerId == null && displayedIndex < 0) return;
     transformResolvedRef.current = true;
     const target = resolveMewTransform(opponentPartnerId);
-    setTransformTargetId(target);
-    const move = signatureMoveName(target);
-    if (move) toast.success(`✨ Transform — Mew copies ${move}!`);
+    // Persist the resolved target server-side (write-once) BEFORE flipping the
+    // effective partner id, so the server has its authoritative copy of the one
+    // ability Mew is allowed to invoke before any ability call fires (the server
+    // rejects Mew's effects until the transform id is registered). Best-effort:
+    // we flip the local id regardless so passive/damage-calc play never stalls
+    // on a transient network error — the server stays the authority for effects.
+    const finishTransform = () => {
+      setTransformTargetId(target);
+      const move = signatureMoveName(target);
+      if (move) toast.success(`✨ Transform — Mew copies ${move}!`);
+    };
+    if (target != null) {
+      void setLivePvpTransform(matchId, target).then(finishTransform, finishTransform);
+    } else {
+      finishTransform();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rawPartnerId, opponentPartnerId, displayedIndex]);
 

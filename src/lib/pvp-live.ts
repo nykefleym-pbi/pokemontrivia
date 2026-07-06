@@ -266,6 +266,37 @@ export async function setLivePvpPartner(
   }
 }
 
+/**
+ * Persist Mew's resolved Transform target dex id server-side (Phase 2 security).
+ * The server stores it write-once on the caller's own side and validates every
+ * subsequent `apply_pvp_signature_effect` call against it, so a Mew player can
+ * only ever invoke the single ability Transform genuinely resolved to copy —
+ * never an arbitrary id. Only an actual Mew (partner 151) may set it. Idempotent
+ * (a later call can't re-roll the stored id). Best-effort: on failure the client
+ * still plays, but the server refuses that side's server-catalog effects.
+ */
+export async function setLivePvpTransform(
+  matchId: string,
+  transformId: number,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const { data, error } = await rpc.rpc("set_live_pvp_transform", {
+      _match_id: matchId,
+      _transform_id: transformId,
+    });
+    if (error) {
+      console.warn("[pvp-live] setLivePvpTransform failed:", error.message);
+      return { ok: false, error: "network" };
+    }
+    const r = data as { ok?: boolean; error?: string } | null;
+    if (r && r.ok === true) return { ok: true };
+    return { ok: false, error: (r && r.error) || "network" };
+  } catch (e) {
+    console.warn("[pvp-live] setLivePvpTransform threw:", e);
+    return { ok: false, error: "network" };
+  }
+}
+
 /** Submit the caller's own side of a live match. Returns the computed score. */
 export async function submitLivePvpResult(
   matchId: string,
