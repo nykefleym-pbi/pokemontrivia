@@ -187,6 +187,9 @@ function LivePvpMatchPage() {
               (row.guest_sig_state as Record<string, number> | null) ??
               matchRef.current?.guestSigState ??
               {},
+            hostRevived: (row.host_revived as boolean | null) ?? matchRef.current?.hostRevived ?? false,
+            guestRevived:
+              (row.guest_revived as boolean | null) ?? matchRef.current?.guestRevived ?? false,
           };
           setMatch(updated);
           if (updated.status === "forfeited") {

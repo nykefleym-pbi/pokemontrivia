@@ -307,7 +307,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     trigger: { type: "every_nth_question", n: 4, requirePrevCorrect: true },
     effect: compound({ type: "damage_calc", bonusCritStage: 2 }, selfStage("speed", 1, 1)),
     wiring: "passive_damage",
-    note: "Whiffs entirely if the previous answer was wrong. +1 Speed side-effect is persistent-ish.",
+    note: "Whiffs entirely if the previous answer was wrong. WIRED: the +1 Speed side-effect now applies via the post_answer catalog row (243), routed on the same hit through evaluatePassiveDamageSideEffects (was silently dropped — a passive_damage entry only folds its damage_calc slice).",
   },
   244: {
     pokemonId: 244,
@@ -351,7 +351,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
       selfStage("attack", 1, 2),
     ),
     wiring: "bespoke",
-    note: "Reactive revive at 40% HP the first time you would hit 0 — needs a lethal-intercept hook.",
+    note: "WIRED (live in submit_pvp_live_answer): the first time you would hit 0 HP — from your own wrong-answer chip OR the opponent's correct-answer damage — Rainbow Rebirth revives you once to 25% max HP (30), cures all statuses, grants +1 Attack, and opens a 2-question Burn-on-correct window. One-time per match (gated by the *_revived flag). The revived-player toast fires on both paths (self-KO from the submit response; opponent-inflicted KO off the realtime-synced *_revived flag). Handled bespoke inside submit_pvp_live_answer, so it stays wiring:'bespoke'.",
   },
   251: {
     pokemonId: 251,
@@ -379,9 +379,9 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     internalKey: "blizzard",
     rarity: 3,
     trigger: { type: "streak_at_least", n: 4 },
-    effect: { type: "hamper", mode: "hide_options" },
+    effect: oppStage("speed", -1, 2),
     wiring: "post_answer",
-    note: "4-question cooldown not enforced by the generic engine.",
+    note: "WIRED: a 4+ streak chills the opponent — standing -1 opp Speed via the post_answer catalog row (378), the frostbite-adjacent Speed drop of Blizzard's mainline flavor. (Replaces the old hide_options hamper, which had no delivery path to the opponent's client.) 4-question cooldown not enforced by the generic engine.",
   },
   379: {
     pokemonId: 379,
@@ -461,7 +461,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     trigger: { type: "every_nth_question", n: 5 },
     effect: compound({ type: "damage_calc", bonusAttackStage: 3 }, selfStage("attack", -1, 2)),
     wiring: "passive_damage",
-    note: "First correct answer arms it, then re-armable every 5. The -1 Atk recoil should follow the nuke.",
+    note: "First correct answer arms it, then re-armable every 5. WIRED: the -1 Atk recoil now follows the nuke via the post_answer catalog row (386), routed on the same hit through evaluatePassiveDamageSideEffects (was silently dropped, making it strictly stronger than designed).",
   },
 
   // ── Generation IV ─────────────────────────────────────────────────────────
@@ -541,8 +541,8 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     rarity: 4,
     trigger: { type: "manual", usesPerBattle: 1 },
     effect: ignoreDef({ bonusCritStage: 2 }),
-    wiring: "bespoke",
-    note: "Fire arms a client-side one-hit modifier (manualHitModifiers) onto the next correct answer: ignore opp Defense + 2 Crit. The vanish (skip current question, untargetable) opening is a bespoke secondary, not wired.",
+    wiring: "manual",
+    note: "WIRED (client-armed hit, structurally identical to Psystrike 150 / Dragon Ascent 384): Fire arms a client-side one-hit modifier (manualHitModifiers) onto the next correct answer — ignore opp Defense + 2 Crit. Relabeled wiring:'bespoke' -> 'manual' to match reality (behavior-neutral: it applies no server-catalog effect, so hasServerManualEffect stays false and no server Fire path is added). The vanish (skip current question, untargetable) opening is a bespoke secondary, not wired.",
   },
   488: {
     pokemonId: 488,
@@ -670,13 +670,13 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     signatureMove: "Blue Flare",
     internalKey: "blue_flare",
     rarity: 4,
-    trigger: { type: "first_half_answer", chance: 0.4 },
+    trigger: { type: "first_half_answer" },
     effect: compound(
       { type: "damage_calc", bonusAttackStage: 1, bonusCritStage: 1 },
       oppStatus("burn", 3, 0.4),
     ),
     wiring: "passive_damage",
-    note: "Fast WRONG answers self-inflict -1 Def (bespoke penalty branch). Damage-calc bonus is deterministic on first-half; Burn is the 40% roll.",
+    note: "WIRED: the trigger no longer carries a chance (so hitTriggerHolds accepts it) — the +1 Atk/+1 Crit damage-calc bonus is deterministic on any first-half correct answer. The bundled Burn is routed on that same hit through the post_answer catalog row (643), with its 40% roll done client-side in evaluatePassiveDamageSideEffects (mirrors 244/809's client-rolled statuses). Fast WRONG answers self-inflict -1 Def (bespoke penalty branch, not wired).",
   },
   644: {
     pokemonId: 644,
@@ -725,7 +725,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     trigger: { type: "manual", usesPerBattle: 2 },
     effect: compound(selfStage("attack", 1, "passive"), oppStatus("sleep", 1, 0.3)),
     wiring: "manual",
-    note: "Aria (+1 Atk) / Pirouette (+1 Spd) stance toggle; 30% Sleep on toggle. Stance choice is bespoke.",
+    note: "Aria (+1 Atk, always) / Pirouette (+1 Spd) stance toggle; 30% Sleep on toggle. WIRED: the Sleep is now a genuine 30% roll — the manual RPC applies the +1 Atk row unconditionally and rolls the Sleep row server-side (its catalog payload carries chance:0.3, gated in apply_pvp_signature_effect's status branch). Stance choice is bespoke.",
   },
   649: {
     pokemonId: 649,
@@ -923,7 +923,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     trigger: { type: "every_nth_question", n: 5 },
     effect: compound({ type: "damage_calc", bonusAttackStage: 3 }, selfStage("attack", -1, 2)),
     wiring: "passive_damage",
-    note: "Soul-Heart (+1 Crit per opponent wrong) is a bespoke reactive secondary.",
+    note: "WIRED: the -1 Atk recoil now follows the nuke via the post_answer catalog row (801), routed on the same hit through evaluatePassiveDamageSideEffects (was silently dropped, making it over-strong). Soul-Heart (+1 Crit per opponent wrong) is a bespoke reactive secondary.",
   },
   802: {
     pokemonId: 802,
@@ -1010,7 +1010,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     trigger: { type: "every_nth_question", n: 5 },
     effect: compound({ type: "damage_calc", secondHitFraction: 0.5 }, oppStatus("sleep", 1, 0.3)),
     wiring: "passive_damage",
-    note: "Iron Fist passive +1 Atk all match is applied at battle start via a separate entry consideration (kept as note).",
+    note: "WIRED: the second-hit fold plus a 30% Sleep sub-effect via the post_answer catalog row (809), routed on the same hit through evaluatePassiveDamageSideEffects (the 30% roll is done client-side, mirroring 244/643). Iron Fist passive +1 Atk all match is a bespoke secondary, not wired.",
   },
 
   // ── Generation VIII ───────────────────────────────────────────────────────
@@ -1154,7 +1154,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     trigger: { type: "manual", usesPerBattle: 1 },
     effect: compound(oppStage("defense", -2, 3), ignoreDef()),
     wiring: "manual",
-    note: "Chien-Pao — Sword of Ruin: -2 opp Def + next 2 correct ignore remaining Def.",
+    note: "Chien-Pao — Sword of Ruin: -2 opp Def (server manual row) + next 2 correct answers ignore the opponent's remaining Defense. WIRED: firing arms a 2-charge client-side ignore-Defense window (swordOfRuinCharges in live-pvp-battle-screen), folded into the next 2 correct hits' damage calc (client-computed, server-clamped, like the armed one-hit manual moves); the window does not persist across a reconnect.",
   },
   1003: {
     pokemonId: 1003,
@@ -1607,6 +1607,38 @@ export function evaluatePostAnswer(
   const out: SignatureEffect[] = [];
   collectApplicable(ability.effect, out);
   return out;
+}
+
+/**
+ * The non-`damage_calc` sub-effects a `passive_damage` ability ALSO bundles and
+ * that should fire on the SAME correct answer as its damage fold — the compound
+ * slice that `evaluateHitModifiers` (damage-calc only) drops on the floor.
+ * Returns [] unless the ability is a passive_damage entry, the answer is
+ * correct, the hit trigger holds, and there is a non-damage-calc slice that
+ * rolls through (a `status` sub-effect may carry a `chance`, rolled here
+ * client-side exactly like `evaluatePostAnswer` does for a post_answer status).
+ *
+ * When non-empty, the live loop routes these through the SAME server-validated
+ * `apply_pvp_signature_effect(phase='post_answer')` path as a post_answer
+ * ability: the client only names WHICH partner fired; the server applies the
+ * fixed magnitude from the `pvp_signature_effects` post_answer rows.
+ *
+ * Wired abilities (each has exactly one non-damage-calc slice, so a single RPC
+ * faithfully delivers it): 243 Raikou (+1 Speed), 386 Deoxys / 801 Magearna
+ * (-1 Atk recoil), 643 Zekrom (40% Burn), 809 Melmetal (30% Sleep).
+ */
+export function evaluatePassiveDamageSideEffects(
+  ability: SignatureAbility | null,
+  ctx: SignatureContext,
+  rng: () => number = Math.random,
+): SignatureEffect[] {
+  if (!ability || !ctx.correct || ability.wiring !== "passive_damage") return [];
+  if (!hitTriggerHolds(ability.trigger, ctx)) return [];
+  const applicable: SignatureEffect[] = [];
+  collectApplicable(ability.effect, applicable);
+  return applicable.filter((e) =>
+    e.type === "status" && e.chance != null ? rng() < e.chance : true,
+  );
 }
 
 /**

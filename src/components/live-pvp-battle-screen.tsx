@@ -24,6 +24,7 @@ import {
   signatureMoveName,
   evaluateHitModifiers,
   evaluatePostAnswer,
+  evaluatePassiveDamageSideEffects,
   evaluateBattleStart,
   hasServerManualEffect,
   hasClientManualHit,
@@ -246,6 +247,12 @@ export function LivePvpBattleScreen({
   // next correct answer). Kept in a ref so it survives re-renders.
   const armedHitRef = useRef<ReturnType<typeof manualHitModifiers> | null>(null);
   const [armedHit, setArmedHit] = useState(false);
+  // Chien-Pao — Sword of Ruin (1002): after firing (-2 opp Def via the server
+  // manual row), the next 2 correct answers also ignore the opponent's remaining
+  // Defense stage. Tracked as a small client-side charge window (client-computed,
+  // server-clamped damage, like the armed one-hit manual moves); not persisted
+  // across a reconnect.
+  const swordOfRuinChargesRef = useRef(0);
 
   const finishedRef = useRef(false);
   const itemsUsedRef = useRef(amIHost ? match.hostItemsUsed : match.guestItemsUsed);
@@ -379,6 +386,19 @@ export function LivePvpBattleScreen({
     itemsUsedRef.current = amIHost ? match.hostItemsUsed : match.guestItemsUsed;
   }, [match, amIHost]);
 
+  // Ho-Oh (250) Rainbow Rebirth — opponent-inflicted revive toast. When the
+  // OPPONENT's correct answer would have KO'd us but the server revived us, our
+  // own *_revived flag flips true on the realtime-synced row (the server writes
+  // no pvp_live_effects row for this path, so we read it off the match state).
+  // The self-KO path already toasts from the submit response; the shared
+  // rainbowRebirthToastedRef dedups so a given revive toasts at most once.
+  const myRevived = amIHost ? match.hostRevived : match.guestRevived;
+  useEffect(() => {
+    if (partnerId !== 250 || !myRevived || rainbowRebirthToastedRef.current) return;
+    rainbowRebirthToastedRef.current = true;
+    toast.success("🌈 Ho-Oh's Rainbow Rebirth — you rise from the ashes!");
+  }, [myRevived, partnerId]);
+
   useEffect(() => {
     const iv = setInterval(() => setNow(Date.now()), 100);
     return () => clearInterval(iv);
@@ -494,6 +514,15 @@ export function LivePvpBattleScreen({
           armedHitRef.current = null;
           setArmedHit(false);
         }
+        // Chien-Pao — Sword of Ruin (1002): the 2-charge ignore-Defense window
+        // armed when Sword of Ruin was manually fired. Consumes one charge per
+        // correct hit while suppressed doesn't block it (the -2 Def already
+        // landed via the server manual row; this window is a pure client-side
+        // damage-calc fold, same trust model as the armed one-hit moves).
+        if (swordOfRuinChargesRef.current > 0) {
+          mods = mergeHitModifiers(mods, { ...NO_HIT_MODIFIERS, ignoreOppDefenseStage: true });
+          swordOfRuinChargesRef.current -= 1;
+        }
         // Phase 1 — Moltres's Fiery Wrath discharge: a correct answer consumes
         // all Wrath stacks for +1 Attack/stack on THIS hit, resets the stack
         // (server-persisted), and rolls a 30%/stack Sleep on the opponent
@@ -510,6 +539,21 @@ export function LivePvpBattleScreen({
           if (move) toast.success(`✨ ${move} — Wrath unleashed!`);
           if (Math.random() < discharge.sleepChance) {
             void applyPvpSignatureEffect(matchId, idxAtAnswer, 146, "post_answer").then(
+              applyAbilityResult,
+            );
+          }
+        }
+        // Fix #3 — passive_damage abilities that ALSO bundle a stat_stage/status
+        // sub-effect (Raikou 243's +1 Speed, Deoxys 386 / Magearna 801's -1 Atk
+        // recoil, Zekrom 643's 40% Burn, Melmetal 809's 30% Sleep): the damage
+        // fold above only ever applies the damage_calc slice, so route the
+        // bundled non-damage-calc slice through the SAME server-validated
+        // post_answer RPC on this same hit (any chance roll already happened
+        // inside evaluatePassiveDamageSideEffects).
+        if (!suppressed) {
+          const sideEffects = evaluatePassiveDamageSideEffects(ability, sigCtx);
+          if (sideEffects.length > 0) {
+            void applyPvpSignatureEffect(matchId, idxAtAnswer, partnerId as number, "post_answer").then(
               applyAbilityResult,
             );
           }
@@ -777,6 +821,12 @@ export function LivePvpBattleScreen({
     if (typeof res.hostHp === "number") {
       setMyHp(amIHost ? res.hostHp : res.guestHp!);
       setOppHp(amIHost ? res.guestHp! : res.hostHp);
+    }
+    // Chien-Pao — Sword of Ruin (1002): the -2 opp Def landed server-side above;
+    // arm the follow-up 2-charge client-side ignore-Defense window for the next
+    // 2 correct answers.
+    if (partnerId === 1002) {
+      swordOfRuinChargesRef.current = 2;
     }
     playSfx("item_use");
     const move = signatureMoveName(partnerId);
