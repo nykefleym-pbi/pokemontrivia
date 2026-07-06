@@ -5,6 +5,7 @@ import {
   signatureMoveName,
   evaluateHitModifiers,
   evaluatePostAnswer,
+  evaluatePassiveDamageSideEffects,
   evaluateBattleStart,
   hasServerManualEffect,
   hasClientManualHit,
@@ -145,6 +146,60 @@ describe("evaluateHitModifiers (passive_damage family)", () => {
   it("Melmetal's Double Iron Bash adds a half-value second hit every 5th question", () => {
     const m = evaluateHitModifiers(SIGNATURE_ABILITIES[809], ctx({ questionIndex: 4 }));
     expect(m.secondHitFraction).toBe(0.5);
+  });
+
+  it("Zekrom's Blue Flare damage-calc bonus is deterministic on any first-half correct answer (no chance)", () => {
+    expect(SIGNATURE_ABILITIES[643].trigger).toEqual({ type: "first_half_answer" });
+    const early = evaluateHitModifiers(SIGNATURE_ABILITIES[643], ctx({ answerElapsedMs: 1000, personalTimerMs: 20000 }));
+    const late = evaluateHitModifiers(SIGNATURE_ABILITIES[643], ctx({ answerElapsedMs: 19000, personalTimerMs: 20000 }));
+    expect(early.bonusAttackStage).toBe(1);
+    expect(early.bonusCritStage).toBe(1);
+    expect(late).toEqual(NO_HIT_MODIFIERS);
+  });
+
+  it("Regice's Blizzard is now a post_answer opponent Speed debuff, not a hamper", () => {
+    expect(SIGNATURE_ABILITIES[378].wiring).toBe("post_answer");
+    const fx = evaluatePostAnswer(SIGNATURE_ABILITIES[378], ctx({ streak: 4 }));
+    expect(fx).toEqual([{ type: "stat_stage", target: "opponent", stat: "speed", delta: -1, duration: 2 }]);
+    expect(evaluatePostAnswer(SIGNATURE_ABILITIES[378], ctx({ streak: 3 }))).toEqual([]);
+  });
+});
+
+describe("evaluatePassiveDamageSideEffects (dropped compound sub-effects, fix #3)", () => {
+  it("Raikou's Thunder bundles a +1 Speed side effect on the same 4th-question hit", () => {
+    const fx = evaluatePassiveDamageSideEffects(
+      SIGNATURE_ABILITIES[243],
+      ctx({ questionIndex: 3, prevCorrect: true }),
+    );
+    expect(fx).toEqual([{ type: "stat_stage", target: "self", stat: "speed", delta: 1, duration: 1 }]);
+    // Whiffs when the hit trigger itself doesn't hold (previous answer wrong).
+    expect(evaluatePassiveDamageSideEffects(SIGNATURE_ABILITIES[243], ctx({ questionIndex: 3, prevCorrect: false }))).toEqual([]);
+  });
+
+  it("Deoxys' Psycho Boost and Magearna's Fleur Cannon bundle a -1 Attack recoil on the nuke hit", () => {
+    for (const id of [386, 801]) {
+      const fx = evaluatePassiveDamageSideEffects(SIGNATURE_ABILITIES[id], ctx({ questionIndex: 4 }));
+      expect(fx).toEqual([{ type: "stat_stage", target: "self", stat: "attack", delta: -1, duration: 2 }]);
+    }
+  });
+
+  it("Zekrom's Burn and Melmetal's Sleep roll their documented chance", () => {
+    const zekromLands = evaluatePassiveDamageSideEffects(SIGNATURE_ABILITIES[643], ctx({ answerElapsedMs: 1000 }), () => 0.1);
+    const zekromWhiffs = evaluatePassiveDamageSideEffects(SIGNATURE_ABILITIES[643], ctx({ answerElapsedMs: 1000 }), () => 0.9);
+    expect(zekromLands).toEqual([{ type: "status", target: "opponent", status: "burn", questions: 3, chance: 0.4 }]);
+    expect(zekromWhiffs).toEqual([]);
+
+    const melmetalLands = evaluatePassiveDamageSideEffects(SIGNATURE_ABILITIES[809], ctx({ questionIndex: 4 }), () => 0.1);
+    const melmetalWhiffs = evaluatePassiveDamageSideEffects(SIGNATURE_ABILITIES[809], ctx({ questionIndex: 4 }), () => 0.9);
+    expect(melmetalLands).toEqual([{ type: "status", target: "opponent", status: "sleep", questions: 1, chance: 0.3 }]);
+    expect(melmetalWhiffs).toEqual([]);
+  });
+
+  it("produces nothing on a wrong answer, when the hit trigger doesn't hold, or for non-passive_damage abilities", () => {
+    expect(evaluatePassiveDamageSideEffects(SIGNATURE_ABILITIES[243], ctx({ questionIndex: 3, correct: false }))).toEqual([]);
+    expect(evaluatePassiveDamageSideEffects(SIGNATURE_ABILITIES[243], ctx({ questionIndex: 2 }))).toEqual([]);
+    expect(evaluatePassiveDamageSideEffects(SIGNATURE_ABILITIES[638], ctx())).toEqual([]); // Cobalion has no bundled sub-effect
+    expect(evaluatePassiveDamageSideEffects(SIGNATURE_ABILITIES[245], ctx())).toEqual([]); // post_answer, not passive_damage
   });
 });
 

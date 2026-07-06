@@ -65,6 +65,10 @@ export interface LivePvpMatch {
    * Moltres's Wrath stacks). Server-clamped on write. `{}` when unused. */
   hostSigState: Record<string, number>;
   guestSigState: Record<string, number>;
+  /** Ho-Oh (250) Rainbow Rebirth: has this side already used its one-time
+   * revive this match (via either the self-KO or opponent-inflicted-KO path)? */
+  hostRevived: boolean;
+  guestRevived: boolean;
 }
 
 interface LivePvpMatchRow {
@@ -111,6 +115,8 @@ interface LivePvpMatchRow {
   weather_owner: "host" | "guest" | null;
   host_sig_state: Record<string, number> | null;
   guest_sig_state: Record<string, number> | null;
+  host_revived: boolean | null;
+  guest_revived: boolean | null;
 }
 
 function fromRow(r: LivePvpMatchRow): LivePvpMatch {
@@ -158,6 +164,8 @@ function fromRow(r: LivePvpMatchRow): LivePvpMatch {
     weatherOwner: r.weather_owner ?? null,
     hostSigState: r.host_sig_state ?? {},
     guestSigState: r.guest_sig_state ?? {},
+    hostRevived: r.host_revived ?? false,
+    guestRevived: r.guest_revived ?? false,
   };
 }
 
