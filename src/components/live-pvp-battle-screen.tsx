@@ -149,6 +149,7 @@ function PvpCombatPanel({
   hp,
   stages,
   statuses,
+  abilityName,
 }: {
   align: "left" | "right";
   name: string;
@@ -156,12 +157,14 @@ function PvpCombatPanel({
   hp: number;
   stages: PvpStatStages;
   statuses: ActiveStatus[];
+  abilityName?: string | null;
 }) {
   const pct = Math.max(0, Math.min(100, (hp / PVP_MAX_HP) * 100));
   const barColor = pct > 50 ? "bg-hp-good" : pct > 20 ? "bg-hp-warn" : "bg-hp-low";
   const alignCls = align === "right" ? "items-end text-right" : "items-start text-left";
   const justifyCls = align === "right" ? "justify-end" : "justify-start";
-  const hasChips = (Object.values(stages) as number[]).some((v) => v !== 0) || statuses.length > 0;
+  const hasChips =
+    !!abilityName || (Object.values(stages) as number[]).some((v) => v !== 0) || statuses.length > 0;
 
   return (
     <div className="w-[clamp(8rem,38vw,10.5rem)] shrink-0 rounded-2xl bg-card px-3 py-2 backdrop-blur shadow-card">
@@ -189,6 +192,11 @@ function PvpCombatPanel({
         </div>
         {hasChips && (
           <div className={`mt-1 flex w-full flex-wrap gap-0.5 ${justifyCls}`}>
+            {abilityName && (
+              <span className="rounded-full bg-primary/10 px-1.5 py-[1px] font-pixel-xs text-primary">
+                ⚡ {abilityName}
+              </span>
+            )}
             <StatChips stages={stages} />
             <StatusChips statuses={statuses} />
           </div>
@@ -1079,47 +1087,36 @@ export function LivePvpBattleScreen({
   const oppTypes: PokeType[] = oppEntry?.types ?? [];
 
   return (
-    <div className="relative flex h-full w-full flex-col overflow-hidden bg-poke-cream">
-      {/* TOP BAR — question index, signature-fire, bag (timer floats above the card) */}
-      <div className="flex shrink-0 items-center justify-between px-5 pb-2 pt-6">
-        <div className="font-pixel-xs text-foreground/60">
-          Question {displayedIndex + 1} / {PVP_QUESTIONS}
+    <div className="relative flex h-full w-full flex-col overflow-hidden bg-battle-field">
+      {/* TOP BAR — round pill (Solo-style), signature-fire (timer floats above the card) */}
+      <div className="flex shrink-0 items-center justify-between gap-2 pt-[calc(env(safe-area-inset-top)+1rem)] pb-1 px-[max(1.25rem,env(safe-area-inset-left))]">
+        <div className="flex items-center gap-1 rounded-full bg-card/90 px-2.5 py-1 font-pixel text-[9px] text-foreground shadow-card backdrop-blur">
+          QUESTION {displayedIndex + 1}/{PVP_QUESTIONS}
         </div>
-        <div className="flex items-center gap-2">
-          {manualFireable && (
-            <button
-              onClick={() => void handleFireSignature()}
-              disabled={
-                manualFiring ||
-                manualFiresUsed >= manualCap ||
-                frozen ||
-                armedHit ||
-                displayedIndex < mySuppressedUntil
-              }
-              title={signatureMoveName(partnerId) ?? "Signature move"}
-              className="flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-sm font-bold text-primary-foreground shadow-card disabled:opacity-40"
-            >
-              {displayedIndex < mySuppressedUntil ? "🔒" : armedHit ? "✨" : "⚡"}{" "}
-              {signatureMoveName(partnerId)}
-              <span className="tabular-nums opacity-80">
-                {displayedIndex < mySuppressedUntil
-                  ? "locked"
-                  : armedHit
-                    ? "armed"
-                    : `${Math.max(0, manualCap - manualFiresUsed)}/${manualCap}`}
-              </span>
-            </button>
-          )}
+        {manualFireable && (
           <button
-            onClick={() => setBagOpen(true)}
-            className="relative flex h-10 w-10 items-center justify-center rounded-full bg-card shadow-card transition active:scale-95"
+            onClick={() => void handleFireSignature()}
+            disabled={
+              manualFiring ||
+              manualFiresUsed >= manualCap ||
+              frozen ||
+              armedHit ||
+              displayedIndex < mySuppressedUntil
+            }
+            title={signatureMoveName(partnerId) ?? "Signature move"}
+            className="flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-sm font-bold text-primary-foreground shadow-card disabled:opacity-40"
           >
-            <Backpack className="h-5 w-5 text-muted-foreground" />
-            <span className="absolute -bottom-1 -right-1 rounded-full bg-primary px-1 font-pixel-xs text-[8px] text-primary-foreground">
-              {itemsUsedRef.current}/{MAX_ITEMS_PER_BATTLE}
+            {displayedIndex < mySuppressedUntil ? "🔒" : armedHit ? "✨" : "⚡"}{" "}
+            {signatureMoveName(partnerId)}
+            <span className="tabular-nums opacity-80">
+              {displayedIndex < mySuppressedUntil
+                ? "locked"
+                : armedHit
+                  ? "armed"
+                  : `${Math.max(0, manualCap - manualFiresUsed)}/${manualCap}`}
             </span>
           </button>
-        </div>
+        )}
       </div>
 
       {/* COMBAT ARENA — FRLG diagonal layout, mirroring Solo */}
@@ -1133,6 +1130,7 @@ export function LivePvpBattleScreen({
             hp={oppHp}
             stages={oppStages}
             statuses={oppStatuses}
+            abilityName={signatureMoveName(opponentPartnerId)}
           />
           <div className="mt-2">
             <ArenaSprite
@@ -1159,13 +1157,14 @@ export function LivePvpBattleScreen({
             hp={myHp}
             stages={myStages}
             statuses={myStatuses}
+            abilityName={signatureMoveName(partnerId)}
           />
         </div>
       </div>
 
       {/* QUESTION CARD — thumb zone, pinned bottom, floating timer pill above */}
       <div className="relative shrink-0 rounded-t-[28px] bg-card px-[max(1rem,env(safe-area-inset-left))] pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-14 shadow-[0_-8px_30px_-12px_oklch(0.3_0.05_260/0.25)]">
-        <div className="pointer-events-none absolute left-1/2 -top-6 z-10 flex -translate-x-1/2 flex-col items-center">
+        <div className="pointer-events-none absolute left-1/2 -top-12 z-10 flex -translate-x-1/2 flex-col items-center">
           <TimerRing timer={Math.ceil(msLeft / 1000)} maxTime={Math.ceil(personalTimerMs / 1000)} />
           {!frozen && <p className="mt-1.5 font-pixel-xs text-foreground/70">{q.category}</p>}
         </div>
@@ -1220,6 +1219,32 @@ export function LivePvpBattleScreen({
                   Locked in — next question soon
                 </div>
               )}
+
+              {/* Item shortcuts row — matches Solo's bag placement inside the question card */}
+              <div className="mt-3 flex items-center justify-center gap-3">
+                <button
+                  onClick={() => setBagOpen(true)}
+                  className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition active:scale-95"
+                >
+                  <Backpack className="h-6 w-6 text-muted-foreground" />
+                  <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-poke-dark px-1 font-pixel text-[9px] text-white">
+                    {itemsUsedRef.current}/{MAX_ITEMS_PER_BATTLE}
+                  </span>
+                </button>
+                {bagItems.slice(0, 3).map((it) => (
+                  <button
+                    key={it.id}
+                    disabled={itemsUsedRef.current >= MAX_ITEMS_PER_BATTLE}
+                    onClick={() => void handleUseItem(it.id)}
+                    className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition active:scale-95 disabled:opacity-40"
+                  >
+                    <ItemIcon item={it} className="h-8 w-8" />
+                    <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-poke-dark px-1 font-pixel text-[9px] text-white">
+                      {inventory[it.id] ?? 0}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </motion.div>
           </AnimatePresence>
         )}
