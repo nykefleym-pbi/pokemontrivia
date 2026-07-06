@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { Backpack } from "lucide-react";
 import type { Trivia } from "@/lib/trivia-core";
 import { playSfx } from "@/lib/audio";
 import { useGameStore, type ActiveStatus, type PvpStatStages } from "@/lib/store";
-import { PokemonSprite, TypeBadge, PokeballSpinner } from "@/components/game-ui";
+import { PokemonSprite, TypeBadge, PokeballSpinner, ItemIcon } from "@/components/game-ui";
 import { findPokemon, type PokeType } from "@/lib/pokemon-data";
 import { ITEMS, STATUS_META, type ItemId, type StatusKind, type PvpStat } from "@/lib/game-data";
 import { MAX_ITEMS_PER_BATTLE } from "@/lib/store/slices/itemsSlice";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { CATEGORIES, CATEGORY_OF, BAG_SHORT_DESC } from "@/lib/item-categories";
 import {
   computePvpDamage,
   timerMsForSpeedStage,
@@ -84,6 +87,14 @@ const CLIENT_ONLY_ITEMS: ItemId[] = ["scope", "xaccuracy"];
  * potion tier plus all berries. Everything else stays out of the Nearby
  * Battle bag in this pass — see the implementation report for scope notes. */
 const SERVER_EFFECT_ITEMS: ItemId[] = ["potion", "superpotion", "maxpotion"];
+
+/** Same grouped layout as Solo's bag/Shop, plus a Berries group since Nearby
+ * Battle is the only mode that carries berries (deliberately excluded from
+ * CATEGORIES so they never show up in Solo's bag/Shop). */
+const PVP_BAG_GROUPS: Array<{ id: string; label: string }> = [
+  ...CATEGORIES,
+  { id: "BERRY", label: "Berries" },
+];
 
 function statBarLabel(stat: PvpStat): string {
   return { attack: "ATK", defense: "DEF", speed: "SPD", crit: "CRIT" }[stat];
@@ -1101,9 +1112,12 @@ export function LivePvpBattleScreen({
           )}
           <button
             onClick={() => setBagOpen(true)}
-            className="rounded-full bg-card px-3 py-1.5 text-sm font-bold shadow-card"
+            className="relative flex h-10 w-10 items-center justify-center rounded-full bg-card shadow-card transition active:scale-95"
           >
-            🎒 {itemsUsedRef.current}/{MAX_ITEMS_PER_BATTLE}
+            <Backpack className="h-5 w-5 text-muted-foreground" />
+            <span className="absolute -bottom-1 -right-1 rounded-full bg-primary px-1 font-pixel-xs text-[8px] text-primary-foreground">
+              {itemsUsedRef.current}/{MAX_ITEMS_PER_BATTLE}
+            </span>
           </button>
         </div>
       </div>
@@ -1211,46 +1225,76 @@ export function LivePvpBattleScreen({
         )}
       </div>
 
-      {bagOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
-          onClick={() => setBagOpen(false)}
-        >
-          <div
-            className="max-h-[70vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-card p-5"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-3 text-center font-display-md text-foreground">Your Bag</div>
-            <div className="mb-3 text-center text-xs font-semibold text-muted-foreground">
+      <Sheet open={bagOpen} onOpenChange={setBagOpen}>
+        <SheetContent side="bottom" className="rounded-t-3xl">
+          <SheetHeader>
+            <SheetTitle className="text-center font-display-lg text-foreground">
+              Your Bag
+            </SheetTitle>
+            <div className="text-center text-xs font-semibold text-muted-foreground">
               {itemsUsedRef.current}/{MAX_ITEMS_PER_BATTLE} items used this battle
             </div>
-            {bagItems.length === 0 ? (
-              <div className="py-6 text-center text-sm text-foreground/60">
-                No usable items or berries yet. Play more Nearby Battles to earn berries!
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {bagItems.map((it) => (
-                  <button
-                    key={it.id}
-                    onClick={() => void handleUseItem(it.id)}
-                    disabled={itemsUsedRef.current >= MAX_ITEMS_PER_BATTLE}
-                    className="flex items-center justify-between rounded-2xl border border-border bg-background px-4 py-2.5 text-left disabled:opacity-40"
-                  >
-                    <div>
-                      <div className="font-display text-sm text-foreground">
-                        {it.emoji} {it.name}
+          </SheetHeader>
+          {(() => {
+            const bagGroups = PVP_BAG_GROUPS.map((cat) => ({
+              ...cat,
+              items: bagItems.filter((it) => CATEGORY_OF[it.id] === cat.id),
+            })).filter((g) => g.items.length > 0);
+            return (
+              <div className="my-4 max-h-[65vh] overflow-y-auto">
+                {bagGroups.length === 0 ? (
+                  <div className="rounded-3xl bg-poke-yellow/15 p-6 text-center">
+                    <div className="mx-auto mb-2 text-4xl">🎒</div>
+                    <div className="font-display-md text-foreground">Your bag is empty</div>
+                    <p className="mt-1 text-xs text-foreground/60">
+                      Play more Nearby Battles to earn berries!
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4 pb-2">
+                    {bagGroups.map((group) => (
+                      <div key={group.id}>
+                        <div className="mb-2 font-pixel-xs uppercase tracking-wider text-foreground/45">
+                          {group.label}
+                        </div>
+                        <div className="flex flex-col gap-2.5">
+                          {group.items.map((it) => {
+                            const owned = inventory[it.id] ?? 0;
+                            const disabled = itemsUsedRef.current >= MAX_ITEMS_PER_BATTLE;
+                            return (
+                              <button
+                                key={it.id}
+                                onClick={() => void handleUseItem(it.id)}
+                                disabled={disabled}
+                                className="flex items-center gap-3.5 rounded-[20px] bg-card px-4 py-3 text-left shadow-card transition active:scale-[0.99] disabled:opacity-40"
+                              >
+                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-primary/[0.08]">
+                                  <ItemIcon item={it} className="h-9 w-9" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                                    {it.name}
+                                    <span className="font-pixel text-[9px] text-primary">
+                                      ×{owned}
+                                    </span>
+                                  </div>
+                                  <div className="text-[11px] leading-tight text-muted-foreground">
+                                    {BAG_SHORT_DESC[it.id] ?? it.desc}
+                                  </div>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
-                      <div className="text-xs text-foreground/60">{it.desc}</div>
-                    </div>
-                    <div className="text-xs font-bold text-foreground/50">×{inventory[it.id] ?? 0}</div>
-                  </button>
-                ))}
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </div>
-      )}
+            );
+          })()}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
