@@ -276,7 +276,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     trigger: { type: "bespoke", note: "Wrath stacks (max 3) on wrong answers, consumed on next correct." },
     effect: compound(selfStage("attack", 1, "one_hit"), oppStatus("sleep", 1, 0.3)),
     wiring: "bespoke",
-    note: "Needs stack tracking (build on wrong, discharge on correct: +1 Atk/stack this hit, 30%/stack Sleep).",
+    note: "WIRED (Phase 1): Wrath stacks tracked per-battle in pvp_live_matches.*_sig_state (server-clamped 0..3 via apply_pvp_signature_effect phase='sig_state'). Build +1 on each wrong answer; the next correct answer discharges — folds +1 Atk/stack into that hit's client-computed damage and rolls 30%/stack to inflict Sleep (1q) on the opponent via the server post_answer catalog row. See signature-bespoke.ts nextWrathStacks/wrathDischarge.",
   },
   150: {
     pokemonId: 150,
@@ -990,7 +990,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     trigger: { type: "fast_pair", underMs: 6000 },
     effect: compound(selfStage("speed", 1, "passive"), selfStage("crit", 1, "passive")),
     wiring: "post_answer",
-    note: "Chain resets to 0 on any slow/wrong answer (bespoke reset).",
+    note: "WIRED (approximation): each sub-6s correct PAIR grants +1 Speed & +1 Crit (server post_answer, clamp-capped +3) — the chain's ramp. The doc's 'reset to 0 on any slow/wrong answer' is NOT modelled: the shipped stage system has no per-source stage accounting, so it cannot subtract exactly the chain-contributed Speed/Crit on a break without also clobbering stages from other sources. Documented as a deliberate limitation (see Phase 1 report) rather than force a lossy stage-decrement.",
   },
   808: {
     pokemonId: 808,
@@ -1224,7 +1224,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     trigger: { type: "bespoke", note: "Reactive: interrupt an incoming opponent ability activation (once per 4q)." },
     effect: oppStatus("poisoned", 3),
     wiring: "bespoke",
-    note: "Cancel the opponent's ability that question + Poison. Whiffs if they weren't about to act.",
+    note: "NOT WIREABLE with the current architecture (see Phase 2 report). The defining effect is to interrupt/cancel the opponent's signature ability BEFORE it applies. Ability activations are server-side (a per-player apply_pvp_signature_effect call) and only surface to the other client AFTER the fact via the pvp_live_effects INSERT — there is no client-observable 'opponent is about to activate' signal, and one player cannot pre-empt another player's server RPC in this trust model. Wiring only the Poison half would misrepresent the ability, so it is intentionally left unwired.",
   },
   1015: {
     pokemonId: 1015,
@@ -1271,10 +1271,10 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     signatureMove: "Thunderclap",
     internalKey: "thunderclap",
     rarity: 3,
-    trigger: { type: "bespoke", note: "Reactive to the opponent answering correctly; once every 4 questions." },
-    effect: compound(selfStage("attack", 1, "one_hit"), oppStage("attack", -1, 1)),
+    trigger: { type: "opponent_correct" },
+    effect: compound(selfStage("attack", 1, "passive"), oppStage("attack", -1, 1)),
     wiring: "bespoke",
-    note: "Raging Bolt — Thunderclap: once per 4q, if the opponent answers correctly you pre-empt for +1 Atk (this exchange) and -1 Atk on them (1q); whiffs if they're idle/wrong. Protosynthesis (fast answers boost highest stat) is a bespoke secondary.",
+    note: "WIRED (Phase 2): reactive to the opponent answering correctly — derived from the synced match row's opponent *_correct_live counter incrementing between realtime renders (opponentAnsweredCorrectly / thunderclapFires in signature-bespoke.ts). Gated once per 4 of MY questions. On fire: +1 self Attack & -1 opp Attack via the server post_answer catalog (durations collapse to standing bumps, matching the shipped stage system which has no per-question expiry). Whiffs when the opponent is idle/wrong. Protosynthesis (fast answers boost highest stat) remains a bespoke secondary.",
   },
   1022: {
     pokemonId: 1022,

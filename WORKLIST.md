@@ -73,6 +73,17 @@ they ship.
     3-item cap, not ownership); only Chople Berry currently inflicts a
     status in live battle; HP/damage/Speed-timer numbers are initial values
     pending a balance pass.
+18. **Training vs Bot (Nearby Battle)** — a "Training" entry point next to
+    the Nearby Battle button that starts a live PvP match against a bot
+    opponent instead of scanning a real friend's code: the bot gets a
+    randomly-rolled Legendary/Mythical partner (so it uses whatever
+    signature ability that Pokémon has, reusing the existing roster with no
+    new ability code needed) and a randomized per-match skill profile
+    (accuracy, answer speed, item/ability-use aggressiveness). Feeds through
+    the exact same `submit_pvp_live_answer`/`apply_pvp_signature_effect`
+    RPCs as a real match — no changes needed to the core HP/stats/status/
+    items/abilities engine. Scheduled to start **after** the signature-
+    ability rollout (item 13) finishes.
 
 ## Bug fixes / polish
 

@@ -7,6 +7,12 @@ import {
   photonGeyserStat,
   resolveTransformCopy,
   clampStage,
+  nextWrathStacks,
+  wrathDischarge,
+  WRATH_MAX,
+  opponentAnsweredCorrectly,
+  thunderclapFires,
+  THUNDERCLAP_COOLDOWN,
   type StageMap,
 } from "./signature-bespoke";
 
@@ -100,5 +106,56 @@ describe("Mew — Transform (151)", () => {
 
   it("returns null when there's nothing to copy and no pool", () => {
     expect(resolveTransformCopy(null, null, [])).toBeNull();
+  });
+});
+
+describe("Moltres — Fiery Wrath (146)", () => {
+  it("builds a Wrath stack on each wrong answer, capped at WRATH_MAX", () => {
+    expect(WRATH_MAX).toBe(3);
+    expect(nextWrathStacks(0, false)).toBe(1);
+    expect(nextWrathStacks(1, false)).toBe(2);
+    expect(nextWrathStacks(2, false)).toBe(3);
+    expect(nextWrathStacks(3, false)).toBe(3); // clamped
+  });
+
+  it("resets to 0 on a correct answer (the discharge)", () => {
+    expect(nextWrathStacks(3, true)).toBe(0);
+    expect(nextWrathStacks(0, true)).toBe(0);
+  });
+
+  it("tolerates out-of-range/fractional stored values", () => {
+    expect(nextWrathStacks(-5, false)).toBe(1);
+    expect(nextWrathStacks(9, false)).toBe(3);
+  });
+
+  it("discharge grants +1 Attack/stack and a 30%/stack Sleep chance (capped)", () => {
+    expect(wrathDischarge(0)).toEqual({ stacks: 0, bonusAttackStage: 0, sleepChance: 0 });
+    expect(wrathDischarge(1)).toEqual({ stacks: 1, bonusAttackStage: 1, sleepChance: 0.3 });
+    const three = wrathDischarge(3);
+    expect(three.bonusAttackStage).toBe(3);
+    expect(three.sleepChance).toBeCloseTo(0.9);
+    // Never exceeds cap even if a stale value slips through.
+    expect(wrathDischarge(5).bonusAttackStage).toBe(3);
+    expect(wrathDischarge(5).sleepChance).toBeLessThanOrEqual(1);
+  });
+});
+
+describe("Opponent-reactive observer (Raging Bolt Thunderclap 1021)", () => {
+  it("detects the opponent's correct-counter advancing", () => {
+    expect(opponentAnsweredCorrectly(2, 3)).toBe(true);
+    expect(opponentAnsweredCorrectly(3, 3)).toBe(false);
+    expect(opponentAnsweredCorrectly(3, 2)).toBe(false);
+  });
+
+  it("fires only on an advance AND when the per-4-question cooldown has elapsed", () => {
+    expect(THUNDERCLAP_COOLDOWN).toBe(4);
+    // Never fired yet (lastFired = -cooldown): available from question 0.
+    expect(thunderclapFires(0, 1, 0, -THUNDERCLAP_COOLDOWN)).toBe(true);
+    // No advance → no fire.
+    expect(thunderclapFires(1, 1, 5, -THUNDERCLAP_COOLDOWN)).toBe(false);
+    // Advance but still on cooldown (fired at q2, now q4 → only 2 elapsed).
+    expect(thunderclapFires(1, 2, 4, 2)).toBe(false);
+    // Advance and cooldown satisfied (fired at q2, now q6 → 4 elapsed).
+    expect(thunderclapFires(1, 2, 6, 2)).toBe(true);
   });
 });

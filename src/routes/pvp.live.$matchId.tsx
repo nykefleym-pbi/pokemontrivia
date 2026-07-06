@@ -179,6 +179,14 @@ function LivePvpMatchPage() {
             guestSuppressedUntil: (row.guest_suppressed_until as number) ?? 0,
             weatherOwner:
               (row.weather_owner as "host" | "guest" | null) ?? matchRef.current?.weatherOwner ?? null,
+            hostSigState:
+              (row.host_sig_state as Record<string, number> | null) ??
+              matchRef.current?.hostSigState ??
+              {},
+            guestSigState:
+              (row.guest_sig_state as Record<string, number> | null) ??
+              matchRef.current?.guestSigState ??
+              {},
           };
           setMatch(updated);
           if (updated.status === "forfeited") {
