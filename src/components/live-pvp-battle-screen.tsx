@@ -193,7 +193,11 @@ function PvpCombatPanel({
         {hasChips && (
           <div className={`mt-1 flex w-full flex-wrap gap-0.5 ${justifyCls}`}>
             {abilityName && (
-              <span className="rounded-full bg-primary/10 px-1.5 py-[1px] font-pixel-xs text-primary">
+              <span
+                className="max-w-full overflow-hidden text-ellipsis whitespace-nowrap rounded-full bg-primary/10 px-1.5 py-[1px] font-pixel-xs uppercase tracking-wide text-primary"
+                style={{ fontSize: "6px" }}
+                title={abilityName}
+              >
                 ⚡ {abilityName}
               </span>
             )}
@@ -1164,30 +1168,31 @@ export function LivePvpBattleScreen({
 
       {/* QUESTION CARD — thumb zone, pinned bottom, floating timer pill above */}
       <div className="relative shrink-0 rounded-t-[28px] bg-card px-[max(1rem,env(safe-area-inset-left))] pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-14 shadow-[0_-8px_30px_-12px_oklch(0.3_0.05_260/0.25)]">
-        <div className="pointer-events-none absolute left-1/2 -top-12 z-10 flex -translate-x-1/2 flex-col items-center">
-          <TimerRing timer={Math.ceil(msLeft / 1000)} maxTime={Math.ceil(personalTimerMs / 1000)} />
-          {!frozen && <p className="mt-1.5 font-pixel-xs text-foreground/70">{q.category}</p>}
-        </div>
+        <div className="relative">
+          <div className="pointer-events-none absolute left-1/2 -top-12 z-10 flex -translate-x-1/2 flex-col items-center">
+            <TimerRing timer={Math.ceil(msLeft / 1000)} maxTime={Math.ceil(personalTimerMs / 1000)} />
+            {!frozen && <p className="mt-1.5 font-pixel-xs text-foreground/70">{q.category}</p>}
+          </div>
 
-        {frozen ? (
-          <div className="flex flex-col items-center justify-center gap-2 py-6 text-center">
-            <div className="text-4xl">❄️</div>
-            <div className="font-display text-lg text-foreground">Frozen solid!</div>
-            <div className="text-xs text-foreground/60">This question is skipped.</div>
-          </div>
-        ) : stillSleepLocked ? (
-          <div className="flex flex-col items-center justify-center gap-2 py-6 text-center">
-            <div className="text-4xl">😴</div>
-            <div className="text-xs text-foreground/60">Waking up…</div>
-          </div>
-        ) : (
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={displayedIndex}
-              initial={{ y: 40, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -10, opacity: 0 }}
-            >
+          {frozen ? (
+            <div className="flex flex-col items-center justify-center gap-2 py-6 text-center">
+              <div className="text-4xl">❄️</div>
+              <div className="font-display text-lg text-foreground">Frozen solid!</div>
+              <div className="text-xs text-foreground/60">This question is skipped.</div>
+            </div>
+          ) : stillSleepLocked ? (
+            <div className="flex flex-col items-center justify-center gap-2 py-6 text-center">
+              <div className="text-4xl">😴</div>
+              <div className="text-xs text-foreground/60">Waking up…</div>
+            </div>
+          ) : (
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={displayedIndex}
+                initial={{ y: 40, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: -10, opacity: 0 }}
+              >
               <p className="text-center font-display text-[clamp(0.95rem,4vw,1.125rem)] font-bold leading-snug text-foreground">
                 {q.question}
               </p>
@@ -1239,15 +1244,13 @@ export function LivePvpBattleScreen({
                     className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition active:scale-95 disabled:opacity-40"
                   >
                     <ItemIcon item={it} className="h-8 w-8" />
-                    <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-poke-dark px-1 font-pixel text-[9px] text-white">
-                      {inventory[it.id] ?? 0}
-                    </span>
                   </button>
                 ))}
               </div>
             </motion.div>
           </AnimatePresence>
-        )}
+          )}
+        </div>
       </div>
 
       <Sheet open={bagOpen} onOpenChange={setBagOpen}>
