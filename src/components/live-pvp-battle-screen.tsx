@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import type { Trivia } from "@/lib/trivia-core";
 import { playSfx } from "@/lib/audio";
 import { useGameStore, type ActiveStatus, type PvpStatStages } from "@/lib/store";
+import { PokemonSprite, TypeBadge, PokeballSpinner } from "@/components/game-ui";
+import { findPokemon, type PokeType } from "@/lib/pokemon-data";
 import { ITEMS, STATUS_META, type ItemId, type StatusKind, type PvpStat } from "@/lib/game-data";
 import { MAX_ITEMS_PER_BATTLE } from "@/lib/store/slices/itemsSlice";
 import {
@@ -86,19 +89,6 @@ function statBarLabel(stat: PvpStat): string {
   return { attack: "ATK", defense: "DEF", speed: "SPD", crit: "CRIT" }[stat];
 }
 
-function HpBar({ hp, maxHp }: { hp: number; maxHp: number }) {
-  const pct = Math.max(0, Math.min(100, (hp / maxHp) * 100));
-  const color = pct > 50 ? "bg-hp-good" : pct > 20 ? "bg-hp-warn" : "bg-hp-low";
-  return (
-    <div className="h-2.5 w-full overflow-hidden rounded-full bg-poke-dark/15">
-      <div
-        className={`h-full rounded-full transition-[width] duration-300 ${color}`}
-        style={{ width: `${pct}%` }}
-      />
-    </div>
-  );
-}
-
 function StatChips({ stages }: { stages: PvpStatStages }) {
   const entries = (Object.keys(stages) as PvpStat[])
     .map((k) => ({ stat: k, val: stages[k] }))
@@ -138,36 +128,113 @@ function StatusChips({ statuses }: { statuses: ActiveStatus[] }) {
   );
 }
 
-function BattlerPanel({
+/** Solo-style CombatPanel adapted for Nearby Battle: same card frame, type
+ * badges, and spring HP bar as `battle-screen.tsx`'s CombatPanel, but carrying
+ * PvP's stat-stage and status chips instead of ability/immunity chips. */
+function PvpCombatPanel({
+  align,
   name,
+  types,
   hp,
   stages,
   statuses,
-  align,
 }: {
+  align: "left" | "right";
   name: string;
+  types: PokeType[];
   hp: number;
   stages: PvpStatStages;
   statuses: ActiveStatus[];
-  align: "left" | "right";
+}) {
+  const pct = Math.max(0, Math.min(100, (hp / PVP_MAX_HP) * 100));
+  const barColor = pct > 50 ? "bg-hp-good" : pct > 20 ? "bg-hp-warn" : "bg-hp-low";
+  const alignCls = align === "right" ? "items-end text-right" : "items-start text-left";
+  const justifyCls = align === "right" ? "justify-end" : "justify-start";
+  const hasChips = (Object.values(stages) as number[]).some((v) => v !== 0) || statuses.length > 0;
+
+  return (
+    <div className="w-[clamp(8rem,38vw,10.5rem)] shrink-0 rounded-2xl bg-card px-3 py-2 backdrop-blur shadow-card">
+      <div className={`flex flex-col ${alignCls}`}>
+        <div className="w-full truncate text-sm font-bold leading-tight">{name}</div>
+        {types.length > 0 && (
+          <div className={`mt-1 flex w-full gap-1 ${justifyCls}`}>
+            {types.map((t) => (
+              <TypeBadge key={t} type={t} size="sm" />
+            ))}
+          </div>
+        )}
+        <div className="mt-1.5 flex w-full items-center gap-2">
+          <div className="h-2 flex-1 overflow-hidden rounded-full bg-poke-dark/15">
+            <motion.div
+              className={`h-full ${barColor}`}
+              initial={false}
+              animate={{ width: `${pct}%` }}
+              transition={{ type: "spring", stiffness: 100, damping: 18 }}
+            />
+          </div>
+          <span className="text-[11px] font-bold tabular-nums text-foreground">
+            {Math.max(0, Math.round(hp))}
+          </span>
+        </div>
+        {hasChips && (
+          <div className={`mt-1 flex w-full flex-wrap gap-0.5 ${justifyCls}`}>
+            <StatChips stages={stages} />
+            <StatusChips statuses={statuses} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Sprite over a soft radial "shadow" ellipse, mirroring Solo's arena. Falls
+ * back to a Poké Ball when the side's partner dex id is unknown (a non-signature
+ * partner, or an opponent whose species the match row doesn't expose). */
+function ArenaSprite({
+  id,
+  back,
+  shake,
+  floatN,
+}: {
+  id: number | null;
+  back: boolean;
+  shake: boolean;
+  floatN: number | null;
 }) {
   return (
-    <div
-      className={`w-full rounded-2xl bg-card px-3 py-2 shadow-card ${align === "right" ? "text-right" : "text-left"}`}
-    >
-      <div className="truncate text-sm font-bold text-foreground">{name}</div>
-      <div className="mt-1 flex items-center gap-2">
-        <HpBar hp={hp} maxHp={PVP_MAX_HP} />
-        <span className="text-[11px] font-bold tabular-nums text-foreground">
-          {Math.max(0, Math.round(hp))}
-        </span>
-      </div>
+    <div className="relative shrink-0">
       <div
-        className={`mt-1 flex flex-wrap gap-1 ${align === "right" ? "justify-end" : "justify-start"}`}
+        aria-hidden="true"
+        className="pointer-events-none absolute bottom-3 left-1/2 h-8 w-28 -translate-x-1/2 rounded-[50%]"
+        style={{
+          background:
+            "radial-gradient(ellipse at 50% 35%, oklch(0.88 0.16 145) 0%, oklch(0.72 0.18 145) 55%, oklch(0.55 0.16 150) 100%)",
+          boxShadow: "0 8px 14px -6px oklch(0.3 0.1 150 / 0.35), inset 0 1px 0 oklch(1 0 0 / 0.35)",
+        }}
+      />
+      <motion.div
+        className={`relative ${shake ? "animate-shake" : ""}`}
+        initial={{ x: back ? -60 : 60, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
       >
-        <StatChips stages={stages} />
-        <StatusChips statuses={statuses} />
-      </div>
+        {id != null ? (
+          <PokemonSprite
+            id={id}
+            back={back}
+            alt={back ? "Your Pokémon" : "Opponent's Pokémon"}
+            className="sprite relative z-10 h-32 w-32"
+          />
+        ) : (
+          <div className="relative z-10 flex h-32 w-32 items-center justify-center">
+            <PokeballSpinner size={72} />
+          </div>
+        )}
+        {floatN != null && (
+          <div className="animate-float-up pointer-events-none absolute top-4 left-1/2 z-20 -translate-x-1/2 font-pixel text-base text-destructive">
+            -{floatN}
+          </div>
+        )}
+      </motion.div>
     </div>
   );
 }
@@ -206,6 +273,7 @@ export function LivePvpBattleScreen({
   // Legendary/Mythical partner signature ability (null for non-legendary
   // partners — they get nothing extra, exactly as before).
   const rawPartnerId = useGameStore((s) => s.pokemon?.id ?? null);
+  const myPokemon = useGameStore((s) => s.pokemon);
   const pokedexCount = useGameStore((s) => Object.keys(s.pokedex).length);
 
   // Phase 2 — Mew's Transform (dex 151): at battle start, once the OPPONENT's
@@ -237,6 +305,14 @@ export function LivePvpBattleScreen({
   const [oppHp, setOppHp] = useState(amIHost ? match.guestHp : match.hostHp);
   const [bagOpen, setBagOpen] = useState(false);
   const [frozen, setFrozen] = useState(false);
+  // Purely-visual arena feedback (mirrors Solo): a shake + floating "-N" damage
+  // number on whichever side's HP just dropped. Driven off HP deltas so every
+  // path that lowers HP (own answer, opponent/bot row sync, ability, item)
+  // triggers it without touching any game logic.
+  const [shakeWho, setShakeWho] = useState<"player" | "opponent" | null>(null);
+  const [floatDmg, setFloatDmg] = useState<{ who: "player" | "opponent"; n: number } | null>(null);
+  const prevMyHpRef = useRef(myHp);
+  const prevOppHpRef = useRef(oppHp);
   // Manual "charge and fire" signature abilities: a generic charge indicator +
   // Fire button (reusing the bag's visual language) for Legendary/Mythical
   // partners whose signature move is player-fired and decomposes to a
@@ -405,6 +481,34 @@ export function LivePvpBattleScreen({
     setOppHp(amIHost ? match.guestHp : match.hostHp);
     itemsUsedRef.current = amIHost ? match.hostItemsUsed : match.guestItemsUsed;
   }, [match, amIHost]);
+
+  useEffect(() => {
+    const prev = prevMyHpRef.current;
+    prevMyHpRef.current = myHp;
+    if (myHp >= prev) return;
+    setShakeWho("player");
+    setFloatDmg({ who: "player", n: Math.round(prev - myHp) });
+    const t1 = setTimeout(() => setShakeWho((w) => (w === "player" ? null : w)), 500);
+    const t2 = setTimeout(() => setFloatDmg((d) => (d?.who === "player" ? null : d)), 1000);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [myHp]);
+
+  useEffect(() => {
+    const prev = prevOppHpRef.current;
+    prevOppHpRef.current = oppHp;
+    if (oppHp >= prev) return;
+    setShakeWho("opponent");
+    setFloatDmg({ who: "opponent", n: Math.round(prev - oppHp) });
+    const t1 = setTimeout(() => setShakeWho((w) => (w === "opponent" ? null : w)), 500);
+    const t2 = setTimeout(() => setFloatDmg((d) => (d?.who === "opponent" ? null : d)), 1000);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [oppHp]);
 
   // Ho-Oh (250) Rainbow Rebirth — opponent-inflicted revive toast. When the
   // OPPONENT's correct answer would have KO'd us but the server revived us, our
@@ -958,25 +1062,19 @@ export function LivePvpBattleScreen({
     return it.isBerry || CLIENT_ONLY_ITEMS.includes(it.id) || SERVER_EFFECT_ITEMS.includes(it.id);
   });
 
-  return (
-    <div className="flex h-full w-full flex-col bg-poke-cream px-5 pb-8 pt-6">
-      <div className="mb-3 grid grid-cols-2 gap-3">
-        <BattlerPanel name="You" hp={myHp} stages={myStages} statuses={myStatuses} align="left" />
-        <BattlerPanel
-          name={opponentName}
-          hp={oppHp}
-          stages={oppStages}
-          statuses={oppStatuses}
-          align="right"
-        />
-      </div>
+  const mySpriteId = myPokemon?.id ?? partnerId ?? null;
+  const myTypes: PokeType[] = myPokemon?.types ?? [];
+  const oppEntry = opponentPartnerId != null ? findPokemon(opponentPartnerId) : undefined;
+  const oppTypes: PokeType[] = oppEntry?.types ?? [];
 
-      <div className="mb-3 flex items-center justify-between">
+  return (
+    <div className="relative flex h-full w-full flex-col overflow-hidden bg-poke-cream">
+      {/* TOP BAR — question index, signature-fire, bag (timer floats above the card) */}
+      <div className="flex shrink-0 items-center justify-between px-5 pb-2 pt-6">
         <div className="font-pixel-xs text-foreground/60">
           Question {displayedIndex + 1} / {PVP_QUESTIONS}
         </div>
         <div className="flex items-center gap-2">
-          <TimerRing timer={Math.ceil(msLeft / 1000)} maxTime={Math.ceil(personalTimerMs / 1000)} />
           {manualFireable && (
             <button
               onClick={() => void handleFireSignature()}
@@ -1010,56 +1108,108 @@ export function LivePvpBattleScreen({
         </div>
       </div>
 
-      {frozen ? (
-        <div className="mb-6 flex flex-1 flex-col items-center justify-center gap-2 rounded-3xl bg-card p-5 text-center shadow-card">
-          <div className="text-4xl">❄️</div>
-          <div className="font-display text-lg text-foreground">Frozen solid!</div>
-          <div className="text-xs text-foreground/60">This question is skipped.</div>
-        </div>
-      ) : (
-        <>
-          <div className="mb-5 rounded-3xl bg-card p-5 shadow-card">
-            <div className="font-pixel-xs mb-2 text-foreground/50">{q.category}</div>
-            <div className="font-display text-lg leading-snug text-foreground">{q.question}</div>
+      {/* COMBAT ARENA — FRLG diagonal layout, mirroring Solo */}
+      <div className="relative min-h-0 flex-1 px-[max(1.25rem,env(safe-area-inset-left))] py-2">
+        {/* OPPONENT ZONE: panel top-left, sprite top-right */}
+        <div className="flex items-start justify-between">
+          <PvpCombatPanel
+            align="left"
+            name={opponentName}
+            types={oppTypes}
+            hp={oppHp}
+            stages={oppStages}
+            statuses={oppStatuses}
+          />
+          <div className="mt-2">
+            <ArenaSprite
+              id={opponentPartnerId}
+              back={false}
+              shake={shakeWho === "opponent"}
+              floatN={floatDmg?.who === "opponent" ? floatDmg.n : null}
+            />
           </div>
-          {stillSleepLocked ? (
-            <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
-              <div className="text-4xl">😴</div>
-              <div className="text-xs text-foreground/60">Waking up…</div>
-            </div>
-          ) : (
-            <div className="flex flex-1 flex-col gap-3">
-              {q.options.map((opt, i) => {
-                const isCorrectOpt = i === q.correct;
-                const isSelected = selected === i;
-                const showState = selected !== null;
-                return (
-                  <button
-                    key={i}
-                    disabled={selected !== null}
-                    onClick={() => handleAnswer(i)}
-                    className={`rounded-2xl border-2 px-4 py-3 text-left font-display text-base transition-colors ${
-                      showState && isCorrectOpt
-                        ? "border-hp-good bg-hp-good/15 text-hp-good"
-                        : showState && isSelected && !isCorrectOpt
-                          ? "border-destructive bg-destructive/10 text-destructive"
-                          : "border-border bg-card text-foreground"
-                    }`}
-                  >
-                    {opt}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </>
-      )}
-
-      {selected !== null && (
-        <div className="mt-3 text-center font-pixel-xs text-foreground/50">
-          Locked in — next question soon
         </div>
-      )}
+
+        {/* PLAYER ZONE: sprite lower-left, panel mid-right */}
+        <div className="-mt-2 flex items-end justify-between">
+          <ArenaSprite
+            id={mySpriteId}
+            back
+            shake={shakeWho === "player"}
+            floatN={floatDmg?.who === "player" ? floatDmg.n : null}
+          />
+          <PvpCombatPanel
+            align="right"
+            name="You"
+            types={myTypes}
+            hp={myHp}
+            stages={myStages}
+            statuses={myStatuses}
+          />
+        </div>
+      </div>
+
+      {/* QUESTION CARD — thumb zone, pinned bottom, floating timer pill above */}
+      <div className="relative shrink-0 rounded-t-[28px] bg-card px-[max(1rem,env(safe-area-inset-left))] pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-14 shadow-[0_-8px_30px_-12px_oklch(0.3_0.05_260/0.25)]">
+        <div className="pointer-events-none absolute left-1/2 -top-6 z-10 flex -translate-x-1/2 flex-col items-center">
+          <TimerRing timer={Math.ceil(msLeft / 1000)} maxTime={Math.ceil(personalTimerMs / 1000)} />
+          {!frozen && <p className="mt-1.5 font-pixel-xs text-foreground/70">{q.category}</p>}
+        </div>
+
+        {frozen ? (
+          <div className="flex flex-col items-center justify-center gap-2 py-6 text-center">
+            <div className="text-4xl">❄️</div>
+            <div className="font-display text-lg text-foreground">Frozen solid!</div>
+            <div className="text-xs text-foreground/60">This question is skipped.</div>
+          </div>
+        ) : stillSleepLocked ? (
+          <div className="flex flex-col items-center justify-center gap-2 py-6 text-center">
+            <div className="text-4xl">😴</div>
+            <div className="text-xs text-foreground/60">Waking up…</div>
+          </div>
+        ) : (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={displayedIndex}
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -10, opacity: 0 }}
+            >
+              <p className="text-center font-display text-[clamp(0.95rem,4vw,1.125rem)] font-bold leading-snug text-foreground">
+                {q.question}
+              </p>
+              <div className="mt-3 grid grid-cols-1 gap-2">
+                {q.options.map((opt, i) => {
+                  const isCorrectOpt = i === q.correct;
+                  const isSelected = selected === i;
+                  const showState = selected !== null;
+                  return (
+                    <button
+                      key={i}
+                      disabled={selected !== null}
+                      onClick={() => handleAnswer(i)}
+                      className={`min-h-[48px] rounded-2xl border-2 px-4 py-3 text-left font-display text-base transition active:scale-[0.98] ${
+                        showState && isCorrectOpt
+                          ? "border-hp-good bg-hp-good/15 text-hp-good"
+                          : showState && isSelected && !isCorrectOpt
+                            ? "border-destructive bg-destructive/10 text-destructive"
+                            : "border-border bg-card text-foreground"
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  );
+                })}
+              </div>
+              {selected !== null && (
+                <div className="mt-3 text-center font-pixel-xs text-foreground/50">
+                  Locked in — next question soon
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        )}
+      </div>
 
       {bagOpen && (
         <div
