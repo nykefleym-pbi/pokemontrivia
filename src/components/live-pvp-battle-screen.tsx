@@ -268,6 +268,9 @@ export function LivePvpBattleScreen({
   // answering correctly, derived from their *_correct_live counter advancing.
   const oppCorrectPrevRef = useRef<number | null>(null);
   const thunderclapLastFiredRef = useRef(-THUNDERCLAP_COOLDOWN);
+  // Ho-Oh (250) Rainbow Rebirth: one-time toast when the server revives us from
+  // a would-be self-KO (server is authoritative; this is display-only).
+  const rainbowRebirthToastedRef = useRef(false);
 
   // Fold a server ability-effect result (stat stages / statuses / HP) back into
   // local state. Shared by the generic post_answer path and the Phase 1/2
@@ -608,6 +611,19 @@ export function LivePvpBattleScreen({
 
     const res = await submitPvpLiveAnswer(matchId, idxAtAnswer, correct, dmg, selfDmg, elapsedMs);
     if (res.ok) {
+      const myNewHp = amIHost ? res.hostHp : res.guestHp;
+      // Ho-Oh's Rainbow Rebirth: we took lethal self-damage this question yet the
+      // authoritative server kept us alive (revived to 25% HP) — announce it once.
+      if (
+        partnerId === 250 &&
+        !rainbowRebirthToastedRef.current &&
+        selfDmg > 0 &&
+        myHp - selfDmg <= 0 &&
+        myNewHp > 0
+      ) {
+        rainbowRebirthToastedRef.current = true;
+        toast.success("🌈 Ho-Oh's Rainbow Rebirth — you rise from the ashes!");
+      }
       setMyHp(amIHost ? res.hostHp : res.guestHp);
       setOppHp(amIHost ? res.guestHp : res.hostHp);
       if (res.resolved && !finishedRef.current) {
