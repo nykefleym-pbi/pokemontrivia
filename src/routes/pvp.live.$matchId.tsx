@@ -110,6 +110,12 @@ function LivePvpMatchPage() {
     playBgm("battle_regular");
   }, []);
 
+  useEffect(() => {
+    const { setBattleScreenActive } = useGameStore.getState();
+    setBattleScreenActive(true);
+    return () => setBattleScreenActive(false);
+  }, []);
+
   // Live row updates: HP/stages/statuses/completion/forfeit all flow through
   // this single postgres_changes subscription (pvp_live_matches was already
   // in the realtime publication; the new HP columns ride the same channel).
