@@ -35,19 +35,24 @@ they ship.
     PokeAPI sprite (pointed at Exp. Share instead); added Big Nugget (instant
     coins), Star Piece (+50% win rewards), and Choice Specs (2× rewards, but
     must be the only item used that battle).
-13. **Legendary/Mythical signature abilities** — in progress, **73 of 104**
-    roster entries fully wired for **PvP (Nearby Battle) only** (Solo has no
-    Attack/Defense/Speed/Crit stats so the abilities don't apply there).
-    Displays the Signature Move name in the UI (not a separate ability name).
-    Roster now includes the 8 previously-missing Pokémon plus Shadow Rider
-    Calyrex (a new synthetic-dex-id precedent for Pokémon formes). Remaining
-    ~31 abilities need larger schema work: per-side partner-id tracking
-    (unlocks Mew's Transform, interrupt/reactive abilities, ability-lock/
-    suppress abilities, and weather-conflict resolution together), a
-    stack-tracking column (Moltres, Zeraora), and Ho-Oh's revive-on-KO
-    (deliberately deferred — touches the core HP/KO resolution path shared
-    by every match, wants an integration-test harness first).
-    Implementation in progress via a data-driven ability-effect engine.
+13. ~~**Legendary/Mythical signature abilities**~~ ✅ shipped — **81 of 104**
+    roster entries fully wired with live effects for **PvP (Nearby Battle)
+    only** (Solo has no Attack/Defense/Speed/Crit stats so the abilities
+    don't apply there); the remaining 23 are intentionally catalog-only/
+    bespoke by design (validated via a dedicated audit pass, no live effect
+    planned). Displays the Signature Move name in the UI (not a separate
+    ability name). Roster now includes the 8 previously-missing Pokémon plus
+    Shadow Rider Calyrex (a new synthetic-dex-id precedent for Pokémon
+    formes). Per-side partner-id tracking (unlocks Mew's Transform,
+    interrupt/reactive abilities, ability-lock/suppress abilities, and
+    weather-conflict resolution), stack-tracking (Moltres, Zeraora), and
+    Ho-Oh's Rainbow Rebirth revive-on-KO (both the self-inflicted and
+    opponent-inflicted KO paths) are all shipped. A validation audit also
+    surfaced and fixed a real security gap (client-supplied Pokémon id
+    wasn't checked against the caller's registered partner, allowing
+    ability-spoofing and unbounded HP drain/heal spam) plus several dead/
+    partially-wired abilities and minor sub-effect gaps. Implemented via a
+    data-driven ability-effect engine.
 14. ~~**Status conditions**~~ ✅ shipped — Burn, Paralysis, Sleep, Freeze,
     Poison/Badly Poisoned, and Confusion, shared between Solo and Nearby
     Battle via a store-level `battleStatuses`/`opponentStatuses` system (one
