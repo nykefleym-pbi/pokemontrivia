@@ -34,6 +34,12 @@ import {
   NO_HIT_MODIFIERS,
   type SignatureContext,
 } from "@/lib/signature-abilities";
+import {
+  nextWrathStacks,
+  wrathDischarge,
+  thunderclapFires,
+  THUNDERCLAP_COOLDOWN,
+} from "@/lib/signature-bespoke";
 import { isWeatherStatSource, isMyWeatherActive } from "@/lib/pvp-weather";
 import { TimerRing } from "@/components/battle-screen";
 
@@ -252,6 +258,35 @@ export function LivePvpBattleScreen({
   const correctCountRef = useRef(0);
   const answeredCategoriesRef = useRef<Set<string>>(new Set());
   const battleStartFiredRef = useRef(false);
+  // Phase 1 — Moltres's Fiery Wrath (dex 146): Wrath stacks (0..3) live in the
+  // authoritative match row (`*_sig_state`, keyed by dex id) so they survive a
+  // reconnect and are server-clamped. This ref mirrors them locally; it's
+  // hydrated from the synced row on mount and kept in step with every write.
+  const wrathStacksRef = useRef(0);
+  const wrathHydratedRef = useRef(false);
+  // Phase 2 — Raging Bolt's Thunderclap (dex 1021): reactive to the opponent
+  // answering correctly, derived from their *_correct_live counter advancing.
+  const oppCorrectPrevRef = useRef<number | null>(null);
+  const thunderclapLastFiredRef = useRef(-THUNDERCLAP_COOLDOWN);
+
+  // Fold a server ability-effect result (stat stages / statuses / HP) back into
+  // local state. Shared by the generic post_answer path and the Phase 1/2
+  // bespoke handlers (Moltres discharge, Raging Bolt reactive).
+  function applyAbilityResult(res: Awaited<ReturnType<typeof applyPvpSignatureEffect>>): void {
+    if (!res.ok || res.noop) return;
+    if (res.hostStages) {
+      useGameStore.setState({
+        myStages: amIHost ? res.hostStages : res.guestStages!,
+        oppStages: amIHost ? res.guestStages! : res.hostStages,
+        battleStatuses: amIHost ? res.hostStatuses! : res.guestStatuses!,
+        opponentStatuses: amIHost ? res.guestStatuses! : res.hostStatuses!,
+      });
+    }
+    if (typeof res.hostHp === "number") {
+      setMyHp(amIHost ? res.hostHp : res.guestHp!);
+      setOppHp(amIHost ? res.guestHp! : res.hostHp);
+    }
+  }
 
   // Phase 2 — resolve Mew's Transform once the opponent's identity is known.
   useEffect(() => {
@@ -284,6 +319,40 @@ export function LivePvpBattleScreen({
       },
     );
   }, [ability, matchId, partnerId, pokedexCount]);
+
+  // Phase 1 — hydrate Moltres's Wrath stacks from the authoritative row once,
+  // as soon as the partner is known to be Moltres (dex 146; possibly via Mew's
+  // Transform). Covers a mid-battle reconnect; a fresh battle reads 0.
+  useEffect(() => {
+    if (wrathHydratedRef.current || partnerId !== 146) return;
+    wrathHydratedRef.current = true;
+    const sig = amIHost ? match.hostSigState : match.guestSigState;
+    wrathStacksRef.current = Math.max(0, Math.min(3, sig?.["146"] ?? 0));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [partnerId]);
+
+  // Phase 2 — Raging Bolt's Thunderclap: watch the opponent's live correct-answer
+  // counter. When it advances (they answered correctly) and my per-4-question
+  // cooldown allows, pre-empt: +1 my Attack / -1 their Attack via the same
+  // server-validated RPC as every other ability (magnitude fixed server-side).
+  const oppCorrectLive = amIHost ? match.guestCorrectLive : match.hostCorrectLive;
+  useEffect(() => {
+    const prev = oppCorrectPrevRef.current;
+    oppCorrectPrevRef.current = oppCorrectLive;
+    if (prev === null || partnerId !== 1021 || finishedRef.current) return;
+    const myIdx = Math.max(0, displayedIndex);
+    if (myIdx < mySuppressedUntil) return; // ability locked (Phase 4)
+    if (!thunderclapFires(prev, oppCorrectLive, myIdx, thunderclapLastFiredRef.current)) return;
+    thunderclapLastFiredRef.current = myIdx;
+    void applyPvpSignatureEffect(matchId, myIdx, 1021, "post_answer").then((res) => {
+      if (res.ok && !res.noop) {
+        applyAbilityResult(res);
+        const move = signatureMoveName(partnerId);
+        if (move) toast.success(`✨ ${move} — you pre-empt the opponent!`);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [oppCorrectLive]);
 
   // Keep local HP/items mirrors in sync with the authoritative row (updates
   // arrive via the parent route's postgres_changes subscription on `match`).
@@ -408,6 +477,26 @@ export function LivePvpBattleScreen({
           armedHitRef.current = null;
           setArmedHit(false);
         }
+        // Phase 1 — Moltres's Fiery Wrath discharge: a correct answer consumes
+        // all Wrath stacks for +1 Attack/stack on THIS hit, resets the stack
+        // (server-persisted), and rolls a 30%/stack Sleep on the opponent
+        // through the same server-validated catalog path as any other status.
+        if (!suppressed && partnerId === 146 && wrathStacksRef.current > 0) {
+          const discharge = wrathDischarge(wrathStacksRef.current);
+          mods = mergeHitModifiers(mods, {
+            ...NO_HIT_MODIFIERS,
+            bonusAttackStage: discharge.bonusAttackStage,
+          });
+          wrathStacksRef.current = 0;
+          void applyPvpSignatureEffect(matchId, idxAtAnswer, 146, "sig_state", 0);
+          const move = signatureMoveName(146);
+          if (move) toast.success(`✨ ${move} — Wrath unleashed!`);
+          if (Math.random() < discharge.sleepChance) {
+            void applyPvpSignatureEffect(matchId, idxAtAnswer, 146, "post_answer").then(
+              applyAbilityResult,
+            );
+          }
+        }
         const baseAttack = mods.ignoreOwnNegativeStages
           ? Math.max(0, myStages.attack)
           : myStages.attack;
@@ -429,6 +518,16 @@ export function LivePvpBattleScreen({
       setStreak(0);
       selfDmg = 8; // flat wrong-answer chip, mirroring solo's flat-loss model
       playSfx("wrong");
+      // Phase 1 — Moltres's Fiery Wrath builds a Wrath stack on each wrong
+      // answer (capped at 3), unless the ability is currently suppressed. The
+      // new count is persisted to the authoritative row (server-clamped).
+      if (partnerId === 146 && idxAtAnswer >= mySuppressedUntil) {
+        const next = nextWrathStacks(wrathStacksRef.current, false);
+        if (next !== wrathStacksRef.current) {
+          wrathStacksRef.current = next;
+          void applyPvpSignatureEffect(matchId, idxAtAnswer, 146, "sig_state", next);
+        }
+      }
     }
 
     // Status cure ticks (mirrors solo: every answer ticks confusion/poison etc.)

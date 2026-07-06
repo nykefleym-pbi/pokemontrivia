@@ -133,6 +133,77 @@ export function resolveTransformCopy(
   return ratingThreeIds[Math.floor(rng() * ratingThreeIds.length)];
 }
 
+// ── Moltres — Fiery Wrath (146) ──────────────────────────────────────────────
+// "Build a Wrath stack on each WRONG answer (cap 3). The next CORRECT answer
+// consumes all stacks: +1 Attack stage per stack for that single hit, and a
+// 30%-per-stack chance to inflict Sleep (1q) on the opponent, then resets to 0."
+//
+// The stack is a per-battle counter that lives beyond streaks/stages, so it is
+// persisted in the match row's per-side `*_sig_state` jsonb (keyed by dex id,
+// server-clamped 0..cap on write). These pure helpers own the arithmetic; the
+// live loop reads the synced stack, computes the discharge client-side (same
+// trust model as every other passive_damage hit — damage is client-computed and
+// server-clamped) and writes the new stack back through the server.
+export const WRATH_MAX = 3;
+
+/** The Wrath stack AFTER an answer: +1 on a wrong answer (capped at WRATH_MAX),
+ * reset to 0 on a correct answer (it discharges). */
+export function nextWrathStacks(current: number, correct: boolean): number {
+  const cur = Math.max(0, Math.min(WRATH_MAX, Math.floor(current)));
+  if (correct) return 0;
+  return Math.min(WRATH_MAX, cur + 1);
+}
+
+export interface WrathDischarge {
+  /** Stacks consumed (0..WRATH_MAX). */
+  stacks: number;
+  /** +1 Attack stage per stack, folded into THIS correct answer's damage calc. */
+  bonusAttackStage: number;
+  /** 30% per stack (capped at 1.0) chance to Sleep the opponent for 1 question. */
+  sleepChance: number;
+}
+
+/** Resolve a Wrath discharge for a correct answer holding `stacks` stacks. When
+ * `stacks` is 0 this is an inert discharge (no bonus, no sleep roll). */
+export function wrathDischarge(stacks: number): WrathDischarge {
+  const s = Math.max(0, Math.min(WRATH_MAX, Math.floor(stacks)));
+  return { stacks: s, bonusAttackStage: s, sleepChance: Math.min(1, 0.3 * s) };
+}
+
+// ── Opponent-reactive observer (Raging Bolt 1021; opponent_correct primitive) ─
+// The live loop can derive an "opponent just answered correctly" signal purely
+// from the already-synced match row: the opponent's `*_correct_live` counter
+// increments by exactly one each time they lock a correct answer. Comparing the
+// counter between realtime-synced renders yields the reactive edge with no new
+// infrastructure. These helpers are pure so the edge-detect + cooldown gate are
+// unit-testable.
+
+/** True when the opponent's correct-answer counter advanced since we last saw
+ * it (i.e. they answered at least one question correctly in between). */
+export function opponentAnsweredCorrectly(prevCorrectLive: number, nextCorrectLive: number): boolean {
+  return nextCorrectLive > prevCorrectLive;
+}
+
+/**
+ * Raging Bolt — Thunderclap (1021): "once per 4 questions, if the opponent
+ * answers correctly, pre-empt." Fires only when (a) the opponent's correct
+ * counter advanced and (b) at least `cooldown` of MY own questions have elapsed
+ * since the last fire. `lastFiredQuestionIndex` is -Infinity / a large negative
+ * when it has never fired. Returns whether it fires this observation.
+ */
+export const THUNDERCLAP_COOLDOWN = 4;
+
+export function thunderclapFires(
+  prevCorrectLive: number,
+  nextCorrectLive: number,
+  myQuestionIndex: number,
+  lastFiredQuestionIndex: number,
+  cooldown: number = THUNDERCLAP_COOLDOWN,
+): boolean {
+  if (!opponentAnsweredCorrectly(prevCorrectLive, nextCorrectLive)) return false;
+  return myQuestionIndex - lastFiredQuestionIndex >= cooldown;
+}
+
 /** Statuses Lunar Dance / a full cleanse removes (all of them). */
 export const CLEANSABLE_STATUSES: readonly StatusKind[] = [
   "confused",

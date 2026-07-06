@@ -61,6 +61,10 @@ export interface LivePvpMatch {
   guestSuppressedUntil: number;
   /** Which side most recently (re-)established weather (Phase 5), or null. */
   weatherOwner: "host" | "guest" | null;
+  /** Per-side per-battle signature counters keyed by partner dex id (Phase 1:
+   * Moltres's Wrath stacks). Server-clamped on write. `{}` when unused. */
+  hostSigState: Record<string, number>;
+  guestSigState: Record<string, number>;
 }
 
 interface LivePvpMatchRow {
@@ -105,6 +109,8 @@ interface LivePvpMatchRow {
   host_suppressed_until: number;
   guest_suppressed_until: number;
   weather_owner: "host" | "guest" | null;
+  host_sig_state: Record<string, number> | null;
+  guest_sig_state: Record<string, number> | null;
 }
 
 function fromRow(r: LivePvpMatchRow): LivePvpMatch {
@@ -150,6 +156,8 @@ function fromRow(r: LivePvpMatchRow): LivePvpMatch {
     hostSuppressedUntil: r.host_suppressed_until ?? 0,
     guestSuppressedUntil: r.guest_suppressed_until ?? 0,
     weatherOwner: r.weather_owner ?? null,
+    hostSigState: r.host_sig_state ?? {},
+    guestSigState: r.guest_sig_state ?? {},
   };
 }
 
@@ -453,7 +461,7 @@ export async function applyPvpSignatureEffect(
   matchId: string,
   questionIndex: number,
   pokemonId: number,
-  phase: "battle_start" | "post_answer" | "manual",
+  phase: "battle_start" | "post_answer" | "manual" | "sig_state",
   scaleCount = 0,
 ): Promise<
   | {
@@ -468,6 +476,8 @@ export async function applyPvpSignatureEffect(
       guestStatuses?: ActiveStatus[];
       hostSuppressedUntil?: number;
       guestSuppressedUntil?: number;
+      hostSigState?: Record<string, number>;
+      guestSigState?: Record<string, number>;
     }
   | { ok: false; error: string }
 > {
@@ -495,6 +505,8 @@ export async function applyPvpSignatureEffect(
       guestStatuses?: ActiveStatus[];
       hostSuppressedUntil?: number;
       guestSuppressedUntil?: number;
+      hostSigState?: Record<string, number>;
+      guestSigState?: Record<string, number>;
       error?: string;
     } | null;
     if (r && r.ok === true) {
@@ -510,6 +522,8 @@ export async function applyPvpSignatureEffect(
         guestStatuses: r.guestStatuses,
         hostSuppressedUntil: r.hostSuppressedUntil,
         guestSuppressedUntil: r.guestSuppressedUntil,
+        hostSigState: r.hostSigState,
+        guestSigState: r.guestSigState,
       };
     }
     return { ok: false, error: (r && r.error) || "network" };
