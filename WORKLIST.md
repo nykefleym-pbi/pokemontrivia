@@ -78,17 +78,27 @@ they ship.
     3-item cap, not ownership); only Chople Berry currently inflicts a
     status in live battle; HP/damage/Speed-timer numbers are initial values
     pending a balance pass.
-18. **Training vs Bot (Nearby Battle)** — a "Training" entry point next to
-    the Nearby Battle button that starts a live PvP match against a bot
-    opponent instead of scanning a real friend's code: the bot gets a
-    randomly-rolled Legendary/Mythical partner (so it uses whatever
-    signature ability that Pokémon has, reusing the existing roster with no
-    new ability code needed) and a randomized per-match skill profile
-    (accuracy, answer speed, item/ability-use aggressiveness). Feeds through
-    the exact same `submit_pvp_live_answer`/`apply_pvp_signature_effect`
-    RPCs as a real match — no changes needed to the core HP/stats/status/
-    items/abilities engine. Scheduled to start **after** the signature-
-    ability rollout (item 13) finishes.
+18. ~~**Training vs Bot (Nearby Battle)**~~ ✅ shipped — a "Training" entry
+    point next to the Nearby Battle button starts a server-backed live PvP
+    match against a computer opponent instead of scanning a friend's code.
+    The bot is one shared synthetic "Training Bot" profile reused as `guest_id`
+    for every bot match (rows carry `is_bot_match = true`); it gets a
+    randomly-rolled Legendary/Mythical partner from the exact egg-hatch roster
+    (so it uses whatever signature ability that Pokémon has — no new ability
+    code) and a randomized per-match skill profile (accuracy, answer speed,
+    ability/item aggressiveness) in the pure, unit-tested brain `src/lib/
+    pvp-bot.ts`. The brain runs on the human's own device and drives the bot
+    through new, narrowly-scoped, additive RPCs (`start_bot_pvp_match`,
+    `submit_bot_pvp_move`, `apply_bot_pvp_signature_effect`,
+    `use_bot_pvp_live_item`) that each gate on `auth.uid() = host_id` AND
+    `is_bot_match = true` and only ever write the bot's own (guest) side — so
+    they can never touch a real opponent in a real match. `submit_pvp_live_answer`
+    and `apply_pvp_signature_effect` are untouched. The human's play path is
+    unchanged, presence/forfeit is disabled for bot matches, and berry rewards
+    keep full parity (same 5 drops per completed battle). The bot's passive/
+    manual damage abilities fold into its clamped move damage; its exotic
+    ability kinds (weather/suppress/swap/cleanse) and its own turn-skipping for
+    Freeze/Sleep/Paralysis are intentionally not modeled (training simplification).
 
 ## Bug fixes / polish
 

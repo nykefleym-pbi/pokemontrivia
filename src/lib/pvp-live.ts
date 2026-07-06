@@ -69,6 +69,9 @@ export interface LivePvpMatch {
    * revive this match (via either the self-KO or opponent-inflicted-KO path)? */
   hostRevived: boolean;
   guestRevived: boolean;
+  /** True when the guest is the shared Training Bot (Training-vs-Bot mode): the
+   * host drives the bot locally via the bot RPCs, and presence/forfeit is off. */
+  isBotMatch: boolean;
 }
 
 interface LivePvpMatchRow {
@@ -117,6 +120,7 @@ interface LivePvpMatchRow {
   guest_sig_state: Record<string, number> | null;
   host_revived: boolean | null;
   guest_revived: boolean | null;
+  is_bot_match: boolean | null;
 }
 
 function fromRow(r: LivePvpMatchRow): LivePvpMatch {
@@ -166,6 +170,7 @@ function fromRow(r: LivePvpMatchRow): LivePvpMatch {
     guestSigState: r.guest_sig_state ?? {},
     hostRevived: r.host_revived ?? false,
     guestRevived: r.guest_revived ?? false,
+    isBotMatch: r.is_bot_match ?? false,
   };
 }
 
@@ -226,6 +231,143 @@ export async function startLivePvpMatch(
   } catch (e) {
     console.warn("[pvp-live] startLivePvpMatch threw:", e);
     return { ok: false, error: "network" };
+  }
+}
+
+/**
+ * Start a Training-vs-Bot match: server-backed, host = the caller, guest = the
+ * shared Training Bot (a random Legendary/Mythical partner is rolled server-side
+ * from the same egg-hatch roster). Same match shape as a real Nearby Battle, so
+ * the whole HP/stats/status/ability engine runs unchanged; the human's device
+ * drives the bot via the bot RPCs below.
+ */
+export async function startBotPvpMatch(
+  questions: Trivia[],
+  partnerId?: number | null,
+): Promise<
+  | { ok: true; matchId: string; startedAt: string; opponent: LiveOpponentPreview }
+  | { ok: false; error: string }
+> {
+  try {
+    const { data, error } = await rpc.rpc("start_bot_pvp_match", {
+      _questions: questions,
+      _partner_id: partnerId ?? null,
+    });
+    if (error) {
+      console.warn("[pvp-live] startBotPvpMatch failed:", error.message);
+      return { ok: false, error: "network" };
+    }
+    const r = data as {
+      ok?: boolean;
+      matchId?: string;
+      startedAt?: string;
+      opponent?: LiveOpponentPreview;
+      error?: string;
+    } | null;
+    if (r && r.ok === true && r.matchId && r.startedAt && r.opponent) {
+      return { ok: true, matchId: r.matchId, startedAt: r.startedAt, opponent: r.opponent };
+    }
+    return { ok: false, error: (r && r.error) || "network" };
+  } catch (e) {
+    console.warn("[pvp-live] startBotPvpMatch threw:", e);
+    return { ok: false, error: "network" };
+  }
+}
+
+/**
+ * Submit one of the bot's (guest-side) moves in a Training match. Security-gated
+ * server-side to `auth.uid() = host_id` AND `is_bot_match = true`, and only ever
+ * writes the bot's own side — it can never touch a real opponent in a real
+ * match. `dmg` is server-clamped to [0,60] exactly like submit_pvp_live_answer.
+ */
+export async function submitBotPvpMove(
+  matchId: string,
+  questionIndex: number,
+  correct: boolean,
+  dmg: number,
+  timeMs: number,
+): Promise<
+  | { ok: true; hostHp: number; guestHp: number; resolved: boolean; winnerId?: string | null }
+  | { ok: false; error: string }
+> {
+  try {
+    const { data, error } = await rpc.rpc("submit_bot_pvp_move", {
+      _match_id: matchId,
+      _question_index: questionIndex,
+      _correct: correct,
+      _dmg: Math.round(dmg),
+      _time_ms: Math.round(timeMs),
+    });
+    if (error) {
+      console.warn("[pvp-live] submitBotPvpMove failed:", error.message);
+      return { ok: false, error: "network" };
+    }
+    const r = data as {
+      ok?: boolean;
+      hostHp?: number;
+      guestHp?: number;
+      resolved?: boolean;
+      winnerId?: string | null;
+      error?: string;
+    } | null;
+    if (r && r.ok === true) {
+      return {
+        ok: true,
+        hostHp: r.hostHp ?? 120,
+        guestHp: r.guestHp ?? 120,
+        resolved: !!r.resolved,
+        winnerId: r.winnerId,
+      };
+    }
+    return { ok: false, error: (r && r.error) || "network" };
+  } catch (e) {
+    console.warn("[pvp-live] submitBotPvpMove threw:", e);
+    return { ok: false, error: "network" };
+  }
+}
+
+/** Fire the bot's signature ability (guest side) for a battle_start/post_answer
+ * phase. Same server-catalog trust model + host/is_bot ownership gate as the
+ * bot move RPC. Best-effort — a no-op when the bot's partner has no catalog
+ * effect for that phase. */
+export async function applyBotPvpSignatureEffect(
+  matchId: string,
+  questionIndex: number,
+  pokemonId: number,
+  phase: "battle_start" | "post_answer",
+  scaleCount = 0,
+): Promise<{ ok: boolean }> {
+  try {
+    const { error } = await rpc.rpc("apply_bot_pvp_signature_effect", {
+      _match_id: matchId,
+      _question_index: questionIndex,
+      _pokemon_id: pokemonId,
+      _phase: phase,
+      _scale_count: scaleCount,
+    });
+    return { ok: !error };
+  } catch (e) {
+    console.warn("[pvp-live] applyBotPvpSignatureEffect threw:", e);
+    return { ok: false };
+  }
+}
+
+/** Use a (healing) item on the bot's guest side. Same ownership gate as above. */
+export async function applyBotPvpLiveItem(
+  matchId: string,
+  questionIndex: number,
+  itemId: ItemId,
+): Promise<{ ok: boolean }> {
+  try {
+    const { error } = await rpc.rpc("use_bot_pvp_live_item", {
+      _match_id: matchId,
+      _question_index: questionIndex,
+      _item_id: itemId,
+    });
+    return { ok: !error };
+  } catch (e) {
+    console.warn("[pvp-live] useBotPvpLiveItem threw:", e);
+    return { ok: false };
   }
 }
 

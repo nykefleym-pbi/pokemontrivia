@@ -190,6 +190,8 @@ function LivePvpMatchPage() {
             hostRevived: (row.host_revived as boolean | null) ?? matchRef.current?.hostRevived ?? false,
             guestRevived:
               (row.guest_revived as boolean | null) ?? matchRef.current?.guestRevived ?? false,
+            isBotMatch:
+              (row.is_bot_match as boolean | null) ?? matchRef.current?.isBotMatch ?? false,
           };
           setMatch(updated);
           if (updated.status === "forfeited") {
@@ -248,9 +250,11 @@ function LivePvpMatchPage() {
   }, [hasOnboarded, myId, matchId]);
 
   // Presence: forfeit the opponent after 30s of them being gone mid-match.
+  // A bot is never "present," so this is disabled for Training matches (it would
+  // otherwise instantly auto-forfeit-win the human against their own bot).
   useEffect(() => {
     if (!hasOnboarded || !myId || !match) return;
-    if (match.status !== "active") return;
+    if (match.status !== "active" || match.isBotMatch) return;
     const opponentId = myId === match.hostId ? match.guestId : match.hostId;
     let forfeitTimer: ReturnType<typeof setTimeout> | null = null;
     const channel = supabase.channel(`pvp_live_presence_${matchId}`, {
