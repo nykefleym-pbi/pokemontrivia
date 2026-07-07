@@ -1723,6 +1723,114 @@ export function describeHitModifiers(mods: HitModifiers): string | null {
   return parts.length > 0 ? parts.join(", ") : null;
 }
 
+// Plain-language nouns for the statuses an ability can inflict (kept local so
+// the describer stays a self-contained pure helper — no game-data value import).
+const STATUS_NOUN: Record<StatusKind, string> = {
+  burn: "Burn",
+  sleep: "Sleep",
+  paralysis: "Paralysis",
+  freeze: "Freeze",
+  poisoned: "Poison",
+  "badly-poisoned": "Bad Poison",
+  confused: "Confusion",
+};
+
+function statStageLabel(stat: StatStageEffect["stat"]): string {
+  switch (stat) {
+    case "attack":
+      return "Attack";
+    case "defense":
+      return "Defense";
+    case "speed":
+      return "Speed";
+    case "crit":
+      return "Crit";
+    case "random":
+      return "a random stat";
+    case "highest_self":
+      return "its highest stat";
+    case "highest_opponent":
+      return "the opponent's highest stat";
+    case "lowest_self":
+      return "its lowest stat";
+  }
+}
+
+/** `+2` / `−1` (using the same minus glyph as the in-battle stat chips). */
+function signedStage(delta: number): string {
+  return `${delta > 0 ? "+" : "−"}${Math.abs(delta)}`;
+}
+
+/** Describe a single (non-compound) signature effect leaf, or null when it has
+ * no player-visible plain-language effect (client-only hamper/help/bespoke). */
+function describeEffectLeaf(effect: SignatureEffect): string | null {
+  switch (effect.type) {
+    case "stat_stage":
+      return effect.target === "self"
+        ? `${signedStage(effect.delta)} ${statStageLabel(effect.stat)}`
+        : `${signedStage(effect.delta)} opponent ${statStageLabel(effect.stat)}`;
+    case "status":
+      return effect.target === "opponent"
+        ? `inflicts ${STATUS_NOUN[effect.status]}`
+        : `${STATUS_NOUN[effect.status]} on self`;
+    case "heal":
+      return `heals ${effect.amount} HP`;
+    case "drain":
+      return `drains ${effect.amount} HP`;
+    case "cure":
+      return "cures status";
+    case "cleanse":
+      return "cures status & resets drops";
+    case "swap_stages":
+      return "swaps stat changes";
+    case "immunity":
+      return "status immunity";
+    case "flat_damage":
+      return effect.fracOppHp
+        ? "cuts opponent's HP"
+        : effect.fracOppLead
+          ? "cuts opponent's lead"
+          : `deals ${effect.amount} damage`;
+    case "damage_calc": {
+      const mods: HitModifiers = {
+        ...NO_HIT_MODIFIERS,
+        ignoreOppDefenseStage: !!effect.ignoreOppDefenseStage,
+        ignoreOwnNegativeStages: !!effect.ignoreOwnNegativeStages,
+        bonusAttackStage: effect.bonusAttackStage ?? 0,
+        bonusCritStage: effect.bonusCritStage ?? 0,
+        secondHitFraction: effect.secondHitFraction ?? 0,
+      };
+      return describeHitModifiers(mods);
+    }
+    default:
+      // hamper / help / bespoke — no server-magnitude, client-only or custom.
+      return null;
+  }
+}
+
+/**
+ * Concise plain-language explainer of a partner's signature-ability effect,
+ * derived straight from the catalog `effect` payload (never invented). Used for
+ * BOTH the acting-player toast and the opponent-facing relay (which resolves it
+ * locally from the effect's dex id — text is never trusted off the wire). Self
+ * effects read plainly ("+1 Attack"); opponent-targeted effects say "opponent"
+ * ("inflicts Burn", "−1 opponent Defense"). Returns null for abilities whose
+ * effect has no plain-language slice (pure hamper/help/bespoke), so the caller
+ * can fall back to the bare move name.
+ */
+export function describeSignatureEffect(pokemonId: number | null | undefined): string | null {
+  const ability = signatureAbilityFor(pokemonId);
+  if (!ability) return null;
+  const leaves: SignatureEffect[] = [];
+  const walk = (e: SignatureEffect): void => {
+    if (e.type === "compound") e.effects.forEach(walk);
+    else leaves.push(e);
+  };
+  walk(ability.effect);
+  const parts = leaves.map(describeEffectLeaf).filter((s): s is string => s != null);
+  return parts.length > 0 ? parts.join(", ") : null;
+}
+
 /**
  * For a player-fired ability whose Fire payoff is a CLIENT-side one-hit
  * damage-calc modifier (Psystrike, Dragon Ascent, Giratina's Shadow Force) —
