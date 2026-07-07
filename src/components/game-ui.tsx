@@ -94,7 +94,10 @@ export function LegendaryFrame({
   className?: string;
 }) {
   const category = legendaryCategory(pokemonId);
-  if (!category) return <>{children}</>;
+  // Non-legendary partners get no frame, but must still honor a layout
+  // className (e.g. spacing) passed by the caller — otherwise the wrapped card
+  // loses its margin and butts against the element above it.
+  if (!category) return className ? <div className={className}>{children}</div> : <>{children}</>;
   const primary = types[0] ?? "normal";
   const secondary = types[1] ?? primary;
   const mascot = isMascotTier(pokemonId);
