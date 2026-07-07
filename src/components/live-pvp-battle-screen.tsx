@@ -5,7 +5,13 @@ import { Backpack } from "lucide-react";
 import type { Trivia } from "@/lib/trivia-core";
 import { playSfx } from "@/lib/audio";
 import { useGameStore, type ActiveStatus, type PvpStatStages } from "@/lib/store";
-import { PokemonSprite, TypeBadge, PokeballSpinner, ItemIcon } from "@/components/game-ui";
+import {
+  PokemonSprite,
+  TypeBadge,
+  PokeballSpinner,
+  ItemIcon,
+  StatusEffectOverlay,
+} from "@/components/game-ui";
 import { findPokemon, type PokeType } from "@/lib/pokemon-data";
 import { ITEMS, STATUS_META, type ItemId, type StatusKind, type PvpStat } from "@/lib/game-data";
 import { MAX_ITEMS_PER_BATTLE } from "@/lib/store/slices/itemsSlice";
@@ -42,6 +48,7 @@ import {
   evaluateHitModifiers,
   evaluatePostAnswer,
   evaluatePassiveDamageSideEffects,
+  describeHitModifiers,
   evaluateBattleStart,
   hasServerManualEffect,
   hasClientManualHit,
@@ -218,11 +225,13 @@ function ArenaSprite({
   back,
   shake,
   floatN,
+  statuses,
 }: {
   id: number | null;
   back: boolean;
   shake: boolean;
   floatN: number | null;
+  statuses: Array<{ kind: StatusKind }>;
 }) {
   return (
     <div className="relative shrink-0">
@@ -252,6 +261,7 @@ function ArenaSprite({
             <PokeballSpinner size={72} />
           </div>
         )}
+        <StatusEffectOverlay statuses={statuses} />
         {floatN != null && (
           <div className="animate-float-up pointer-events-none absolute top-4 left-1/2 z-20 -translate-x-1/2 font-pixel text-base text-destructive">
             -{floatN}
@@ -652,7 +662,28 @@ export function LivePvpBattleScreen({
         const sigCtx = buildSigContext(idxAtAnswer, true, nextStreak, elapsedMs, totalMs, category);
         // Phase 4: while suppressed, the partner's passive/armed signature
         // modifiers don't apply (the ability is locked).
-        let mods = suppressed ? NO_HIT_MODIFIERS : evaluateHitModifiers(ability, sigCtx);
+        const abilityMods = suppressed ? NO_HIT_MODIFIERS : evaluateHitModifiers(ability, sigCtx);
+        const passiveSideEffects = suppressed ? [] : evaluatePassiveDamageSideEffects(ability, sigCtx);
+        let mods = abilityMods;
+        // Toast gap fix: a pure passive_damage ability (no bundled stat/status
+        // sub-effect — Freeze-Dry, Stone Edge, Sacred Sword, etc.) folds its
+        // bonus silently into the damage number with zero player-visible
+        // feedback. Describe what actually fired, straight off the resolved
+        // modifiers (never invented), so the acting player sees the effect.
+        // Bundled abilities (passiveSideEffects.length > 0) already get their
+        // own attribution when the post_answer RPC below applies; the
+        // opponent's client separately gets an "Opponent's X activates!"
+        // toast off the pvp_live_effects broadcast that RPC produces. A pure
+        // passive_damage-only ability makes no server round trip at all (there
+        // is no stat/status for the opponent to authoritatively receive), so a
+        // local-only toast for the acting player is the right scope here.
+        if (passiveSideEffects.length === 0) {
+          const desc = describeHitModifiers(abilityMods);
+          if (desc) {
+            const move = signatureMoveName(partnerId);
+            if (move) toast.success(`✨ ${move} — ${desc}!`);
+          }
+        }
         // Fold in any armed client-side manual one-hit modifier (Psystrike /
         // Dragon Ascent / Shadow Force), then disarm — it applies to this one
         // correct answer only.
@@ -698,7 +729,7 @@ export function LivePvpBattleScreen({
         // post_answer RPC on this same hit (any chance roll already happened
         // inside evaluatePassiveDamageSideEffects).
         if (!suppressed) {
-          const sideEffects = evaluatePassiveDamageSideEffects(ability, sigCtx);
+          const sideEffects = passiveSideEffects;
           if (sideEffects.length > 0) {
             void applyPvpSignatureEffect(matchId, idxAtAnswer, partnerId as number, "post_answer").then(
               applyAbilityResult,
@@ -1142,6 +1173,7 @@ export function LivePvpBattleScreen({
               back={false}
               shake={shakeWho === "opponent"}
               floatN={floatDmg?.who === "opponent" ? floatDmg.n : null}
+              statuses={oppStatuses}
             />
           </div>
         </div>
@@ -1153,6 +1185,7 @@ export function LivePvpBattleScreen({
             back
             shake={shakeWho === "player"}
             floatN={floatDmg?.who === "player" ? floatDmg.n : null}
+            statuses={myStatuses}
           />
           <PvpCombatPanel
             align="right"
