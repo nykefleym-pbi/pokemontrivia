@@ -1707,6 +1707,23 @@ export function mergeHitModifiers(a: HitModifiers, b: HitModifiers): HitModifier
 }
 
 /**
+ * Plain-language summary of whichever modifiers actually fired on this hit,
+ * for the passive_damage toast-gap fix — describes the resolved
+ * `HitModifiers` directly (never a hardcoded per-ability string), so it can
+ * never drift from what the ability's own `damage_calc` payload produced.
+ * Returns null when nothing fired (nothing to announce).
+ */
+export function describeHitModifiers(mods: HitModifiers): string | null {
+  const parts: string[] = [];
+  if (mods.ignoreOppDefenseStage) parts.push("ignores their Defense");
+  if (mods.ignoreOwnNegativeStages) parts.push("shrugs off its own stat drop");
+  if (mods.bonusAttackStage > 0) parts.push(`+${mods.bonusAttackStage} Attack this hit`);
+  if (mods.bonusCritStage > 0) parts.push(`+${mods.bonusCritStage} Crit this hit`);
+  if (mods.secondHitFraction > 0) parts.push("extra hit");
+  return parts.length > 0 ? parts.join(", ") : null;
+}
+
+/**
  * For a player-fired ability whose Fire payoff is a CLIENT-side one-hit
  * damage-calc modifier (Psystrike, Dragon Ascent, Giratina's Shadow Force) —
  * i.e. it has `damage_calc` sub-effects but NO server-catalog effect to route

@@ -48,6 +48,7 @@ import {
   evaluateHitModifiers,
   evaluatePostAnswer,
   evaluatePassiveDamageSideEffects,
+  describeHitModifiers,
   evaluateBattleStart,
   hasServerManualEffect,
   hasClientManualHit,
@@ -661,7 +662,28 @@ export function LivePvpBattleScreen({
         const sigCtx = buildSigContext(idxAtAnswer, true, nextStreak, elapsedMs, totalMs, category);
         // Phase 4: while suppressed, the partner's passive/armed signature
         // modifiers don't apply (the ability is locked).
-        let mods = suppressed ? NO_HIT_MODIFIERS : evaluateHitModifiers(ability, sigCtx);
+        const abilityMods = suppressed ? NO_HIT_MODIFIERS : evaluateHitModifiers(ability, sigCtx);
+        const passiveSideEffects = suppressed ? [] : evaluatePassiveDamageSideEffects(ability, sigCtx);
+        let mods = abilityMods;
+        // Toast gap fix: a pure passive_damage ability (no bundled stat/status
+        // sub-effect — Freeze-Dry, Stone Edge, Sacred Sword, etc.) folds its
+        // bonus silently into the damage number with zero player-visible
+        // feedback. Describe what actually fired, straight off the resolved
+        // modifiers (never invented), so the acting player sees the effect.
+        // Bundled abilities (passiveSideEffects.length > 0) already get their
+        // own attribution when the post_answer RPC below applies; the
+        // opponent's client separately gets an "Opponent's X activates!"
+        // toast off the pvp_live_effects broadcast that RPC produces. A pure
+        // passive_damage-only ability makes no server round trip at all (there
+        // is no stat/status for the opponent to authoritatively receive), so a
+        // local-only toast for the acting player is the right scope here.
+        if (passiveSideEffects.length === 0) {
+          const desc = describeHitModifiers(abilityMods);
+          if (desc) {
+            const move = signatureMoveName(partnerId);
+            if (move) toast.success(`✨ ${move} — ${desc}!`);
+          }
+        }
         // Fold in any armed client-side manual one-hit modifier (Psystrike /
         // Dragon Ascent / Shadow Force), then disarm — it applies to this one
         // correct answer only.
@@ -707,7 +729,7 @@ export function LivePvpBattleScreen({
         // post_answer RPC on this same hit (any chance roll already happened
         // inside evaluatePassiveDamageSideEffects).
         if (!suppressed) {
-          const sideEffects = evaluatePassiveDamageSideEffects(ability, sigCtx);
+          const sideEffects = passiveSideEffects;
           if (sideEffects.length > 0) {
             void applyPvpSignatureEffect(matchId, idxAtAnswer, partnerId as number, "post_answer").then(
               applyAbilityResult,
