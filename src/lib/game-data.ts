@@ -522,15 +522,15 @@ export const BERRY_IDS: ItemId[] = ITEMS.filter((i) => i.isBerry).map((i) => i.i
 
 /**
  * The berry drop pool for a completed Nearby Battle. Excludes the two premium
- * berries (Lum, Starf) so those stay rarity-gated. Five berries are rolled
- * (with replacement) from this pool per battle played — see `rollBerryDrops`.
+ * berries (Lum, Starf) so those stay rarity-gated. Two berries are rolled
+ * (with replacement) from this pool per battle WON — see `rollBerryDrops`.
  */
 export const NEARBY_BERRY_DROP_POOL: ItemId[] = ITEMS.filter(
   (i) => i.isBerry && !i.premium,
 ).map((i) => i.id);
 
-/** Number of berries granted per completed Nearby Battle (win or loss). */
-export const BERRIES_PER_NEARBY_BATTLE = 5;
+/** Number of berries granted per Nearby Battle won (winners only). */
+export const BERRIES_PER_NEARBY_BATTLE = 2;
 
 /** One-time starter berry granted the first time a player enters Nearby Battle. */
 export const STARTER_PVP_BERRY: ItemId = "lumberry";

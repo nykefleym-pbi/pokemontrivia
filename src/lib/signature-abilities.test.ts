@@ -3,6 +3,7 @@ import {
   SIGNATURE_ABILITIES,
   signatureAbilityFor,
   signatureMoveName,
+  describeSignatureEffect,
   evaluateHitModifiers,
   evaluatePostAnswer,
   evaluatePassiveDamageSideEffects,
@@ -462,5 +463,47 @@ describe("Mew — Transform copy resolution (Phase 2)", () => {
     for (const id of [...NON_MASCOT_ABILITY_IDS, ...RATING_THREE_ABILITY_IDS]) {
       expect(SIGNATURE_ABILITIES[id]).toBeDefined();
     }
+  });
+});
+
+describe("describeSignatureEffect", () => {
+  it("describes self stat-stage bumps plainly", () => {
+    // 1017 Ogerpon — Ivy Cudgel: battle_start +1 Crit.
+    expect(describeSignatureEffect(1017)).toBe("+1 Crit");
+    // 382 Kyogre — Origin Pulse: compound +1 Attack, +1 Speed.
+    expect(describeSignatureEffect(382)).toBe("+1 Attack, +1 Speed");
+  });
+
+  it("describes opponent-targeted stat drops with the − glyph and 'opponent'", () => {
+    // 1001 Wo-Chien — Ruination: standing -1 opponent Attack.
+    expect(describeSignatureEffect(1001)).toBe("−1 opponent Attack");
+  });
+
+  it("describes inflicted statuses", () => {
+    // 244 Entei — Sacred Fire: on-correct Burn.
+    expect(describeSignatureEffect(244)).toBe("inflicts Burn");
+    // 648 Meloetta — Relic Song: +1 Attack, then Sleep on the opponent.
+    expect(describeSignatureEffect(648)).toBe("+1 Attack, inflicts Sleep");
+  });
+
+  it("describes heals, drains, and swaps", () => {
+    // 717 Yveltal — Oblivion Wing: drain 2 HP.
+    expect(describeSignatureEffect(717)).toBe("drains 2 HP");
+    // 893 Zarude — Jungle Healing: heal 8 + cure.
+    expect(describeSignatureEffect(893)).toBe("heals 8 HP, cures status");
+    // 490 Manaphy — Heart Swap.
+    expect(describeSignatureEffect(490)).toBe("swaps stat changes");
+  });
+
+  it("reuses the hit-modifier phrasing for pure damage-calc abilities", () => {
+    // 144 Articuno — Freeze-Dry: ignore opponent Defense.
+    expect(describeSignatureEffect(144)).toBe("ignores their Defense");
+  });
+
+  it("returns null for a non-legendary partner or a purely-bespoke effect", () => {
+    expect(describeSignatureEffect(25)).toBeNull();
+    expect(describeSignatureEffect(null)).toBeNull();
+    // 789 Cosmog — Splash: deliberate no-op (bespoke effect).
+    expect(describeSignatureEffect(789)).toBeNull();
   });
 });
