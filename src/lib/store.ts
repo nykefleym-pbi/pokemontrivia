@@ -144,6 +144,9 @@ export interface GameState {
 
   dailyGiftLastClaim: string | null;
   dailyGiftStreak: number;
+  /** YYYY-MM-DD of the last day the discounted featured shop item was bought
+   * (the featured deal is limited to one purchase per day). */
+  featuredDealLastPurchase: string | null;
   guaranteedShinyPending: boolean;
   pokeEggs: PokeEgg[];
   megaTrophies: { eventId: string; name: string; pokeId: number; claimedAt: string }[];
@@ -285,6 +288,9 @@ export interface GameState {
   markCuratedSeen: (ids: string[]) => void;
 
   buyItem: (id: ItemId, cost: number) => boolean;
+  /** Record that today's discounted featured shop item was purchased (caps it
+   * at one purchase per day). */
+  markFeaturedDealPurchased: () => void;
   useItem: (id: ItemId) => boolean;
   tryAutoFocusBand: () => boolean;
   tryAutoQuickClaw: () => boolean;
@@ -864,6 +870,7 @@ export const useGameStore = create<GameState>()(
 
         dailyGiftLastClaim: s.dailyGiftLastClaim,
         dailyGiftStreak: s.dailyGiftStreak,
+        featuredDealLastPurchase: s.featuredDealLastPurchase,
         guaranteedShinyPending: s.guaranteedShinyPending,
         pokeEggs: s.pokeEggs,
         megaTrophies: s.megaTrophies,

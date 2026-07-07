@@ -69,6 +69,8 @@ export const createItemsSlice: StoreSlice<
     | "pokeEggs"
     | "grantItem"
     | "buyItem"
+    | "featuredDealLastPurchase"
+    | "markFeaturedDealPurchased"
     | "useItem"
     | "toggleAutoItem"
     | "tryAutoFocusBand"
@@ -85,6 +87,7 @@ export const createItemsSlice: StoreSlice<
   >
 > = (set, get) => ({
   inventory: { ...defaultInventory },
+  featuredDealLastPurchase: null,
   itemCooldowns: {},
   autoItems: {},
   luckyEggExpiresAt: 0,
@@ -266,6 +269,9 @@ export const createItemsSlice: StoreSlice<
     });
     return true;
   },
+
+  markFeaturedDealPurchased: () =>
+    set({ featuredDealLastPurchase: new Date().toISOString().slice(0, 10) }),
 
   useItem: (id) => {
     const s = get();

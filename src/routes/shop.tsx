@@ -45,6 +45,8 @@ function ShopPage() {
   const priceOf = (cost: number) => (metalworks ? Math.max(1, Math.round(cost * 0.9)) : cost);
   const inventory = useGameStore((s) => s.inventory);
   const buyItem = useGameStore((s) => s.buyItem);
+  const featuredDealLastPurchase = useGameStore((s) => s.featuredDealLastPurchase);
+  const markFeaturedDealPurchased = useGameStore((s) => s.markFeaturedDealPurchased);
   const applyItem = useGameStore((s) => s.useItem);
   const autoItems = useGameStore((s) => s.autoItems);
   const dailyGiftLastClaim = useGameStore((s) => s.dailyGiftLastClaim);
@@ -121,24 +123,39 @@ function ShopPage() {
 
   const items = ITEMS.filter((it) => CATEGORY_OF[it.id] === tab);
 
+  // The discounted featured item is limited to one purchase per day.
+  const todayISO = new Date().toISOString().slice(0, 10);
+  const featuredUsedToday = featuredDealLastPurchase === todayISO;
+
   function confirmPurchase() {
     if (!confirmState) return;
     const { item, cost } = confirmState;
+    // Featured deal: always a single unit, and only once per day.
+    const isFeatured = !!confirmState.featured;
+    if (isFeatured && featuredUsedToday) {
+      playSfx("error");
+      toast.error("You've already grabbed today's deal — check back tomorrow!");
+      setConfirmState(null);
+      return;
+    }
+    const buyQty = isFeatured ? 1 : qty;
     let bought = 0;
-    for (let i = 0; i < qty; i++) {
+    for (let i = 0; i < buyQty; i++) {
       const ok = buyItem(item.id as never, cost);
       if (!ok) break;
       bought++;
     }
     if (bought === 0) {
       playSfx("error");
-      toast.error(`Need ${cost * qty} Coins to buy ${qty}× ${item.name}.`);
-    } else if (bought < qty) {
-      playSfx("purchase");
-      toast.success(`Bought ${bought}× ${item.name} (ran out of Coins).`);
+      toast.error(`Need ${cost * buyQty} Coins to buy ${buyQty}× ${item.name}.`);
     } else {
       playSfx("purchase");
-      toast.success(`Bought ${qty}× ${item.name}!`);
+      if (isFeatured) markFeaturedDealPurchased();
+      toast.success(
+        bought < buyQty
+          ? `Bought ${bought}× ${item.name} (ran out of Coins).`
+          : `Bought ${buyQty}× ${item.name}!`,
+      );
     }
     setConfirmState(null);
   }
@@ -267,8 +284,9 @@ function ShopPage() {
           </div>
         )}
 
-        {/* Featured — single discounted item */}
+        {/* Featured — single discounted item, one purchase per day */}
         <button
+          disabled={featuredUsedToday}
           onClick={() =>
             setConfirmState({
               item: featured.item,
@@ -279,10 +297,10 @@ function ShopPage() {
               },
             })
           }
-          className="relative mb-5 flex w-full items-center gap-5 overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-[#b5341f] p-6 pt-9 text-left shadow-card"
+          className="relative mb-5 flex w-full items-center gap-5 overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-[#b5341f] p-6 pt-9 text-left shadow-card disabled:opacity-60"
         >
           <span className="absolute left-1/2 top-3 -translate-x-1/2 rounded-full bg-poke-yellow px-3 py-0.5 font-pixel-xs uppercase text-foreground shadow-sm">
-            Discounted {featured.discountPct}% off
+            {featuredUsedToday ? "Back tomorrow" : `Discounted ${featured.discountPct}% off`}
           </span>
           <div
             aria-hidden
@@ -400,8 +418,9 @@ function ShopPage() {
                 </div>
               )}
 
-              {/* Quantity stepper */}
-              {(() => {
+              {/* Quantity stepper — hidden for the featured deal (one per day) */}
+              {!confirmState.featured &&
+                (() => {
                 const unitCost = confirmState.cost;
                 const maxQty = unitCost > 0 ? Math.max(1, Math.floor(coins / unitCost)) : 1;
                 return (
@@ -515,6 +534,11 @@ function ShopPage() {
                 (it) => CATEGORY_OF[it.id] === cat.id && (inventory[it.id] ?? 0) > 0,
               ),
             })).filter((g) => g.items.length > 0);
+            // Berries are Nearby-Battle-only, excluded from the shop categories;
+            // surface them here read-only so players can see what they're holding.
+            const ownedBerries = ITEMS.filter(
+              (it) => it.isBerry && (inventory[it.id] ?? 0) > 0,
+            );
             return (
               <div className="my-4 max-h-[65vh] overflow-y-auto">
                 {ownedInBag.length === 0 ? (
@@ -591,9 +615,35 @@ function ShopPage() {
                         </div>
                       </div>
                     ))}
+                    {ownedBerries.length > 0 && (
+                      <div>
+                        <div className="mb-2 font-pixel-xs uppercase tracking-wider text-foreground/45">
+                          Berries · Nearby Battle
+                        </div>
+                        <div className="flex flex-col gap-2.5">
+                          {ownedBerries.map((it) => (
+                            <div
+                              key={it.id}
+                              className="flex items-center gap-3.5 rounded-[20px] bg-card px-4 py-3 shadow-card"
+                            >
+                              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-primary/[0.08]">
+                                <ItemIcon item={it} className="h-9 w-9" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="font-bold leading-tight text-foreground">{it.name}</div>
+                                <div className="mt-0.5 text-xs leading-snug text-foreground/55">
+                                  {it.desc}
+                                </div>
+                              </div>
+                              <span className="shrink-0 font-pixel-xs text-foreground">×{inventory[it.id] ?? 0}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     <div className="rounded-2xl bg-poke-blue/10 px-4 py-3 text-xs leading-snug text-foreground/70">
-                      💡 Battle items appear in your item dock during a match. Tap one before
-                      answering to activate it.
+                      💡 Battle items appear in your item dock during a match. Berries are used only
+                      in Nearby Battle.
                     </div>
                   </div>
                 )}
