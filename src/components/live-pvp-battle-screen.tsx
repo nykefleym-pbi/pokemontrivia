@@ -5,7 +5,13 @@ import { Backpack } from "lucide-react";
 import type { Trivia } from "@/lib/trivia-core";
 import { playSfx } from "@/lib/audio";
 import { useGameStore, type ActiveStatus, type PvpStatStages } from "@/lib/store";
-import { PokemonSprite, TypeBadge, PokeballSpinner, ItemIcon } from "@/components/game-ui";
+import {
+  PokemonSprite,
+  TypeBadge,
+  PokeballSpinner,
+  ItemIcon,
+  StatusEffectOverlay,
+} from "@/components/game-ui";
 import { findPokemon, type PokeType } from "@/lib/pokemon-data";
 import { ITEMS, STATUS_META, type ItemId, type StatusKind, type PvpStat } from "@/lib/game-data";
 import { MAX_ITEMS_PER_BATTLE } from "@/lib/store/slices/itemsSlice";
@@ -218,11 +224,13 @@ function ArenaSprite({
   back,
   shake,
   floatN,
+  statuses,
 }: {
   id: number | null;
   back: boolean;
   shake: boolean;
   floatN: number | null;
+  statuses: Array<{ kind: StatusKind }>;
 }) {
   return (
     <div className="relative shrink-0">
@@ -252,6 +260,7 @@ function ArenaSprite({
             <PokeballSpinner size={72} />
           </div>
         )}
+        <StatusEffectOverlay statuses={statuses} />
         {floatN != null && (
           <div className="animate-float-up pointer-events-none absolute top-4 left-1/2 z-20 -translate-x-1/2 font-pixel text-base text-destructive">
             -{floatN}
@@ -1142,6 +1151,7 @@ export function LivePvpBattleScreen({
               back={false}
               shake={shakeWho === "opponent"}
               floatN={floatDmg?.who === "opponent" ? floatDmg.n : null}
+              statuses={oppStatuses}
             />
           </div>
         </div>
@@ -1153,6 +1163,7 @@ export function LivePvpBattleScreen({
             back
             shake={shakeWho === "player"}
             floatN={floatDmg?.who === "player" ? floatDmg.n : null}
+            statuses={myStatuses}
           />
           <PvpCombatPanel
             align="right"

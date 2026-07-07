@@ -2,7 +2,7 @@ import * as React from "react";
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { spriteFallbacks, type PokeType } from "@/lib/pokemon-data";
-import type { ItemDef } from "@/lib/game-data";
+import type { ItemDef, StatusKind } from "@/lib/game-data";
 import { legendaryCategory, isMascotTier } from "@/lib/legendary-data";
 
 /** Item icon (PokeAPI sprite via item.iconUrl), falling back to its emoji if the
@@ -242,6 +242,119 @@ export const PokeballSpinner = React.memo(function PokeballSpinner({
     </div>
   );
 });
+
+function BurnEffect() {
+  return (
+    <>
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="status-anim-burn absolute bottom-1 text-lg"
+          style={{ left: `${28 + i * 20}%`, animationDelay: `${i * 0.18}s` }}
+        >
+          🔥
+        </span>
+      ))}
+    </>
+  );
+}
+
+function FreezeEffect() {
+  return <div className="status-anim-freeze absolute inset-1 rounded-3xl" />;
+}
+
+function ParalysisEffect() {
+  return (
+    <>
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="status-anim-spark absolute text-base"
+          style={{ left: `${18 + i * 26}%`, top: `${8 + (i % 2) * 18}%`, animationDelay: `${i * 0.23}s` }}
+        >
+          ⚡
+        </span>
+      ))}
+    </>
+  );
+}
+
+function PoisonEffect({ badly = false }: { badly?: boolean }) {
+  return (
+    <>
+      <div className="status-anim-poison-glow absolute inset-2 rounded-full" />
+      {[0, 1, 2, 3].map((i) => (
+        <span
+          key={i}
+          className="status-anim-bubble absolute bottom-2 block h-2 w-2 rounded-full bg-purple-400/70"
+          style={{ left: `${12 + i * 22}%`, animationDelay: `${i * 0.5}s` }}
+        />
+      ))}
+      {badly &&
+        [0, 1].map((i) => (
+          <span
+            key={`spark-${i}`}
+            className="status-anim-toxic-spark absolute text-sm text-fuchsia-400"
+            style={{ right: `${8 + i * 22}%`, top: `${12 + i * 14}%`, animationDelay: `${i * 0.3}s` }}
+          >
+            ✦
+          </span>
+        ))}
+    </>
+  );
+}
+
+function SleepEffect() {
+  return (
+    <div className="status-anim-sleep absolute -top-1 left-1/2 -translate-x-1/2 text-xl">💤</div>
+  );
+}
+
+function ConfusionEffect() {
+  return (
+    <div className="pointer-events-none absolute left-1/2 -top-2 h-16 w-16 -translate-x-1/2">
+      {[0, 1].map((i) => (
+        <div key={i} className="status-anim-orbit absolute inset-0" style={{ animationDelay: `${i * -1}s` }}>
+          <span
+            className="status-anim-orbit-counter absolute left-1/2 top-0 -translate-x-1/2 text-base"
+            style={{ animationDelay: `${i * -1}s` }}
+          >
+            💫
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Shared status-condition sprite overlay for Solo and Nearby-Battle PvP:
+ * flames/frost/sparks/bubbles/zzz/orbiting stars layered directly on the
+ * sprite, in addition to (not replacing) the small emoji chip in the combat
+ * panel. Confusion is the sole stacking volatile, so it can render alongside
+ * one mutually-exclusive major status (burn/freeze/paralysis/poisoned/
+ * badly-poisoned/sleep) at the same time. Render as an absolutely-positioned
+ * sibling of `PokemonSprite` inside the same `motion.div` wrapper the caller
+ * already uses for shake/float-damage.
+ */
+export function StatusEffectOverlay({ statuses }: { statuses: Array<{ kind: StatusKind }> }) {
+  if (!statuses || statuses.length === 0) return null;
+  const major = statuses.find((s) => s.kind !== "confused")?.kind;
+  const confused = statuses.some((s) => s.kind === "confused");
+  if (!major && !confused) return null;
+
+  return (
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-20 overflow-visible">
+      {major === "burn" && <BurnEffect />}
+      {major === "freeze" && <FreezeEffect />}
+      {major === "paralysis" && <ParalysisEffect />}
+      {major === "poisoned" && <PoisonEffect />}
+      {major === "badly-poisoned" && <PoisonEffect badly />}
+      {major === "sleep" && <SleepEffect />}
+      {confused && <ConfusionEffect />}
+    </div>
+  );
+}
 
 export function AppHeader({
   children,

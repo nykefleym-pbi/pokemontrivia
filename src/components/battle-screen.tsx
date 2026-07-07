@@ -30,7 +30,7 @@ import {
 } from "@/lib/pokemon-data";
 import { getAbility as getAbilityFn, type Ability } from "@/lib/abilities";
 import { TutorialOverlay } from "@/components/tutorial-overlay";
-import { TypeBadge, PokemonSprite, ItemIcon } from "@/components/game-ui";
+import { TypeBadge, PokemonSprite, ItemIcon, StatusEffectOverlay } from "@/components/game-ui";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   AlertDialog,
@@ -1459,6 +1459,7 @@ function BattleMode({
               {enemy.isShiny && (
                 <Sparkles className="pointer-events-none absolute right-2 top-2 z-20 h-4 w-4 animate-pulse text-yellow-300 drop-shadow" />
               )}
+              <StatusEffectOverlay statuses={[]} />
               {floatDmg?.who === "enemy" && (
                 <div className="animate-float-up pointer-events-none absolute top-4 left-1/2 z-20 -translate-x-1/2 font-pixel text-base text-destructive">
                   -{floatDmg.n}
@@ -1494,6 +1495,7 @@ function BattleMode({
                 alt={player.name}
                 className={`sprite relative z-10 h-40 w-40 ${streak >= 5 ? "mega-glow" : ""}`}
               />
+              <StatusEffectOverlay statuses={statuses} />
               {floatDmg?.who === "player" && (
                 <div className="animate-float-up pointer-events-none absolute top-4 left-1/2 z-20 -translate-x-1/2 font-pixel text-base text-destructive">
                   -{floatDmg.n}
