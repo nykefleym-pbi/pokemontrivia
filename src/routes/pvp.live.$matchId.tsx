@@ -17,7 +17,7 @@ import { getProfileById, ensureSession, type TrainerProfile } from "@/lib/social
 import { supabase } from "@/integrations/supabase/client";
 import { playBgm } from "@/lib/audio";
 import { trainerSpriteUrl, ITEMS, rollBerryDrops, STARTER_PVP_BERRY } from "@/lib/game-data";
-import { signatureMoveName } from "@/lib/signature-abilities";
+import { signatureMoveName, describeSignatureEffect } from "@/lib/signature-abilities";
 
 export const Route = createFileRoute("/pvp/live/$matchId")({
   component: LivePvpMatchPage,
@@ -238,10 +238,14 @@ function LivePvpMatchPage() {
       if (effect.source === "ability") {
         const move = signatureMoveName(effect.pokemonId);
         if (!move) return;
+        // Resolve the effect explainer locally from the dex id (never trust
+        // text off the wire). Covers the Training bot too: its ability fires
+        // broadcast a pvp_live_effects row sourced as the guest/bot, which the
+        // human receives here (sourceId !== myId) and toasts with this explainer.
+        const desc = describeSignatureEffect(effect.pokemonId);
+        const base = desc ? `Opponent's ${move} — ${desc}` : `Opponent's ${move} activates`;
         toast.warning(
-          effect.target === "opponent"
-            ? `✨ Opponent's ${move} activates — you're affected!`
-            : `✨ Opponent's ${move} activates!`,
+          effect.target === "opponent" ? `✨ ${base} — you're affected!` : `✨ ${base}!`,
         );
         return;
       }
@@ -300,15 +304,14 @@ function LivePvpMatchPage() {
     };
   }, [hasOnboarded, myId, match, matchId]);
 
-  // Grant the per-battle berry drops exactly once, whenever the match reaches
-  // a terminal phase (win, loss, or forfeit either way) — "5 berries per
-  // completed battle played" applies regardless of win/loss.
+  // Grant the per-battle berry drops exactly once when the match reaches a
+  // terminal phase — WINNERS ONLY (win on HP/tiebreak, or a forfeit win). A
+  // loss/tie/forfeit-loss records the battle log but grants no berries and
+  // shows no pickup toast.
   useEffect(() => {
     if (rewardsGrantedRef.current) return;
     if (phase !== "result" && phase !== "forfeit_won" && phase !== "forfeit_lost") return;
     rewardsGrantedRef.current = true;
-    const drops = rollBerryDrops();
-    for (const id of drops) useGameStore.getState().grantItem(id, 1);
     const won =
       phase === "forfeit_won" ||
       (phase === "result" && match?.winnerId === myId);
@@ -320,7 +323,11 @@ function LivePvpMatchPage() {
       timestamp: Date.now(),
       mode: "nearby",
     });
-    toast.success(`🍒 You picked up ${drops.length} berries from this battle!`);
+    if (won) {
+      const drops = rollBerryDrops();
+      for (const id of drops) useGameStore.getState().grantItem(id, 1);
+      toast.success(`🍒 You picked up ${drops.length} berries from this battle!`);
+    }
   }, [phase, match, myId, opponentProfile]);
 
   function handleFinish(result: LivePvpBattleResult) {
