@@ -45,6 +45,7 @@ import {
 import {
   signatureAbilityFor,
   signatureMoveName,
+  describeSignatureEffect,
   evaluateHitModifiers,
   evaluatePostAnswer,
   evaluatePassiveDamageSideEffects,
@@ -332,6 +333,10 @@ export function LivePvpBattleScreen({
   const startedAtMs = useRef(new Date(startedAt).getTime()).current;
   const [now, setNow] = useState(() => Date.now());
   const [displayedIndex, setDisplayedIndex] = useState(-1);
+  // Mirror of displayedIndex read inside timers/effects that must see the latest
+  // value without a stale closure (Fix 3: wall-clock ceiling and both-answered
+  // early-advance converge on it so neither re-enters nor rewinds a question).
+  const displayedIndexRef = useRef(-1);
   const [selected, setSelected] = useState<number | null>(null);
   const [streak, setStreak] = useState(0);
   const [myHp, setMyHp] = useState(amIHost ? match.hostHp : match.guestHp);
@@ -376,6 +381,9 @@ export function LivePvpBattleScreen({
 
   const finishedRef = useRef(false);
   const itemsUsedRef = useRef(amIHost ? match.hostItemsUsed : match.guestItemsUsed);
+  // Fix 4 — per-item-TYPE cap of 1 use per battle (on top of the 3-items-total
+  // cap). One battle == one screen mount, so a mount-scoped Set is sufficient.
+  const usedItemIdsRef = useRef<Set<ItemId>>(new Set());
   const questionStartRef = useRef(0);
 
   // Training-vs-Bot: the human is always the host and drives the bot (guest)
@@ -467,7 +475,10 @@ export function LivePvpBattleScreen({
       (res) => {
         if (res.ok && !res.noop) {
           const move = signatureMoveName(partnerId);
-          if (move) toast.success(`✨ ${move} — ${partnerId ? "your partner powers up!" : ""}`.trim());
+          if (move) {
+            const desc = describeSignatureEffect(partnerId);
+            toast.success(desc ? `✨ ${move} — ${desc}!` : `✨ ${move} activates!`);
+          }
         }
       },
     );
@@ -501,7 +512,10 @@ export function LivePvpBattleScreen({
       if (res.ok && !res.noop) {
         applyAbilityResult(res);
         const move = signatureMoveName(partnerId);
-        if (move) toast.success(`✨ ${move} — you pre-empt the opponent!`);
+        if (move) {
+          const desc = describeSignatureEffect(partnerId);
+          toast.success(desc ? `✨ ${move} — ${desc}!` : `✨ ${move} — you pre-empt the opponent!`);
+        }
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -579,15 +593,13 @@ export function LivePvpBattleScreen({
   const isAsleep = myStatuses.some((s) => s.kind === "sleep");
   const sleepLockMs = isAsleep ? personalTimerMs * 0.4 : 0;
 
-  useEffect(() => {
-    if (idx === displayedIndex || finishedRef.current) return;
-    if (idx >= PVP_QUESTIONS || idx >= questions.length) {
-      // Ran out of shared question slots without the server having already
-      // resolved us (e.g. a near-simultaneous KO edge case) — the route will
-      // pick up the resolution from the row update; just stop advancing.
-      return;
-    }
-    setDisplayedIndex(idx);
+  // Advance to a specific question index: re-anchor the personal timer, clear
+  // the selection, and roll the Freeze skip. Shared by the wall-clock ceiling
+  // and the both-answered early-advance so they converge on the same next
+  // index (never double-entering or rewinding, gated by displayedIndexRef).
+  function enterQuestion(nextIdx: number) {
+    displayedIndexRef.current = nextIdx;
+    setDisplayedIndex(nextIdx);
     setSelected(null);
     setFrozen(false);
     questionStartRef.current = Date.now();
@@ -600,8 +612,44 @@ export function LivePvpBattleScreen({
       setFrozen(true);
       if (thaws) tickBattleStatusCure("freeze");
     }
+  }
+
+  // Wall-clock ceiling: the shared per-question slot boundary. Only ever moves
+  // forward — the both-answered path below may already have advanced us past
+  // `idx`, so re-anchoring must never rewind or re-enter a question.
+  useEffect(() => {
+    if (finishedRef.current || idx <= displayedIndexRef.current) return;
+    if (idx >= PVP_QUESTIONS || idx >= questions.length) {
+      // Ran out of shared question slots without the server having already
+      // resolved us (e.g. a near-simultaneous KO edge case) — the route will
+      // pick up the resolution from the row update; just stop advancing.
+      return;
+    }
+    enterQuestion(idx);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idx]);
+
+  // Fix 3 — advance EARLY once BOTH sides have answered the current question,
+  // instead of waiting out the full slot timer. Gated on the authoritative
+  // per-side answered counters (host_answered_live / guest_answered_live) both
+  // passing the current index: both clients observe the SAME row, so this keeps
+  // a real 2-player match in lockstep (modulo realtime latency), and in Training
+  // the bot's answer increments the guest counter through the same path. A short
+  // delay lets the answer-feedback highlight land first; the wall-clock effect
+  // above stays the hard ceiling so a stalling opponent can't hang the match.
+  const bothAnsweredCount = Math.min(match.hostAnsweredLive, match.guestAnsweredLive);
+  useEffect(() => {
+    if (finishedRef.current || displayedIndex < 0) return;
+    if (bothAnsweredCount <= displayedIndex) return; // both sides not done yet
+    const nextIdx = displayedIndex + 1;
+    if (nextIdx >= PVP_QUESTIONS || nextIdx >= questions.length) return;
+    const t = setTimeout(() => {
+      if (finishedRef.current || nextIdx <= displayedIndexRef.current) return;
+      enterQuestion(nextIdx);
+    }, 1000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bothAnsweredCount, displayedIndex]);
 
   function buildSigContext(
     idxAtAnswer: number,
@@ -832,7 +880,10 @@ export function LivePvpBattleScreen({
                 setOppHp(amIHost ? abilityRes.guestHp! : abilityRes.hostHp);
               }
               const move = signatureMoveName(partnerId);
-              if (move) toast.success(`✨ ${move} activates!`);
+              if (move) {
+                const desc = describeSignatureEffect(partnerId);
+                toast.success(desc ? `✨ ${move} — ${desc}!` : `✨ ${move} activates!`);
+              }
             }
           },
         );
@@ -981,10 +1032,15 @@ export function LivePvpBattleScreen({
     }
     const def = ITEMS.find((i) => i.id === itemId);
     if (!def) return;
+    if (usedItemIdsRef.current.has(itemId)) {
+      toast.error(`You already used a ${def.name} this battle.`);
+      return;
+    }
 
     if (CLIENT_ONLY_ITEMS.includes(itemId)) {
       // Pure client-side UI aid — no server round trip, mirrors Solo exactly.
       useGameStore.getState().useItem(itemId);
+      usedItemIdsRef.current.add(itemId);
       toast.info(`✨ ${def.name} used!`);
       playSfx("item_use");
       setBagOpen(false);
@@ -1004,6 +1060,7 @@ export function LivePvpBattleScreen({
       inventory: { ...s.inventory, [itemId]: (s.inventory[itemId] ?? 0) - 1 },
     }));
     itemsUsedRef.current += 1;
+    usedItemIdsRef.current.add(itemId);
     setMyHp(amIHost ? res.hostHp : res.guestHp);
     setOppHp(amIHost ? res.guestHp : res.hostHp);
     useGameStore.setState({
@@ -1090,7 +1147,10 @@ export function LivePvpBattleScreen({
     }
     playSfx("item_use");
     const move = signatureMoveName(partnerId);
-    if (move) toast.success(`✨ ${move} unleashed!`);
+    if (move) {
+      const desc = describeSignatureEffect(partnerId);
+      toast.success(desc ? `✨ ${move} — ${desc}!` : `✨ ${move} unleashed!`);
+    }
   }
 
   if (idx < 0) {
@@ -1160,7 +1220,7 @@ export function LivePvpBattleScreen({
         <div className="flex items-start justify-between">
           <PvpCombatPanel
             align="left"
-            name={opponentName}
+            name={oppEntry?.name ?? opponentName}
             types={oppTypes}
             hp={oppHp}
             stages={oppStages}
@@ -1189,7 +1249,7 @@ export function LivePvpBattleScreen({
           />
           <PvpCombatPanel
             align="right"
-            name="You"
+            name={myPokemon?.name ?? findPokemon(partnerId ?? -1)?.name ?? "You"}
             types={myTypes}
             hp={myHp}
             stages={myStages}
@@ -1272,7 +1332,10 @@ export function LivePvpBattleScreen({
                 {bagItems.slice(0, 3).map((it) => (
                   <button
                     key={it.id}
-                    disabled={itemsUsedRef.current >= MAX_ITEMS_PER_BATTLE}
+                    disabled={
+                      itemsUsedRef.current >= MAX_ITEMS_PER_BATTLE ||
+                      usedItemIdsRef.current.has(it.id)
+                    }
                     onClick={() => void handleUseItem(it.id)}
                     className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition active:scale-95 disabled:opacity-40"
                   >
@@ -1321,7 +1384,9 @@ export function LivePvpBattleScreen({
                         <div className="flex flex-col gap-2.5">
                           {group.items.map((it) => {
                             const owned = inventory[it.id] ?? 0;
-                            const disabled = itemsUsedRef.current >= MAX_ITEMS_PER_BATTLE;
+                            const disabled =
+                              itemsUsedRef.current >= MAX_ITEMS_PER_BATTLE ||
+                              usedItemIdsRef.current.has(it.id);
                             return (
                               <button
                                 key={it.id}
