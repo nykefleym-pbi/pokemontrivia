@@ -33,7 +33,8 @@ function randomOf<T>(pool: readonly T[]): T {
  * to `toLevel` (inclusive) — a single battle can cross multiple levels, and
  * every level crossed pays out:
  *  - coins: 25 x levelMultiplier(level)
- *  - a random (non-premium) item worth ~100 x levelMultiplier(level)
+ *  - a single random (non-premium) item (qty 1 — kept scarce so items don't
+ *    pile up from light play)
  * Every 5th level ALSO adds a flat 100 x levelMultiplier(level) coins plus
  * one random premium item. Every 10th level ALSO adds a Poké Egg.
  * Returns null if no level was gained.
@@ -50,9 +51,7 @@ export function rollLevelUpRewards(fromLevel: number, toLevel: number): LevelUpR
     const mult = levelMultiplier(lvl);
 
     coins += Math.round(25 * mult);
-    const item = randomOf(NON_PREMIUM_ITEMS);
-    const budget = Math.round(100 * mult);
-    grant(item.id, Math.max(1, Math.min(10, Math.round(budget / item.cost))));
+    grant(randomOf(NON_PREMIUM_ITEMS).id, 1);
 
     if (lvl % 5 === 0) {
       coins += Math.round(100 * mult);
