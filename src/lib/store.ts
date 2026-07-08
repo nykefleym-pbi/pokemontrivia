@@ -17,6 +17,8 @@ import type { PokeEntry } from "./pokemon-data";
 import { rollAbilityId, type AbilityId } from "./abilities";
 import type { LevelUpRewards } from "./level-rewards";
 import { ALL_POKEMON, rehydratePokemon } from "./pokemon-data";
+import { isLegendaryOrMythical } from "./legendary-data";
+import { randomGuestName } from "./trainer-name";
 import type { Round } from "@/routes/whos-that-pokemon";
 import { createMegaSlice } from "@/lib/store/slices/megaSlice";
 import { createWhosThatSlice } from "@/lib/store/slices/whosThatSlice";
@@ -506,15 +508,18 @@ export const useGameStore = create<GameState>()(
       },
 
       startGuestSession: () => {
-        const poke = ALL_POKEMON[Math.floor(Math.random() * ALL_POKEMON.length)];
+        // Guests get a non-legendary starter (legendaries/mythicals are
+        // Poké-Egg exclusive) and a random trainer name, not a Pokémon name
+        // (feedback 96098111).
+        const guestPool = ALL_POKEMON.filter((p) => !isLegendaryOrMythical(p.id));
+        const poke = guestPool[Math.floor(Math.random() * guestPool.length)];
         const trainer = TRAINER_SPRITES[Math.floor(Math.random() * TRAINER_SPRITES.length)];
-        const suffix = Math.floor(Math.random() * 999);
         set({
           hasOnboarded: true,
           isGuest: true,
           lastSeenWhatsNew: WHATS_NEW.version,
           engageShownThisSession: true,
-          trainerName: `${poke.name}-${suffix}`,
+          trainerName: randomGuestName(),
           pokemon: poke,
           abilityId: rollAbilityId(poke.types),
           pokedex: {
