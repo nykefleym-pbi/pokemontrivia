@@ -24,6 +24,7 @@ import { createLeaguesSlice } from "@/lib/store/slices/leaguesSlice";
 import { createProfileSlice } from "@/lib/store/slices/profileSlice";
 import { createItemsSlice, defaultInventory } from "@/lib/store/slices/itemsSlice";
 import { createCollectionsSlice } from "@/lib/store/slices/collectionsSlice";
+import { WHATS_NEW } from "./whats-new";
 
 const MAX_SEEN_HASHES = 500;
 const MAX_SEEN_TEXTS = 200;
@@ -511,6 +512,8 @@ export const useGameStore = create<GameState>()(
         set({
           hasOnboarded: true,
           isGuest: true,
+          lastSeenWhatsNew: WHATS_NEW.version,
+          engageShownThisSession: true,
           trainerName: `${poke.name}-${suffix}`,
           pokemon: poke,
           abilityId: rollAbilityId(poke.types),

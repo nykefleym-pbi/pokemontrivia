@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { playSfx, playItemCue } from "@/lib/audio";
 import { Star, Coins, ShoppingBag, Minus, Plus } from "lucide-react";
 import { useGameStore } from "@/lib/store";
+import { useStoreHydrated } from "@/lib/store-hydration";
 import { ITEMS, type ItemDef } from "@/lib/game-data";
 import { getAbility } from "@/lib/abilities";
 import { CATEGORIES, CATEGORY_OF, BAG_SHORT_DESC, type ItemCategory } from "@/lib/item-categories";
@@ -35,6 +36,7 @@ type ConfirmState = {
 
 function ShopPage() {
   const hasOnboarded = useGameStore((s) => s.hasOnboarded);
+  const hydrated = useStoreHydrated();
   const navigate = useNavigate();
   const coins = useGameStore((s) => s.coins);
   const partner = useGameStore((s) => s.pokemon);
@@ -112,14 +114,14 @@ function ShopPage() {
   }, []);
 
   useEffect(() => {
-    if (!hasOnboarded) navigate({ to: "/" });
-  }, [hasOnboarded, navigate]);
+    if (hydrated && !hasOnboarded) navigate({ to: "/" });
+  }, [hydrated, hasOnboarded, navigate]);
 
   useEffect(() => {
     if (confirmState) setQty(1);
   }, [confirmState]);
 
-  if (!hasOnboarded) return null;
+  if (!hydrated || !hasOnboarded) return null;
 
   const items = ITEMS.filter((it) => CATEGORY_OF[it.id] === tab);
 
@@ -299,7 +301,7 @@ function ShopPage() {
           }
           className="relative mb-5 flex w-full items-center gap-5 overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-[#b5341f] p-6 pt-9 text-left shadow-card disabled:opacity-60"
         >
-          <span className="absolute left-1/2 top-3 -translate-x-1/2 rounded-full bg-poke-yellow px-3 py-0.5 font-pixel-xs uppercase text-foreground shadow-sm">
+          <span className="absolute left-1/2 top-3 -translate-x-1/2 whitespace-nowrap rounded-full bg-poke-yellow px-3 py-0.5 font-pixel-xs uppercase text-foreground shadow-sm">
             {featuredUsedToday ? "Back tomorrow" : `Discounted ${featured.discountPct}% off`}
           </span>
           <div

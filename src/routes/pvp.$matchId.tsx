@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useGameStore } from "@/lib/store";
+import { useStoreHydrated } from "@/lib/store-hydration";
 import { PokeballSpinner } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
 import { getPvpMatch, submitPvpResult, type PvpMatch } from "@/lib/pvp";
@@ -25,6 +26,7 @@ function phaseForCompletedSide(status: PvpMatch["status"]): Phase {
 function PvpMatchPage() {
   const { matchId } = Route.useParams();
   const hasOnboarded = useGameStore((s) => s.hasOnboarded);
+  const hydrated = useStoreHydrated();
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>("loading");
   const [match, setMatch] = useState<PvpMatch | null>(null);
@@ -34,6 +36,7 @@ function PvpMatchPage() {
   const [pendingResult, setPendingResult] = useState<PvpBattleResult | null>(null);
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!hasOnboarded) {
       navigate({ to: "/" });
       return;
@@ -62,7 +65,7 @@ function PvpMatchPage() {
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matchId, hasOnboarded]);
+  }, [matchId, hasOnboarded, hydrated]);
 
   useEffect(() => {
     playBgm("battle_regular");
@@ -100,7 +103,7 @@ function PvpMatchPage() {
     setPhase(fresh ? phaseForCompletedSide(fresh.status) : "not_found");
   }
 
-  if (!hasOnboarded) return null;
+  if (!hydrated || !hasOnboarded) return null;
 
   if (phase === "loading") {
     return (

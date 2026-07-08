@@ -28,6 +28,7 @@ import { ShareCardDialog } from "@/components/share-card-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Textarea } from "@/components/ui/textarea";
 import { useGameStore } from "@/lib/store";
+import { useStoreHydrated } from "@/lib/store-hydration";
 import {
   listFriends,
   addFriendByCode,
@@ -107,6 +108,7 @@ export const Route = createFileRoute("/profile")({
 
 function ProfilePage() {
   const hasOnboarded = useGameStore((s) => s.hasOnboarded);
+  const hydrated = useStoreHydrated();
   const navigate = useNavigate();
   const trainerName = useGameStore((s) => s.trainerName);
   const trainerSprite = useGameStore((s) => s.trainerSprite);
@@ -375,8 +377,8 @@ function ProfilePage() {
   }, []);
 
   useEffect(() => {
-    if (!hasOnboarded) navigate({ to: "/" });
-  }, [hasOnboarded, navigate]);
+    if (hydrated && !hasOnboarded) navigate({ to: "/" });
+  }, [hydrated, hasOnboarded, navigate]);
 
   // Re-picking is limited to Pokémon captured in the Pokédex (the current
   // partner always stays available). Onboarding still uses STARTING_PARTNERS.
@@ -448,7 +450,7 @@ function ProfilePage() {
     return () => window.clearTimeout(t);
   }, [nameDraft, renameOpen, trainerName]);
 
-  if (!hasOnboarded || !pokemon) return null;
+  if (!hydrated || !hasOnboarded || !pokemon) return null;
 
   const rank = rankForLevel(level);
 

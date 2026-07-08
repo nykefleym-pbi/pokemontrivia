@@ -94,31 +94,24 @@ export function spriteUrl(
   const shiny = opts.shiny ?? false;
   const variant = shiny ? "shiny/" : "";
   if (back) {
-    return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/${variant}${id}.png`;
+    return `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/back/${variant}${id}.png`;
   }
-  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${variant}${id}.png`;
+  return `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/${variant}${id}.png`;
 }
 
 export function spriteFallbacks(id: number, shiny = false): string[] {
   const variant = shiny ? "shiny/" : "";
-  const p = findPokemon(id);
-  const slug = p?.slug ?? "";
-
-  let dbPack = "black-white";
-  if (id >= 906) dbPack = "scarlet-violet";
-  else if (id >= 810) dbPack = "sword-shield";
-  else if (id >= 722) dbPack = "sun-moon";
-  else if (id >= 650) dbPack = "x-y";
-
-  const list = [
+  // jsDelivr mirrors the PokeAPI sprites repo on a real CDN with CORS enabled;
+  // raw.githubusercontent stays as fallback (it rate-limits with 429s under
+  // shared IPs). img.pokemondb.net was dropped: it sends no
+  // Access-Control-Allow-Origin header, so it can never load into an image
+  // element that sets crossOrigin="anonymous".
+  return [
+    `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/${variant}${id}.png`,
     `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${variant}${id}.png`,
+    `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/other/official-artwork/${variant}${id}.png`,
     `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${variant}${id}.png`,
   ];
-  if (slug) {
-    list.push(`https://img.pokemondb.net/sprites/${dbPack}/normal/${slug}.png`);
-    list.push(`https://img.pokemondb.net/sprites/home/normal/${slug}.png`);
-  }
-  return list;
 }
 
 // Type effectiveness — attacker -> list of types it's super effective against (Gen 6+ chart, simplified).

@@ -113,10 +113,10 @@ export type ItemId =
   | "colburberry";
 
 const ICON = (slug: string) =>
-  `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${slug}.png`;
+  `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/items/${slug}.png`;
 
 const DREAM_ICON = (slug: string) =>
-  `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/dream-world/${slug}.png`;
+  `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/items/dream-world/${slug}.png`;
 
 export const ITEMS: ItemDef[] = [
   {

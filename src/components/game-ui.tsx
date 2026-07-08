@@ -394,7 +394,9 @@ export const PokemonSprite = React.memo(function PokemonSprite({
     if (back) {
       const variant = shiny ? "shiny/" : "";
       return [
+        `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/back/${variant}${id}.png`,
         `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/${variant}${id}.png`,
+        `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/${variant}${id}.png`,
         `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${variant}${id}.png`,
       ];
     }
@@ -425,7 +427,7 @@ export const PokemonSprite = React.memo(function PokemonSprite({
 export type DailyMark = "correct" | "wrong" | "timeout";
 
 const POKEBALL_SPRITE =
-  "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png";
+  "https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/items/poke-ball.png";
 
 export function PokeballPattern({ marks }: { marks: DailyMark[] }) {
   if (!marks?.length) return null;

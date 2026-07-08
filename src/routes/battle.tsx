@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useGameStore } from "@/lib/store";
+import { useStoreHydrated } from "@/lib/store-hydration";
 import { PokemonSprite } from "@/components/game-ui";
 import { difficultyForLevel } from "@/lib/game-data";
 import { BattleScreen, type Trivia } from "@/components/battle-screen";
@@ -40,6 +41,7 @@ export const Route = createFileRoute("/battle")({
 
 function BattlePage() {
   const hasOnboarded = useGameStore((s) => s.hasOnboarded);
+  const hydrated = useStoreHydrated();
   const level = useGameStore((s) => s.level);
   const peakLevel = useGameStore((s) => s.peakLevel);
   const defeatedElites = useGameStore((s) => s.defeatedElites);
@@ -219,8 +221,8 @@ function BattlePage() {
   }, []);
 
   useEffect(() => {
-    if (!hasOnboarded) navigate({ to: "/" });
-  }, [hasOnboarded, navigate]);
+    if (hydrated && !hasOnboarded) navigate({ to: "/" });
+  }, [hydrated, hasOnboarded, navigate]);
 
   useEffect(() => {
     if (hasOnboarded && search.autostart === 1 && !autoStartedRef.current && phase === "home") {
@@ -693,7 +695,7 @@ function BattlePage() {
     },
   };
 
-  if (!hasOnboarded) return null;
+  if (!hydrated || !hasOnboarded) return null;
 
   return (
     <>

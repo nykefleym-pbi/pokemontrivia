@@ -263,7 +263,7 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
           }}
         />
         <img
-          src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${event.megaId}.png`}
+          src={`https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/${event.megaId}.png`}
           alt={event.name}
           crossOrigin="anonymous"
           className="absolute object-contain"

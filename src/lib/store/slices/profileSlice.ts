@@ -3,6 +3,7 @@ import type { StoreSlice } from "@/lib/store/slice";
 import type { ItemId } from "@/lib/game-data";
 import { TRAINER_SPRITES } from "@/lib/game-data";
 import { rollAbilityId } from "@/lib/abilities";
+import { WHATS_NEW } from "@/lib/whats-new";
 
 export const createProfileSlice: StoreSlice<
   Pick<
@@ -59,6 +60,8 @@ export const createProfileSlice: StoreSlice<
     set({
       hasOnboarded: true,
       isGuest: false,
+      lastSeenWhatsNew: WHATS_NEW.version,
+      engageShownThisSession: true,
       trainerName: name,
       pokemon,
       abilityId: rollAbilityId(pokemon.types),
