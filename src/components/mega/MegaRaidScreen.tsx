@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Backpack } from "lucide-react";
 import { toast } from "sonner";
 import { PokemonSprite } from "@/components/game-ui";
 import type { Trivia } from "@/components/battle-screen";
+import { shuffleAllTriviaOptions } from "@/lib/trivia-core";
 import { useGameStore } from "@/lib/store";
 import { ITEMS, type ItemId } from "@/lib/game-data";
 import {
@@ -97,7 +98,16 @@ function TimerRing({ timer, maxTime }: { timer: number; maxTime: number }) {
   );
 }
 
-export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, onRematch }: Props) {
+export function MegaRaidScreen({
+  event,
+  questions: rawQuestions,
+  onExit,
+  onViewLeaderboard,
+  onRematch,
+}: Props) {
+  // Random option order per run — the fixed 50-question set stays identical
+  // for every player (leaderboard fairness), only the answer positions move.
+  const questions = useMemo(() => shuffleAllTriviaOptions(rawQuestions), [rawQuestions]);
   const total = questions.length;
   const inventory = useGameStore((s) => s.inventory);
   const grantItem = useGameStore((s) => s.grantItem);

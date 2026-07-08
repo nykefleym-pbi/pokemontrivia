@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Trivia } from "@/lib/trivia-core";
+import { shuffleAllTriviaOptions } from "@/lib/trivia-core";
 import { playSfx } from "@/lib/audio";
 
 const QUESTION_TIME_MS = 20_000;
@@ -21,7 +22,10 @@ interface Props {
  * machinery, just the frozen question set, a per-question countdown, and a
  * running correct/streak/time tally handed back on completion.
  */
-export function PvpBattleScreen({ questions, onFinish }: Props) {
+export function PvpBattleScreen({ questions: rawQuestions, onFinish }: Props) {
+  // Both players get the same frozen question set; only the option order is
+  // randomized per client (correctness is computed locally, so this is safe).
+  const questions = useMemo(() => shuffleAllTriviaOptions(rawQuestions), [rawQuestions]);
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [correctCount, setCorrectCount] = useState(0);

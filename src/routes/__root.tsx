@@ -16,6 +16,7 @@ import { FriendRequestInbox } from "@/components/FriendRequestInbox";
 import { PvpInviteInbox } from "@/components/PvpInviteInbox";
 import { LivePvpWatcher } from "@/components/LivePvpWatcher";
 import { NameReclaimPrompt } from "@/components/NameReclaimPrompt";
+import { Analytics } from "@vercel/analytics/react";
 
 import appCss from "../styles.css?url";
 
@@ -216,6 +217,7 @@ function RootComponent() {
       <NameReclaimPrompt />
 
       <PwaRegister />
+      <Analytics />
     </div>
   );
 }

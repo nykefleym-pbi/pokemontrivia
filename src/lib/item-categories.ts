@@ -28,6 +28,8 @@ export const CATEGORY_OF: Record<ItemId, ItemCategory> = {
   focusband: "HEALING",
   revive: "HEALING",
   oranberry: "HEALING",
+  kingsrock: "HEALING",
+  leftovers: "HEALING",
   xattack: "BATTLE",
   scope: "BATTLE",
   xaccuracy: "BATTLE",
@@ -35,6 +37,7 @@ export const CATEGORY_OF: Record<ItemId, ItemCategory> = {
   assaultvest: "BATTLE",
   zoomlens: "BATTLE",
   silkscarf: "BATTLE",
+  metronome: "BATTLE",
   escape: "UTILITY",
   amuletcoin: "UTILITY",
   repel: "UTILITY",
@@ -44,9 +47,6 @@ export const CATEGORY_OF: Record<ItemId, ItemCategory> = {
   choicespecs: "UTILITY",
   candy: "PREMIUM",
   luckyegg: "PREMIUM",
-  kingsrock: "PREMIUM",
-  leftovers: "PREMIUM",
-  metronome: "PREMIUM",
   bignugget: "PREMIUM",
 };
 

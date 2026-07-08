@@ -52,6 +52,7 @@ import { ShareCardDialog } from "@/components/share-card-dialog";
 import type { ShareData } from "@/components/share-card-builder";
 import { trainerSpriteUrl, STATUS_META } from "@/lib/game-data";
 import type { Trivia } from "@/lib/trivia-core";
+import { shuffleAllTriviaOptions } from "@/lib/trivia-core";
 export type { Trivia };
 import { DailyScreen } from "@/components/daily-screen";
 import { ResultScreen } from "@/components/result-screen";
@@ -190,13 +191,16 @@ interface Props {
 }
 
 export function BattleScreen({
-  questions,
+  questions: rawQuestions,
   onExit,
   onRematch,
   mode = "battle",
   eliteMember,
   gymLeader,
 }: Props) {
+  // Randomize option order once per battle so repeat questions can't be
+  // answered from memorized answer positions.
+  const questions = useMemo(() => shuffleAllTriviaOptions(rawQuestions), [rawQuestions]);
   if (mode === "daily") {
     return <DailyScreen questions={questions} onExit={onExit} />;
   }

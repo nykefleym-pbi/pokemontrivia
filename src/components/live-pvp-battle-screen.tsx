@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { Backpack } from "lucide-react";
 import type { Trivia } from "@/lib/trivia-core";
+import { shuffleAllTriviaOptions } from "@/lib/trivia-core";
 import { playSfx } from "@/lib/audio";
 import { useGameStore, type ActiveStatus, type PvpStatStages } from "@/lib/store";
 import {
@@ -288,7 +289,7 @@ function ArenaSprite({
  */
 export function LivePvpBattleScreen({
   matchId,
-  questions,
+  questions: rawQuestions,
   startedAt,
   myId,
   hostId,
@@ -296,6 +297,9 @@ export function LivePvpBattleScreen({
   opponentName,
   onFinish,
 }: Props) {
+  // Shared question set, per-client option order (answers are submitted as
+  // correct/incorrect booleans, never as option indexes, so this is safe).
+  const questions = useMemo(() => shuffleAllTriviaOptions(rawQuestions), [rawQuestions]);
   const amIHost = myId === hostId;
   const myStages = useGameStore((s) => s.myStages);
   const oppStages = useGameStore((s) => s.oppStages);

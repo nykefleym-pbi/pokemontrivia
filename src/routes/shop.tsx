@@ -286,9 +286,16 @@ function ShopPage() {
           </div>
         )}
 
-        {/* Featured — single discounted item, one purchase per day */}
+        {/* Featured — single discounted item, one purchase per day. Once
+            bought, the big card collapses to a slim note so the catalog below
+            isn't pushed down by a spent deal. */}
+        {featuredUsedToday ? (
+          <div className="mb-5 flex items-center justify-center gap-2 rounded-full bg-poke-dark/10 px-4 py-2 text-xs font-bold text-foreground/60">
+            <Star className="h-3.5 w-3.5" />
+            Daily deal claimed — a new deal lands tomorrow
+          </div>
+        ) : (
         <button
-          disabled={featuredUsedToday}
           onClick={() =>
             setConfirmState({
               item: featured.item,
@@ -302,7 +309,7 @@ function ShopPage() {
           className="relative mb-5 flex w-full items-center gap-5 overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-[#b5341f] p-6 pt-9 text-left shadow-card disabled:opacity-60"
         >
           <span className="absolute left-1/2 top-3 -translate-x-1/2 whitespace-nowrap rounded-full bg-poke-yellow px-3 py-0.5 font-pixel-xs uppercase text-foreground shadow-sm">
-            {featuredUsedToday ? "Back tomorrow" : `Discounted ${featured.discountPct}% off`}
+            {`Discounted ${featured.discountPct}% off`}
           </span>
           <div
             aria-hidden
@@ -324,6 +331,7 @@ function ShopPage() {
             </span>
           </div>
         </button>
+        )}
 
         {/* Category tabs */}
         <div className="mb-4 grid grid-cols-4 gap-1 rounded-full bg-poke-dark/10 p-1">
