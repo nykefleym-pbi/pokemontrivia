@@ -604,22 +604,33 @@ async function drawPokemonSprite(
 ) {
   if (isNaN(id)) return;
   const variant = shiny ? "shiny/" : "";
-  const url = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${variant}${id}.png`;
-  try {
-    const img = await loadImage(url);
-    ctx.drawImage(img, x, y, size, size);
-    return;
-  } catch {
-    /* fall through */
+  const artworkUrls = [
+    `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/other/official-artwork/${variant}${id}.png`,
+    `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${variant}${id}.png`,
+  ];
+  for (const url of artworkUrls) {
+    try {
+      const img = await loadImage(url);
+      ctx.drawImage(img, x, y, size, size);
+      return;
+    } catch {
+      /* try next source */
+    }
   }
-  try {
-    const fallback = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${variant}${id}.png`;
-    const img = await loadImage(fallback);
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(img, x, y, size, size);
-    ctx.imageSmoothingEnabled = true;
-  } catch {
-    /* skip */
+  const spriteUrls = [
+    `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/${variant}${id}.png`,
+    `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${variant}${id}.png`,
+  ];
+  for (const fallback of spriteUrls) {
+    try {
+      const img = await loadImage(fallback);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(img, x, y, size, size);
+      ctx.imageSmoothingEnabled = true;
+      return;
+    } catch {
+      /* try next source */
+    }
   }
 }
 
