@@ -7,15 +7,42 @@
 import webpush from "npm:web-push@3.6.7";
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
+const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 const CRON_SECRET = Deno.env.get("PUSH_CRON_SECRET");
-const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY")!;
-const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY")!;
+const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY") ?? "";
+const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY") ?? "";
 const VAPID_SUBJECT = Deno.env.get("VAPID_SUBJECT") ?? "mailto:support@pokemontriviabattle.app";
 
-webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+// VAPID init must NOT run at module scope: setVapidDetails throws on a missing
+// or malformed key, which would crash EVERY request at cold boot with a blind
+// 500 (this is exactly what silently killed all push — reminders and friend
+// requests — when the VAPID secrets weren't set). Initialize lazily and surface
+// the real reason as a descriptive 503 instead.
+let vapidError: string | null = null;
+let vapidReady = false;
+function ensureVapid(): string | null {
+  if (vapidReady) return null;
+  if (vapidError) return vapidError;
+  const missing: string[] = [];
+  if (!VAPID_PUBLIC_KEY) missing.push("VAPID_PUBLIC_KEY");
+  if (!VAPID_PRIVATE_KEY) missing.push("VAPID_PRIVATE_KEY");
+  if (missing.length > 0) {
+    vapidError = `push not configured: missing edge-function secret(s): ${missing.join(", ")}`;
+    console.error(vapidError);
+    return vapidError;
+  }
+  try {
+    webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+    vapidReady = true;
+    return null;
+  } catch (e) {
+    vapidError = `push not configured: invalid VAPID keys (${(e as Error).message}); publicLen=${VAPID_PUBLIC_KEY.length}, privateLen=${VAPID_PRIVATE_KEY.length}`;
+    console.error(vapidError);
+    return vapidError;
+  }
+}
 
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
@@ -144,6 +171,11 @@ Deno.serve(async (req) => {
 
   const authError = await authorize(req, payload);
   if (authError) return json({ error: authError }, 403);
+
+  // Configure web-push now (not at boot) so a misconfigured VAPID secret
+  // returns a descriptive 503 instead of crashing the whole function.
+  const vapidErr = ensureVapid();
+  if (vapidErr) return json({ error: vapidErr }, 503);
 
   let query = admin.from("push_subscriptions").select("id, user_id, endpoint, p256dh, auth");
   if (
