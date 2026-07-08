@@ -52,6 +52,8 @@ import { ShareCardDialog } from "@/components/share-card-dialog";
 import type { ShareData } from "@/components/share-card-builder";
 import { trainerSpriteUrl, STATUS_META } from "@/lib/game-data";
 import type { Trivia } from "@/lib/trivia-core";
+import { shuffleAllTriviaOptions } from "@/lib/trivia-core";
+import { useForfeitGuard } from "@/lib/use-forfeit-guard";
 export type { Trivia };
 import { DailyScreen } from "@/components/daily-screen";
 import { ResultScreen } from "@/components/result-screen";
@@ -190,13 +192,16 @@ interface Props {
 }
 
 export function BattleScreen({
-  questions,
+  questions: rawQuestions,
   onExit,
   onRematch,
   mode = "battle",
   eliteMember,
   gymLeader,
 }: Props) {
+  // Randomize option order once per battle so repeat questions can't be
+  // answered from memorized answer positions.
+  const questions = useMemo(() => shuffleAllTriviaOptions(rawQuestions), [rawQuestions]);
   if (mode === "daily") {
     return <DailyScreen questions={questions} onExit={onExit} />;
   }
@@ -352,6 +357,9 @@ function BattleMode({
   } | null>(null);
   const [bagOpen, setBagOpen] = useState(false);
   const [confirmExit, setConfirmExit] = useState(false);
+  // Browser/Android back mid-battle asks to forfeit instead of silently
+  // leaving (feedback 2286b6fc). Reuses the existing Leave-battle dialog.
+  useForfeitGuard(phase !== "result", () => setConfirmExit(true));
   const [resultWon, setResultWon] = useState<boolean | null>(null);
   const [xpEarned, setXpEarned] = useState(0);
   const [coinsEarned, setCoinsEarned] = useState(0);

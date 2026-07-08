@@ -1,8 +1,20 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Backpack } from "lucide-react";
 import { toast } from "sonner";
 import { PokemonSprite } from "@/components/game-ui";
 import type { Trivia } from "@/components/battle-screen";
+import { shuffleTriviaOptionsWithOrder } from "@/lib/trivia-core";
+import { useForfeitGuard } from "@/lib/use-forfeit-guard";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useGameStore } from "@/lib/store";
 import { ITEMS, type ItemId } from "@/lib/game-data";
 import {
@@ -97,7 +109,27 @@ function TimerRing({ timer, maxTime }: { timer: number; maxTime: number }) {
   );
 }
 
-export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, onRematch }: Props) {
+export function MegaRaidScreen({
+  event,
+  questions: rawQuestions,
+  onExit,
+  onViewLeaderboard,
+  onRematch,
+}: Props) {
+  // Random option order per run — the fixed 50-question set stays identical
+  // for every player (leaderboard fairness), only the answer positions move.
+  // Mega questions arrive with correct = -1 and the server later reveals the
+  // correct index in ORIGINAL option order, so keep each question's
+  // permutation to translate server indexes into display indexes.
+  const shuffledSet = useMemo(
+    () => rawQuestions.map((q) => shuffleTriviaOptionsWithOrder(q)),
+    [rawQuestions],
+  );
+  const questions = useMemo(() => shuffledSet.map((s) => s.q), [shuffledSet]);
+  const toDisplayIdx = useCallback(
+    (qi: number, serverIdx: number) => shuffledSet[qi]?.order.indexOf(serverIdx) ?? serverIdx,
+    [shuffledSet],
+  );
   const total = questions.length;
   const inventory = useGameStore((s) => s.inventory);
   const grantItem = useGameStore((s) => s.grantItem);
@@ -112,6 +144,10 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
   const [correctCount, setCorrectCount] = useState(0);
   const [bagOpen, setBagOpen] = useState(false);
   const [phase, setPhase] = useState<"fighting" | "result">("fighting");
+  const [confirmLeave, setConfirmLeave] = useState(false);
+  // Browser/Android back mid-raid asks before abandoning the run
+  // (feedback 2286b6fc).
+  useForfeitGuard(phase !== "result", () => setConfirmLeave(true));
 
   const [usedOnce, setUsedOnce] = useState<Set<ItemId>>(new Set());
   const [xAtkArmed, setXAtkArmed] = useState(false);
@@ -218,8 +254,11 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
       if (typeof correctIdx !== "number") {
         const rev = await revealMegaAnswer(event.id, qIndex);
         if (rev) {
-          correctIdx = rev.correctIndex;
-          setCorrectIdxByQ((m) => ({ ...m, [qIndex]: rev.correctIndex }));
+          // Server reveals the index in original option order; translate into
+          // this run's shuffled display order.
+          const displayIdx = toDisplayIdx(qIndex, rev.correctIndex);
+          correctIdx = displayIdx;
+          setCorrectIdxByQ((m) => ({ ...m, [qIndex]: displayIdx }));
         }
       }
       // If the server check failed (network hiccup) and the user actually picked
@@ -303,8 +342,9 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
         if (typeof correctIdx !== "number") {
           const rev = await revealMegaAnswer(event.id, qIndex);
           if (rev) {
-            correctIdx = rev.correctIndex;
-            setCorrectIdxByQ((m) => ({ ...m, [qIndex]: rev.correctIndex }));
+            const displayIdx = toDisplayIdx(qIndex, rev.correctIndex);
+            correctIdx = displayIdx;
+            setCorrectIdxByQ((m) => ({ ...m, [qIndex]: displayIdx }));
           }
         }
         if (typeof correctIdx !== "number") {
@@ -697,6 +737,29 @@ export function MegaRaidScreen({ event, questions, onExit, onViewLeaderboard, on
           </div>
         </div>
       )}
+
+      <AlertDialog open={confirmLeave} onOpenChange={setConfirmLeave}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave the raid?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your progress in this run will be lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep fighting</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                endedRef.current = true;
+                onExit();
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Leave
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

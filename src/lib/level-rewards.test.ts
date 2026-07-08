@@ -21,8 +21,10 @@ describe("rollLevelUpRewards", () => {
     // base (lvl4 + lvl5) + milestone bonus at lvl5
     expect(r!.coins).toBeGreaterThan(50);
     expect(r!.eggs).toBe(0);
+    // Must cover the full PREMIUM_ITEM_IDS pool in level-rewards.ts — the pick
+    // is random, so omitting any pool member makes this test flaky.
     const hasPremium = r!.items.some((it) =>
-      ["candy", "luckyegg", "focusband", "assaultvest"].includes(it.id),
+      ["candy", "luckyegg", "focusband", "assaultvest", "bignugget"].includes(it.id),
     );
     expect(hasPremium).toBe(true);
   });
