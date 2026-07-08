@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { playSfx, playItemCue } from "@/lib/audio";
 import { Star, Coins, ShoppingBag, Minus, Plus } from "lucide-react";
 import { useGameStore } from "@/lib/store";
+import { useStoreHydrated } from "@/lib/store-hydration";
 import { ITEMS, type ItemDef } from "@/lib/game-data";
 import { getAbility } from "@/lib/abilities";
 import { CATEGORIES, CATEGORY_OF, BAG_SHORT_DESC, type ItemCategory } from "@/lib/item-categories";
@@ -35,6 +36,7 @@ type ConfirmState = {
 
 function ShopPage() {
   const hasOnboarded = useGameStore((s) => s.hasOnboarded);
+  const hydrated = useStoreHydrated();
   const navigate = useNavigate();
   const coins = useGameStore((s) => s.coins);
   const partner = useGameStore((s) => s.pokemon);
@@ -112,14 +114,14 @@ function ShopPage() {
   }, []);
 
   useEffect(() => {
-    if (!hasOnboarded) navigate({ to: "/" });
-  }, [hasOnboarded, navigate]);
+    if (hydrated && !hasOnboarded) navigate({ to: "/" });
+  }, [hydrated, hasOnboarded, navigate]);
 
   useEffect(() => {
     if (confirmState) setQty(1);
   }, [confirmState]);
 
-  if (!hasOnboarded) return null;
+  if (!hydrated || !hasOnboarded) return null;
 
   const items = ITEMS.filter((it) => CATEGORY_OF[it.id] === tab);
 

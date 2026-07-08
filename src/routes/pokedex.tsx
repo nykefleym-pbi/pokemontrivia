@@ -5,6 +5,7 @@ import { Search, Sparkles, X, ArrowRight, Volume2, ChevronLeft } from "lucide-re
 import { Fragment } from "react";
 import { playCry, playSfx } from "@/lib/audio";
 import { useGameStore } from "@/lib/store";
+import { useStoreHydrated } from "@/lib/store-hydration";
 import { EggHatch } from "@/components/mega/EggHatch";
 import { ALL_POKEMON, type PokeType } from "@/lib/pokemon-data";
 import { Input } from "@/components/ui/input";
@@ -51,6 +52,7 @@ const GEN_RANGES: Array<{ gen: number; from: number; to: number }> = [
 
 function PokedexPage() {
   const hasOnboarded = useGameStore((s) => s.hasOnboarded);
+  const hydrated = useStoreHydrated();
   const pokedex = useGameStore((s) => s.pokedex);
   const trainerName = useGameStore((s) => s.trainerName);
   const navigate = useNavigate();
@@ -63,8 +65,8 @@ function PokedexPage() {
   const [showShiny, setShowShiny] = useState(false);
 
   useEffect(() => {
-    if (!hasOnboarded) navigate({ to: "/" });
-  }, [hasOnboarded, navigate]);
+    if (hydrated && !hasOnboarded) navigate({ to: "/" });
+  }, [hydrated, hasOnboarded, navigate]);
 
   const range = GEN_RANGES.find((g) => g.gen === gen)!;
   const regionTotal = range.to - range.from + 1;
@@ -85,7 +87,7 @@ function PokedexPage() {
     });
   }, [range, q, type, capturedOnly, shinyOnly, pokedex]);
 
-  if (!hasOnboarded) return null;
+  if (!hydrated || !hasOnboarded) return null;
 
   const ringCirc = 2 * Math.PI * 26;
 
