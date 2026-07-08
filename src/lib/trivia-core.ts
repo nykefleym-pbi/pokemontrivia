@@ -29,15 +29,29 @@ export interface TriviaPayload {
  * option index.
  */
 export function shuffleTriviaOptions<T extends Trivia>(q: T): T {
+  return shuffleTriviaOptionsWithOrder(q).q;
+}
+
+/**
+ * Like `shuffleTriviaOptions`, but also returns the permutation used:
+ * `order[displayIndex] === originalIndex`. Needed by Mega Raids, where the
+ * client only learns the correct index from the server (in ORIGINAL option
+ * order) and must map it into the shuffled display order via
+ * `order.indexOf(serverIndex)`. A `correct` of -1 (unknown) stays -1.
+ */
+export function shuffleTriviaOptionsWithOrder<T extends Trivia>(q: T): { q: T; order: number[] } {
   const order = q.options.map((_, i) => i);
   for (let i = order.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [order[i], order[j]] = [order[j], order[i]];
   }
   return {
-    ...q,
-    options: order.map((i) => q.options[i]),
-    correct: order.indexOf(q.correct),
+    q: {
+      ...q,
+      options: order.map((i) => q.options[i]),
+      correct: q.correct >= 0 ? order.indexOf(q.correct) : q.correct,
+    },
+    order,
   };
 }
 

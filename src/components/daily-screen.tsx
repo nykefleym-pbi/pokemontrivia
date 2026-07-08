@@ -22,6 +22,7 @@ import type { ShareData } from "@/components/share-card-builder";
 import type { Trivia } from "@/lib/trivia-core";
 import { TimerRing } from "@/components/battle-screen";
 import { syncActivity } from "@/lib/social";
+import { useForfeitGuard } from "@/lib/use-forfeit-guard";
 
 export function DailyScreen({ questions, onExit }: { questions: Trivia[]; onExit: () => void }) {
   const recordDaily = useGameStore((s) => s.recordDaily);
@@ -37,6 +38,9 @@ export function DailyScreen({ questions, onExit }: { questions: Trivia[]; onExit
     return () => setBattleScreenActive(false);
   }, [setBattleScreenActive]);
   const [confirmExit, setConfirmExit] = useState(false);
+  // Browser/Android back mid-run asks to forfeit instead of silently leaving
+  // (feedback 2286b6fc). Reuses the existing Leave dialog.
+  useForfeitGuard(phase !== "done", () => setConfirmExit(true));
   const [correctCount, setCorrectCount] = useState(0);
   const [timer, setTimer] = useState(20);
   const startedAt = useRef(Date.now());

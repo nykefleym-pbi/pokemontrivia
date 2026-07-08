@@ -53,6 +53,7 @@ import type { ShareData } from "@/components/share-card-builder";
 import { trainerSpriteUrl, STATUS_META } from "@/lib/game-data";
 import type { Trivia } from "@/lib/trivia-core";
 import { shuffleAllTriviaOptions } from "@/lib/trivia-core";
+import { useForfeitGuard } from "@/lib/use-forfeit-guard";
 export type { Trivia };
 import { DailyScreen } from "@/components/daily-screen";
 import { ResultScreen } from "@/components/result-screen";
@@ -356,6 +357,9 @@ function BattleMode({
   } | null>(null);
   const [bagOpen, setBagOpen] = useState(false);
   const [confirmExit, setConfirmExit] = useState(false);
+  // Browser/Android back mid-battle asks to forfeit instead of silently
+  // leaving (feedback 2286b6fc). Reuses the existing Leave-battle dialog.
+  useForfeitGuard(phase !== "result", () => setConfirmExit(true));
   const [resultWon, setResultWon] = useState<boolean | null>(null);
   const [xpEarned, setXpEarned] = useState(0);
   const [coinsEarned, setCoinsEarned] = useState(0);
