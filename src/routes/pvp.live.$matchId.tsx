@@ -422,7 +422,9 @@ function LivePvpMatchPage() {
               <AlertDialogAction
                 onClick={() => {
                   setForfeitConfirmOpen(false);
-                  void forfeitLivePvpMatch(matchId);
+                  // concede=true: the opponent wins, we earn no rewards
+                  // (feedback 45f613c7).
+                  void forfeitLivePvpMatch(matchId, true);
                 }}
               >
                 Forfeit

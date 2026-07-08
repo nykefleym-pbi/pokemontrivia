@@ -478,12 +478,23 @@ export async function submitLivePvpResult(
   }
 }
 
-/** Claim a forfeit win when the opponent's presence has been gone for 30s. */
+/**
+ * Resolve a live match by forfeit.
+ * - `concede = false` (default): CLAIM the win for the caller — used by the
+ *   presence watchdog when the opponent has been gone for 30s.
+ * - `concede = true`: the caller GIVES UP, so the opponent is recorded as the
+ *   winner and the caller earns no rewards — used by the Forfeit button and the
+ *   back-button guard (feedback 45f613c7).
+ */
 export async function forfeitLivePvpMatch(
   matchId: string,
+  concede = false,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
-    const { data, error } = await rpc.rpc("forfeit_live_pvp_match", { _match_id: matchId });
+    const { data, error } = await rpc.rpc("forfeit_live_pvp_match", {
+      _match_id: matchId,
+      _concede: concede,
+    });
     if (error) {
       console.warn("[pvp-live] forfeitLivePvpMatch failed:", error.message);
       return { ok: false, error: "network" };

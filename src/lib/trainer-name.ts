@@ -20,6 +20,25 @@ export function validateTrainerName(
   return { ok: true, name };
 }
 
+// Kid-friendly random trainer name for guest sessions (feedback 96098111):
+// an adjective + trainer-y noun + 1–2 digits, always within the 3–16 char
+// length rule and the allowed character set above.
+const GUEST_NAME_ADJECTIVES = [
+  "Brave", "Swift", "Lucky", "Mighty", "Clever", "Sunny", "Bold", "Cosmic",
+  "Turbo", "Epic", "Wild", "Royal", "Zippy", "Cool", "Ace",
+];
+const GUEST_NAME_NOUNS = [
+  "Trainer", "Champ", "Rival", "Rookie", "Master", "Hero", "Star", "Ranger",
+  "Ace", "Scout", "Buddy", "Pal",
+];
+
+export function randomGuestName(rng: () => number = Math.random): string {
+  const adj = GUEST_NAME_ADJECTIVES[Math.floor(rng() * GUEST_NAME_ADJECTIVES.length)];
+  const noun = GUEST_NAME_NOUNS[Math.floor(rng() * GUEST_NAME_NOUNS.length)];
+  const num = Math.floor(rng() * 90) + 10; // 10–99
+  return `${adj}${noun}${num}`.slice(0, TRAINER_NAME_MAX);
+}
+
 export function claimErrorMessage(error: string): string {
   switch (error as ClaimErrorCode) {
     case "taken":

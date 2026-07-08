@@ -75,7 +75,9 @@ export function PartnerCard({
                 : "bg-muted text-foreground/50"
             }`}
           >
-            {eligible ? "✦ Evolve" : `✦ Evolve · ${tp}/${cost} TP`}
+            {/* TP progress lives in the bar under the Pokémon's name; don't
+                repeat it here (feedback ab8a72c9). */}
+            ✦ Evolve
           </Button>
         </div>
       )}

@@ -743,19 +743,22 @@ export function MegaRaidScreen({
           <AlertDialogHeader>
             <AlertDialogTitle>Leave the raid?</AlertDialogTitle>
             <AlertDialogDescription>
-              Your progress in this run will be lost.
+              Leaving now ends the raid as a loss and uses up one of your
+              attempts (feedback f63c4dc3 — you can't bail to save an attempt).
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Keep fighting</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                endedRef.current = true;
-                onExit();
+                setConfirmLeave(false);
+                // Record the abandoned run as a loss so it consumes an attempt,
+                // rather than a free exit.
+                void finish(false, correctCount);
               }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Leave
+              Leave (counts as attempt)
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
