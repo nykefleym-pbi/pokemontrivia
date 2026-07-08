@@ -1,10 +1,21 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useGameStore } from "@/lib/store";
 import { useStoreHydrated } from "@/lib/store-hydration";
-import { PokeballSpinner } from "@/components/game-ui";
+import { PokeballSpinner, PokemonSprite } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   getLivePvpMatch,
   forfeitLivePvpMatch,
@@ -16,8 +27,11 @@ import {
 import { LivePvpBattleScreen, type LivePvpBattleResult } from "@/components/live-pvp-battle-screen";
 import { getProfileById, ensureSession, type TrainerProfile } from "@/lib/social";
 import { supabase } from "@/integrations/supabase/client";
-import { playBgm } from "@/lib/audio";
-import { trainerSpriteUrl, ITEMS, rollBerryDrops, STARTER_PVP_BERRY } from "@/lib/game-data";
+import { playBgm, playBattleResult } from "@/lib/audio";
+import { ITEMS, rollBerryDrops, STARTER_PVP_BERRY } from "@/lib/game-data";
+import { BAG_SHORT_DESC } from "@/lib/item-categories";
+import { PVP_QUESTIONS } from "@/lib/pvp-combat";
+import { useForfeitGuard } from "@/lib/use-forfeit-guard";
 import { signatureMoveName, describeSignatureEffect } from "@/lib/signature-abilities";
 
 export const Route = createFileRoute("/pvp/live/$matchId")({
@@ -49,6 +63,14 @@ function LivePvpMatchPage() {
   const [match, setMatch] = useState<LivePvpMatch | null>(null);
   const [myId, setMyId] = useState<string | null>(null);
   const [opponentProfile, setOpponentProfile] = useState<TrainerProfile | null>(null);
+  const [forfeitConfirmOpen, setForfeitConfirmOpen] = useState(false);
+  const [berryDrops, setBerryDrops] = useState<number | null>(null);
+  const partner = useGameStore((s) => s.pokemon);
+
+  // Back-button forfeit guard (feedback 2286b6fc): while the battle is live, a
+  // stray Back press opens the confirm dialog instead of silently abandoning
+  // the match. Confirming runs the same forfeit path as the presence timeout.
+  useForfeitGuard(phase === "battle", () => setForfeitConfirmOpen(true));
 
   const matchRef = useRef<LivePvpMatch | null>(null);
   const myIdRef = useRef<string | null>(null);
@@ -245,19 +267,24 @@ function LivePvpMatchPage() {
         // text off the wire). Covers the Training bot too: its ability fires
         // broadcast a pvp_live_effects row sourced as the guest/bot, which the
         // human receives here (sourceId !== myId) and toasts with this explainer.
+        // Always name the owner (Opponent's) + effect + who it hits so players
+        // can tell what fired and whom it touched (feedback b44e3b83).
         const desc = describeSignatureEffect(effect.pokemonId);
         const base = desc ? `Opponent's ${move} — ${desc}` : `Opponent's ${move} activates`;
         toast.warning(
-          effect.target === "opponent" ? `✨ ${base} — you're affected!` : `✨ ${base}!`,
+          effect.target === "opponent" ? `✨ ${base} — affects YOU!` : `✨ ${base} — affects them!`,
         );
         return;
       }
       const def = ITEMS.find((i) => i.id === effect.itemId);
       if (!def) return;
+      // Item/berry: emoji + name + a short plain-language effect line so the
+      // player understands the HP jump they just saw (feedback b424480a).
+      const effectText = BAG_SHORT_DESC[def.id] ?? def.desc;
       if (effect.target === "opponent") {
-        toast.warning(`${def.emoji} Opponent used ${def.name} — you're affected!`);
+        toast.warning(`${def.emoji} Opponent used ${def.name} — affects YOU! ${effectText}`);
       } else {
-        toast.info(`${def.emoji} Opponent used ${def.name}.`);
+        toast.info(`${def.emoji} Opponent used ${def.name} — ${effectText}`);
       }
     });
   }, [hasOnboarded, myId, matchId]);
@@ -318,6 +345,9 @@ function LivePvpMatchPage() {
     const won =
       phase === "forfeit_won" ||
       (phase === "result" && match?.winnerId === myId);
+    // Celebratory / defeat result music, mirroring Solo's result screen. Nearby
+    // Battle rides the "regular" battle track, so reuse its win/lose clips.
+    playBattleResult("regular", won);
     useGameStore.getState().pushBattleLog({
       opponent: opponentProfile?.trainer_name || "Nearby Battle",
       won,
@@ -329,7 +359,10 @@ function LivePvpMatchPage() {
     if (won) {
       const drops = rollBerryDrops();
       for (const id of drops) useGameStore.getState().grantItem(id, 1);
+      setBerryDrops(drops.length);
       toast.success(`🍒 You picked up ${drops.length} berries from this battle!`);
+    } else {
+      setBerryDrops(0);
     }
   }, [phase, match, myId, opponentProfile]);
 
@@ -363,53 +396,260 @@ function LivePvpMatchPage() {
 
   if (phase === "battle" && match && myId) {
     return (
-      <LivePvpBattleScreen
-        matchId={matchId}
-        questions={match.questions}
-        startedAt={match.startedAt}
-        myId={myId}
-        hostId={match.hostId}
-        match={match}
-        opponentName={opponentProfile?.trainer_name || "Opponent"}
-        onFinish={handleFinish}
-      />
+      <>
+        <LivePvpBattleScreen
+          matchId={matchId}
+          questions={match.questions}
+          startedAt={match.startedAt}
+          myId={myId}
+          hostId={match.hostId}
+          match={match}
+          opponentName={opponentProfile?.trainer_name || "Opponent"}
+          onFinish={handleFinish}
+        />
+        <AlertDialog open={forfeitConfirmOpen} onOpenChange={setForfeitConfirmOpen}>
+          <AlertDialogContent className="max-w-xs rounded-3xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="font-display-lg text-foreground">
+                Forfeit this battle?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                You'll lose the battle and its rewards.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Keep playing</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  setForfeitConfirmOpen(false);
+                  void forfeitLivePvpMatch(matchId);
+                }}
+              >
+                Forfeit
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </>
     );
   }
 
   const iAmHost = myId === match?.hostId;
   const myFinalHp = match ? (iAmHost ? match.hostHp : match.guestHp) : null;
   const oppFinalHp = match ? (iAmHost ? match.guestHp : match.hostHp) : null;
-  const won = phase === "result" && match?.winnerId === myId;
+  const myCorrect = match ? (iAmHost ? match.hostCorrectLive : match.guestCorrectLive) : null;
+  const won =
+    phase === "forfeit_won" || (phase === "result" && match?.winnerId === myId);
   const tied = phase === "result" && match?.winnerId === null && match.status === "completed";
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-6 bg-poke-cream px-6 text-center">
-      <img
-        src={trainerSpriteUrl(opponentProfile?.trainer_sprite || "red")}
-        alt=""
-        className="sprite h-24 w-24 object-contain"
-      />
-      {phase === "forfeit_won" ? (
-        <>
-          <div className="font-display-xl text-foreground">You won! 🎉</div>
-          <div className="font-pixel-xs text-foreground/60">
-            {opponentProfile?.trainer_name || "Your opponent"} disconnected.
+    <PvpResultScreen
+      won={won}
+      tied={tied}
+      forfeitWon={phase === "forfeit_won"}
+      forfeitLost={phase === "forfeit_lost"}
+      opponentName={opponentProfile?.trainer_name || "Opponent"}
+      myHp={myFinalHp}
+      oppHp={oppFinalHp}
+      correctCount={myCorrect}
+      partnerId={partner?.id ?? null}
+      partnerName={partner?.name ?? "Your partner"}
+      berryDrops={berryDrops}
+      onBack={() => navigate({ to: "/profile" })}
+    />
+  );
+}
+
+/**
+ * Victory / Defeat screen for Nearby Battle. Reuses the visual language of
+ * Solo's `ResultScreen` (feedback c067f516) — the victory confetti + bouncing
+ * partner sprite on a win, the muted grayscale defeat treatment on a loss — but
+ * carries the PvP-relevant summary (HP result, correct count, berry drops)
+ * instead of Solo's XP/coin/level rewards, which don't exist in Nearby Battle.
+ */
+function PvpResultScreen({
+  won,
+  tied,
+  forfeitWon,
+  forfeitLost,
+  opponentName,
+  myHp,
+  oppHp,
+  correctCount,
+  partnerId,
+  partnerName,
+  berryDrops,
+  onBack,
+}: {
+  won: boolean;
+  tied: boolean;
+  forfeitWon: boolean;
+  forfeitLost: boolean;
+  opponentName: string;
+  myHp: number | null;
+  oppHp: number | null;
+  correctCount: number | null;
+  partnerId: number | null;
+  partnerName: string;
+  berryDrops: number | null;
+  onBack: () => void;
+}) {
+  const hpLine = (
+    <>
+      You: {myHp ?? "—"} HP · {opponentName}: {oppHp ?? "—"} HP
+    </>
+  );
+
+  if (won) {
+    const confetti = [
+      { c: "bg-primary", s: "h-3 w-3 rounded-sm", l: "8%" },
+      { c: "bg-poke-yellow", s: "h-2 w-2 rounded-full", l: "20%" },
+      { c: "bg-poke-blue", s: "h-2.5 w-2.5 rounded-full", l: "32%" },
+      { c: "bg-hp-good", s: "h-3 w-3 rounded-sm", l: "44%" },
+      { c: "bg-poke-yellow", s: "h-2 w-2 rounded-full", l: "56%" },
+      { c: "bg-primary", s: "h-2 w-2 rounded-full", l: "68%" },
+      { c: "bg-destructive", s: "h-2.5 w-2.5 rounded-sm", l: "80%" },
+      { c: "bg-poke-blue", s: "h-2 w-2 rounded-full", l: "92%" },
+    ];
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="relative flex h-full w-full flex-col overflow-y-auto bg-victory px-6 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
+      >
+        {confetti.map((d, i) => (
+          <motion.span
+            key={i}
+            className={`pointer-events-none absolute ${d.s} ${d.c}`}
+            style={{ left: d.l, top: "-5%" }}
+            initial={{ y: 0, opacity: 0 }}
+            animate={{
+              y: ["-5%", "115%"],
+              x: [0, i % 2 === 0 ? 20 : -20, 0],
+              rotate: [0, 360],
+              opacity: [0, 1, 1, 0.8, 0],
+            }}
+            transition={{
+              duration: 3.5 + (i % 4) * 0.6,
+              repeat: Infinity,
+              delay: i * 0.4,
+              ease: "easeIn",
+            }}
+          />
+        ))}
+
+        <div className="flex flex-col items-center text-center">
+          <div className="font-pixel-xs uppercase tracking-[0.25em] text-primary">★ Battle Won ★</div>
+          <h1 className="mt-2 font-display-xl text-foreground">Victory!</h1>
+          <p className="mt-1 text-sm text-foreground/70">
+            {forfeitWon
+              ? `${opponentName} disconnected`
+              : correctCount != null
+                ? `${opponentName} defeated · ${correctCount}/${PVP_QUESTIONS} correct`
+                : `${opponentName} defeated`}
+          </p>
+
+          {partnerId != null && (
+            <div className="relative mt-6 flex h-36 w-44 items-end justify-center">
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute bottom-2 left-1/2 h-10 w-32 -translate-x-1/2 rounded-[50%]"
+                style={{
+                  background:
+                    "radial-gradient(ellipse at 50% 35%, oklch(0.88 0.16 145) 0%, oklch(0.72 0.18 145) 55%, oklch(0.55 0.16 150) 100%)",
+                  boxShadow:
+                    "0 8px 14px -6px oklch(0.3 0.1 150 / 0.35), inset 0 1px 0 oklch(1 0 0 / 0.35)",
+                }}
+              />
+              <motion.div
+                animate={{ y: [0, -8, 0] }}
+                transition={{ duration: 1.4, repeat: Infinity }}
+                className="relative z-10"
+              >
+                <PokemonSprite id={partnerId} alt={partnerName} className="sprite h-28 w-28" />
+              </motion.div>
+            </div>
+          )}
+        </div>
+
+        <div className="mx-auto mt-6 w-full max-w-sm rounded-2xl bg-card p-4 text-center shadow-card">
+          <div className="font-pixel-xs text-foreground/70">{hpLine}</div>
+          {berryDrops != null && berryDrops > 0 && (
+            <div className="mt-2 font-display-md text-hp-good">
+              🍒 +{berryDrops} berr{berryDrops === 1 ? "y" : "ies"}
+            </div>
+          )}
+        </div>
+
+        <div className="mx-auto mt-auto w-full max-w-sm pt-8">
+          <Button
+            size="lg"
+            onClick={onBack}
+            className="h-14 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
+          >
+            Back to Profile
+          </Button>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // DEFEAT / TIE / FORFEIT-LOSS
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="relative flex h-full w-full flex-col overflow-y-auto bg-defeat px-6 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
+    >
+      <div className="flex flex-col items-center text-center">
+        <div className="font-pixel-xs uppercase tracking-[0.25em] text-poke-blue/80">
+          {tied ? "Battle Tied" : "Battle Lost"}
+        </div>
+        <h1 className="mt-2 font-display-xl text-white">
+          {tied ? "It's a tie!" : forfeitLost ? "Battle forfeited" : "So close!"}
+        </h1>
+        <p className="mt-1 text-sm text-white/60">
+          {forfeitLost
+            ? "You left the battle."
+            : correctCount != null
+              ? `${opponentName} wins · ${correctCount}/${PVP_QUESTIONS} correct`
+              : `${opponentName} wins`}
+        </p>
+
+        {partnerId != null && (
+          <div className="relative mt-6 flex h-32 w-40 items-end justify-center">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute bottom-2 left-1/2 h-8 w-28 -translate-x-1/2 rounded-[50%] bg-black/40 blur-[2px]"
+            />
+            <motion.div
+              animate={{ rotate: [0, -3, 3, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="relative z-10"
+            >
+              <PokemonSprite
+                id={partnerId}
+                alt={partnerName}
+                className="sprite h-24 w-24 opacity-80 grayscale"
+              />
+            </motion.div>
           </div>
-        </>
-      ) : phase === "forfeit_lost" ? (
-        <div className="font-display-xl text-foreground">You forfeited this battle.</div>
-      ) : (
-        <>
-          <div className="font-display-xl text-foreground">
-            {won ? "You won! 🎉" : tied ? "It's a tie!" : "You lost this one."}
-          </div>
-          <div className="font-pixel-xs text-foreground/60">
-            You: {myFinalHp ?? "—"} HP · {opponentProfile?.trainer_name || "Opponent"}:{" "}
-            {oppFinalHp ?? "—"} HP
-          </div>
-        </>
-      )}
-      <Button onClick={() => navigate({ to: "/profile" })}>Back to Profile</Button>
-    </div>
+        )}
+      </div>
+
+      <div className="mx-auto mt-6 w-full max-w-sm rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-center">
+        <p className="text-xs text-white/70">{hpLine}</p>
+      </div>
+
+      <div className="mx-auto mt-auto w-full max-w-sm pt-8">
+        <Button
+          size="lg"
+          onClick={onBack}
+          className="h-14 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
+        >
+          Back to Profile
+        </Button>
+      </div>
+    </motion.div>
   );
 }

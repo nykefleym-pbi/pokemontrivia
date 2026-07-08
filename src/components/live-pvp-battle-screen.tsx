@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { Backpack } from "lucide-react";
 import type { Trivia } from "@/lib/trivia-core";
 import { shuffleAllTriviaOptions } from "@/lib/trivia-core";
-import { playSfx } from "@/lib/audio";
+import { playSfx, playCry } from "@/lib/audio";
 import { useGameStore, type ActiveStatus, type PvpStatStages } from "@/lib/store";
 import {
   PokemonSprite,
@@ -355,6 +355,13 @@ export function LivePvpBattleScreen({
   const [floatDmg, setFloatDmg] = useState<{ who: "player" | "opponent"; n: number } | null>(null);
   const prevMyHpRef = useRef(myHp);
   const prevOppHpRef = useRef(oppHp);
+  // Fix — battle intro (feedback 254db1d9): mirror Solo's send-out beat before
+  // question 1 — Pokéball-throw SFX + the opponent partner's cry + a brief
+  // "Battle start!" banner. Refs keep each cue firing exactly once.
+  const [introBanner, setIntroBanner] = useState<string | null>(null);
+  const introThrowRef = useRef(false);
+  const oppCryRef = useRef(false);
+  const abilityAnnounceRef = useRef(false);
   // Manual "charge and fire" signature abilities: a generic charge indicator +
   // Fire button (reusing the bag's visual language) for Legendary/Mythical
   // partners whose signature move is player-fired and decomposes to a
@@ -578,6 +585,43 @@ export function LivePvpBattleScreen({
     const iv = setInterval(() => setNow(Date.now()), 100);
     return () => clearInterval(iv);
   }, []);
+
+  // Battle intro — throw SFX + "Battle start!" banner once on mount (mirrors
+  // Solo's send-out). Kept off the wall-clock question timer so it never
+  // desyncs the shared slots.
+  useEffect(() => {
+    if (introThrowRef.current) return;
+    introThrowRef.current = true;
+    playSfx("pokeball_open");
+    setIntroBanner("Battle start!");
+    const t = setTimeout(() => setIntroBanner(null), 2000);
+    return () => clearTimeout(t);
+  }, []);
+
+  // Opponent partner's cry, once its species is known (the guest registers its
+  // dex id on mount, so this can arrive a beat after the throw — exactly like
+  // Solo's revealPokemon ball-open → cry gap).
+  useEffect(() => {
+    if (oppCryRef.current || opponentPartnerId == null) return;
+    oppCryRef.current = true;
+    const t = setTimeout(() => playCry(opponentPartnerId), 320);
+    return () => clearTimeout(t);
+  }, [opponentPartnerId]);
+
+  // Battle-start ability announcement (feedback b44e3b83): name whichever
+  // partners have a Signature Move so both players know what's in play. Fires
+  // once, as soon as the ability picture has settled (opponent id known, or the
+  // first question has begun for a non-legendary/unknown opponent).
+  useEffect(() => {
+    if (abilityAnnounceRef.current) return;
+    const myMove = signatureMoveName(partnerId);
+    const oppMove = signatureMoveName(opponentPartnerId);
+    if (opponentPartnerId == null && displayedIndex < 0 && !myMove) return;
+    abilityAnnounceRef.current = true;
+    if (myMove) toast.info(`⚡ Your ${myMove} is in play!`);
+    if (oppMove) toast.info(`⚡ Opponent's ${oppMove} is in play!`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [partnerId, opponentPartnerId, displayedIndex]);
 
   const QUESTION_SLOT_MS = PVP_BASE_TIMER_MS;
   const elapsed = now - startedAtMs;
@@ -1187,6 +1231,23 @@ export function LivePvpBattleScreen({
 
   return (
     <div className="relative flex h-full w-full flex-col overflow-hidden bg-battle-field">
+      {/* Battle-start banner overlay (Solo parity) */}
+      <AnimatePresence>
+        {introBanner && (
+          <motion.div
+            key={introBanner}
+            initial={{ y: -10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -10, opacity: 0 }}
+            className="pointer-events-none absolute inset-x-5 top-1/2 z-40 -translate-y-1/2"
+          >
+            <div className="rounded-2xl border-2 border-poke-dark bg-card/95 p-3 text-center text-sm font-semibold shadow-pop backdrop-blur">
+              {introBanner}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* TOP BAR — round pill (Solo-style), signature-fire (timer floats above the card) */}
       <div className="flex shrink-0 items-center justify-between gap-2 pt-[calc(env(safe-area-inset-top)+1rem)] pb-1 px-[max(1.25rem,env(safe-area-inset-left))]">
         <div className="flex items-center gap-1 rounded-full bg-card/90 px-2.5 py-1 font-pixel text-[9px] text-foreground shadow-card backdrop-blur">
