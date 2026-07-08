@@ -69,15 +69,14 @@ export function PartnerCard({
           <Button
             onClick={handleEvolveClick}
             disabled={!eligible}
-            className="h-12 flex-1 rounded-full bg-gradient-to-r from-poke-yellow to-primary font-bold text-white shadow-pop disabled:opacity-60"
+            className={`h-12 flex-1 rounded-full font-bold shadow-pop ${
+              eligible
+                ? "bg-gradient-to-r from-poke-yellow to-primary text-white"
+                : "bg-muted text-foreground/50"
+            }`}
           >
-            ✦ Evolve
+            {eligible ? "✦ Evolve" : `✦ Evolve · ${tp}/${cost} TP`}
           </Button>
-          {!eligible && (
-            <span className="shrink-0 text-xs font-semibold text-foreground/55">
-              {Math.max(0, cost - tp)} TP to go
-            </span>
-          )}
         </div>
       )}
       {pokemon.isFullyEvolved && (

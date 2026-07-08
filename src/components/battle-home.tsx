@@ -202,7 +202,7 @@ export function BattleHome({
             className="relative mt-4 h-14 w-full rounded-full bg-primary text-base font-bold shadow-pop"
           >
             <Sparkles className="mr-2 h-4 w-4" />
-            {loading && pending === null ? "Summoning..." : "Find Match"}
+            {loading && pending === null ? "Summoning..." : "Start Battle"}
           </Button>
         </div>
       </div>
