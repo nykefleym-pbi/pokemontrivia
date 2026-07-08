@@ -109,6 +109,16 @@ function statBarLabel(stat: PvpStat): string {
   return { attack: "ATK", defense: "DEF", speed: "SPD", crit: "CRIT" }[stat];
 }
 
+/** Plain, kid-friendly stat names for the stat-stage change toasts (feedback
+ * 554b395c) — the chips use the short ATK/DEF codes, but a toast reads better
+ * spelled out ("Your Attack rose!"). */
+const STAT_FULL_LABEL: Record<PvpStat, string> = {
+  attack: "Attack",
+  defense: "Defense",
+  speed: "Speed",
+  crit: "Crit",
+};
+
 function StatChips({ stages }: { stages: PvpStatStages }) {
   const entries = (Object.keys(stages) as PvpStat[])
     .map((k) => ({ stat: k, val: stages[k] }))
@@ -568,6 +578,41 @@ export function LivePvpBattleScreen({
     };
   }, [oppHp]);
 
+  // Stat-stage change feedback (feedback 554b395c): whenever ANY stat stage
+  // (attack/defense/speed/crit) moves for either side, toast it in plain,
+  // kid-friendly language ("⬆️ Your Attack rose!" / "⬇️ Opponent's Speed
+  // fell!"). Both sides' stages are the authoritative row values synced from the
+  // route file, so this one diff is the single place that catches every source
+  // (item, berry, signature ability, weather) for both players. We diff previous
+  // vs current, so a single change yields exactly one toast per changed stat and
+  // an unchanged value never re-toasts. The refs seed to `null` and the first
+  // run just records the mount values (possibly already battle-start-buffed) so
+  // the starting stages never phantom-toast.
+  const prevMyStagesRef = useRef<PvpStatStages | null>(null);
+  const prevOppStagesRef = useRef<PvpStatStages | null>(null);
+  useEffect(() => {
+    const prevMine = prevMyStagesRef.current;
+    const prevOpp = prevOppStagesRef.current;
+    prevMyStagesRef.current = myStages;
+    prevOppStagesRef.current = oppStages;
+    if (prevMine === null || prevOpp === null) return; // skip initial mount
+    const announce = (prev: PvpStatStages, cur: PvpStatStages, mine: boolean) => {
+      (Object.keys(cur) as PvpStat[]).forEach((stat) => {
+        const delta = cur[stat] - prev[stat];
+        if (delta === 0) return;
+        const rose = delta > 0;
+        const sharp = Math.abs(delta) >= 2;
+        const subject = `${mine ? "Your" : "Opponent's"} ${STAT_FULL_LABEL[stat]}`;
+        const verb = rose ? (sharp ? "sharply rose" : "rose") : sharp ? "sharply fell" : "fell";
+        const line = `${rose ? "⬆️" : "⬇️"} ${subject} ${verb}!`;
+        if (rose) toast.success(line);
+        else toast.warning(line);
+      });
+    };
+    announce(prevMine, myStages, true);
+    announce(prevOpp, oppStages, false);
+  }, [myStages, oppStages]);
+
   // Ho-Oh (250) Rainbow Rebirth — opponent-inflicted revive toast. When the
   // OPPONENT's correct answer would have KO'd us but the server revived us, our
   // own *_revived flag flips true on the realtime-synced row (the server writes
@@ -586,27 +631,35 @@ export function LivePvpBattleScreen({
     return () => clearInterval(iv);
   }, []);
 
-  // Battle intro — throw SFX + "Battle start!" banner once on mount (mirrors
-  // Solo's send-out). Kept off the wall-clock question timer so it never
-  // desyncs the shared slots.
+  // Battle intro (feedback f988a2b5) — the Pokéball-throw SFX + "Battle start!"
+  // banner must land WHEN the "Get ready!" countdown ends and question 1 begins,
+  // NOT on raw mount. Previously they fired on mount, during the countdown, so
+  // they were stepped on / missed. Keyed to displayedIndex flipping to its first
+  // real question (>= 0, set by enterQuestion the moment the shared wall-clock
+  // countdown reaches question 1), mirroring Solo's send-out beat right before
+  // the first question. Ref-guarded to fire exactly once.
   useEffect(() => {
-    if (introThrowRef.current) return;
+    if (introThrowRef.current || displayedIndex < 0) return;
     introThrowRef.current = true;
     playSfx("pokeball_open");
     setIntroBanner("Battle start!");
     const t = setTimeout(() => setIntroBanner(null), 2000);
     return () => clearTimeout(t);
-  }, []);
+  }, [displayedIndex]);
 
-  // Opponent partner's cry, once its species is known (the guest registers its
-  // dex id on mount, so this can arrive a beat after the throw — exactly like
-  // Solo's revealPokemon ball-open → cry gap).
+  // Opponent partner's cry — a beat after the throw, once BOTH the intro has
+  // begun (countdown over, throw fired) and the opponent's species is known (the
+  // guest registers its dex id on mount, which can land a beat after the
+  // countdown). Mirrors Solo's revealPokemon ball-open → cry gap; ref-guarded to
+  // fire once and never during the countdown. displayedIndex is in the deps so
+  // this re-checks when the countdown ends (introThrowRef is a ref, not
+  // reactive) even if the opponent id was already known.
   useEffect(() => {
-    if (oppCryRef.current || opponentPartnerId == null) return;
+    if (oppCryRef.current || !introThrowRef.current || opponentPartnerId == null) return;
     oppCryRef.current = true;
     const t = setTimeout(() => playCry(opponentPartnerId), 320);
     return () => clearTimeout(t);
-  }, [opponentPartnerId]);
+  }, [opponentPartnerId, displayedIndex]);
 
   // Battle-start ability announcement (feedback b44e3b83): name whichever
   // partners have a Signature Move so both players know what's in play. Fires
@@ -1089,7 +1142,9 @@ export function LivePvpBattleScreen({
       // Pure client-side UI aid — no server round trip, mirrors Solo exactly.
       useGameStore.getState().useItem(itemId);
       usedItemIdsRef.current.add(itemId);
-      toast.info(`✨ ${def.name} used!`);
+      // Name it + a short plain-language effect line (feedback 554b395c), same
+      // shape as the opponent-item toast the route shows for the other player.
+      toast.info(`${def.emoji} You used ${def.name} — ${BAG_SHORT_DESC[itemId] ?? def.desc}`);
       playSfx("item_use");
       setBagOpen(false);
       return;
@@ -1117,11 +1172,15 @@ export function LivePvpBattleScreen({
       battleStatuses: amIHost ? res.hostStatuses : res.guestStatuses,
       opponentStatuses: amIHost ? res.guestStatuses : res.hostStatuses,
     });
+    // Name it + a short plain-language effect line (feedback 554b395c) so the
+    // player understands the HP/stat change they just triggered — reuse
+    // BAG_SHORT_DESC, falling back to the item's own desc (e.g. berries).
+    const effectLine = BAG_SHORT_DESC[itemId] ?? def.desc;
     const opponentFacing = def.berry?.target === "opponent";
     toast.success(
       opponentFacing
-        ? `${def.emoji} You used ${def.name} — Opponent affected!`
-        : `${def.emoji} You used ${def.name}!`,
+        ? `${def.emoji} You used ${def.name} on the opponent — ${effectLine}`
+        : `${def.emoji} You used ${def.name} — ${effectLine}`,
     );
     setBagOpen(false);
   }
