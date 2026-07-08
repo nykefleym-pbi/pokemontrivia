@@ -593,15 +593,23 @@ export function baseDamageForLevel(level: number): number {
   return 10 + 2 * leagueIndex(level);
 }
 
-// Linear up through level 51 (Monarch, the final rank) so the climb through
-// every rank feels exactly as it does today. Past that the endless endgame
-// grind gets progressively harder via a quadratic tail, since reward scaling
-// (levelMultiplier, +5%/level) can't keep pace with a linear requirement
-// forever — this keeps leveling meaningfully harder at high levels instead
-// of the difficulty flattening out into a fixed grind forever.
+// Pokémon GO's trainer-level XP curve divided by 10 (feedback adc10973 —
+// "for level 2, instead of 2500, make it 250"). Index k is the XP needed to
+// advance FROM level k+1, i.e. xpForLevel(level) = XP_TO_NEXT[level - 1]; the
+// last entry is the cost of reaching level 50, matching the table's end.
+const XP_TO_NEXT: readonly number[] = [
+  250, 300, 350, 400, 500, 600, 700, 800, 900, 1000,
+  1200, 1400, 1600, 1800, 2100, 2450, 2800, 3150, 3500, 4200,
+  4900, 5600, 6300, 7000, 8300, 9600, 10900, 12200, 13500, 15800,
+  18100, 20400, 22700, 25000, 29000, 33000, 37000, 41000, 45000, 52000,
+  59000, 66000, 73000, 80000, 90000, 100000, 110000, 120000, 130000,
+];
+
 export function xpForLevel(level: number): number {
-  const overCap = Math.max(0, level - 51);
-  return Math.round(80 + (level - 1) * 40 + 0.5 * overCap * overCap);
+  if (level <= XP_TO_NEXT.length) return XP_TO_NEXT[level - 1];
+  // Past Pokémon GO's level-50 table the endless endgame keeps climbing at
+  // the table's final gradient (+10,000 per level).
+  return XP_TO_NEXT[XP_TO_NEXT.length - 1] + (level - XP_TO_NEXT.length) * 10000;
 }
 
 export function totalXpToReachLevel(level: number): number {
@@ -677,9 +685,14 @@ export const TP_REWARDS = {
   weeklyWin: 100,
 };
 
+// Evolution follows the mainline games' level requirements converted to TP at
+// 1 level = 1,000 TP (feedback 582e8210 — e.g. Bulbasaur→Ivysaur at level 16
+// = 16,000 TP). Per-species evolve levels aren't in the generated dataset, so
+// each stage uses the typical mainline level for that stage: first evolutions
+// cluster around level 16, second evolutions around level 36. Tune here.
 export const EVOLUTION_TP_COST: Record<1 | 2, number> = {
-  1: 150,
-  2: 350,
+  1: 16000,
+  2: 36000,
 };
 
 export interface TpDamageBoost {
