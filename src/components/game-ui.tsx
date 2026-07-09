@@ -340,10 +340,23 @@ function ConfusionEffect() {
  * sibling of `PokemonSprite` inside the same `motion.div` wrapper the caller
  * already uses for shake/float-damage.
  */
-export function StatusEffectOverlay({ statuses }: { statuses: Array<{ kind: StatusKind }> }) {
-  if (!statuses || statuses.length === 0) return null;
-  const major = statuses.find((s) => s.kind !== "confused")?.kind;
-  const confused = statuses.some((s) => s.kind === "confused");
+export function StatusEffectOverlay({
+  statuses,
+  confused: confusedOverride = false,
+}: {
+  statuses: Array<{ kind: StatusKind }>;
+  /**
+   * Client-authoritative confused overlay (Training's "confused after 2 wrong").
+   * Confusion is held locally and merged into the displayed statuses, but this
+   * prop lets a caller force the confusion visual on either side WITHOUT writing
+   * it into the shared/synced status row (so realtime row-sync can't clobber it).
+   * Renders on top of any major status already present in `statuses`.
+   */
+  confused?: boolean;
+}) {
+  const list = statuses ?? [];
+  const major = list.find((s) => s.kind !== "confused")?.kind;
+  const confused = confusedOverride || list.some((s) => s.kind === "confused");
   if (!major && !confused) return null;
 
   return (

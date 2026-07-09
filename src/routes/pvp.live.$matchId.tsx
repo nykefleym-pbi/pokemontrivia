@@ -29,12 +29,11 @@ import { getProfileById, ensureSession, type TrainerProfile } from "@/lib/social
 import { supabase } from "@/integrations/supabase/client";
 import { playBgm, playBattleResult } from "@/lib/audio";
 import { ITEMS, rollBerryDrops, STARTER_PVP_BERRY } from "@/lib/game-data";
-import { BAG_SHORT_DESC } from "@/lib/item-categories";
 import { PVP_QUESTIONS } from "@/lib/pvp-combat";
 import { useForfeitGuard } from "@/lib/use-forfeit-guard";
-import { signatureAbilityFor, signatureMoveName, describeSignatureEffect } from "@/lib/signature-abilities";
-import { getAbilityById, type AbilityId } from "@/lib/abilities";
-import { resolvePvpTypeAbilityId, typeAbilityPvp } from "@/lib/pvp-type-abilities";
+import { signatureAbilityFor } from "@/lib/signature-abilities";
+import { resolvePvpTypeAbilityId } from "@/lib/pvp-type-abilities";
+import { useBattleFxCues } from "@/hooks/useBattleFxCues";
 
 export const Route = createFileRoute("/pvp/live/$matchId")({
   component: LivePvpMatchPage,
@@ -68,6 +67,9 @@ function LivePvpMatchPage() {
   const [forfeitConfirmOpen, setForfeitConfirmOpen] = useState(false);
   const [berryDrops, setBerryDrops] = useState<number | null>(null);
   const partner = useGameStore((s) => s.pokemon);
+  // Opponent-side combat cues funnel through the same frozen `emit` path as the
+  // battle screen's local cues, so wording/ordering/dedupe are identical.
+  const { emit } = useBattleFxCues();
 
   // Back-button forfeit guard (feedback 2286b6fc): while the battle is live, a
   // stray Back press opens the confirm dialog instead of silently abandoning
@@ -271,48 +273,51 @@ function LivePvpMatchPage() {
   // dex id — the move name itself is never trusted from the wire.
   useEffect(() => {
     if (!hasOnboarded || !myId) return;
+    // Route every opponent effect through the frozen `emit` path. The hook
+    // resolves all wording locally from the ids (never trusting text off the
+    // wire) and dedupes by dedupeKey so a bot effect arriving via both the
+    // broadcast and a row-diff toasts at most once. Covers the Training bot:
+    // its RPCs broadcast pvp_live_effects rows sourced as the guest, which the
+    // host receives here (sourceId !== myId).
     return subscribeToLivePvpEffects(matchId, (effect: LivePvpEffect) => {
       if (effect.sourceId === myId) return;
+      const questionIndex = effect.questionIndex;
+      const hitsOpponent = effect.target === "opponent";
       if (effect.source === "ability") {
-        // Non-legendary TYPE ability: no dex id, an abilityId in the payload.
-        // Resolve its name + effect line locally (never trust text off the wire).
+        // Non-legendary TYPE ability: no dex id, carries an abilityId.
         if (!effect.pokemonId && effect.abilityId) {
-          const ta = getAbilityById(effect.abilityId as AbilityId);
-          const wiring = typeAbilityPvp(effect.abilityId as AbilityId);
-          if (!ta) return;
-          const base = wiring ? `Opponent's ${ta.name} — ${wiring.note}` : `Opponent's ${ta.name} activates`;
-          toast.warning(
-            effect.target === "opponent" ? `⚡ ${base} — affects YOU!` : `⚡ ${base} — affects them!`,
-          );
+          emit({
+            kind: "type-ability",
+            side: "opponent",
+            abilityId: effect.abilityId,
+            hitsOpponent,
+            questionIndex,
+            dedupeKey: `opponent:type-ability:${questionIndex}:${effect.abilityId}`,
+          });
           return;
         }
-        const move = signatureMoveName(effect.pokemonId);
-        if (!move) return;
-        // Resolve the effect explainer locally from the dex id (never trust
-        // text off the wire). Covers the Training bot too: its ability fires
-        // broadcast a pvp_live_effects row sourced as the guest/bot, which the
-        // human receives here (sourceId !== myId) and toasts with this explainer.
-        // Always name the owner (Opponent's) + effect + who it hits so players
-        // can tell what fired and whom it touched (feedback b44e3b83).
-        const desc = describeSignatureEffect(effect.pokemonId);
-        const base = desc ? `Opponent's ${move} — ${desc}` : `Opponent's ${move} activates`;
-        toast.warning(
-          effect.target === "opponent" ? `✨ ${base} — affects YOU!` : `✨ ${base} — affects them!`,
-        );
+        if (effect.pokemonId == null) return;
+        emit({
+          kind: "signature",
+          side: "opponent",
+          partnerId: effect.pokemonId,
+          hitsOpponent,
+          questionIndex,
+          dedupeKey: `opponent:signature:${questionIndex}:${effect.pokemonId}`,
+        });
         return;
       }
-      const def = ITEMS.find((i) => i.id === effect.itemId);
-      if (!def) return;
-      // Item/berry: emoji + name + a short plain-language effect line so the
-      // player understands the HP jump they just saw (feedback b424480a).
-      const effectText = BAG_SHORT_DESC[def.id] ?? def.desc;
-      if (effect.target === "opponent") {
-        toast.warning(`${def.emoji} Opponent used ${def.name} — affects YOU! ${effectText}`);
-      } else {
-        toast.info(`${def.emoji} Opponent used ${def.name} — ${effectText}`);
-      }
+      if (!effect.itemId) return;
+      emit({
+        kind: "item",
+        side: "opponent",
+        itemId: effect.itemId,
+        hitsOpponent,
+        questionIndex,
+        dedupeKey: `opponent:item:${questionIndex}:${effect.itemId}`,
+      });
     });
-  }, [hasOnboarded, myId, matchId]);
+  }, [hasOnboarded, myId, matchId, emit]);
 
   // Presence: forfeit the opponent after 30s of them being gone mid-match.
   // A bot is never "present," so this is disabled for Training matches (it would

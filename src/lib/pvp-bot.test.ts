@@ -7,6 +7,7 @@ import {
   botAnswerTimeMs,
   botShouldFireAbility,
   botShouldUseItem,
+  botConfusionMiss,
   type BotProfile,
   type BotTier,
 } from "./pvp-bot";
@@ -166,5 +167,65 @@ describe("botShouldUseItem", () => {
     // 0% HP urgency ≈ 1 → the same roll now fires.
     expect(botShouldUseItem(aggro, { hpPct: 0.44, itemsRemaining: 2 }, () => 0.3)).toBe(false);
     expect(botShouldUseItem(aggro, { hpPct: 0.02, itemsRemaining: 2 }, sequence([0.3]))).toBe(true);
+  });
+});
+
+describe("botConfusionMiss", () => {
+  it("forces a miss at the low probability boundary (rng 0) and consumes a tick", () => {
+    // Mirrors the human `Math.random() < 0.25` roll: rng 0 is inside the window.
+    const r = botConfusionMiss({ confusedTicks: 2, answeredCorrectly: true }, () => 0);
+    expect(r.missed).toBe(true);
+    expect(r.confusedTicksRemaining).toBe(1);
+  });
+
+  it("does not miss above the probability boundary (rng 0.99) and keeps the tick", () => {
+    const r = botConfusionMiss({ confusedTicks: 2, answeredCorrectly: true }, () => 0.99);
+    expect(r.missed).toBe(false);
+    expect(r.confusedTicksRemaining).toBe(2);
+  });
+
+  it("holds exactly at 0.25 (upper edge of the window is a non-miss)", () => {
+    const r = botConfusionMiss({ confusedTicks: 1, answeredCorrectly: true }, () => 0.25);
+    expect(r.missed).toBe(false);
+    expect(r.confusedTicksRemaining).toBe(1);
+  });
+
+  it("never misses when the bot is not confused, whatever the roll", () => {
+    expect(botConfusionMiss({ confusedTicks: 0, answeredCorrectly: true }, () => 0)).toEqual({
+      missed: false,
+      confusedTicksRemaining: 0,
+    });
+  });
+
+  it("never misses or decrements on a wrong answer (roll lives only on the correct path)", () => {
+    const r = botConfusionMiss({ confusedTicks: 3, answeredCorrectly: false }, () => 0);
+    expect(r.missed).toBe(false);
+    expect(r.confusedTicksRemaining).toBe(3);
+  });
+
+  it("decrements down to zero across successive misses, then stops missing", () => {
+    let ticks = 2;
+    // Two forced misses drain the duration...
+    for (let i = 0; i < 2; i++) {
+      const r = botConfusionMiss({ confusedTicks: ticks, answeredCorrectly: true }, () => 0);
+      expect(r.missed).toBe(true);
+      ticks = r.confusedTicksRemaining;
+    }
+    expect(ticks).toBe(0);
+    // ...after which the bot is no longer confused and cannot miss.
+    expect(botConfusionMiss({ confusedTicks: ticks, answeredCorrectly: true }, () => 0).missed).toBe(
+      false,
+    );
+  });
+
+  it("converges on the 25% miss rate over many confused-correct ticks", () => {
+    const rng = seeded(77);
+    let misses = 0;
+    const n = 20_000;
+    for (let i = 0; i < n; i++) {
+      if (botConfusionMiss({ confusedTicks: 5, answeredCorrectly: true }, rng).missed) misses++;
+    }
+    expect(misses / n).toBeGreaterThan(0.24);
+    expect(misses / n).toBeLessThan(0.26);
   });
 });
