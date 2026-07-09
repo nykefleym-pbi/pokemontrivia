@@ -32,7 +32,9 @@ import { ITEMS, rollBerryDrops, STARTER_PVP_BERRY } from "@/lib/game-data";
 import { BAG_SHORT_DESC } from "@/lib/item-categories";
 import { PVP_QUESTIONS } from "@/lib/pvp-combat";
 import { useForfeitGuard } from "@/lib/use-forfeit-guard";
-import { signatureMoveName, describeSignatureEffect } from "@/lib/signature-abilities";
+import { signatureAbilityFor, signatureMoveName, describeSignatureEffect } from "@/lib/signature-abilities";
+import { getAbilityById, type AbilityId } from "@/lib/abilities";
+import { resolvePvpTypeAbilityId, typeAbilityPvp } from "@/lib/pvp-type-abilities";
 
 export const Route = createFileRoute("/pvp/live/$matchId")({
   component: LivePvpMatchPage,
@@ -102,7 +104,14 @@ function LivePvpMatchPage() {
       // idempotent no-op for the host and the real write for the guest. Refresh
       // the local row with the returned ids so both sides are known ASAP.
       const myPartnerId = useGameStore.getState().pokemon?.id ?? null;
-      void setLivePvpPartner(matchId, myPartnerId).then((res) => {
+      // Register the resolved TYPE ability id too, but only for a non-legendary
+      // partner (a legendary uses its signature ability, keyed by dex id) — so
+      // the opponent can name whichever ability is actually in play.
+      const myPokemon = useGameStore.getState().pokemon;
+      const myAbilityId = signatureAbilityFor(myPartnerId)
+        ? null
+        : resolvePvpTypeAbilityId(myPokemon?.types, useGameStore.getState().abilityId);
+      void setLivePvpPartner(matchId, myPartnerId, myAbilityId).then((res) => {
         if (res.ok) {
           setMatch((prev) =>
             prev
@@ -206,6 +215,10 @@ function LivePvpMatchPage() {
               (row.host_partner_id as number | null) ?? matchRef.current?.hostPartnerId ?? null,
             guestPartnerId:
               (row.guest_partner_id as number | null) ?? matchRef.current?.guestPartnerId ?? null,
+            hostAbilityId:
+              (row.host_ability_id as string | null) ?? matchRef.current?.hostAbilityId ?? null,
+            guestAbilityId:
+              (row.guest_ability_id as string | null) ?? matchRef.current?.guestAbilityId ?? null,
             hostSuppressedUntil: (row.host_suppressed_until as number) ?? 0,
             guestSuppressedUntil: (row.guest_suppressed_until as number) ?? 0,
             weatherOwner:
@@ -261,6 +274,18 @@ function LivePvpMatchPage() {
     return subscribeToLivePvpEffects(matchId, (effect: LivePvpEffect) => {
       if (effect.sourceId === myId) return;
       if (effect.source === "ability") {
+        // Non-legendary TYPE ability: no dex id, an abilityId in the payload.
+        // Resolve its name + effect line locally (never trust text off the wire).
+        if (!effect.pokemonId && effect.abilityId) {
+          const ta = getAbilityById(effect.abilityId as AbilityId);
+          const wiring = typeAbilityPvp(effect.abilityId as AbilityId);
+          if (!ta) return;
+          const base = wiring ? `Opponent's ${ta.name} — ${wiring.note}` : `Opponent's ${ta.name} activates`;
+          toast.warning(
+            effect.target === "opponent" ? `⚡ ${base} — affects YOU!` : `⚡ ${base} — affects them!`,
+          );
+          return;
+        }
         const move = signatureMoveName(effect.pokemonId);
         if (!move) return;
         // Resolve the effect explainer locally from the dex id (never trust

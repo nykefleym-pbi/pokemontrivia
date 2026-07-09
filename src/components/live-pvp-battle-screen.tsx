@@ -29,12 +29,25 @@ import {
   submitPvpLiveAnswer,
   applyPvpLiveItem,
   applyPvpSignatureEffect,
+  applyPvpTypeAbilityEffect,
   setLivePvpTransform,
   submitBotPvpMove,
   applyBotPvpSignatureEffect,
   applyBotPvpLiveItem,
   type LivePvpMatch,
 } from "@/lib/pvp-live";
+import { getAbilityById, type AbilityId } from "@/lib/abilities";
+import {
+  resolvePvpTypeAbilityId,
+  typeAbilityPvp,
+  typeAbilityDamageMod,
+  typeAbilitySelfDmgMod,
+  typeAbilityHasBattleStart,
+  typeAbilityPostAnswerFires,
+  applyDamageMod,
+  applySelfDmgMod,
+  type TypeAbilityCtx,
+} from "@/lib/pvp-type-abilities";
 import {
   rollBotProfile,
   botAnswersCorrectly,
@@ -344,6 +357,19 @@ export function LivePvpBattleScreen({
   const partnerId = rawPartnerId === MEW_ID && transformTargetId != null ? transformTargetId : rawPartnerId;
   const ability = useMemo(() => signatureAbilityFor(partnerId), [partnerId]);
 
+  // Non-legendary partners run a TYPE ability instead of a signature (feedback
+  // 29fd5d73). The two are mutually exclusive: `typeAbilityId` is only resolved
+  // when there is no signature, so every signature codepath below stays a no-op
+  // for a type-ability partner (they all gate on `ability`). The opponent's id
+  // is read off the synced row so we can announce/attribute it.
+  const storeAbilityId = useGameStore((s) => s.abilityId);
+  const typeAbilityId = useMemo<AbilityId | null>(
+    () => (ability ? null : resolvePvpTypeAbilityId(myPokemon?.types, storeAbilityId)),
+    [ability, myPokemon, storeAbilityId],
+  );
+  const typeWiring = useMemo(() => typeAbilityPvp(typeAbilityId), [typeAbilityId]);
+  const oppAbilityId = (amIHost ? match.guestAbilityId : match.hostAbilityId) as AbilityId | null;
+
   const startedAtMs = useRef(new Date(startedAt).getTime()).current;
   const [now, setNow] = useState(() => Date.now());
   const [displayedIndex, setDisplayedIndex] = useState(-1);
@@ -357,6 +383,12 @@ export function LivePvpBattleScreen({
   const [oppHp, setOppHp] = useState(amIHost ? match.guestHp : match.hostHp);
   const [bagOpen, setBagOpen] = useState(false);
   const [frozen, setFrozen] = useState(false);
+  // Client-only battle aids (feedback b9d53ba1): X Accuracy highlights the
+  // correct option, Scope dims a random wrong one — mirroring Solo's
+  // revealedCorrect/revealedWrong. These were being consumed with no visible
+  // effect in Nearby Battle. Reset each question in enterQuestion.
+  const [revealedCorrect, setRevealedCorrect] = useState<number | null>(null);
+  const [revealedWrong, setRevealedWrong] = useState<number | null>(null);
   // Purely-visual arena feedback (mirrors Solo): a shake + floating "-N" damage
   // number on whichever side's HP just dropped. Driven off HP deltas so every
   // path that lowers HP (own answer, opponent/bot row sync, ability, item)
@@ -366,12 +398,21 @@ export function LivePvpBattleScreen({
   const prevMyHpRef = useRef(myHp);
   const prevOppHpRef = useRef(oppHp);
   // Fix — battle intro (feedback 254db1d9): mirror Solo's send-out beat before
-  // question 1 — Pokéball-throw SFX + the opponent partner's cry + a brief
-  // "Battle start!" banner. Refs keep each cue firing exactly once.
-  const [introBanner, setIntroBanner] = useState<string | null>(null);
+  // question 1 — Pokéball-throw SFX + the opponent partner's cry. The visible
+  // "Battle start!" banner was removed (feedback 29fd5d73); the audio cues stay.
+  // Refs keep each cue firing exactly once.
   const introThrowRef = useRef(false);
   const oppCryRef = useRef(false);
   const abilityAnnounceRef = useRef(false);
+  // Type-ability (non-legendary) bookkeeping. All battle-scoped, so plain refs.
+  const taBattleStartFiredRef = useRef(false);
+  const taAnnouncedRef = useRef(false);
+  const taActivatedRef = useRef<Set<string>>(new Set()); // conditional fireNotes shown
+  const hadWrongRef = useRef(false); // any wrong answer yet (Berserk / Snow Cloak)
+  const wrongCountRef = useRef(0); // wrong-answer tally (Sand Force)
+  const moxieStacksRef = useRef(0); // Moxie's accumulated flat bonus
+  const torrentFiredRef = useRef(false); // Torrent's one-time sub-30% heal
+  const sturdyUsedRef = useRef(false); // Sturdy's one-time 1-HP save
   // Manual "charge and fire" signature abilities: a generic charge indicator +
   // Fire button (reusing the bag's visual language) for Legendary/Mythical
   // partners whose signature move is player-fired and decomposes to a
@@ -442,6 +483,24 @@ export function LivePvpBattleScreen({
   // local state. Shared by the generic post_answer path and the Phase 1/2
   // bespoke handlers (Moltres discharge, Raging Bolt reactive).
   function applyAbilityResult(res: Awaited<ReturnType<typeof applyPvpSignatureEffect>>): void {
+    if (!res.ok || res.noop) return;
+    if (res.hostStages) {
+      useGameStore.setState({
+        myStages: amIHost ? res.hostStages : res.guestStages!,
+        oppStages: amIHost ? res.guestStages! : res.hostStages,
+        battleStatuses: amIHost ? res.hostStatuses! : res.guestStatuses!,
+        opponentStatuses: amIHost ? res.guestStatuses! : res.hostStatuses!,
+      });
+    }
+    if (typeof res.hostHp === "number") {
+      setMyHp(amIHost ? res.hostHp : res.guestHp!);
+      setOppHp(amIHost ? res.guestHp! : res.hostHp);
+    }
+  }
+
+  // Fold a server type-ability effect result (heal / stat / status / cure /
+  // chip) back into local state — same shape as applyAbilityResult.
+  function applyTypeAbilityResult(res: Awaited<ReturnType<typeof applyPvpTypeAbilityEffect>>): void {
     if (!res.ok || res.noop) return;
     if (res.hostStages) {
       useGameStore.setState({
@@ -631,20 +690,18 @@ export function LivePvpBattleScreen({
     return () => clearInterval(iv);
   }, []);
 
-  // Battle intro (feedback f988a2b5) — the Pokéball-throw SFX + "Battle start!"
-  // banner must land WHEN the "Get ready!" countdown ends and question 1 begins,
-  // NOT on raw mount. Previously they fired on mount, during the countdown, so
-  // they were stepped on / missed. Keyed to displayedIndex flipping to its first
-  // real question (>= 0, set by enterQuestion the moment the shared wall-clock
-  // countdown reaches question 1), mirroring Solo's send-out beat right before
-  // the first question. Ref-guarded to fire exactly once.
+  // Battle intro (feedback f988a2b5) — the Pokéball-throw SFX must land WHEN the
+  // "Get ready!" countdown ends and question 1 begins, NOT on raw mount.
+  // Previously it fired on mount, during the countdown, so it was stepped on /
+  // missed. Keyed to displayedIndex flipping to its first real question (>= 0,
+  // set by enterQuestion the moment the shared wall-clock countdown reaches
+  // question 1), mirroring Solo's send-out beat right before the first question.
+  // Ref-guarded to fire exactly once. (The "Battle start!" banner was removed —
+  // feedback 29fd5d73.)
   useEffect(() => {
     if (introThrowRef.current || displayedIndex < 0) return;
     introThrowRef.current = true;
     playSfx("pokeball_open");
-    setIntroBanner("Battle start!");
-    const t = setTimeout(() => setIntroBanner(null), 2000);
-    return () => clearTimeout(t);
   }, [displayedIndex]);
 
   // Opponent partner's cry — a beat after the throw, once BOTH the intro has
@@ -676,6 +733,44 @@ export function LivePvpBattleScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [partnerId, opponentPartnerId, displayedIndex]);
 
+  // Type-ability "in play" announcement (feedback 29fd5d73) — parity with the
+  // signature announcement above so both players know what each side's ability
+  // does. Fires once, as soon as the picture has settled (opponent's ability
+  // known, or the first question begins for an unknown/settled opponent).
+  useEffect(() => {
+    if (taAnnouncedRef.current) return;
+    const mineW = typeAbilityPvp(typeAbilityId);
+    const oppW = typeAbilityPvp(oppAbilityId);
+    if (!mineW && oppAbilityId == null && displayedIndex < 0) return;
+    taAnnouncedRef.current = true;
+    if (typeAbilityId && mineW) {
+      const a = getAbilityById(typeAbilityId);
+      if (a) toast.info(`⚡ Your ${a.name} is in play — ${mineW.note}`);
+    }
+    if (oppAbilityId && oppW) {
+      const a = getAbilityById(oppAbilityId);
+      if (a) toast.info(`⚡ Opponent's ${a.name} is in play — ${oppW.note}`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [typeAbilityId, oppAbilityId, displayedIndex]);
+
+  // Type-ability battle-start standing buff (Adaptable/Intimidate/Speed movers).
+  // Server one-shots per side; fire once the first question has begun so the
+  // ability id is registered on the row.
+  useEffect(() => {
+    if (taBattleStartFiredRef.current || !typeAbilityId || displayedIndex < 0) return;
+    taBattleStartFiredRef.current = true;
+    if (!typeAbilityHasBattleStart(typeAbilityId)) return;
+    void applyPvpTypeAbilityEffect(matchId, 0, typeAbilityId, "battle_start").then((res) => {
+      if (res.ok && !res.noop) {
+        applyTypeAbilityResult(res);
+        const a = getAbilityById(typeAbilityId);
+        if (a) toast.success(`⚡ ${a.name} — ${typeWiring?.note ?? "activated"}!`);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [typeAbilityId, displayedIndex]);
+
   const QUESTION_SLOT_MS = PVP_BASE_TIMER_MS;
   const elapsed = now - startedAtMs;
   const idx = elapsed < 0 ? -1 : Math.floor(elapsed / QUESTION_SLOT_MS);
@@ -703,6 +798,22 @@ export function LivePvpBattleScreen({
     setDisplayedIndex(nextIdx);
     setSelected(null);
     setFrozen(false);
+    // Battle aids are per-question — clear last question's reveals.
+    setRevealedCorrect(null);
+    setRevealedWrong(null);
+    // Type-ability reveal aids (Foresight every 5th Q, Compound Eyes on the
+    // first & last of each set) — auto-reveal a wrong option for free.
+    if (typeWiring?.revealsWrongAt?.(nextIdx)) {
+      const qq = questions[nextIdx];
+      if (qq) {
+        const wrongs = qq.options.map((_, i) => i).filter((i) => i !== qq.correct);
+        if (wrongs.length > 0) {
+          setRevealedWrong(wrongs[Math.floor(Math.random() * wrongs.length)]);
+          const a = getAbilityById(typeAbilityId);
+          if (a && typeWiring.fireNote) toast.info(typeWiring.fireNote);
+        }
+      }
+    }
     questionStartRef.current = Date.now();
 
     // Freeze: skip this question outright, ~30% auto-thaw chance/question,
@@ -783,6 +894,11 @@ export function LivePvpBattleScreen({
     if (finishedRef.current) return;
     let dmg = 0;
     let selfDmg = 0;
+    // Type-ability bookkeeping for this answer: `landedHit` is a real correct
+    // hit (not a confusion miss / freeze), `streakAfterAnswer` is the streak the
+    // answer leaves us on.
+    let landedHit = false;
+    let streakAfterAnswer = 0;
 
     if (frozen) {
       // Freeze auto-forfeits the question: no damage either way, streak resets.
@@ -797,6 +913,8 @@ export function LivePvpBattleScreen({
       } else {
         const nextStreak = streak + 1;
         setStreak(nextStreak);
+        streakAfterAnswer = nextStreak;
+        landedHit = true;
         correctCountRef.current += 1;
         const totalMs = personalTimerMs;
         const speedRatio = Math.max(0, (totalMs - elapsedMs) / totalMs);
@@ -915,6 +1033,97 @@ export function LivePvpBattleScreen({
           wrathStacksRef.current = next;
           void applyPvpSignatureEffect(matchId, idxAtAnswer, 146, "sig_state", next);
         }
+      }
+    }
+
+    // ── Non-legendary TYPE ability wiring (feedback 29fd5d73) ─────────────────
+    // Pure damage/self-damage tweaks are folded client-side (server-clamped);
+    // heals/stats/statuses/cures/chip route through the server catalog. No-op
+    // for a legendary partner (typeAbilityId is null when a signature exists).
+    if (typeAbilityId && typeWiring && !frozen) {
+      const hasConfused = myStatuses.some((s) => s.kind === "confused");
+      const hasPoisoned = myStatuses.some(
+        (s) => s.kind === "poisoned" || s.kind === "badly-poisoned",
+      );
+      const taCtx: TypeAbilityCtx = {
+        correct: landedHit,
+        selfHpPct: myHp / PVP_MAX_HP,
+        oppHpPct: oppHp / PVP_MAX_HP,
+        streakAfter: streakAfterAnswer,
+        answerElapsedMs: elapsedMs,
+        personalTimerMs,
+        questionIndex: idxAtAnswer,
+        prevCorrect: prevCorrectRef.current,
+        hadWrong: hadWrongRef.current,
+        correctCount: correctCountRef.current,
+        moxieStacks: moxieStacksRef.current,
+        hasNegativeStatus: hasConfused || hasPoisoned,
+        hasConfused,
+        hasPoisoned,
+      };
+
+      // Fire-note helper: show a conditional ability's "activated" toast once.
+      const toastFireOnce = () => {
+        if (typeWiring.fireNote && !taActivatedRef.current.has(typeAbilityId)) {
+          taActivatedRef.current.add(typeAbilityId);
+          toast.success(typeWiring.fireNote);
+        }
+      };
+
+      if (landedHit) {
+        const mod = typeAbilityDamageMod(typeAbilityId, taCtx);
+        if (mod.active) {
+          dmg = applyDamageMod(dmg, mod);
+          toastFireOnce();
+        }
+        // Moxie accrues a permanent +1 each time a 3-streak is reached.
+        if (typeAbilityId === "moxie" && streakAfterAnswer > 0 && streakAfterAnswer % 3 === 0) {
+          moxieStacksRef.current += 1;
+        }
+      } else if (!correct) {
+        const selfMod = typeAbilitySelfDmgMod(typeAbilityId, taCtx);
+        if (selfMod.active) {
+          selfDmg = applySelfDmgMod(selfDmg, selfMod);
+          toastFireOnce();
+        }
+        // Sturdy — survive one otherwise-lethal self hit at 1 HP.
+        if (
+          typeWiring.clampsLethalSelfDmg &&
+          !sturdyUsedRef.current &&
+          myHp > 1 &&
+          myHp - selfDmg <= 0
+        ) {
+          selfDmg = myHp - 1;
+          sturdyUsedRef.current = true;
+          if (typeWiring.fireNote) toast.success(typeWiring.fireNote);
+        }
+        // Sand Force — the first two wrong answers don't break the streak.
+        if (typeWiring.keepsStreakOnWrong?.(wrongCountRef.current + 1)) {
+          setStreak(streak);
+          toastFireOnce();
+        }
+      }
+
+      // Server catalog post_answer effect (heal / stat / status / cure / chip).
+      // Torrent's sub-30% heal is one-time; every other predicate is self-gating.
+      if (typeAbilityPostAnswerFires(typeAbilityId, taCtx)) {
+        const torrentBlocked = typeAbilityId === "torrent" && torrentFiredRef.current;
+        if (!torrentBlocked) {
+          if (typeAbilityId === "torrent") torrentFiredRef.current = true;
+          void applyPvpTypeAbilityEffect(matchId, idxAtAnswer, typeAbilityId, "post_answer").then(
+            (res) => {
+              if (res.ok && !res.noop) {
+                applyTypeAbilityResult(res);
+                toastFireOnce();
+              }
+            },
+          );
+        }
+      }
+
+      if (!correct) {
+        hadWrongRef.current = true;
+        wrongCountRef.current += 1;
       }
     }
 
@@ -1140,6 +1349,17 @@ export function LivePvpBattleScreen({
 
     if (CLIENT_ONLY_ITEMS.includes(itemId)) {
       // Pure client-side UI aid — no server round trip, mirrors Solo exactly.
+      // Apply the actual reveal so the aid does something (feedback b9d53ba1):
+      // X Accuracy highlights the correct option; Scope dims a random wrong one.
+      const q = questions[displayedIndex];
+      if (q) {
+        if (itemId === "xaccuracy") {
+          setRevealedCorrect(q.correct);
+        } else if (itemId === "scope") {
+          const wrongs = q.options.map((_, i) => i).filter((i) => i !== q.correct);
+          setRevealedWrong(wrongs[Math.floor(Math.random() * wrongs.length)]);
+        }
+      }
       useGameStore.getState().useItem(itemId);
       usedItemIdsRef.current.add(itemId);
       // Name it + a short plain-language effect line (feedback 554b395c), same
@@ -1290,23 +1510,6 @@ export function LivePvpBattleScreen({
 
   return (
     <div className="relative flex h-full w-full flex-col overflow-hidden bg-battle-field">
-      {/* Battle-start banner overlay (Solo parity) */}
-      <AnimatePresence>
-        {introBanner && (
-          <motion.div
-            key={introBanner}
-            initial={{ y: -10, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -10, opacity: 0 }}
-            className="pointer-events-none absolute inset-x-5 top-1/2 z-40 -translate-y-1/2"
-          >
-            <div className="rounded-2xl border-2 border-poke-dark bg-card/95 p-3 text-center text-sm font-semibold shadow-pop backdrop-blur">
-              {introBanner}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* TOP BAR — round pill (Solo-style), signature-fire (timer floats above the card) */}
       <div className="flex shrink-0 items-center justify-between gap-2 pt-[calc(env(safe-area-inset-top)+1rem)] pb-1 px-[max(1.25rem,env(safe-area-inset-left))]">
         <div className="flex items-center gap-1 rounded-full bg-card/90 px-2.5 py-1 font-pixel text-[9px] text-foreground shadow-card backdrop-blur">
@@ -1418,17 +1621,24 @@ export function LivePvpBattleScreen({
                   const isCorrectOpt = i === q.correct;
                   const isSelected = selected === i;
                   const showState = selected !== null;
+                  // Battle aids (feedback b9d53ba1) — only while unanswered.
+                  const isDimmed = selected === null && revealedWrong === i;
+                  const isHinted = selected === null && revealedCorrect === i;
                   return (
                     <button
                       key={i}
-                      disabled={selected !== null}
+                      disabled={selected !== null || isDimmed}
                       onClick={() => handleAnswer(i)}
                       className={`min-h-[48px] rounded-2xl border-2 px-4 py-3 text-left font-display text-base transition active:scale-[0.98] ${
                         showState && isCorrectOpt
                           ? "border-hp-good bg-hp-good/15 text-hp-good"
                           : showState && isSelected && !isCorrectOpt
                             ? "border-destructive bg-destructive/10 text-destructive"
-                            : "border-border bg-card text-foreground"
+                            : isDimmed
+                              ? "border-border/60 line-through opacity-50"
+                              : isHinted
+                                ? "border-hp-good bg-hp-good/10 text-hp-good"
+                                : "border-border bg-card text-foreground"
                       }`}
                     >
                       {opt}
