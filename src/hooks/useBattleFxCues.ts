@@ -205,12 +205,22 @@ export function useBattleFxCues(options?: { staggerMs?: number }): BattleFxCueAp
 
   const emit = React.useCallback(
     (event: BattleFxEvent) => {
-      // Slot advance: reset dedupe and drop any stale cues still queued from a
-      // prior slot so nothing bleeds across question boundaries.
+      // Slot advance: reset dedupe, then FLUSH (not drop) any cues still queued
+      // from the prior slot. Discarding them here could swallow a just-queued
+      // Must-story cue — e.g. the "No answer — counted incorrect" toast emitted
+      // by the wall-clock ceiling a moment before the new slot's first cue
+      // arrives. Release them now in their stable order (the stagger only ever
+      // applied within a single slot).
       if (event.questionIndex > slotRef.current) {
         slotRef.current = event.questionIndex;
         seenKeysRef.current.clear();
+        const pending = queueRef.current;
         queueRef.current = [];
+        if (pending.length > 0) {
+          pending.sort((a, b) => a.order - b.order);
+          for (const item of pending) item.show();
+          lastShownRef.current = Date.now();
+        }
       }
       // Idempotency: the same underlying effect (e.g. a bot row arriving via both
       // the broadcast and a row-diff) toasts at most once per slot.
