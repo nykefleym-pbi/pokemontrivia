@@ -13,7 +13,6 @@ import { PixelGift } from "@/components/pixel-icons";
 import { ItemIcon } from "@/components/game-ui";
 import { syncActivity } from "@/lib/social";
 import { Button } from "@/components/ui/button";
-import { Toaster } from "@/components/ui/sonner";
 import {
   Sheet,
   SheetContent,
@@ -187,7 +186,6 @@ function ShopPage() {
 
   return (
     <div className="bg-poke-cream h-full w-full overflow-y-auto pb-nav safe-x">
-      <Toaster position="top-center" />
       {/* Hero */}
       <div className="px-5 pb-5 pt-[calc(env(safe-area-inset-top)+1rem)]">
         <p className="font-pixel-xs text-primary">WELCOME TO</p>

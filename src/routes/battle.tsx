@@ -24,7 +24,6 @@ import {
 import { ensureMegaQuestions } from "@/lib/mega/questions";
 import { WHATS_NEW } from "@/lib/whats-new";
 import { fetchMegaLeaderboard, getMyMegaRun, getMegaAttempts } from "@/lib/mega/runs";
-import { Toaster } from "@/components/ui/sonner";
 import { nextPendingElite, type EliteMember } from "@/lib/elite-four";
 import { findGymLeader, type GymLeader } from "@/lib/gym-leaders";
 import { syncActivity } from "@/lib/social";
@@ -699,7 +698,6 @@ function BattlePage() {
 
   return (
     <>
-      <Toaster position="top-center" />
       {engageCards && engageCards.length > 0 && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center">
           <div className="absolute inset-0 bg-[rgba(8,9,14,0.72)]" />
