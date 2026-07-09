@@ -16,7 +16,7 @@ import { clampStage } from "./pvp-combat";
 import type { PokeEntry } from "./pokemon-data";
 import { rollAbilityId, type AbilityId } from "./abilities";
 import type { LevelUpRewards } from "./level-rewards";
-import { ALL_POKEMON, rehydratePokemon } from "./pokemon-data";
+import { ALL_POKEMON, rehydratePokemon, isStartingPartner, canEvolve } from "./pokemon-data";
 import { isLegendaryOrMythical } from "./legendary-data";
 import { randomGuestName } from "./trainer-name";
 import type { Round } from "@/routes/whos-that-pokemon";
@@ -508,11 +508,16 @@ export const useGameStore = create<GameState>()(
       },
 
       startGuestSession: () => {
-        // Guests get a non-legendary starter (legendaries/mythicals are
-        // Poké-Egg exclusive) and a random trainer name, not a Pokémon name
-        // (feedback 96098111).
-        const guestPool = ALL_POKEMON.filter((p) => !isLegendaryOrMythical(p.id));
-        const poke = guestPool[Math.floor(Math.random() * guestPool.length)];
+        // Guests get a non-legendary, base-stage starter that can still evolve
+        // (feedback 96098111 + d4e7dcc3): legendaries/mythicals are Poké-Egg
+        // exclusive, and a base-stage Pokémon with an evolution ahead of it lets
+        // the guest experience levelling up and evolving. Falls back to any
+        // non-legendary if the strict pool were ever empty. Plus a random
+        // trainer name, not a Pokémon name.
+        const nonLegendary = ALL_POKEMON.filter((p) => !isLegendaryOrMythical(p.id));
+        const guestPool = nonLegendary.filter((p) => isStartingPartner(p) && canEvolve(p));
+        const pool = guestPool.length > 0 ? guestPool : nonLegendary;
+        const poke = pool[Math.floor(Math.random() * pool.length)];
         const trainer = TRAINER_SPRITES[Math.floor(Math.random() * TRAINER_SPRITES.length)];
         set({
           hasOnboarded: true,

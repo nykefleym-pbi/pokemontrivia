@@ -54,6 +54,11 @@ export interface LivePvpMatch {
    * Transform, weather-conflict resolution). */
   hostPartnerId: number | null;
   guestPartnerId: number | null;
+  /** Each side's resolved non-legendary TYPE ability id (null for a legendary
+   * partner — which uses a signature — or a legacy row). Lets the opponent name
+   * the ability for attribution / "in play" toasts. */
+  hostAbilityId: string | null;
+  guestAbilityId: string | null;
   /** Question index at which each side's signature-ability suppression lifts
    * (0 = not suppressed). A side is locked while its current question index is
    * below this value (Phase 4: Heatran/Zygarde/Regieleki/Pecharunt). */
@@ -113,6 +118,8 @@ interface LivePvpMatchRow {
   live_resolved_at: string | null;
   host_partner_id: number | null;
   guest_partner_id: number | null;
+  host_ability_id: string | null;
+  guest_ability_id: string | null;
   host_suppressed_until: number;
   guest_suppressed_until: number;
   weather_owner: "host" | "guest" | null;
@@ -163,6 +170,8 @@ function fromRow(r: LivePvpMatchRow): LivePvpMatch {
     liveResolvedAt: r.live_resolved_at,
     hostPartnerId: r.host_partner_id ?? null,
     guestPartnerId: r.guest_partner_id ?? null,
+    hostAbilityId: r.host_ability_id ?? null,
+    guestAbilityId: r.guest_ability_id ?? null,
     hostSuppressedUntil: r.host_suppressed_until ?? 0,
     guestSuppressedUntil: r.guest_suppressed_until ?? 0,
     weatherOwner: r.weather_owner ?? null,
@@ -184,8 +193,11 @@ export interface LivePvpEffect {
   itemId: ItemId | null;
   /** "item" (a berry/potion) or "ability" (a Legendary/Mythical signature move). */
   source: "item" | "ability";
-  /** Partner dex id for ability activations (the client resolves the move name). */
+  /** Partner dex id for signature-ability activations (the client resolves the
+   * move name). Null for a non-legendary TYPE ability, which carries `abilityId`. */
   pokemonId: number | null;
+  /** Non-legendary type-ability id (from the effect payload) for attribution. */
+  abilityId: string | null;
   kind: "stat_stage" | "status" | "cure" | "immunity" | "heal";
   payload: Record<string, unknown>;
   createdAt: string;
@@ -381,6 +393,7 @@ export async function applyBotPvpLiveItem(
 export async function setLivePvpPartner(
   matchId: string,
   partnerId: number | null,
+  abilityId: string | null = null,
 ): Promise<
   | { ok: true; hostPartnerId: number | null; guestPartnerId: number | null; bothKnown: boolean }
   | { ok: false; error: string }
@@ -389,6 +402,7 @@ export async function setLivePvpPartner(
     const { data, error } = await rpc.rpc("set_live_pvp_partner", {
       _match_id: matchId,
       _partner_id: partnerId ?? null,
+      _ability_id: abilityId ?? null,
     });
     if (error) {
       console.warn("[pvp-live] setLivePvpPartner failed:", error.message);
@@ -725,6 +739,77 @@ export async function applyPvpSignatureEffect(
   }
 }
 
+/**
+ * Apply a non-legendary partner's TYPE ability effect for a phase. Same trust
+ * model as signatures/berries: the client names WHICH ability id + phase and the
+ * server looks up the fixed magnitude from `pvp_type_ability_effects` (the client
+ * can't supply a magnitude), mutates the authoritative row, and logs to
+ * `pvp_live_effects` (source='ability', abilityId in the payload) for the
+ * opponent's toast. `_phase` is "battle_start" (a one-time standing buff) or
+ * "post_answer" (a triggered heal/stat/status/cure/chip). Returns the resolved
+ * state, or a noop when nothing applied (already-started battle_start, or no
+ * catalog row — a pure damage-calc ability has none). Pure damage/self-damage
+ * abilities never call this; those are folded client-side and server-clamped.
+ */
+export async function applyPvpTypeAbilityEffect(
+  matchId: string,
+  questionIndex: number,
+  abilityId: string,
+  phase: "battle_start" | "post_answer",
+): Promise<
+  | {
+      ok: true;
+      noop?: boolean;
+      hostHp?: number;
+      guestHp?: number;
+      hostStages?: PvpStatStages;
+      guestStages?: PvpStatStages;
+      hostStatuses?: ActiveStatus[];
+      guestStatuses?: ActiveStatus[];
+    }
+  | { ok: false; error: string }
+> {
+  try {
+    const { data, error } = await rpc.rpc("apply_pvp_type_ability_effect", {
+      _match_id: matchId,
+      _question_index: questionIndex,
+      _ability_id: abilityId,
+      _phase: phase,
+    });
+    if (error) {
+      console.warn("[pvp-live] applyPvpTypeAbilityEffect failed:", error.message);
+      return { ok: false, error: "network" };
+    }
+    const r = data as {
+      ok?: boolean;
+      noop?: boolean;
+      hostHp?: number;
+      guestHp?: number;
+      hostStages?: PvpStatStages;
+      guestStages?: PvpStatStages;
+      hostStatuses?: ActiveStatus[];
+      guestStatuses?: ActiveStatus[];
+      error?: string;
+    } | null;
+    if (r && r.ok === true) {
+      return {
+        ok: true,
+        noop: r.noop,
+        hostHp: r.hostHp,
+        guestHp: r.guestHp,
+        hostStages: r.hostStages,
+        guestStages: r.guestStages,
+        hostStatuses: r.hostStatuses,
+        guestStatuses: r.guestStatuses,
+      };
+    }
+    return { ok: false, error: (r && r.error) || "network" };
+  } catch (e) {
+    console.warn("[pvp-live] applyPvpTypeAbilityEffect threw:", e);
+    return { ok: false, error: "network" };
+  }
+}
+
 /** Subscribe to item/berry-effect events for a match (both self and opponent
  * uses are logged; the caller filters by sourceId). Returns an unsubscribe fn. */
 export function subscribeToLivePvpEffects(
@@ -747,6 +832,9 @@ export function subscribeToLivePvpEffects(
           itemId: (row.item_id as ItemId | null) ?? null,
           source: (row.source as "item" | "ability" | undefined) ?? "item",
           pokemonId: (row.pokemon_id as number | null) ?? null,
+          abilityId:
+            ((row.payload as Record<string, unknown> | null)?.abilityId as string | undefined) ??
+            null,
           kind: row.kind as LivePvpEffect["kind"],
           payload: (row.payload as Record<string, unknown>) ?? {},
           createdAt: row.created_at as string,
