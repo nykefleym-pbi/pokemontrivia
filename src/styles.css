@@ -664,3 +664,23 @@
 .status-anim-orbit-counter {
   animation: status-orbit-counter 2s linear infinite;
 }
+
+/* Accessibility: honor the OS "reduce motion" preference for every combat
+ * status overlay (burn/freeze/spark/poison/bubble/toxic/sleep/orbit — incl. the
+ * client-authoritative Confusion overlay). The sprite/emoji still renders as a
+ * static cue so the status stays legible; only the looping animation is stilled.
+ * This is the reduced-motion complement to the `motion-safe:` intent for the
+ * confusion overlay in game-ui.tsx. */
+@media (prefers-reduced-motion: reduce) {
+  .status-anim-burn,
+  .status-anim-freeze,
+  .status-anim-spark,
+  .status-anim-poison-glow,
+  .status-anim-bubble,
+  .status-anim-toxic-spark,
+  .status-anim-sleep,
+  .status-anim-orbit,
+  .status-anim-orbit-counter {
+    animation: none;
+  }
+}

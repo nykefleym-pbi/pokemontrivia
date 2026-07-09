@@ -54,6 +54,7 @@ import {
   botAnswerTimeMs,
   botShouldFireAbility,
   botShouldUseItem,
+  botConfusionMiss,
   type BotProfile,
 } from "@/lib/pvp-bot";
 import {
@@ -83,6 +84,8 @@ import {
 } from "@/lib/signature-bespoke";
 import { isWeatherStatSource, isMyWeatherActive } from "@/lib/pvp-weather";
 import { TimerRing } from "@/components/battle-screen";
+import { useBattleFxCues } from "@/hooks/useBattleFxCues";
+import type { BattleSide, BattleStatusKind } from "@/lib/training-battle-fx-types";
 
 export interface LivePvpBattleResult {
   resolved: boolean;
@@ -251,12 +254,14 @@ function ArenaSprite({
   shake,
   floatN,
   statuses,
+  confused,
 }: {
   id: number | null;
   back: boolean;
   shake: boolean;
   floatN: number | null;
   statuses: Array<{ kind: StatusKind }>;
+  confused?: boolean;
 }) {
   return (
     <div className="relative shrink-0">
@@ -286,7 +291,7 @@ function ArenaSprite({
             <PokeballSpinner size={72} />
           </div>
         )}
-        <StatusEffectOverlay statuses={statuses} />
+        <StatusEffectOverlay statuses={statuses} confused={confused} />
         {floatN != null && (
           <div className="animate-float-up pointer-events-none absolute top-4 left-1/2 z-20 -translate-x-1/2 font-pixel text-base text-destructive">
             -{floatN}
@@ -456,6 +461,31 @@ export function LivePvpBattleScreen({
   const botStreakRef = useRef(0);
   const botLastIdxRef = useRef(-1);
   const botBattleStartRef = useRef(false);
+
+  // Single cue path (spec Stories 2-7): every player-visible combat cue funnels
+  // through this `emit` (frozen contract), instead of ad-hoc toast.* calls.
+  const { emit } = useBattleFxCues();
+
+  // Confused-after-2-consecutive-wrong (#1) — client-authoritative for BOTH
+  // sides. Held locally (never written to the synced status row, so realtime
+  // row-sync can't clobber it — architecture §8) and merged into the displayed
+  // statuses + the human confusion-miss roll. Each side has a consecutive-wrong
+  // counter (reset on a correct answer) and a remaining-confused-ticks count
+  // that only decrements on a confusion miss, mirroring the human model.
+  const CONFUSE_AT = 2;
+  const CONFUSE_TICKS = STATUS_META.confused.defaultCures; // 2, matching Solo
+  const selfWrongStreakRef = useRef(0);
+  const botWrongStreakRef = useRef(0);
+  const selfConfusedTicksRef = useRef(0);
+  const oppConfusedTicksRef = useRef(0);
+  const [selfConfused, setSelfConfused] = useState(false);
+  const [oppConfused, setOppConfused] = useState(false);
+  // Mirror of `selected` for the wall-clock ceiling / timer effects that must
+  // read the leaving slot's answer without a stale closure (no-answer fix #6).
+  const selectedRef = useRef<number | null>(null);
+  // Highest slot index already resolved, so the no-answer ceiling resolve and
+  // the personal-timeout submit can never double-submit the same slot (#6).
+  const lastResolvedIdxRef = useRef(-1);
 
   // Signature-ability bookkeeping (drives the pure evaluators in
   // signature-abilities.ts). Kept in refs so they survive re-renders without
@@ -672,6 +702,51 @@ export function LivePvpBattleScreen({
     announce(prevOpp, oppStages, false);
   }, [myStages, oppStages]);
 
+  // Status-change feedback (#4 / Story 4): mirror the stat-stage diff above but
+  // over the synced status lists — emit a cue on every gain/loss for either
+  // side. This is the single catch-all regardless of which effect (item,
+  // ability, weather) changed the row. `confused` is excluded: it is
+  // client-authoritative (never on the synced row) and already cued directly in
+  // applyConfused / tickConfusedOut, so this diff never double-announces it.
+  const prevMyStatusesRef = useRef<ActiveStatus[] | null>(null);
+  const prevOppStatusesRef = useRef<ActiveStatus[] | null>(null);
+  useEffect(() => {
+    const prevMine = prevMyStatusesRef.current;
+    const prevOpp = prevOppStatusesRef.current;
+    prevMyStatusesRef.current = myStatuses;
+    prevOppStatusesRef.current = oppStatuses;
+    if (prevMine === null || prevOpp === null) return; // skip initial mount
+    const atIdx = Math.max(0, displayedIndexRef.current);
+    const announce = (prev: ActiveStatus[], cur: ActiveStatus[], side: BattleSide) => {
+      const prevKinds = new Set(prev.map((s) => s.kind));
+      const curKinds = new Set(cur.map((s) => s.kind));
+      for (const s of cur) {
+        if (s.kind === "confused" || prevKinds.has(s.kind)) continue;
+        emit({
+          kind: "status-applied",
+          side,
+          status: s.kind as BattleStatusKind,
+          questionIndex: atIdx,
+          durationTicks: s.curesRemaining,
+          dedupeKey: `${side}:status-applied:${atIdx}:${s.kind}`,
+        });
+      }
+      for (const s of prev) {
+        if (s.kind === "confused" || curKinds.has(s.kind)) continue;
+        emit({
+          kind: "status-expired",
+          side,
+          status: s.kind as BattleStatusKind,
+          questionIndex: atIdx,
+          dedupeKey: `${side}:status-expired:${atIdx}:${s.kind}`,
+        });
+      }
+    };
+    announce(prevMine, myStatuses, "self");
+    announce(prevOpp, oppStatuses, "opponent");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [myStatuses, oppStatuses]);
+
   // Ho-Oh (250) Rainbow Rebirth — opponent-inflicted revive toast. When the
   // OPPONENT's correct answer would have KO'd us but the server revived us, our
   // own *_revived flag flips true on the realtime-synced row (the server writes
@@ -797,6 +872,7 @@ export function LivePvpBattleScreen({
     displayedIndexRef.current = nextIdx;
     setDisplayedIndex(nextIdx);
     setSelected(null);
+    selectedRef.current = null;
     setFrozen(false);
     // Battle aids are per-question — clear last question's reveals.
     setRevealedCorrect(null);
@@ -836,6 +912,31 @@ export function LivePvpBattleScreen({
       // resolved us (e.g. a near-simultaneous KO edge case) — the route will
       // pick up the resolution from the row update; just stop advancing.
       return;
+    }
+    // No-answer race fix (#6): if the slot we're leaving ran out with nothing
+    // selected, resolve it as incorrect BEFORE advancing so it's actually
+    // scored and feeds the consecutive-wrong → confused chain (#1). Guarded on
+    // selectedRef + lastResolvedIdxRef so it never double-submits with the
+    // personal-timeout effect. Frozen slots auto-forfeit (matching that effect)
+    // and are skipped here.
+    const leaving = displayedIndexRef.current;
+    if (
+      leaving >= 0 &&
+      leaving > lastResolvedIdxRef.current &&
+      selectedRef.current === null &&
+      !frozen
+    ) {
+      selectedRef.current = -1;
+      setSelected(-1);
+      emit({
+        kind: "answer-result",
+        side: "self",
+        questionIndex: leaving,
+        correct: false,
+        noAnswer: true,
+        dedupeKey: `self:answer-result:${leaving}:no-answer`,
+      });
+      void resolveQuestion(leaving, false, personalTimerMs);
     }
     enterQuestion(idx);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -890,8 +991,50 @@ export function LivePvpBattleScreen({
     };
   }
 
+  // Apply a client-authoritative `confused` to a side after 2 consecutive wrong
+  // answers (#1). Idempotent while already confused. Never touches the synced
+  // status row — the visual is merged in locally (selfConfused / oppConfused).
+  function applyConfused(side: BattleSide, atIdx: number) {
+    const ticksRef = side === "self" ? selfConfusedTicksRef : oppConfusedTicksRef;
+    if (ticksRef.current > 0) return;
+    ticksRef.current = CONFUSE_TICKS;
+    if (side === "self") setSelfConfused(true);
+    else setOppConfused(true);
+    emit({
+      kind: "status-applied",
+      side,
+      status: "confused",
+      questionIndex: atIdx,
+      durationTicks: CONFUSE_TICKS,
+      dedupeKey: `${side}:status-applied:${atIdx}:confused`,
+    });
+  }
+
+  // Consume one confused tick on a confusion miss; emit the expiry cue once it
+  // ticks out. Mirrors the human's only-decrement-on-a-miss model.
+  function tickConfusedOut(side: BattleSide, atIdx: number) {
+    const ticksRef = side === "self" ? selfConfusedTicksRef : oppConfusedTicksRef;
+    if (ticksRef.current <= 0) return;
+    ticksRef.current -= 1;
+    if (ticksRef.current > 0) return;
+    if (side === "self") setSelfConfused(false);
+    else setOppConfused(false);
+    emit({
+      kind: "status-expired",
+      side,
+      status: "confused",
+      questionIndex: atIdx,
+      dedupeKey: `${side}:status-expired:${atIdx}:confused`,
+    });
+  }
+
   async function resolveQuestion(idxAtAnswer: number, correct: boolean, elapsedMs: number) {
     if (finishedRef.current) return;
+    // No-double-submit guard (#6): each slot resolves exactly once. Protects the
+    // no-answer ceiling resolve from racing the personal-timeout submit (indices
+    // only advance, so this never blocks a legitimate later slot).
+    if (idxAtAnswer <= lastResolvedIdxRef.current) return;
+    lastResolvedIdxRef.current = idxAtAnswer;
     let dmg = 0;
     let selfDmg = 0;
     // Type-ability bookkeeping for this answer: `landedHit` is a real correct
@@ -904,11 +1047,17 @@ export function LivePvpBattleScreen({
       // Freeze auto-forfeits the question: no damage either way, streak resets.
       setStreak(0);
     } else if (correct) {
-      const isConfused = myStatuses.some((s) => s.kind === "confused");
+      // A landed correct answer breaks any building wrong-streak (#1). A
+      // confusion miss below is still a `correct` answer, so it resets too —
+      // no confused death-spiral.
+      selfWrongStreakRef.current = 0;
+      const isConfused =
+        selfConfusedTicksRef.current > 0 || myStatuses.some((s) => s.kind === "confused");
       const missedFromConfusion = isConfused && Math.random() < 0.25;
       if (missedFromConfusion) {
         toast.warning("🌀 Confused — your attack missed!");
         tickBattleStatusCure("confused");
+        tickConfusedOut("self", idxAtAnswer);
         setStreak(0);
       } else {
         const nextStreak = streak + 1;
@@ -1022,6 +1171,11 @@ export function LivePvpBattleScreen({
       }
     } else {
       setStreak(0);
+      // Consecutive-wrong → confused (#1), mirroring Solo (battle-screen.tsx
+      // :1035-1041). A genuine wrong answer builds the streak; at 2 the human
+      // becomes confused. The no-answer ceiling resolve (#6) feeds this path too.
+      selfWrongStreakRef.current += 1;
+      if (selfWrongStreakRef.current === CONFUSE_AT) applyConfused("self", idxAtAnswer);
       selfDmg = 8; // flat wrong-answer chip, mirroring solo's flat-loss model
       playSfx("wrong");
       // Phase 1 — Moltres's Fiery Wrath builds a Wrath stack on each wrong
@@ -1062,11 +1216,20 @@ export function LivePvpBattleScreen({
         hasPoisoned,
       };
 
-      // Fire-note helper: show a conditional ability's "activated" toast once.
+      // Fire-note helper: announce a conditional type ability's activation once
+      // per battle, via the single cue path (wording resolved by the hook from
+      // the ability id — never duplicated here).
       const toastFireOnce = () => {
         if (typeWiring.fireNote && !taActivatedRef.current.has(typeAbilityId)) {
           taActivatedRef.current.add(typeAbilityId);
-          toast.success(typeWiring.fireNote);
+          emit({
+            kind: "type-ability",
+            side: "self",
+            abilityId: typeAbilityId,
+            hitsOpponent: false,
+            questionIndex: idxAtAnswer,
+            dedupeKey: `self:type-ability:${idxAtAnswer}:${typeAbilityId}`,
+          });
         }
       };
 
@@ -1189,10 +1352,15 @@ export function LivePvpBattleScreen({
                 setMyHp(amIHost ? abilityRes.hostHp : abilityRes.guestHp!);
                 setOppHp(amIHost ? abilityRes.guestHp! : abilityRes.hostHp);
               }
-              const move = signatureMoveName(partnerId);
-              if (move) {
-                const desc = describeSignatureEffect(partnerId);
-                toast.success(desc ? `✨ ${move} — ${desc}!` : `✨ ${move} activates!`);
+              if (partnerId != null) {
+                emit({
+                  kind: "signature",
+                  side: "self",
+                  partnerId,
+                  hitsOpponent: true,
+                  questionIndex: idxAtAnswer,
+                  dedupeKey: `self:signature:${idxAtAnswer}:${partnerId}`,
+                });
               }
             }
           },
@@ -1237,6 +1405,7 @@ export function LivePvpBattleScreen({
     if (selected !== null || displayedIndex < 0 || frozen) return;
     const q = questions[displayedIndex];
     setSelected(choiceIndex);
+    selectedRef.current = choiceIndex;
     const elapsedMs = Date.now() - questionStartRef.current;
     void resolveQuestion(displayedIndex, choiceIndex === q.correct, elapsedMs);
   }
@@ -1248,6 +1417,7 @@ export function LivePvpBattleScreen({
     const deadline = questionStartRef.current + personalTimerMs;
     if (Date.now() >= deadline) {
       setSelected(-1);
+      selectedRef.current = -1;
       void resolveQuestion(displayedIndex, false, personalTimerMs);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1287,7 +1457,31 @@ export function LivePvpBattleScreen({
     const t = setTimeout(() => {
       if (finishedRef.current) return;
       let dmg = 0;
-      if (correct) {
+      // Bot confusion (#1 mirror): while confused, an otherwise-correct answer
+      // may miss (25%, consuming one tick) — same magnitude/semantics as the
+      // human roll (:907-912), via the pure Backend helper. A miss deals no
+      // damage and breaks the bot's streak; the slot still counts as correct
+      // (parity with the human, who submits correct=true / dmg=0 on a miss).
+      let botMissed = false;
+      if (correct && oppConfusedTicksRef.current > 0) {
+        const cm = botConfusionMiss({
+          confusedTicks: oppConfusedTicksRef.current,
+          answeredCorrectly: true,
+        });
+        botMissed = cm.missed;
+        oppConfusedTicksRef.current = cm.confusedTicksRemaining;
+        if (botMissed && cm.confusedTicksRemaining <= 0) {
+          setOppConfused(false);
+          emit({
+            kind: "status-expired",
+            side: "opponent",
+            status: "confused",
+            questionIndex: idxAtAnswer,
+            dedupeKey: `opponent:status-expired:${idxAtAnswer}:confused`,
+          });
+        }
+      }
+      if (correct && !botMissed) {
         const next = botStreakRef.current + 1;
         botStreakRef.current = next;
         const totalMs = timerMsForSpeedStage(oppStages.speed, PVP_BASE_TIMER_MS);
@@ -1306,6 +1500,14 @@ export function LivePvpBattleScreen({
         dmg = computed;
       } else {
         botStreakRef.current = 0;
+      }
+      // Consecutive-wrong → confused for the bot (#1). A genuine wrong answer
+      // builds the streak; a correct answer (even a confusion miss) resets it.
+      if (correct) {
+        botWrongStreakRef.current = 0;
+      } else {
+        botWrongStreakRef.current += 1;
+        if (botWrongStreakRef.current === CONFUSE_AT) applyConfused("opponent", idxAtAnswer);
       }
       void submitBotPvpMove(matchId, idxAtAnswer, correct, dmg, timeMs).then((res) => {
         if (res.ok && res.resolved && !finishedRef.current) {
@@ -1362,9 +1564,16 @@ export function LivePvpBattleScreen({
       }
       useGameStore.getState().useItem(itemId);
       usedItemIdsRef.current.add(itemId);
-      // Name it + a short plain-language effect line (feedback 554b395c), same
-      // shape as the opponent-item toast the route shows for the other player.
-      toast.info(`${def.emoji} You used ${def.name} — ${BAG_SHORT_DESC[itemId] ?? def.desc}`);
+      // Announce via the single cue path (wording resolved by the hook from the
+      // item id), same shape as the opponent-item cue the route emits.
+      emit({
+        kind: "item",
+        side: "self",
+        itemId,
+        hitsOpponent: false,
+        questionIndex: Math.max(0, displayedIndex),
+        dedupeKey: `self:item:${Math.max(0, displayedIndex)}:${itemId}`,
+      });
       playSfx("item_use");
       setBagOpen(false);
       return;
@@ -1392,16 +1601,17 @@ export function LivePvpBattleScreen({
       battleStatuses: amIHost ? res.hostStatuses : res.guestStatuses,
       opponentStatuses: amIHost ? res.guestStatuses : res.hostStatuses,
     });
-    // Name it + a short plain-language effect line (feedback 554b395c) so the
-    // player understands the HP/stat change they just triggered — reuse
-    // BAG_SHORT_DESC, falling back to the item's own desc (e.g. berries).
-    const effectLine = BAG_SHORT_DESC[itemId] ?? def.desc;
-    const opponentFacing = def.berry?.target === "opponent";
-    toast.success(
-      opponentFacing
-        ? `${def.emoji} You used ${def.name} on the opponent — ${effectLine}`
-        : `${def.emoji} You used ${def.name} — ${effectLine}`,
-    );
+    // Announce via the single cue path so the player understands the HP/stat
+    // change they just triggered. An offensive berry hits the opponent; the
+    // hook resolves wording (name + short effect) from the item id.
+    emit({
+      kind: "item",
+      side: "self",
+      itemId,
+      hitsOpponent: def.berry?.target === "opponent",
+      questionIndex: Math.max(0, displayedIndex),
+      dedupeKey: `self:item:${Math.max(0, displayedIndex)}:${itemId}`,
+    });
     setBagOpen(false);
   }
 
@@ -1473,11 +1683,14 @@ export function LivePvpBattleScreen({
       swordOfRuinChargesRef.current = 2;
     }
     playSfx("item_use");
-    const move = signatureMoveName(partnerId);
-    if (move) {
-      const desc = describeSignatureEffect(partnerId);
-      toast.success(desc ? `✨ ${move} — ${desc}!` : `✨ ${move} unleashed!`);
-    }
+    emit({
+      kind: "signature",
+      side: "self",
+      partnerId,
+      hitsOpponent: true,
+      questionIndex: Math.max(0, displayedIndex),
+      dedupeKey: `self:signature:${Math.max(0, displayedIndex)}:${partnerId}`,
+    });
   }
 
   if (idx < 0) {
@@ -1507,6 +1720,16 @@ export function LivePvpBattleScreen({
   const myTypes: PokeType[] = myPokemon?.types ?? [];
   const oppEntry = opponentPartnerId != null ? findPokemon(opponentPartnerId) : undefined;
   const oppTypes: PokeType[] = oppEntry?.types ?? [];
+
+  // Merge the client-authoritative confused overlay into the displayed status
+  // lists (#1) so the chip + sprite show it, without ever writing it to the
+  // synced status row (realtime row-sync would otherwise clobber it — §8).
+  const mergeConfused = (list: ActiveStatus[], on: boolean, ticks: number): ActiveStatus[] =>
+    on && !list.some((s) => s.kind === "confused")
+      ? [...list, { kind: "confused" as StatusKind, curesRemaining: ticks, appliedAt: 0 }]
+      : list;
+  const myStatusesDisplay = mergeConfused(myStatuses, selfConfused, selfConfusedTicksRef.current);
+  const oppStatusesDisplay = mergeConfused(oppStatuses, oppConfused, oppConfusedTicksRef.current);
 
   return (
     <div className="relative flex h-full w-full flex-col overflow-hidden bg-battle-field">
@@ -1551,7 +1774,7 @@ export function LivePvpBattleScreen({
             types={oppTypes}
             hp={oppHp}
             stages={oppStages}
-            statuses={oppStatuses}
+            statuses={oppStatusesDisplay}
             abilityName={signatureMoveName(opponentPartnerId)}
           />
           <div className="mt-2">
@@ -1560,7 +1783,8 @@ export function LivePvpBattleScreen({
               back={false}
               shake={shakeWho === "opponent"}
               floatN={floatDmg?.who === "opponent" ? floatDmg.n : null}
-              statuses={oppStatuses}
+              statuses={oppStatusesDisplay}
+              confused={oppConfused}
             />
           </div>
         </div>
@@ -1572,7 +1796,8 @@ export function LivePvpBattleScreen({
             back
             shake={shakeWho === "player"}
             floatN={floatDmg?.who === "player" ? floatDmg.n : null}
-            statuses={myStatuses}
+            statuses={myStatusesDisplay}
+            confused={selfConfused}
           />
           <PvpCombatPanel
             align="right"
@@ -1580,7 +1805,7 @@ export function LivePvpBattleScreen({
             types={myTypes}
             hp={myHp}
             stages={myStages}
-            statuses={myStatuses}
+            statuses={myStatusesDisplay}
             abilityName={signatureMoveName(partnerId)}
           />
         </div>

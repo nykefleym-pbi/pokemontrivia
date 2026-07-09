@@ -125,6 +125,41 @@ export function botShouldFireAbility(
   return rng() < profile.aggression;
 }
 
+/** Chance an otherwise-correct answer misses while confused. Mirrors the human
+ * confusion-miss roll at live-pvp-battle-screen.tsx:908 (`Math.random() < 0.25`). */
+const CONFUSION_MISS_CHANCE = 0.25;
+
+/** Outcome of the bot's per-question confusion check. */
+export interface BotConfusionResult {
+  /** True when confusion forced an otherwise-correct answer to miss this tick. */
+  missed: boolean;
+  /** Confused ticks left after this question. Decrements only on a miss — exactly
+   * like the human side, whose only confused decrement is the
+   * `tickBattleStatusCure("confused")` inside the miss branch (:911); confused is
+   * deliberately absent from the per-question status tick list (:1131-1135). */
+  confusedTicksRemaining: number;
+}
+
+/**
+ * Bot mirror of the human confusion-miss roll (live-pvp-battle-screen.tsx:907-912).
+ * While the bot carries a `confused` status, an otherwise-correct answer has a 25%
+ * chance to miss, and that miss consumes one confused tick — identical magnitude
+ * and semantics to the human path. A wrong answer, or a bot with no confused ticks
+ * left, never misses and never decrements (mirroring the human roll living only in
+ * the `correct` branch). Deterministic given `rng` so the driver stays testable.
+ */
+export function botConfusionMiss(
+  ctx: { confusedTicks: number; answeredCorrectly: boolean },
+  rng: Rng = Math.random,
+): BotConfusionResult {
+  const remaining = Math.max(0, ctx.confusedTicks);
+  if (!ctx.answeredCorrectly || remaining <= 0) {
+    return { missed: false, confusedTicksRemaining: remaining };
+  }
+  const missed = rng() < CONFUSION_MISS_CHANCE;
+  return { missed, confusedTicksRemaining: missed ? remaining - 1 : remaining };
+}
+
 /**
  * Whether the bot uses a healing item this question. Only considered when the
  * bot is hurt; the more hurt (and the more aggressive) it is, the likelier.
