@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   rollBotPartner,
   rollBotProfile,
+  rollBotTier,
   botAnswersCorrectly,
   botAnswerTimeMs,
   botShouldFireAbility,
   botShouldUseItem,
   type BotProfile,
+  type BotTier,
 } from "./pvp-bot";
 import { ALL_LEGENDARY_MYTHICAL_IDS } from "./legendary-data";
 import { PVP_BASE_TIMER_MS } from "./pvp-combat";
@@ -30,6 +32,7 @@ function sequence(values: number[]): () => number {
 }
 
 const profile = (over: Partial<BotProfile> = {}): BotProfile => ({
+  tier: "trainer",
   accuracy: 0.75,
   speed: { meanMs: 8000, jitter: 2000 },
   aggression: 0.5,
@@ -52,19 +55,50 @@ describe("rollBotPartner", () => {
   });
 });
 
+describe("rollBotTier", () => {
+  it("returns each tier at the weighted boundaries", () => {
+    expect(rollBotTier(() => 0)).toBe("rookie");
+    expect(rollBotTier(() => 0.29)).toBe("rookie");
+    expect(rollBotTier(() => 0.3)).toBe("trainer");
+    expect(rollBotTier(() => 0.74)).toBe("trainer");
+    expect(rollBotTier(() => 0.75)).toBe("ace");
+    expect(rollBotTier(() => 0.999)).toBe("ace");
+  });
+
+  it("produces all three tiers across many rolls", () => {
+    const rng = seeded(9);
+    const seen = new Set<BotTier>();
+    for (let i = 0; i < 500; i++) seen.add(rollBotTier(rng));
+    expect(seen).toEqual(new Set<BotTier>(["rookie", "trainer", "ace"]));
+  });
+});
+
 describe("rollBotProfile", () => {
-  it("stays within the documented bounds across many rolls", () => {
+  it("stays within the outer envelope across many rolls", () => {
     const rng = seeded(42);
     for (let i = 0; i < 300; i++) {
       const p = rollBotProfile(rng);
-      expect(p.accuracy).toBeGreaterThanOrEqual(0.55);
-      expect(p.accuracy).toBeLessThanOrEqual(0.9);
-      expect(p.speed.meanMs).toBeGreaterThanOrEqual(4000);
+      expect(["rookie", "trainer", "ace"]).toContain(p.tier);
+      expect(p.accuracy).toBeGreaterThanOrEqual(0.45);
+      expect(p.accuracy).toBeLessThanOrEqual(0.95);
+      expect(p.speed.meanMs).toBeGreaterThanOrEqual(3000);
       expect(p.speed.meanMs).toBeLessThanOrEqual(12_000);
-      expect(p.speed.jitter).toBeGreaterThanOrEqual(1000);
+      expect(p.speed.jitter).toBeGreaterThanOrEqual(800);
       expect(p.speed.jitter).toBeLessThanOrEqual(4000);
-      expect(p.aggression).toBeGreaterThanOrEqual(0.2);
-      expect(p.aggression).toBeLessThanOrEqual(0.8);
+      expect(p.aggression).toBeGreaterThanOrEqual(0.15);
+      expect(p.aggression).toBeLessThanOrEqual(0.9);
+    }
+  });
+
+  it("draws from the forced tier's band (non-overlapping accuracy)", () => {
+    const rng = seeded(3);
+    for (let i = 0; i < 200; i++) {
+      const rookie = rollBotProfile(rng, "rookie");
+      expect(rookie.tier).toBe("rookie");
+      expect(rookie.accuracy).toBeLessThanOrEqual(0.6);
+      const ace = rollBotProfile(rng, "ace");
+      expect(ace.tier).toBe("ace");
+      expect(ace.accuracy).toBeGreaterThanOrEqual(0.82);
     }
   });
 });
