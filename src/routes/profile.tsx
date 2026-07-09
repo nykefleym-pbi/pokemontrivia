@@ -72,7 +72,6 @@ import {
 } from "@/components/profile-parts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Toaster } from "@/components/ui/sonner";
 import { Switch } from "@/components/ui/switch";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -513,8 +512,6 @@ function ProfilePage() {
 
   return (
     <div className="bg-poke-cream h-full w-full overflow-y-auto pb-nav safe-x">
-      <Toaster position="top-center" />
-
       {/* Hero strip */}
       <div className="px-5 pb-5 pt-[calc(env(safe-area-inset-top)+1rem)]">
         <motion.div

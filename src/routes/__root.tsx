@@ -16,6 +16,7 @@ import { FriendRequestInbox } from "@/components/FriendRequestInbox";
 import { PvpInviteInbox } from "@/components/PvpInviteInbox";
 import { LivePvpWatcher } from "@/components/LivePvpWatcher";
 import { NameReclaimPrompt } from "@/components/NameReclaimPrompt";
+import { Toaster } from "@/components/ui/sonner";
 import { Analytics } from "@vercel/analytics/react";
 
 import appCss from "../styles.css?url";
@@ -211,6 +212,11 @@ function RootComponent() {
         <Outlet />
         <BottomNav />
       </div>
+      {/* Single app-wide toaster: every route (incl. /pvp/live Training & Nearby
+          Battle) renders toasts through this. Do NOT add per-route <Toaster>s —
+          multiple mounts double every toast. Sonner uses fixed positioning, so
+          the ancestor overflow-hidden here does not clip it. */}
+      <Toaster position="top-center" />
       <FriendRequestInbox />
       <PvpInviteInbox />
       <LivePvpWatcher />
