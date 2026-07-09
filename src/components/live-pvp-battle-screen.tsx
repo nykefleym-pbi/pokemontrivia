@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { Backpack } from "lucide-react";
+import { Backpack, Info } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { Trivia } from "@/lib/trivia-core";
 import { shuffleAllTriviaOptions } from "@/lib/trivia-core";
 import { playSfx, playCry } from "@/lib/audio";
@@ -60,6 +61,7 @@ import {
 import {
   signatureAbilityFor,
   signatureMoveName,
+  describeSignatureEffect,
   evaluateHitModifiers,
   evaluatePostAnswer,
   evaluatePassiveDamageSideEffects,
@@ -124,16 +126,6 @@ function statBarLabel(stat: PvpStat): string {
   return { attack: "ATK", defense: "DEF", speed: "SPD", crit: "CRIT" }[stat];
 }
 
-/** Plain, kid-friendly stat names for the stat-stage change toasts (feedback
- * 554b395c) — the chips use the short ATK/DEF codes, but a toast reads better
- * spelled out ("Your Attack rose!"). */
-const STAT_FULL_LABEL: Record<PvpStat, string> = {
-  attack: "Attack",
-  defense: "Defense",
-  speed: "Speed",
-  crit: "Crit",
-};
-
 function StatChips({ stages }: { stages: PvpStatStages }) {
   const entries = (Object.keys(stages) as PvpStat[])
     .map((k) => ({ stat: k, val: stages[k] }))
@@ -156,23 +148,6 @@ function StatChips({ stages }: { stages: PvpStatStages }) {
   );
 }
 
-function StatusChips({ statuses }: { statuses: ActiveStatus[] }) {
-  if (statuses.length === 0) return null;
-  return (
-    <div className="flex flex-wrap gap-1">
-      {statuses.map((s) => (
-        <span
-          key={s.kind}
-          className="rounded-full bg-purple-500/20 px-1.5 py-[1px] font-pixel-xs text-purple-700"
-          title={STATUS_META[s.kind].label}
-        >
-          {STATUS_META[s.kind].emoji}
-        </span>
-      ))}
-    </div>
-  );
-}
-
 /** Solo-style CombatPanel adapted for Nearby Battle: same card frame, type
  * badges, and spring HP bar as `battle-screen.tsx`'s CombatPanel, but carrying
  * PvP's stat-stage and status chips instead of ability/immunity chips. */
@@ -182,23 +157,22 @@ function PvpCombatPanel({
   types,
   hp,
   stages,
-  statuses,
   abilityName,
+  abilityDesc,
 }: {
   align: "left" | "right";
   name: string;
   types: PokeType[];
   hp: number;
   stages: PvpStatStages;
-  statuses: ActiveStatus[];
   abilityName?: string | null;
+  abilityDesc?: string | null;
 }) {
   const pct = Math.max(0, Math.min(100, (hp / PVP_MAX_HP) * 100));
   const barColor = pct > 50 ? "bg-hp-good" : pct > 20 ? "bg-hp-warn" : "bg-hp-low";
   const alignCls = align === "right" ? "items-end text-right" : "items-start text-left";
   const justifyCls = align === "right" ? "justify-end" : "justify-start";
-  const hasChips =
-    !!abilityName || (Object.values(stages) as number[]).some((v) => v !== 0) || statuses.length > 0;
+  const hasChips = !!abilityName || (Object.values(stages) as number[]).some((v) => v !== 0);
 
   return (
     <div className="w-[clamp(8rem,38vw,10.5rem)] shrink-0 rounded-2xl bg-card px-3 py-2 backdrop-blur shadow-card">
@@ -225,18 +199,25 @@ function PvpCombatPanel({
           </span>
         </div>
         {hasChips && (
-          <div className={`mt-1 flex w-full flex-wrap gap-0.5 ${justifyCls}`}>
+          <div className={`mt-1 flex w-full flex-wrap items-center gap-0.5 ${justifyCls}`}>
             {abilityName && (
-              <span
-                className="max-w-full overflow-hidden text-ellipsis whitespace-nowrap rounded-full bg-primary/10 px-1.5 py-[1px] font-pixel-xs uppercase tracking-wide text-primary"
-                style={{ fontSize: "6px" }}
-                title={abilityName}
-              >
-                ⚡ {abilityName}
-              </span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex max-w-full items-center gap-0.5 overflow-hidden rounded-full bg-primary/10 px-1.5 py-[2px] text-[9px] font-bold uppercase tracking-wide text-primary active:scale-95"
+                  >
+                    <span className="truncate">⚡ {abilityName}</span>
+                    <Info className="h-2.5 w-2.5 shrink-0 opacity-70" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align={align === "right" ? "end" : "start"} className="w-56 text-xs">
+                  <div className="font-bold text-primary">⚡ {abilityName}</div>
+                  {abilityDesc && <p className="mt-1 leading-snug text-muted-foreground">{abilityDesc}</p>}
+                </PopoverContent>
+              </Popover>
             )}
             <StatChips stages={stages} />
-            <StatusChips statuses={statuses} />
           </div>
         )}
       </div>
@@ -374,6 +355,27 @@ export function LivePvpBattleScreen({
   const typeWiring = useMemo(() => typeAbilityPvp(typeAbilityId), [typeAbilityId]);
   const oppAbilityId = (amIHost ? match.guestAbilityId : match.hostAbilityId) as AbilityId | null;
 
+  // Ability shown in each combat panel's tappable info popover: the signature
+  // move for a legendary partner, otherwise the non-legendary type ability. The
+  // description is the PvP-specific note (falls back to the Solo ability text).
+  const myAbilityLabel = ability
+    ? signatureMoveName(partnerId)
+    : typeAbilityId
+      ? getAbilityById(typeAbilityId)?.name ?? null
+      : null;
+  const myAbilityDesc = ability
+    ? describeSignatureEffect(partnerId)
+    : typeAbilityId
+      ? typeWiring?.note ?? getAbilityById(typeAbilityId)?.description ?? null
+      : null;
+  const oppSigMove = signatureMoveName(opponentPartnerId);
+  const oppAbilityLabel = oppSigMove ?? (oppAbilityId ? getAbilityById(oppAbilityId)?.name ?? null : null);
+  const oppAbilityDesc = oppSigMove
+    ? describeSignatureEffect(opponentPartnerId)
+    : oppAbilityId
+      ? typeAbilityPvp(oppAbilityId)?.note ?? getAbilityById(oppAbilityId)?.description ?? null
+      : null;
+
   const startedAtMs = useRef(new Date(startedAt).getTime()).current;
   const [now, setNow] = useState(() => Date.now());
   const [displayedIndex, setDisplayedIndex] = useState(-1);
@@ -407,10 +409,8 @@ export function LivePvpBattleScreen({
   // Refs keep each cue firing exactly once.
   const introThrowRef = useRef(false);
   const oppCryRef = useRef(false);
-  const abilityAnnounceRef = useRef(false);
   // Type-ability (non-legendary) bookkeeping. All battle-scoped, so plain refs.
   const taBattleStartFiredRef = useRef(false);
-  const taAnnouncedRef = useRef(false);
   const taActivatedRef = useRef<Set<string>>(new Set()); // conditional fireNotes shown
   const hadWrongRef = useRef(false); // any wrong answer yet (Berserk / Snow Cloak)
   const wrongCountRef = useRef(0); // wrong-answer tally (Sand Force)
@@ -588,7 +588,7 @@ export function LivePvpBattleScreen({
       (res) => {
         if (res.ok && !res.noop) {
           const move = signatureMoveName(partnerId);
-          if (move) notify("success", `✨ ${move} activated!`);
+          if (move) notify("success", `✨ ${move} activated!`, { description: describeSignatureEffect(partnerId) });
         }
       },
     );
@@ -664,39 +664,10 @@ export function LivePvpBattleScreen({
     };
   }, [oppHp]);
 
-  // Stat-stage change feedback (feedback 554b395c): whenever ANY stat stage
-  // (attack/defense/speed/crit) moves for either side, toast it in plain,
-  // kid-friendly language ("⬆️ Your Attack rose!" / "⬇️ Opponent's Speed
-  // fell!"). Both sides' stages are the authoritative row values synced from the
-  // route file, so this one diff is the single place that catches every source
-  // (item, berry, signature ability, weather) for both players. We diff previous
-  // vs current, so a single change yields exactly one toast per changed stat and
-  // an unchanged value never re-toasts. The refs seed to `null` and the first
-  // run just records the mount values (possibly already battle-start-buffed) so
-  // the starting stages never phantom-toast.
-  const prevMyStagesRef = useRef<PvpStatStages | null>(null);
-  const prevOppStagesRef = useRef<PvpStatStages | null>(null);
-  useEffect(() => {
-    const prevMine = prevMyStagesRef.current;
-    const prevOpp = prevOppStagesRef.current;
-    prevMyStagesRef.current = myStages;
-    prevOppStagesRef.current = oppStages;
-    if (prevMine === null || prevOpp === null) return; // skip initial mount
-    const announce = (prev: PvpStatStages, cur: PvpStatStages, mine: boolean) => {
-      (Object.keys(cur) as PvpStat[]).forEach((stat) => {
-        const delta = cur[stat] - prev[stat];
-        if (delta === 0) return;
-        const rose = delta > 0;
-        const sharp = Math.abs(delta) >= 2;
-        const subject = `${mine ? "Your" : "Opponent's"} ${STAT_FULL_LABEL[stat]}`;
-        const verb = rose ? (sharp ? "sharply rose" : "rose") : sharp ? "sharply fell" : "fell";
-        const line = `${rose ? "⬆️" : "⬇️"} ${subject} ${verb}!`;
-        notify(rose ? "success" : "warning", line);
-      });
-    };
-    announce(prevMine, myStages, true);
-    announce(prevOpp, oppStages, false);
-  }, [myStages, oppStages, notify]);
+  // Stat-stage changes are no longer toasted (they flooded the feed and Regular
+  // battle has no such toasts). The change is still visible: the ATK/DEF/SPD/CRIT
+  // chips under each HP bar (StatChips) update live, and the ability toast that
+  // caused it names the effect. Keeping this consistent with Solo.
 
   // Status-change feedback (#4 / Story 4): mirror the stat-stage diff above but
   // over the synced status lists — emit a cue on every gain/loss for either
@@ -789,44 +760,10 @@ export function LivePvpBattleScreen({
     return () => clearTimeout(t);
   }, [opponentPartnerId, displayedIndex]);
 
-  // Battle-start ability announcement (feedback b44e3b83): name whichever
-  // partners have a Signature Move so both players know what's in play. Fires
-  // once, as soon as the ability picture has settled (opponent id known, or the
-  // first question has begun for a non-legendary/unknown opponent).
-  useEffect(() => {
-    // Only after the 3-2-1 countdown (displayedIndex >= 0 = Pokémon on screen),
-    // never during it — the ability names are known at mount but must wait.
-    if (abilityAnnounceRef.current || displayedIndex < 0) return;
-    const myMove = signatureMoveName(partnerId);
-    const oppMove = signatureMoveName(opponentPartnerId);
-    if (!myMove && !oppMove) return;
-    abilityAnnounceRef.current = true;
-    if (myMove) notify("info", `⚡ Your ${myMove} is ready!`);
-    if (oppMove) notify("info", `⚡ Opponent has ${oppMove}!`);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [partnerId, opponentPartnerId, displayedIndex]);
-
-  // Type-ability "in play" announcement (feedback 29fd5d73) — parity with the
-  // signature announcement above so both players know what each side's ability
-  // does. Fires once, as soon as the picture has settled (opponent's ability
-  // known, or the first question begins for an unknown/settled opponent).
-  useEffect(() => {
-    // Gate on the countdown ending, same as the signature announcement above.
-    if (taAnnouncedRef.current || displayedIndex < 0) return;
-    const mineW = typeAbilityPvp(typeAbilityId);
-    const oppW = typeAbilityPvp(oppAbilityId);
-    if (!mineW && !oppW) return;
-    taAnnouncedRef.current = true;
-    if (typeAbilityId && mineW) {
-      const a = getAbilityById(typeAbilityId);
-      if (a) notify("info", `⚡ Your ${a.name} is ready!`);
-    }
-    if (oppAbilityId && oppW) {
-      const a = getAbilityById(oppAbilityId);
-      if (a) notify("info", `⚡ Opponent has ${a.name}!`);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [typeAbilityId, oppAbilityId, displayedIndex]);
+  // Each side's ability (signature move or type ability) is no longer announced
+  // with a start-of-battle toast — the tappable info popover on the combat panel
+  // (⚡ chip) now surfaces the name + effect on demand, which keeps the opening
+  // calm instead of firing several toasts before the first question.
 
   // Type-ability battle-start standing buff (Adaptable/Intimidate/Speed movers).
   // Server one-shots per side; fire once the first question has begun so the
@@ -839,7 +776,7 @@ export function LivePvpBattleScreen({
       if (res.ok && !res.noop) {
         applyTypeAbilityResult(res);
         const a = getAbilityById(typeAbilityId);
-        if (a) notify("success", `⚡ ${a.name} activated!`);
+        if (a) notify("success", `⚡ ${a.name} activated!`, { description: typeWiring?.note });
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1054,7 +991,7 @@ export function LivePvpBattleScreen({
         selfConfusedTicksRef.current > 0 || myStatuses.some((s) => s.kind === "confused");
       const missedFromConfusion = isConfused && Math.random() < 0.25;
       if (missedFromConfusion) {
-        notify("warning", "🌀 Confused — you missed!");
+        notify("warning", "🌀 Confused — your attack missed!");
         tickBattleStatusCure("confused");
         tickConfusedOut("self", idxAtAnswer);
         setStreak(0);
@@ -1403,6 +1340,15 @@ export function LivePvpBattleScreen({
   function handleAnswer(choiceIndex: number) {
     if (selected !== null || displayedIndex < 0 || frozen) return;
     const q = questions[displayedIndex];
+    // Haptics parity with Regular battle: a short buzz on a correct answer, a
+    // triple-buzz on a wrong one (no-op where the Vibration API is unavailable).
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      try {
+        navigator.vibrate(choiceIndex === q.correct ? 30 : [50, 30, 50]);
+      } catch {
+        /* ignore */
+      }
+    }
     setSelected(choiceIndex);
     selectedRef.current = choiceIndex;
     const elapsedMs = Date.now() - questionStartRef.current;
@@ -1773,8 +1719,8 @@ export function LivePvpBattleScreen({
             types={oppTypes}
             hp={oppHp}
             stages={oppStages}
-            statuses={oppStatusesDisplay}
-            abilityName={signatureMoveName(opponentPartnerId)}
+            abilityName={oppAbilityLabel}
+            abilityDesc={oppAbilityDesc}
           />
           <div className="mt-2">
             <ArenaSprite
@@ -1804,8 +1750,8 @@ export function LivePvpBattleScreen({
             types={myTypes}
             hp={myHp}
             stages={myStages}
-            statuses={myStatusesDisplay}
-            abilityName={signatureMoveName(partnerId)}
+            abilityName={myAbilityLabel}
+            abilityDesc={myAbilityDesc}
           />
         </div>
       </div>

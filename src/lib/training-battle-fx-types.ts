@@ -114,13 +114,26 @@ export type EmitBattleFx = (event: BattleFxEvent) => void;
 /** Toast severities a battle cue can surface. */
 export type BattleToastLevel = "info" | "success" | "warning" | "error";
 
+/** Extra presentation for a battle toast — matches Regular battle's grouped
+ * `toast(title, { description, duration })` so activation + effect read as one. */
+export interface BattleToastOptions {
+  /** Secondary line under the title (e.g. the ability's effect). */
+  description?: string | null;
+  /** Override the default battle-cue duration (ms). */
+  duration?: number;
+}
+
 /**
  * A plain battle toast (start-of-battle announcements and one-off attributions
  * that are NOT part of the frozen event union). Routed through the SAME
  * staggered queue as `emit` so every battle toast reads one-by-one instead of
  * a burst of simultaneous toasts blocking each other.
  */
-export type NotifyBattleFx = (level: BattleToastLevel, message: string) => void;
+export type NotifyBattleFx = (
+  level: BattleToastLevel,
+  message: string,
+  opts?: BattleToastOptions,
+) => void;
 
 /** Shape the UI/UX cue hook returns to the battle screen + route. */
 export interface BattleFxCueApi {

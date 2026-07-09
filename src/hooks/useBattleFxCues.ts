@@ -23,11 +23,13 @@ import { toast } from "sonner";
 
 import { ITEMS, STATUS_META } from "@/lib/game-data";
 import { getAbilityById, type AbilityId } from "@/lib/abilities";
-import { signatureMoveName } from "@/lib/signature-abilities";
+import { signatureMoveName, describeSignatureEffect } from "@/lib/signature-abilities";
+import { typeAbilityPvp } from "@/lib/pvp-type-abilities";
 import type {
   BattleFxCueApi,
   BattleFxEvent,
   BattleFxKind,
+  BattleToastOptions,
 } from "@/lib/training-battle-fx-types";
 
 type ToastLevel = "info" | "success" | "warning" | "error";
@@ -35,6 +37,8 @@ type ToastLevel = "info" | "success" | "warning" | "error";
 interface Cue {
   level: ToastLevel;
   message: string;
+  /** Secondary line — the ability's effect, so activation + effect read as one. */
+  description?: string | null;
 }
 
 /**
@@ -51,21 +55,30 @@ const KIND_ORDER: readonly BattleFxKind[] = [
   "status-applied",
 ];
 
-const DEFAULT_STAGGER_MS = 350;
+// At least ~1s between toasts so a burst never stacks up and blocks the last
+// one before it can be read (feedback: toasts were overwhelming at 350ms).
+const DEFAULT_STAGGER_MS = 1200;
+// Battle-cue lifetime — short enough that a paced sequence never piles up, in
+// the same ballpark as Regular battle's ability toasts (2200ms).
+const DEFAULT_DURATION_MS = 2600;
 
-function showToast(level: ToastLevel, message: string): void {
+function showToast(level: ToastLevel, message: string, opts?: BattleToastOptions): void {
+  const o = {
+    description: opts?.description ?? undefined,
+    duration: opts?.duration ?? DEFAULT_DURATION_MS,
+  };
   switch (level) {
     case "success":
-      toast.success(message);
+      toast.success(message, o);
       break;
     case "warning":
-      toast.warning(message);
+      toast.warning(message, o);
       break;
     case "error":
-      toast.error(message);
+      toast.error(message, o);
       break;
     default:
-      toast.info(message);
+      toast.info(message, o);
   }
 }
 
@@ -99,35 +112,33 @@ function resolveCue(event: BattleFxEvent): Cue | null {
     case "type-ability": {
       const ability = getAbilityById(event.abilityId as AbilityId);
       if (!ability) return null;
-      if (mine) {
-        return {
-          level: "success",
-          message: event.hitsOpponent ? `⚡ ${ability.name} — hit them!` : `⚡ ${ability.name} activated!`,
-        };
-      }
-      return {
-        level: "warning",
-        message: event.hitsOpponent
-          ? `⚡ Opponent's ${ability.name} hit you!`
-          : `⚡ Opponent's ${ability.name} activated!`,
-      };
+      // Group activation + effect into ONE toast (title + description), matching
+      // Regular battle's `toast.info(name activated, { description })`.
+      const effect = typeAbilityPvp(event.abilityId as AbilityId)?.note ?? ability.description;
+      return mine
+        ? { level: "success", message: `⚡ ${ability.name} activated!`, description: effect }
+        : { level: "warning", message: `⚡ Opponent's ${ability.name}!`, description: effect };
     }
 
     case "signature": {
       const move = signatureMoveName(event.partnerId);
       if (!move) return null;
-      if (mine) {
-        return { level: "success", message: `✨ ${move}!` };
-      }
-      return {
-        level: "warning",
-        message: event.hitsOpponent ? `✨ Opponent's ${move} hit you!` : `✨ Opponent's ${move}!`,
-      };
+      const effect = describeSignatureEffect(event.partnerId);
+      return mine
+        ? { level: "success", message: `✨ ${move}!`, description: effect }
+        : { level: "warning", message: `✨ Opponent's ${move}!`, description: effect };
     }
 
     case "status-applied": {
       const meta = STATUS_META[event.status];
       const label = meta.label.toLowerCase();
+      // Confused reads like Regular battle's "🌀 Confused! Some correct answers
+      // may miss." rather than the generic status line.
+      if (event.status === "confused") {
+        return mine
+          ? { level: "warning", message: "🌀 Confused!", description: "Some correct answers may miss." }
+          : { level: "success", message: "🌀 Opponent is confused!" };
+      }
       const dur =
         typeof event.durationTicks === "number" && event.durationTicks > 0
           ? ` (${event.durationTicks} question${event.durationTicks === 1 ? "" : "s"})`
@@ -223,7 +234,7 @@ export function useBattleFxCues(options?: { staggerMs?: number }): BattleFxCueAp
 
       queueRef.current.push({
         order: KIND_ORDER.indexOf(event.kind),
-        show: () => showToast(cue.level, cue.message),
+        show: () => showToast(cue.level, cue.message, { description: cue.description }),
       });
       scheduleFlush(0);
     },
@@ -235,10 +246,10 @@ export function useBattleFxCues(options?: { staggerMs?: number }): BattleFxCueAp
   // simultaneously with the cues. Ordered after the event kinds so, in a
   // same-tick batch, the slot's resolved cues lead and the announcement trails.
   const notify = React.useCallback(
-    (level: ToastLevel, message: string) => {
+    (level: ToastLevel, message: string, opts?: BattleToastOptions) => {
       queueRef.current.push({
         order: KIND_ORDER.length,
-        show: () => showToast(level, message),
+        show: () => showToast(level, message, opts),
       });
       scheduleFlush(0);
     },
