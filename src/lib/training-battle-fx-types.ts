@@ -111,7 +111,19 @@ export type BattleFxEvent =
  */
 export type EmitBattleFx = (event: BattleFxEvent) => void;
 
+/** Toast severities a battle cue can surface. */
+export type BattleToastLevel = "info" | "success" | "warning" | "error";
+
+/**
+ * A plain battle toast (start-of-battle announcements and one-off attributions
+ * that are NOT part of the frozen event union). Routed through the SAME
+ * staggered queue as `emit` so every battle toast reads one-by-one instead of
+ * a burst of simultaneous toasts blocking each other.
+ */
+export type NotifyBattleFx = (level: BattleToastLevel, message: string) => void;
+
 /** Shape the UI/UX cue hook returns to the battle screen + route. */
 export interface BattleFxCueApi {
   emit: EmitBattleFx;
+  notify: NotifyBattleFx;
 }

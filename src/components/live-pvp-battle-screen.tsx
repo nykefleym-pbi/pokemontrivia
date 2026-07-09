@@ -60,7 +60,6 @@ import {
 import {
   signatureAbilityFor,
   signatureMoveName,
-  describeSignatureEffect,
   evaluateHitModifiers,
   evaluatePostAnswer,
   evaluatePassiveDamageSideEffects,
@@ -463,8 +462,9 @@ export function LivePvpBattleScreen({
   const botBattleStartRef = useRef(false);
 
   // Single cue path (spec Stories 2-7): every player-visible combat cue funnels
-  // through this `emit` (frozen contract), instead of ad-hoc toast.* calls.
-  const { emit } = useBattleFxCues();
+  // through `emit`/`notify` (frozen contract) — one staggered one-by-one queue,
+  // never ad-hoc simultaneous toast.* calls.
+  const { emit, notify } = useBattleFxCues();
 
   // Confused-after-2-consecutive-wrong (#1) — client-authoritative for BOTH
   // sides. Held locally (never written to the synced status row, so realtime
@@ -565,7 +565,7 @@ export function LivePvpBattleScreen({
     const finishTransform = () => {
       setTransformTargetId(target);
       const move = signatureMoveName(target);
-      if (move) toast.success(`✨ Transform — Mew copies ${move}!`);
+      if (move) notify("success", `✨ Mew copied ${move}!`);
     };
     if (target != null) {
       void setLivePvpTransform(matchId, target).then(finishTransform, finishTransform);
@@ -578,21 +578,21 @@ export function LivePvpBattleScreen({
   // Apply the partner's battle-start standing buff exactly once (server guards
   // against a double-apply via host/guest_ability_started too).
   useEffect(() => {
-    if (battleStartFiredRef.current || !ability || ability.wiring !== "battle_start") return;
+    // Wait for the 3-2-1 countdown to end (displayedIndex >= 0 = Pokémon on
+    // screen) before announcing, so the battle-start buff never toasts mid-countdown.
+    if (battleStartFiredRef.current || displayedIndex < 0) return;
+    if (!ability || ability.wiring !== "battle_start") return;
     if (evaluateBattleStart(ability, pokedexCount).length === 0) return;
     battleStartFiredRef.current = true;
     void applyPvpSignatureEffect(matchId, 0, partnerId as number, "battle_start", pokedexCount).then(
       (res) => {
         if (res.ok && !res.noop) {
           const move = signatureMoveName(partnerId);
-          if (move) {
-            const desc = describeSignatureEffect(partnerId);
-            toast.success(desc ? `✨ ${move} — ${desc}!` : `✨ ${move} activates!`);
-          }
+          if (move) notify("success", `✨ ${move} activated!`);
         }
       },
     );
-  }, [ability, matchId, partnerId, pokedexCount]);
+  }, [ability, matchId, partnerId, pokedexCount, displayedIndex, notify]);
 
   // Phase 1 — hydrate Moltres's Wrath stacks from the authoritative row once,
   // as soon as the partner is known to be Moltres (dex 146; possibly via Mew's
@@ -622,10 +622,7 @@ export function LivePvpBattleScreen({
       if (res.ok && !res.noop) {
         applyAbilityResult(res);
         const move = signatureMoveName(partnerId);
-        if (move) {
-          const desc = describeSignatureEffect(partnerId);
-          toast.success(desc ? `✨ ${move} — ${desc}!` : `✨ ${move} — you pre-empt the opponent!`);
-        }
+        if (move) notify("success", `✨ ${move} struck first!`);
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -694,13 +691,12 @@ export function LivePvpBattleScreen({
         const subject = `${mine ? "Your" : "Opponent's"} ${STAT_FULL_LABEL[stat]}`;
         const verb = rose ? (sharp ? "sharply rose" : "rose") : sharp ? "sharply fell" : "fell";
         const line = `${rose ? "⬆️" : "⬇️"} ${subject} ${verb}!`;
-        if (rose) toast.success(line);
-        else toast.warning(line);
+        notify(rose ? "success" : "warning", line);
       });
     };
     announce(prevMine, myStages, true);
     announce(prevOpp, oppStages, false);
-  }, [myStages, oppStages]);
+  }, [myStages, oppStages, notify]);
 
   // Status-change feedback (#4 / Story 4): mirror the stat-stage diff above but
   // over the synced status lists — emit a cue on every gain/loss for either
@@ -757,8 +753,8 @@ export function LivePvpBattleScreen({
   useEffect(() => {
     if (partnerId !== 250 || !myRevived || rainbowRebirthToastedRef.current) return;
     rainbowRebirthToastedRef.current = true;
-    toast.success("🌈 Ho-Oh's Rainbow Rebirth — you rise from the ashes!");
-  }, [myRevived, partnerId]);
+    notify("success", "🌈 Ho-Oh revived you!");
+  }, [myRevived, partnerId, notify]);
 
   useEffect(() => {
     const iv = setInterval(() => setNow(Date.now()), 100);
@@ -798,13 +794,15 @@ export function LivePvpBattleScreen({
   // once, as soon as the ability picture has settled (opponent id known, or the
   // first question has begun for a non-legendary/unknown opponent).
   useEffect(() => {
-    if (abilityAnnounceRef.current) return;
+    // Only after the 3-2-1 countdown (displayedIndex >= 0 = Pokémon on screen),
+    // never during it — the ability names are known at mount but must wait.
+    if (abilityAnnounceRef.current || displayedIndex < 0) return;
     const myMove = signatureMoveName(partnerId);
     const oppMove = signatureMoveName(opponentPartnerId);
-    if (opponentPartnerId == null && displayedIndex < 0 && !myMove) return;
+    if (!myMove && !oppMove) return;
     abilityAnnounceRef.current = true;
-    if (myMove) toast.info(`⚡ Your ${myMove} is in play!`);
-    if (oppMove) toast.info(`⚡ Opponent's ${oppMove} is in play!`);
+    if (myMove) notify("info", `⚡ Your ${myMove} is ready!`);
+    if (oppMove) notify("info", `⚡ Opponent has ${oppMove}!`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [partnerId, opponentPartnerId, displayedIndex]);
 
@@ -813,18 +811,19 @@ export function LivePvpBattleScreen({
   // does. Fires once, as soon as the picture has settled (opponent's ability
   // known, or the first question begins for an unknown/settled opponent).
   useEffect(() => {
-    if (taAnnouncedRef.current) return;
+    // Gate on the countdown ending, same as the signature announcement above.
+    if (taAnnouncedRef.current || displayedIndex < 0) return;
     const mineW = typeAbilityPvp(typeAbilityId);
     const oppW = typeAbilityPvp(oppAbilityId);
-    if (!mineW && oppAbilityId == null && displayedIndex < 0) return;
+    if (!mineW && !oppW) return;
     taAnnouncedRef.current = true;
     if (typeAbilityId && mineW) {
       const a = getAbilityById(typeAbilityId);
-      if (a) toast.info(`⚡ Your ${a.name} is in play — ${mineW.note}`);
+      if (a) notify("info", `⚡ Your ${a.name} is ready!`);
     }
     if (oppAbilityId && oppW) {
       const a = getAbilityById(oppAbilityId);
-      if (a) toast.info(`⚡ Opponent's ${a.name} is in play — ${oppW.note}`);
+      if (a) notify("info", `⚡ Opponent has ${a.name}!`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [typeAbilityId, oppAbilityId, displayedIndex]);
@@ -840,7 +839,7 @@ export function LivePvpBattleScreen({
       if (res.ok && !res.noop) {
         applyTypeAbilityResult(res);
         const a = getAbilityById(typeAbilityId);
-        if (a) toast.success(`⚡ ${a.name} — ${typeWiring?.note ?? "activated"}!`);
+        if (a) notify("success", `⚡ ${a.name} activated!`);
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -886,7 +885,7 @@ export function LivePvpBattleScreen({
         if (wrongs.length > 0) {
           setRevealedWrong(wrongs[Math.floor(Math.random() * wrongs.length)]);
           const a = getAbilityById(typeAbilityId);
-          if (a && typeWiring.fireNote) toast.info(typeWiring.fireNote);
+          if (a && typeWiring.fireNote) notify("info", typeWiring.fireNote);
         }
       }
     }
@@ -1055,7 +1054,7 @@ export function LivePvpBattleScreen({
         selfConfusedTicksRef.current > 0 || myStatuses.some((s) => s.kind === "confused");
       const missedFromConfusion = isConfused && Math.random() < 0.25;
       if (missedFromConfusion) {
-        toast.warning("🌀 Confused — your attack missed!");
+        notify("warning", "🌀 Confused — you missed!");
         tickBattleStatusCure("confused");
         tickConfusedOut("self", idxAtAnswer);
         setStreak(0);
@@ -1097,7 +1096,7 @@ export function LivePvpBattleScreen({
           const desc = describeHitModifiers(abilityMods);
           if (desc) {
             const move = signatureMoveName(partnerId);
-            if (move) toast.success(`✨ ${move} — ${desc}!`);
+            if (move) notify("success", `✨ ${move} — ${desc}!`);
           }
         }
         // Fold in any armed client-side manual one-hit modifier (Psystrike /
@@ -1130,7 +1129,7 @@ export function LivePvpBattleScreen({
           wrathStacksRef.current = 0;
           void applyPvpSignatureEffect(matchId, idxAtAnswer, 146, "sig_state", 0);
           const move = signatureMoveName(146);
-          if (move) toast.success(`✨ ${move} — Wrath unleashed!`);
+          if (move) notify("success", `✨ ${move} — Wrath unleashed!`);
           if (Math.random() < discharge.sleepChance) {
             void applyPvpSignatureEffect(matchId, idxAtAnswer, 146, "post_answer").then(
               applyAbilityResult,
@@ -1258,7 +1257,7 @@ export function LivePvpBattleScreen({
         ) {
           selfDmg = myHp - 1;
           sturdyUsedRef.current = true;
-          if (typeWiring.fireNote) toast.success(typeWiring.fireNote);
+          if (typeWiring.fireNote) notify("success", typeWiring.fireNote);
         }
         // Sand Force — the first two wrong answers don't break the streak.
         if (typeWiring.keepsStreakOnWrong?.(wrongCountRef.current + 1)) {
@@ -1309,7 +1308,7 @@ export function LivePvpBattleScreen({
       if (suppressToastedForRef.current !== mySuppressedUntil) {
         suppressToastedForRef.current = mySuppressedUntil;
         const move = signatureMoveName(partnerId);
-        toast.warning(`🔒 ${move ?? "Your signature move"} is suppressed!`);
+        notify("warning", `🔒 ${move ?? "Signature move"} suppressed!`);
       }
     } else if (!frozen && ability && ability.wiring === "post_answer") {
       const totalMs = personalTimerMs;
@@ -1334,7 +1333,7 @@ export function LivePvpBattleScreen({
           (match.hostPartnerId === 384 || match.guestPartnerId === 384)
         ) {
           weatherNegatedToastedRef.current = true;
-          toast.warning("🌪️ Air Lock — Rayquaza negates the weather!");
+          notify("warning", "🌪️ Rayquaza negated the weather!");
         }
       } else if (postEffects.length > 0) {
         void applyPvpSignatureEffect(matchId, idxAtAnswer, partnerId as number, "post_answer").then(
@@ -1387,7 +1386,7 @@ export function LivePvpBattleScreen({
         myNewHp > 0
       ) {
         rainbowRebirthToastedRef.current = true;
-        toast.success("🌈 Ho-Oh's Rainbow Rebirth — you rise from the ashes!");
+        notify("success", "🌈 Ho-Oh revived you!");
       }
       setMyHp(amIHost ? res.hostHp : res.guestHp);
       setOppHp(amIHost ? res.guestHp : res.hostHp);
@@ -1622,7 +1621,7 @@ export function LivePvpBattleScreen({
     // also refuses), and we surface a distinct locked toast.
     if (displayedIndex >= 0 && displayedIndex < mySuppressedUntil) {
       const move = signatureMoveName(partnerId);
-      toast.warning(`🔒 ${move ?? "Your signature move"} is suppressed!`);
+      notify("warning", `🔒 ${move ?? "Signature move"} suppressed!`);
       return;
     }
 
@@ -1637,7 +1636,7 @@ export function LivePvpBattleScreen({
       setManualFiresUsed((n) => n + 1);
       playSfx("item_use");
       const move = signatureMoveName(partnerId);
-      if (move) toast.success(`✨ ${move} — armed! Your next correct answer strikes hard.`);
+      if (move) notify("success", `✨ ${move} armed!`);
       return;
     }
 

@@ -22,10 +22,8 @@ import * as React from "react";
 import { toast } from "sonner";
 
 import { ITEMS, STATUS_META } from "@/lib/game-data";
-import { BAG_SHORT_DESC } from "@/lib/item-categories";
 import { getAbilityById, type AbilityId } from "@/lib/abilities";
-import { typeAbilityPvp } from "@/lib/pvp-type-abilities";
-import { signatureMoveName, describeSignatureEffect } from "@/lib/signature-abilities";
+import { signatureMoveName } from "@/lib/signature-abilities";
 import type {
   BattleFxCueApi,
   BattleFxEvent,
@@ -83,46 +81,48 @@ function resolveCue(event: BattleFxEvent): Cue | null {
     case "item": {
       const def = ITEMS.find((i) => i.id === event.itemId);
       if (!def) return null;
-      const effect = BAG_SHORT_DESC[def.id] ?? def.desc;
       if (mine) {
         return {
           // Offensive berry reads as a positive action; self buffs/reveals stay
           // low-key info — matches the shipped local-item toast levels.
           level: event.hitsOpponent ? "success" : "info",
           message: event.hitsOpponent
-            ? `${def.emoji} You used ${def.name} on the opponent — ${effect}`
-            : `${def.emoji} You used ${def.name} — ${effect}`,
+            ? `${def.emoji} You used ${def.name} on the opponent!`
+            : `${def.emoji} You used ${def.name}.`,
         };
       }
       return event.hitsOpponent
-        ? {
-            level: "warning",
-            message: `${def.emoji} Opponent used ${def.name} — affects YOU! ${effect}`,
-          }
-        : { level: "info", message: `${def.emoji} Opponent used ${def.name} — ${effect}` };
+        ? { level: "warning", message: `${def.emoji} Opponent's ${def.name} hit you!` }
+        : { level: "info", message: `${def.emoji} Opponent used ${def.name}.` };
     }
 
     case "type-ability": {
       const ability = getAbilityById(event.abilityId as AbilityId);
       if (!ability) return null;
-      const wiring = typeAbilityPvp(event.abilityId as AbilityId);
-      const owner = mine ? "Your" : "Opponent's";
-      const base = wiring ? `${owner} ${ability.name} — ${wiring.note}` : `${owner} ${ability.name} activates`;
       if (mine) {
-        return { level: "success", message: `⚡ ${base}${event.hitsOpponent ? " — affects them!" : ""}` };
+        return {
+          level: "success",
+          message: event.hitsOpponent ? `⚡ ${ability.name} — hit them!` : `⚡ ${ability.name} activated!`,
+        };
       }
-      return { level: "warning", message: `⚡ ${base} — affects ${event.hitsOpponent ? "YOU" : "them"}!` };
+      return {
+        level: "warning",
+        message: event.hitsOpponent
+          ? `⚡ Opponent's ${ability.name} hit you!`
+          : `⚡ Opponent's ${ability.name} activated!`,
+      };
     }
 
     case "signature": {
       const move = signatureMoveName(event.partnerId);
       if (!move) return null;
-      const desc = describeSignatureEffect(event.partnerId);
       if (mine) {
-        return { level: "success", message: desc ? `✨ ${move} — ${desc}!` : `✨ ${move} activates!` };
+        return { level: "success", message: `✨ ${move}!` };
       }
-      const base = desc ? `Opponent's ${move} — ${desc}` : `Opponent's ${move} activates`;
-      return { level: "warning", message: `✨ ${base} — affects ${event.hitsOpponent ? "YOU" : "them"}!` };
+      return {
+        level: "warning",
+        message: event.hitsOpponent ? `✨ Opponent's ${move} hit you!` : `✨ Opponent's ${move}!`,
+      };
     }
 
     case "status-applied": {
@@ -142,7 +142,7 @@ function resolveCue(event: BattleFxEvent): Cue | null {
       const label = meta.label.toLowerCase();
       return mine
         ? { level: "success", message: `${meta.emoji} You're no longer ${label}.` }
-        : { level: "info", message: `${meta.emoji} Opponent is no longer ${label}.` };
+        : { level: "info", message: `${meta.emoji} Opponent's ${label} wore off.` };
     }
 
     case "answer-result": {
@@ -150,8 +150,8 @@ function resolveCue(event: BattleFxEvent): Cue | null {
       // through the HP bars / streak UI, so toasting every answer would flood.
       if (!event.noAnswer) return null;
       return mine
-        ? { level: "error", message: "⏱️ No answer — counted incorrect." }
-        : { level: "info", message: "⏱️ Opponent didn't answer — counted incorrect." };
+        ? { level: "error", message: "⏱️ No answer — counted wrong." }
+        : { level: "info", message: "⏱️ Opponent didn't answer." };
     }
   }
 }
@@ -205,22 +205,13 @@ export function useBattleFxCues(options?: { staggerMs?: number }): BattleFxCueAp
 
   const emit = React.useCallback(
     (event: BattleFxEvent) => {
-      // Slot advance: reset dedupe, then FLUSH (not drop) any cues still queued
-      // from the prior slot. Discarding them here could swallow a just-queued
-      // Must-story cue — e.g. the "No answer — counted incorrect" toast emitted
-      // by the wall-clock ceiling a moment before the new slot's first cue
-      // arrives. Release them now in their stable order (the stagger only ever
-      // applied within a single slot).
+      // Slot advance: reset dedupe only. Any cues still queued from the prior
+      // slot stay in the queue and keep draining one-by-one through the stagger
+      // (they are never dropped), so a slot boundary no longer dumps a burst of
+      // simultaneous toasts that block each other.
       if (event.questionIndex > slotRef.current) {
         slotRef.current = event.questionIndex;
         seenKeysRef.current.clear();
-        const pending = queueRef.current;
-        queueRef.current = [];
-        if (pending.length > 0) {
-          pending.sort((a, b) => a.order - b.order);
-          for (const item of pending) item.show();
-          lastShownRef.current = Date.now();
-        }
       }
       // Idempotency: the same underlying effect (e.g. a bot row arriving via both
       // the broadcast and a row-diff) toasts at most once per slot.
@@ -239,11 +230,26 @@ export function useBattleFxCues(options?: { staggerMs?: number }): BattleFxCueAp
     [scheduleFlush],
   );
 
+  // Plain battle toast (start-of-battle announcements, one-off attributions):
+  // routed through the SAME staggered queue as `emit` so it never bursts
+  // simultaneously with the cues. Ordered after the event kinds so, in a
+  // same-tick batch, the slot's resolved cues lead and the announcement trails.
+  const notify = React.useCallback(
+    (level: ToastLevel, message: string) => {
+      queueRef.current.push({
+        order: KIND_ORDER.length,
+        show: () => showToast(level, message),
+      });
+      scheduleFlush(0);
+    },
+    [scheduleFlush],
+  );
+
   React.useEffect(() => {
     return () => {
       if (flushTimerRef.current !== null) clearTimeout(flushTimerRef.current);
     };
   }, []);
 
-  return React.useMemo(() => ({ emit }), [emit]);
+  return React.useMemo(() => ({ emit, notify }), [emit, notify]);
 }
