@@ -2,6 +2,7 @@ import { type ReactNode } from "react";
 import { motion } from "framer-motion";
 import { Share2 } from "lucide-react";
 import { PokemonSprite } from "@/components/game-ui";
+import { MissedReview } from "@/components/MissedReview";
 import { Button } from "@/components/ui/button";
 
 export function ResultScreen({
@@ -182,8 +183,6 @@ export function ResultScreen({
   }
 
   // DEFEAT
-  const shown = missed.slice(0, 5);
-  const more = Math.max(0, missed.length - shown.length);
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -218,35 +217,16 @@ export function ResultScreen({
         </div>
       </div>
 
-      <div className="mx-auto mt-6 w-full max-w-sm rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-        <div className="font-pixel-xs uppercase tracking-wider text-white/60">
-          Review · {missed.length} Missed
-        </div>
-        <div className="mt-3 space-y-2.5">
-          {shown.length === 0 ? (
-            <p className="text-sm text-white/70">No wrong answers — the clock got you!</p>
-          ) : (
-            shown.map((m, i) => (
-              <div key={i} className="flex items-start gap-2.5">
-                <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-destructive/80 text-[10px] font-bold text-white">
-                  ✕
-                </span>
-                <p className="line-clamp-2 text-[13px] leading-snug text-white/90">
-                  <span className="font-semibold">{m.correctAnswer}</span>
-                  {m.explanation ? <span className="text-white/60"> — {m.explanation}</span> : null}
-                </p>
-              </div>
-            ))
-          )}
-          {more > 0 && <p className="text-xs italic text-white/45">and {more} more…</p>}
-        </div>
-        <div className="my-3 border-t border-dashed border-white/10" />
-        <p className="text-xs text-white/70">
-          Consolation: <span className="font-bold text-poke-yellow">+{xpEarned} XP</span>
-          {" · "}
-          {streakKept ? "streak kept 🔥" : "streak reset"}
-        </p>
-      </div>
+      <MissedReview
+        missed={missed}
+        footer={
+          <p className="text-xs text-white/70">
+            Consolation: <span className="font-bold text-poke-yellow">+{xpEarned} XP</span>
+            {" · "}
+            {streakKept ? "streak kept 🔥" : "streak reset"}
+          </p>
+        }
+      />
 
       <div className="mx-auto mt-auto w-full max-w-sm space-y-2 pt-8">
         <Button

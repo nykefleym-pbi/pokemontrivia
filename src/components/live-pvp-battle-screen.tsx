@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { Backpack, Info } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import type { Trivia } from "@/lib/trivia-core";
+import type { Trivia, MissedAnswer } from "@/lib/trivia-core";
 import { shuffleAllTriviaOptions } from "@/lib/trivia-core";
 import { playSfx, playCry } from "@/lib/audio";
 import { useGameStore, type ActiveStatus, type PvpStatStages } from "@/lib/store";
@@ -104,6 +104,10 @@ interface Props {
   match: LivePvpMatch;
   opponentName: string;
   onFinish: (result: LivePvpBattleResult) => void;
+  /** Called as each of MY questions resolves wrong (real wrong or timeout/no-
+   * answer), so the route can retain the missed list above the battle→result
+   * unmount for the defeat review. Never fires for a correct/confusion-miss. */
+  onMissed?: (m: MissedAnswer) => void;
 }
 
 /** Non-battle items usable in Nearby Battle without a server round-trip
@@ -151,28 +155,29 @@ function StatChips({ stages }: { stages: PvpStatStages }) {
 /** Solo-style CombatPanel adapted for Nearby Battle: same card frame, type
  * badges, and spring HP bar as `battle-screen.tsx`'s CombatPanel, but carrying
  * PvP's stat-stage and status chips instead of ability/immunity chips. */
+/** One ability chip+popover in a combat panel (a legendary shows two). */
+type AbilityChip = { name: string; desc: string | null };
+
 function PvpCombatPanel({
   align,
   name,
   types,
   hp,
   stages,
-  abilityName,
-  abilityDesc,
+  abilities = [],
 }: {
   align: "left" | "right";
   name: string;
   types: PokeType[];
   hp: number;
   stages: PvpStatStages;
-  abilityName?: string | null;
-  abilityDesc?: string | null;
+  abilities?: AbilityChip[];
 }) {
   const pct = Math.max(0, Math.min(100, (hp / PVP_MAX_HP) * 100));
   const barColor = pct > 50 ? "bg-hp-good" : pct > 20 ? "bg-hp-warn" : "bg-hp-low";
   const alignCls = align === "right" ? "items-end text-right" : "items-start text-left";
   const justifyCls = align === "right" ? "justify-end" : "justify-start";
-  const hasChips = !!abilityName || (Object.values(stages) as number[]).some((v) => v !== 0);
+  const hasChips = abilities.length > 0 || (Object.values(stages) as number[]).some((v) => v !== 0);
 
   return (
     <div className="w-[clamp(8rem,38vw,10.5rem)] shrink-0 rounded-2xl bg-card px-3 py-2 backdrop-blur shadow-card">
@@ -200,23 +205,23 @@ function PvpCombatPanel({
         </div>
         {hasChips && (
           <div className={`mt-1 flex w-full flex-wrap items-center gap-0.5 ${justifyCls}`}>
-            {abilityName && (
-              <Popover>
+            {abilities.map((a, i) => (
+              <Popover key={`${a.name}-${i}`}>
                 <PopoverTrigger asChild>
                   <button
                     type="button"
                     className="flex max-w-full items-center gap-0.5 overflow-hidden rounded-full bg-primary/10 px-1.5 py-[2px] text-[9px] font-bold uppercase tracking-wide text-primary active:scale-95"
                   >
-                    <span className="truncate">⚡ {abilityName}</span>
+                    <span className="truncate">⚡ {a.name}</span>
                     <Info className="h-2.5 w-2.5 shrink-0 opacity-70" />
                   </button>
                 </PopoverTrigger>
                 <PopoverContent align={align === "right" ? "end" : "start"} className="w-56 text-xs">
-                  <div className="font-bold text-primary">⚡ {abilityName}</div>
-                  {abilityDesc && <p className="mt-1 leading-snug text-muted-foreground">{abilityDesc}</p>}
+                  <div className="font-bold text-primary">⚡ {a.name}</div>
+                  {a.desc && <p className="mt-1 leading-snug text-muted-foreground">{a.desc}</p>}
                 </PopoverContent>
               </Popover>
-            )}
+            ))}
             <StatChips stages={stages} />
           </div>
         )}
@@ -304,6 +309,7 @@ export function LivePvpBattleScreen({
   match,
   opponentName,
   onFinish,
+  onMissed,
 }: Props) {
   // Shared question set, per-client option order (answers are submitted as
   // correct/incorrect booleans, never as option indexes, so this is safe).
@@ -342,39 +348,53 @@ export function LivePvpBattleScreen({
   const partnerId = rawPartnerId === MEW_ID && transformTargetId != null ? transformTargetId : rawPartnerId;
   const ability = useMemo(() => signatureAbilityFor(partnerId), [partnerId]);
 
-  // Non-legendary partners run a TYPE ability instead of a signature (feedback
-  // 29fd5d73). The two are mutually exclusive: `typeAbilityId` is only resolved
-  // when there is no signature, so every signature codepath below stays a no-op
-  // for a type-ability partner (they all gate on `ability`). The opponent's id
-  // is read off the synced row so we can announce/attribute it.
+  // Every partner runs its TYPE ability (feedback 29fd5d73); a Legendary/Mythical
+  // ALSO runs its signature (feedback #3 — the two used to be mutually exclusive
+  // but now stack). `typeAbilityId` resolves unconditionally, and the signature
+  // codepaths gate independently on `ability`, so both ability blocks fold into
+  // the same dmg/selfDmg locals below. The opponent's id is read off the synced
+  // row so we can announce/attribute it.
   const storeAbilityId = useGameStore((s) => s.abilityId);
   const typeAbilityId = useMemo<AbilityId | null>(
-    () => (ability ? null : resolvePvpTypeAbilityId(myPokemon?.types, storeAbilityId)),
-    [ability, myPokemon, storeAbilityId],
+    () => resolvePvpTypeAbilityId(myPokemon?.types, storeAbilityId),
+    [myPokemon, storeAbilityId],
   );
   const typeWiring = useMemo(() => typeAbilityPvp(typeAbilityId), [typeAbilityId]);
   const oppAbilityId = (amIHost ? match.guestAbilityId : match.hostAbilityId) as AbilityId | null;
 
-  // Ability shown in each combat panel's tappable info popover: the signature
-  // move for a legendary partner, otherwise the non-legendary type ability. The
-  // description is the PvP-specific note (falls back to the Solo ability text).
-  const myAbilityLabel = ability
-    ? signatureMoveName(partnerId)
-    : typeAbilityId
-      ? getAbilityById(typeAbilityId)?.name ?? null
-      : null;
-  const myAbilityDesc = ability
-    ? describeSignatureEffect(partnerId)
-    : typeAbilityId
-      ? typeWiring?.note ?? getAbilityById(typeAbilityId)?.description ?? null
-      : null;
-  const oppSigMove = signatureMoveName(opponentPartnerId);
-  const oppAbilityLabel = oppSigMove ?? (oppAbilityId ? getAbilityById(oppAbilityId)?.name ?? null : null);
-  const oppAbilityDesc = oppSigMove
-    ? describeSignatureEffect(opponentPartnerId)
-    : oppAbilityId
-      ? typeAbilityPvp(oppAbilityId)?.note ?? getAbilityById(oppAbilityId)?.description ?? null
-      : null;
+  // Abilities shown in each combat panel's tappable info popover(s). A legendary
+  // partner now surfaces BOTH its signature AND its type ability (feedback #3);
+  // a non-legendary surfaces only its type ability. Signature description is the
+  // PvP-specific note; type description falls back to the Solo ability text.
+  const myAbilities = useMemo<AbilityChip[]>(() => {
+    const chips: AbilityChip[] = [];
+    if (ability) {
+      const name = signatureMoveName(partnerId);
+      if (name) chips.push({ name, desc: describeSignatureEffect(partnerId) });
+    }
+    if (typeAbilityId) {
+      const name = getAbilityById(typeAbilityId)?.name ?? null;
+      if (name) {
+        chips.push({ name, desc: typeWiring?.note ?? getAbilityById(typeAbilityId)?.description ?? null });
+      }
+    }
+    return chips;
+  }, [ability, partnerId, typeAbilityId, typeWiring]);
+  const oppAbilities = useMemo<AbilityChip[]>(() => {
+    const chips: AbilityChip[] = [];
+    const oppSigMove = signatureMoveName(opponentPartnerId);
+    if (oppSigMove) chips.push({ name: oppSigMove, desc: describeSignatureEffect(opponentPartnerId) });
+    if (oppAbilityId) {
+      const name = getAbilityById(oppAbilityId)?.name ?? null;
+      if (name) {
+        chips.push({
+          name,
+          desc: typeAbilityPvp(oppAbilityId)?.note ?? getAbilityById(oppAbilityId)?.description ?? null,
+        });
+      }
+    }
+    return chips;
+  }, [opponentPartnerId, oppAbilityId]);
 
   const startedAtMs = useRef(new Date(startedAt).getTime()).current;
   const [now, setNow] = useState(() => Date.now());
@@ -1107,6 +1127,22 @@ export function LivePvpBattleScreen({
       }
     } else {
       setStreak(0);
+      // Retain this miss for the defeat-screen review (feedback #1), mirroring
+      // Solo's `missedRef` push (battle-screen.tsx:887-891). Every wrong path —
+      // a real wrong answer, the no-answer ceiling resolve (#6), and the
+      // personal-timeout — routes through this single `else`, and the
+      // lastResolvedIdxRef guard above means each slot reaches here at most once,
+      // so the route accumulates one entry per missed question with no dupes.
+      // Lifted to route state (not `onFinish`) so it survives the opponent-
+      // resolves-the-match unmount.
+      const missedQ = questions[idxAtAnswer];
+      if (missedQ) {
+        onMissed?.({
+          question: missedQ.question,
+          correctAnswer: missedQ.options[missedQ.correct],
+          explanation: missedQ.explanation,
+        });
+      }
       // Consecutive-wrong → confused (#1), mirroring Solo (battle-screen.tsx
       // :1035-1041). A genuine wrong answer builds the streak; at 2 the human
       // becomes confused. The no-answer ceiling resolve (#6) feeds this path too.
@@ -1126,10 +1162,11 @@ export function LivePvpBattleScreen({
       }
     }
 
-    // ── Non-legendary TYPE ability wiring (feedback 29fd5d73) ─────────────────
+    // ── TYPE ability wiring (feedback 29fd5d73) ───────────────────────────────
     // Pure damage/self-damage tweaks are folded client-side (server-clamped);
-    // heals/stats/statuses/cures/chip route through the server catalog. No-op
-    // for a legendary partner (typeAbilityId is null when a signature exists).
+    // heals/stats/statuses/cures/chip route through the server catalog. Fires for
+    // EVERY partner now, including legendaries — it stacks on top of the signature
+    // block above (feedback #3), both folding into the same dmg/selfDmg locals.
     if (typeAbilityId && typeWiring && !frozen) {
       const hasConfused = myStatuses.some((s) => s.kind === "confused");
       const hasPoisoned = myStatuses.some(
@@ -1719,8 +1756,7 @@ export function LivePvpBattleScreen({
             types={oppTypes}
             hp={oppHp}
             stages={oppStages}
-            abilityName={oppAbilityLabel}
-            abilityDesc={oppAbilityDesc}
+            abilities={oppAbilities}
           />
           <div className="mt-2">
             <ArenaSprite
@@ -1750,8 +1786,7 @@ export function LivePvpBattleScreen({
             types={myTypes}
             hp={myHp}
             stages={myStages}
-            abilityName={myAbilityLabel}
-            abilityDesc={myAbilityDesc}
+            abilities={myAbilities}
           />
         </div>
       </div>

@@ -13,6 +13,18 @@ export interface Trivia {
   category: string;
 }
 
+/**
+ * A question the player answered incorrectly, retained for the post-battle
+ * review shown on a defeat screen (Solo `ResultScreen` and Nearby/Training
+ * `PvpResultScreen`). `correctAnswer` is the option text after per-client
+ * shuffle (see `shuffleAllTriviaOptions`), never the raw index.
+ */
+export interface MissedAnswer {
+  question: string;
+  correctAnswer: string;
+  explanation: string;
+}
+
 export interface TriviaPayload {
   question: string;
   options: string[];

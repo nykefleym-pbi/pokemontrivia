@@ -31,9 +31,10 @@ import { playBgm, playBattleResult } from "@/lib/audio";
 import { ITEMS, rollBerryDrops, STARTER_PVP_BERRY } from "@/lib/game-data";
 import { PVP_QUESTIONS } from "@/lib/pvp-combat";
 import { useForfeitGuard } from "@/lib/use-forfeit-guard";
-import { signatureAbilityFor } from "@/lib/signature-abilities";
 import { resolvePvpTypeAbilityId } from "@/lib/pvp-type-abilities";
 import { useBattleFxCues } from "@/hooks/useBattleFxCues";
+import { MissedReview } from "@/components/MissedReview";
+import type { MissedAnswer } from "@/lib/trivia-core";
 
 export const Route = createFileRoute("/pvp/live/$matchId")({
   component: LivePvpMatchPage,
@@ -66,6 +67,10 @@ function LivePvpMatchPage() {
   const [opponentProfile, setOpponentProfile] = useState<TrainerProfile | null>(null);
   const [forfeitConfirmOpen, setForfeitConfirmOpen] = useState(false);
   const [berryDrops, setBerryDrops] = useState<number | null>(null);
+  // Missed-answer history for the defeat review (feedback #1). Accumulated here
+  // (not in the battle screen) so it survives the battle→result unmount that a
+  // loss resolved by the OPPONENT's answer triggers.
+  const [missed, setMissed] = useState<MissedAnswer[]>([]);
   const partner = useGameStore((s) => s.pokemon);
   // Opponent-side combat cues funnel through the same frozen `emit` path as the
   // battle screen's local cues, so wording/ordering/dedupe are identical.
@@ -106,13 +111,16 @@ function LivePvpMatchPage() {
       // idempotent no-op for the host and the real write for the guest. Refresh
       // the local row with the returned ids so both sides are known ASAP.
       const myPartnerId = useGameStore.getState().pokemon?.id ?? null;
-      // Register the resolved TYPE ability id too, but only for a non-legendary
-      // partner (a legendary uses its signature ability, keyed by dex id) — so
-      // the opponent can name whichever ability is actually in play.
+      // Always register the resolved TYPE ability id (feedback #3). A legendary
+      // now fires its type ability IN ADDITION TO its signature, so the server
+      // needs the type id for its battleStart/postAnswerFires catalog effects and
+      // the opponent needs it to attribute the type ability. The signature id is
+      // carried separately (keyed by dex id), so both coexist.
       const myPokemon = useGameStore.getState().pokemon;
-      const myAbilityId = signatureAbilityFor(myPartnerId)
-        ? null
-        : resolvePvpTypeAbilityId(myPokemon?.types, useGameStore.getState().abilityId);
+      const myAbilityId = resolvePvpTypeAbilityId(
+        myPokemon?.types,
+        useGameStore.getState().abilityId,
+      );
       void setLivePvpPartner(matchId, myPartnerId, myAbilityId).then((res) => {
         if (res.ok) {
           setMatch((prev) =>
@@ -436,6 +444,7 @@ function LivePvpMatchPage() {
           match={match}
           opponentName={opponentProfile?.trainer_name || "Opponent"}
           onFinish={handleFinish}
+          onMissed={(m) => setMissed((prev) => [...prev, m])}
         />
         <AlertDialog open={forfeitConfirmOpen} onOpenChange={setForfeitConfirmOpen}>
           <AlertDialogContent className="max-w-xs rounded-3xl">
@@ -487,6 +496,7 @@ function LivePvpMatchPage() {
       partnerId={partner?.id ?? null}
       partnerName={partner?.name ?? "Your partner"}
       berryDrops={berryDrops}
+      missed={missed}
       onBack={() => navigate({ to: "/profile" })}
     />
   );
@@ -511,6 +521,7 @@ function PvpResultScreen({
   partnerId,
   partnerName,
   berryDrops,
+  missed,
   onBack,
 }: {
   won: boolean;
@@ -524,6 +535,7 @@ function PvpResultScreen({
   partnerId: number | null;
   partnerName: string;
   berryDrops: number | null;
+  missed: MissedAnswer[];
   onBack: () => void;
 }) {
   const hpLine = (
@@ -672,6 +684,10 @@ function PvpResultScreen({
       <div className="mx-auto mt-6 w-full max-w-sm rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-center">
         <p className="text-xs text-white/70">{hpLine}</p>
       </div>
+
+      {/* Missed-answer review at parity with Solo's defeat screen (feedback #1).
+          Renders nothing when the loss had no wrong answers (HP/forfeit). */}
+      <MissedReview missed={missed} />
 
       <div className="mx-auto mt-auto w-full max-w-sm pt-8">
         <Button
