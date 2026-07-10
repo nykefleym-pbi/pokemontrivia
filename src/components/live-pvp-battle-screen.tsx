@@ -62,6 +62,7 @@ import {
   signatureAbilityFor,
   signatureMoveName,
   describeSignatureEffect,
+  describeSignatureFull,
   evaluateHitModifiers,
   evaluatePostAnswer,
   evaluatePassiveDamageSideEffects,
@@ -370,7 +371,7 @@ export function LivePvpBattleScreen({
     const chips: AbilityChip[] = [];
     if (ability) {
       const name = signatureMoveName(partnerId);
-      if (name) chips.push({ name, desc: describeSignatureEffect(partnerId) });
+      if (name) chips.push({ name, desc: describeSignatureFull(partnerId) });
     }
     if (typeAbilityId) {
       const name = getAbilityById(typeAbilityId)?.name ?? null;
@@ -383,7 +384,7 @@ export function LivePvpBattleScreen({
   const oppAbilities = useMemo<AbilityChip[]>(() => {
     const chips: AbilityChip[] = [];
     const oppSigMove = signatureMoveName(opponentPartnerId);
-    if (oppSigMove) chips.push({ name: oppSigMove, desc: describeSignatureEffect(opponentPartnerId) });
+    if (oppSigMove) chips.push({ name: oppSigMove, desc: describeSignatureFull(opponentPartnerId) });
     if (oppAbilityId) {
       const name = getAbilityById(oppAbilityId)?.name ?? null;
       if (name) {

@@ -1831,6 +1831,108 @@ export function describeSignatureEffect(pokemonId: number | null | undefined): s
   return parts.length > 0 ? parts.join(", ") : null;
 }
 
+/** `2` → "2nd", `4` → "4th". Used by the trigger describer. */
+function ordinal(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return `${n}${s[(v - 20) % 10] ?? s[v] ?? s[0]}`;
+}
+
+function capitalize(s: string): string {
+  return s.length > 0 ? s[0].toUpperCase() + s.slice(1) : s;
+}
+
+/** Seconds label from a millisecond window ("5s", "1.5s"). */
+function msSeconds(ms: number): string {
+  return `${(ms / 1000).toFixed(ms % 1000 === 0 ? 0 : 1)}s`;
+}
+
+/**
+ * Plain-language "when it triggers" clause for the TAPPABLE ability popover.
+ * Kept out of the transient in-battle toast (which stays terse). Returns null
+ * for a bespoke trigger with no generic phrasing so the caller can degrade.
+ */
+function describeSignatureTrigger(trigger: SignatureTrigger): string | null {
+  switch (trigger.type) {
+    case "battle_start":
+      return "at the start of battle";
+    case "passive":
+      return "on every hit";
+    case "on_correct":
+      return "when you answer correctly";
+    case "on_wrong":
+      return "when you answer wrong";
+    case "streak_at_least":
+      return `on a correct answer at a streak of ${trigger.n}+`;
+    case "streak_break":
+      return "when a wrong answer breaks your streak";
+    case "every_nth_question":
+      return trigger.requirePrevCorrect
+        ? `every ${ordinal(trigger.n)} question, if the previous was correct`
+        : `every ${ordinal(trigger.n)} question`;
+    case "every_nth_correct":
+      return `on every ${ordinal(trigger.n)} correct answer`;
+    case "first_half_answer":
+      return "when you answer in the first half of the timer";
+    case "last_seconds_answer":
+      return `when you answer in the last ${msSeconds(trigger.withinMs)}`;
+    case "fast_answer":
+      return `when you answer within ${msSeconds(trigger.underMs)}`;
+    case "fast_pair":
+      return `on two answers in a row under ${msSeconds(trigger.underMs)}`;
+    case "hp_threshold":
+      return `when ${trigger.side === "self" ? "your" : "the opponent's"} HP ${
+        trigger.cmp === "below" ? "drops below" : "rises above"
+      } ${trigger.pct}%`;
+    case "opponent_correct":
+      return "when the opponent answers correctly";
+    case "opponent_wrong":
+      return "when the opponent answers wrong";
+    case "new_category":
+      return "the first time you answer a new category correctly";
+    case "question_category_is":
+      return `on a correct ${trigger.category} question`;
+    case "pokedex_scaling":
+      return "scaling with your Pokédex progress";
+    case "cooldown":
+      return `every ${trigger.everyN} questions`;
+    case "manual":
+      return "when you tap Fire";
+    case "bespoke":
+      return null;
+  }
+}
+
+/** True for a deliberately-useless joke ability (e.g. Cosmog's Splash). */
+function isNoOpSignature(ability: SignatureAbility): boolean {
+  return ability.internalKey === "splash_useless";
+}
+
+/**
+ * Fuller, sentence-form explainer for the TAPPABLE ability popover — states the
+ * effect AND when it triggers, plus any proc chance. The transient in-battle
+ * toast deliberately stays terse (see `describeSignatureEffect`); this richer
+ * text is safe here because the player opens it on demand. Degrades gracefully:
+ * effect-only when the trigger has no generic phrasing, "Triggers …" when the
+ * effect is purely client-side/bespoke, and a fixed line for a no-op joke
+ * ability. Returns null only when the partner has no signature ability at all.
+ */
+export function describeSignatureFull(pokemonId: number | null | undefined): string | null {
+  const ability = signatureAbilityFor(pokemonId);
+  if (!ability) return null;
+  if (isNoOpSignature(ability)) return "Nothing happens. Has no effect whatsoever.";
+  const effect = describeSignatureEffect(pokemonId);
+  const when = describeSignatureTrigger(ability.trigger);
+  const chance =
+    "chance" in ability.trigger && ability.trigger.chance != null
+      ? ` (${Math.round(ability.trigger.chance * 100)}% chance)`
+      : "";
+  if (effect && when) return `${capitalize(effect)} ${when}${chance}.`;
+  if (effect) return `${capitalize(effect)}.`;
+  if (when) return `Triggers ${when}${chance}.`;
+  return null;
+}
+
 /**
  * For a player-fired ability whose Fire payoff is a CLIENT-side one-hit
  * damage-calc modifier (Psystrike, Dragon Ascent, Giratina's Shadow Force) —

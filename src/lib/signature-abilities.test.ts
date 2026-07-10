@@ -4,6 +4,7 @@ import {
   signatureAbilityFor,
   signatureMoveName,
   describeSignatureEffect,
+  describeSignatureFull,
   evaluateHitModifiers,
   evaluatePostAnswer,
   evaluatePassiveDamageSideEffects,
@@ -505,5 +506,35 @@ describe("describeSignatureEffect", () => {
     expect(describeSignatureEffect(null)).toBeNull();
     // 789 Cosmog — Splash: deliberate no-op (bespoke effect).
     expect(describeSignatureEffect(789)).toBeNull();
+  });
+});
+
+describe("describeSignatureFull (tappable popover — effect + when triggered)", () => {
+  it("states the effect AND the trigger clause", () => {
+    // 1017 Ogerpon — Ivy Cudgel: battle_start +1 Crit.
+    expect(describeSignatureFull(1017)).toBe("+1 Crit at the start of battle.");
+    // 144 Articuno — Freeze-Dry: passive, ignores their Defense.
+    expect(describeSignatureFull(144)).toBe("Ignores their Defense on every hit.");
+    // 145 Zapdos — Thunderous Kick: fast_pair under 5s, −1 opponent Defense.
+    expect(describeSignatureFull(145)).toBe(
+      "−1 opponent Defense on two answers in a row under 5s.",
+    );
+  });
+
+  it("appends the proc chance when the trigger has one", () => {
+    // 244 Entei — Sacred Fire: on_correct 40%, inflicts Burn.
+    expect(describeSignatureFull(244)).toBe("Inflicts Burn when you answer correctly (40% chance).");
+  });
+
+  it("gives Splash's deliberate no-op a plain explanation instead of a blank", () => {
+    // 789 Cosmog — Splash: the short effect text is null (blank popover before).
+    expect(describeSignatureFull(789)).toBe("Nothing happens. Has no effect whatsoever.");
+  });
+
+  it("returns null for a non-legendary or a purely-bespoke ability with no generic phrasing", () => {
+    expect(describeSignatureFull(25)).toBeNull();
+    expect(describeSignatureFull(null)).toBeNull();
+    // 151 Mew — Transform: bespoke trigger + bespoke effect, no generic text.
+    expect(describeSignatureFull(151)).toBeNull();
   });
 });
