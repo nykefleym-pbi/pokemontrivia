@@ -103,7 +103,10 @@ function questions(n: number): string {
  *  the already-percent fields (`lifesteal`, `revive.hpPct`, `heal_pct_of_...`).
  *  Each call site below is pinned to the unit its field actually uses. */
 function pct(fraction: number): string {
-  return `${Math.round(fraction * 100)}%`;
+  // Keep a half-percent rather than rounding it away: Heatran's 0.125 is 12.5%,
+  // and "13%" would quietly misreport the spec.
+  const n = fraction * 100;
+  return `${Number.isInteger(n) ? n : Number(n.toFixed(1))}%`;
 }
 
 function whole(percent: number): string {
@@ -159,6 +162,12 @@ function describeStat(spec: StatChangeSpec): string {
         spec.stat,
       ).toLowerCase()} per correct answer, stacking up to 3 times`;
     case "one_shot":
+      // Genesect rolls its stat, so "+1 your a random stat" is the naive join.
+      if (spec.stat === "random") {
+        return `${signed(spec.delta)} to one of ${
+          spec.target === "self" ? "your" : "the opponent's"
+        } stats at random`;
+      }
       return `${signed(spec.delta)} ${whose(spec.target)} ${statLabel(spec.stat).toLowerCase()}`;
     case "decay":
       return `${signed(spec.initial)} ${whose(spec.target)} ${statLabel(
@@ -233,10 +242,12 @@ function describeMultiplier(m: DamageMultiplierSpec): string[] {
 
 function describePhase(p: PhaseWindowSpec): string {
   const parts: string[] = [];
+  // "the first 1 question" → "the first question".
+  const window = p.windowN === 1 ? "the first question" : `the first ${questions(p.windowN)}`;
   parts.push(
     p.scaleToPct === 0
-      ? `you deal no damage for the first ${questions(p.windowN)}`
-      : `you deal ${p.scaleToPct}% damage for the first ${questions(p.windowN)}`,
+      ? `you deal no damage for ${window}`
+      : `you deal ${p.scaleToPct}% damage for ${window}`,
   );
   if (p.payoffMultiplier != null) {
     const at = p.payoffAtIndex ?? p.windowN + 1;
@@ -445,5 +456,9 @@ export function describeEngineSpec(engine: SignatureEngineSpec): string {
 }
 
 function capitalize(s: string): string {
-  return s.length > 0 ? s[0].toUpperCase() + s.slice(1) : s;
+  if (s.length === 0) return s;
+  // Never touch a leading multiplier — Blacephalon opens on "x5 damage", and a
+  // blind uppercase turns it into "X5".
+  if (/^x\d/.test(s)) return s;
+  return s[0].toUpperCase() + s.slice(1);
 }
