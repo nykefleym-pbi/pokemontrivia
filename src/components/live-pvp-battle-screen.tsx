@@ -22,7 +22,9 @@ import { CATEGORIES, CATEGORY_OF, BAG_SHORT_DESC } from "@/lib/item-categories";
 import {
   computePvpDamage,
   evaluateHitModifiers as evaluateSigMultiplier,
+  evaluateIndexFactor,
   multiplierConditionHolds,
+  phasePayoffIndex,
   NO_SIGNATURE_HIT_MODIFIERS,
   timerMsForSpeedStage,
   PVP_BASE_TIMER_MS,
@@ -710,6 +712,10 @@ export function LivePvpBattleScreen({
   // what Uxie foresaw. Per-side, because both a human and a bot can hold these rows.
   const bespokeFxRef = useRef<BespokeFxState>(EMPTY_BESPOKE_FX_STATE);
   const botBespokeFxRef = useRef<BespokeFxState>(EMPTY_BESPOKE_FX_STATE);
+  // M5 — Cosmog #789: its halve-HP payoff hangs off the phase window, so it fires on
+  // the payoff QUESTION rather than on the trigger, and `_pvp_apply_m4_fx` carries no
+  // replay cursor of its own. This is the at-most-once guard. Keyed `side:dex`.
+  const phasePayoffFiredRef = useRef<Set<string>>(new Set());
   // Azelf #482: the culled choice indices for the question currently on screen.
   // State (not a ref) because it must re-render the answer buttons.
   const [eliminatedChoices, setEliminatedChoices] = useState<number[]>([]);
@@ -756,34 +762,15 @@ export function LivePvpBattleScreen({
     engine: SignatureEngineSpec;
     dex: number;
     questionIndex: number;
+    questionNo: number;
     triggerFired: boolean;
     disabled: boolean;
     side: "self" | "opponent";
     asBot: boolean;
   }): void {
-    const { engine, dex, questionIndex, triggerFired, disabled, side, asBot } = args;
-    if (!triggerFired || disabled) return;
+    const { engine, dex, questionIndex, questionNo, triggerFired, disabled, side, asBot } = args;
 
-    if (engine.status?.length) {
-      void sigEngineStatus(matchId, questionIndex, dex, asBot).then((res) => {
-        if (!res.ok || res.noop) return;
-        useGameStore.setState({
-          battleStatuses: (amIHost ? res.hostStatuses : res.guestStatuses) ?? [],
-          opponentStatuses: (amIHost ? res.guestStatuses : res.hostStatuses) ?? [],
-        });
-        emit({
-          kind: "signature",
-          side,
-          partnerId: dex,
-          hitsOpponent: true,
-          questionIndex,
-          dedupeKey: `${side}:engine_status:${questionIndex}:${dex}`,
-        });
-      });
-    }
-
-    const wantsFx = engine.bespoke?.some((b) => b.fx === "instant_ko" || b.fx === "frac_hp_damage");
-    if (wantsFx) {
+    const runM4Fx = (): void => {
       void sigM4Fx(matchId, questionIndex, dex, asBot).then((res) => {
         if (!res.ok || res.noop) return;
         if (typeof res.hostHp === "number" && typeof res.guestHp === "number") {
@@ -808,7 +795,44 @@ export function LivePvpBattleScreen({
           dedupeKey: `${side}:m4fx:${questionIndex}:${dex}`,
         });
       });
+    };
+
+    // M5 — Cosmog #789. Its halve-HP is the PAYOFF of a phase window, so it lands on
+    // the payoff question, and neither of the gates below can express that: its
+    // trigger is `start_of_battle` (true only on q1) and its `once_per_battle` disable
+    // is already spent by the time q4 comes round. Fire it off the question number
+    // instead, before those gates — a fixed payoff index can only come up once, and
+    // the ref keeps a re-render from halving twice.
+    if (engine.phase?.payoffEffect && questionNo === phasePayoffIndex(engine.phase)) {
+      const key = `${side}:${dex}`;
+      if (!phasePayoffFiredRef.current.has(key)) {
+        phasePayoffFiredRef.current.add(key);
+        runM4Fx();
+      }
     }
+
+    if (!triggerFired || disabled) return;
+
+    if (engine.status?.length) {
+      void sigEngineStatus(matchId, questionIndex, dex, asBot).then((res) => {
+        if (!res.ok || res.noop) return;
+        useGameStore.setState({
+          battleStatuses: (amIHost ? res.hostStatuses : res.guestStatuses) ?? [],
+          opponentStatuses: (amIHost ? res.guestStatuses : res.hostStatuses) ?? [],
+        });
+        emit({
+          kind: "signature",
+          side,
+          partnerId: dex,
+          hitsOpponent: true,
+          questionIndex,
+          dedupeKey: `${side}:engine_status:${questionIndex}:${dex}`,
+        });
+      });
+    }
+
+    const wantsFx = engine.bespoke?.some((b) => b.fx === "instant_ko" || b.fx === "frac_hp_damage");
+    if (wantsFx) runM4Fx();
 
     if (engine.shield || engine.nullifySelfDamage || engine.opponentTimer) {
       void sigM4Window(
@@ -1593,6 +1617,20 @@ export function LivePvpBattleScreen({
               selfHpPct: myHp / PVP_MAX_HP,
             })
           : NO_SIGNATURE_HIT_MODIFIERS;
+        // M5: the question-indexed outgoing scale — the phase charge-window and the
+        // fixed-index marks. Unlike the multiplier above this is NOT gated on
+        // `triggerHeld`: a charge window is anchored on question 1 and held open by
+        // the question number itself, not by the trigger re-firing (see
+        // `evaluateIndexFactor`). Disable/suppress still switch it off.
+        const indexFactor =
+          !suppressed && engineSpec && !sigDisabledRef.current
+            ? evaluateIndexFactor(engineSpec, {
+                correct: true,
+                questionNo: idxAtAnswer + 1,
+                selfHpPct: myHp / PVP_MAX_HP,
+                oppHpPct: oppHp / PVP_MAX_HP,
+              })
+            : 1;
         const { dmg: computed } = computePvpDamage({
           streak: nextStreak,
           speedRatio,
@@ -1603,6 +1641,7 @@ export function LivePvpBattleScreen({
           burned,
           hitFactor: sigMult.factor,
           ignoreDefense: sigMult.ignoreDefense,
+          outgoingFactor: indexFactor,
         });
         dmg = computed + (mods.secondHitFraction ? Math.round(computed * mods.secondHitFraction) : 0);
         answeredCategoriesRef.current.add(category);
@@ -1910,6 +1949,7 @@ export function LivePvpBattleScreen({
           engine: tickEngine,
           dex: answeredDex,
           questionIndex: idxAtAnswer,
+          questionNo: idxAtAnswer + 1,
           triggerFired,
           disabled: runtime?.disabled ?? false,
           side: "self",
@@ -2079,6 +2119,16 @@ export function LivePvpBattleScreen({
               selfHpPct: oppHp / PVP_MAX_HP,
             })
           : NO_SIGNATURE_HIT_MODIFIERS;
+        // M5: the bot charges and pays off exactly as a human does — HP fractions
+        // mirrored, since from the bot's point of view IT is "self".
+        const botIndexFactor = botEngineSpec && !botSigDisabledRef.current
+          ? evaluateIndexFactor(botEngineSpec, {
+              correct: true,
+              questionNo: idxAtAnswer + 1,
+              selfHpPct: oppHp / PVP_MAX_HP,
+              oppHpPct: myHp / PVP_MAX_HP,
+            })
+          : 1;
         const { dmg: computed } = computePvpDamage({
           streak: next,
           speedRatio,
@@ -2089,6 +2139,7 @@ export function LivePvpBattleScreen({
           burned,
           hitFactor: botMult.factor,
           ignoreDefense: botMult.ignoreDefense,
+          outgoingFactor: botIndexFactor,
         });
         dmg = computed;
       } else {
@@ -2169,6 +2220,7 @@ export function LivePvpBattleScreen({
             engine: botTickEngine,
             dex: botPartnerId,
             questionIndex: idxAtAnswer,
+            questionNo: idxAtAnswer + 1,
             triggerFired: botTriggerFired,
             disabled: botEntry?.disabled ?? false,
             side: "opponent",

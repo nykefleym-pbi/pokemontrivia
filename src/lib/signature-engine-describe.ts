@@ -249,30 +249,64 @@ function describePhase(p: PhaseWindowSpec): string {
       ? `you deal no damage for ${window}`
       : `you deal ${p.scaleToPct}% damage for ${window}`,
   );
+  const at = p.payoffAtIndex ?? p.windowN + 1;
   if (p.payoffMultiplier != null) {
-    const at = p.payoffAtIndex ?? p.windowN + 1;
     const gate = p.payoffCondition === "opp_hp_gt_self" ? ", if the opponent has more HP than you" : "";
     parts.push(`then ${times(p.payoffMultiplier)} damage on question ${at}${gate}`);
   }
   if (p.payoffEffect) {
-    parts.push(`then ${describeBespoke(p.payoffEffect)}`);
+    parts.push(`then on question ${at} you ${describeBespoke(p.payoffEffect)}`);
   }
   return parts.join(", ");
 }
 
-function describeFixedIndex(f: FixedIndexSpec): string {
-  const parts: string[] = [];
-  if (f.receiveDamagePct === 0) parts.push(`you take no damage on question ${f.index}`);
-  else if (f.receiveDamagePct != null)
-    parts.push(`you take ${f.receiveDamagePct}% damage on question ${f.index}`);
-  if (f.outgoingMultiplier != null) {
-    parts.push(
-      f.outgoingMultiplier >= 1
-        ? `${times(f.outgoingMultiplier)} damage on question ${f.index}`
-        : `you deal ${pct(f.outgoingMultiplier)} damage on question ${f.index}`,
-    );
+/** "question 4" / "questions 4 and 9" / "questions 2-19". A run of three or more
+ *  consecutive questions collapses to a range — Blacephalon's burnout covers
+ *  eighteen of them, and spelling each one out buries the ability in its own
+ *  description. */
+function questionList(indices: number[]): string {
+  const sorted = [...new Set(indices)].sort((a, b) => a - b);
+  if (sorted.length === 1) return `question ${sorted[0]}`;
+
+  const runs: number[][] = [];
+  for (const i of sorted) {
+    const last = runs.at(-1);
+    if (last && i === last.at(-1)! + 1) last.push(i);
+    else runs.push([i]);
   }
-  return parts.join(", ");
+  const spans = runs.map((run) =>
+    run.length >= 3 ? `${run[0]}-${run.at(-1)}` : run.map(String).join(", "),
+  );
+  return `questions ${list(spans)}`;
+}
+
+/** One clause per DISTINCT mark, with every question carrying that mark folded into
+ *  it, so the reader gets "×5 damage on question 1" and "you deal 75% damage on
+ *  questions 2-19" rather than nineteen near-identical clauses. */
+function describeFixedIndexes(specs: FixedIndexSpec[]): string[] {
+  const byMark = new Map<string, { spec: FixedIndexSpec; indices: number[] }>();
+  for (const f of specs) {
+    const key = `${f.receiveDamagePct ?? ""}|${f.outgoingMultiplier ?? ""}`;
+    const seen = byMark.get(key);
+    if (seen) seen.indices.push(f.index);
+    else byMark.set(key, { spec: f, indices: [f.index] });
+  }
+
+  const out: string[] = [];
+  for (const { spec: f, indices } of byMark.values()) {
+    const where = questionList(indices);
+    if (f.receiveDamagePct === 0) out.push(`you take no damage on ${where}`);
+    else if (f.receiveDamagePct != null)
+      out.push(`you take ${whole(f.receiveDamagePct)} damage on ${where}`);
+    if (f.outgoingMultiplier != null) {
+      out.push(
+        f.outgoingMultiplier >= 1
+          ? `${times(f.outgoingMultiplier)} damage on ${where}`
+          : `you deal ${pct(f.outgoingMultiplier)} damage on ${where}`,
+      );
+    }
+  }
+  return out;
 }
 
 // ── Bespoke effects ──────────────────────────────────────────────────────────
@@ -390,12 +424,7 @@ function collectEffects(engine: SignatureEngineSpec): string[] {
   }
   if (engine.multiplier) effects.push(...describeMultiplier(engine.multiplier));
   if (engine.phase) effects.push(describePhase(engine.phase));
-  if (engine.fixedIndex) {
-    for (const f of engine.fixedIndex) {
-      const text = describeFixedIndex(f);
-      if (text) effects.push(text);
-    }
-  }
+  if (engine.fixedIndex?.length) effects.push(...describeFixedIndexes(engine.fixedIndex));
   if (engine.shield) {
     effects.push(
       engine.shield.receivePct === 0
@@ -431,10 +460,13 @@ export function describeEngineSpec(engine: SignatureEngineSpec): string {
   // Rows whose effects already name their own question numbers (Giratina's
   // q1/q2/q11/q12 marks, Regigigas's payoff question) would otherwise end
   // "...double damage on question 12 on questions 2 and 12." The trigger clause
-  // is pure repetition there, so drop it.
+  // is pure repetition there, so drop it. A phase window is the same story from
+  // the other end: it says "for the first 3 questions", which already carries
+  // "from the start of the battle".
   const whenIsRedundant =
-    engine.trigger.type === "on_questions" &&
-    ((engine.fixedIndex?.length ?? 0) > 0 || engine.phase != null);
+    (engine.trigger.type === "on_questions" &&
+      ((engine.fixedIndex?.length ?? 0) > 0 || engine.phase != null)) ||
+    (engine.trigger.type === "start_of_battle" && engine.phase != null);
 
   const when = describeEngineTrigger(engine.trigger);
   const head =
@@ -449,7 +481,15 @@ export function describeEngineSpec(engine: SignatureEngineSpec): string {
   if (engine.expireAfterQuestions != null && engine.expireAfterQuestions > 0) {
     tail.push(`It wears off after ${questions(engine.expireAfterQuestions)}.`);
   }
-  const disable = engine.disable ? describeDisable(engine.disable) : null;
+  // A stat-revert disable on a row that changes no stat reverts nothing — it is
+  // dead spec, and printing "the stat change is undone after 2 wrong answers"
+  // under Regigigas (a pure damage row) invents a drawback it does not have.
+  const revertsNothing =
+    (engine.disable?.kind === "revert_stat_after_incorrect" ||
+      engine.disable?.kind === "disable_increase_after_incorrect") &&
+    (engine.stat?.length ?? 0) === 0 &&
+    (engine.incorrectStat?.length ?? 0) === 0;
+  const disable = engine.disable && !revertsNothing ? describeDisable(engine.disable) : null;
   if (disable) tail.push(disable);
 
   return [head, ...tail].join(" ");

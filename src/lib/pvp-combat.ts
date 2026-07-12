@@ -1,5 +1,10 @@
 import { streakMultiplier } from "./game-data";
-import type { DamageMultiplierSpec, MultiplierCondition } from "./signature-abilities";
+import type {
+  DamageMultiplierSpec,
+  FixedIndexSpec,
+  MultiplierCondition,
+  PhaseWindowSpec,
+} from "./signature-abilities";
 
 /**
  * Pure combat math for the Nearby-Battle HP-endurance PvP loop.
@@ -94,6 +99,15 @@ export interface PvpDamageParams {
    */
   hitFactor?: number;
   ignoreDefense?: boolean;
+  /**
+   * signature-rework M5 — the QUESTION-INDEXED outgoing scale (`engine.phase` /
+   * `engine.fixedIndex`), from `evaluateIndexFactor`. Kept apart from `hitFactor`
+   * because it is the one channel allowed to reach ZERO: a phase window with
+   * `scaleToPct: 0` means "this question deals no damage at all", and the `max(1, …)`
+   * floor below would otherwise quietly turn that into a 1-HP scratch. Every other
+   * path keeps the floor.
+   */
+  outgoingFactor?: number;
   rng?: () => number;
 }
 
@@ -119,6 +133,7 @@ export function computePvpDamage(p: PvpDamageParams): PvpDamageResult {
   // into THIS answer's damage only. ignoreDefense collapses the Defense divisor
   // to 1 (the +3-clamped opponent Defense no longer reduces the hit).
   const hitFactor = p.hitFactor ?? 1;
+  const outgoingFactor = p.outgoingFactor ?? 1;
   const defenseDivisor = p.ignoreDefense ? 1 : 1 / statStageMultiplier(p.defenseStage);
   const dmg = Math.round(
     (p.baseDamage ?? PVP_BASE_DAMAGE) *
@@ -128,9 +143,12 @@ export function computePvpDamage(p: PvpDamageParams): PvpDamageResult {
       critMult *
       burnMult *
       hitFactor *
-      defenseDivisor,
+      defenseDivisor *
+      outgoingFactor,
   );
-  return { dmg: Math.max(1, dmg), didCrit };
+  // A zero phase window is a real zero (Cosmog/Giratina/Xerneas charge questions),
+  // not a 1-HP scratch — see `outgoingFactor`.
+  return { dmg: outgoingFactor === 0 ? 0 : Math.max(1, dmg), didCrit };
 }
 
 // ── signature-rework: conditional answer-damage multiplier resolver ──────────
@@ -234,4 +252,81 @@ function hpTierFactor(spec: DamageMultiplierSpec, ctx: HitModifierContext): numb
     .sort((a, b) => b.atLeastPct - a.atLeastPct)
     .find((t) => hpPct >= t.atLeastPct);
   return tier?.factor ?? flat;
+}
+
+// ── signature-rework M5: question-indexed outgoing damage ────────────────────
+
+/** What `evaluateIndexFactor` reads. Unlike the multiplier channel this is keyed
+ *  on the QUESTION NUMBER, not on the opponent. */
+export interface IndexDamageContext {
+  /** Was this answer correct? A phase/fixed-index scale only touches a real hit. */
+  correct: boolean;
+  /** 1-indexed question number (1..20), matching the engine's `phaseIdx`. */
+  questionNo: number;
+  /** Attacker's own HP as a 0..1 fraction (Regigigas #486's payoff gate). */
+  selfHpPct?: number;
+  /** Defender's HP as a 0..1 fraction (same gate). */
+  oppHpPct?: number;
+}
+
+/** The question number a phase window pays off on: explicit, else the question
+ *  straight after the window closes. */
+export function phasePayoffIndex(p: PhaseWindowSpec): number {
+  return p.payoffAtIndex ?? p.windowN + 1;
+}
+
+/**
+ * signature-rework M5 — resolve a row's QUESTION-INDEXED outgoing damage scale
+ * into a single factor to fold into `computePvpDamage` (`outgoingFactor`).
+ *
+ * Two spec shapes feed it, and both were catalogued from the owner's spreadsheet
+ * back in M2/M3 but never delivered: nothing outside the describer read
+ * `engine.phase` or `engine.fixedIndex`, so ten rows — Giratina, Regigigas,
+ * Xerneas, Type: Null, Silvally, Cosmog, the three Ultra Beasts and Blacephalon —
+ * charged up and then hit for exactly normal damage.
+ *
+ *  - `fixedIndex`: an outgoing multiplier pinned to specific questions (Giratina
+ *    x2 on q2/q12; Blacephalon x5 on q1, 75% on q2-19).
+ *  - `phase`: a charge window over questions 1..windowN scaled to `scaleToPct`
+ *    (0 = the classic "deal no damage while charging"), then a `payoffMultiplier`
+ *    on the payoff question. `payoffCondition: "opp_hp_gt_self"` gates the payoff
+ *    on Regigigas actually being behind.
+ *
+ * Anchored on ABSOLUTE question numbers, deliberately: every phase row triggers at
+ * `start_of_battle` or `on_questions`, so the window always opens on question 1 and
+ * the trigger is NOT what holds it open. Gating this on a live trigger the way the
+ * multiplier channel does would switch the window off for questions 2..N and leave
+ * only the payoff — the exact opposite of a charge-up. The caller still drops it
+ * when the row is disabled or suppressed.
+ *
+ * A wrong answer, an absent spec, or a question the spec says nothing about all
+ * return the neutral 1.
+ */
+export function evaluateIndexFactor(
+  engine: { phase?: PhaseWindowSpec; fixedIndex?: FixedIndexSpec[] } | null | undefined,
+  ctx: IndexDamageContext,
+): number {
+  if (!engine || !ctx.correct) return 1;
+  let factor = 1;
+
+  const fixed = engine.fixedIndex?.find(
+    (f) => f.index === ctx.questionNo && f.outgoingMultiplier != null,
+  );
+  if (fixed?.outgoingMultiplier != null) factor *= fixed.outgoingMultiplier;
+
+  const p = engine.phase;
+  if (p) {
+    const payoffAt = phasePayoffIndex(p);
+    if (ctx.questionNo === payoffAt && p.payoffMultiplier != null) {
+      // Regigigas #486: the x2.5 only lands if the opponent is still ahead of us.
+      const gated =
+        p.payoffCondition === "opp_hp_gt_self" &&
+        !(ctx.oppHpPct !== undefined && ctx.selfHpPct !== undefined && ctx.oppHpPct > ctx.selfHpPct);
+      if (!gated) factor *= p.payoffMultiplier;
+    } else if (ctx.questionNo <= p.windowN) {
+      factor *= p.scaleToPct / 100;
+    }
+  }
+
+  return factor;
 }

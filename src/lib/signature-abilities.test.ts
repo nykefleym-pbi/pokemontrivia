@@ -401,14 +401,40 @@ describe("describeSignatureFull (tappable popover — effect + when + cooldown)"
 
   it("drops the trigger clause when the effects already name their questions", () => {
     // 487 Giratina marks q1/q2/q11/q12 explicitly — appending "on questions 2
-    // and 12" would repeat what the effect text just said.
+    // and 12" would repeat what the effect text just said. Questions carrying the
+    // same mark fold into one clause (M5) rather than repeating it per question.
     expect(describeSignatureFull(487)).toBe(
-      "You take no damage on question 1, you take no damage on question 11, double damage on question 2 and double damage on question 12.",
+      "You take no damage on questions 1 and 11 and double damage on questions 2 and 12.",
     );
   });
 
-  it("gives Splash's deliberate no-op a plain explanation instead of a blank", () => {
-    expect(describeSignatureFull(789)).toBe("Nothing happens. Has no effect whatsoever.");
+  // Cosmog #789 USED to be the joke row ("Splash — nothing happens"), and the
+  // describer said so by testing `isNoOpSignature` before the engine. The rework
+  // armed it: it charges for three questions and halves the opponent on q4. Whatever
+  // the text says, it must not be the old "no effect whatsoever" line.
+  it("describes Cosmog's armed Splash, not the joke ability it replaced", () => {
+    const text = describeSignatureFull(789)!;
+    expect(text).not.toContain("Nothing happens");
+    expect(text).toContain("no damage for the first 3 questions");
+    expect(text).toContain("on question 4");
+    expect(text).toContain("50% off the opponent's current HP");
+  });
+
+  it("describes Blacephalon's burnout as the owner specced it (q2-19, permanent)", () => {
+    // Owner correction 2026-07-12: x5 on q1, then 75% for questions 2 THROUGH 19 —
+    // and the burnout is permanent, so no "undone after a wrong answer" clause.
+    expect(describeSignatureFull(806)).toBe(
+      "x5 damage on question 1 and you deal 75% damage on questions 2-19.",
+    );
+  });
+
+  it("does not invent a stat drawback on a row that changes no stat", () => {
+    // Regigigas #486 carries `revert_stat_after_incorrect` but has no `stat` spec, so
+    // there is nothing to revert. Printing "the stat change is undone…" would be a
+    // penalty the ability does not actually have.
+    expect(describeSignatureFull(486)).not.toContain("stat change");
+    // Stakataka #805 DOES buff Attack, so its revert clause is real and must stay.
+    expect(describeSignatureFull(805)).toContain("stat change is undone");
   });
 
   it("returns null for a non-legendary partner", () => {

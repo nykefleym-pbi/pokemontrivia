@@ -580,6 +580,12 @@ const everyQuestionTrigger: NewSignatureTrigger = { type: "every_question", wher
 const everyEvenTrigger: NewSignatureTrigger = { type: "every_even_question", where: "client" };
 const everyOddTrigger: NewSignatureTrigger = { type: "every_odd_question", where: "client" };
 const onQuestions = (indices: number[]): NewSignatureTrigger => ({ type: "on_questions", indices, where: "client" });
+/** Inclusive question range, e.g. `qRange(2, 19)` → [2..19]. */
+const qRange = (from: number, to: number): number[] =>
+  Array.from({ length: to - from + 1 }, (_, i) => from + i);
+/** The same outgoing multiplier pinned across a run of questions. */
+const outgoingOver = (indices: number[], outgoingMultiplier: number): FixedIndexSpec[] =>
+  indices.map((index) => ({ type: "fixed_index", index, outgoingMultiplier }));
 const selfAfflictedTrigger = (pct: number): NewSignatureTrigger => ({
   type: "self_afflicted_or_hp_below",
   pct,
@@ -1925,15 +1931,18 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     effect: selfStage("crit", 1, "passive"),
     wiring: "post_answer",
     note: "NOT in v2 doc — fill design (Beast Boost: grow Crit). Confirm with product owner.",
-    // 00-owner-spec.md row 71. q1 outgoing x5; q19 ("2nd-to-last", F1) outgoing
-    // scaled to 75% (outgoingMultiplier 0.75).
+    // 00-owner-spec.md row 71, as CORRECTED by the owner 2026-07-12: Mind Blown goes
+    // off once — x5 on question 1 — and Blacephalon spends the rest of the battle
+    // burnt out, dealing 75% damage on questions 2 THROUGH 19 (not just q19, which is
+    // how the cell was first read). The burnout is permanent: no wrong answer undoes
+    // it, hence `none` rather than the revert-after-1 it used to carry.
     engine: {
-      trigger: onQuestions([1, 19]),
+      trigger: onQuestions(qRange(1, 19)),
       fixedIndex: [
         { type: "fixed_index", index: 1, outgoingMultiplier: 5 },
-        { type: "fixed_index", index: 19, outgoingMultiplier: 0.75 },
+        ...outgoingOver(qRange(2, 19), 0.75),
       ],
-      disable: revertAfter(1),
+      disable: noDisable,
     },
   },
   807: {
@@ -3350,10 +3359,15 @@ function isNoOpSignature(ability: SignatureAbility): boolean {
 export function describeSignatureFull(pokemonId: number | null | undefined): string | null {
   const ability = signatureAbilityFor(pokemonId);
   if (!ability) return null;
-  if (isNoOpSignature(ability)) return "Nothing happens. Has no effect whatsoever.";
   // Same reason as `describeSignatureEffect`: for an engine-owned row the legacy
   // trigger/effect pair describes the PRE-rework ability. Render the engine.
+  //
+  // This MUST come before the no-op check. Cosmog #789 is the only joke row, and the
+  // rework gave it real teeth — it charges for three questions and then halves the
+  // opponent's HP. Testing `isNoOpSignature` first told every Cosmog owner "nothing
+  // happens, has no effect whatsoever" while it was taking 60 HP off them.
   if (ability.engine) return describeEngineSpec(ability.engine);
+  if (isNoOpSignature(ability)) return "Nothing happens. Has no effect whatsoever.";
   const effect = describeSignatureEffect(pokemonId);
   const when = describeSignatureTrigger(ability.trigger);
   const chance =

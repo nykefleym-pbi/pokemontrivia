@@ -6,10 +6,13 @@ import {
   critRate,
   computePvpDamage,
   evaluateHitModifiers,
+  evaluateIndexFactor,
+  phasePayoffIndex,
   NO_SIGNATURE_HIT_MODIFIERS,
   PVP_BASE_TIMER_MS,
   PVP_CRIT_MULT,
 } from "./pvp-combat";
+import { SIGNATURE_ABILITIES } from "./signature-abilities";
 import type { DamageMultiplierSpec } from "./signature-abilities";
 import { rollBerryDrops, NEARBY_BERRY_DROP_POOL, BERRIES_PER_NEARBY_BATTLE } from "./game-data";
 
@@ -120,6 +123,71 @@ describe("pvp-combat: engine damage multipliers", () => {
     };
     expect(evaluateHitModifiers(spec, ctx).ignoreDefense).toBe(true);
     expect(evaluateHitModifiers(spec, { ...ctx, oppType: ["fire"] }).ignoreDefense).toBe(false);
+  });
+});
+
+describe("pvp-combat: question-indexed outgoing damage (M5)", () => {
+  const engineOf = (dex: number) => SIGNATURE_ABILITIES[dex].engine!;
+  const at = (dex: number, questionNo: number, hp?: { selfHpPct: number; oppHpPct: number }) =>
+    evaluateIndexFactor(engineOf(dex), { correct: true, questionNo, ...hp });
+
+  it("Blacephalon #806 opens on x5 and then burns out to 75% for the rest of the battle", () => {
+    expect(at(806, 1)).toBe(5);
+    // The owner's correction: 75% covers questions 2 THROUGH 19, not just q19.
+    for (let q = 2; q <= 19; q++) expect(at(806, q), `q${q}`).toBe(0.75);
+    // q20 is off the end of the spec — neutral, not 75%.
+    expect(at(806, 20)).toBe(1);
+  });
+
+  it("Giratina #487 doubles on its two marked questions only", () => {
+    expect(at(487, 2)).toBe(2);
+    expect(at(487, 12)).toBe(2);
+    expect(at(487, 3)).toBe(1);
+    // q1/q11 are the DEFENSIVE marks (receiveDamagePct) — they must not touch
+    // Giratina's own outgoing damage.
+    expect(at(487, 1)).toBe(1);
+    expect(at(487, 11)).toBe(1);
+  });
+
+  it("Naganadel #803 charges at 50% then triples on the payoff question", () => {
+    for (let q = 1; q <= 5; q++) expect(at(803, q), `q${q}`).toBe(0.5);
+    expect(at(803, 6)).toBe(3);
+    expect(at(803, 7)).toBe(1);
+  });
+
+  it("a zero phase window really is zero, not the 1-HP damage floor", () => {
+    expect(at(805, 1)).toBe(0);
+    const { dmg } = computePvpDamage({
+      streak: 5,
+      speedRatio: 1,
+      attackStage: 3,
+      defenseStage: 0,
+      critStage: 0,
+      firstHalf: true,
+      outgoingFactor: 0,
+      rng: () => 1,
+    });
+    expect(dmg).toBe(0);
+  });
+
+  it("Regigigas #486 only pays off while it is behind on HP", () => {
+    expect(at(486, 4, { selfHpPct: 0.3, oppHpPct: 0.9 })).toBe(2.5);
+    expect(at(486, 4, { selfHpPct: 0.9, oppHpPct: 0.3 })).toBe(1);
+    // No HP supplied → the gate cannot be shown to hold, so no payoff.
+    expect(at(486, 4)).toBe(1);
+  });
+
+  it("is inert on a wrong answer and on rows with no indexed damage", () => {
+    expect(evaluateIndexFactor(engineOf(806), { correct: false, questionNo: 1 })).toBe(1);
+    expect(evaluateIndexFactor(engineOf(1001), { correct: true, questionNo: 1 })).toBe(1);
+    expect(evaluateIndexFactor(null, { correct: true, questionNo: 1 })).toBe(1);
+  });
+
+  it("reads the payoff question off the spec, explicit or implied", () => {
+    expect(phasePayoffIndex({ type: "phase_window", windowN: 3, scaleToPct: 0 })).toBe(4);
+    expect(
+      phasePayoffIndex({ type: "phase_window", windowN: 5, scaleToPct: 50, payoffAtIndex: 6 }),
+    ).toBe(6);
   });
 });
 
