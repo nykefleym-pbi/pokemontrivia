@@ -244,10 +244,16 @@ function describePhase(p: PhaseWindowSpec): string {
   const parts: string[] = [];
   // "the first 1 question" → "the first question".
   const window = p.windowN === 1 ? "the first question" : `the first ${questions(p.windowN)}`;
+  // Cosmog #789 is the only row that charges into a bespoke payoff rather than a
+  // damage multiplier, and the owner wants its joke kept (2026-07-12): Splash reads
+  // as the do-nothing ability right up until it takes half the opponent's health.
+  const isSetUp = p.scaleToPct === 0 && p.payoffEffect != null;
   parts.push(
-    p.scaleToPct === 0
-      ? `you deal no damage for ${window}`
-      : `you deal ${p.scaleToPct}% damage for ${window}`,
+    isSetUp
+      ? `nothing seems to happen for ${window} — you deal no damage at all`
+      : p.scaleToPct === 0
+        ? `you deal no damage for ${window}`
+        : `you deal ${p.scaleToPct}% damage for ${window}`,
   );
   const at = p.payoffAtIndex ?? p.windowN + 1;
   if (p.payoffMultiplier != null) {
@@ -255,7 +261,11 @@ function describePhase(p: PhaseWindowSpec): string {
     parts.push(`then ${times(p.payoffMultiplier)} damage on question ${at}${gate}`);
   }
   if (p.payoffEffect) {
-    parts.push(`then on question ${at} you ${describeBespoke(p.payoffEffect)}`);
+    // Spell out that CURRENT means current: the cut is taken off whatever HP the
+    // opponent is actually sitting on at the payoff question, not their starting HP.
+    parts.push(
+      `and then on question ${at} you ${describeBespoke(p.payoffEffect)} — taken off whatever they are actually on at that moment, not off their starting HP`,
+    );
   }
   return parts.join(", ");
 }

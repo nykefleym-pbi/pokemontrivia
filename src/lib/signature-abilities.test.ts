@@ -408,16 +408,20 @@ describe("describeSignatureFull (tappable popover — effect + when + cooldown)"
     );
   });
 
-  // Cosmog #789 USED to be the joke row ("Splash — nothing happens"), and the
-  // describer said so by testing `isNoOpSignature` before the engine. The rework
-  // armed it: it charges for three questions and halves the opponent on q4. Whatever
-  // the text says, it must not be the old "no effect whatsoever" line.
-  it("describes Cosmog's armed Splash, not the joke ability it replaced", () => {
+  // Cosmog #789 USED to be the joke row, and the describer read it as one — it tested
+  // `isNoOpSignature` before the engine, so Splash still said "Nothing happens. Has no
+  // effect whatsoever." long after the rework armed it. Owner ruling 2026-07-12: keep
+  // the joke in the TEXT (Splash looks useless right up until it isn't), but the text
+  // must go on to say what it really does, and must be explicit that the cut comes off
+  // the opponent's CURRENT HP at the payoff question.
+  it("keeps Splash's joke but then tells the truth about the halve", () => {
     const text = describeSignatureFull(789)!;
-    expect(text).not.toContain("Nothing happens");
-    expect(text).toContain("no damage for the first 3 questions");
-    expect(text).toContain("on question 4");
-    expect(text).toContain("50% off the opponent's current HP");
+    expect(text).toBe(
+      "Nothing seems to happen for the first 3 questions — you deal no damage at all, " +
+        "and then on question 4 you knock 50% off the opponent's current HP — taken off " +
+        "whatever they are actually on at that moment, not off their starting HP. Once per battle.",
+    );
+    expect(text).not.toContain("Has no effect whatsoever");
   });
 
   it("describes Blacephalon's burnout as the owner specced it (q2-19, permanent)", () => {
