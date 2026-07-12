@@ -24,6 +24,7 @@ import {
   type LivePvpMatch,
   type LivePvpEffect,
 } from "@/lib/pvp-live";
+import type { SigRuntimeMap } from "@/lib/signature-rework-types";
 import { LivePvpBattleScreen, type LivePvpBattleResult } from "@/components/live-pvp-battle-screen";
 import { getProfileById, ensureSession, type TrainerProfile } from "@/lib/social";
 import { supabase } from "@/integrations/supabase/client";
@@ -240,6 +241,17 @@ function LivePvpMatchPage() {
             guestSigState:
               (row.guest_sig_state as Record<string, number> | null) ??
               matchRef.current?.guestSigState ??
+              {},
+            // The signature-engine runtime rides this same channel: it is how each
+            // client sees the OTHER side's engine fire (`phaseIdx` advancing), which
+            // the `opponent_signature` rows react to.
+            hostSigRuntime:
+              (row.host_sig_runtime as SigRuntimeMap | null) ??
+              matchRef.current?.hostSigRuntime ??
+              {},
+            guestSigRuntime:
+              (row.guest_sig_runtime as SigRuntimeMap | null) ??
+              matchRef.current?.guestSigRuntime ??
               {},
             hostRevived: (row.host_revived as boolean | null) ?? matchRef.current?.hostRevived ?? false,
             guestRevived:

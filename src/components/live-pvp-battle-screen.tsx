@@ -21,6 +21,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { CATEGORIES, CATEGORY_OF, BAG_SHORT_DESC } from "@/lib/item-categories";
 import {
   computePvpDamage,
+  evaluateHitModifiers as evaluateSigMultiplier,
+  multiplierConditionHolds,
+  NO_SIGNATURE_HIT_MODIFIERS,
   timerMsForSpeedStage,
   PVP_BASE_TIMER_MS,
   PVP_MAX_HP,
@@ -35,8 +38,20 @@ import {
   submitBotPvpMove,
   applyBotPvpSignatureEffect,
   applyBotPvpLiveItem,
+  sigEngineTick,
+  botSigEngineTick,
+  sigEngineStatus,
+  sigM4Fx,
+  sigM4Window,
+  type SigEngineTickSpec,
   type LivePvpMatch,
 } from "@/lib/pvp-live";
+import {
+  stepBespokeFx,
+  eliminatedChoiceIndices,
+  EMPTY_BESPOKE_FX_STATE,
+  type BespokeFxState,
+} from "@/lib/signature-bespoke-fx";
 import { getAbilityById, type AbilityId } from "@/lib/abilities";
 import {
   resolvePvpTypeAbilityId,
@@ -53,7 +68,6 @@ import {
   rollBotProfile,
   botAnswersCorrectly,
   botAnswerTimeMs,
-  botShouldFireAbility,
   botShouldUseItem,
   botConfusionMiss,
   type BotProfile,
@@ -74,9 +88,12 @@ import {
   mergeHitModifiers,
   manualUsesPerBattle,
   resolveMewTransform,
+  engineTriggerFired,
   MEW_ID,
   NO_HIT_MODIFIERS,
   type SignatureContext,
+  type SignatureEngineSpec,
+  type DisableSpec,
 } from "@/lib/signature-abilities";
 import {
   nextWrathStacks,
@@ -288,6 +305,139 @@ function ArenaSprite({
   );
 }
 
+// ── signature-rework M1 engine helpers (Frontend-B, shard B) ────────────────
+// Pure, component-independent glue for the server-authoritative per-answer
+// signature engine (`sigEngineTick`/`botSigEngineTick`). See
+// docs/handoffs/signature-rework/03-frontend-b.md.
+
+/** Coerce the engine tick's `Record<string, number>` stage map into the store's
+ *  `PvpStatStages` shape (any missing stat → 0). */
+function toStages(rec: Record<string, number>): PvpStatStages {
+  return {
+    attack: rec.attack ?? 0,
+    defense: rec.defense ?? 0,
+    speed: rec.speed ?? 0,
+    crit: rec.crit ?? 0,
+  };
+}
+
+interface TickDisable {
+  disableKind: string;
+  disableN: number;
+  disableNextQuestion: boolean;
+  /** `disable_effect_after_questions(n)` — the row auto-disables + reverts n
+   *  questions after it fired, regardless of correctness. Composes with
+   *  `disableKind` server-side, so an `any_of` carrying BOTH a revert-after-N
+   *  arm and a questions-elapsed arm keeps both (Moltres #146). 0 = never. */
+  expireAfterQuestions: number;
+}
+
+const NO_TICK_DISABLE: TickDisable = {
+  disableKind: "none",
+  disableN: 0,
+  disableNextQuestion: false,
+  expireAfterQuestions: 0,
+};
+
+/** `any_of([...])` → the arms compose rather than compete: pick the highest-priority
+ *  *incorrect-counting* arm for kind/n (only one can be tracked), and carry the
+ *  orthogonal arms (`disable_next_question_after_effect`,
+ *  `disable_effect_after_questions`) alongside it — the server tracks those on
+ *  separate fields. This is what lets Moltres #146 both revert on 1 incorrect AND
+ *  expire 3 questions after firing. */
+function reduceAnyOfDisable(arms: DisableSpec[]): TickDisable {
+  const disableNextQuestion = arms.some((a) => a.kind === "disable_next_question_after_effect");
+  const expiryArm = arms.find((a) => a.kind === "disable_effect_after_questions");
+  const expireAfterQuestions = expiryArm && "n" in expiryArm ? expiryArm.n : 0;
+  const priority = [
+    "revert_stat_after_incorrect",
+    "disable_increase_after_incorrect",
+    "disable_effect_after_incorrect",
+    "once_per_battle",
+  ] as const;
+  for (const kind of priority) {
+    const arm = arms.find((a) => a.kind === kind);
+    if (arm) {
+      return {
+        disableKind: kind,
+        disableN: "n" in arm ? arm.n : 0,
+        disableNextQuestion,
+        expireAfterQuestions,
+      };
+    }
+  }
+  return { ...NO_TICK_DISABLE, disableNextQuestion, expireAfterQuestions };
+}
+
+/** Reduce a row's `DisableSpec` to the disable kinds + orthogonal flags the RPC
+ *  understands. Kinds the server still can't track collapse to `none` and stay on
+ *  their existing bespoke path. */
+function engineToTickDisable(disable: DisableSpec): TickDisable {
+  switch (disable.kind) {
+    case "revert_stat_after_incorrect":
+    case "disable_increase_after_incorrect":
+    case "disable_effect_after_incorrect":
+      return { ...NO_TICK_DISABLE, disableKind: disable.kind, disableN: disable.n };
+    case "once_per_battle":
+      return { ...NO_TICK_DISABLE, disableKind: "once_per_battle" };
+    case "disable_next_question_after_effect":
+      return { ...NO_TICK_DISABLE, disableNextQuestion: true };
+    case "disable_effect_after_questions":
+      return { ...NO_TICK_DISABLE, expireAfterQuestions: disable.n };
+    case "any_of":
+      return reduceAnyOfDisable(disable.of);
+    // Still not tick-tracked — left on the existing bespoke/heal path:
+    case "disable_multiplier_after_incorrect": // multiplier-disable has no runtime counter yet
+    case "disable_healing_after_questions": // healing-disable is the bespoke heal flow
+    case "none":
+    default:
+      return NO_TICK_DISABLE;
+  }
+}
+
+/** Build a `SigEngineTickSpec` from a row's `SignatureEngineSpec`. `statSpecs` and
+ *  `incorrectStat` pass through as-is (the server applies/tracks them); `stackCap`
+ *  is omitted — no per-row ramp-cap override exists on the spec, so it defaults
+ *  to 3. `selfHp`/`oppHp` are supplied by the caller, which has the live HP. */
+function engineToTickSpec(
+  engine: SignatureEngineSpec,
+  hp?: { selfHp: number; oppHp: number },
+  opp?: { oppType: string[]; oppSpecies: number },
+): SigEngineTickSpec {
+  const disable = engineToTickDisable(engine.disable);
+  // Uxie #480: the tick rolls + stores the predicted status when it sees a stat spec
+  // carrying mode 'predicted_status', then echoes it back in the runtime. The catalog
+  // row expresses the prediction as a BESPOKE fx (it changes no stat), so we bridge it
+  // into the stat-spec channel here rather than polluting the catalog with a fake stat.
+  const statSpecs: SigEngineTickSpec["statSpecs"] = [...(engine.stat ?? [])];
+  if (engine.bespoke?.some((b) => b.fx === "predicted_status_reveal")) {
+    statSpecs.push({ mode: "predicted_status" });
+  }
+  // A `multiplier` can also carry STAT specs that depend on the matchup:
+  // `onSuccess` when its condition holds (Ogerpon #1017's +3 Crit only into
+  // grass/water/fire/rock; Regice #378, whose "multiplier" is really just a
+  // conditional +1 Attack), and `fallback` when it does not (Zygarde #718).
+  // The tick cannot evaluate an opponent condition, so we resolve it here — the
+  // client already supplies every other stat spec, and the server still clamps
+  // the result to +/-3. Without this, those stat bumps reach nobody: the legacy
+  // path used to deliver them, and M4 switches the legacy path off.
+  if (engine.multiplier && opp) {
+    const holds = multiplierConditionHolds(engine.multiplier.condition, opp);
+    const conditional = holds ? engine.multiplier.onSuccess : engine.multiplier.fallback;
+    if (conditional?.length) statSpecs.push(...conditional);
+  }
+  return {
+    statSpecs,
+    incorrectStatSpecs: engine.incorrectStat ?? [],
+    disableKind: disable.disableKind,
+    disableN: disable.disableN,
+    disableNextQuestion: disable.disableNextQuestion,
+    expireAfterQuestions: engine.expireAfterQuestions ?? disable.expireAfterQuestions,
+    selfHp: hp?.selfHp ?? null,
+    oppHp: hp?.oppHp ?? null,
+  };
+}
+
 /**
  * Turn-based HP-endurance battle for Nearby Battle. Both trainers answer the
  * same shared, wall-clock-synced question set (base 20s slot, same lockstep
@@ -451,7 +601,14 @@ export function LivePvpBattleScreen({
   // (Aeroblast, Mist Ball, …) OR arms a client-side one-hit damage modifier
   // (Psystrike, Dragon Ascent, Giratina's Shadow Force — no server round trip;
   // damage is client-computed and server-clamped like any passive_damage hit).
-  const isClientHitManual = !!ability && hasClientManualHit(ability);
+  // Owner ruling 2026-07-12: for rows the engine drives, the ENGINE REPLACES the
+  // manual armed-hit button — Psystrike / Dragon Ascent / Shadow Force now fire
+  // automatically on their trigger instead of being tapped. Dropping them out of
+  // `isClientHitManual` both stops the one-hit modifier being armed (it would
+  // double the engine's own effect) and hides a Fire button that would no longer
+  // do anything. Server-catalog manuals (Aeroblast, Roar of Time, …) are a
+  // different path and keep their button.
+  const isClientHitManual = !!ability && !ability.engine && hasClientManualHit(ability);
   const manualFireable =
     !!ability && manualCap > 0 && (hasServerManualEffect(ability) || isClientHitManual);
   // Client-armed one-hit modifiers waiting to be folded into the NEXT correct
@@ -529,6 +686,38 @@ export function LivePvpBattleScreen({
   // Ho-Oh (250) Rainbow Rebirth: one-time toast when the server revives us from
   // a would-be self-KO (server is authoritative; this is display-only).
   const rainbowRebirthToastedRef = useRef(false);
+  // signature-rework M1 engine (sigEngineTick) cue bookkeeping. Track my own
+  // partner's disable + net-stat state across ticks so we can cue a
+  // cooldown/lockout onset and a stat-revert exactly once each (never fabricated
+  // — read straight off the tick's returned runtime). The error toast is
+  // deduped to at most once per battle so a missing/unapplied RPC can't spam.
+  const sigDisabledRef = useRef(false);
+  const sigNetActiveRef = useRef(false);
+  const sigTickErrorRef = useRef(false);
+  // The bot's own disabled flag, mirrored off ITS returned runtime entry, so the
+  // bot's engine multiplier respects a cooldown exactly as the human's does
+  // (otherwise the bot would keep a x2 the player has already lost).
+  const botSigDisabledRef = useRef(false);
+  // M4 `latchOnTrigger`: has this side's row ever fired? Walking Wake #1009 /
+  // Iron Leaves #1010 bank their x2 "for the rest of the battle" once they drop
+  // below 50% HP, and Regidrago #895 stays armed from battle start so its HP
+  // ladder is re-read every question. Refs (not state) — read inside the answer
+  // handler, and a re-render must not reset them.
+  const sigLatchedRef = useRef(false);
+  const botSigLatchedRef = useRef(false);
+  // M3 bespoke scheduling (signature-bespoke-fx.ts): which question a delayed strike
+  // lands on, how long Heatran's DoT window stays open, which question Azelf culls,
+  // what Uxie foresaw. Per-side, because both a human and a bot can hold these rows.
+  const bespokeFxRef = useRef<BespokeFxState>(EMPTY_BESPOKE_FX_STATE);
+  const botBespokeFxRef = useRef<BespokeFxState>(EMPTY_BESPOKE_FX_STATE);
+  // Azelf #482: the culled choice indices for the question currently on screen.
+  // State (not a ref) because it must re-render the answer buttons.
+  const [eliminatedChoices, setEliminatedChoices] = useState<number[]>([]);
+  // M2 opponent-signature observer: the opponent's engine bumps `phaseIdx` to the
+  // question number whenever THEIR signature fires. Watching that counter advance is
+  // how a client-side row reacts to it (Celebi/Manaphy/Solgaleo/Lunala). Same
+  // one-question reaction lag we already accept for Raging Bolt's Thunderclap.
+  const oppSigPhaseIdxRef = useRef<number | null>(null);
 
   // Fold a server ability-effect result (stat stages / statuses / HP) back into
   // local state. Shared by the generic post_answer path and the Phase 1/2
@@ -546,6 +735,140 @@ export function LivePvpBattleScreen({
     if (typeof res.hostHp === "number") {
       setMyHp(amIHost ? res.hostHp : res.guestHp!);
       setOppHp(amIHost ? res.guestHp! : res.hostHp);
+    }
+  }
+
+  /**
+   * M4 — fire the three server-owned channels a row may need when its trigger
+   * fires. Each is a no-op unless the row's spec actually asks for it, and the
+   * server no-ops again if it has no catalog row, so this is safe to call for
+   * every engine row.
+   *
+   *  - engine_status: the row's `engine.status`. Before M4 nothing delivered these
+   *    (statuses came from the legacy path) — 34 rows were silently inert.
+   *  - m4_fx:         the instant KO + the Ruination halve. SERVER-rolled: a client
+   *                   that could report its own KO would be an instant-win cheat.
+   *  - m4_window:     shield / self-damage-zero / opponent-timer windows, written
+   *                   into runtime for the OTHER side (or submit_pvp_live_answer)
+   *                   to read back.
+   */
+  function fireM4Channels(args: {
+    engine: SignatureEngineSpec;
+    dex: number;
+    questionIndex: number;
+    triggerFired: boolean;
+    disabled: boolean;
+    side: "self" | "opponent";
+    asBot: boolean;
+  }): void {
+    const { engine, dex, questionIndex, triggerFired, disabled, side, asBot } = args;
+    if (!triggerFired || disabled) return;
+
+    if (engine.status?.length) {
+      void sigEngineStatus(matchId, questionIndex, dex, asBot).then((res) => {
+        if (!res.ok || res.noop) return;
+        useGameStore.setState({
+          battleStatuses: (amIHost ? res.hostStatuses : res.guestStatuses) ?? [],
+          opponentStatuses: (amIHost ? res.guestStatuses : res.hostStatuses) ?? [],
+        });
+        emit({
+          kind: "signature",
+          side,
+          partnerId: dex,
+          hitsOpponent: true,
+          questionIndex,
+          dedupeKey: `${side}:engine_status:${questionIndex}:${dex}`,
+        });
+      });
+    }
+
+    const wantsFx = engine.bespoke?.some((b) => b.fx === "instant_ko" || b.fx === "frac_hp_damage");
+    if (wantsFx) {
+      void sigM4Fx(matchId, questionIndex, dex, asBot).then((res) => {
+        if (!res.ok || res.noop) return;
+        if (typeof res.hostHp === "number" && typeof res.guestHp === "number") {
+          setMyHp(amIHost ? res.hostHp : res.guestHp);
+          setOppHp(amIHost ? res.guestHp : res.hostHp);
+        }
+        if (res.instantKo) {
+          const move = signatureMoveName(dex);
+          notify(
+            side === "self" ? "success" : "error",
+            side === "self"
+              ? `💀 ${move ?? "Signature"} — ONE-HIT KO!`
+              : `💀 ${move ?? "Their signature"} knocked you out!`,
+          );
+        }
+        emit({
+          kind: "signature",
+          side,
+          partnerId: dex,
+          hitsOpponent: true,
+          questionIndex,
+          dedupeKey: `${side}:m4fx:${questionIndex}:${dex}`,
+        });
+      });
+    }
+
+    if (engine.shield || engine.nullifySelfDamage || engine.opponentTimer) {
+      void sigM4Window(
+        matchId,
+        questionIndex,
+        dex,
+        {
+          shieldQuestions: engine.shield?.questions,
+          selfDmgZero: engine.nullifySelfDamage,
+          oppTimerMs: engine.opponentTimer?.ms,
+          oppTimerQuestions: engine.opponentTimer?.questions,
+        },
+        asBot,
+      ).then((res) => {
+        if (!res.ok || res.noop) return;
+        const move = signatureMoveName(dex);
+        if (engine.shield && side === "self") {
+          notify("success", `🛡️ ${move ?? "Signature"} — no damage for ${engine.shield.questions} questions`);
+        }
+        if (engine.opponentTimer && side === "self") {
+          notify("success", `⏱️ ${move ?? "Signature"} — their clock is down to ${engine.opponentTimer.ms / 1000}s`);
+        }
+      });
+    }
+  }
+
+  // Fold a signature-engine tick result (both sides' stat stages) back into the
+  // store. The tick returns ONLY stages + runtime (no statuses/HP), so unlike
+  // applyAbilityResult this touches stages alone — the ATK/DEF/SPD/CRIT chips
+  // then show the buff/debuff/revert live, consistent with the deliberate
+  // no-stat-toast policy. Shared by the human and bot tick call sites.
+  function foldSigTickStages(res: Awaited<ReturnType<typeof sigEngineTick>>): void {
+    if (!res.ok || res.noop || !res.hostStages || !res.guestStages) return;
+    useGameStore.setState({
+      myStages: toStages(amIHost ? res.hostStages : res.guestStages),
+      oppStages: toStages(amIHost ? res.guestStages : res.hostStages),
+    });
+  }
+
+  // Human tick: fold the stages, then cue the two player-relevant transitions
+  // read off my own partner's returned runtime — a cooldown/lockout onset and a
+  // stat-revert (net contribution emptied). Deduped via refs so each fires once
+  // per transition; nothing is announced that the tick didn't actually report.
+  function applyHumanSigTick(res: Awaited<ReturnType<typeof sigEngineTick>>, dexId: number): void {
+    foldSigTickStages(res);
+    if (!res.ok || res.noop) return;
+    const runtime = amIHost ? res.hostSigRuntime : res.guestSigRuntime;
+    const entry = runtime?.[String(dexId)];
+    if (!entry) return;
+    const move = signatureMoveName(dexId);
+    const wasDisabled = sigDisabledRef.current;
+    sigDisabledRef.current = entry.disabled;
+    const hasNet = Object.values(entry.netByStat).some((v) => v !== 0);
+    const hadNet = sigNetActiveRef.current;
+    sigNetActiveRef.current = hasNet;
+    if (!move) return;
+    if (!wasDisabled && entry.disabled) {
+      notify("info", `🔒 ${move} — signature on cooldown`);
+    } else if (hadNet && !hasNet) {
+      notify("info", `${move} — stat change wore off`);
     }
   }
 
@@ -615,6 +938,33 @@ export function LivePvpBattleScreen({
     );
   }, [ability, matchId, partnerId, pokedexCount, displayedIndex, notify]);
 
+  // Azelf #482 — resolve the culled options for the question now on screen. The
+  // scheduler decided LAST question which question to cull and by how many; this
+  // just draws it. Recomputed per question so the cull never leaks onto the next one.
+  useEffect(() => {
+    if (displayedIndex < 0) {
+      setEliminatedChoices([]);
+      return;
+    }
+    const q = questions[displayedIndex];
+    if (!q) {
+      setEliminatedChoices([]);
+      return;
+    }
+    const culled = eliminatedChoiceIndices(
+      bespokeFxRef.current,
+      displayedIndex + 1,
+      q.options.length,
+      q.correct,
+    );
+    setEliminatedChoices(culled);
+    if (culled.length > 0) {
+      const move = signatureMoveName(partnerId);
+      notify("success", `🧠 ${move ?? "Future Sight"} cleared ${culled.length} wrong answer${culled.length === 1 ? "" : "s"}!`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayedIndex]);
+
   // Phase 1 — hydrate Moltres's Wrath stacks from the authoritative row once,
   // as soon as the partner is known to be Moltres (dex 146; possibly via Mew's
   // Transform). Covers a mid-battle reconnect; a fresh battle reads 0.
@@ -648,6 +998,73 @@ export function LivePvpBattleScreen({
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [oppCorrectLive]);
+
+  // M2 — the `opponent_signature` observer (Celebi #251, Manaphy #490, Solgaleo #791,
+  // Lunala #792). These rows fire in REACTION to the other side's signature, which the
+  // client can't evaluate locally — so we watch the opponent's engine runtime on the
+  // synced row. Their `phaseIdx` advancing to a new question number IS the fact that
+  // their signature fired there. We then tick OUR engine with triggerFired = true and
+  // let the server apply the payload; the client only observes, it never decides the
+  // magnitude. Reaction lands a question late, exactly like Raging Bolt's Thunderclap.
+  const oppSigRuntime = amIHost ? match.guestSigRuntime : match.hostSigRuntime;
+  const oppPartnerForSig = opponentPartnerId;
+  useEffect(() => {
+    const engine = ability?.engine;
+    if (partnerId == null || !engine || engine.trigger.type !== "opponent_signature") return;
+    if (oppPartnerForSig == null || finishedRef.current) return;
+
+    const theirPhaseIdx = oppSigRuntime?.[String(oppPartnerForSig)]?.phaseIdx ?? 0;
+    const prev = oppSigPhaseIdxRef.current;
+    oppSigPhaseIdxRef.current = theirPhaseIdx;
+    // First observation only establishes the baseline — a mid-battle reconnect must
+    // not replay every signature the opponent already fired.
+    if (prev === null || theirPhaseIdx <= prev) return;
+
+    const myIdx = Math.max(0, displayedIndex);
+    if (myIdx < mySuppressedUntil) return; // my ability is locked
+    const reactingDex = partnerId;
+
+    void sigEngineTick(
+      matchId,
+      myIdx,
+      reactingDex,
+      true, // an observed opponent signature is the trigger; correctness is irrelevant
+      true,
+      engineToTickSpec(
+        engine,
+        { selfHp: myHp, oppHp },
+        {
+          oppType: oppPartnerForSig != null ? (findPokemon(oppPartnerForSig)?.types ?? []) : [],
+          oppSpecies: oppPartnerForSig ?? -1,
+        },
+      ),
+    ).then((tickRes) => {
+      if (!tickRes.ok) return;
+      applyHumanSigTick(tickRes, reactingDex);
+      const runtime = (amIHost ? tickRes.hostSigRuntime : tickRes.guestSigRuntime)?.[
+        String(reactingDex)
+      ];
+      if (runtime?.disabled) return; // row is on cooldown — observed, but it does not act
+      const move = signatureMoveName(reactingDex);
+      if (move) notify("success", `✨ ${move} answered their signature!`);
+
+      const outcome = stepBespokeFx(engine.bespoke, bespokeFxRef.current, {
+        questionNo: myIdx + 1,
+        triggerFired: true,
+        disabled: false,
+        oppHpPct: oppHp / PVP_MAX_HP,
+        predictedStatus: runtime?.predictedStatus ?? null,
+      });
+      bespokeFxRef.current = outcome.state;
+      if (outcome.cue) notify("info", outcome.cue);
+      if (outcome.fireBespoke) {
+        void applyPvpSignatureEffect(matchId, myIdx, reactingDex, "bespoke").then((fxRes) => {
+          if (fxRes.ok && !fxRes.noop) applyAbilityResult(fxRes);
+        });
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [oppSigRuntime, oppPartnerForSig]);
 
   // Keep local HP/items mirrors in sync with the authoritative row (updates
   // arrive via the parent route's postgres_changes subscription on `match`).
@@ -814,10 +1231,26 @@ export function LivePvpBattleScreen({
   // Paralysis shortens the personal window a further 25%, mirroring solo's
   // "Speed cut" translation; never below 4s so a question is always answerable.
   const isParalyzed = myStatuses.some((s) => s.kind === "paralysis");
-  const personalTimerMs = Math.max(
+  const basePersonalTimerMs = Math.max(
     4000,
     Math.min(QUESTION_SLOT_MS, isParalyzed ? Math.round(mySpeedTimerMs * 0.75) : mySpeedTimerMs),
   );
+  // M4 — the Loyal Three (#1014/#1015/#1016) crush MY clock to 5s. The window lives
+  // on THEIR sig_runtime (only the server writes it) and is read cross-side here,
+  // because a timer can only be enforced on the screen it belongs to. It overrides
+  // the Speed-stage timer rather than stacking with it, and the server has already
+  // clamped the value — a tampered client cannot squeeze anyone below 3s.
+  const oppTimerSqueezeMs = (() => {
+    if (oppPartnerForSig == null) return null;
+    const entry = oppSigRuntime?.[String(oppPartnerForSig)];
+    if (!entry?.oppTimerMs || entry.disabled) return null;
+    const questionNo = Math.max(0, displayedIndex) + 1;
+    if ((entry.oppTimerThroughQ ?? -1) < questionNo) return null;
+    return entry.oppTimerMs;
+  })();
+  const personalTimerMs = oppTimerSqueezeMs
+    ? Math.min(basePersonalTimerMs, oppTimerSqueezeMs)
+    : basePersonalTimerMs;
   const isAsleep = myStatuses.some((s) => s.kind === "sleep");
   const sleepLockMs = isAsleep ? personalTimerMs * 0.4 : 0;
 
@@ -945,6 +1378,14 @@ export function LivePvpBattleScreen({
       questionCategory: category,
       pokedexCount,
       oppDefenseStage: oppStages.defense,
+      // signature-rework additions (§2 of 03-frontend-a.md).
+      questionNo: idxAtAnswer + 1,
+      // M4: statuses ONLY. The HP half of `self_afflicted_or_hp_below` is now the
+      // predicate's job (it reads the row's own `pct` against selfHpPct above) —
+      // baking `< 0.5` in here made every row a 50% row and mis-fired Zarude's 25%.
+      selfAfflicted: myStatuses.length > 0 || selfConfused,
+      oppType: opponentPartnerId != null ? (findPokemon(opponentPartnerId)?.types ?? []) : [],
+      oppSpecies: opponentPartnerId ?? undefined,
     };
   }
 
@@ -1078,7 +1519,11 @@ export function LivePvpBattleScreen({
         // all Wrath stacks for +1 Attack/stack on THIS hit, resets the stack
         // (server-persisted), and rolls a 30%/stack Sleep on the opponent
         // through the same server-validated catalog path as any other status.
-        if (!suppressed && partnerId === 146 && wrathStacksRef.current > 0) {
+        // L2 de-dup: when the row carries an `engine` spec, the engine tick is the
+        // SOLE driver of its stat lifecycle. Moltres's legacy Wrath path grants the
+        // same +Attack and rolls the same Sleep the engine now does, so running both
+        // would double the buff. Skip the legacy path for engine-owned rows.
+        if (!suppressed && partnerId === 146 && !ability?.engine && wrathStacksRef.current > 0) {
           const discharge = wrathDischarge(wrathStacksRef.current);
           mods = mergeHitModifiers(mods, {
             ...NO_HIT_MODIFIERS,
@@ -1113,6 +1558,41 @@ export function LivePvpBattleScreen({
           ? Math.max(0, myStages.attack)
           : myStages.attack;
         const baseCrit = mods.ignoreOwnNegativeStages ? Math.max(0, myStages.crit) : myStages.crit;
+        // signature-rework (ruling 7): fold the partner's conditional
+        // engine.multiplier (x2-vs-type, ignore-Defense, …) into THIS correct
+        // hit. No-op (factor 1 / ignoreDefense false) when the row has no
+        // multiplier, the condition fails, or the ability is suppressed.
+        //
+        // Owner ruling 2026-07-12: a multiplier is NOT always-on. It applies only
+        // on an answer where the row's OWN trigger fires, and never while the row
+        // is disabled (cooldown) or suppressed. So Freeze-Dry's x2-vs-Water needs
+        // the 3-streak like everything else, and Psystrike's ignore-Defense no
+        // longer leaks onto question 1.
+        const engineSpec = ability?.engine;
+        // M4 `latchOnTrigger`: Walking Wake / Iron Leaves keep their x2 "for the
+        // rest of the battle" once they have dipped below 50% (owner ruling
+        // 2026-07-12 — healing back up does NOT revoke it), and Regidrago's
+        // start_of_battle trigger stays held so its HP ladder can be re-read
+        // every question. Once latched, the trigger counts as fired forever;
+        // the disable/suppress gates still apply.
+        if (engineSpec?.latchOnTrigger && engineTriggerFired(engineSpec.trigger, sigCtx)) {
+          sigLatchedRef.current = true;
+        }
+        const triggerHeld =
+          !!engineSpec &&
+          (engineTriggerFired(engineSpec.trigger, sigCtx) ||
+            (engineSpec.latchOnTrigger === true && sigLatchedRef.current));
+        const multiplierLive = !suppressed && !!engineSpec && !sigDisabledRef.current && triggerHeld;
+        const sigMult = multiplierLive
+          ? evaluateSigMultiplier(engineSpec.multiplier, {
+              correct: true,
+              oppType:
+                opponentPartnerId != null ? (findPokemon(opponentPartnerId)?.types ?? []) : [],
+              oppSpecies: opponentPartnerId ?? -1,
+              // Regidrago #895 reads its factor off MY live HP.
+              selfHpPct: myHp / PVP_MAX_HP,
+            })
+          : NO_SIGNATURE_HIT_MODIFIERS;
         const { dmg: computed } = computePvpDamage({
           streak: nextStreak,
           speedRatio,
@@ -1121,6 +1601,8 @@ export function LivePvpBattleScreen({
           critStage: baseCrit + mods.bonusCritStage,
           firstHalf,
           burned,
+          hitFactor: sigMult.factor,
+          ignoreDefense: sigMult.ignoreDefense,
         });
         dmg = computed + (mods.secondHitFraction ? Math.round(computed * mods.secondHitFraction) : 0);
         answeredCategoriesRef.current.add(category);
@@ -1154,7 +1636,10 @@ export function LivePvpBattleScreen({
       // Phase 1 — Moltres's Fiery Wrath builds a Wrath stack on each wrong
       // answer (capped at 3), unless the ability is currently suppressed. The
       // new count is persisted to the authoritative row (server-clamped).
-      if (partnerId === 146 && idxAtAnswer >= mySuppressedUntil) {
+      // L2 de-dup: skipped once Moltres carries an `engine` spec — the engine's
+      // own ramp/expiry lifecycle replaces the legacy stack counter (see the
+      // discharge site above).
+      if (partnerId === 146 && !ability?.engine && idxAtAnswer >= mySuppressedUntil) {
         const next = nextWrathStacks(wrathStacksRef.current, false);
         if (next !== wrathStacksRef.current) {
           wrathStacksRef.current = next;
@@ -1345,6 +1830,94 @@ export function LivePvpBattleScreen({
       // the OPPONENT's own screen, so nothing to apply on this client.
     }
 
+    // signature-rework M1 — run the server-authoritative signature engine once
+    // per human answer, UNCONDITIONALLY (never gated by a "should fire" check;
+    // the engine itself decides no-op). It owns the ramp/decay/revert/disable
+    // lifecycle so stat buffs EXPIRE instead of compounding. Only rows carrying
+    // an `engine` spec have anything to tick; the DUAL-FIRE type-ability blocks
+    // above and the bespoke post_answer path are untouched (R1).
+    const tickEngine = ability?.engine;
+    if (partnerId != null && tickEngine) {
+      const selfAfflicted = myStatuses.length > 0 || selfConfused;
+      const triggerFired = engineTriggerFired(tickEngine.trigger, {
+        correct,
+        streak: streakAfterAnswer,
+        questionIndex: idxAtAnswer,
+        questionNo: idxAtAnswer + 1,
+        selfAfflicted,
+        // M4: the HP gates (Zarude 25%, the 50% paradox rows, Terapagos's
+        // opponent-has-2x-my-HP) are resolved inside the predicate now.
+        selfHpPct: myHp / PVP_MAX_HP,
+        oppHpPct: oppHp / PVP_MAX_HP,
+      });
+      const answeredDex = partnerId;
+      void sigEngineTick(
+        matchId,
+        idxAtAnswer,
+        answeredDex,
+        correct,
+        triggerFired,
+        engineToTickSpec(
+          tickEngine,
+          { selfHp: myHp, oppHp },
+          {
+            oppType:
+              opponentPartnerId != null ? (findPokemon(opponentPartnerId)?.types ?? []) : [],
+            oppSpecies: opponentPartnerId ?? -1,
+          },
+        ),
+      ).then((tickRes) => {
+        if (!tickRes.ok) {
+          if (!sigTickErrorRef.current) {
+            sigTickErrorRef.current = true;
+            toast.error("Signature engine unavailable — stat effects may not update.");
+          }
+          return;
+        }
+        applyHumanSigTick(tickRes, answeredDex);
+        // M3 — bespoke scheduling runs AFTER the tick so `disabled` and the rolled
+        // `predictedStatus` come from authoritative runtime rather than a local guess.
+        const runtime = (amIHost ? tickRes.hostSigRuntime : tickRes.guestSigRuntime)?.[
+          String(answeredDex)
+        ];
+        const outcome = stepBespokeFx(tickEngine.bespoke, bespokeFxRef.current, {
+          questionNo: idxAtAnswer + 1,
+          triggerFired,
+          disabled: runtime?.disabled ?? false,
+          oppHpPct: oppHp / PVP_MAX_HP,
+          predictedStatus: runtime?.predictedStatus ?? null,
+        });
+        bespokeFxRef.current = outcome.state;
+        if (outcome.cue) notify("info", outcome.cue);
+        if (outcome.fireBespoke) {
+          void applyPvpSignatureEffect(matchId, idxAtAnswer, answeredDex, "bespoke").then(
+            (fxRes) => {
+              if (!fxRes.ok || fxRes.noop) return;
+              applyAbilityResult(fxRes);
+              emit({
+                kind: "signature",
+                side: "self",
+                partnerId: answeredDex,
+                hitsOpponent: true,
+                questionIndex: idxAtAnswer,
+                dedupeKey: `self:bespoke:${idxAtAnswer}:${answeredDex}`,
+              });
+            },
+          );
+        }
+        // M4 — the three server-owned channels, fired only on a live trigger.
+        fireM4Channels({
+          engine: tickEngine,
+          dex: answeredDex,
+          questionIndex: idxAtAnswer,
+          triggerFired,
+          disabled: runtime?.disabled ?? false,
+          side: "self",
+          asBot: false,
+        });
+      });
+    }
+
     prevCorrectRef.current = correct;
     prevElapsedRef.current = elapsedMs;
 
@@ -1471,6 +2044,41 @@ export function LivePvpBattleScreen({
         const speedRatio = Math.max(0, (totalMs - timeMs) / totalMs);
         const firstHalf = timeMs <= totalMs / 2;
         const burned = oppStatuses.some((s) => s.kind === "burn");
+        // signature-rework (ruling 7): the bot's own conditional engine.multiplier
+        // vs the human partner (the bot's opponent). Trigger-gated and cooldown-
+        // gated on the bot's side too (owner ruling 2026-07-12) — same rule the
+        // human path applies above, so neither side gets an always-on multiplier.
+        const botEngineSpec = botAbility?.engine;
+        // M4: the bot latches exactly as the human does (above) — otherwise a bot
+        // Walking Wake would lose its rest-of-battle x2 the moment it healed.
+        const botTriggerNow =
+          !!botEngineSpec &&
+          engineTriggerFired(botEngineSpec.trigger, {
+            correct: true,
+            streak: next,
+            questionIndex: idxAtAnswer,
+            questionNo: idxAtAnswer + 1,
+            // M4: from the bot's point of view IT is "self" and the player is the
+            // "opponent" — so the HP fractions are mirrored.
+            selfAfflicted: oppStatuses.length > 0 || oppConfused,
+            selfHpPct: oppHp / PVP_MAX_HP,
+            oppHpPct: myHp / PVP_MAX_HP,
+          });
+        if (botEngineSpec?.latchOnTrigger && botTriggerNow) botSigLatchedRef.current = true;
+        const botMultLive =
+          !!botEngineSpec &&
+          !botSigDisabledRef.current &&
+          (botTriggerNow ||
+            (botEngineSpec.latchOnTrigger === true && botSigLatchedRef.current));
+        const botMult = botMultLive
+          ? evaluateSigMultiplier(botEngineSpec.multiplier, {
+              correct: true,
+              oppType: myPokemon?.types ?? [],
+              oppSpecies: partnerId ?? -1,
+              // Regidrago #895 on the bot's side reads ITS HP.
+              selfHpPct: oppHp / PVP_MAX_HP,
+            })
+          : NO_SIGNATURE_HIT_MODIFIERS;
         const { dmg: computed } = computePvpDamage({
           streak: next,
           speedRatio,
@@ -1479,6 +2087,8 @@ export function LivePvpBattleScreen({
           critStage: oppStages.crit,
           firstHalf,
           burned,
+          hitFactor: botMult.factor,
+          ignoreDefense: botMult.ignoreDefense,
         });
         dmg = computed;
       } else {
@@ -1499,13 +2109,72 @@ export function LivePvpBattleScreen({
           onFinish({ resolved: true, won, hp: res.hostHp, oppHp: res.guestHp });
         }
       });
-      if (
-        botPartnerId != null &&
-        botAbility &&
-        botAbility.wiring === "post_answer" &&
-        botShouldFireAbility(p, { answeredCorrectly: correct, hasAbility: true })
-      ) {
-        void applyBotPvpSignatureEffect(matchId, idxAtAnswer, botPartnerId, "post_answer");
+      // signature-rework M1 — run the engine tick for the bot's (guest) answer
+      // once per question, UNCONDITIONALLY (NOT gated by botShouldFireAbility —
+      // that gate stays for the bespoke fire below). Rows with an `engine` spec
+      // only. Targets `pvp_bot_sig_engine_tick`, which DB Engineer must still add
+      // (03-backend.md §4) — until then this no-ops/errors at runtime silently
+      // (expected; not toasted). The bot is always the guest.
+      const botTickEngine = botAbility?.engine;
+      if (botPartnerId != null && botTickEngine) {
+        const botAfflicted = oppStatuses.length > 0 || oppConfused;
+        const botTriggerFired = engineTriggerFired(botTickEngine.trigger, {
+          correct,
+          streak: botStreakRef.current,
+          questionIndex: idxAtAnswer,
+          questionNo: idxAtAnswer + 1,
+          selfAfflicted: botAfflicted,
+          // M4: mirrored — the bot is "self" here (see the multiplier gate above).
+          selfHpPct: oppHp / PVP_MAX_HP,
+          oppHpPct: myHp / PVP_MAX_HP,
+        });
+        void botSigEngineTick(
+          matchId,
+          idxAtAnswer,
+          botPartnerId,
+          correct,
+          botTriggerFired,
+          // The bot IS the opponent from this (host) client's view, so its own HP
+          // is `oppHp` and the HP it faces is ours.
+          // The bot's "opponent" is US, so its matchup conditions read OUR types.
+          engineToTickSpec(
+            botTickEngine,
+            { selfHp: oppHp, oppHp: myHp },
+            { oppType: myPokemon?.types ?? [], oppSpecies: partnerId ?? -1 },
+          ),
+        ).then((tickRes) => {
+          foldSigTickStages(tickRes);
+          // The bot is always the guest — mirror its disabled flag for the
+          // multiplier gate above.
+          const botEntry = tickRes.guestSigRuntime?.[String(botPartnerId)];
+          if (botEntry) botSigDisabledRef.current = botEntry.disabled;
+          // M3 — the bot schedules its bespoke rows on the same rules we do (owner
+          // ruling 5: the bot runs its signature identically to a human). HP is
+          // mirrored: the bot's "opponent" is us.
+          const botOutcome = stepBespokeFx(botTickEngine.bespoke, botBespokeFxRef.current, {
+            questionNo: idxAtAnswer + 1,
+            triggerFired: botTriggerFired,
+            disabled: botEntry?.disabled ?? false,
+            oppHpPct: myHp / PVP_MAX_HP,
+            predictedStatus: botEntry?.predictedStatus ?? null,
+          });
+          botBespokeFxRef.current = botOutcome.state;
+          if (botOutcome.fireBespoke) {
+            void applyBotPvpSignatureEffect(matchId, idxAtAnswer, botPartnerId, "bespoke");
+          }
+          // M4 — the bot gets the same three server-owned channels. It can KO us
+          // with Urshifu, shield itself with Zamazenta and crush our clock with the
+          // Loyal Three, exactly as a human holding those rows could.
+          fireM4Channels({
+            engine: botTickEngine,
+            dex: botPartnerId,
+            questionIndex: idxAtAnswer,
+            triggerFired: botTriggerFired,
+            disabled: botEntry?.disabled ?? false,
+            side: "opponent",
+            asBot: true,
+          });
+        });
       }
       if (
         botShouldUseItem(p, {
@@ -1827,8 +2496,11 @@ export function LivePvpBattleScreen({
                   const isCorrectOpt = i === q.correct;
                   const isSelected = selected === i;
                   const showState = selected !== null;
-                  // Battle aids (feedback b9d53ba1) — only while unanswered.
-                  const isDimmed = selected === null && revealedWrong === i;
+                  // Battle aids (feedback b9d53ba1) — only while unanswered. Azelf's
+                  // Future Sight culls a rolled set of wrong options and reuses the
+                  // same dimmed/disabled treatment, so the two aids read identically.
+                  const isDimmed =
+                    selected === null && (revealedWrong === i || eliminatedChoices.includes(i));
                   const isHinted = selected === null && revealedCorrect === i;
                   return (
                     <button

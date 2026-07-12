@@ -1,4 +1,5 @@
 import { streakMultiplier } from "./game-data";
+import type { DamageMultiplierSpec, MultiplierCondition } from "./signature-abilities";
 
 /**
  * Pure combat math for the Nearby-Battle HP-endurance PvP loop.
@@ -81,6 +82,18 @@ export interface PvpDamageParams {
   firstHalf: boolean;
   /** Attacker is burned. */
   burned?: boolean;
+  /**
+   * signature-rework (ruling 7 — answer-damage scope). Conditional damage
+   * multiplier applied to THIS correct answer only. `factor` (>1) scales the
+   * final damage; `ignoreDefense` drops the defender's Defense-stage divisor.
+   * Compute these with `evaluateHitModifiers(spec, ctx)` (below) at the call
+   * site (buildSigContext supplies `oppType`/`oppSpecies`), then pass the
+   * result here. Defaults (factor 1 / ignoreDefense false) are a no-op, so
+   * flat / HP-fraction / phase damage paths — which never build a
+   * `PvpDamageParams` — are untouched. Server re-clamps the final HP delta (R6).
+   */
+  hitFactor?: number;
+  ignoreDefense?: boolean;
   rng?: () => number;
 }
 
@@ -102,6 +115,11 @@ export function computePvpDamage(p: PvpDamageParams): PvpDamageResult {
   const didCrit = rng() < critRate(p.critStage, p.firstHalf);
   const critMult = didCrit ? PVP_CRIT_MULT : 1;
   const burnMult = p.burned ? PVP_BURN_OUTPUT_MULT : 1;
+  // signature-rework (ruling 7): fold the conditional multiplier + ignore-Defense
+  // into THIS answer's damage only. ignoreDefense collapses the Defense divisor
+  // to 1 (the +3-clamped opponent Defense no longer reduces the hit).
+  const hitFactor = p.hitFactor ?? 1;
+  const defenseDivisor = p.ignoreDefense ? 1 : 1 / statStageMultiplier(p.defenseStage);
   const dmg = Math.round(
     (p.baseDamage ?? PVP_BASE_DAMAGE) *
       streakMultiplier(p.streak) *
@@ -109,7 +127,111 @@ export function computePvpDamage(p: PvpDamageParams): PvpDamageResult {
       statStageMultiplier(p.attackStage) *
       critMult *
       burnMult *
-      (1 / statStageMultiplier(p.defenseStage)),
+      hitFactor *
+      defenseDivisor,
   );
   return { dmg: Math.max(1, dmg), didCrit };
+}
+
+// ── signature-rework: conditional answer-damage multiplier resolver ──────────
+
+/** Minimal context `evaluateHitModifiers` reads. A subset of the fields
+ *  `buildSigContext` populates on `SignatureContext` (oppType/oppSpecies), plus
+ *  whether this answer was correct — the multiplier is answer-damage-scoped
+ *  (ruling 7), so it is inert on a wrong answer. */
+export interface HitModifierContext {
+  /** Was this answer correct? Multiplier/ignore-Def only apply when true. */
+  correct: boolean;
+  /** Opponent partner's types (for "opponent_type"/"opponent_type_any"). */
+  oppType: string[];
+  /** Opponent partner's National Dex id (for "opponent_species"/"opponent_species_any"). */
+  oppSpecies: number;
+  /** signature-rework M4: the ATTACKER's own HP as a 0..1 fraction, for the
+   *  `hpTiers` ladder (Regidrago #895 — x3 while healthy down to x1 when spent).
+   *  Optional: rows without `hpTiers` never read it, and an absent value falls
+   *  through to the flat `factor` rather than silently picking a tier. */
+  selfHpPct?: number;
+}
+
+/** Aggregated answer-damage modifiers for one correct answer. `factor` feeds
+ *  `PvpDamageParams.hitFactor`; `ignoreDefense` feeds `PvpDamageParams.ignoreDefense`. */
+export interface SignatureHitModifiers {
+  factor: number;
+  ignoreDefense: boolean;
+}
+
+export const NO_SIGNATURE_HIT_MODIFIERS: SignatureHitModifiers = { factor: 1, ignoreDefense: false };
+
+/** Does a multiplier's opponent-condition hold right now? Exported because the tick
+ *  spec builder needs the same answer to decide whether a row's `onSuccess` or its
+ *  `fallback` STAT specs go to the server (Ogerpon #1017 / Regice #378 / Zygarde
+ *  #718) — one definition, so the damage and the stat bump can never disagree. */
+export function multiplierConditionHolds(
+  cond: MultiplierCondition,
+  ctx: Pick<HitModifierContext, "oppType" | "oppSpecies">,
+): boolean {
+  switch (cond.on) {
+    case "always":
+      return true;
+    case "opponent_type":
+      return ctx.oppType.includes(cond.typeName);
+    case "opponent_type_any":
+      return cond.typeNames.some((t) => ctx.oppType.includes(t));
+    case "opponent_species":
+      return ctx.oppSpecies === cond.dexId;
+    case "opponent_species_any":
+      return cond.dexIds.includes(ctx.oppSpecies);
+    default:
+      return false;
+  }
+}
+
+/**
+ * Resolve a row's `engine.multiplier` (`DamageMultiplierSpec`) against the live
+ * opponent into the concrete `{ factor, ignoreDefense }` to fold into
+ * `computePvpDamage` for THIS correct answer (ruling 7 — answer-damage scope).
+ *
+ * - Wrong answer, or no spec → the neutral `{ factor: 1, ignoreDefense: false }`.
+ * - Condition holds → the spec's `factor` and `ignoreDefense` apply. (The
+ *   `onSuccess` / `fallback` STAT specs are NOT handled here — those are stat
+ *   stages resolved by the backend `sigEngineTick`, not the damage number.)
+ * - Condition fails → the factor falls back to `fallbackFactor` (default 1), and
+ *   the conditional `ignoreDefense` drops.
+ *
+ * `ignoreDefenseAlways` is the unconditional axis: it applies whether or not the
+ * condition holds, so a row can ignore Defense EVERY battle while ALSO carrying a
+ * separate species/type-conditional damage factor. Solgaleo #791 is the row that
+ * forces the two axes apart (always ignore Def, ×2 only into Lunala) — a single
+ * `{ on: "always" }` condition cannot express both at once.
+ *
+ * NB: this is a DISTINCT function from the same-named `evaluateHitModifiers` in
+ * `signature-abilities.ts` (which resolves the legacy `damage_calc` HitModifiers
+ * from an ability). They live in different modules; a caller needing both should
+ * alias one on import. See docs/handoffs/signature-rework/03-frontend-a.md.
+ */
+export function evaluateHitModifiers(
+  spec: DamageMultiplierSpec | null | undefined,
+  ctx: HitModifierContext,
+): SignatureHitModifiers {
+  if (!spec || !ctx.correct) return NO_SIGNATURE_HIT_MODIFIERS;
+  const holds = multiplierConditionHolds(spec.condition, ctx);
+  return {
+    factor: holds ? hpTierFactor(spec, ctx) : (spec.fallbackFactor ?? 1),
+    ignoreDefense: spec.ignoreDefenseAlways === true || (holds && spec.ignoreDefense === true),
+  };
+}
+
+/** The factor to use when the condition holds. Normally the flat `spec.factor`,
+ *  but an `hpTiers` row (Regidrago #895) reads it off a ladder keyed on the
+ *  attacker's own live HP: the highest tier whose `atLeastPct` the attacker still
+ *  meets. Re-evaluated every question (owner ruling 2026-07-12), so the factor
+ *  slides down as Regidrago is worn out. */
+function hpTierFactor(spec: DamageMultiplierSpec, ctx: HitModifierContext): number {
+  const flat = spec.factor ?? 1;
+  if (!spec.hpTiers?.length || ctx.selfHpPct === undefined) return flat;
+  const hpPct = ctx.selfHpPct * 100;
+  const tier = [...spec.hpTiers]
+    .sort((a, b) => b.atLeastPct - a.atLeastPct)
+    .find((t) => hpPct >= t.atLeastPct);
+  return tier?.factor ?? flat;
 }

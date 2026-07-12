@@ -2,6 +2,11 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Trivia } from "@/lib/trivia-core";
 import type { ActiveStatus, PvpStatStages } from "@/lib/store";
 import type { ItemId } from "@/lib/game-data";
+import type {
+  StatChangeSpec,
+  SigEngineTickResult,
+  SigRuntimeMap,
+} from "@/lib/signature-rework-types";
 
 export interface LiveOpponentPreview {
   id: string;
@@ -70,6 +75,13 @@ export interface LivePvpMatch {
    * Moltres's Wrath stacks). Server-clamped on write. `{}` when unused. */
   hostSigState: Record<string, number>;
   guestSigState: Record<string, number>;
+  /** Per-side signature-ENGINE runtime keyed by partner dex id (M1). Surfaced on the
+   * synced row — not just in the tick's reply — so each client can OBSERVE the other
+   * side's engine: `phaseIdx` advancing to a question number is the fact that their
+   * signature fired there, which is what the `opponent_signature` rows react to
+   * (Celebi/Manaphy/Solgaleo/Lunala). `{}` when unused. */
+  hostSigRuntime: SigRuntimeMap;
+  guestSigRuntime: SigRuntimeMap;
   /** Ho-Oh (250) Rainbow Rebirth: has this side already used its one-time
    * revive this match (via either the self-KO or opponent-inflicted-KO path)? */
   hostRevived: boolean;
@@ -125,6 +137,8 @@ interface LivePvpMatchRow {
   weather_owner: "host" | "guest" | null;
   host_sig_state: Record<string, number> | null;
   guest_sig_state: Record<string, number> | null;
+  host_sig_runtime: SigRuntimeMap | null;
+  guest_sig_runtime: SigRuntimeMap | null;
   host_revived: boolean | null;
   guest_revived: boolean | null;
   is_bot_match: boolean | null;
@@ -177,6 +191,8 @@ function fromRow(r: LivePvpMatchRow): LivePvpMatch {
     weatherOwner: r.weather_owner ?? null,
     hostSigState: r.host_sig_state ?? {},
     guestSigState: r.guest_sig_state ?? {},
+    hostSigRuntime: r.host_sig_runtime ?? {},
+    guestSigRuntime: r.guest_sig_runtime ?? {},
     hostRevived: r.host_revived ?? false,
     guestRevived: r.guest_revived ?? false,
     isBotMatch: r.is_bot_match ?? false,
@@ -346,7 +362,7 @@ export async function applyBotPvpSignatureEffect(
   matchId: string,
   questionIndex: number,
   pokemonId: number,
-  phase: "battle_start" | "post_answer",
+  phase: "battle_start" | "post_answer" | "bespoke",
   scaleCount = 0,
 ): Promise<{ ok: boolean }> {
   try {
@@ -361,6 +377,83 @@ export async function applyBotPvpSignatureEffect(
   } catch (e) {
     console.warn("[pvp-live] applyBotPvpSignatureEffect threw:", e);
     return { ok: false };
+  }
+}
+
+/**
+ * Bot/guest-side parity for the generalized signature-engine tick (owner
+ * ruling 5, docs/handoffs/signature-rework/01b-owner-decisions.md: the bot
+ * runs its own signature identically to a human). Must be called once per
+ * bot answer, unconditionally — same as `sigEngineTick` below — so that
+ * `consecutiveWrong`/`disabled`/`firedThisBattle` bookkeeping stays correct
+ * even for bespoke-only rows (03-db.md §3). See `sigEngineTick`'s doc comment
+ * for the full arg→RPC mapping; this mirrors it exactly except for the RPC
+ * name and the auth path it depends on.
+ *
+ * IMPORTANT — open DB gap (see docs/handoffs/signature-rework/03-backend.md,
+ * "botSigEngineTick auth gap"): `pvp_sig_engine_tick`
+ * (supabase/migrations/20260710120000_pvp_sig_engine_runtime.sql:148) only
+ * authorizes `auth.uid() in (host_id, guest_id)` and resolves the acting
+ * side FROM that uid — there is no host-acting-as-guest branch the way
+ * `apply_bot_pvp_signature_effect` (:230 of
+ * supabase/migrations/20260706202620_pvp_bot_match_rpcs.sql) has
+ * (`v_uid = host_id` + `is_bot_match` + guest treated as "self"). Calling
+ * `pvp_sig_engine_tick` from the host's session with the bot's `pokemonId`
+ * would tick the HOST's own runtime (or fail `unauthorized_ability`), not
+ * the bot's. This function therefore targets a NEW, not-yet-created RPC,
+ * `pvp_bot_sig_engine_tick`, that DB Engineer must add (mirroring
+ * `apply_bot_pvp_signature_effect`'s auth model) before this will work
+ * against a live match — see the Handoff block in 03-backend.md.
+ */
+export async function botSigEngineTick(
+  matchId: string,
+  questionIndex: number,
+  pokemonId: number,
+  correct: boolean,
+  triggerFired: boolean,
+  spec: SigEngineTickSpec,
+): Promise<SigEngineTickResult> {
+  if (!matchId || questionIndex < 0) {
+    console.warn("[pvp-live] botSigEngineTick: invalid args", { matchId, questionIndex });
+    return { ok: false, reason: "invalid_args" };
+  }
+  try {
+    const { data, error } = await rpc.rpc("pvp_bot_sig_engine_tick", {
+      _match_id: matchId,
+      _question_index: questionIndex,
+      _pokemon_id: pokemonId,
+      _correct: correct,
+      _trigger_fired: triggerFired,
+      _stat_specs: spec.statSpecs,
+      _disable_kind: spec.disableKind,
+      _disable_n: spec.disableN,
+      _disable_next_question: spec.disableNextQuestion,
+      _stack_cap: spec.stackCap ?? 3,
+      _incorrect_stat_specs: spec.incorrectStatSpecs ?? [],
+      _expire_after_questions: spec.expireAfterQuestions ?? 0,
+      _self_hp: spec.selfHp ?? null,
+      _opp_hp: spec.oppHp ?? null,
+    });
+    if (error) {
+      console.warn("[pvp-live] botSigEngineTick failed:", error.message);
+      return { ok: false, reason: "network" };
+    }
+    const r = data as (SigEngineTickResult & { error?: string }) | null;
+    if (r && r.ok === true) {
+      return {
+        ok: true,
+        noop: r.noop,
+        reason: r.reason,
+        hostStages: r.hostStages,
+        guestStages: r.guestStages,
+        hostSigRuntime: r.hostSigRuntime,
+        guestSigRuntime: r.guestSigRuntime,
+      };
+    }
+    return { ok: false, reason: (r && r.error) || "network" };
+  } catch (e) {
+    console.warn("[pvp-live] botSigEngineTick threw:", e);
+    return { ok: false, reason: "network" };
   }
 }
 
@@ -667,7 +760,7 @@ export async function applyPvpSignatureEffect(
   matchId: string,
   questionIndex: number,
   pokemonId: number,
-  phase: "battle_start" | "post_answer" | "manual" | "sig_state",
+  phase: "battle_start" | "post_answer" | "manual" | "sig_state" | "bespoke",
   scaleCount = 0,
 ): Promise<
   | {
@@ -736,6 +829,248 @@ export async function applyPvpSignatureEffect(
   } catch (e) {
     console.warn("[pvp-live] applyPvpSignatureEffect threw:", e);
     return { ok: false, error: "network" };
+  }
+}
+
+/** Per-call args for `sigEngineTick`/`botSigEngineTick`, resolved client-side
+ * from the firing ability's catalog `SignatureEngineSpec` (signature-rework-types.ts
+ * §8) — see 03-db.md §3 for the exact field→RPC-arg mapping this mirrors. */
+/** Uxie #480 rides the stat-spec channel without changing a stat: the RPC scans
+ * `_stat_specs` for this marker and, on the row's first fire, rolls + stores the
+ * predicted status in `sig_runtime` (echoed back for the client to reveal). It is a
+ * spec element rather than a 15th RPC arg so the tick's arity stays stable. */
+export interface PredictedStatusSpec {
+  mode: "predicted_status";
+}
+
+export interface SigEngineTickSpec {
+  /** Catalog row's `SignatureEngineSpec.stat` (may be `[]`). Passed to the RPC
+   * as jsonb, array as-is — no reshaping (03-db.md §1/§3). Only index 0 is
+   * tracked (revert/decay/ramp); any further entries are untracked one-shot
+   * bumps applied once on first fire (M1 limitation, 03-db.md §1). */
+  statSpecs: (StatChangeSpec | PredictedStatusSpec)[];
+  /** `DisableSpec.kind` resolved for this ability, or `'none'`. `any_of`,
+   * `disable_multiplier_after_incorrect`, and `disable_healing_after_questions`
+   * are not understood by this RPC — resolve client-side / leave on the
+   * existing bespoke path and pass `'none'` here (03-db.md §2). */
+  disableKind: string;
+  /** `DisableSpec.n` where the kind takes one; `0` otherwise. */
+  disableN: number;
+  /** True only for `kind: 'disable_next_question_after_effect'` (Mewtwo/Entei/
+   * Jirachi) — composes independently of `disableKind` (03-db.md §2). */
+  disableNextQuestion: boolean;
+  /** `SIG_STACK_CAP` override; defaults to 3 (signature-rework-types.ts §0). */
+  stackCap?: number;
+  // ── M2/M3 (migration 20260711133000 widens the RPC to 14 args) ─────────────
+  /** `SignatureEngineSpec.incorrectStat` — stat specs applied on a WRONG answer
+   * (Hoopa #386's −2 self Def). Accumulates into `netByStat` like the correct-path
+   * specs, so a later revert unwinds it too. Omit → `[]` (no incorrect-path stats). */
+  incorrectStatSpecs?: StatChangeSpec[];
+  /** `SignatureEngineSpec.expireAfterQuestions` — auto-disable + revert this many
+   * questions after the row fired (Moltres #146's 3-question window). `0`/omitted =
+   * never auto-expires. Composes with `disableKind` (the row can also revert early). */
+  expireAfterQuestions?: number;
+  /** Acting side's HP at answer time; `null` when unknown. Sent for server-side
+   * clamping of HP-gated payoffs (Regigigas #486). */
+  selfHp?: number | null;
+  /** Opponent's HP at answer time; `null` when unknown. */
+  oppHp?: number | null;
+}
+
+/**
+ * Tick the generalized signature-engine state machine (M1) for the caller's
+ * own side: consecutive-wrong counter, ramp/decay per-stat (netByStat) bookkeeping,
+ * revert/disable/re-arm, and the next-question skip
+ * (`supabase/migrations/20260710120000_pvp_sig_engine_runtime.sql:148`,
+ * `pvp_sig_engine_tick`). Additive to `applyPvpSignatureEffect` — bespoke
+ * phases (battle_start/manual/sig_state, and most post_answer kinds:
+ * stat_stage/status/cure/heal/drain/suppress_ability/swap_stages/cleanse)
+ * still go through that RPC unchanged; this one owns ONLY the ramp/decay/
+ * disable lifecycle for rows using `SignatureEngineSpec.stat`.
+ *
+ * Call once per side per answer, from `resolveQuestion`, ALWAYS — even when
+ * `spec.statSpecs` is `[]` — so `consecutiveWrong`/`disabled`/
+ * `firedThisBattle` bookkeeping stays correct for bespoke-only rows too
+ * (03-db.md §3). `questionIndex` is 0-indexed exactly as the caller's loop
+ * tracks it; do NOT pre-increment (the RPC maps to 1-indexed internally).
+ *
+ * `noop: true` (e.g. `reason: 'stale'` on replay) is expected, normal
+ * behavior — do not toast it. Only `ok: false` should surface a sonner toast
+ * at the call site (COMMON_RULES §2 — this function never swallows the
+ * error, it returns it on `reason` since the frozen `SigEngineTickResult`
+ * stub has no dedicated `error` field; see 03-backend.md for that mapping).
+ */
+export async function sigEngineTick(
+  matchId: string,
+  questionIndex: number,
+  pokemonId: number,
+  correct: boolean,
+  triggerFired: boolean,
+  spec: SigEngineTickSpec,
+): Promise<SigEngineTickResult> {
+  if (!matchId || questionIndex < 0) {
+    console.warn("[pvp-live] sigEngineTick: invalid args", { matchId, questionIndex });
+    return { ok: false, reason: "invalid_args" };
+  }
+  try {
+    const { data, error } = await rpc.rpc("pvp_sig_engine_tick", {
+      _match_id: matchId,
+      _question_index: questionIndex,
+      _pokemon_id: pokemonId,
+      _correct: correct,
+      _trigger_fired: triggerFired,
+      _stat_specs: spec.statSpecs,
+      _disable_kind: spec.disableKind,
+      _disable_n: spec.disableN,
+      _disable_next_question: spec.disableNextQuestion,
+      _stack_cap: spec.stackCap ?? 3,
+      _incorrect_stat_specs: spec.incorrectStatSpecs ?? [],
+      _expire_after_questions: spec.expireAfterQuestions ?? 0,
+      _self_hp: spec.selfHp ?? null,
+      _opp_hp: spec.oppHp ?? null,
+    });
+    if (error) {
+      console.warn("[pvp-live] sigEngineTick failed:", error.message);
+      return { ok: false, reason: "network" };
+    }
+    const r = data as (SigEngineTickResult & { error?: string }) | null;
+    if (r && r.ok === true) {
+      return {
+        ok: true,
+        noop: r.noop,
+        reason: r.reason,
+        hostStages: r.hostStages,
+        guestStages: r.guestStages,
+        hostSigRuntime: r.hostSigRuntime,
+        guestSigRuntime: r.guestSigRuntime,
+      };
+    }
+    return { ok: false, reason: (r && r.error) || "network" };
+  } catch (e) {
+    console.warn("[pvp-live] sigEngineTick threw:", e);
+    return { ok: false, reason: "network" };
+  }
+}
+
+// ── signature-rework M4 ──────────────────────────────────────────────────────
+
+/**
+ * Deliver an engine row's STATUS (`engine.status`). Same trust model as every
+ * other effect: the client only says "my row's trigger fired on question N"; the
+ * server looks the status, the chance and the duration up in `pvp_signature_effects`
+ * and rolls it. Ogerpon's species gate and Genesect's random-status roll both live
+ * server-side too.
+ *
+ * Before M4 this channel did not exist — 34 rows carried `engine.status` that
+ * NOTHING ever applied, and statuses were still coming from the legacy path.
+ */
+export async function sigEngineStatus(
+  matchId: string,
+  questionIndex: number,
+  pokemonId: number,
+  asBot = false,
+): Promise<{ ok: boolean; noop?: boolean; hostStatuses?: ActiveStatus[]; guestStatuses?: ActiveStatus[] }> {
+  try {
+    const { data, error } = await rpc.rpc(
+      asBot ? "pvp_bot_sig_engine_status" : "pvp_sig_engine_status",
+      { _match_id: matchId, _question_index: questionIndex, _pokemon_id: pokemonId },
+    );
+    if (error) {
+      console.warn("[pvp-live] sigEngineStatus failed:", error.message);
+      return { ok: false };
+    }
+    const r = data as {
+      ok: boolean;
+      noop?: boolean;
+      hostStatuses?: ActiveStatus[];
+      guestStatuses?: ActiveStatus[];
+    } | null;
+    return r ?? { ok: false };
+  } catch (e) {
+    console.warn("[pvp-live] sigEngineStatus threw:", e);
+    return { ok: false };
+  }
+}
+
+/**
+ * The M4 HP effects: the instant KO (Urshifu #892 / Fezandipiti #1016 / Terapagos
+ * #1024) and the Ruination quartet's halve-current-HP (#1001-#1004).
+ *
+ * The KO roll happens on the SERVER and nowhere else — a client that could report
+ * its own knockout would be an instant-win cheat. If it lands, the server resolves
+ * the match itself and hands back the winner.
+ */
+export async function sigM4Fx(
+  matchId: string,
+  questionIndex: number,
+  pokemonId: number,
+  asBot = false,
+): Promise<{
+  ok: boolean;
+  noop?: boolean;
+  instantKo?: boolean;
+  hostHp?: number;
+  guestHp?: number;
+  resolved?: boolean;
+  winnerId?: string | null;
+}> {
+  try {
+    const { data, error } = await rpc.rpc(asBot ? "pvp_bot_sig_m4_fx" : "pvp_sig_m4_fx", {
+      _match_id: matchId,
+      _question_index: questionIndex,
+      _pokemon_id: pokemonId,
+    });
+    if (error) {
+      console.warn("[pvp-live] sigM4Fx failed:", error.message);
+      return { ok: false };
+    }
+    return (data as { ok: boolean } | null) ?? { ok: false };
+  } catch (e) {
+    console.warn("[pvp-live] sigM4Fx threw:", e);
+    return { ok: false };
+  }
+}
+
+/** What a row asks the server to open when its trigger fires. Every magnitude is
+ *  re-clamped server-side — the timer can never go below 3s however this is called. */
+export interface SigM4WindowSpec {
+  /** Zamazenta #889 / Iron Boulder #1022 — questions of total damage immunity. */
+  shieldQuestions?: number;
+  /** Eternatus #890 — wrong answers stop costing HP. */
+  selfDmgZero?: boolean;
+  /** The Loyal Three — squeeze the OPPONENT's answer clock. */
+  oppTimerMs?: number;
+  oppTimerQuestions?: number;
+}
+
+/** Open the M4 runtime windows (shield / self-damage-zero / opponent-timer) on the
+ *  caller's own row. These are read back cross-side: the shield by
+ *  submit_pvp_live_answer, the timer by the victim's client. */
+export async function sigM4Window(
+  matchId: string,
+  questionIndex: number,
+  pokemonId: number,
+  spec: SigM4WindowSpec,
+  asBot = false,
+): Promise<{ ok: boolean; noop?: boolean; hostSigRuntime?: SigRuntimeMap; guestSigRuntime?: SigRuntimeMap }> {
+  try {
+    const { data, error } = await rpc.rpc(asBot ? "pvp_bot_sig_m4_window" : "pvp_sig_m4_window", {
+      _match_id: matchId,
+      _question_index: questionIndex,
+      _pokemon_id: pokemonId,
+      _shield_questions: spec.shieldQuestions ?? 0,
+      _self_dmg_zero: spec.selfDmgZero ?? false,
+      _opp_timer_ms: spec.oppTimerMs ?? 0,
+      _opp_timer_questions: spec.oppTimerQuestions ?? 0,
+    });
+    if (error) {
+      console.warn("[pvp-live] sigM4Window failed:", error.message);
+      return { ok: false };
+    }
+    return (data as { ok: boolean } | null) ?? { ok: false };
+  } catch (e) {
+    console.warn("[pvp-live] sigM4Window threw:", e);
+    return { ok: false };
   }
 }
 

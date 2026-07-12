@@ -5,10 +5,123 @@ import {
   timerMsForSpeedStage,
   critRate,
   computePvpDamage,
+  evaluateHitModifiers,
+  NO_SIGNATURE_HIT_MODIFIERS,
   PVP_BASE_TIMER_MS,
   PVP_CRIT_MULT,
 } from "./pvp-combat";
+import type { DamageMultiplierSpec } from "./signature-abilities";
 import { rollBerryDrops, NEARBY_BERRY_DROP_POOL, BERRIES_PER_NEARBY_BATTLE } from "./game-data";
+
+describe("pvp-combat: Regidrago #895 HP-tier multiplier (M4)", () => {
+  // Owner ruling 2026-07-12: re-read every question off Regidrago's OWN live HP,
+  // so it opens at x3 and fades to x1 as it is worn down.
+  const regidrago: DamageMultiplierSpec = {
+    type: "damage_multiplier",
+    factor: 1,
+    condition: { on: "always" },
+    hpTiers: [
+      { atLeastPct: 100, factor: 3 },
+      { atLeastPct: 80, factor: 2.5 },
+      { atLeastPct: 60, factor: 2 },
+      { atLeastPct: 40, factor: 1.5 },
+      { atLeastPct: 0, factor: 1 },
+    ],
+  };
+  const at = (selfHpPct: number) =>
+    evaluateHitModifiers(regidrago, { correct: true, oppType: [], oppSpecies: 1, selfHpPct }).factor;
+
+  it("slides down the ladder as Regidrago loses HP", () => {
+    expect(at(1)).toBe(3); // full
+    expect(at(0.9)).toBe(2.5); // >=80
+    expect(at(0.8)).toBe(2.5); // boundary is inclusive
+    expect(at(0.7)).toBe(2); // >=60
+    expect(at(0.5)).toBe(1.5); // >=40
+    expect(at(0.2)).toBe(1); // spent
+    expect(at(0.01)).toBe(1);
+  });
+
+  it("falls back to the flat factor when the caller carries no HP", () => {
+    expect(
+      evaluateHitModifiers(regidrago, { correct: true, oppType: [], oppSpecies: 1 }).factor,
+    ).toBe(1);
+  });
+
+  it("leaves rows without hpTiers alone", () => {
+    const flat: DamageMultiplierSpec = {
+      type: "damage_multiplier",
+      factor: 2,
+      condition: { on: "always" },
+    };
+    expect(
+      evaluateHitModifiers(flat, { correct: true, oppType: [], oppSpecies: 1, selfHpPct: 0.1 })
+        .factor,
+    ).toBe(2);
+  });
+});
+
+describe("pvp-combat: engine damage multipliers", () => {
+  const ctx = { correct: true, oppType: ["water"], oppSpecies: 800 };
+
+  it("is neutral with no spec, or on a wrong answer", () => {
+    expect(evaluateHitModifiers(null, ctx)).toEqual(NO_SIGNATURE_HIT_MODIFIERS);
+    const spec: DamageMultiplierSpec = {
+      type: "damage_multiplier",
+      factor: 2,
+      condition: { on: "opponent_type", typeName: "water" },
+    };
+    expect(evaluateHitModifiers(spec, { ...ctx, correct: false })).toEqual(
+      NO_SIGNATURE_HIT_MODIFIERS,
+    );
+  });
+
+  it("applies the factor only when the condition holds", () => {
+    const spec: DamageMultiplierSpec = {
+      type: "damage_multiplier",
+      factor: 2,
+      condition: { on: "opponent_type", typeName: "water" },
+    };
+    expect(evaluateHitModifiers(spec, ctx).factor).toBe(2);
+    expect(evaluateHitModifiers(spec, { ...ctx, oppType: ["fire"] }).factor).toBe(1);
+  });
+
+  it("falls back to fallbackFactor when the condition fails", () => {
+    const spec: DamageMultiplierSpec = {
+      type: "damage_multiplier",
+      factor: 2.5,
+      fallbackFactor: 0.5,
+      condition: { on: "opponent_species", dexId: 800 },
+    };
+    expect(evaluateHitModifiers(spec, ctx).factor).toBe(2.5);
+    expect(evaluateHitModifiers(spec, { ...ctx, oppSpecies: 1 }).factor).toBe(0.5);
+  });
+
+  // Solgaleo #791 is the row that forces the two axes apart: ignore Defense in
+  // EVERY battle, but x2 only into Lunala. A single `always` condition can't say both.
+  it("ignoreDefenseAlways applies even when the conditional factor does not", () => {
+    const solgaleo: DamageMultiplierSpec = {
+      type: "damage_multiplier",
+      factor: 2,
+      ignoreDefenseAlways: true,
+      condition: { on: "opponent_species", dexId: 792 }, // Lunala
+    };
+    const vsLunala = evaluateHitModifiers(solgaleo, { ...ctx, oppSpecies: 792 });
+    expect(vsLunala).toEqual({ factor: 2, ignoreDefense: true });
+    const vsOther = evaluateHitModifiers(solgaleo, { ...ctx, oppSpecies: 1 });
+    expect(vsOther).toEqual({ factor: 1, ignoreDefense: true });
+  });
+
+  it("conditional ignoreDefense drops when the condition fails", () => {
+    const spec: DamageMultiplierSpec = {
+      type: "damage_multiplier",
+      factor: 2,
+      ignoreDefense: true,
+      condition: { on: "opponent_type", typeName: "water" },
+    };
+    expect(evaluateHitModifiers(spec, ctx).ignoreDefense).toBe(true);
+    expect(evaluateHitModifiers(spec, { ...ctx, oppType: ["fire"] }).ignoreDefense).toBe(false);
+  });
+});
 
 describe("pvp-combat: stat stages", () => {
   it("clamps stages to -3..+3", () => {

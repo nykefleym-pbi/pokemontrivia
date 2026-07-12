@@ -22,10 +22,12 @@ import {
   MEW_ID,
   NON_MASCOT_ABILITY_IDS,
   RATING_THREE_ABILITY_IDS,
+  SIG_ENGINE_DEX_IDS,
+  engineTriggerFired,
+  postTriggerFires,
+  type NewSignatureTrigger,
   type SignatureContext,
   type SignatureAbility,
-  type StatStageEffect,
-  type StatusEffect,
 } from "./signature-abilities";
 import { ALL_LEGENDARY_MYTHICAL_IDS, isMascotTier } from "./legendary-data";
 
@@ -106,190 +108,61 @@ describe("gating", () => {
   });
 });
 
-describe("evaluateHitModifiers (passive_damage family)", () => {
-  it("Cobalion ignores both own negative stages and opp Defense, always", () => {
-    const m = evaluateHitModifiers(SIGNATURE_ABILITIES[638], ctx());
-    expect(m.ignoreOppDefenseStage).toBe(true);
-    expect(m.ignoreOwnNegativeStages).toBe(true);
+// ── The legacy path is DEAD (owner ruling 2026-07-12: "remove the legacy") ───
+//
+// These four evaluators — evaluateHitModifiers, evaluatePassiveDamageSideEffects,
+// evaluatePostAnswer, evaluateBattleStart — used to be how Legendary/Mythical
+// abilities actually did anything. They are now inert for any row carrying an
+// `engine` spec, which (as of M4) is ALL 104 of them. The owner's spreadsheets are
+// the single source of truth; the engine tick, `engine_status`, and the bespoke /
+// m4_fx phases deliver every effect.
+//
+// This block is the guard that keeps them dead. It is not ceremony: several rows
+// carry BOTH a legacy post_answer catalog row AND a new engine_status row (Zekrom
+// #643, Munkidori #1015, Melmetal #809...). If the legacy path were ever resurrected
+// alongside the engine, every one of those would inflict its status TWICE and every
+// buff would be applied twice. The tests that used to assert the legacy behaviour
+// were deleted with the behaviour itself.
+describe("the legacy signature path is inert for engine-owned rows", () => {
+  it("evaluateHitModifiers no longer fires for an engine row", () => {
+    // Cobalion #638 (ignore-Defense) is a passive_damage row whose legacy path used
+    // to fold modifiers into the hit. Its engine spec owns that now.
+    expect(evaluateHitModifiers(SIGNATURE_ABILITIES[638], ctx())).toEqual(NO_HIT_MODIFIERS);
   });
 
-  it("returns nothing on a wrong answer", () => {
-    expect(evaluateHitModifiers(SIGNATURE_ABILITIES[638], ctx({ correct: false }))).toEqual(
-      NO_HIT_MODIFIERS,
-    );
+  it("evaluatePassiveDamageSideEffects no longer fires for an engine row", () => {
+    // Zekrom #643's 40% Burn — now delivered by engine_status, server-rolled.
+    expect(evaluatePassiveDamageSideEffects(SIGNATURE_ABILITIES[643], ctx(), () => 0)).toEqual([]);
   });
 
-  it("Articuno's Freeze-Dry only ignores Defense while opp Def stage > 0", () => {
-    expect(evaluateHitModifiers(SIGNATURE_ABILITIES[144], ctx({ oppDefenseStage: 0 })).ignoreOppDefenseStage).toBe(false);
-    expect(evaluateHitModifiers(SIGNATURE_ABILITIES[144], ctx({ oppDefenseStage: 2 })).ignoreOppDefenseStage).toBe(true);
+  it("evaluatePostAnswer no longer fires for an engine row", () => {
+    expect(evaluatePostAnswer(SIGNATURE_ABILITIES[243], ctx())).toEqual([]); // Raikou
+    expect(evaluatePostAnswer(SIGNATURE_ABILITIES[717], ctx())).toEqual([]); // Yveltal
   });
 
-  it("Regirock's Stone Edge grants +2 crit only on a last-3s answer", () => {
-    const early = evaluateHitModifiers(SIGNATURE_ABILITIES[377], ctx({ answerElapsedMs: 1000 }));
-    const clutch = evaluateHitModifiers(SIGNATURE_ABILITIES[377], ctx({ answerElapsedMs: 18000 }));
-    expect(early.bonusCritStage).toBe(0);
-    expect(clutch.bonusCritStage).toBe(2);
+  it("evaluateBattleStart no longer fires for an engine row", () => {
+    expect(evaluateBattleStart(SIGNATURE_ABILITIES[379], 0)).toEqual([]); // Registeel
+    expect(evaluateBattleStart(SIGNATURE_ABILITIES[1001], 0)).toEqual([]); // Wo-Chien
   });
 
-  it("Raikou's Thunder fires every 4th question only when the previous answer was correct", () => {
-    const charged = evaluateHitModifiers(SIGNATURE_ABILITIES[243], ctx({ questionIndex: 3, prevCorrect: true }));
-    const whiff = evaluateHitModifiers(SIGNATURE_ABILITIES[243], ctx({ questionIndex: 3, prevCorrect: false }));
-    const off = evaluateHitModifiers(SIGNATURE_ABILITIES[243], ctx({ questionIndex: 2, prevCorrect: true }));
-    expect(charged.bonusCritStage).toBe(2);
-    expect(whiff.bonusCritStage).toBe(0);
-    expect(off.bonusCritStage).toBe(0);
-  });
-
-  it("Deoxys' Psycho Boost gives +3 Attack this hit every 5th question", () => {
-    const m = evaluateHitModifiers(SIGNATURE_ABILITIES[386], ctx({ questionIndex: 4 }));
-    expect(m.bonusAttackStage).toBe(3);
-  });
-
-  it("Melmetal's Double Iron Bash adds a half-value second hit every 5th question", () => {
-    const m = evaluateHitModifiers(SIGNATURE_ABILITIES[809], ctx({ questionIndex: 4 }));
-    expect(m.secondHitFraction).toBe(0.5);
-  });
-
-  it("Zekrom's Blue Flare damage-calc bonus is deterministic on any first-half correct answer (no chance)", () => {
-    expect(SIGNATURE_ABILITIES[643].trigger).toEqual({ type: "first_half_answer" });
-    const early = evaluateHitModifiers(SIGNATURE_ABILITIES[643], ctx({ answerElapsedMs: 1000, personalTimerMs: 20000 }));
-    const late = evaluateHitModifiers(SIGNATURE_ABILITIES[643], ctx({ answerElapsedMs: 19000, personalTimerMs: 20000 }));
-    expect(early.bonusAttackStage).toBe(1);
-    expect(early.bonusCritStage).toBe(1);
-    expect(late).toEqual(NO_HIT_MODIFIERS);
-  });
-
-  it("Regice's Blizzard is now a post_answer opponent Speed debuff, not a hamper", () => {
-    expect(SIGNATURE_ABILITIES[378].wiring).toBe("post_answer");
-    const fx = evaluatePostAnswer(SIGNATURE_ABILITIES[378], ctx({ streak: 4 }));
-    expect(fx).toEqual([{ type: "stat_stage", target: "opponent", stat: "speed", delta: -1, duration: 2 }]);
-    expect(evaluatePostAnswer(SIGNATURE_ABILITIES[378], ctx({ streak: 3 }))).toEqual([]);
-  });
-});
-
-describe("evaluatePassiveDamageSideEffects (dropped compound sub-effects, fix #3)", () => {
-  it("Raikou's Thunder bundles a +1 Speed side effect on the same 4th-question hit", () => {
-    const fx = evaluatePassiveDamageSideEffects(
-      SIGNATURE_ABILITIES[243],
-      ctx({ questionIndex: 3, prevCorrect: true }),
-    );
-    expect(fx).toEqual([{ type: "stat_stage", target: "self", stat: "speed", delta: 1, duration: 1 }]);
-    // Whiffs when the hit trigger itself doesn't hold (previous answer wrong).
-    expect(evaluatePassiveDamageSideEffects(SIGNATURE_ABILITIES[243], ctx({ questionIndex: 3, prevCorrect: false }))).toEqual([]);
-  });
-
-  it("Deoxys' Psycho Boost and Magearna's Fleur Cannon bundle a -1 Attack recoil on the nuke hit", () => {
-    for (const id of [386, 801]) {
-      const fx = evaluatePassiveDamageSideEffects(SIGNATURE_ABILITIES[id], ctx({ questionIndex: 4 }));
-      expect(fx).toEqual([{ type: "stat_stage", target: "self", stat: "attack", delta: -1, duration: 2 }]);
+  it("holds for EVERY row on the roster — no legacy leak anywhere", () => {
+    for (const id of SIG_ENGINE_DEX_IDS) {
+      const a = SIGNATURE_ABILITIES[id];
+      expect(evaluatePostAnswer(a, ctx()), `#${id} post_answer`).toEqual([]);
+      expect(evaluateBattleStart(a, 200), `#${id} battle_start`).toEqual([]);
+      expect(evaluatePassiveDamageSideEffects(a, ctx(), () => 0), `#${id} side-fx`).toEqual([]);
+      expect(evaluateHitModifiers(a, ctx()), `#${id} hit-mods`).toEqual(NO_HIT_MODIFIERS);
     }
-  });
-
-  it("Zekrom's Burn and Melmetal's Sleep roll their documented chance", () => {
-    const zekromLands = evaluatePassiveDamageSideEffects(SIGNATURE_ABILITIES[643], ctx({ answerElapsedMs: 1000 }), () => 0.1);
-    const zekromWhiffs = evaluatePassiveDamageSideEffects(SIGNATURE_ABILITIES[643], ctx({ answerElapsedMs: 1000 }), () => 0.9);
-    expect(zekromLands).toEqual([{ type: "status", target: "opponent", status: "burn", questions: 3, chance: 0.4 }]);
-    expect(zekromWhiffs).toEqual([]);
-
-    const melmetalLands = evaluatePassiveDamageSideEffects(SIGNATURE_ABILITIES[809], ctx({ questionIndex: 4 }), () => 0.1);
-    const melmetalWhiffs = evaluatePassiveDamageSideEffects(SIGNATURE_ABILITIES[809], ctx({ questionIndex: 4 }), () => 0.9);
-    expect(melmetalLands).toEqual([{ type: "status", target: "opponent", status: "sleep", questions: 1, chance: 0.3 }]);
-    expect(melmetalWhiffs).toEqual([]);
-  });
-
-  it("produces nothing on a wrong answer, when the hit trigger doesn't hold, or for non-passive_damage abilities", () => {
-    expect(evaluatePassiveDamageSideEffects(SIGNATURE_ABILITIES[243], ctx({ questionIndex: 3, correct: false }))).toEqual([]);
-    expect(evaluatePassiveDamageSideEffects(SIGNATURE_ABILITIES[243], ctx({ questionIndex: 2 }))).toEqual([]);
-    expect(evaluatePassiveDamageSideEffects(SIGNATURE_ABILITIES[638], ctx())).toEqual([]); // Cobalion has no bundled sub-effect
-    expect(evaluatePassiveDamageSideEffects(SIGNATURE_ABILITIES[245], ctx())).toEqual([]); // post_answer, not passive_damage
-  });
-});
-
-describe("evaluatePostAnswer (post_answer family)", () => {
-  it("Suicune's Aurora Veil grants +1 Defense on a live 3+ streak", () => {
-    const none = evaluatePostAnswer(SIGNATURE_ABILITIES[245], ctx({ streak: 2 }));
-    const fired = evaluatePostAnswer(SIGNATURE_ABILITIES[245], ctx({ streak: 3 }));
-    expect(none).toEqual([]);
-    const def = fired.find((e): e is StatStageEffect => e.type === "stat_stage" && e.stat === "defense");
-    expect(def?.delta).toBe(1);
-  });
-
-  it("Meltan's Flash Cannon grants +1 Attack every 3rd correct answer", () => {
-    expect(evaluatePostAnswer(SIGNATURE_ABILITIES[808], ctx({ correctCount: 2 }))).toEqual([]);
-    const fired = evaluatePostAnswer(SIGNATURE_ABILITIES[808], ctx({ correctCount: 3 }));
-    expect((fired[0] as StatStageEffect).delta).toBe(1);
-  });
-
-  it("Entei's Sacred Fire rolls a 40% Burn on correct answers", () => {
-    const lands = evaluatePostAnswer(SIGNATURE_ABILITIES[244], ctx(), () => 0.1);
-    const whiffs = evaluatePostAnswer(SIGNATURE_ABILITIES[244], ctx(), () => 0.9);
-    expect((lands[0] as StatusEffect).status).toBe("burn");
-    expect(whiffs).toEqual([]);
-  });
-
-  it("Thundurus' Wildbolt Storm is a 50% Paralysis on a 6-question cooldown", () => {
-    const offCd = evaluatePostAnswer(SIGNATURE_ABILITIES[642], ctx({ questionIndex: 4 }), () => 0.1);
-    const onCdLands = evaluatePostAnswer(SIGNATURE_ABILITIES[642], ctx({ questionIndex: 5 }), () => 0.1);
-    const onCdWhiff = evaluatePostAnswer(SIGNATURE_ABILITIES[642], ctx({ questionIndex: 5 }), () => 0.9);
-    expect(offCd).toEqual([]);
-    expect((onCdLands[0] as StatusEffect).status).toBe("paralysis");
-    expect(onCdWhiff).toEqual([]);
-  });
-
-  it("Zapdos' Thunderous Kick fires on a fast sub-5s pair (opp -1 Def + scramble)", () => {
-    const slow = evaluatePostAnswer(SIGNATURE_ABILITIES[145], ctx({ answerElapsedMs: 6000 }));
-    const fast = evaluatePostAnswer(
-      SIGNATURE_ABILITIES[145],
-      ctx({ answerElapsedMs: 3000, prevAnswerElapsedMs: 3000, prevCorrect: true }),
-    );
-    expect(slow).toEqual([]);
-    expect(fast.some((e) => e.type === "stat_stage" && e.target === "opponent")).toBe(true);
-    expect(fast.some((e) => e.type === "hamper")).toBe(true);
-  });
-
-  it("Yveltal's Oblivion Wing drains on every correct answer", () => {
-    const fired = evaluatePostAnswer(SIGNATURE_ABILITIES[717], ctx());
-    expect(fired.some((e) => e.type === "drain")).toBe(true);
-    expect(evaluatePostAnswer(SIGNATURE_ABILITIES[717], ctx({ correct: false }))).toEqual([]);
-  });
-
-  it("passive_damage and manual abilities produce no post-answer effects", () => {
-    expect(evaluatePostAnswer(SIGNATURE_ABILITIES[638], ctx())).toEqual([]); // Cobalion (passive_damage)
-    expect(evaluatePostAnswer(SIGNATURE_ABILITIES[150], ctx())).toEqual([]); // Mewtwo (manual)
-  });
-});
-
-describe("evaluateBattleStart (battle_start family)", () => {
-  it("Registeel takes a standing +1 Defense at battle start", () => {
-    const fx = evaluateBattleStart(SIGNATURE_ABILITIES[379], 0);
-    expect((fx[0] as StatStageEffect)).toMatchObject({ target: "self", stat: "defense", delta: 1 });
-  });
-
-  it("Wo-Chien puts a standing -1 Attack on the opponent", () => {
-    const fx = evaluateBattleStart(SIGNATURE_ABILITIES[1001], 0);
-    expect((fx[0] as StatStageEffect)).toMatchObject({ target: "opponent", stat: "attack", delta: -1 });
-  });
-
-  it("Fezandipiti's Beat Up scales +1 Attack per 25 Pokédex entries (max +3)", () => {
-    expect(evaluateBattleStart(SIGNATURE_ABILITIES[1016], 10)).toEqual([]);
-    expect((evaluateBattleStart(SIGNATURE_ABILITIES[1016], 60)[0] as StatStageEffect).delta).toBe(2);
-    expect((evaluateBattleStart(SIGNATURE_ABILITIES[1016], 200)[0] as StatStageEffect).delta).toBe(3);
-  });
-
-  it("Cosmoem's Cosmic Power locks +2 Def / -1 Atk at start", () => {
-    const fx = evaluateBattleStart(SIGNATURE_ABILITIES[790], 0) as StatStageEffect[];
-    expect(fx.find((e) => e.stat === "defense")?.delta).toBe(2);
-    expect(fx.find((e) => e.stat === "attack")?.delta).toBe(-1);
   });
 });
 
 describe("manual charge-and-fire abilities", () => {
   it("exposes a Fire button only for manual abilities with a server effect", () => {
-    // Aeroblast (249) fires -2 opp Speed → server-fireable.
+    // Aeroblast (249) fires -2 opp Speed – server-fireable.
     expect(hasServerManualEffect(SIGNATURE_ABILITIES[249])).toBe(true);
-    // Psystrike (150) fires a damage-calc one-hit modifier → NOT server-fireable.
+    // Psystrike (150) fires a damage-calc one-hit modifier – NOT server-fireable.
     expect(hasServerManualEffect(SIGNATURE_ABILITIES[150])).toBe(false);
-    // Dragon Ascent (384) is damage-calc only after the refactor → not fireable.
+    // Dragon Ascent (384) is damage-calc only after the refactor – not fireable.
     expect(hasServerManualEffect(SIGNATURE_ABILITIES[384])).toBe(false);
     // Non-manual abilities are never server-fireable.
     expect(hasServerManualEffect(SIGNATURE_ABILITIES[638])).toBe(false);
@@ -335,18 +208,22 @@ describe("manual charge-and-fire abilities", () => {
 });
 
 describe("question-category trigger primitive (Phase 3)", () => {
-  it("Koraidon's Collision Course spikes only on the first correct of a NEW category", () => {
+  // M4: Koraidon's legacy "first correct of a NEW category" spike is GONE. The
+  // owner's spreadsheet replaces it with a 3-streak x2 into ice/flying/psychic/
+  // dragon/fairy, and the legacy path no longer runs for engine rows. The
+  // `new_category` primitive itself still exists and is exercised below.
+  it("Koraidon runs the owner-spec x2 now, not the old new-category spike", () => {
     const koraidon = SIGNATURE_ABILITIES[1007];
-    expect(koraidon.wiring).toBe("passive_damage");
-    expect(koraidon.trigger).toEqual({ type: "new_category" });
-    const spike = evaluateHitModifiers(koraidon, ctx({ newCategory: true }));
-    expect(spike).toMatchObject({ bonusAttackStage: 1, bonusCritStage: 1 });
-    const repeat = evaluateHitModifiers(koraidon, ctx({ newCategory: false }));
-    expect(repeat).toEqual(NO_HIT_MODIFIERS);
-    // Only on correct answers.
-    expect(evaluateHitModifiers(koraidon, ctx({ newCategory: true, correct: false }))).toEqual(
-      NO_HIT_MODIFIERS,
-    );
+    expect(koraidon.engine?.trigger).toEqual({ type: "streak_in_a_row", n: 3, where: "client" });
+    expect(koraidon.engine?.multiplier).toMatchObject({
+      factor: 2,
+      condition: {
+        on: "opponent_type_any",
+        typeNames: ["ice", "flying", "psychic", "dragon", "fairy"],
+      },
+    });
+    // ...and the old spike is inert.
+    expect(evaluateHitModifiers(koraidon, ctx({ newCategory: true }))).toEqual(NO_HIT_MODIFIERS);
   });
 
   it("question_category_is fires a post_answer effect only when the category matches", () => {
@@ -453,7 +330,7 @@ describe("Mew — Transform copy resolution (Phase 2)", () => {
       expect(picked).not.toBe(MEW_ID);
       expect(isMascotTier(picked!) && SIGNATURE_ABILITIES[picked!].rarity >= 5).toBe(false);
     }
-    // A pikachu-tier non-legendary partner id (25) has no ability → fallback.
+    // A pikachu-tier non-legendary partner id (25) has no ability – fallback.
     expect(NON_MASCOT_ABILITY_IDS).toContain(resolveMewTransform(25, rng(0.3)));
   });
 
@@ -536,5 +413,185 @@ describe("describeSignatureFull (tappable popover — effect + when triggered)",
     expect(describeSignatureFull(null)).toBeNull();
     // 151 Mew — Transform: bespoke trigger + bespoke effect, no generic text.
     expect(describeSignatureFull(151)).toBeNull();
+  });
+});
+
+describe("signature engine: the reworked-row boundary", () => {
+  // SIG_ENGINE_DEX_IDS is the single source of "which rows the engine drives". The
+  // server DELETEs the legacy stat rows for exactly these ids and the client skips
+  // the legacy stat path for exactly these ids — if the two sets ever disagree,
+  // buffs silently apply twice or not at all.
+  // M4 (2026-07-12) added the 33 Gen VIII/IX legendaries from the owner's second
+  // spreadsheet, taking the engine from the original 71 rows to the full roster.
+  it("covers the 104 reworked rows and matches the rows carrying an `engine` spec", () => {
+    expect(SIG_ENGINE_DEX_IDS).toHaveLength(104);
+    const fromCatalog = Object.values(SIGNATURE_ABILITIES)
+      .filter((a) => a.engine !== undefined)
+      .map((a) => a.pokemonId)
+      .sort((a, b) => a - b);
+    expect([...SIG_ENGINE_DEX_IDS]).toEqual(fromCatalog);
+  });
+
+  it("gives every engine row a trigger the tick can resolve", () => {
+    for (const id of SIG_ENGINE_DEX_IDS) {
+      const engine = SIGNATURE_ABILITIES[id]?.engine;
+      expect(engine, `#${id} should carry an engine spec`).toBeDefined();
+      expect(["client", "server"]).toContain(engine!.trigger.where);
+    }
+  });
+});
+
+describe("signature engine: engineTriggerFired", () => {
+  it("never fires a server-site trigger on the client (the observer owns those)", () => {
+    expect(
+      engineTriggerFired({ type: "opponent_signature", where: "server" }, ctx({ correct: true })),
+    ).toBe(false);
+    expect(
+      engineTriggerFired({ type: "hp_reaches_zero", where: "server" }, ctx({ correct: true })),
+    ).toBe(false);
+  });
+
+  it("fires a streak trigger only once the streak is met, and only on a correct answer", () => {
+    const trig = { type: "streak_in_a_row", n: 3, where: "client" } as const;
+    expect(engineTriggerFired(trig, ctx({ correct: true, streak: 2 }))).toBe(false);
+    expect(engineTriggerFired(trig, ctx({ correct: true, streak: 3 }))).toBe(true);
+    expect(engineTriggerFired(trig, ctx({ correct: false, streak: 3 }))).toBe(false);
+  });
+
+  it("resolves parity and fixed-index triggers off the 1-indexed question number", () => {
+    // questionIndex 1 (0-based) is question 2 (1-indexed) – even.
+    expect(
+      engineTriggerFired(
+        { type: "every_even_question", where: "client" },
+        ctx({ questionIndex: 1 }),
+      ),
+    ).toBe(true);
+    expect(
+      engineTriggerFired({ type: "every_odd_question", where: "client" }, ctx({ questionIndex: 1 })),
+    ).toBe(false);
+    // Giratina fires on questions 2 and 12.
+    const onQs: NewSignatureTrigger = {
+      type: "on_questions",
+      indices: [2, 12],
+      where: "client",
+    };
+    expect(engineTriggerFired(onQs, ctx({ questionIndex: 1 }))).toBe(true);
+    expect(engineTriggerFired(onQs, ctx({ questionIndex: 2 }))).toBe(false);
+  });
+
+  it("agrees with postTriggerFires — it is a wrapper, not a second implementation", () => {
+    const trig = { type: "every_question", where: "client" } as const;
+    const c = ctx({ correct: true });
+    expect(engineTriggerFired(trig, c)).toBe(postTriggerFires(trig, c, () => 0));
+  });
+});
+
+// ── M4: the 33 Gen VIII/IX rows from the owner's second spreadsheet ──────────
+
+describe("M4: self_afflicted_or_hp_below honours its own pct", () => {
+  // REGRESSION. Every caller used to pre-bake `hp < 0.5` into `selfAfflicted`
+  // and the predicate just read that flag, so the trigger's `pct` was dead. That
+  // was invisible while all 7 rows were 50% — but Zarude #893 is the only 25%
+  // row in the game, and it would have fired at half health: a full heal handed
+  // out twice as easily as designed.
+  const zarude: NewSignatureTrigger = { type: "self_afflicted_or_hp_below", pct: 25, where: "client" };
+  const paradox: NewSignatureTrigger = { type: "self_afflicted_or_hp_below", pct: 50, where: "client" };
+
+  it("does NOT fire Zarude's 25% gate at 40% HP — but the 50% rows do", () => {
+    const at40 = ctx({ correct: true, selfAfflicted: false, selfHpPct: 0.4 });
+    expect(engineTriggerFired(zarude, at40)).toBe(false);
+    expect(engineTriggerFired(paradox, at40)).toBe(true);
+  });
+
+  it("fires Zarude once it is genuinely under 25%", () => {
+    expect(
+      engineTriggerFired(zarude, ctx({ correct: true, selfAfflicted: false, selfHpPct: 0.2 })),
+    ).toBe(true);
+  });
+
+  it("still fires on a status at full HP (the 'afflicted' half of the OR)", () => {
+    expect(
+      engineTriggerFired(zarude, ctx({ correct: true, selfAfflicted: true, selfHpPct: 1 })),
+    ).toBe(true);
+  });
+});
+
+describe("M4: Terapagos #1024 opp_hp_multiple_of_self", () => {
+  const trig: NewSignatureTrigger = { type: "opp_hp_multiple_of_self", factor: 2, where: "client" };
+
+  it("fires only once the opponent actually holds 2x your HP", () => {
+    expect(engineTriggerFired(trig, ctx({ selfHpPct: 0.5, oppHpPct: 0.99 }))).toBe(false);
+    expect(engineTriggerFired(trig, ctx({ selfHpPct: 0.5, oppHpPct: 1 }))).toBe(true);
+    expect(engineTriggerFired(trig, ctx({ selfHpPct: 0.25, oppHpPct: 0.6 }))).toBe(true);
+  });
+
+  it("never fires while you are level or ahead", () => {
+    expect(engineTriggerFired(trig, ctx({ selfHpPct: 1, oppHpPct: 1 }))).toBe(false);
+    expect(engineTriggerFired(trig, ctx({ selfHpPct: 1, oppHpPct: 0.3 }))).toBe(false);
+  });
+
+  it("does not divide by a dead player", () => {
+    expect(engineTriggerFired(trig, ctx({ selfHpPct: 0, oppHpPct: 1 }))).toBe(false);
+  });
+});
+
+describe("M4: the 33 new rows are authored as the owner spec reads", () => {
+  it("Urshifu, Fezandipiti and Terapagos are the only instant-KO rows, at 30/10/50%", () => {
+    const koRows = SIG_ENGINE_DEX_IDS.flatMap((id) => {
+      const ko = SIGNATURE_ABILITIES[id]?.engine?.bespoke?.find((b) => b.fx === "instant_ko");
+      return ko ? [[id, ko.chance] as const] : [];
+    });
+    expect(koRows).toEqual([
+      [892, 0.3],
+      [1016, 0.1],
+      [1024, 0.5],
+    ]);
+  });
+
+  it("Zamazenta and Iron Boulder are shields (owner ruling: NOT a self-nerf)", () => {
+    expect(SIGNATURE_ABILITIES[889].engine?.shield).toEqual({ questions: 3, receivePct: 0 });
+    expect(SIGNATURE_ABILITIES[1022].engine?.shield).toEqual({ questions: 3, receivePct: 0 });
+    // Eternatus is the self-damage row, and is NOT a shield — it still takes hits.
+    expect(SIGNATURE_ABILITIES[890].engine?.nullifySelfDamage).toBe(true);
+    expect(SIGNATURE_ABILITIES[890].engine?.shield).toBeUndefined();
+  });
+
+  it("Eternatus is hard-countered by the two wolves", () => {
+    expect(SIGNATURE_ABILITIES[890].engine?.disable).toEqual({
+      kind: "disabled_if_opponent_species",
+      dexIds: [888, 889],
+    });
+  });
+
+  it("the Loyal Three all crush the enemy timer to 5s for 5 questions", () => {
+    for (const id of [1014, 1015, 1016]) {
+      expect(SIGNATURE_ABILITIES[id].engine?.opponentTimer).toEqual({ ms: 5000, questions: 5 });
+    }
+  });
+
+  it("Walking Wake and Iron Leaves latch their x2 for the rest of the battle", () => {
+    for (const id of [1009, 1010]) {
+      expect(SIGNATURE_ABILITIES[id].engine?.latchOnTrigger).toBe(true);
+      expect(SIGNATURE_ABILITIES[id].engine?.disable).toEqual({ kind: "none" });
+    }
+    // Gouging Fire shares the below-50% trigger but explicitly does NOT latch —
+    // its cell says "disables effect after 3 questions".
+    expect(SIGNATURE_ABILITIES[1020].engine?.latchOnTrigger).toBeUndefined();
+  });
+
+  it("the Ruination quartet each halve current HP once per battle on a 5-streak", () => {
+    for (const id of [1001, 1002, 1003, 1004]) {
+      const e = SIGNATURE_ABILITIES[id].engine;
+      expect(e?.trigger).toEqual({ type: "streak_in_a_row", n: 5, where: "client" });
+      expect(e?.bespoke).toEqual([{ fx: "frac_hp_damage", pctOfOppCurrentHp: 0.5 }]);
+      expect(e?.disable).toEqual({ kind: "once_per_battle" });
+      expect(e?.status?.[0].chance).toBe(0.1);
+    }
+  });
+
+  it("Ogerpon only badly-poisons the Loyal Three", () => {
+    expect(SIGNATURE_ABILITIES[1017].engine?.status?.[0].ifOpponentSpeciesAny).toEqual([
+      1014, 1015, 1016,
+    ]);
   });
 });
