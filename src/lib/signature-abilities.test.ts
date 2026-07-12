@@ -344,75 +344,86 @@ describe("Mew — Transform copy resolution (Phase 2)", () => {
   });
 });
 
-describe("describeSignatureEffect", () => {
-  it("describes self stat-stage bumps plainly", () => {
-    // 1017 Ogerpon — Ivy Cudgel: battle_start +1 Crit.
-    expect(describeSignatureEffect(1017)).toBe("+1 Crit");
-    // 382 Kyogre — Origin Pulse: compound +1 Attack, +1 Speed.
-    expect(describeSignatureEffect(382)).toBe("+1 Attack, +1 Speed");
-  });
+// ─────────────────────────────────────────────────────────────────────────────
+// The describers must narrate the ENGINE, not the inert legacy fields.
+//
+// These blocks used to assert the pre-rework text ("heals 8 HP, cures status"
+// for Zarude). That text was still being SHOWN in battle long after the engine
+// took over the mechanics — the popover confidently described an ability the
+// game no longer had. The rule this locks in: for an engine-owned row the words
+// come from `engine`, so the description and the behaviour cannot drift.
+// ─────────────────────────────────────────────────────────────────────────────
 
-  it("describes opponent-targeted stat drops with the − glyph and 'opponent'", () => {
-    // 1001 Wo-Chien — Ruination: standing -1 opponent Attack.
-    expect(describeSignatureEffect(1001)).toBe("−1 opponent Attack");
-  });
-
-  it("describes inflicted statuses", () => {
-    // 244 Entei — Sacred Fire: on-correct Burn.
-    expect(describeSignatureEffect(244)).toBe("inflicts Burn");
-    // 648 Meloetta — Relic Song: +1 Attack, then Sleep on the opponent.
-    expect(describeSignatureEffect(648)).toBe("+1 Attack, inflicts Sleep");
-  });
-
-  it("describes heals, drains, and swaps", () => {
-    // 717 Yveltal — Oblivion Wing: drain 2 HP.
-    expect(describeSignatureEffect(717)).toBe("drains 2 HP");
-    // 893 Zarude — Jungle Healing: heal 8 + cure.
-    expect(describeSignatureEffect(893)).toBe("heals 8 HP, cures status");
-    // 490 Manaphy — Heart Swap.
-    expect(describeSignatureEffect(490)).toBe("swaps stat changes");
-  });
-
-  it("reuses the hit-modifier phrasing for pure damage-calc abilities", () => {
-    // 144 Articuno — Freeze-Dry: ignore opponent Defense.
-    expect(describeSignatureEffect(144)).toBe("ignores their Defense");
-  });
-
-  it("returns null for a non-legendary partner or a purely-bespoke effect", () => {
-    expect(describeSignatureEffect(25)).toBeNull();
-    expect(describeSignatureEffect(null)).toBeNull();
-    // 789 Cosmog — Splash: deliberate no-op (bespoke effect).
-    expect(describeSignatureEffect(789)).toBeNull();
-  });
-});
-
-describe("describeSignatureFull (tappable popover — effect + when triggered)", () => {
-  it("states the effect AND the trigger clause", () => {
-    // 1017 Ogerpon — Ivy Cudgel: battle_start +1 Crit.
-    expect(describeSignatureFull(1017)).toBe("+1 Crit at the start of battle.");
-    // 144 Articuno — Freeze-Dry: passive, ignores their Defense.
-    expect(describeSignatureFull(144)).toBe("Ignores their Defense on every hit.");
-    // 145 Zapdos — Thunderous Kick: fast_pair under 5s, −1 opponent Defense.
-    expect(describeSignatureFull(145)).toBe(
-      "−1 opponent Defense on two answers in a row under 5s.",
+describe("describeSignatureEffect (terse in-battle toast)", () => {
+  it("narrates the engine, not the legacy effect tree", () => {
+    // 893 Zarude — legacy said "heals 8 HP, cures status" on a 5-question cooldown.
+    // The engine heals to FULL, and only below 25%.
+    expect(describeSignatureEffect(893)).toBe(
+      "-1 your defence and heal to full and clear every status condition",
     );
   });
 
-  it("appends the proc chance when the trigger has one", () => {
-    // 244 Entei — Sacred Fire: on_correct 40%, inflicts Burn.
-    expect(describeSignatureFull(244)).toBe("Inflicts Burn when you answer correctly (40% chance).");
+  it("renders already-percent fields as percents, not fractions", () => {
+    // 717 Yveltal — lifesteal `pct` is a WHOLE 75, not 0.75. Rendering it through
+    // the 0..1 helper produced "7500% of the damage you deal".
+    expect(describeSignatureEffect(717)).toBe("Heal yourself for 75% of the damage you deal");
+  });
+
+  it("returns null for a non-legendary partner", () => {
+    expect(describeSignatureEffect(25)).toBeNull();
+    expect(describeSignatureEffect(null)).toBeNull();
+  });
+});
+
+describe("describeSignatureFull (tappable popover — effect + when + cooldown)", () => {
+  it("states the effect, the trigger, and the cooldown", () => {
+    expect(describeSignatureFull(144)).toBe(
+      "A 10% chance to inflict Freeze on the opponent for 2 questions and double damage against water types once you get 3 answers right in a row. The damage bonus switches off after 1 wrong answer.",
+    );
+  });
+
+  it("honours the row's own HP threshold rather than a hard-coded 50%", () => {
+    // Zarude is the only 25% row; the legacy predicate ignored `pct` entirely.
+    expect(describeSignatureFull(893)).toContain("your HP is below 25%");
+    expect(describeSignatureFull(893)).toContain("Once per battle.");
+  });
+
+  it("describes the M4 instant-KO gates, which are what keep it fair", () => {
+    expect(describeSignatureFull(1024)).toBe(
+      "A 50% chance to knock the opponent out on the spot while the opponent has at least twice your HP. It switches off permanently the moment you use a healing item.",
+    );
+  });
+
+  it("names the species in a matchup lockout", () => {
+    // 890 Eternatus is inert against Zacian/Zamazenta.
+    expect(describeSignatureFull(890)).toContain("does nothing at all against Zacian and Zamazenta");
+  });
+
+  it("drops the trigger clause when the effects already name their questions", () => {
+    // 487 Giratina marks q1/q2/q11/q12 explicitly — appending "on questions 2
+    // and 12" would repeat what the effect text just said.
+    expect(describeSignatureFull(487)).toBe(
+      "You take no damage on question 1, you take no damage on question 11, double damage on question 2 and double damage on question 12.",
+    );
   });
 
   it("gives Splash's deliberate no-op a plain explanation instead of a blank", () => {
-    // 789 Cosmog — Splash: the short effect text is null (blank popover before).
     expect(describeSignatureFull(789)).toBe("Nothing happens. Has no effect whatsoever.");
   });
 
-  it("returns null for a non-legendary or a purely-bespoke ability with no generic phrasing", () => {
+  it("returns null for a non-legendary partner", () => {
     expect(describeSignatureFull(25)).toBeNull();
     expect(describeSignatureFull(null)).toBeNull();
-    // 151 Mew — Transform: bespoke trigger + bespoke effect, no generic text.
-    expect(describeSignatureFull(151)).toBeNull();
+  });
+
+  it("has real text for every one of the 104 engine rows", () => {
+    // The whole point: no engine row may fall back to a blank or a legacy string.
+    for (const dex of SIG_ENGINE_DEX_IDS) {
+      const text = describeSignatureFull(dex);
+      expect(text, `dex ${dex}`).toBeTruthy();
+      expect(text, `dex ${dex}`).not.toContain("undefined");
+      expect(text, `dex ${dex}`).not.toContain("NaN");
+    }
   });
 });
 

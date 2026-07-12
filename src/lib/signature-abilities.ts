@@ -1,5 +1,6 @@
 import type { PvpStat, StatusKind } from "./game-data";
 import { isLegendaryOrMythical, isMascotTier } from "./legendary-data";
+import { describeEngineEffects, describeEngineSpec } from "./signature-engine-describe";
 
 /**
  * Legendary / Mythical PARTNER signature abilities for Nearby Battle (live PvP).
@@ -423,6 +424,11 @@ export interface FixedIndexSpec {
 
 // ── Bespoke effect references (catalogue; delivery split M2/M3) ─────────────
 export type BespokeEffectRef =
+  /** Fraction of the opponent's CURRENT HP (0.5 = halve it) — Tapu quartet,
+   *  Cosmog, and the M4 Ruination four. A 0..1 fraction, matching the `pct` the
+   *  server's `m4_fx`/`frac_hp_current` row carries; the Gen-VII rows used to
+   *  carry a whole `50` here, which no reader consumed but which read as a 100x
+   *  discrepancy against the M4 rows. One field, one unit. */
   | { fx: "frac_hp_damage"; pctOfOppCurrentHp: number } // Tapu halve, Cosmog
   /** Arceus #493: 1–10% chip every question its trigger holds (no `questions`).
    *  Regieleki #894 (M4): 1–15% each question for a 5-question WINDOW opened by
@@ -1660,7 +1666,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     engine: {
       trigger: streakN(5),
       stat: [oneShot("speed", "self", 1)],
-      bespoke: [{ fx: "frac_hp_damage", pctOfOppCurrentHp: 50 }],
+      bespoke: [{ fx: "frac_hp_damage", pctOfOppCurrentHp: 0.5 }],
       disable: oncePerBattleDisable,
     },
   },
@@ -1677,7 +1683,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     engine: {
       trigger: streakN(5),
       stat: [oneShot("crit", "self", 1)],
-      bespoke: [{ fx: "frac_hp_damage", pctOfOppCurrentHp: 50 }],
+      bespoke: [{ fx: "frac_hp_damage", pctOfOppCurrentHp: 0.5 }],
       disable: oncePerBattleDisable,
     },
   },
@@ -1694,7 +1700,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     engine: {
       trigger: streakN(5),
       stat: [oneShot("attack", "self", 1)],
-      bespoke: [{ fx: "frac_hp_damage", pctOfOppCurrentHp: 50 }],
+      bespoke: [{ fx: "frac_hp_damage", pctOfOppCurrentHp: 0.5 }],
       disable: oncePerBattleDisable,
     },
   },
@@ -1711,7 +1717,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     engine: {
       trigger: streakN(5),
       stat: [oneShot("defense", "self", 1)],
-      bespoke: [{ fx: "frac_hp_damage", pctOfOppCurrentHp: 50 }],
+      bespoke: [{ fx: "frac_hp_damage", pctOfOppCurrentHp: 0.5 }],
       disable: oncePerBattleDisable,
     },
   },
@@ -1733,7 +1739,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
         windowN: 3,
         scaleToPct: 0,
         payoffAtIndex: 4,
-        payoffEffect: { fx: "frac_hp_damage", pctOfOppCurrentHp: 50 },
+        payoffEffect: { fx: "frac_hp_damage", pctOfOppCurrentHp: 0.5 },
       },
       disable: oncePerBattleDisable,
     },
@@ -3241,6 +3247,10 @@ function describeEffectLeaf(effect: SignatureEffect): string | null {
 export function describeSignatureEffect(pokemonId: number | null | undefined): string | null {
   const ability = signatureAbilityFor(pokemonId);
   if (!ability) return null;
+  // An engine-owned row's legacy `effect` tree is inert (see `isEngineOwned`) —
+  // describing it would narrate an ability the game no longer has. The engine is
+  // the only honest source for all 104 Legendary/Mythical rows.
+  if (ability.engine) return describeEngineEffects(ability.engine);
   const leaves: SignatureEffect[] = [];
   const walk = (e: SignatureEffect): void => {
     if (e.type === "compound") e.effects.forEach(walk);
@@ -3341,6 +3351,9 @@ export function describeSignatureFull(pokemonId: number | null | undefined): str
   const ability = signatureAbilityFor(pokemonId);
   if (!ability) return null;
   if (isNoOpSignature(ability)) return "Nothing happens. Has no effect whatsoever.";
+  // Same reason as `describeSignatureEffect`: for an engine-owned row the legacy
+  // trigger/effect pair describes the PRE-rework ability. Render the engine.
+  if (ability.engine) return describeEngineSpec(ability.engine);
   const effect = describeSignatureEffect(pokemonId);
   const when = describeSignatureTrigger(ability.trigger);
   const chance =
