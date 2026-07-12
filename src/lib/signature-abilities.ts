@@ -992,9 +992,8 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     trigger: { type: "manual", usesPerBattle: 1 },
     effect: { type: "flat_damage", amount: 12, ignoreDefense: true },
     wiring: "bespoke",
-    note: "Delayed strike: marks current question, resolves 2 questions later if interim answers were correct.",
-    // 00-owner-spec.md row 20. TODO(M3): flat_next_question_damage (delayed
-    // strike) is hard bespoke per architecture §6/§7 — authored, not yet wired.
+    note: "WIRED (M3): stepBespokeFx arms the strike on the trigger and resolves it DOOM_DESIRE_DELAY_Q questions later; the server owns the magnitude (pvp_signature_effects bespoke/flat_next_question_damage, 20). An in-flight strike blocks a second one.",
+    // 00-owner-spec.md row 20.
     engine: {
       trigger: selfAfflictedTrigger(50),
       bespoke: [{ fx: "flat_next_question_damage", amount: 20 }],
@@ -1028,9 +1027,8 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     trigger: { type: "cooldown", everyN: 4 },
     effect: { type: "help", mode: "preview_category" },
     wiring: "bespoke",
-    note: "Self answer-help (preview next category); needs UI hook.",
-    // 00-owner-spec.md row 23. TODO(M3): predicted_status_reveal is hard bespoke
-    // (architecture §6/§7) — authored, not yet wired; graceful no-op downstream.
+    note: "WIRED (M3): the SERVER rolls the status at battle start (engineToTickSpec bridges the bespoke fx into a `predicted_status` stat spec; _pvp_sig_engine_apply rolls it and echoes it back on sig_runtime.predictedStatus) and reveals it to the player. It is inflicted — provably the same status — the first time the opponent falls below 50% HP, via bespoke/predicted_status_apply.",
+    // 00-owner-spec.md row 23.
     engine: {
       trigger: startOfBattleTrigger,
       bespoke: [{ fx: "predicted_status_reveal", applyIfOppHpBelowPct: 50 }],
@@ -1045,9 +1043,8 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     trigger: { type: "cooldown", everyN: 4 },
     effect: compound({ type: "help", mode: "preview_value" }, selfStage("speed", 1, 1)),
     wiring: "bespoke",
-    note: "Preview high-value question; +1 Speed only when high-value. Needs UI hook.",
-    // 00-owner-spec.md row 24. TODO(M3): item_lockout is hard bespoke
-    // (architecture §6/§7) — authored, not yet wired; graceful no-op downstream.
+    note: "WIRED (M3): resolved entirely server-side — `use_pvp_live_item` refuses the OPPONENT's item with `item_locked` while Mesprit's sig_runtime shows firedThisBattle and not disabled. No client scheduling (reacting in stepBespokeFx would double-apply it).",
+    // 00-owner-spec.md row 24.
     engine: {
       trigger: startOfBattleTrigger,
       bespoke: [{ fx: "item_lockout" }],
@@ -1062,9 +1059,8 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     trigger: { type: "cooldown", everyN: 5 },
     effect: { type: "help", mode: "eliminate_option" },
     wiring: "bespoke",
-    note: "Auto-eliminate one wrong option; needs UI hook.",
-    // 00-owner-spec.md row 25. TODO(M3): eliminate_choices is hard bespoke
-    // (architecture §6/§7 — "help path is a client no-op today") — authored, not yet wired.
+    note: "WIRED (M3): a correct answer on q5/q10/q15/q20 rolls 1-3 wrong options to cull and schedules them onto the NEXT question; live-pvp-battle-screen greys them out via eliminatedChoiceIndices. Self-help only, so it stays client-side — the correct answer is never culled. (The q20 fire has no q21 to land on and is inert by design.)",
+    // 00-owner-spec.md row 25.
     engine: {
       // M2 §5: fires ON questions 5/10/15/20 (the effect windows), not at start.
       trigger: onQuestions([5, 10, 15, 20]),
@@ -1113,9 +1109,8 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     trigger: { type: "manual", usesPerBattle: 1 },
     effect: compound(oppStatus("badly-poisoned", 3), { type: "bespoke", note: "Ability-lock opponent 3q." }),
     wiring: "manual",
-    note: "Phase 4 (wired): manual fire locks the opponent's signature ability for 3 questions (server suppress_ability) + Badly Poisoned. The 2 flat chip/question is not modelled.",
-    // 00-owner-spec.md row 28. TODO(M3): dot_frac_hp is hard bespoke
-    // (architecture §6/§7, "today: Bad-Poison proxy") — authored, not yet wired.
+    note: "WIRED (M3): a 5-streak opens a 5-question damage-over-time window that chips the opponent for 12.5% of max HP (15) each question, server-applied via bespoke/dot_frac_hp; two misses slam it shut. The manual fire (ability-lock 3q + Badly Poisoned) still stands alongside it.",
+    // 00-owner-spec.md row 28.
     engine: {
       trigger: streakN(5),
       bespoke: [{ fx: "dot_frac_hp", pct: 0.125, questions: 5 }],
@@ -1215,9 +1210,11 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     wiring: "manual",
     note: "Give opp your lowest (most negative) stage, take their highest (most positive). Server-computed (swap_stages kind); cancels in a mirror if both fire the same question.",
     // 00-owner-spec.md row 33 SUPERSEDES the legacy swap_stages above with a
-    // reactive negate. TODO(M3): reflect_opponent_stat is hard bespoke
-    // (architecture §6/§7) — authored, not yet wired. opponent_signature is
-    // server-eval (M2/M3, §9 R3) — inert client-side until wired.
+    // reactive negate. WIRED (M2/M3): `opponent_signature` is server-eval, so the
+    // live loop's observer watches the OPPONENT's sig_runtime phaseIdx advance —
+    // that IS the fact their signature fired — then ticks this row with
+    // triggerFired and calls bespoke/reflect_opponent_stat, which flips Manaphy's
+    // own negative stages positive. No-ops when it carries no debuff to reflect.
     engine: {
       trigger: opponentSignatureTrigger,
       bespoke: [{ fx: "reflect_opponent_stat", factor: -1 }],
@@ -1858,9 +1855,11 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     ),
     wiring: "bespoke",
     note: "Steal opponent's highest positive stage (remove from them, add to self).",
-    // 00-owner-spec.md row 67 SUPERSEDES the legacy steal-stage. TODO(M3):
-    // opponent_uses_item is server-eval + use_opponent_item is hard bespoke
-    // (architecture §6/§7) — authored, inert client-side. Blank cooldown → none (ruling 6).
+    // 00-owner-spec.md row 67 SUPERSEDES the legacy steal-stage. WIRED (M3):
+    // resolved entirely inside `use_pvp_live_item` — when the opponent consumes an
+    // item, the server mirrors that same item's effect onto Marshadow (spending one
+    // of its own 3 item uses). Server-eval by necessity: only the server sees the
+    // opponent's item. Blank cooldown → none (ruling 6).
     engine: {
       trigger: opponentItemTrigger,
       bespoke: [{ fx: "use_opponent_item" }],
@@ -2973,8 +2972,17 @@ export function postTriggerFires(
     // a correct answer (parity with every other case in this switch). ────────
     case "streak_in_a_row":
       return ctx.correct && ctx.streak >= trigger.n;
+    // …with ONE exception: a battle-start ability is setup, not a reward for the
+    // first answer. Requiring `correct` here silently killed it for the whole
+    // battle whenever q1 was missed — the row fires once at q1 and most carry
+    // `once_per_battle`, so there was never a second chance. That took out Uxie
+    // #480, Mesprit #481, Regidrago #895, Ogerpon #1017, Cosmog #789, Mew #151,
+    // Type: Null #772, Silvally #773 and the three Ultra Beasts. Owner ruling
+    // (2026-07-13): it fires at the start of the battle, win or lose q1 — which
+    // is what `NewSignatureTrigger.start_of_battle` ("fires once before Q1
+    // resolves") always said it did.
     case "start_of_battle":
-      return ctx.correct && ctx.questionIndex === 0;
+      return ctx.questionIndex === 0;
     case "every_question":
       return ctx.correct;
     case "every_even_question":

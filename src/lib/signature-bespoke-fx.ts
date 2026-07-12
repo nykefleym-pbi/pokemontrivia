@@ -119,13 +119,17 @@ export function stepBespokeFx(
           state = { ...state, dotThroughQ: null };
           break;
         }
+        // Chip BEFORE re-arming. Heatran's trigger is a 5-streak, so it keeps
+        // firing for as long as the streak holds — and re-opening the window on
+        // those questions instead of burning through them meant a player who kept
+        // answering correctly never dealt a single point of Magma Storm damage.
+        // An open window burns every question inside it; a re-fire extends it.
+        const dotOpen = state.dotThroughQ !== null && ctx.questionNo <= state.dotThroughQ;
+        if (dotOpen) fireBespoke = true;
         if (ctx.triggerFired) {
+          if (!dotOpen) cue = "🔥 Magma Storm — the opponent is burning";
           state = { ...state, dotThroughQ: ctx.questionNo + fx.questions };
-          cue = "🔥 Magma Storm — the opponent is burning";
-        } else if (state.dotThroughQ !== null && ctx.questionNo <= state.dotThroughQ) {
-          fireBespoke = true;
-        }
-        if (state.dotThroughQ !== null && ctx.questionNo >= state.dotThroughQ) {
+        } else if (state.dotThroughQ !== null && ctx.questionNo >= state.dotThroughQ) {
           state = { ...state, dotThroughQ: null };
         }
         break;
@@ -144,13 +148,12 @@ export function stepBespokeFx(
           state = { ...state, chipThroughQ: null };
           break;
         }
+        const chipOpen = state.chipThroughQ !== null && ctx.questionNo <= state.chipThroughQ;
+        if (chipOpen) fireBespoke = true;
         if (ctx.triggerFired) {
+          if (!chipOpen) cue = "⚡ Thunder Cage — they can't escape";
           state = { ...state, chipThroughQ: ctx.questionNo + fx.questions };
-          cue = "⚡ Thunder Cage — they can't escape";
-        } else if (state.chipThroughQ !== null && ctx.questionNo <= state.chipThroughQ) {
-          fireBespoke = true;
-        }
-        if (state.chipThroughQ !== null && ctx.questionNo >= state.chipThroughQ) {
+        } else if (state.chipThroughQ !== null && ctx.questionNo >= state.chipThroughQ) {
           state = { ...state, chipThroughQ: null };
         }
         break;

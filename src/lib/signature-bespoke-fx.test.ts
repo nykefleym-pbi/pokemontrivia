@@ -85,6 +85,28 @@ describe("bespoke fx: Heatran #485 damage-over-time window", () => {
     expect(s.dotThroughQ).toBeNull();
   });
 
+  // Heatran's trigger is a 5-in-a-row streak, so it re-fires on every question the
+  // streak survives. Re-opening the window on those questions instead of burning
+  // through them meant the ability paid out NOTHING for as long as the player kept
+  // answering correctly — the better you played, the less Magma Storm did.
+  it("keeps burning while a sustained streak re-fires the trigger", () => {
+    let s: BespokeFxState = stepBespokeFx(fx, EMPTY_BESPOKE_FX_STATE, {
+      ...base,
+      questionNo: 5,
+      triggerFired: true,
+    }).state;
+
+    const ticks: boolean[] = [];
+    for (const q of [6, 7, 8]) {
+      const r = stepBespokeFx(fx, s, { ...base, questionNo: q, triggerFired: true });
+      ticks.push(r.fireBespoke);
+      s = r.state;
+    }
+    expect(ticks).toEqual([true, true, true]);
+    // Each re-fire extends the window rather than resetting the payout.
+    expect(s.dotThroughQ).toBe(8 + 3);
+  });
+
   it("a disable (Heatran missed twice) slams the window shut early", () => {
     const opened = stepBespokeFx(fx, EMPTY_BESPOKE_FX_STATE, {
       ...base,

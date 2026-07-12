@@ -499,6 +499,18 @@ describe("signature engine: engineTriggerFired", () => {
     expect(engineTriggerFired(trig, ctx({ correct: false, streak: 3 }))).toBe(false);
   });
 
+  // A battle-start row is setup, not a reward for answering q1. It fires once and
+  // most carry `once_per_battle`, so gating it on a correct q1 used to kill Uxie
+  // #480, Mesprit #481, Regidrago #895, Ogerpon #1017 and six others outright for
+  // the rest of the battle. Owner ruling 2026-07-13: it fires either way.
+  it("fires a battle-start trigger on question 1 whether or not q1 was answered right", () => {
+    const trig: NewSignatureTrigger = { type: "start_of_battle", where: "client" };
+    expect(engineTriggerFired(trig, ctx({ questionIndex: 0, correct: true }))).toBe(true);
+    expect(engineTriggerFired(trig, ctx({ questionIndex: 0, correct: false }))).toBe(true);
+    // …but only on question 1.
+    expect(engineTriggerFired(trig, ctx({ questionIndex: 1, correct: true }))).toBe(false);
+  });
+
   it("resolves parity and fixed-index triggers off the 1-indexed question number", () => {
     // questionIndex 1 (0-based) is question 2 (1-indexed) – even.
     expect(
