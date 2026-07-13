@@ -118,7 +118,7 @@ interface Side {
   selfDmgZero: boolean;
   // cross-side suppression: this side's ability is locked through this question
   suppressedThroughQ: number;
-  manualUsesLeft: number;
+  payloadUsesLeft: number;
   manualFired: boolean;
   usedHealingItem: boolean;
 }
@@ -140,8 +140,11 @@ const emptyRuntime = (): Runtime => ({
 function makeSide(dex: number, useAbility: boolean): Side {
   const ability = useAbility ? (SIGNATURE_ABILITIES[dex] ?? null) : null;
   const engine = ability?.engine ?? null;
-  const manualUses =
-    ability?.trigger.type === "manual" ? (ability.trigger.usesPerBattle ?? 1) : 0;
+  // NB: `capped_payload` is the WIRING/TRIGGER label. The DB phase token is still the
+  // string "manual" (see gen-signature-sql). Do not conflate them — comparing this to
+  // "manual" silently yields 0 uses and un-wires all 20 capped-payload abilities.
+  const payloadUses =
+    ability?.trigger.type === "capped_payload" ? (ability.trigger.usesPerBattle ?? 1) : 0;
   return {
     dex,
     ability,
@@ -162,7 +165,7 @@ function makeSide(dex: number, useAbility: boolean): Side {
     oppTimerThroughQ: -1,
     selfDmgZero: false,
     suppressedThroughQ: -1,
-    manualUsesLeft: manualUses,
+    payloadUsesLeft: payloadUses,
     manualFired: false,
     usedHealingItem: false,
   };
@@ -740,8 +743,8 @@ function takeTurn(
       // Signature moves are AUTOMATIC (owner ruling 2026-07-13): the row's manual-
       // phase effects fire on its own engine trigger now, not on a button tap,
       // still capped at the uses they always had.
-      if (fired && !me.rt.disabled && me.manualUsesLeft > 0) {
-        me.manualUsesLeft -= 1;
+      if (fired && !me.rt.disabled && me.payloadUsesLeft > 0) {
+        me.payloadUsesLeft -= 1;
         applyDbEffects(me, opp, "manual", rng, qNo);
       }
 

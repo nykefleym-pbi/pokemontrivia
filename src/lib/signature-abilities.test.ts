@@ -5,10 +5,10 @@ import {
   signatureMoveName,
   describeSignatureEffect,
   describeSignatureFull,
-  hasServerManualEffect,
+  hasCappedPayload,
   mergeHitModifiers,
-  manualUsesPerBattle,
-  SERVER_FIREABLE_MANUAL_IDS,
+  cappedPayloadUses,
+  CAPPED_PAYLOAD_IDS,
   checkCatalogIntegrity,
   NO_HIT_MODIFIERS,
   resolveMewTransform,
@@ -135,50 +135,50 @@ describe("the roster is fully engine-owned", () => {
 describe("manual charge-and-fire abilities", () => {
   it("exposes a Fire button only for manual abilities with a server effect", () => {
     // Aeroblast (249) fires -2 opp Speed – server-fireable.
-    expect(hasServerManualEffect(SIGNATURE_ABILITIES[249])).toBe(true);
+    expect(hasCappedPayload(SIGNATURE_ABILITIES[249])).toBe(true);
     // Psystrike (150) fires a damage-calc one-hit modifier – NOT server-fireable.
-    expect(hasServerManualEffect(SIGNATURE_ABILITIES[150])).toBe(false);
+    expect(hasCappedPayload(SIGNATURE_ABILITIES[150])).toBe(false);
     // Dragon Ascent (384) is damage-calc only after the refactor – not fireable.
-    expect(hasServerManualEffect(SIGNATURE_ABILITIES[384])).toBe(false);
+    expect(hasCappedPayload(SIGNATURE_ABILITIES[384])).toBe(false);
     // Non-manual abilities are never server-fireable.
-    expect(hasServerManualEffect(SIGNATURE_ABILITIES[638])).toBe(false);
-    expect(hasServerManualEffect(null)).toBe(false);
+    expect(hasCappedPayload(SIGNATURE_ABILITIES[638])).toBe(false);
+    expect(hasCappedPayload(null)).toBe(false);
   });
 
   it("reports the per-battle use cap", () => {
-    expect(manualUsesPerBattle(SIGNATURE_ABILITIES[249])).toBe(2); // Aeroblast
-    expect(manualUsesPerBattle(SIGNATURE_ABILITIES[380])).toBe(1); // Mist Ball
-    expect(manualUsesPerBattle(SIGNATURE_ABILITIES[638])).toBe(0); // passive
+    expect(cappedPayloadUses(SIGNATURE_ABILITIES[249])).toBe(2); // Aeroblast
+    expect(cappedPayloadUses(SIGNATURE_ABILITIES[380])).toBe(1); // Mist Ball
+    expect(cappedPayloadUses(SIGNATURE_ABILITIES[638])).toBe(0); // passive
   });
 
-  it("SERVER_FIREABLE_MANUAL_IDS matches the server-catalogued manual abilities", () => {
+  it("CAPPED_PAYLOAD_IDS matches the server-catalogued manual abilities", () => {
     // Includes Phase 2 additions Cresselia (488, cleanse) / Manaphy (490,
     // swap_stages) and the Phase 4 ability-suppressors Heatran (485),
     // Zygarde (718), Regieleki (894) and Pecharunt (1025).
-    expect([...SERVER_FIREABLE_MANUAL_IDS]).toEqual([
+    expect([...CAPPED_PAYLOAD_IDS]).toEqual([
       249, 380, 381, 483, 484, 485, 488, 490, 491, 492, 648, 718, 894, 1002, 1003, 1024, 1025,
     ]);
   });
 
   it("the four ability-suppressors are wired as server-fireable manual (Phase 4)", () => {
     for (const id of [485, 718, 894, 1025]) {
-      expect(SIGNATURE_ABILITIES[id].wiring).toBe("manual");
-      expect(hasServerManualEffect(SIGNATURE_ABILITIES[id])).toBe(true);
-      expect(manualUsesPerBattle(SIGNATURE_ABILITIES[id])).toBe(1);
+      expect(SIGNATURE_ABILITIES[id].wiring).toBe("capped_payload");
+      expect(hasCappedPayload(SIGNATURE_ABILITIES[id])).toBe(true);
+      expect(cappedPayloadUses(SIGNATURE_ABILITIES[id])).toBe(1);
     }
   });
 
   it("Cresselia (488) and Manaphy (490) are now server-fireable manual, not bespoke", () => {
-    expect(SIGNATURE_ABILITIES[488].wiring).toBe("manual");
+    expect(SIGNATURE_ABILITIES[488].wiring).toBe("capped_payload");
     // Balance pass 2026-07-13: the cleanse used to cost 15% of current HP, which
     // cancelled out the engine's own free heal and left Cresselia second-weakest
     // in the game (36% win rate). It is free now.
     expect(SIGNATURE_ABILITIES[488].effect).toEqual({ type: "cleanse", hpCostPct: 0 });
-    expect(hasServerManualEffect(SIGNATURE_ABILITIES[488])).toBe(true);
+    expect(hasCappedPayload(SIGNATURE_ABILITIES[488])).toBe(true);
 
-    expect(SIGNATURE_ABILITIES[490].wiring).toBe("manual");
+    expect(SIGNATURE_ABILITIES[490].wiring).toBe("capped_payload");
     expect(SIGNATURE_ABILITIES[490].effect).toEqual({ type: "swap_stages" });
-    expect(hasServerManualEffect(SIGNATURE_ABILITIES[490])).toBe(true);
+    expect(hasCappedPayload(SIGNATURE_ABILITIES[490])).toBe(true);
   });
 });
 

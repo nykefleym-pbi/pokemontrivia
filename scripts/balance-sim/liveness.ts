@@ -14,8 +14,8 @@
  *
  *   - `evaluateBattleStart` LOOKED live (called from two useEffects, five DB rows).
  *     It was dead. The rows were deleted 2026-07-13.
- *   - `hasServerManualEffect` LOOKED dead (legacy name, `wiring: "manual"`, a
- *     `phase='manual'` table). It is LIVE — `fireManualAuto` runs it off the engine
+ *   - `hasCappedPayload` LOOKED dead (legacy name, `wiring: "manual"`, a
+ *     `phase='manual'` table). It is LIVE — `fireCappedPayload` runs it off the engine
  *     trigger. Deleting it would have stripped 20 Pokemon of their ability.
  *
  * Names lie in both directions. So this file does not trust names, comments, or
@@ -91,7 +91,7 @@ const PATHS: Path[] = [
   { fn: "evaluatePostAnswer", kind: "fn", src: sigSrc, decl: /export function evaluatePostAnswer\b/, delivers: "phase='post_answer' DB rows" },
   { fn: "evaluatePassiveDamageSideEffects", kind: "fn", src: sigSrc, decl: /export function evaluatePassiveDamageSideEffects\b/, delivers: "post_answer side-effects on a passive hit" },
   { fn: "evaluateHitModifiers", kind: "fn", src: sigSrc, decl: /export function evaluateHitModifiers\b/, delivers: "damage-calc modifiers folded into a hit" },
-  { fn: "hasServerManualEffect", kind: "fn", src: sigSrc, decl: /export function hasServerManualEffect\b/, delivers: "phase='manual' DB rows (auto-fired by fireManualAuto)" },
+  { fn: "hasCappedPayload", kind: "fn", src: sigSrc, decl: /export function hasCappedPayload\b/, delivers: "phase='manual' DB rows (auto-fired by fireCappedPayload)" },
   { fn: "isClientHitManual", kind: "expr", src: screenSrc, decl: /const isClientHitManual\s*=/, delivers: "arming the one-hit modifier in the battle screen" },
   { fn: "manualHitModifiers", kind: "fn", src: sigSrc, decl: /export function manualHitModifiers\b/, delivers: "an armed one-hit damage modifier", gatedBy: "isClientHitManual" },
   { fn: "hasClientManualHit", kind: "fn", src: sigSrc, decl: /export function hasClientManualHit\b/, delivers: "whether a row arms a one-hit modifier", gatedBy: "isClientHitManual" },
@@ -179,5 +179,5 @@ for (const r of live) console.log(`      ${pad(r.fn, 34)}delivers ${r.delivers}`
 console.log("");
 console.log("NAMING TRAP: `manual` no longer means player-fired. The Fire button was removed");
 console.log("(owner ruling 2026-07-13). A row's manual-phase effects are the payload its ENGINE");
-console.log("trigger delivers, auto-fired by `fireManualAuto`, capped at the uses it always had.");
+console.log("trigger delivers, auto-fired by `fireCappedPayload`, capped at the uses it always had.");
 console.log("");

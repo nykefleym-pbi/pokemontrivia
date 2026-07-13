@@ -79,9 +79,9 @@ import {
   signatureMoveName,
   describeSignatureEffect,
   describeSignatureFull,
-  hasServerManualEffect,
+  hasCappedPayload,
   mergeHitModifiers,
-  manualUsesPerBattle,
+  cappedPayloadUses,
   resolveMewTransform,
   engineTriggerFired,
   MEW_ID,
@@ -586,15 +586,15 @@ export function LivePvpBattleScreen({
   // `manual`-phase signature abilities. NOTE THE NAME LIES: nothing here is
   // player-fired any more. The Fire button was removed (owner ruling 2026-07-13);
   // a row's manual-phase effects are the payload its OWN engine trigger delivers,
-  // auto-fired by `fireManualAuto` and still capped at the uses it always had.
+  // auto-fired by `fireCappedPayload` and still capped at the uses it always had.
   // This counter only drives the uses-remaining chip.
-  const [manualFiresUsed, setManualFiresUsed] = useState(0);
-  // Mirrors of the two above, for `fireManualAuto` — it runs inside the engine
+  const [payloadUsed, setPayloadUsed] = useState(0);
+  // Mirrors of the two above, for `fireCappedPayload` — it runs inside the engine
   // tick's async callback, where the state values it closed over are already stale.
-  const manualFiresUsedRef = useRef(0);
-  const manualFiringRef = useRef(false);
-  const manualCap = manualUsesPerBattle(ability);
-  const manualFireable = !!ability && manualCap > 0 && hasServerManualEffect(ability);
+  const payloadUsedRef = useRef(0);
+  const payloadFiringRef = useRef(false);
+  const payloadCap = cappedPayloadUses(ability);
+  const hasPayload = !!ability && payloadCap > 0 && hasCappedPayload(ability);
   //
   // The client-armed one-hit modifier (`isClientHitManual` / `armedHitRef`) lived
   // here. Deleted 2026-07-13. It was gated on `!ability.engine`, and all 104 rows
@@ -1841,7 +1841,7 @@ export function LivePvpBattleScreen({
         // Signature moves are automatic (owner ruling 2026-07-13): the row's
         // manual-phase effects fire on its own trigger now, not on a button tap.
         if (triggerFired && !(runtime?.disabled ?? false)) {
-          void fireManualAuto(idxAtAnswer);
+          void fireCappedPayload(idxAtAnswer);
         }
       });
     }
@@ -2209,13 +2209,13 @@ export function LivePvpBattleScreen({
    * Called from the engine tick, on a question where the trigger genuinely fired
    * and the row is not disabled or suppressed.
    */
-  async function fireManualAuto(questionIndex: number) {
-    if (!manualFireable || partnerId == null || finishedRef.current) return;
-    if (manualFiresUsedRef.current >= manualCap) return;
+  async function fireCappedPayload(questionIndex: number) {
+    if (!hasPayload || partnerId == null || finishedRef.current) return;
+    if (payloadUsedRef.current >= payloadCap) return;
     if (questionIndex < mySuppressedUntil) return;
-    if (manualFiringRef.current) return;
+    if (payloadFiringRef.current) return;
 
-    manualFiringRef.current = true;
+    payloadFiringRef.current = true;
     // Same server-validated path as berries: the client only names WHICH partner
     // fired and on what phase; the server looks up the fixed magnitude by dex id
     // and enforces the per-battle cap (returns noop/'no_charges' if exceeded).
@@ -2226,16 +2226,16 @@ export function LivePvpBattleScreen({
       "manual",
       pokedexCount,
     );
-    manualFiringRef.current = false;
+    payloadFiringRef.current = false;
     if (!res.ok) return;
     if (res.noop) {
       // Server-enforced cap reached (or nothing to apply) — sync the local counter.
-      manualFiresUsedRef.current = manualCap;
-      setManualFiresUsed(manualCap);
+      payloadUsedRef.current = payloadCap;
+      setPayloadUsed(payloadCap);
       return;
     }
-    manualFiresUsedRef.current += 1;
-    setManualFiresUsed((n) => n + 1);
+    payloadUsedRef.current += 1;
+    setPayloadUsed((n) => n + 1);
     if (res.hostStages) {
       useGameStore.setState({
         myStages: amIHost ? res.hostStages : res.guestStages!,
@@ -2314,10 +2314,10 @@ export function LivePvpBattleScreen({
         </div>
         {/* Owner ruling 2026-07-13: signature moves are AUTOMATIC. The Fire button
             is gone — a row's manual-phase effects now fire off its own engine
-            trigger (see `fireManualAuto`), still capped at the uses they always
+            trigger (see `fireCappedPayload`), still capped at the uses they always
             had. The signature name and what it does stay visible on the combat
             panel's ability chip. */}
-        {manualFireable && (
+        {hasPayload && (
           <div
             title={signatureMoveName(partnerId) ?? "Signature move"}
             className="flex items-center gap-1 rounded-full bg-card/90 px-3 py-1.5 font-pixel text-[9px] text-foreground shadow-card backdrop-blur"
@@ -2326,7 +2326,7 @@ export function LivePvpBattleScreen({
             <span className="tabular-nums opacity-70">
               {displayedIndex < mySuppressedUntil
                 ? "locked"
-                : `${Math.max(0, manualCap - manualFiresUsed)}/${manualCap}`}
+                : `${Math.max(0, payloadCap - payloadUsed)}/${payloadCap}`}
             </span>
           </div>
         )}

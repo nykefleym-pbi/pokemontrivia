@@ -56,7 +56,7 @@ export type WiringMode =
   /** Fires an effect after an answer resolves (persistent stage / status / heal / hamper). */
   | "post_answer"
   /** Player-fired button; data present but no in-battle UI wired yet. */
-  | "manual"
+  | "capped_payload"
   /** Needs a custom handler the generic engine can't express; data present, not auto-fired. */
   | "bespoke";
 
@@ -97,7 +97,7 @@ export type SignatureTrigger =
   /** Auto every N questions (cooldown rotation), optional roll. */
   | { type: "cooldown"; everyN: number; chance?: number }
   /** Player-fired. */
-  | { type: "manual"; usesPerBattle: number; cooldownQuestions?: number }
+  | { type: "capped_payload"; usesPerBattle: number; cooldownQuestions?: number }
   /** Needs a bespoke handler. */
   | { type: "bespoke"; note: string };
 
@@ -707,9 +707,9 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     signatureMove: "Psystrike",
     internalKey: "psystrike",
     rarity: 5,
-    trigger: { type: "manual", usesPerBattle: 1 },
+    trigger: { type: "capped_payload", usesPerBattle: 1 },
     effect: ignoreDef({ ignoreOwnNegativeStages: true }),
-    wiring: "manual",
+    wiring: "capped_payload",
     note: "Fire arms a client-side one-hit modifier (manualHitModifiers) folded into the next correct answer's damage calc — ignore opp Defense + own negative stages. Auto-fire-on-last-question if unused is a bespoke secondary, not wired.",
     // 00-owner-spec.md row 4. "On the next correct, inflict -1 Defense" modelled
     // as a one-shot fired alongside the trigger (see 03-frontend-a.md ambiguity notes).
@@ -799,9 +799,9 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     signatureMove: "Aeroblast",
     internalKey: "aeroblast",
     rarity: 4,
-    trigger: { type: "manual", usesPerBattle: 2, cooldownQuestions: 5 },
+    trigger: { type: "capped_payload", usesPerBattle: 2, cooldownQuestions: 5 },
     effect: oppStage("speed", -2, 2),
-    wiring: "manual",
+    wiring: "capped_payload",
     note: "Charge-and-store (1 per 5 correct, cap 2).",
     // 00-owner-spec.md row 9.
     engine: {
@@ -837,7 +837,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     signatureMove: "Time Travel",
     internalKey: "time_travel",
     rarity: 3,
-    trigger: { type: "manual", usesPerBattle: 1 },
+    trigger: { type: "capped_payload", usesPerBattle: 1 },
     effect: { type: "bespoke", note: "Rewind last wrong: refund HP + restore streak, re-attempt with 4s." },
     wiring: "bespoke",
     // 00-owner-spec.md row 11 SUPERSEDES the legacy trigger/effect above (rewind
@@ -914,9 +914,9 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     signatureMove: "Mist Ball",
     internalKey: "mist_ball",
     rarity: 4,
-    trigger: { type: "manual", usesPerBattle: 1 },
+    trigger: { type: "capped_payload", usesPerBattle: 1 },
     effect: oppStage("attack", -2, 2),
-    wiring: "manual",
+    wiring: "capped_payload",
     note: "Armed after 3 correct. Non-mascot per file despite mascot-tier flavor (flagged for reconciliation).",
     // 00-owner-spec.md row 15.
     engine: {
@@ -930,9 +930,9 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     signatureMove: "Luster Purge",
     internalKey: "luster_purge",
     rarity: 4,
-    trigger: { type: "manual", usesPerBattle: 1 },
+    trigger: { type: "capped_payload", usesPerBattle: 1 },
     effect: compound(oppStage("defense", -2, 2), ignoreDef()),
-    wiring: "manual",
+    wiring: "capped_payload",
     note: "Armed after 3 correct. Non-mascot per file.",
     // 00-owner-spec.md row 16.
     engine: {
@@ -981,9 +981,9 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     signatureMove: "Dragon Ascent",
     internalKey: "sky_splitting_ascent",
     rarity: 5,
-    trigger: { type: "manual", usesPerBattle: 1 },
+    trigger: { type: "capped_payload", usesPerBattle: 1 },
     effect: { type: "damage_calc", bonusCritStage: 3, bonusAttackStage: 1 },
-    wiring: "manual",
+    wiring: "capped_payload",
     note: "Fire arms a client-side one-hit modifier (manualHitModifiers) onto the next correct answer: +3 Crit / +1 Atk. The self -2 Def-for-1q backlash and passive Air Lock (negate opponent weather/field engines) are bespoke secondaries, not wired.",
     // 00-owner-spec.md row 19.
     engine: {
@@ -998,7 +998,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     signatureMove: "Doom Desire",
     internalKey: "doom_desire",
     rarity: 3,
-    trigger: { type: "manual", usesPerBattle: 1 },
+    trigger: { type: "capped_payload", usesPerBattle: 1 },
     effect: { type: "flat_damage", amount: 12, ignoreDefense: true },
     wiring: "bespoke",
     note: "WIRED (M3): stepBespokeFx arms the strike on the trigger and resolves it DOOM_DESIRE_DELAY_Q questions later; the server owns the magnitude (pvp_signature_effects bespoke/flat_next_question_damage, 20). An in-flight strike blocks a second one.",
@@ -1082,9 +1082,9 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     signatureMove: "Roar of Time",
     internalKey: "roar_of_time",
     rarity: 4,
-    trigger: { type: "manual", usesPerBattle: 2 },
+    trigger: { type: "capped_payload", usesPerBattle: 2 },
     effect: selfStage("speed", 2, 1),
-    wiring: "manual",
+    wiring: "capped_payload",
     note: "Fire = +2 Speed (clutch time). The -1-Speed next-question recharge is a bespoke follow-up (persistent-stage system can't auto-expire a one-question delta). Charges 1 per 5 correct, cap 2.",
     // 00-owner-spec.md row 26.
     engine: {
@@ -1099,9 +1099,9 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     signatureMove: "Spacial Rend",
     internalKey: "spacial_rend",
     rarity: 4,
-    trigger: { type: "manual", usesPerBattle: 2 },
+    trigger: { type: "capped_payload", usesPerBattle: 2 },
     effect: compound(selfStage("speed", 1, 1), { type: "hamper", mode: "scramble" }),
-    wiring: "manual",
+    wiring: "capped_payload",
     // 00-owner-spec.md row 27.
     engine: {
       trigger: streakN(3),
@@ -1115,9 +1115,9 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     signatureMove: "Magma Storm",
     internalKey: "magma_storm",
     rarity: 3,
-    trigger: { type: "manual", usesPerBattle: 1 },
+    trigger: { type: "capped_payload", usesPerBattle: 1 },
     effect: compound(oppStatus("badly-poisoned", 3), { type: "bespoke", note: "Ability-lock opponent 3q." }),
-    wiring: "manual",
+    wiring: "capped_payload",
     note: "WIRED (M3): a 5-streak opens a 5-question damage-over-time window that chips the opponent for 12.5% of max HP (15) each question, server-applied via bespoke/dot_frac_hp; two misses slam it shut. The manual fire (ability-lock 3q + Badly Poisoned) still stands alongside it.",
     // 00-owner-spec.md row 28.
     engine: {
@@ -1163,10 +1163,10 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     signatureMove: "Shadow Force",
     internalKey: "shadow_force",
     rarity: 4,
-    trigger: { type: "manual", usesPerBattle: 1 },
+    trigger: { type: "capped_payload", usesPerBattle: 1 },
     effect: ignoreDef({ bonusCritStage: 2 }),
-    wiring: "manual",
-    note: "WIRED (client-armed hit, structurally identical to Psystrike 150 / Dragon Ascent 384): Fire arms a client-side one-hit modifier (manualHitModifiers) onto the next correct answer — ignore opp Defense + 2 Crit. Relabeled wiring:'bespoke' -> 'manual' to match reality (behavior-neutral: it applies no server-catalog effect, so hasServerManualEffect stays false and no server Fire path is added). The vanish (skip current question, untargetable) opening is a bespoke secondary, not wired.",
+    wiring: "capped_payload",
+    note: "WIRED (client-armed hit, structurally identical to Psystrike 150 / Dragon Ascent 384): Fire arms a client-side one-hit modifier (manualHitModifiers) onto the next correct answer — ignore opp Defense + 2 Crit. Relabeled wiring:'bespoke' -> 'manual' to match reality (behavior-neutral: it applies no server-catalog effect, so hasCappedPayload stays false and no server Fire path is added). The vanish (skip current question, untargetable) opening is a bespoke secondary, not wired.",
     // 00-owner-spec.md row 30. q1/q11 defensive immunity is `receiveDamagePct: 0`
     // — DEFENSIVE, must be server-enforced (architecture §5). Cooldown column
     // ("Applied only on selected questions") maps to `none`: the fixedIndex
@@ -1187,14 +1187,14 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     signatureMove: "Lunar Dance",
     internalKey: "lunar_dance",
     rarity: 3,
-    trigger: { type: "manual", usesPerBattle: 1 },
+    trigger: { type: "capped_payload", usesPerBattle: 1 },
     // BALANCE (owner ruling 2026-07-13): the cleanse used to COST 15% of current HP,
     // which cancelled out the engine's free heal below and left Cresselia the
     // second-weakest row in the game (36%). The cost is now 0 — the migration sets
     // `hpCostPct` to 0 on its `pvp_signature_effects` row, which is where the server
     // reads it from.
     effect: { type: "cleanse", hpCostPct: 0 },
-    wiring: "manual",
+    wiring: "capped_payload",
     note: "Cure all statuses + reset negative Atk/Def/Spd stages to 0, at no HP cost. Server-computed (cleanse kind).",
     // 00-owner-spec.md row 31 SUPERSEDES the legacy 15%-HP-cost cleanse above
     // with a free 100%-heal + cure.
@@ -1224,9 +1224,9 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     signatureMove: "Heart Swap",
     internalKey: "heart_swap",
     rarity: 3,
-    trigger: { type: "manual", usesPerBattle: 1 },
+    trigger: { type: "capped_payload", usesPerBattle: 1 },
     effect: { type: "swap_stages" },
-    wiring: "manual",
+    wiring: "capped_payload",
     note: "Give opp your lowest (most negative) stage, take their highest (most positive). Server-computed (swap_stages kind); cancels in a mirror if both fire the same question.",
     // 00-owner-spec.md row 33 SUPERSEDES the legacy swap_stages above with a
     // reactive negate. WIRED (M2/M3): `opponent_signature` is server-eval, so the
@@ -1246,9 +1246,9 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     signatureMove: "Dark Void",
     internalKey: "dark_void",
     rarity: 3,
-    trigger: { type: "manual", usesPerBattle: 1 },
+    trigger: { type: "capped_payload", usesPerBattle: 1 },
     effect: oppStatus("sleep", 2, 0.6),
-    wiring: "manual",
+    wiring: "capped_payload",
     note: "60% land chance (Dark Void's low accuracy).",
     // 00-owner-spec.md row 34.
     engine: {
@@ -1263,9 +1263,9 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     signatureMove: "Seed Flare",
     internalKey: "seed_flare",
     rarity: 3,
-    trigger: { type: "manual", usesPerBattle: 1 },
+    trigger: { type: "capped_payload", usesPerBattle: 1 },
     effect: oppStage("defense", -2, 3),
-    wiring: "manual",
+    wiring: "capped_payload",
     note: "Seed Flare: on fire, -2 opp Defense (Sp. Def crash). The 40%/60%-on-streak land chance is rolled client-side before the fire request; chance-on-streak is bespoke.",
     // 00-owner-spec.md row 35.
     engine: {
@@ -1279,7 +1279,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     signatureMove: "Judgment",
     internalKey: "judgment",
     rarity: 5,
-    trigger: { type: "manual", usesPerBattle: 1 },
+    trigger: { type: "capped_payload", usesPerBattle: 1 },
     effect: { type: "flat_damage", amount: 2, perCategory: true, ignoreDefense: true },
     wiring: "bespoke",
     note: "Battle-start attune (+1 Atk on dominant category) is a bespoke passive; Judgment scales ~2 HP per distinct category answered correctly.",
@@ -1495,9 +1495,9 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     signatureMove: "Relic Song",
     internalKey: "relic_song",
     rarity: 3,
-    trigger: { type: "manual", usesPerBattle: 2 },
+    trigger: { type: "capped_payload", usesPerBattle: 2 },
     effect: compound(selfStage("attack", 1, "passive"), oppStatus("sleep", 1, 0.3)),
-    wiring: "manual",
+    wiring: "capped_payload",
     note: "Aria (+1 Atk, always) / Pirouette (+1 Spd) stance toggle; 30% Sleep on toggle. WIRED: the Sleep is now a genuine 30% roll — the manual RPC applies the +1 Atk row unconditionally and rolls the Sleep row server-side (its catalog payload carries chance:0.3, gated in apply_pvp_signature_effect's status branch). Stance choice is bespoke.",
     // 00-owner-spec.md row 47.
     engine: {
@@ -1534,7 +1534,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     signatureMove: "Geomancy",
     internalKey: "geomancy",
     rarity: 4,
-    trigger: { type: "manual", usesPerBattle: 1 },
+    trigger: { type: "capped_payload", usesPerBattle: 1 },
     effect: compound(selfStage("attack", 2, 3), selfStage("defense", 1, 3), selfStage("speed", 1, 3)),
     wiring: "bespoke",
     note: "Two-stage: charge (skip one question) then release the triple buff.",
@@ -1569,9 +1569,9 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     signatureMove: "Thousand Waves",
     internalKey: "thousand_waves",
     rarity: 3,
-    trigger: { type: "manual", usesPerBattle: 1 },
+    trigger: { type: "capped_payload", usesPerBattle: 1 },
     effect: compound(oppStage("speed", -1, 3), { type: "bespoke", note: "Ability/escape lock 3q." }),
-    wiring: "manual",
+    wiring: "capped_payload",
     note: "Phase 4 (wired): manual fire binds the opponent's signature ability for 3 questions (server suppress_ability) + -1 Speed. The 10+-correct duration extension to 4q is not modelled.",
     // 00-owner-spec.md row 51. Multiplier with `fallback` (Zygarde: else +1 Atk/+1 Def).
     engine: {
@@ -1877,7 +1877,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     signatureMove: "Spectral Thief",
     internalKey: "spectral_thief",
     rarity: 3,
-    trigger: { type: "manual", usesPerBattle: 1 },
+    trigger: { type: "capped_payload", usesPerBattle: 1 },
     effect: compound(
       { type: "stat_stage", target: "self", stat: "highest_opponent", delta: 1, duration: "passive" },
       { type: "damage_calc", bonusCritStage: 1 },
@@ -2083,7 +2083,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     signatureMove: "Dynamax Cannon",
     internalKey: "dynamax_cannon",
     rarity: 4,
-    trigger: { type: "manual", usesPerBattle: 1 },
+    trigger: { type: "capped_payload", usesPerBattle: 1 },
     effect: compound(oppStage("speed", -2, 2), oppStage("attack", -1, 2)),
     wiring: "bespoke",
     note: "Charge one question then release; Pressure (opp cooldowns 15% slower) is a bespoke passive.",
@@ -2168,9 +2168,9 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     signatureMove: "Thunder Cage",
     internalKey: "thunder_cage",
     rarity: 3,
-    trigger: { type: "manual", usesPerBattle: 1 },
+    trigger: { type: "capped_payload", usesPerBattle: 1 },
     effect: oppStatus("paralysis", 3),
-    wiring: "manual",
+    wiring: "capped_payload",
     note: "Phase 4 (wired): manual fire cages the opponent's signature ability for 3 questions (server suppress_ability) + Paralysis. Transistor (your sub-5s answers +1 Atk while caged) remains bespoke.",
     // M4 owner spec: 3-in-a-row -> a random 1-15% chip EACH of the next 5
     // questions. Owner ruling 2026-07-12: percent of the opponent's MAX HP
@@ -2329,9 +2329,9 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     signatureMove: "Ruination",
     internalKey: "ruination_sword",
     rarity: 3,
-    trigger: { type: "manual", usesPerBattle: 1 },
+    trigger: { type: "capped_payload", usesPerBattle: 1 },
     effect: compound(oppStage("defense", -2, 3), ignoreDef()),
-    wiring: "manual",
+    wiring: "capped_payload",
     note: "Chien-Pao — Sword of Ruin: -2 opp Def (server manual row) + next 2 correct answers ignore the opponent's remaining Defense. WIRED: firing arms a 2-charge client-side ignore-Defense window (swordOfRuinCharges in live-pvp-battle-screen), folded into the next 2 correct hits' damage calc (client-computed, server-clamped, like the armed one-hit manual moves); the window does not persist across a reconnect.",
     // M4 owner spec: Ruination — halve current HP + 10% Freeze, once per battle.
     engine: {
@@ -2346,9 +2346,9 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     signatureMove: "Ruination",
     internalKey: "ruination_vessel",
     rarity: 3,
-    trigger: { type: "manual", usesPerBattle: 1 },
+    trigger: { type: "capped_payload", usesPerBattle: 1 },
     effect: compound(selfStage("defense", 2, 3), oppStage("crit", -1, 3)),
-    wiring: "manual",
+    wiring: "capped_payload",
     note: "Ting-Lu — Vessel of Ruin: +2 own Def + -1 opp Crit.",
     // M4 owner spec: Ruination — halve current HP + 10% Confusion, once per battle.
     engine: {
@@ -2363,7 +2363,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     signatureMove: "Ruination",
     internalKey: "ruination_beads",
     rarity: 3,
-    trigger: { type: "manual", usesPerBattle: 1 },
+    trigger: { type: "capped_payload", usesPerBattle: 1 },
     effect: compound({ type: "flat_damage", amount: 0, fracOppHp: 0.5, ignoreDefense: true }, oppStatus("burn", 3)),
     wiring: "bespoke",
     note: "Chi-Yu — Beads of Ruin: deal half opponent's current HP (ignore Def) then Burn.",
@@ -2616,9 +2616,9 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     signatureMove: "Tera Starstorm",
     internalKey: "tera_starstorm",
     rarity: 4,
-    trigger: { type: "manual", usesPerBattle: 1 },
+    trigger: { type: "capped_payload", usesPerBattle: 1 },
     effect: compound(selfStage("attack", 2, 3), selfStage("defense", 1, 3), selfStage("speed", 2, 1)),
-    wiring: "manual",
+    wiring: "capped_payload",
     note: "Tera for 3 questions: +2 Atk across all categories (ignore Def) + Tera Shell +1 Def + +2 Speed on activation. Non-mascot per file.",
     // M4 owner spec: the pure comeback button — while the opponent has at least
     // TWICE your HP, a 50% instant KO. Priced by two hard gates: you must be
@@ -2641,9 +2641,9 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     signatureMove: "Malignant Chain",
     internalKey: "malignant_chain",
     rarity: 4,
-    trigger: { type: "manual", usesPerBattle: 1 },
+    trigger: { type: "capped_payload", usesPerBattle: 1 },
     effect: compound(oppStatus("badly-poisoned", 3), { type: "hamper", mode: "force_mistap" }),
-    wiring: "manual",
+    wiring: "capped_payload",
     note: "Phase 4 (wired): manual fire binds the opponent's signature ability for 3 questions (server suppress_ability) + Badly Poisoned. Poison Puppeteer (scramble + force mis-tap, only if the opponent was already statused) remains a client-only bespoke secondary.",
     // M4 owner spec: a clockwork row — on questions 5, 10 and 15 exactly, a 75%
     // Badly Poisoned. No streak, no HP gate, blank cooldown = never disables.
@@ -3101,26 +3101,26 @@ export function engineTriggerFired(
 // Purge, Dark Void, Seed Flare, Relic Song, the Ruination burst pair, Tera
 // Starstorm, etc. These are "server-fireable": the live battle screen shows a
 // generic charge/Fire affordance and, on tap, calls the SAME server-validated
-// RPC as berries with phase="manual" (magnitude looked up server-side by dex
+// RPC as berries with phase="capped_payload" (magnitude looked up server-side by dex
 // id; the server enforces the per-battle use cap). Manual abilities whose fire
 // payoff is a damage-calc/one-hit modifier (Psystrike, Spacial Rend, Roar of
 // Time, Dragon Ascent) or a bespoke multi-stage sequence (Geomancy, Dynamax
 // Cannon, Thunder Cage) are NOT server-fireable yet and are handled elsewhere /
-// documented as follow-up — `hasServerManualEffect` returns false for them so
+// documented as follow-up — `hasCappedPayload` returns false for them so
 // no dead Fire button is shown.
 
 /** True when a manual ability applies at least one server-catalog effect on
- * fire (i.e. `apply_pvp_signature_effect(phase="manual")` will do something). */
-export function hasServerManualEffect(ability: SignatureAbility | null): boolean {
-  if (!ability || ability.wiring !== "manual") return false;
+ * fire (i.e. `apply_pvp_signature_effect(phase="capped_payload")` will do something). */
+export function hasCappedPayload(ability: SignatureAbility | null): boolean {
+  if (!ability || ability.wiring !== "capped_payload") return false;
   const out: SignatureEffect[] = [];
   collectApplicable(ability.effect, out);
   return out.length > 0;
 }
 
 /** Per-battle use cap for a manual ability (0 if not manual). */
-export function manualUsesPerBattle(ability: SignatureAbility | null): number {
-  if (!ability || ability.trigger.type !== "manual") return 0;
+export function cappedPayloadUses(ability: SignatureAbility | null): number {
+  if (!ability || ability.trigger.type !== "capped_payload") return 0;
   return ability.trigger.usesPerBattle;
 }
 
@@ -3331,7 +3331,7 @@ function describeSignatureTrigger(trigger: SignatureTrigger): string | null {
       return "scaling with your Pokédex progress";
     case "cooldown":
       return `every ${trigger.everyN} questions`;
-    case "manual":
+    case "capped_payload":
       return "when you tap Fire";
     case "bespoke":
       return null;
@@ -3387,9 +3387,9 @@ export function describeSignatureFull(pokemonId: number | null | undefined): str
 // dead too. Verified by `scripts/balance-sim/liveness.ts`.
 
 /** Ids whose `manual`-phase effects the engine trigger auto-delivers via the server
- *  RPC. (Not a Fire button — see `fireManualAuto`; the name `manual` is historical.) */
-export const SERVER_FIREABLE_MANUAL_IDS: readonly number[] = Object.values(SIGNATURE_ABILITIES)
-  .filter((a) => hasServerManualEffect(a))
+ *  RPC. (Not a Fire button — see `fireCappedPayload`; the name `manual` is historical.) */
+export const CAPPED_PAYLOAD_IDS: readonly number[] = Object.values(SIGNATURE_ABILITIES)
+  .filter((a) => hasCappedPayload(a))
   .map((a) => a.pokemonId)
   .sort((a, b) => a - b);
 
