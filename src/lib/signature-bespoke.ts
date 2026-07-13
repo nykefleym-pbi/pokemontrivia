@@ -1,4 +1,5 @@
 import type { PvpStat, StatusKind } from "./game-data";
+import { clampStage } from "./pvp-combat";
 
 /**
  * Bespoke signature-ability evaluators — the "doesn't fit the generic
@@ -22,10 +23,12 @@ export type StageMap = Record<PvpStat, number>;
 
 const ALL_STATS: readonly PvpStat[] = ["attack", "defense", "speed", "crit"];
 
-/** Mirror of the shipped ±3 stage clamp (pvp-combat `clampStage`). */
-export function clampStage(n: number): number {
-  return Math.max(-3, Math.min(3, Math.round(n)));
-}
+// `clampStage` used to be re-implemented here as a hand-copied "mirror of the shipped
+// ±3 stage clamp". It hardcoded -3..3 while pvp-combat clamps to PVP_STAGE_MIN/MAX —
+// so the two agreed only by luck, and widening the stage range would have silently
+// left every bespoke ability (Heart Swap, Fiery Wrath) clamping to the OLD bounds.
+// Re-exported from the one real implementation instead, so it cannot drift.
+export { clampStage };
 
 // ── Manaphy — Heart Swap (490) ───────────────────────────────────────────────
 // "Give the opponent your lowest (most negative) stage and take their highest
