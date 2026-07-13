@@ -75,7 +75,7 @@ export interface TypeAbilitySelfDmgMod {
   active: boolean;
 }
 
-interface TypeAbilityPvp {
+export interface TypeAbilityPvp {
   /** Correct-answer damage tweak (client, server-clamped). */
   damage?: (ctx: TypeAbilityCtx) => TypeAbilityDamageMod;
   /** Wrong-answer self-damage tweak (client, server-clamped). */
@@ -107,7 +107,10 @@ function dmg(pct: number, flat: number, active: boolean): TypeAbilityDamageMod {
   return active ? { pct, flat, active: true } : NO_DMG;
 }
 
-const TABLE: Record<AbilityId, TypeAbilityPvp> = {
+// Exported (as TYPE_ABILITY_TABLE) so src/content/abilities/type/ can generate
+// thin per-ability wrapper files without duplicating this logic — see that
+// folder's README-equivalent comment in type-def.ts.
+export const TABLE: Record<AbilityId, TypeAbilityPvp> = {
   // ── normal ────────────────────────────────────────────────────────────────
   adaptable: {
     // Solo: starts with 105 HP. PvP HP is a fixed 120 pool, so instead grant a
