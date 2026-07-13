@@ -3437,57 +3437,18 @@ export function describeSignatureFull(pokemonId: number | null | undefined): str
   return null;
 }
 
-/**
- * For a player-fired ability whose Fire payoff is a CLIENT-side one-hit
- * damage-calc modifier (Psystrike, Dragon Ascent, Giratina's Shadow Force) —
- * i.e. it has `damage_calc` sub-effects but NO server-catalog effect to route
- * through the RPC. Pressing Fire "arms" these modifiers onto the player's next
- * correct answer (folded into `computePvpDamage`, exactly like a passive_damage
- * ability — damage is client-computed and server-clamped, so no round trip and
- * no new trust surface). Returns the folded modifiers, or null if this ability
- * isn't a client-armed manual hit.
- */
-export function manualHitModifiers(ability: SignatureAbility | null): HitModifiers | null {
-  if (!ability || ability.trigger.type !== "manual") return null;
-  // If it applies a server-catalog effect, the server RPC owns its Fire.
-  if (hasServerManualEffect(ability)) return null;
-  // Only arm when the Fire payoff is EXCLUSIVELY a damage-calc modifier — an
-  // ability with a bespoke/stat sub-effect (e.g. Spectral Thief's stat-steal)
-  // isn't faithfully served by arming only its damage-calc slice.
-  const flat: SignatureEffect[] = [];
-  const flatten = (e: SignatureEffect): void => {
-    if (e.type === "compound") e.effects.forEach(flatten);
-    else flat.push(e);
-  };
-  flatten(ability.effect);
-  if (flat.length === 0 || flat.some((e) => e.type !== "damage_calc")) return null;
-  const calcs: DamageCalcEffect[] = [];
-  collectDamageCalc(ability.effect, calcs);
-  if (calcs.length === 0) return null;
-  const mods: HitModifiers = { ...NO_HIT_MODIFIERS };
-  for (const c of calcs) {
-    if (c.ignoreOppDefenseStage) mods.ignoreOppDefenseStage = true;
-    if (c.ignoreOwnNegativeStages) mods.ignoreOwnNegativeStages = true;
-    if (c.bonusAttackStage) mods.bonusAttackStage += c.bonusAttackStage;
-    if (c.bonusCritStage) mods.bonusCritStage += c.bonusCritStage;
-    if (c.secondHitFraction) mods.secondHitFraction = c.secondHitFraction;
-  }
-  return mods;
-}
+// `manualHitModifiers`, `hasClientManualHit` and `CLIENT_HIT_MANUAL_IDS` lived here.
+// Deleted 2026-07-13.
+//
+// They powered the client-armed one-hit modifier: pressing Fire on Psystrike /
+// Dragon Ascent / Shadow Force "armed" a damage bonus onto your next correct answer.
+// The engine replaced that on 2026-07-12 (those three fire off their own trigger
+// now), and the battle screen gated the whole path on `!ability.engine` — true for
+// none of the 104 rows. Nothing ever armed the ref, so the code that consumed it was
+// dead too. Verified by `scripts/balance-sim/liveness.ts`.
 
-/** True when a manual ability's Fire arms a client-side one-hit damage modifier
- * (rather than routing a server-catalog effect). */
-export function hasClientManualHit(ability: SignatureAbility | null): boolean {
-  return manualHitModifiers(ability) !== null;
-}
-
-/** Ids whose manual ability arms a client-side one-hit modifier on Fire. */
-export const CLIENT_HIT_MANUAL_IDS: readonly number[] = Object.values(SIGNATURE_ABILITIES)
-  .filter((a) => a.trigger.type === "manual" && hasClientManualHit(a))
-  .map((a) => a.pokemonId)
-  .sort((a, b) => a - b);
-
-/** Ids whose manual ability the live screen exposes a Fire button for. */
+/** Ids whose `manual`-phase effects the engine trigger auto-delivers via the server
+ *  RPC. (Not a Fire button — see `fireManualAuto`; the name `manual` is historical.) */
 export const SERVER_FIREABLE_MANUAL_IDS: readonly number[] = Object.values(SIGNATURE_ABILITIES)
   .filter((a) => hasServerManualEffect(a))
   .map((a) => a.pokemonId)

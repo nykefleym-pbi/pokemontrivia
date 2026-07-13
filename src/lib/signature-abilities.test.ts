@@ -9,12 +9,9 @@ import {
   evaluatePostAnswer,
   evaluatePassiveDamageSideEffects,
   hasServerManualEffect,
-  hasClientManualHit,
-  manualHitModifiers,
   mergeHitModifiers,
   manualUsesPerBattle,
   SERVER_FIREABLE_MANUAL_IDS,
-  CLIENT_HIT_MANUAL_IDS,
   checkCatalogIntegrity,
   NO_HIT_MODIFIERS,
   resolveMewTransform,
@@ -195,8 +192,6 @@ describe("manual charge-and-fire abilities", () => {
       expect(SIGNATURE_ABILITIES[id].wiring).toBe("manual");
       expect(hasServerManualEffect(SIGNATURE_ABILITIES[id])).toBe(true);
       expect(manualUsesPerBattle(SIGNATURE_ABILITIES[id])).toBe(1);
-      // They arm no client-side one-hit modifier — the server owns the fire.
-      expect(manualHitModifiers(SIGNATURE_ABILITIES[id])).toBeNull();
     }
   });
 
@@ -207,12 +202,10 @@ describe("manual charge-and-fire abilities", () => {
     // in the game (36% win rate). It is free now.
     expect(SIGNATURE_ABILITIES[488].effect).toEqual({ type: "cleanse", hpCostPct: 0 });
     expect(hasServerManualEffect(SIGNATURE_ABILITIES[488])).toBe(true);
-    expect(manualHitModifiers(SIGNATURE_ABILITIES[488])).toBeNull(); // server owns the fire
 
     expect(SIGNATURE_ABILITIES[490].wiring).toBe("manual");
     expect(SIGNATURE_ABILITIES[490].effect).toEqual({ type: "swap_stages" });
     expect(hasServerManualEffect(SIGNATURE_ABILITIES[490])).toBe(true);
-    expect(manualHitModifiers(SIGNATURE_ABILITIES[490])).toBeNull();
   });
 });
 
@@ -254,37 +247,18 @@ describe("question-category trigger primitive (Phase 3)", () => {
   });
 });
 
-describe("client-armed one-hit manual abilities (Psystrike / Dragon Ascent / Shadow Force)", () => {
-  it("Psystrike arms an ignore-defense + ignore-own-negatives one-hit modifier", () => {
-    const mods = manualHitModifiers(SIGNATURE_ABILITIES[150]);
-    expect(mods).not.toBeNull();
-    expect(mods!.ignoreOppDefenseStage).toBe(true);
-    expect(mods!.ignoreOwnNegativeStages).toBe(true);
-    expect(hasClientManualHit(SIGNATURE_ABILITIES[150])).toBe(true);
-  });
+// The "client-armed one-hit manual abilities" suite lived here (Psystrike #150 /
+// Dragon Ascent #384 / Shadow Force #487). Deleted 2026-07-13 with the behaviour it
+// tested: pressing Fire armed a damage bonus onto your next correct answer. The
+// engine replaced that on 2026-07-12, and the battle screen gated the path on
+// `!ability.engine` — false for all 104 rows — so nothing ever armed it.
+// `scripts/balance-sim/liveness.ts` now guards this: it recomputes which delivery
+// paths can run and shouts if a dead one comes back.
 
-  it("Dragon Ascent arms +3 Crit / +1 Attack for one hit", () => {
-    const mods = manualHitModifiers(SIGNATURE_ABILITIES[384]);
-    expect(mods).toMatchObject({ bonusCritStage: 3, bonusAttackStage: 1 });
-  });
-
-  it("Giratina's Shadow Force arms ignore-defense + 2 Crit for one hit", () => {
-    const mods = manualHitModifiers(SIGNATURE_ABILITIES[487]);
-    expect(mods).toMatchObject({ ignoreOppDefenseStage: true, bonusCritStage: 2 });
-  });
-
-  it("server-fireable and passive manual/other abilities do NOT arm a client hit", () => {
-    expect(manualHitModifiers(SIGNATURE_ABILITIES[249])).toBeNull(); // Aeroblast (server)
-    expect(manualHitModifiers(SIGNATURE_ABILITIES[484])).toBeNull(); // Spacial Rend (server)
-    expect(manualHitModifiers(SIGNATURE_ABILITIES[638])).toBeNull(); // Cobalion (passive)
-    expect(manualHitModifiers(null)).toBeNull();
-  });
-
-  it("CLIENT_HIT_MANUAL_IDS is exactly the three damage-calc manual moves", () => {
-    expect([...CLIENT_HIT_MANUAL_IDS]).toEqual([150, 384, 487]);
-  });
-
-  it("mergeHitModifiers folds an armed modifier on top of passive modifiers", () => {
+describe("mergeHitModifiers", () => {
+  // Still live: the battle screen folds Chien-Pao's ignore-Defense charges and the
+  // engine's own modifiers through this.
+  it("folds two sets of modifiers together", () => {
     const merged = mergeHitModifiers(
       { ...NO_HIT_MODIFIERS, bonusCritStage: 1 },
       { ...NO_HIT_MODIFIERS, bonusCritStage: 2, ignoreOppDefenseStage: true },

@@ -84,8 +84,6 @@ import {
   evaluatePassiveDamageSideEffects,
   describeHitModifiers,
   hasServerManualEffect,
-  hasClientManualHit,
-  manualHitModifiers,
   mergeHitModifiers,
   manualUsesPerBattle,
   resolveMewTransform,
@@ -589,37 +587,25 @@ export function LivePvpBattleScreen({
   const moxieStacksRef = useRef(0); // Moxie's accumulated flat bonus
   const torrentFiredRef = useRef(false); // Torrent's one-time sub-30% heal
   const sturdyUsedRef = useRef(false); // Sturdy's one-time 1-HP save
-  // Manual "charge and fire" signature abilities: a generic charge indicator +
-  // Fire button (reusing the bag's visual language) for Legendary/Mythical
-  // partners whose signature move is player-fired and decomposes to a
-  // server-catalog effect (Aeroblast, Roar of Time, Ruination burst, etc.). The
-  // server enforces the per-battle use cap; this local counter only drives the
-  // button's enabled/label state.
+  // `manual`-phase signature abilities. NOTE THE NAME LIES: nothing here is
+  // player-fired any more. The Fire button was removed (owner ruling 2026-07-13);
+  // a row's manual-phase effects are the payload its OWN engine trigger delivers,
+  // auto-fired by `fireManualAuto` and still capped at the uses it always had.
+  // This counter only drives the uses-remaining chip.
   const [manualFiresUsed, setManualFiresUsed] = useState(0);
   // Mirrors of the two above, for `fireManualAuto` — it runs inside the engine
   // tick's async callback, where the state values it closed over are already stale.
   const manualFiresUsedRef = useRef(0);
   const manualFiringRef = useRef(false);
   const manualCap = manualUsesPerBattle(ability);
-  // A manual ability is fireable if it either routes a server-catalog effect
-  // (Aeroblast, Mist Ball, …) OR arms a client-side one-hit damage modifier
-  // (Psystrike, Dragon Ascent, Giratina's Shadow Force — no server round trip;
-  // damage is client-computed and server-clamped like any passive_damage hit).
-  // Owner ruling 2026-07-12: for rows the engine drives, the ENGINE REPLACES the
-  // manual armed-hit button — Psystrike / Dragon Ascent / Shadow Force now fire
-  // automatically on their trigger instead of being tapped. Dropping them out of
-  // `isClientHitManual` both stops the one-hit modifier being armed (it would
-  // double the engine's own effect) and hides a Fire button that would no longer
-  // do anything. Server-catalog manuals (Aeroblast, Roar of Time, …) are a
-  // different path and keep their button.
-  const isClientHitManual = !!ability && !ability.engine && hasClientManualHit(ability);
-  const manualFireable =
-    !!ability && manualCap > 0 && (hasServerManualEffect(ability) || isClientHitManual);
-  // Client-armed one-hit modifiers waiting to be folded into the NEXT correct
-  // answer (set when the player Fires a client-hit manual move; consumed on the
-  // next correct answer). Kept in a ref so it survives re-renders.
-  const armedHitRef = useRef<ReturnType<typeof manualHitModifiers> | null>(null);
-  const [armedHit, setArmedHit] = useState(false);
+  const manualFireable = !!ability && manualCap > 0 && hasServerManualEffect(ability);
+  //
+  // The client-armed one-hit modifier (`isClientHitManual` / `armedHitRef`) lived
+  // here. Deleted 2026-07-13. It was gated on `!ability.engine`, and all 104 rows
+  // have an engine, so it was always false — Psystrike / Dragon Ascent / Shadow
+  // Force fire off their engine trigger now (owner ruling 2026-07-12). Nothing ever
+  // armed the ref, so the fold that consumed it was dead too. Confirmed by
+  // `scripts/balance-sim/liveness.ts`; deleting it left the sim byte-identical.
   // Chien-Pao — Sword of Ruin (1002): after firing (-2 opp Def via the server
   // manual row), the next 2 correct answers also ignore the opponent's remaining
   // Defense stage. Tracked as a small client-side charge window (client-computed,
@@ -1509,14 +1495,6 @@ export function LivePvpBattleScreen({
             const move = signatureMoveName(partnerId);
             if (move) notify("success", `✨ ${move} — ${desc}!`);
           }
-        }
-        // Fold in any armed client-side manual one-hit modifier (Psystrike /
-        // Dragon Ascent / Shadow Force), then disarm — it applies to this one
-        // correct answer only.
-        if (!suppressed && armedHitRef.current) {
-          mods = mergeHitModifiers(mods, armedHitRef.current);
-          armedHitRef.current = null;
-          setArmedHit(false);
         }
         // Chien-Pao — Sword of Ruin (1002): the 2-charge ignore-Defense window
         // armed when Sword of Ruin was manually fired. Consumes one charge per
