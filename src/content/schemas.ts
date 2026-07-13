@@ -51,6 +51,34 @@ export const RolledAbilityDefSchema = z.object({
   slot: z.union([z.literal(0), z.literal(1), z.literal(2)]),
 });
 
+// Deliberately shallow, same reasoning as SignatureDefSchema: a TypeAbilityPvp
+// entry is executable behavior (damage tweaks, timing predicates), not data —
+// its own correctness is covered by pvp-type-abilities.test.ts. This just
+// checks the wrapper shape (id present, note is a non-empty string, at least
+// one behavior field so an empty `{}` entry can't sneak through unnoticed).
+export const TypeAbilityDefSchema = z
+  .object({
+    id: z.string().min(1),
+    pvp: z
+      .object({ note: z.string().min(1) })
+      .passthrough(),
+  })
+  .superRefine(({ pvp }, ctx) => {
+    const behaviorKeys = [
+      "damage",
+      "selfDmg",
+      "battleStart",
+      "postAnswerFires",
+      "keepsStreakOnWrong",
+      "revealsWrongAt",
+      "clampsLethalSelfDmg",
+      "inert",
+    ];
+    if (!behaviorKeys.some((k) => k in pvp)) {
+      ctx.addIssue({ code: "custom", message: "no behavior field set — this ability does nothing in PvP" });
+    }
+  });
+
 export const ItemCategorySchema = z.enum(["HEALING", "BATTLE", "UTILITY", "PREMIUM", "BERRY"]);
 
 export const PvpStatSchema = z.enum(["attack", "defense", "speed", "crit"]);

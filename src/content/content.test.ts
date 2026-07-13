@@ -3,12 +3,20 @@ import { ITEM_BY_ID, ITEM_LIST } from "./items";
 import { STATUS_BY_ID, STATUS_LIST, STATUS_META } from "./statuses";
 import { SIGNATURE_BY_ID, SIGNATURE_BY_POKEMON_ID, SIGNATURE_LIST } from "./abilities/signature";
 import { ROLLED_BY_ID, ROLLED_LIST, ROLLED_SETS } from "./abilities/rolled";
-import { ItemDefSchema, StatusDefSchema, SignatureDefSchema, RolledAbilityDefSchema } from "./schemas";
+import { TYPE_ABILITY_BY_ID, TYPE_ABILITY_LIST } from "./abilities/type";
+import {
+  ItemDefSchema,
+  StatusDefSchema,
+  SignatureDefSchema,
+  RolledAbilityDefSchema,
+  TypeAbilityDefSchema,
+} from "./schemas";
 import { ITEMS, STATUS_META as LEGACY_STATUS_META } from "@/lib/game-data";
 import { CATEGORY_OF } from "@/lib/item-categories";
 import { ALL_LEGENDARY_MYTHICAL_IDS } from "@/lib/legendary-data";
 import { SIGNATURE_ABILITIES } from "@/lib/signature-abilities";
 import { ABILITY_SETS } from "@/lib/abilities";
+import { TABLE as TYPE_ABILITY_TABLE } from "@/lib/pvp-type-abilities";
 
 describe("item registry", () => {
   it("every definition file passes its schema", () => {
@@ -120,5 +128,26 @@ describe("rolled ability registry", () => {
 
   it("registry is the single source for the legacy ABILITY_SETS export", () => {
     expect(ABILITY_SETS).toBe(ROLLED_SETS);
+  });
+});
+
+describe("type ability (PvP) registry", () => {
+  it("has exactly one generated file per rollable ability, matching the rolled registry", () => {
+    expect(TYPE_ABILITY_LIST.length).toBe(ROLLED_LIST.length);
+    expect(new Set(TYPE_ABILITY_LIST.map((a) => a.id))).toEqual(new Set(ROLLED_LIST.map((a) => a.id)));
+  });
+
+  it("every definition file passes its schema", () => {
+    for (const a of TYPE_ABILITY_LIST) {
+      const parsed = TypeAbilityDefSchema.safeParse(a);
+      expect(parsed.success, `${a.id}: ${JSON.stringify(parsed.error?.issues)}`).toBe(true);
+    }
+  });
+
+  it("each file wraps the TABLE entry it claims to, by reference", () => {
+    for (const [id, def] of Object.entries(TYPE_ABILITY_BY_ID)) {
+      expect(def.id).toBe(id);
+      expect(def.pvp).toBe(TYPE_ABILITY_TABLE[id as keyof typeof TYPE_ABILITY_TABLE]);
+    }
   });
 });
