@@ -21,9 +21,9 @@
     --cold:#2a6f9e; --cold-bg:#e8f1f7; --ok:#4a7c59; --accent:#7d4cdb;
   }
   body { background: var(--bg); color: var(--ink); font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0; padding: 2.5rem 1.25rem 5rem; }
-  .wrap { max-width: 78rem; margin: 0 auto; display: flex; flex-direction: column; gap: 2rem; }
+  .wrap { max-width: 84rem; margin: 0 auto; display: flex; flex-direction: column; gap: 2rem; }
   header h1 { font-size: clamp(1.7rem, 3.6vw, 2.5rem); margin: 0 0 .4rem; letter-spacing: -.02em; text-wrap: balance; }
-  header p { margin: 0; color: var(--muted); max-width: 60ch; }
+  header p { margin: 0; color: var(--muted); max-width: 62ch; }
   .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 1rem; }
   .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 1rem 1.15rem; }
   .card .k { font-size: 1.9rem; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
@@ -33,44 +33,43 @@
   .note { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 1rem 1.15rem; }
   .note p { margin: 0 0 .6rem; } .note p:last-child { margin: 0; }
   .scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
-  table { border-collapse: collapse; width: 100%; min-width: 60rem; font-size: .9rem; }
+  table { border-collapse: collapse; width: 100%; min-width: 68rem; font-size: .9rem; }
   th { text-align: left; font-size: .74rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); padding: .7rem .8rem; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--panel); }
   td { padding: .65rem .8rem; border-bottom: 1px solid var(--line); vertical-align: top; }
   tr:last-child td { border-bottom: none; }
   .num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
-  .strong { font-weight: 650; } .muted { color: var(--muted); } .quiet { color: var(--muted); opacity: .8; }
+  .strong { font-weight: 650; } .muted { color: var(--muted); }
   .mon .name { display: block; font-weight: 600; }
   .mon .dex { display: block; font-size: .75rem; color: var(--muted); font-variant-numeric: tabular-nums; }
-  .why { max-width: 34rem; } .fix { max-width: 20rem; color: var(--ok); }
+  .does { max-width: 30rem; }
+  .does .seen { display: block; margin-top: .35rem; padding-top: .35rem; border-top: 1px dashed var(--line); color: var(--muted); font-size: .85em; }
+  .fix { max-width: 24rem; }
+  .fix.ok { color: var(--ok); } .fix.hot { color: var(--hot); } .fix.cold { color: var(--cold); }
+  .fix b { font-weight: 650; }
   tr.hot td.num.strong { color: var(--hot); } tr.hot { background: var(--hot-bg); }
   tr.cold td.num.strong { color: var(--cold); } tr.cold { background: var(--cold-bg); }
   tr.warm td.num.strong { color: var(--warm); }
   footer { color: var(--muted); font-size: .85rem; border-top: 1px solid var(--line); padding-top: 1rem; }
-  code { background: var(--bg); padding: .1em .35em; border-radius: 4px; font-size: .88em; }
 </style>
 <div class="wrap">
   <header>
-    <h1>Signature abilities: balance pass, after the changes</h1>
+    <h1>Signature abilities: what each one does now, and what to change</h1>
     <p>Every Legendary and Mythical played against every other one, 200 battles per pairing —
       2,142,400 battles in total, using the game's real damage maths and the real
-      server rules. Both players answer equally well, so any gap in win rate is caused by the ability and nothing else.
-      <strong>These are the numbers AFTER the approved changes shipped.</strong></p>
+      server rules. Both players answer equally well, so any gap in win rate is caused by the ability and nothing else.</p>
   </header>
 
   <section>
-    <h2>What changed</h2>
+    <h2>Read this first</h2>
     <div class="note">
-      <p>The roster ran from <strong>86% down to 34%</strong>. It now runs from <strong>70% down to 41%</strong> —
-        the gap between the best and worst ability has shrunk from 52 points to 29.</p>
-      <p>Three of the problems turned out to be <strong>bugs, not tuning</strong>. Four Paradox Pokémon were permanently
-        invulnerable or permanently doubled once they dropped below half health, because their "switches off after 3
-        questions" cooldown could never run. Shields could only ever be total, never partial. And poison dealt
-        <em>no damage at all</em> in live battles, which quietly made six Pokémon near-worthless. All three are fixed.</p>
-      <p>Signature moves are also <strong>automatic now</strong> — the Fire button is gone, and every ability triggers
-        by itself on the condition it was written with.</p>
-      <p><strong>Still worth a look:</strong> Iron Boulder and Zarude are still the two strongest. And now that poison
-        genuinely bites, Calyrex-Shadow and Pecharunt have jumped from the bottom of the table to near the top —
-        that is the poison fix working, but it may have overshot.</p>
+      <p><strong>Win rate</strong> is how often that Pokémon beats the rest of the Legendary field. A perfectly balanced
+        roster would have every ability at <strong>50%</strong>. Above 60% it is winning on the strength of its ability;
+        below 42% it is losing on the weakness of its.</p>
+      <p><strong>Ability worth</strong> is the same Pokémon fighting <em>itself with the ability switched off</em> — how much
+        the ability adds at all. 50% would mean it does nothing.</p>
+      <p><strong>“What it does now”</strong> is generated from the game's own ability descriptions, so it always reflects
+        what is actually live. <strong>“Suggested change”</strong> only ever moves a number the ability already has, or adds a
+        cooldown — no ability changes what it does.</p>
     </div>
   </section>
 
@@ -80,18 +79,8 @@
     <div class="card low"><div class="k">41%</div><div class="l">weakest win rate</div></div>
     <div class="card bad"><div class="k">12</div><div class="l">clearly too strong</div></div>
     <div class="card low"><div class="k">2</div><div class="l">clearly too weak</div></div>
+    <div class="card"><div class="k">54</div><div class="l">suggested changes</div></div>
   </div>
-
-  <section>
-    <h2>What "win rate" means here</h2>
-    <div class="note">
-      <p><strong>Win rate</strong> is how often that Pokémon beats the rest of the Legendary field. A perfectly balanced
-        roster would have every ability sitting at <strong>50%</strong>. Anything at 60%+ is beating the field on the strength
-        of its ability; anything under 42% is being beaten on the weakness of its.</p>
-      <p><strong>Ability worth</strong> is the same Pokémon fighting <em>itself with the ability switched off</em>. It answers a
-        different question: how much does this ability add at all? 50% would mean it does literally nothing.</p>
-    </div>
-  </section>
 
   <section>
     <h2>The full ranking</h2>
@@ -99,7 +88,7 @@
       <table>
         <thead><tr>
           <th class="num">#</th><th>Ability</th><th class="num">Win rate</th><th class="num">Ability worth</th>
-          <th>What the simulation saw</th><th>Suggested change</th>
+          <th>What it does now</th><th>Suggested change</th>
         </tr></thead>
         <tbody>
 <tr class="hot">
@@ -107,832 +96,832 @@
       <td class="mon"><span class="name">Mighty Cleave</span><span class="dex">#1022</span></td>
       <td class="num strong">70%</td>
       <td class="num muted">79%</td>
-      <td class="why">WAS 86% — permanently invulnerable once it dropped below half health, because its 3-question cooldown could never run. The window now closes properly.</td>
-      <td class="fix">FIXED (86% → 70%). Still the strongest; may want a second look.</td>
+      <td class="does">Inflict Confusion on the opponent for 3 questions and you take no damage from the opponent for 3 questions while you have a status condition, or your HP is below 50%. It switches off 3 questions after it fires.<span class="seen">WAS 86% — permanently invulnerable below half health, because its 3-question cooldown could never run. Window now closes.</span></td>
+      <td class="fix hot">Too strong at 70% — take <b>40%</b> of incoming damage instead of 0%; confused chance <b>60%</b> instead of 100%.</td>
     </tr>
 <tr class="hot">
       <td class="num">2</td>
       <td class="mon"><span class="name">Jungle Healing</span><span class="dex">#893</span></td>
       <td class="num strong">68%</td>
       <td class="num muted">74%</td>
-      <td class="why">WAS 70% — healed to FULL and cleared all statuses, AND still ran its old heal-8-every-5-questions path on top of that.</td>
-      <td class="fix">Heals to 60% now, and the duplicate legacy heal is deleted. Still high — may want a second look.</td>
+      <td class="does">-1 your defence and heal to full and clear every status condition while you have a status condition, or your HP is below 25%. Once per battle.<span class="seen">WAS 70% — healed to FULL and still ran a duplicate legacy heal on top. Now heals to 60%, duplicate deleted.</span></td>
+      <td class="fix hot">Too strong at 68%, but its numbers are already at the floor.</td>
     </tr>
 <tr class="hot">
       <td class="num">3</td>
       <td class="mon"><span class="name">Splash</span><span class="dex">#789</span></td>
       <td class="num strong">67%</td>
       <td class="num muted">75%</td>
-      <td class="why">Deals ZERO damage for 3 questions, then halves the opponent's health on question 4. The halve DOES work — an earlier report saying otherwise was a simulator bug.</td>
-      <td class="fix">Left as-is at your request. Note it now measures as one of the strongest.</td>
+      <td class="does">Nothing seems to happen for the first 3 questions — you deal no damage at all, and then on question 4 you knock 50% off the opponent's current HP — taken off whatever they are actually on at that moment, not off their starting HP. Once per battle.<span class="seen">Deals zero damage for 3 questions, then halves the opponent's health. The halve does work — an earlier report saying otherwise was a bug in the simulator.</span></td>
+      <td class="fix hot">Too strong at 67%, but its numbers are already at the floor.</td>
     </tr>
 <tr class="hot">
       <td class="num">4</td>
       <td class="mon"><span class="name">Tachyon Cutter</span><span class="dex">#1023</span></td>
       <td class="num strong">67%</td>
       <td class="num muted">75%</td>
-      <td class="why">WAS 71% — permanent double damage and a re-applied Confusion. Its window now closes after 3 questions.</td>
-      <td class="fix">FIXED (71% → 67%). Still high.</td>
+      <td class="does">Inflict Confusion on the opponent for 3 questions and double damage while you have a status condition, or your HP is below 50%. It switches off 3 questions after it fires.<span class="seen">WAS 71% — permanent double damage. Window now closes after 3 questions.</span></td>
+      <td class="fix hot">Too strong at 67% — confused chance <b>67%</b> instead of 100%; damage multiplier <b>x1.7</b> instead of x2.</td>
     </tr>
 <tr class="hot">
       <td class="num">5</td>
       <td class="mon"><span class="name">Astral Barrage</span><span class="dex">#10194</span></td>
       <td class="num strong">64%</td>
       <td class="num muted">76%</td>
-      <td class="why">Lands a guaranteed badly-poison. That used to do literally nothing; now that poison bites, this is one of the strongest rows in the game.</td>
-      <td class="fix">NEW OUTLIER — needs a decision. Poison working has made it strong.</td>
+      <td class="does">Inflict Bad Poison on the opponent for 3 questions and double damage against psychic, ghost, fighting and normal types once you get 3 answers right in a row. The damage bonus switches off after 1 wrong answer.<span class="seen">Lands a guaranteed badly-poison. That used to do nothing at all; now that poison bites it is one of the strongest rows.</span></td>
+      <td class="fix hot">Too strong at 64% — badly-poisoned chance <b>71%</b> instead of 100%; damage multiplier <b>x1.7</b> instead of x2; or give it a cooldown: switch off for 3 questions after it fires.</td>
     </tr>
 <tr class="hot">
       <td class="num">6</td>
       <td class="mon"><span class="name">Glacial Lance</span><span class="dex">#898</span></td>
       <td class="num strong">64%</td>
       <td class="num muted">74%</td>
-      <td class="why">WAS 75% — a GUARANTEED Freeze on a 3-answer streak. A frozen player forfeits the question outright, so it simply deleted the opponent's turns.</td>
-      <td class="fix">Freeze chance 100% → 35%. (75% → 64%.)</td>
+      <td class="does">A 35% chance to inflict Freeze on the opponent for 3 questions and double damage against grass, flying, ground and ice types once you get 3 answers right in a row. The damage bonus switches off after 1 wrong answer.<span class="seen">WAS 75% — a guaranteed Freeze, and a frozen player forfeits the question outright. Chance cut to 35%.</span></td>
+      <td class="fix hot">Too strong at 64% — freeze chance <b>25%</b> instead of 35%; damage multiplier <b>x1.7</b> instead of x2; or give it a cooldown: switch off for 3 questions after it fires.</td>
     </tr>
 <tr class="hot">
       <td class="num">7</td>
       <td class="mon"><span class="name">Dragon Energy</span><span class="dex">#895</span></td>
       <td class="num strong">63%</td>
       <td class="num muted">69%</td>
-      <td class="why">WAS 65% — triple damage while at full health, and it opens every battle at full health.</td>
-      <td class="fix">Top tier x3 → x2.5.</td>
+      <td class="does">Your damage scales with your own remaining HP (x2.5 at 100% HP or above, x2.25 at 80% HP or above, double at 60% HP or above, x1.5 at 40% HP or above and x1 at 0% HP or above), re-checked every question from the start of the battle. Once it fires, it lasts the rest of the battle. The damage bonus switches off after 2 wrong answers.</td>
+      <td class="fix hot">Too strong at 63% — damage multiplier <b>x1.1</b> instead of x1.</td>
     </tr>
 <tr class="hot">
       <td class="num">8</td>
       <td class="mon"><span class="name">Beat Up</span><span class="dex">#1016</span></td>
       <td class="num strong">62%</td>
       <td class="num muted">56%</td>
-      <td class="why"><span class="quiet">Standing +1 Atk per 25 Pokédex entries captured (max +3), checked at battle start (v2 correction). Toxic Chain poison chance is a bespoke secondary.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">Cut the opponent's answer timer to 5 seconds for 5 questions and a 10% chance to knock the opponent out on the spot once you get 3 answers right in a row. It switches off 5 questions after it fires.</td>
+      <td class="fix hot">Too strong at 62% — KO chance <b>8%</b> instead of 10%.</td>
     </tr>
 <tr class="hot">
       <td class="num">9</td>
       <td class="mon"><span class="name">Malignant Chain</span><span class="dex">#1025</span></td>
       <td class="num strong">62%</td>
       <td class="num muted">67%</td>
-      <td class="why">A 75% badly-poison. Same story as Calyrex-Shadow: it was near-worthless and is now genuinely strong.</td>
-      <td class="fix">NEW OUTLIER — needs a decision.</td>
+      <td class="does">A 75% chance to inflict Bad Poison on the opponent for 3 questions on questions 5, 10 and 15.<span class="seen">A 75% badly-poison — near-worthless before the poison fix, genuinely strong after it.</span></td>
+      <td class="fix hot">Too strong at 62% — badly-poisoned chance <b>56%</b> instead of 75%; or give it a cooldown: switch off for 3 questions after it fires.</td>
     </tr>
 <tr class="hot">
       <td class="num">10</td>
       <td class="mon"><span class="name">Burning Bulwark</span><span class="dex">#1020</span></td>
       <td class="num strong">62%</td>
       <td class="num muted">69%</td>
-      <td class="why">WAS 65% — permanent double damage and a re-applied Burn. Its window now closes after 3 questions.</td>
-      <td class="fix">FIXED.</td>
+      <td class="does">Inflict Burn on the opponent for 3 questions and double damage while you have a status condition, or your HP is below 50%. It switches off 3 questions after it fires.<span class="seen">WAS 65% — permanent double damage. Window now closes after 3 questions.</span></td>
+      <td class="fix hot">Too strong at 62% — burn chance <b>77%</b> instead of 100%; damage multiplier <b>x1.8</b> instead of x2.</td>
     </tr>
 <tr class="hot">
       <td class="num">11</td>
       <td class="mon"><span class="name">Behemoth Blade</span><span class="dex">#888</span></td>
       <td class="num strong">61%</td>
       <td class="num muted">64%</td>
-      <td class="why"><span class="quiet">Intrepid Sword entry +1 Atk; extra +1 Atk while opponent leads on HP/stages is a bespoke conditional.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">Double damage once you get 3 answers right in a row. It wears off after 3 questions. The damage bonus switches off after 1 wrong answer.</td>
+      <td class="fix hot">Too strong at 61% — damage multiplier <b>x1.8</b> instead of x2.</td>
     </tr>
 <tr class="hot">
       <td class="num">12</td>
       <td class="mon"><span class="name">Judgment</span><span class="dex">#493</span></td>
       <td class="num strong">61%</td>
       <td class="num muted">68%</td>
-      <td class="why">WAS 70% — chipped 1-10% of a full health bar EVERY question with no cooldown: ~132 free damage against a 120 HP bar.</td>
-      <td class="fix">Chip is now 1-5% (~72 damage). (70% → 61%.)</td>
+      <td class="does">Chip the opponent for 1%–5% of their max HP on every question.<span class="seen">WAS 70% — chipped up to 10% of a full health bar every question, with no cooldown.</span></td>
+      <td class="fix hot">Too strong at 61% — chip up to <b>5%</b> of a health bar instead of 5%; or give it a cooldown: switch off for 3 questions after it fires.</td>
     </tr>
 <tr class="warm">
       <td class="num">13</td>
       <td class="mon"><span class="name">Thunderclap</span><span class="dex">#1021</span></td>
       <td class="num strong">58%</td>
       <td class="num muted">65%</td>
-      <td class="why">WAS 61% — permanent double damage and a re-applied Paralysis. Its window now closes after 3 questions.</td>
-      <td class="fix">FIXED.</td>
+      <td class="does">Inflict Paralysis on the opponent for 3 questions and double damage while you have a status condition, or your HP is below 50%. It switches off 3 questions after it fires.<span class="seen">WAS 61% — permanent double damage. Window now closes after 3 questions.</span></td>
+      <td class="fix hot">Too strong at 58% — paralysis chance <b>83%</b> instead of 100%; damage multiplier <b>x1.8</b> instead of x2.</td>
     </tr>
 <tr class="warm">
       <td class="num">14</td>
       <td class="mon"><span class="name">Techno Blast</span><span class="dex">#649</span></td>
       <td class="num strong">58%</td>
       <td class="num muted">65%</td>
-      <td class="why"><span class="quiet">Genesect — Techno Blast: standing +1 Speed at battle start (default Shock drive encoded). The Drive loadout choice (Shock/Burn/Chill/Douse) + one mid-battle hot-swap is a bespoke secondary, not wired.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+1 to one of your stats at random and inflict a random status on the opponent for 3 questions once you get 3 answers right in a row. The stat change is undone after 2 wrong answers.</td>
+      <td class="fix hot">Too strong at 58% — random chance <b>83%</b> instead of 100%; or give it a cooldown: switch off for 3 questions after it fires.</td>
     </tr>
 <tr class="warm">
       <td class="num">15</td>
       <td class="mon"><span class="name">Doom Desire</span><span class="dex">#385</span></td>
       <td class="num strong">58%</td>
       <td class="num muted">64%</td>
-      <td class="why"><span class="quiet">WIRED (M3): stepBespokeFx arms the strike on the trigger and resolves it DOOM_DESIRE_DELAY_Q questions later; the server owns the magnitude (pvp_signature_effects bespoke/flat_next_question_damage, 20). An in-flight strike blocks a second one.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">A delayed strike that hits for 20 damage two questions later while you have a status condition, or your HP is below 50%. After it fires, it sits out the next question.</td>
+      <td class="fix hot">Too strong at 58% — hit for <b>17</b> instead of 20; or give it a cooldown: switch off for 3 questions after it fires.</td>
     </tr>
 <tr class="warm">
       <td class="num">16</td>
       <td class="mon"><span class="name">Ruination</span><span class="dex">#1001</span></td>
       <td class="num strong">58%</td>
       <td class="num muted">61%</td>
-      <td class="why"><span class="quiet">Wo-Chien — Tablets of Ruin: standing -1 opp Attack all match.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">A 10% chance to inflict Poison on the opponent for 3 questions and knock 50% off the opponent's current HP once you get 5 answers right in a row. Once per battle.</td>
+      <td class="fix hot">Too strong at 58% — poisoned chance <b>8%</b> instead of 10%.</td>
     </tr>
 <tr class="warm">
       <td class="num">17</td>
       <td class="mon"><span class="name">Sacred Sword</span><span class="dex">#647</span></td>
       <td class="num strong">57%</td>
       <td class="num muted">63%</td>
-      <td class="why"><span class="quiet">Keldeo — 4th Sword of Justice: ignore opp's highest Def stage once every 4 questions.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+2 your defence and +2 your attack and your hits ignore the opponent's Defence on every question. The stat change is undone after 2 wrong answers.</td>
+      <td class="fix hot">Too strong at 57% — damage multiplier <b>x1.1</b> instead of x1; or give it a cooldown: switch off for 3 questions after it fires.</td>
     </tr>
 <tr class="warm">
       <td class="num">18</td>
       <td class="mon"><span class="name">Sacred Fire</span><span class="dex">#244</span></td>
       <td class="num strong">56%</td>
       <td class="num muted">63%</td>
-      <td class="why"><span class="quiet">Below-30%-HP mode (cure self + +1 Def) is a bespoke reactive branch, not auto-wired.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">A 50% chance to inflict Burn on the opponent for 3 questions and x1.5 damage once you get 3 answers right in a row. After it fires, it sits out the next question.<span class="seen">Its Burn was landing TWICE — a 50% roll, then a second unconditional application through an old code path. The duplicate is deleted, so it is now genuinely 50%.</span></td>
+      <td class="fix hot">Too strong at 56% — burn chance <b>44%</b> instead of 50%; damage multiplier <b>x1.4</b> instead of x1.5; or give it a cooldown: switch off for 3 questions after it fires.</td>
     </tr>
 <tr class="warm">
       <td class="num">19</td>
       <td class="mon"><span class="name">Magma Storm</span><span class="dex">#485</span></td>
       <td class="num strong">56%</td>
       <td class="num muted">62%</td>
-      <td class="why"><span class="quiet">WIRED (M3): a 5-streak opens a 5-question damage-over-time window that chips the opponent for 12.5% of max HP (15) each question, server-applied via bespoke/dot_frac_hp; two misses slam it shut. The manual fire (ability-lock 3q + Badly Poisoned) still stands alongside it.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">Burn the opponent for 12.5% of their max HP each question for 5 questions once you get 5 answers right in a row. It switches off after 2 wrong answers.</td>
+      <td class="fix hot">Too strong at 56% — drain <b>11%</b> a question instead of 13%; or give it a cooldown: switch off for 3 questions after it fires.</td>
     </tr>
 <tr class="warm">
       <td class="num">20</td>
       <td class="mon"><span class="name">Double Iron Bash</span><span class="dex">#809</span></td>
       <td class="num strong">55%</td>
       <td class="num muted">62%</td>
-      <td class="why"><span class="quiet">WIRED: the second-hit fold plus a 30% Sleep sub-effect via the post_answer catalog row (809), routed on the same hit through evaluatePassiveDamageSideEffects (the 30% roll is done client-side, mirroring 244/643). Iron Fist passive +1 Atk all match is a bespoke secondary, not wired.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">A 30% chance to inflict Sleep on the opponent for 3 questions and x1.5 damage once you get 3 answers right in a row. The damage bonus switches off after 2 wrong answers.<span class="seen">Sleep was landing twice (30% roll + a free 30%). Duplicate deleted.</span></td>
+      <td class="fix hot">Too strong at 55% — sleep chance <b>27%</b> instead of 30%; damage multiplier <b>x1.4</b> instead of x1.5; or give it a cooldown: switch off for 3 questions after it fires.</td>
     </tr>
 <tr class="warm">
       <td class="num">21</td>
       <td class="mon"><span class="name">Shadow Force</span><span class="dex">#487</span></td>
       <td class="num strong">55%</td>
       <td class="num muted">62%</td>
-      <td class="why"><span class="quiet">WIRED (client-armed hit, structurally identical to Psystrike 150 / Dragon Ascent 384): Fire arms a client-side one-hit modifier (manualHitModifiers) onto the next correct answer — ignore opp Defense + 2 Crit. Relabeled wiring:'bespoke' -> 'manual' to match reality (behavior-neutral: it applies no server-catalog effect, so hasServerManualEffect stays false and no server Fire path is added). The vanish (skip current question, untargetable) opening is a bespoke secondary, not wired.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">You take no damage on questions 1 and 11 and double damage on questions 2 and 12.</td>
+      <td class="fix hot">Too strong at 55% — or give it a cooldown: switch off for 3 questions after it fires.</td>
     </tr>
 <tr class="ok">
       <td class="num">22</td>
       <td class="mon"><span class="name">Thunder Cage</span><span class="dex">#894</span></td>
       <td class="num strong">55%</td>
       <td class="num muted">59%</td>
-      <td class="why"><span class="quiet">Phase 4 (wired): manual fire cages the opponent's signature ability for 3 questions (server suppress_ability) + Paralysis. Transistor (your sub-5s answers +1 Atk while caged) remains bespoke.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">Chip the opponent for 1%–15% of their max HP each question for the next 5 questions once you get 3 answers right in a row. It wears off after 5 questions. It switches off after 1 wrong answer.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">23</td>
       <td class="mon"><span class="name">Ruination</span><span class="dex">#1002</span></td>
       <td class="num strong">54%</td>
       <td class="num muted">62%</td>
-      <td class="why"><span class="quiet">Chien-Pao — Sword of Ruin: -2 opp Def (server manual row) + next 2 correct answers ignore the opponent's remaining Defense. WIRED: firing arms a 2-charge client-side ignore-Defense window (swordOfRuinCharges in live-pvp-battle-screen), folded into the next 2 correct hits' damage calc (client-computed, server-clamped, like the armed one-hit manual moves); the window does not persist across a reconnect.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">A 10% chance to inflict Freeze on the opponent for 3 questions and knock 50% off the opponent's current HP once you get 5 answers right in a row. Once per battle.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">24</td>
       <td class="mon"><span class="name">Collision Course</span><span class="dex">#1007</span></td>
       <td class="num strong">54%</td>
       <td class="num muted">65%</td>
-      <td class="why"><span class="quiet">Per-new-category spike: the first correct answer on each new question category hits harder (+1 Atk & +1 Crit for that hit). Orichalcum Pulse (+1 Atk standing while leading on HP) remains a bespoke conditional passive.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">Double damage against ice, flying, psychic, dragon and fairy types once you get 3 answers right in a row. The damage bonus switches off after 2 wrong answers.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">25</td>
       <td class="mon"><span class="name">Ruination</span><span class="dex">#1004</span></td>
       <td class="num strong">54%</td>
       <td class="num muted">59%</td>
-      <td class="why"><span class="quiet">Chi-Yu — Beads of Ruin: deal half opponent's current HP (ignore Def) then Burn.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">A 10% chance to inflict Burn on the opponent for 3 questions and knock 50% off the opponent's current HP once you get 5 answers right in a row. Once per battle.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">26</td>
       <td class="mon"><span class="name">Sacred Fire</span><span class="dex">#250</span></td>
       <td class="num strong">54%</td>
       <td class="num muted">59%</td>
-      <td class="why">Comes back from 0 HP once per battle, at 25% health. Measured, that lands mid-table — dramatic, but not a second health bar.</td>
-      <td class="fix">No change needed. (The earlier '50% revive' claim was a bug in the simulator, not the game.)</td>
+      <td class="does">+1 your attack and revive at 25% HP and clear your status instead of fainting when you would be knocked out. The stat change is undone after 2 wrong answers.<span class="seen">Revives once at 25% health. Mid-table — dramatic, but not a second health bar. No change needed.</span></td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">27</td>
       <td class="mon"><span class="name">Ruination</span><span class="dex">#1003</span></td>
       <td class="num strong">54%</td>
       <td class="num muted">61%</td>
-      <td class="why"><span class="quiet">Ting-Lu — Vessel of Ruin: +2 own Def + -1 opp Crit.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">A 10% chance to inflict Confusion on the opponent for 3 questions and knock 50% off the opponent's current HP once you get 5 answers right in a row. Once per battle.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">28</td>
       <td class="mon"><span class="name">Nature's Madness</span><span class="dex">#788</span></td>
       <td class="num strong">54%</td>
       <td class="num muted">60%</td>
-      <td class="why"><span class="quiet">Misty Terrain: neither side can inflict status 3q + halve opp positive-stage durations (bespoke truce).</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+1 your defence and knock 50% off the opponent's current HP once you get 5 answers right in a row. Once per battle.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">29</td>
       <td class="mon"><span class="name">Tera Starstorm</span><span class="dex">#1024</span></td>
       <td class="num strong">54%</td>
       <td class="num muted">61%</td>
-      <td class="why">WAS 73% — a 50% coin-flip to win the match outright, behind a gate that only asked you to be losing.</td>
-      <td class="fix">KO chance 50% → 15%. Now sits comfortably mid-field.</td>
+      <td class="does">A 15% chance to knock the opponent out on the spot while the opponent has at least twice your HP. It switches off permanently the moment you use a healing item.<span class="seen">WAS 73% — a coin-flip to win the match outright. KO chance cut 50% → 15%.</span></td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">30</td>
       <td class="mon"><span class="name">Behemoth Bash</span><span class="dex">#889</span></td>
       <td class="num strong">54%</td>
       <td class="num muted">56%</td>
-      <td class="why">WAS 70% — a 3-answer streak granted 3 questions of taking ZERO damage, re-earned the moment the streak came back.</td>
-      <td class="fix">Shield now halves incoming damage rather than nullifying it. (70% → 59%.)</td>
+      <td class="does">You take only 50% damage from the opponent for 3 questions once you get 3 answers right in a row. It wears off after 3 questions. It switches off after 1 wrong answer.<span class="seen">WAS 70% — 3 questions of taking ZERO damage. The shield now halves damage instead of nullifying it.</span></td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">31</td>
       <td class="mon"><span class="name">Nature's Madness</span><span class="dex">#787</span></td>
       <td class="num strong">53%</td>
       <td class="num muted">59%</td>
-      <td class="why"><span class="quiet">Grassy Terrain regen ~4 HP/question for 3q; here applied as a one-shot heal + Def. Per-question regen is bespoke.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+1 your attack and knock 50% off the opponent's current HP once you get 5 answers right in a row. Once per battle.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">32</td>
       <td class="mon"><span class="name">Glaciate</span><span class="dex">#646</span></td>
       <td class="num strong">53%</td>
       <td class="num muted">58%</td>
-      <td class="why"><span class="quiet">If opp already at negative Speed → Freeze instead; whole effect doubled while you trail on HP (bespoke escalation). Non-mascot per file.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">-2 the opponent's speed per correct answer, stacking up to 3 times, a 20% chance to inflict Freeze on the opponent for 2 questions and double damage against Zekrom and Reshiram once you get 3 answers right in a row. The stat change is undone after 2 wrong answers.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">33</td>
       <td class="mon"><span class="name">Dynamax Cannon</span><span class="dex">#890</span></td>
       <td class="num strong">53%</td>
       <td class="num muted">59%</td>
-      <td class="why"><span class="quiet">Charge one question then release; Pressure (opp cooldowns 15% slower) is a bespoke passive.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">A 5% chance to inflict Bad Poison on the opponent for 3 questions and wrong answers cost you no HP (the opponent's hits still land in full) once you get 3 answers right in a row. It does nothing at all against Zacian and Zamazenta.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">34</td>
       <td class="mon"><span class="name">Photon Geyser</span><span class="dex">#800</span></td>
       <td class="num strong">53%</td>
       <td class="num muted">60%</td>
-      <td class="why"><span class="quiet">Auto-optimize (convert surplus); prism-split (+1 Atk & Spd) once per battle is bespoke.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+1 your attack and a 50% chance to inflict Confusion on the opponent for 2 questions once you get 3 answers right in a row. The stat change is undone after 1 wrong answer.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">35</td>
       <td class="mon"><span class="name">Nature's Madness</span><span class="dex">#785</span></td>
       <td class="num strong">52%</td>
       <td class="num muted">59%</td>
-      <td class="why"><span class="quiet">Cut half the opponent's HP LEAD (never past parity) + Electric Terrain anti-status. Lead-cut is bespoke.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+1 your speed and knock 50% off the opponent's current HP once you get 5 answers right in a row. Once per battle.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">36</td>
       <td class="mon"><span class="name">Nature's Madness</span><span class="dex">#786</span></td>
       <td class="num strong">52%</td>
       <td class="num muted">59%</td>
-      <td class="why"><span class="quiet">Psychic Terrain: opponent can't activate priority/auto-trigger abilities 2q (bespoke lock).</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+1 your crit chance and knock 50% off the opponent's current HP once you get 5 answers right in a row. Once per battle.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">37</td>
       <td class="mon"><span class="name">Thousand Waves</span><span class="dex">#718</span></td>
       <td class="num strong">52%</td>
       <td class="num muted">55%</td>
-      <td class="why"><span class="quiet">Phase 4 (wired): manual fire binds the opponent's signature ability for 3 questions (server suppress_ability) + -1 Speed. The 10+-correct duration extension to 4q is not modelled.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">Double damage against flying types and +1 your attack and +1 your defence otherwise once you get 3 answers right in a row.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">38</td>
       <td class="mon"><span class="name">Geomancy</span><span class="dex">#716</span></td>
       <td class="num strong">51%</td>
       <td class="num muted">59%</td>
-      <td class="why"><span class="quiet">Two-stage: charge (skip one question) then release the triple buff.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+2 your attack, +2 your defence and +2 your speed and you deal no damage for the first question. It switches off after 3 wrong answers.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">39</td>
       <td class="mon"><span class="name">Astral Barrage</span><span class="dex">#897</span></td>
       <td class="num strong">51%</td>
       <td class="num muted">59%</td>
-      <td class="why">Lands a GUARANTEED badly-poison. Poison used to deal no damage at all in live battles, so it did nothing; it bites now.</td>
-      <td class="fix">Fixed by the poison tick — poison deals 5 HP a question (badly-poisoned ramps).</td>
+      <td class="does">Inflict Bad Poison on the opponent for 3 questions and double damage against psychic and ghost types once you get 5 answers right in a row. The damage bonus switches off after 1 wrong answer.<span class="seen">A guaranteed badly-poison. Poison dealt no damage in live battles at all until this pass.</span></td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">40</td>
       <td class="mon"><span class="name">Surging Strikes</span><span class="dex">#892</span></td>
       <td class="num strong">51%</td>
       <td class="num muted">57%</td>
-      <td class="why"><span class="quiet">Single = one +3-crit ignore-Def hit; Rapid = next 3 answers +2 crit ignore-Def. Inherits Kubfu crit-ramp.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">Your hits ignore the opponent's Defence and a 30% chance to knock the opponent out on the spot once you get 5 answers right in a row. The damage bonus switches off after 1 wrong answer.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">41</td>
       <td class="mon"><span class="name">Glacial Lance</span><span class="dex">#896</span></td>
       <td class="num strong">51%</td>
       <td class="num muted">55%</td>
-      <td class="why">Guaranteed Freeze on a 5-streak — the same turn-deletion as Calyrex-Ice, one tier down.</td>
-      <td class="fix">Freeze chance 100% → 40%.</td>
+      <td class="does">A 40% chance to inflict Freeze on the opponent for 3 questions and double damage against grass, flying and ground types once you get 5 answers right in a row. The damage bonus switches off after 1 wrong answer.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">42</td>
       <td class="mon"><span class="name">Flash Cannon</span><span class="dex">#808</span></td>
       <td class="num strong">51%</td>
       <td class="num muted">58%</td>
-      <td class="why"><span class="quiet">Molten Growth: permanent +1 Atk every 3 correct (compounds to clamp).</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">-1 the opponent's defence per correct answer, stacking up to 3 times and -1 the opponent's speed per correct answer, stacking up to 3 times once you get 3 answers right in a row. The stat change is undone after 2 wrong answers.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">43</td>
       <td class="mon"><span class="name">Diamond Storm</span><span class="dex">#719</span></td>
       <td class="num strong">50%</td>
       <td class="num muted">57%</td>
-      <td class="why"><span class="quiet">Once-per-battle status-reflect (spend the Defense buffer) is a bespoke secondary.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+2 your defence per correct answer, stacking up to 3 times once you get 3 answers right in a row. The stat change is undone after 2 wrong answers.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">44</td>
       <td class="mon"><span class="name">Electro Drift</span><span class="dex">#1008</span></td>
       <td class="num strong">50%</td>
       <td class="num muted">68%</td>
-      <td class="why"><span class="quiet">Hadron Engine (opp -1 Speed while you lead) + once-per-battle 2-category preview are bespoke secondaries.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">Double damage against ice, ground, dragon and fairy types once you get 3 answers right in a row. The damage bonus switches off after 2 wrong answers.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">45</td>
       <td class="mon"><span class="name">Freeze-Dry</span><span class="dex">#144</span></td>
       <td class="num strong">50%</td>
       <td class="num muted">54%</td>
-      <td class="why"><span class="quiet">Ignore-defense only applies while opp Defense stage ≥ +1 (checked in evaluateHitModifiers). Secondary once-per-battle Freeze on opp's first 2-streak is bespoke and not auto-wired.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">A 10% chance to inflict Freeze on the opponent for 2 questions and double damage against water types once you get 3 answers right in a row. The damage bonus switches off after 1 wrong answer.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">46</td>
       <td class="mon"><span class="name">Luster Purge</span><span class="dex">#381</span></td>
       <td class="num strong">49%</td>
       <td class="num muted">55%</td>
-      <td class="why"><span class="quiet">Armed after 3 correct. Non-mascot per file.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">-2 the opponent's defence per correct answer, stacking up to 3 times once you get 3 answers right in a row. The stat change is undone after 1 wrong answer.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">47</td>
       <td class="mon"><span class="name">Flash Cannon</span><span class="dex">#379</span></td>
       <td class="num strong">49%</td>
       <td class="num muted">56%</td>
-      <td class="why"><span class="quiet">Once-per-battle 40% opp -1 Def shot is a bespoke secondary, not auto-wired.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">-1 the opponent's defence per correct answer, stacking up to 3 times and +1 your attack while you have a status condition, or your HP is below 50%. The stat change is undone after 1 wrong answer.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">48</td>
       <td class="mon"><span class="name">Blizzard</span><span class="dex">#378</span></td>
       <td class="num strong">49%</td>
       <td class="num muted">57%</td>
-      <td class="why"><span class="quiet">WIRED: a 4+ streak chills the opponent — standing -1 opp Speed via the post_answer catalog row (378), the frostbite-adjacent Speed drop of Blizzard's mainline flavor. (Replaces the old hide_options hamper, which had no delivery path to the opponent's client.) 4-question cooldown not enforced by the generic engine.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">A 10% chance to inflict Freeze on the opponent for 2 questions and +1 your attack against flying, grass and ground types once you get 3 answers right in a row.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">49</td>
       <td class="mon"><span class="name">Dark Void</span><span class="dex">#491</span></td>
       <td class="num strong">49%</td>
       <td class="num muted">51%</td>
-      <td class="why"><span class="quiet">60% land chance (Dark Void's low accuracy).</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">Inflict Sleep on the opponent for 2 questions and double damage against psychic and ghost types once you get 3 answers right in a row.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">50</td>
       <td class="mon"><span class="name">Psyblade</span><span class="dex">#1010</span></td>
       <td class="num strong">49%</td>
       <td class="num muted">70%</td>
-      <td class="why"><span class="quiet">Iron Leaves — Psyblade: +1 Atk & +1 Crit on correct answers WHILE any terrain/field effect is active (yours or a teammate's). Quark Drive (fast answers boost highest stat) is a bespoke secondary. Terrain gating is bespoke.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">Double damage against grass and psychic types while you have a status condition, or your HP is below 50%. Once it fires, it lasts the rest of the battle.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">51</td>
       <td class="mon"><span class="name">Seed Flare</span><span class="dex">#492</span></td>
       <td class="num strong">48%</td>
       <td class="num muted">56%</td>
-      <td class="why"><span class="quiet">Seed Flare: on fire, -2 opp Defense (Sp. Def crash). The 40%/60%-on-streak land chance is rolled client-side before the fire request; chance-on-streak is bespoke.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">-2 the opponent's defence and +1 your attack once you get 3 answers right in a row. The stat change is undone after 1 wrong answer.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">52</td>
       <td class="mon"><span class="name">Cosmic Power</span><span class="dex">#790</span></td>
       <td class="num strong">48%</td>
       <td class="num muted">55%</td>
-      <td class="why"><span class="quiet">Every 4 questions survived, +1 Atk back (bespoke slow charge).</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+2 your defence per correct answer, stacking up to 3 times and +1 your attack once you get 3 answers right in a row. The stat change is undone after 1 wrong answer.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">53</td>
       <td class="mon"><span class="name">Thunderous Kick</span><span class="dex">#145</span></td>
       <td class="num strong">48%</td>
       <td class="num muted">55%</td>
-      <td class="why"><span class="quiet">3-question cooldown between fires is not enforced by the generic engine.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">-1 the opponent's defence per correct answer, stacking up to 3 times once you get 3 answers right in a row. The stat change is undone after 1 wrong answer.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">54</td>
       <td class="mon"><span class="name">Mist Ball</span><span class="dex">#380</span></td>
       <td class="num strong">48%</td>
       <td class="num muted">55%</td>
-      <td class="why"><span class="quiet">Armed after 3 correct. Non-mascot per file despite mascot-tier flavor (flagged for reconciliation).</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">-2 the opponent's attack per correct answer, stacking up to 3 times once you get 3 answers right in a row. The stat change is undone after 1 wrong answer.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">55</td>
       <td class="mon"><span class="name">Bleakwind Storm</span><span class="dex">#641</span></td>
       <td class="num strong">48%</td>
       <td class="num muted">55%</td>
-      <td class="why"><span class="quiet">Also denies opp first-half crit bonus during it (bespoke).</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+3 your speed and a 20% chance to inflict Confusion on the opponent for 2 questions once you get 3 answers right in a row. The stat change is undone after 2 wrong answers.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">56</td>
       <td class="mon"><span class="name">Hydro Steam</span><span class="dex">#1009</span></td>
       <td class="num strong">48%</td>
       <td class="num muted">70%</td>
-      <td class="why"><span class="quiet">Walking Wake — Hydro Steam: +2 Attack on correct answers WHILE the opponent is buffed or leading (dead weight when you're ahead). Protosynthesis (fast answers boost highest stat) is a bespoke secondary. Adversity gating is bespoke.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">Double damage against water and dragon types while you have a status condition, or your HP is below 50%. Once it fires, it lasts the rest of the battle.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">57</td>
       <td class="mon"><span class="name">Blue Flare</span><span class="dex">#643</span></td>
       <td class="num strong">48%</td>
       <td class="num muted">55%</td>
-      <td class="why"><span class="quiet">WIRED: the trigger no longer carries a chance (so hitTriggerHolds accepts it) — the +1 Atk/+1 Crit damage-calc bonus is deterministic on any first-half correct answer. The bundled Burn is routed on that same hit through the post_answer catalog row (643), with its 40% roll done client-side in evaluatePassiveDamageSideEffects (mirrors 244/809's client-rolled statuses). Fast WRONG answers self-inflict -1 Def (bespoke penalty branch, not wired).</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+1 your attack and +1 your crit chance, a 20% chance to inflict Burn on the opponent for 3 questions and double damage against Zekrom once you get 3 answers right in a row. The stat change is undone after 2 wrong answers.<span class="seen">Burn was landing twice (20% roll + a free 40%). Duplicate deleted.</span></td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">58</td>
       <td class="mon"><span class="name">Lunar Dance</span><span class="dex">#488</span></td>
       <td class="num strong">47%</td>
       <td class="num muted">53%</td>
-      <td class="why">WAS 36% — its cleanse charged you 15% of your HP, cancelling out its own free heal.</td>
-      <td class="fix">The HP cost is gone. Now mid-field.</td>
+      <td class="does">Heal to full and clear every status condition while you have a status condition, or your HP is below 50%. Once per battle.<span class="seen">WAS 36% — its cleanse charged 15% of your HP, cancelling out its own heal. Cost removed.</span></td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">59</td>
       <td class="mon"><span class="name">Plasma Fists</span><span class="dex">#807</span></td>
       <td class="num strong">46%</td>
       <td class="num muted">54%</td>
-      <td class="why"><span class="quiet">WIRED (approximation): each sub-6s correct PAIR grants +1 Speed & +1 Crit (server post_answer, clamp-capped +3) — the chain's ramp. The doc's 'reset to 0 on any slow/wrong answer' is NOT modelled: the shipped stage system has no per-source stage accounting, so it cannot subtract exactly the chain-contributed Speed/Crit on a break without also clobbering stages from other sources. Documented as a deliberate limitation (see Phase 1 report) rather than force a lossy stage-decrement.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+2 your attack and +2 your speed once you get 3 answers right in a row. The stat change is undone after 1 wrong answer.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">60</td>
       <td class="mon"><span class="name">Bolt Strike</span><span class="dex">#644</span></td>
       <td class="num strong">46%</td>
       <td class="num muted">53%</td>
-      <td class="why"><span class="quiet">-1 Speed backlash on streak break is a bespoke secondary.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+1 your attack and +1 your crit chance, a 20% chance to inflict Paralysis on the opponent for 3 questions and double damage against Reshiram once you get 3 answers right in a row. The stat change is undone after 2 wrong answers.<span class="seen">Paralysis was landing twice (20% roll + a free 100%). Duplicate deleted.</span></td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">61</td>
       <td class="mon"><span class="name">Upper Hand</span><span class="dex">#1014</span></td>
       <td class="num strong">46%</td>
       <td class="num muted">52%</td>
-      <td class="why"><span class="quiet">NOT WIREABLE with the current architecture (see Phase 2 report). The defining effect is to interrupt/cancel the opponent's signature ability BEFORE it applies. Ability activations are server-side (a per-player apply_pvp_signature_effect call) and only surface to the other client AFTER the fact via the pvp_live_effects INSERT — there is no client-observable 'opponent is about to activate' signal, and one player cannot pre-empt another player's server RPC in this trust model. Wiring only the Poison half would misrepresent the ability, so it is intentionally left unwired.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">A 10% chance to inflict Confusion on the opponent for 3 questions and cut the opponent's answer timer to 5 seconds for 5 questions once you get 3 answers right in a row. It switches off 5 questions after it fires.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">62</td>
       <td class="mon"><span class="name">Fiery Wrath</span><span class="dex">#146</span></td>
       <td class="num strong">46%</td>
       <td class="num muted">53%</td>
-      <td class="why"><span class="quiet">WIRED (Phase 1): Wrath stacks tracked per-battle in pvp_live_matches.*_sig_state (server-clamped 0..3 via apply_pvp_signature_effect phase='sig_state'). Build +1 on each wrong answer; the next correct answer discharges — folds +1 Atk/stack into that hit's client-computed damage and rolls 30%/stack to inflict Sleep (1q) on the opponent via the server post_answer catalog row. See signature-bespoke.ts nextWrathStacks/wrathDischarge.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+1 your attack per correct answer, stacking up to 3 times and a 20% chance to inflict Sleep on the opponent for 2 questions once you get 3 answers right in a row. It wears off after 3 questions. The stat change is undone after 1 wrong answer.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">63</td>
       <td class="mon"><span class="name">Steam Eruption</span><span class="dex">#721</span></td>
       <td class="num strong">46%</td>
       <td class="num muted">52%</td>
-      <td class="why"><span class="quiet">Every-3-questions self-cleanse + once-per-battle full eruption are bespoke secondaries.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+2 your crit chance and a 30% chance to inflict Burn on the opponent for 3 questions once you get 3 answers right in a row. The stat change is undone after 1 wrong answer.<span class="seen">Burn was landing twice (30% roll + a free 100%). Duplicate deleted.</span></td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">64</td>
       <td class="mon"><span class="name">Relic Song</span><span class="dex">#648</span></td>
       <td class="num strong">46%</td>
       <td class="num muted">53%</td>
-      <td class="why"><span class="quiet">Aria (+1 Atk, always) / Pirouette (+1 Spd) stance toggle; 30% Sleep on toggle. WIRED: the Sleep is now a genuine 30% roll — the manual RPC applies the +1 Atk row unconditionally and rolls the Sleep row server-side (its catalog payload carries chance:0.3, gated in apply_pvp_signature_effect's status branch). Stance choice is bespoke.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+1 your attack and a 20% chance to inflict Sleep on the opponent for 2 questions once you get 3 answers right in a row. The stat change is undone after 2 wrong answers.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">65</td>
       <td class="mon"><span class="name">Sacred Sword</span><span class="dex">#639</span></td>
       <td class="num strong">46%</td>
       <td class="num muted">50%</td>
-      <td class="why"><span class="quiet">Terrakion — offense: always ignore Def; on 3+ streak also +1 Atk (streak ramp is a bespoke secondary).</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+1 your defence and your hits ignore the opponent's Defence on every even-numbered question. The stat change is undone after 1 wrong answer.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">66</td>
       <td class="mon"><span class="name">Mind Blown</span><span class="dex">#806</span></td>
       <td class="num strong">46%</td>
       <td class="num muted">52%</td>
-      <td class="why"><span class="quiet">NOT in v2 doc — fill design (Beast Boost: grow Crit). Confirm with product owner.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">x5 damage on question 1 and you deal 75% damage on questions 2-19.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">67</td>
       <td class="mon"><span class="name">Ivy Cudgel</span><span class="dex">#1017</span></td>
       <td class="num strong">46%</td>
       <td class="num muted">52%</td>
-      <td class="why"><span class="quiet">Ogerpon — Ivy Cudgel: standing +1 Crit at battle start (baseline Teal Mask encoded). The Mask loadout (Teal/Wellspring/Hearthflame/Cornerstone) + Embody Aspect swap is a bespoke secondary, not wired.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">Inflict Bad Poison on the opponent for 3 questions (only against Okidogi, Munkidori and Fezandipiti) and +3 your crit chance against grass, water, fire and rock types from the start of the battle.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">68</td>
       <td class="mon"><span class="name">Sludge Wave</span><span class="dex">#1015</span></td>
       <td class="num strong">45%</td>
       <td class="num muted">52%</td>
-      <td class="why">Poison-based, and poison now actually deals damage.</td>
-      <td class="fix">Fixed by the poison tick.</td>
+      <td class="does">A 10% chance to inflict Poison on the opponent for 3 questions and cut the opponent's answer timer to 5 seconds for 5 questions once you get 3 answers right in a row. It switches off 5 questions after it fires.<span class="seen">Poison was landing twice (10% roll + a free 100%) — and poison now actually deals damage. Duplicate deleted.</span></td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">69</td>
       <td class="mon"><span class="name">Precipice Blades</span><span class="dex">#383</span></td>
       <td class="num strong">45%</td>
       <td class="num muted">53%</td>
-      <td class="why"><span class="quiet">Standing sun while streak holds; lifts on 2 consecutive misses. Latest-weather-wins vs Kyogre is bespoke.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">-1 the opponent's attack, -1 the opponent's crit chance and -1 the opponent's speed and double damage against Kyogre while you have a status condition, or your HP is below 50%. The stat change is undone after 1 wrong answer.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">70</td>
       <td class="mon"><span class="name">Sacred Sword</span><span class="dex">#640</span></td>
       <td class="num strong">45%</td>
       <td class="num muted">52%</td>
-      <td class="why"><span class="quiet">Virizion — evasion: always ignore Def; stacking debuff-evasion (15%/stack) is a bespoke secondary.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+1 your attack and your hits ignore the opponent's Defence on every odd-numbered question. The stat change is undone after 1 wrong answer.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="ok">
       <td class="num">71</td>
       <td class="mon"><span class="name">Stone Edge</span><span class="dex">#377</span></td>
       <td class="num strong">45%</td>
       <td class="num muted">51%</td>
-      <td class="why"><span class="quiet">Within the healthy band.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+2 your crit chance per correct answer, stacking up to 3 times once you get 3 answers right in a row. The stat change is undone after 1 wrong answer.</td>
+      <td class="fix ok">Healthy — no change.</td>
     </tr>
 <tr class="warm">
       <td class="num">72</td>
       <td class="mon"><span class="name">Psycho Boost</span><span class="dex">#386</span></td>
       <td class="num strong">45%</td>
       <td class="num muted">52%</td>
-      <td class="why"><span class="quiet">First correct answer arms it, then re-armable every 5. WIRED: the -1 Atk recoil now follows the nuke via the post_answer catalog row (386), routed on the same hit through evaluatePassiveDamageSideEffects (was silently dropped, making it strictly stronger than designed).</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+3 your attack, then -1 each question after (down to -3) once you get 3 answers right in a row. It stops growing after 1 wrong answer, but keeps fading.</td>
+      <td class="fix cold">Too weak at 45%, but its numbers are already at the floor.</td>
     </tr>
 <tr class="warm">
       <td class="num">73</td>
       <td class="mon"><span class="name">Spacial Rend</span><span class="dex">#484</span></td>
       <td class="num strong">45%</td>
       <td class="num muted">52%</td>
-      <td class="why"><span class="quiet">Within the healthy band.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+3 your crit chance and double damage against Dialga once you get 3 answers right in a row. The stat change is undone after 1 wrong answer.</td>
+      <td class="fix cold">Too weak at 45% — damage multiplier <b>x2.1</b> instead of x2.</td>
     </tr>
 <tr class="warm">
       <td class="num">74</td>
       <td class="mon"><span class="name">Gyro Ball</span><span class="dex">#805</span></td>
       <td class="num strong">45%</td>
       <td class="num muted">50%</td>
-      <td class="why">WAS 38% — dealt no damage for 3 questions to earn a x1.5. The worst trade in the roster.</td>
-      <td class="fix">Payoff x1.5 → x3, and its Attack bonus +2 → +3.</td>
+      <td class="does">+3 your attack and you deal no damage for the first 3 questions, then triple damage on question 4. The stat change is undone after 1 wrong answer.</td>
+      <td class="fix cold">Too weak at 45% — payoff <b>x3.2</b> instead of x3.</td>
     </tr>
 <tr class="warm">
       <td class="num">75</td>
       <td class="mon"><span class="name">Focus Energy</span><span class="dex">#891</span></td>
       <td class="num strong">45%</td>
       <td class="num muted">52%</td>
-      <td class="why"><span class="quiet">Crit resets to 0 on a wrong answer (bespoke reset). No finisher (that's Urshifu).</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+3 your crit chance once you get 3 answers right in a row. The stat change is undone after 1 wrong answer.</td>
+      <td class="fix cold">Too weak at 45%, but its numbers are already at the floor.</td>
     </tr>
 <tr class="warm">
       <td class="num">76</td>
       <td class="mon"><span class="name">Origin Pulse</span><span class="dex">#382</span></td>
       <td class="num strong">44%</td>
       <td class="num muted">52%</td>
-      <td class="why"><span class="quiet">Standing weather while streak holds; lifts on 2 consecutive misses. Latest-weather-wins vs Groudon is bespoke.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+1 your attack, +1 your crit chance and +1 your speed and double damage against Groudon while you have a status condition, or your HP is below 50%. The stat change is undone after 1 wrong answer.</td>
+      <td class="fix cold">Too weak at 44% — damage multiplier <b>x2.1</b> instead of x2.</td>
     </tr>
 <tr class="warm">
       <td class="num">77</td>
       <td class="mon"><span class="name">Psystrike</span><span class="dex">#150</span></td>
       <td class="num strong">44%</td>
       <td class="num muted">50%</td>
-      <td class="why"><span class="quiet">Fire arms a client-side one-hit modifier (manualHitModifiers) folded into the next correct answer's damage calc — ignore opp Defense + own negative stages. Auto-fire-on-last-question if unused is a bespoke secondary, not wired.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">-1 the opponent's defence and your hits ignore the opponent's Defence once you get 3 answers right in a row. After it fires, it sits out the next question.</td>
+      <td class="fix cold">Too weak at 44% — damage multiplier <b>x1.1</b> instead of x1.</td>
     </tr>
 <tr class="warm">
       <td class="num">78</td>
       <td class="mon"><span class="name">Sacred Sword</span><span class="dex">#638</span></td>
       <td class="num strong">44%</td>
       <td class="num muted">50%</td>
-      <td class="why"><span class="quiet">Cobalion — neutral always-on: compute through both your negative stages and opp Defense.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">Your hits ignore the opponent's Defence on every question. The damage bonus switches off after 1 wrong answer.</td>
+      <td class="fix cold">Too weak at 44% — damage multiplier <b>x1.1</b> instead of x1.</td>
     </tr>
 <tr class="warm">
       <td class="num">79</td>
       <td class="mon"><span class="name">Sandsear Storm</span><span class="dex">#645</span></td>
       <td class="num strong">44%</td>
       <td class="num muted">50%</td>
-      <td class="why"><span class="quiet">Within the healthy band.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+3 your speed and a 20% chance to inflict Burn on the opponent for 3 questions once you get 3 answers right in a row. The stat change is undone after 2 wrong answers.<span class="seen">Burn was landing twice (20% roll + a free 100%). Duplicate deleted.</span></td>
+      <td class="fix cold">Too weak at 44% — burn chance <b>22%</b> instead of 20%.</td>
     </tr>
 <tr class="warm">
       <td class="num">80</td>
       <td class="mon"><span class="name">Thunder</span><span class="dex">#243</span></td>
       <td class="num strong">44%</td>
       <td class="num muted">50%</td>
-      <td class="why"><span class="quiet">Whiffs entirely if the previous answer was wrong. WIRED: the +1 Speed side-effect now applies via the post_answer catalog row (243), routed on the same hit through evaluatePassiveDamageSideEffects (was silently dropped — a passive_damage entry only folds its damage_calc slice).</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+1 your speed and a 30% chance to inflict Paralysis on the opponent for 3 questions once you get 3 answers right in a row. The stat change is undone after 2 wrong answers.</td>
+      <td class="fix cold">Too weak at 44% — paralysis chance <b>34%</b> instead of 30%.</td>
     </tr>
 <tr class="warm">
       <td class="num">81</td>
       <td class="mon"><span class="name">Future Sight</span><span class="dex">#482</span></td>
       <td class="num strong">44%</td>
       <td class="num muted">50%</td>
-      <td class="why"><span class="quiet">WIRED (M3): a correct answer on q5/q10/q15/q20 rolls 1-3 wrong options to cull and schedules them onto the NEXT question; live-pvp-battle-screen greys them out via eliminatedChoiceIndices. Self-help only, so it stays client-side — the correct answer is never culled. (The q20 fire has no q21 to land on and is inert by design.)</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">Remove 1–3 wrong answers from your next question on questions 5, 10, 15 and 20. It switches off after 3 wrong answers.</td>
+      <td class="fix cold">Too weak at 44%, but its numbers are already at the floor.</td>
     </tr>
 <tr class="warm">
       <td class="num">82</td>
       <td class="mon"><span class="name">Spectral Thief</span><span class="dex">#802</span></td>
       <td class="num strong">44%</td>
       <td class="num muted">50%</td>
-      <td class="why"><span class="quiet">Steal opponent's highest positive stage (remove from them, add to self).</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">Use the opponent's item for yourself when the opponent uses an item.</td>
+      <td class="fix cold">Too weak at 44%, but its numbers are already at the floor.</td>
     </tr>
 <tr class="warm">
       <td class="num">83</td>
       <td class="mon"><span class="name">Aeroblast</span><span class="dex">#249</span></td>
       <td class="num strong">44%</td>
       <td class="num muted">50%</td>
-      <td class="why"><span class="quiet">Charge-and-store (1 per 5 correct, cap 2).</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+1 your crit chance per correct answer, stacking up to 3 times once you get 3 answers right in a row. The stat change is undone after 1 wrong answer.</td>
+      <td class="fix cold">Too weak at 44%, but its numbers are already at the floor.</td>
     </tr>
 <tr class="warm">
       <td class="num">84</td>
       <td class="mon"><span class="name">Heart Swap</span><span class="dex">#490</span></td>
       <td class="num strong">44%</td>
       <td class="num muted">50%</td>
-      <td class="why"><span class="quiet">Give opp your lowest (most negative) stage, take their highest (most positive). Server-computed (swap_stages kind); cancels in a mirror if both fire the same question.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">Turn the opponent's stat drops against them when the opponent's signature ability fires. It switches off after 2 wrong answers.</td>
+      <td class="fix cold">Too weak at 44%, but its numbers are already at the floor.</td>
     </tr>
 <tr class="warm">
       <td class="num">85</td>
       <td class="mon"><span class="name">Fleur Cannon</span><span class="dex">#801</span></td>
       <td class="num strong">44%</td>
       <td class="num muted">48%</td>
-      <td class="why"><span class="quiet">WIRED: the -1 Atk recoil now follows the nuke via the post_answer catalog row (801), routed on the same hit through evaluatePassiveDamageSideEffects (was silently dropped, making it over-strong). Soul-Heart (+1 Crit per opponent wrong) is a bespoke reactive secondary.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+3 your attack and +0 your defence, then -1 each question after (down to -3) once you get 3 answers right in a row. It stops growing after 1 wrong answer, but keeps fading.</td>
+      <td class="fix cold">Too weak at 44%, but its numbers are already at the floor.</td>
     </tr>
 <tr class="warm">
       <td class="num">86</td>
       <td class="mon"><span class="name">Aurora Beam</span><span class="dex">#245</span></td>
       <td class="num strong">44%</td>
       <td class="num muted">51%</td>
-      <td class="why"><span class="quiet">Buff should drop when streak breaks (persistent-stage system can't auto-expire; approximated as apply-on-streak).</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">Clear your status and heal back 50% of the damage you take for 3 questions while you have a status condition, or your HP is below 50%. The healing stops 3 questions after it starts. Once per battle.</td>
+      <td class="fix cold">Too weak at 44%, but its numbers are already at the floor.</td>
     </tr>
 <tr class="warm">
       <td class="num">87</td>
       <td class="mon"><span class="name">Sunsteel Strike</span><span class="dex">#791</span></td>
       <td class="num strong">44%</td>
       <td class="num muted">52%</td>
-      <td class="why"><span class="quiet">Full Metal Body (own stages can't be lowered) + once-per-battle nova are bespoke secondaries.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">Double damage against Lunala, your hits ignore the opponent's Defence and shut off the opponent's signature ability when the opponent's signature ability fires.</td>
+      <td class="fix cold">Too weak at 44% — damage multiplier <b>x2.1</b> instead of x2.</td>
     </tr>
 <tr class="warm">
       <td class="num">88</td>
       <td class="mon"><span class="name">Bubble Beam</span><span class="dex">#489</span></td>
       <td class="num strong">43%</td>
       <td class="num muted">49%</td>
-      <td class="why"><span class="quiet">Within the healthy band.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">-1 the opponent's speed per correct answer, stacking up to 3 times and +1 your speed per correct answer, stacking up to 3 times once you get 3 answers right in a row. The stat change is undone after 2 wrong answers.</td>
+      <td class="fix cold">Too weak at 43%, but its numbers are already at the floor.</td>
     </tr>
 <tr class="warm">
       <td class="num">89</td>
       <td class="mon"><span class="name">Time Travel</span><span class="dex">#251</span></td>
       <td class="num strong">43%</td>
       <td class="num muted">50%</td>
-      <td class="why"><span class="quiet">Within the healthy band.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+2 your speed and shut off the opponent's signature ability when the opponent's signature ability fires. It switches off after 2 wrong answers.</td>
+      <td class="fix cold">Too weak at 43%, but its numbers are already at the floor.</td>
     </tr>
 <tr class="warm">
       <td class="num">90</td>
       <td class="mon"><span class="name">Air Slash</span><span class="dex">#804</span></td>
       <td class="num strong">43%</td>
       <td class="num muted">49%</td>
-      <td class="why"><span class="quiet">NOT in v2 doc — fill design (Beast Boost: grow Speed). Confirm with product owner.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">You deal 75% damage for the first 3 questions, then double damage on question 4.</td>
+      <td class="fix cold">Too weak at 43% — payoff <b>x2.1</b> instead of x2.</td>
     </tr>
 <tr class="warm">
       <td class="num">91</td>
       <td class="mon"><span class="name">Wildbolt Storm</span><span class="dex">#642</span></td>
       <td class="num strong">43%</td>
       <td class="num muted">50%</td>
-      <td class="why"><span class="quiet">Within the healthy band.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+3 your speed and a 20% chance to inflict Paralysis on the opponent for 3 questions once you get 3 answers right in a row. The stat change is undone after 2 wrong answers.<span class="seen">Paralysis was landing twice (20% roll + a free 100%). Duplicate deleted.</span></td>
+      <td class="fix cold">Too weak at 43% — paralysis chance <b>23%</b> instead of 20%.</td>
     </tr>
 <tr class="warm">
       <td class="num">92</td>
       <td class="mon"><span class="name">Future Sight</span><span class="dex">#480</span></td>
       <td class="num strong">43%</td>
       <td class="num muted">51%</td>
-      <td class="why"><span class="quiet">WIRED (M3): the SERVER rolls the status at battle start (engineToTickSpec bridges the bespoke fx into a `predicted_status` stat spec; _pvp_sig_engine_apply rolls it and echoes it back on sig_runtime.predictedStatus) and reveals it to the player. It is inflicted — provably the same status — the first time the opponent falls below 50% HP, via bespoke/predicted_status_apply.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">Foresee a status condition, which lands on the opponent once they drop below 50% HP from the start of the battle. Once per battle.</td>
+      <td class="fix cold">Too weak at 43%, but its numbers are already at the floor.</td>
     </tr>
 <tr class="warm">
       <td class="num">93</td>
       <td class="mon"><span class="name">Roar of Time</span><span class="dex">#483</span></td>
       <td class="num strong">43%</td>
       <td class="num muted">52%</td>
-      <td class="why"><span class="quiet">Fire = +2 Speed (clutch time). The -1-Speed next-question recharge is a bespoke follow-up (persistent-stage system can't auto-expire a one-question delta). Charges 1 per 5 correct, cap 2.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+3 your speed and double damage against Palkia once you get 3 answers right in a row. The stat change is undone after 1 wrong answer.</td>
+      <td class="fix cold">Too weak at 43% — damage multiplier <b>x2.1</b> instead of x2.</td>
     </tr>
 <tr class="warm">
       <td class="num">94</td>
       <td class="mon"><span class="name">Moongeist Beam</span><span class="dex">#792</span></td>
       <td class="num strong">43%</td>
       <td class="num muted">49%</td>
-      <td class="why"><span class="quiet">Eliminated-option answer ignores Def; Shadow Shield (+2 Def while at full HP) is a bespoke passive.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+2 your defence, double damage against Solgaleo and shut off the opponent's signature ability when the opponent's signature ability fires. The stat change is undone after 1 wrong answer.</td>
+      <td class="fix cold">Too weak at 43% — damage multiplier <b>x2.1</b> instead of x2.</td>
     </tr>
 <tr class="warm">
       <td class="num">95</td>
       <td class="mon"><span class="name">Multi-Attack</span><span class="dex">#773</span></td>
       <td class="num strong">43%</td>
       <td class="num muted">49%</td>
-      <td class="why"><span class="quiet">Silvally — RKS Adaptation: attune to the battle's dominant category (+1 Atk & +1 Crit on it) with one mid-battle re-attune. Category-attune + swap is bespoke.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">You deal no damage for the first question, then double damage on question 2.</td>
+      <td class="fix cold">Too weak at 43% — payoff <b>x2.1</b> instead of x2.</td>
     </tr>
 <tr class="warm">
       <td class="num">96</td>
       <td class="mon"><span class="name">Oblivion Wing</span><span class="dex">#717</span></td>
       <td class="num strong">43%</td>
       <td class="num muted">52%</td>
-      <td class="why"><span class="quiet">Drain doubles on a 4+ streak (bespoke scaling); once-per-battle Death Wing (~10 HP) is bespoke.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">Heal yourself for 75% of the damage you deal on every question.</td>
+      <td class="fix cold">Too weak at 43% — heal back <b>100%</b> of damage dealt instead of 7500%.</td>
     </tr>
 <tr class="warm">
       <td class="num">97</td>
       <td class="mon"><span class="name">Future Sight</span><span class="dex">#481</span></td>
       <td class="num strong">43%</td>
       <td class="num muted">50%</td>
-      <td class="why"><span class="quiet">WIRED (M3): resolved entirely server-side — `use_pvp_live_item` refuses the OPPONENT's item with `item_locked` while Mesprit's sig_runtime shows firedThisBattle and not disabled. No client scheduling (reacting in stepBespokeFx would double-apply it).</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">Lock the opponent out of their items from the start of the battle. It switches off after 3 wrong answers.</td>
+      <td class="fix cold">Too weak at 43%, but its numbers are already at the floor.</td>
     </tr>
 <tr class="warm">
       <td class="num">98</td>
       <td class="mon"><span class="name">Transform</span><span class="dex">#151</span></td>
       <td class="num strong">43%</td>
       <td class="num muted">51%</td>
-      <td class="why"><span class="quiet">Within the healthy band.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">Copy the opponent's signature ability from the start of the battle. Once per battle.</td>
+      <td class="fix cold">Too weak at 43%, but its numbers are already at the floor.</td>
     </tr>
 <tr class="warm">
       <td class="num">99</td>
       <td class="mon"><span class="name">Hyperspace Hole</span><span class="dex">#720</span></td>
       <td class="num strong">43%</td>
       <td class="num muted">49%</td>
-      <td class="why">WAS 34%, the worst in the game — every WRONG answer permanently stripped 2 of your own Defence and nothing gave it back.</td>
-      <td class="fix">Strips 1 now, and it recovers after 3 questions. (34% → 43%.)</td>
+      <td class="does">-1 your defence when you answer wrong and your hits ignore the opponent's Defence on every question. It wears off after 3 questions.<span class="seen">WAS 34%, the worst in the game — every wrong answer permanently stripped 2 of your own Defence with no way back.</span></td>
+      <td class="fix cold">Too weak at 43% — damage multiplier <b>x1.1</b> instead of x1.</td>
     </tr>
 <tr class="warm">
       <td class="num">100</td>
       <td class="mon"><span class="name">Multi-Attack</span><span class="dex">#772</span></td>
       <td class="num strong">42%</td>
       <td class="num muted">47%</td>
-      <td class="why"><span class="quiet">Type: Null — Chained Vigor: a single locked +1 Attack on ONE preset category only (chosen at start, no adaptation). Category-gating is bespoke; the restrained shadow of Silvally.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">You deal no damage for the first question, then x1.5 damage on question 2.</td>
+      <td class="fix cold">Too weak at 42% — payoff <b>x1.6</b> instead of x1.5.</td>
     </tr>
 <tr class="warm">
       <td class="num">101</td>
       <td class="mon"><span class="name">Crush Grip</span><span class="dex">#486</span></td>
       <td class="num strong">42%</td>
       <td class="num muted">48%</td>
-      <td class="why">WAS 39% — three questions dealing NOTHING to earn a x2.5 that only pays out if you were already behind.</td>
-      <td class="fix">Charges at half damage instead of zero. (39% → 42%.)</td>
+      <td class="does">You deal 50% damage for the first 3 questions, then x2.5 damage on question 4, if the opponent has more HP than you.</td>
+      <td class="fix cold">Too weak at 42% — payoff <b>x2.7</b> instead of x2.5.</td>
     </tr>
 <tr class="warm">
       <td class="num">102</td>
       <td class="mon"><span class="name">V-create</span><span class="dex">#494</span></td>
       <td class="num strong">42%</td>
       <td class="num muted">48%</td>
-      <td class="why"><span class="quiet">NOT in v2 doc — fill design (Victory Star: confident early answers hit truer). Confirm with product owner.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+3 your crit chance, -2 your defence and -1 your speed once you get 3 answers right in a row. The stat change is undone after 1 wrong answer.</td>
+      <td class="fix cold">Too weak at 42%, but its numbers are already at the floor.</td>
     </tr>
 <tr class="cold">
       <td class="num">103</td>
       <td class="mon"><span class="name">Fell Stinger</span><span class="dex">#803</span></td>
       <td class="num strong">42%</td>
       <td class="num muted">48%</td>
-      <td class="why">WAS 40% — five questions at half damage to earn a x3.</td>
-      <td class="fix">Payoff x3 → x4.</td>
+      <td class="does">You deal 50% damage for the first 5 questions, then x4 damage on question 6.</td>
+      <td class="fix cold">Too weak at 42% — payoff <b>x4.5</b> instead of x4.</td>
     </tr>
 <tr class="cold">
       <td class="num">104</td>
       <td class="mon"><span class="name">Dragon Ascent</span><span class="dex">#384</span></td>
       <td class="num strong">41%</td>
       <td class="num muted">46%</td>
-      <td class="why"><span class="quiet">Fire arms a client-side one-hit modifier (manualHitModifiers) onto the next correct answer: +3 Crit / +1 Atk. The self -2 Def-for-1q backlash and passive Air Lock (negate opponent weather/field engines) are bespoke secondaries, not wired.</span></td>
-      <td class="fix"><span class='quiet'>—</span></td>
+      <td class="does">+3 your crit chance and -2 your defence and triple damage against Kyogre and Groudon while you have a status condition, or your HP is below 50%. The stat change is undone after 1 wrong answer.</td>
+      <td class="fix cold">Too weak at 41% — damage multiplier <b>x3.4</b> instead of x3.</td>
     </tr>
         </tbody>
       </table>
@@ -940,7 +929,7 @@
   </section>
 
   <footer>
-    <p>Simulated at a 75% answer-accuracy standard; the ranking was re-checked at 60% and 90% and the same abilities
-      come out on top. Held items, type abilities and weather are switched off so the signature is measured on its own.</p>
+    <p>Simulated at a 75% answer-accuracy standard; the ranking was re-checked at 60% and 90% and the same abilities come
+      out on top. Held items, type abilities and weather are switched off so the signature is measured on its own.</p>
   </footer>
 </div>
