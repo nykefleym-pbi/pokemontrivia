@@ -1,7 +1,8 @@
 // Type vocabulary + tuning constants for the signature-ability engine.
 // Shared by the catalog (signature-abilities) and the plain-language
 // renderer (signature-engine-describe) without either importing the other.
-import type { PvpStat, StatusKind } from "./game-data";
+import type { PvpStat } from "../engine/state";
+import type { StatusKind } from "../content/statuses/status-def";
 
 export type SideRef = "self" | "opponent";
 
