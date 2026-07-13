@@ -196,7 +196,10 @@ describe("manual charge-and-fire abilities", () => {
 
   it("Cresselia (488) and Manaphy (490) are now server-fireable manual, not bespoke", () => {
     expect(SIGNATURE_ABILITIES[488].wiring).toBe("manual");
-    expect(SIGNATURE_ABILITIES[488].effect).toEqual({ type: "cleanse", hpCostPct: 15 });
+    // Balance pass 2026-07-13: the cleanse used to cost 15% of current HP, which
+    // cancelled out the engine's own free heal and left Cresselia second-weakest
+    // in the game (36% win rate). It is free now.
+    expect(SIGNATURE_ABILITIES[488].effect).toEqual({ type: "cleanse", hpCostPct: 0 });
     expect(hasServerManualEffect(SIGNATURE_ABILITIES[488])).toBe(true);
     expect(manualHitModifiers(SIGNATURE_ABILITIES[488])).toBeNull(); // server owns the fire
 
@@ -389,8 +392,11 @@ describe("describeSignatureFull (tappable popover — effect + when + cooldown)"
   });
 
   it("describes the M4 instant-KO gates, which are what keep it fair", () => {
+    // Balance pass 2026-07-13: 50% -> 15%. The gate reads as a hard one but is not —
+    // "the opponent has twice your HP" only means you are losing, which is common,
+    // and a coin-flip to win outright from there measured a 73% win rate.
     expect(describeSignatureFull(1024)).toBe(
-      "A 50% chance to knock the opponent out on the spot while the opponent has at least twice your HP. It switches off permanently the moment you use a healing item.",
+      "A 15% chance to knock the opponent out on the spot while the opponent has at least twice your HP. It switches off permanently the moment you use a healing item.",
     );
   });
 
@@ -589,7 +595,8 @@ describe("M4: Terapagos #1024 opp_hp_multiple_of_self", () => {
 });
 
 describe("M4: the 33 new rows are authored as the owner spec reads", () => {
-  it("Urshifu, Fezandipiti and Terapagos are the only instant-KO rows, at 30/10/50%", () => {
+  // Balance pass 2026-07-13: Terapagos went 50% -> 15% (see describeSignatureFull).
+  it("Urshifu, Fezandipiti and Terapagos are the only instant-KO rows, at 30/10/15%", () => {
     const koRows = SIG_ENGINE_DEX_IDS.flatMap((id) => {
       const ko = SIGNATURE_ABILITIES[id]?.engine?.bespoke?.find((b) => b.fx === "instant_ko");
       return ko ? [[id, ko.chance] as const] : [];
@@ -597,16 +604,51 @@ describe("M4: the 33 new rows are authored as the owner spec reads", () => {
     expect(koRows).toEqual([
       [892, 0.3],
       [1016, 0.1],
-      [1024, 0.5],
+      [1024, 0.15],
     ]);
   });
 
+  // Balance pass 2026-07-13: Zamazenta now HALVES incoming damage rather than
+  // nullifying it (three questions of total invulnerability, re-earned the moment
+  // the streak came back, measured a 70% win rate). Iron Boulder keeps its total
+  // shield — safe now that its window genuinely closes after 3 questions.
   it("Zamazenta and Iron Boulder are shields (owner ruling: NOT a self-nerf)", () => {
-    expect(SIGNATURE_ABILITIES[889].engine?.shield).toEqual({ questions: 3, receivePct: 0 });
+    expect(SIGNATURE_ABILITIES[889].engine?.shield).toEqual({ questions: 3, receivePct: 50 });
     expect(SIGNATURE_ABILITIES[1022].engine?.shield).toEqual({ questions: 3, receivePct: 0 });
     // Eternatus is the self-damage row, and is NOT a shield — it still takes hits.
     expect(SIGNATURE_ABILITIES[890].engine?.nullifySelfDamage).toBe(true);
     expect(SIGNATURE_ABILITIES[890].engine?.shield).toBeUndefined();
+  });
+
+  // ── Balance pass 2026-07-13 ────────────────────────────────────────────────
+  // The four Paradox rows trigger on "self HP below 50%". That is a STATE, not an
+  // event: it stays true for every remaining question of the battle. Their authored
+  // cooldown ("disables the effect after 3 questions") was only ever evaluated on a
+  // question where the trigger did NOT fire, so it never ran — Iron Boulder's "take
+  // no damage for 3 questions" became "take no damage for the rest of the battle"
+  // (86% win rate against the field; 95% into Rayquaza). The server tick now anchors
+  // the window to the question it OPENED on and closes it regardless.
+  //
+  // This test pins the property that made the bug possible, so nobody re-introduces
+  // it by assuming the trigger is a one-off event.
+  it("the Paradox rows' HP trigger is a STATE — it keeps firing while you are hurt", () => {
+    for (const id of [1020, 1021, 1022, 1023]) {
+      const trig = SIGNATURE_ABILITIES[id].engine!.trigger;
+      expect(trig).toEqual({ type: "self_afflicted_or_hp_below", pct: 50, where: "client" });
+      // Under half health, it fires on EVERY question — which is precisely why the
+      // expiry may not be gated on the trigger going quiet.
+      for (const q of [0, 5, 12, 19]) {
+        expect(
+          engineTriggerFired(trig, ctx({ questionIndex: q, selfHpPct: 0.45, oppHpPct: 0.9 })),
+          `#${id} q${q + 1}`,
+        ).toBe(true);
+      }
+      // And all four carry the 3-question window that has to close over the top of it.
+      expect(SIGNATURE_ABILITIES[id].engine!.disable).toEqual({
+        kind: "disable_effect_after_questions",
+        n: 3,
+      });
+    }
   });
 
   it("Eternatus is hard-countered by the two wolves", () => {

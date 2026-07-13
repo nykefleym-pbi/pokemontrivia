@@ -597,7 +597,10 @@ export function LivePvpBattleScreen({
   // server enforces the per-battle use cap; this local counter only drives the
   // button's enabled/label state.
   const [manualFiresUsed, setManualFiresUsed] = useState(0);
-  const [manualFiring, setManualFiring] = useState(false);
+  // Mirrors of the two above, for `fireManualAuto` — it runs inside the engine
+  // tick's async callback, where the state values it closed over are already stale.
+  const manualFiresUsedRef = useRef(0);
+  const manualFiringRef = useRef(false);
   const manualCap = manualUsesPerBattle(ability);
   // A manual ability is fireable if it either routes a server-catalog effect
   // (Aeroblast, Mist Ball, …) OR arms a client-side one-hit damage modifier
@@ -1955,6 +1958,11 @@ export function LivePvpBattleScreen({
           side: "self",
           asBot: false,
         });
+        // Signature moves are automatic (owner ruling 2026-07-13): the row's
+        // manual-phase effects fire on its own trigger now, not on a button tap.
+        if (triggerFired && !(runtime?.disabled ?? false)) {
+          void fireManualAuto(idxAtAnswer);
+        }
       });
     }
 
@@ -2319,54 +2327,43 @@ export function LivePvpBattleScreen({
     setBagOpen(false);
   }
 
-  async function handleFireSignature() {
-    if (!manualFireable || manualFiring || partnerId == null) return;
-    if (manualFiresUsed >= manualCap || finishedRef.current) return;
-    // Phase 4: a suppressed player can't fire — no charge is spent (the server
-    // also refuses), and we surface a distinct locked toast.
-    if (displayedIndex >= 0 && displayedIndex < mySuppressedUntil) {
-      const move = signatureMoveName(partnerId);
-      notify("warning", `🔒 ${move ?? "Signature move"} suppressed!`);
-      return;
-    }
+  /**
+   * Owner ruling 2026-07-13: signature moves are AUTOMATIC — a player never taps a
+   * Fire button. A row's `manual`-phase effects (Heatran's ability-lock, Manaphy's
+   * stat-swap, Terapagos's stat burst, Cresselia's cleanse, the Ruination stat
+   * strips…) now fire off the row's OWN engine trigger, still capped at the uses
+   * they always had. The cap is enforced server-side as before; the local counter
+   * just stops us spamming the RPC once it is spent.
+   *
+   * Called from the engine tick, on a question where the trigger genuinely fired
+   * and the row is not disabled or suppressed.
+   */
+  async function fireManualAuto(questionIndex: number) {
+    if (!manualFireable || partnerId == null || finishedRef.current) return;
+    if (manualFiresUsedRef.current >= manualCap) return;
+    if (questionIndex < mySuppressedUntil) return;
+    if (manualFiringRef.current) return;
 
-    // Client-armed one-hit abilities (Psystrike / Dragon Ascent / Shadow Force):
-    // no server round trip — arm the modifier onto the next correct answer. The
-    // per-battle cap is purely local (the payoff is a client-computed,
-    // server-clamped damage number, exactly like a passive_damage hit).
-    if (isClientHitManual) {
-      if (armedHitRef.current) return; // already armed and waiting
-      armedHitRef.current = manualHitModifiers(ability);
-      setArmedHit(true);
-      setManualFiresUsed((n) => n + 1);
-      playSfx("item_use");
-      const move = signatureMoveName(partnerId);
-      if (move) notify("success", `✨ ${move} armed!`);
-      return;
-    }
-
-    setManualFiring(true);
-    // Same server-validated path as berries: the client only names WHICH
-    // partner fired; the server looks up the fixed magnitude by dex id and
-    // enforces the per-battle cap (returns noop/'no_charges' if exceeded).
+    manualFiringRef.current = true;
+    // Same server-validated path as berries: the client only names WHICH partner
+    // fired and on what phase; the server looks up the fixed magnitude by dex id
+    // and enforces the per-battle cap (returns noop/'no_charges' if exceeded).
     const res = await applyPvpSignatureEffect(
       matchId,
-      Math.max(0, displayedIndex),
+      Math.max(0, questionIndex),
       partnerId,
       "manual",
       pokedexCount,
     );
-    setManualFiring(false);
-    if (!res.ok) {
-      toast.error("Couldn't fire that move — try again.");
-      return;
-    }
+    manualFiringRef.current = false;
+    if (!res.ok) return;
     if (res.noop) {
-      // Server-enforced cap reached (or nothing to apply) — sync the local
-      // counter so the button disables.
+      // Server-enforced cap reached (or nothing to apply) — sync the local counter.
+      manualFiresUsedRef.current = manualCap;
       setManualFiresUsed(manualCap);
       return;
     }
+    manualFiresUsedRef.current += 1;
     setManualFiresUsed((n) => n + 1);
     if (res.hostStages) {
       useGameStore.setState({
@@ -2387,13 +2384,15 @@ export function LivePvpBattleScreen({
       swordOfRuinChargesRef.current = 2;
     }
     playSfx("item_use");
+    const move = signatureMoveName(partnerId);
+    if (move) notify("success", `⚡ ${move}!`);
     emit({
       kind: "signature",
       side: "self",
       partnerId,
       hitsOpponent: true,
-      questionIndex: Math.max(0, displayedIndex),
-      dedupeKey: `self:signature:${Math.max(0, displayedIndex)}:${partnerId}`,
+      questionIndex: Math.max(0, questionIndex),
+      dedupeKey: `self:manual:${Math.max(0, questionIndex)}:${partnerId}`,
     });
   }
 
@@ -2442,29 +2441,23 @@ export function LivePvpBattleScreen({
         <div className="flex items-center gap-1 rounded-full bg-card/90 px-2.5 py-1 font-pixel text-[9px] text-foreground shadow-card backdrop-blur">
           QUESTION {displayedIndex + 1}/{PVP_QUESTIONS}
         </div>
+        {/* Owner ruling 2026-07-13: signature moves are AUTOMATIC. The Fire button
+            is gone — a row's manual-phase effects now fire off its own engine
+            trigger (see `fireManualAuto`), still capped at the uses they always
+            had. The signature name and what it does stay visible on the combat
+            panel's ability chip. */}
         {manualFireable && (
-          <button
-            onClick={() => void handleFireSignature()}
-            disabled={
-              manualFiring ||
-              manualFiresUsed >= manualCap ||
-              frozen ||
-              armedHit ||
-              displayedIndex < mySuppressedUntil
-            }
+          <div
             title={signatureMoveName(partnerId) ?? "Signature move"}
-            className="flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-sm font-bold text-primary-foreground shadow-card disabled:opacity-40"
+            className="flex items-center gap-1 rounded-full bg-card/90 px-3 py-1.5 font-pixel text-[9px] text-foreground shadow-card backdrop-blur"
           >
-            {displayedIndex < mySuppressedUntil ? "🔒" : armedHit ? "✨" : "⚡"}{" "}
-            {signatureMoveName(partnerId)}
-            <span className="tabular-nums opacity-80">
+            {displayedIndex < mySuppressedUntil ? "🔒" : "⚡"} {signatureMoveName(partnerId)}
+            <span className="tabular-nums opacity-70">
               {displayedIndex < mySuppressedUntil
                 ? "locked"
-                : armedHit
-                  ? "armed"
-                  : `${Math.max(0, manualCap - manualFiresUsed)}/${manualCap}`}
+                : `${Math.max(0, manualCap - manualFiresUsed)}/${manualCap}`}
             </span>
-          </button>
+          </div>
         )}
       </div>
 

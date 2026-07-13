@@ -1131,12 +1131,17 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     // deal 0 damage, q4 pays off ×2.5 ONLY if opponent HP > self HP — now
     // expressed via the new `payoffCondition`, evaluated client-side from
     // SignatureContext.oppHpPct/selfHpPct (server re-clamps). See 03-frontend-a-m2m3.md.
+    // BALANCE (owner ruling 2026-07-13): the charge window was `scaleToPct: 0` —
+    // three questions dealing NOTHING to earn a x2.5 that only pays out if you are
+    // ALREADY behind. Measured, that is the second-worst ability in the game (39%).
+    // Charging at half damage instead of zero keeps the slow-start identity without
+    // making the first three questions a write-off.
     engine: {
       trigger: onQuestions([4]),
       phase: {
         type: "phase_window",
         windowN: 3,
-        scaleToPct: 0,
+        scaleToPct: 50,
         payoffAtIndex: 4,
         payoffMultiplier: 2.5,
         payoffCondition: "opp_hp_gt_self",
@@ -1174,9 +1179,14 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     internalKey: "lunar_dance",
     rarity: 3,
     trigger: { type: "manual", usesPerBattle: 1 },
-    effect: { type: "cleanse", hpCostPct: 15 },
+    // BALANCE (owner ruling 2026-07-13): the cleanse used to COST 15% of current HP,
+    // which cancelled out the engine's free heal below and left Cresselia the
+    // second-weakest row in the game (36%). The cost is now 0 — the migration sets
+    // `hpCostPct` to 0 on its `pvp_signature_effects` row, which is where the server
+    // reads it from.
+    effect: { type: "cleanse", hpCostPct: 0 },
     wiring: "manual",
-    note: "Spend 15% current HP: cure all statuses + reset negative Atk/Def/Spd stages to 0. Server-computed (cleanse kind).",
+    note: "Cure all statuses + reset negative Atk/Def/Spd stages to 0, at no HP cost. Server-computed (cleanse kind).",
     // 00-owner-spec.md row 31 SUPERSEDES the legacy 15%-HP-cost cleanse above
     // with a free 100%-heal + cure.
     engine: {
@@ -1266,10 +1276,14 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     note: "Battle-start attune (+1 Atk on dominant category) is a bespoke passive; Judgment scales ~2 HP per distinct category answered correctly.",
     // 00-owner-spec.md row 36. TODO(M3): frac_hp_random is hard bespoke
     // (architecture §6/§7) — authored, not yet wired; graceful no-op downstream.
+    // BALANCE (owner ruling 2026-07-13): the roll was 1-10% of MAX HP, fired every
+    // question, with NO cooldown at all — averaging ~6.6 HP a question over 20
+    // questions is ~132 free damage against a 120 HP bar, i.e. more than a whole
+    // health bar handed over for nothing. 1-5% halves it to ~72.
     engine: {
       // §2c: server rolls a fraction in [minPct,maxPct] → opp HP -= round(oppMaxHp × pct).
       trigger: everyQuestionTrigger,
-      bespoke: [{ fx: "frac_hp_random", minPct: 0.01, maxPct: 0.1 }],
+      bespoke: [{ fx: "frac_hp_random", minPct: 0.01, maxPct: 0.05 }],
       disable: noDisable,
     },
   },
@@ -1591,10 +1605,16 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     // CORRECT answer ignore opp Defense; on a WRONG answer −2 self Def via the new
     // `incorrectStat` engine arm (no disable → accumulates within ±3, never reverts).
     // Blank Cooldown → `none` (ruling 6). ignoreDefense only on the correct answer (ruling 7).
+    // BALANCE (owner ruling 2026-07-13): the wrong-answer penalty was -2 self Def
+    // with `disable: none`, so it accumulated to the -3 floor and NEVER came back.
+    // Hoopa was the worst ability in the game (34%) — the only one that reliably
+    // loses you the match. Now it strips 1, and `expireAfterQuestions` gives it back
+    // 3 questions later, so a bad patch hurts without being permanent.
     engine: {
       trigger: everyQuestionTrigger,
       multiplier: { type: "damage_multiplier", factor: 1, condition: { on: "always" }, ignoreDefense: true },
-      incorrectStat: [oneShot("defense", "self", -2)],
+      incorrectStat: [oneShot("defense", "self", -1)],
+      expireAfterQuestions: 3,
       disable: noDisable,
     },
   },
@@ -1877,9 +1897,12 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     wiring: "post_answer",
     note: "NOT in v2 doc — fill design (Beast Boost: grow Attack). Confirm with product owner.",
     // 00-owner-spec.md row 68.
+    // BALANCE (owner ruling 2026-07-13): payoff x3 -> x4. Poipole spends five
+    // questions at HALF damage to earn one big hit, and measured that trade simply
+    // loses (40% win rate). Raising the payoff is the owner's chosen fix.
     engine: {
       trigger: startOfBattleTrigger,
-      phase: { type: "phase_window", windowN: 5, scaleToPct: 50, payoffAtIndex: 6, payoffMultiplier: 3 },
+      phase: { type: "phase_window", windowN: 5, scaleToPct: 50, payoffAtIndex: 6, payoffMultiplier: 4 },
       disable: revertAfter(1),
     },
   },
@@ -1913,10 +1936,13 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     // 00-owner-spec.md row 70. The +2 Atk one-shot fires with the q4 payoff
     // (timing carried by the phase's payoffAtIndex; the engine applies `stat`
     // when the phase pays off).
+    // BALANCE (owner ruling 2026-07-13): payoff x1.5 -> x3 and the one-shot Attack
+    // +2 -> +3. Stakataka deals NO damage for three questions to earn a x1.5 — the
+    // worst trade in the roster (38% win rate, third from bottom).
     engine: {
       trigger: startOfBattleTrigger,
-      stat: [oneShot("attack", "self", 2)],
-      phase: { type: "phase_window", windowN: 3, scaleToPct: 0, payoffAtIndex: 4, payoffMultiplier: 1.5 },
+      stat: [oneShot("attack", "self", 3)],
+      phase: { type: "phase_window", windowN: 3, scaleToPct: 0, payoffAtIndex: 4, payoffMultiplier: 3 },
       disable: revertAfter(1),
     },
   },
@@ -2028,12 +2054,17 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     wiring: "battle_start",
     note: "Dauntless Shield entry +1 Def (→+2 on a 4+ streak); status-reflect while trailing is bespoke.",
     // M4 owner spec: 3-in-a-row -> "For 3 questions, damage from opponent is 0".
-    // The mirror of its Zacian sibling: Zacian doubles output, Zamazenta zeroes
+    // The mirror of its Zacian sibling: Zacian doubles output, Zamazenta blunts
     // input. Server-enforced (see `shield`) — the ATTACKER computes damage, so
     // only the server can be trusted to throw it away.
+    //
+    // BALANCE (owner ruling 2026-07-13): `receivePct` was 0 — three questions of
+    // total invulnerability, re-earned the moment the streak came back. It
+    // measured a 70% win rate. Halving incoming damage keeps the "wall" identity
+    // without making a good player untouchable.
     engine: {
       trigger: streakN(3),
-      shield: { questions: 3, receivePct: 0 },
+      shield: { questions: 3, receivePct: 50 },
       expireAfterQuestions: 3,
       disable: disableEffectAfter(1),
     },
@@ -2106,10 +2137,16 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     rarity: 3,
     trigger: { type: "cooldown", everyN: 5 },
     effect: compound({ type: "heal", target: "self", amount: 8 }, { type: "cure", target: "self", status: "any" }),
-    wiring: "post_answer",
+    // BALANCE (owner ruling 2026-07-13): `wiring` was "post_answer", which kept the
+    // LEGACY heal-8-and-cure firing every 5th question ON TOP of the engine's
+    // once-per-battle big heal — a sustain engine nobody authored. Moving the row
+    // to "bespoke" wiring stops `evaluatePostAnswer` firing it; the engine below is
+    // now Zarude's only healing. Its `pvp_signature_effects` post_answer rows are
+    // dropped in the same migration. The big heal itself drops 100% -> 60%.
+    wiring: "bespoke",
     note: "Leaf Guard (immune to Burn/Sleep while leading) is a bespoke passive.",
-    // M4 owner spec: HP below 25% -> heal to FULL + clear status, paying -1 own
-    // Defence. Once per battle: a single get-out-of-jail card, not a fountain.
+    // M4 owner spec: HP below 25% -> heal + clear status, paying -1 own Defence.
+    // Once per battle: a single get-out-of-jail card, not a fountain.
     engine: {
       trigger: selfAfflictedTrigger(25),
       bespoke: [{ fx: "full_heal_cure" }],
@@ -2156,9 +2193,13 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
         type: "damage_multiplier",
         factor: 1,
         condition: { on: "always" },
+        // BALANCE (owner ruling 2026-07-13): the top tier was x3. Regidrago opens
+        // every battle at full HP, so x3 was what it hit with for the questions
+        // that decide the match — a 65% win rate against the field. x2.5 keeps the
+        // "devastating while healthy, fades as it is worn down" shape.
         hpTiers: [
-          { atLeastPct: 100, factor: 3 },
-          { atLeastPct: 80, factor: 2.5 },
+          { atLeastPct: 100, factor: 2.5 },
+          { atLeastPct: 80, factor: 2.25 },
           { atLeastPct: 60, factor: 2 },
           { atLeastPct: 40, factor: 1.5 },
           { atLeastPct: 0, factor: 1 },
@@ -2177,11 +2218,15 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     effect: compound(oppStage("speed", -1, 2), { type: "hamper", mode: "highlight_wrong" }),
     wiring: "post_answer",
     note: "Chilling Neigh ramp (+1 Atk every 3 correct) is a bespoke secondary.",
-    // M4 owner spec: FIVE-in-a-row -> guaranteed Freeze + x2 into grass/flying/
-    // ground. The unfused steed pays a 5-streak for what Calyrex-Ice gets at 3.
+    // M4 owner spec: FIVE-in-a-row -> Freeze + x2 into grass/flying/ground. The
+    // unfused steed pays a 5-streak for what Calyrex-Ice gets at 3.
+    //
+    // BALANCE (owner ruling 2026-07-13): Freeze chance was 1. Same turn-deletion
+    // problem as its fused form; 40% here rather than Calyrex-Ice's 35% because
+    // the 5-streak gate is genuinely harder to reach.
     engine: {
       trigger: streakN(5),
-      status: [{ status: "freeze", target: "opponent", chance: 1, questions: 3 }],
+      status: [{ status: "freeze", target: "opponent", chance: 0.4, questions: 3 }],
       multiplier: vsTypes(2, "grass", "flying", "ground"),
       disable: disableMultiplierAfter(1),
     },
@@ -2214,12 +2259,18 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     effect: compound(oppStage("speed", -2, 2), { type: "heal", target: "self", amount: 3 }),
     wiring: "post_answer",
     note: "Dex id 898 = ICE RIDER Calyrex (As One — Glacial Reign), unchanged. Shadow Rider Calyrex is a separate roster entry under synthetic id 10194 (below). Ramp (+1 Atk every 2 correct) + Unnerve are bespoke secondaries.",
-    // M4 owner spec (CALYREX-ICE row): 3-in-a-row -> guaranteed Freeze + x2 into
+    // M4 owner spec (CALYREX-ICE row): 3-in-a-row -> Freeze + x2 into
     // grass/flying/ground/ICE. The fusion upgrade over Glastrier: a 3-streak
     // instead of 5, and ice added to the type list.
+    //
+    // BALANCE (owner ruling 2026-07-13): the Freeze chance was 1 (guaranteed).
+    // A frozen player forfeits the question outright, so a guaranteed Freeze on a
+    // 3-streak simply deletes the opponent's turns — and the streak keeps
+    // re-freezing them. It measured a 75% win rate against the whole Legendary
+    // field, second only to Iron Boulder. 35% keeps the moment without the lock.
     engine: {
       trigger: streakN(3),
-      status: [{ status: "freeze", target: "opponent", chance: 1, questions: 3 }],
+      status: [{ status: "freeze", target: "opponent", chance: 0.35, questions: 3 }],
       multiplier: vsTypes(2, "grass", "flying", "ground", "ice"),
       disable: disableMultiplierAfter(1),
     },
@@ -2565,9 +2616,14 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     // getting crushed, and it switches off forever the moment you drink a potion
     // (`disabled_if_used_healing_item`) — you cannot heal into range and still
     // hold the trigger.
+    // BALANCE (owner ruling 2026-07-13): the KO chance was 50%. The gate reads as
+    // a hard one but it is not — "the opponent has twice your HP" just means you
+    // are losing, which is common, and a coin-flip to win outright from there
+    // measured a 73% win rate. 15% keeps it as a genuine last hope rather than a
+    // reliable comeback.
     engine: {
       trigger: oppHpMultipleTrigger(2),
-      bespoke: [{ fx: "instant_ko", chance: 0.5 }],
+      bespoke: [{ fx: "instant_ko", chance: 0.15 }],
       disable: disabledIfUsedHealingItem,
     },
   },

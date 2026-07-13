@@ -149,9 +149,12 @@ describe("pvp-combat: question-indexed outgoing damage (M5)", () => {
     expect(at(487, 11)).toBe(1);
   });
 
-  it("Naganadel #803 charges at 50% then triples on the payoff question", () => {
+  // Balance pass 2026-07-13: the payoff went x3 -> x4. Five questions at HALF
+  // damage to earn one big hit measured as a losing trade (40% win rate against
+  // the Legendary field), and the owner chose to raise the reward.
+  it("Naganadel #803 charges at 50% then quadruples on the payoff question", () => {
     for (let q = 1; q <= 5; q++) expect(at(803, q), `q${q}`).toBe(0.5);
-    expect(at(803, 6)).toBe(3);
+    expect(at(803, 6)).toBe(4);
     expect(at(803, 7)).toBe(1);
   });
 
