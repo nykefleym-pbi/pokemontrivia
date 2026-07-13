@@ -8,7 +8,6 @@ import {
   evaluateHitModifiers,
   evaluatePostAnswer,
   evaluatePassiveDamageSideEffects,
-  evaluateBattleStart,
   hasServerManualEffect,
   hasClientManualHit,
   manualHitModifiers,
@@ -110,10 +109,12 @@ describe("gating", () => {
 
 // ── The legacy path is DEAD (owner ruling 2026-07-12: "remove the legacy") ───
 //
-// These four evaluators — evaluateHitModifiers, evaluatePassiveDamageSideEffects,
-// evaluatePostAnswer, evaluateBattleStart — used to be how Legendary/Mythical
-// abilities actually did anything. They are now inert for any row carrying an
-// `engine` spec, which (as of M4) is ALL 104 of them. The owner's spreadsheets are
+// These evaluators — evaluateHitModifiers, evaluatePassiveDamageSideEffects,
+// evaluatePostAnswer — used to be how Legendary/Mythical abilities actually did
+// anything. They are now inert for any row carrying an `engine` spec, which (as of
+// M4) is ALL 104 of them. A fourth, evaluateBattleStart, was deleted outright on
+// 2026-07-13 along with the `"battle_start"` WiringMode — the type system is now
+// the guard there, so there is nothing left to assert. The owner's spreadsheets are
 // the single source of truth; the engine tick, `engine_status`, and the bespoke /
 // m4_fx phases deliver every effect.
 //
@@ -140,18 +141,23 @@ describe("the legacy signature path is inert for engine-owned rows", () => {
     expect(evaluatePostAnswer(SIGNATURE_ABILITIES[717], ctx())).toEqual([]); // Yveltal
   });
 
-  it("evaluateBattleStart no longer fires for an engine row", () => {
-    expect(evaluateBattleStart(SIGNATURE_ABILITIES[379], 0)).toEqual([]); // Registeel
-    expect(evaluateBattleStart(SIGNATURE_ABILITIES[1001], 0)).toEqual([]); // Wo-Chien
-  });
-
   it("holds for EVERY row on the roster — no legacy leak anywhere", () => {
     for (const id of SIG_ENGINE_DEX_IDS) {
       const a = SIGNATURE_ABILITIES[id];
       expect(evaluatePostAnswer(a, ctx()), `#${id} post_answer`).toEqual([]);
-      expect(evaluateBattleStart(a, 200), `#${id} battle_start`).toEqual([]);
       expect(evaluatePassiveDamageSideEffects(a, ctx(), () => 0), `#${id} side-fx`).toEqual([]);
       expect(evaluateHitModifiers(a, ctx()), `#${id} hit-mods`).toEqual(NO_HIT_MODIFIERS);
+    }
+  });
+
+  // The eight rows that used to carry `wiring: "battle_start"` now say "engine".
+  // Their entry buff, if they still have one, comes from their own engine spec.
+  // A regression here means someone reintroduced a legacy delivery path.
+  it("every engine-wired row is in fact engine-owned", () => {
+    const engineWired = SIG_ENGINE_DEX_IDS.filter((id) => SIGNATURE_ABILITIES[id]?.wiring === "engine");
+    expect(engineWired).toEqual([379, 649, 790, 888, 889, 1001, 1016, 1017]);
+    for (const id of engineWired) {
+      expect(SIGNATURE_ABILITIES[id].engine, `#${id} must have an engine spec`).toBeDefined();
     }
   });
 });

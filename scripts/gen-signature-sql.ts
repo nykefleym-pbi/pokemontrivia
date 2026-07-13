@@ -1,10 +1,13 @@
 /* Emits the `pvp_signature_effects` catalog INSERT rows from the TS catalog so
  * the server-side magnitudes stay in lockstep with src/lib/signature-abilities.ts.
  * Run: npx vite-node scripts/gen-signature-sql.ts
- * Only battle_start / post_answer abilities produce server-applied rows
+ * Only post_answer / manual abilities produce server-applied rows
  * (stat_stage / status / cure / heal / drain). damage_calc, hamper, help,
- * flat_damage and bespoke/manual effects are handled client-side or not
- * auto-fired. */
+ * flat_damage and bespoke effects are handled client-side or not auto-fired.
+ *
+ * `battle_start` used to emit here too. That is what created the five dead rows
+ * deleted on 2026-07-13 — the phase never fired in a live match (see `WiringMode`),
+ * so every row this produced for it was inert. */
 import {
   SIGNATURE_ABILITIES,
   type SignatureAbility,
@@ -19,9 +22,9 @@ function flatten(e: SignatureEffect, out: SignatureEffect[]): void {
 }
 
 function rowsFor(a: SignatureAbility): Row[] {
-  // battle_start / post_answer effects apply automatically; manual effects fire
-  // on the player's Fire tap. All three route through the same server RPC.
-  if (a.wiring !== "battle_start" && a.wiring !== "post_answer" && a.wiring !== "manual") return [];
+  // post_answer effects apply automatically; manual effects fire on the player's
+  // Fire tap. Both route through the same server RPC.
+  if (a.wiring !== "post_answer" && a.wiring !== "manual") return [];
   const flat: SignatureEffect[] = [];
   flatten(a.effect, flat);
   const rows: Row[] = [];

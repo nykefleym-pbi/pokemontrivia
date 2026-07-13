@@ -4,10 +4,14 @@
  * client only names the phase. Balancing any server-owned effect means editing
  * these rows, so the simulator reads the real table rather than the catalog's
  * legacy `effect` field, which no longer decides magnitude.
+ *
+ * The five `battle_start` rows (888, 889, 1001, 1016, 1017) are gone — deleted from
+ * production 2026-07-13. The phase never fired in a live match, so simulating them
+ * handed those five an entry buff the real game never gave them.
  */
 export interface DbEffect {
   effectIndex: number;
-  phase: "battle_start" | "post_answer" | "manual" | "bespoke" | "m4_fx" | "engine_status" | "index_shield";
+  phase: "post_answer" | "manual" | "bespoke" | "m4_fx" | "engine_status" | "index_shield";
   target: "self" | "opponent";
   kind: string;
   payload: Record<string, unknown>;
@@ -65,8 +69,6 @@ export const DB_EFFECTS: Record<number, DbEffect[]> = {
   ],
   808: [E(0, "post_answer", "self", "stat_stage", { stat: "attack", delta: 1 })],
   809: [E(0, "post_answer", "opponent", "status", { chance: 0.3, status: "sleep", questions: 1 })],
-  888: [E(0, "battle_start", "self", "stat_stage", { stat: "attack", delta: 1 })],
-  889: [E(0, "battle_start", "self", "stat_stage", { stat: "defense", delta: 1 })],
   891: [E(0, "post_answer", "self", "stat_stage", { stat: "crit", delta: 1 })],
   892: [E(90, "m4_fx", "opponent", "instant_ko", { chance: 0.3 })],
   // The legacy post_answer heal-8-and-cure is GONE (it was firing on top of the
@@ -86,10 +88,7 @@ export const DB_EFFECTS: Record<number, DbEffect[]> = {
     E(0, "post_answer", "opponent", "stat_stage", { stat: "speed", delta: -2 }),
     E(1, "post_answer", "self", "heal", { amount: 3 }),
   ],
-  1001: [
-    E(0, "battle_start", "opponent", "stat_stage", { stat: "attack", delta: -1 }),
-    E(90, "m4_fx", "opponent", "frac_hp_current", { pct: 0.5 }),
-  ],
+  1001: [E(90, "m4_fx", "opponent", "frac_hp_current", { pct: 0.5 })],
   1002: [
     E(0, "manual", "opponent", "stat_stage", { stat: "defense", uses: 1, delta: -2 }),
     E(90, "m4_fx", "opponent", "frac_hp_current", { pct: 0.5 }),
@@ -102,11 +101,7 @@ export const DB_EFFECTS: Record<number, DbEffect[]> = {
   1004: [E(90, "m4_fx", "opponent", "frac_hp_current", { pct: 0.5 })],
   1008: [E(0, "post_answer", "self", "stat_stage", { stat: "speed", delta: 1 })],
   1015: [E(0, "post_answer", "opponent", "status", { status: "poisoned", questions: 3 })],
-  1016: [
-    E(0, "battle_start", "self", "stat_scale", { max: 3, per: 25, stat: "attack" }),
-    E(90, "m4_fx", "opponent", "instant_ko", { chance: 0.1 }),
-  ],
-  1017: [E(0, "battle_start", "self", "stat_stage", { stat: "crit", delta: 1 })],
+  1016: [E(90, "m4_fx", "opponent", "instant_ko", { chance: 0.1 })],
   1021: [
     E(0, "post_answer", "self", "stat_stage", { stat: "attack", delta: 1 }),
     E(1, "post_answer", "opponent", "stat_stage", { stat: "attack", delta: -1 }),

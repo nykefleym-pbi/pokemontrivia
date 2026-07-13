@@ -782,20 +782,18 @@ export function simulateBattle(
   const a = makeSide(dexA, opts.abilityA ?? true);
   const b = makeSide(dexB, opts.abilityB ?? true);
 
-  // NO battle_start DB effects. This looks wrong and is not.
+  // NO battle_start DB effects — the phase no longer exists.
   //
-  // The battle screen only fires that phase when `evaluateBattleStart(...)` returns
-  // something (live-pvp-battle-screen:956), and that function opens with
-  // `if (!ability || isEngineOwned(ability)) return []` (signature-abilities:3150).
-  // Every one of the 104 rows HAS an engine, so it always returns [] and the phase
-  // never fires in a real match. The five `battle_start` rows still sitting in
-  // `pvp_signature_effects` — Zacian +1 Atk, Zamazenta +1 Def, Wo-Chien -1 opp Atk,
-  // Fezandipiti's Pokedex scaling, Ogerpon +1 Crit — are inert legacy data.
+  // It never fired in a live match: the battle screen gated it on
+  // `evaluateBattleStart(...)` returning something, and that function bailed on every
+  // engine-owned row — which is all 104 of them. Simulating it handed five abilities
+  // an entry buff the game never gave them, which is why Zacian measured 60.9%
+  // ("too strong") off a +1 Attack it does not actually get.
   //
-  // Applying them here handed four abilities an entry buff the game never gives
-  // them, which is why Zacian measured 60.9% ("too strong") off a +1 Attack it does
-  // not actually get. A row whose engine is meant to act at battle start does so
-  // through its OWN engine trigger (`start_of_battle`), which the tick below runs.
+  // The evaluator, the `"battle_start"` WiringMode, and the five `pvp_signature_effects`
+  // rows (Zacian, Zamazenta, Wo-Chien, Fezandipiti, Ogerpon) were all deleted on
+  // 2026-07-13. An ability that buffs on entry does it through its OWN engine trigger
+  // (`start_of_battle`), which the tick below runs.
   // Eternatus-style hard matchup counters.
   for (const [me, opp] of [
     [a, b],

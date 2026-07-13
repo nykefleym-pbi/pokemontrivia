@@ -83,7 +83,6 @@ import {
   evaluatePostAnswer,
   evaluatePassiveDamageSideEffects,
   describeHitModifiers,
-  evaluateBattleStart,
   hasServerManualEffect,
   hasClientManualHit,
   manualHitModifiers,
@@ -642,7 +641,6 @@ export function LivePvpBattleScreen({
   const botProfileRef = useRef<BotProfile | null>(null);
   const botStreakRef = useRef(0);
   const botLastIdxRef = useRef(-1);
-  const botBattleStartRef = useRef(false);
 
   // Single cue path (spec Stories 2-7): every player-visible combat cue funnels
   // through `emit`/`notify` (frozen contract) — one staggered one-by-one queue,
@@ -677,7 +675,6 @@ export function LivePvpBattleScreen({
   const prevElapsedRef = useRef(Number.MAX_SAFE_INTEGER);
   const correctCountRef = useRef(0);
   const answeredCategoriesRef = useRef<Set<string>>(new Set());
-  const battleStartFiredRef = useRef(false);
   // Phase 1 — Moltres's Fiery Wrath (dex 146): Wrath stacks (0..3) live in the
   // authoritative match row (`*_sig_state`, keyed by dex id) so they survive a
   // reconnect and are server-clamped. This ref mirrors them locally; it's
@@ -946,24 +943,12 @@ export function LivePvpBattleScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rawPartnerId, opponentPartnerId, displayedIndex]);
 
-  // Apply the partner's battle-start standing buff exactly once (server guards
-  // against a double-apply via host/guest_ability_started too).
-  useEffect(() => {
-    // Wait for the 3-2-1 countdown to end (displayedIndex >= 0 = Pokémon on
-    // screen) before announcing, so the battle-start buff never toasts mid-countdown.
-    if (battleStartFiredRef.current || displayedIndex < 0) return;
-    if (!ability || ability.wiring !== "battle_start") return;
-    if (evaluateBattleStart(ability, pokedexCount).length === 0) return;
-    battleStartFiredRef.current = true;
-    void applyPvpSignatureEffect(matchId, 0, partnerId as number, "battle_start", pokedexCount).then(
-      (res) => {
-        if (res.ok && !res.noop) {
-          const move = signatureMoveName(partnerId);
-          if (move) notify("success", `✨ ${move} activated!`, { description: describeSignatureEffect(partnerId) });
-        }
-      },
-    );
-  }, [ability, matchId, partnerId, pokedexCount, displayedIndex, notify]);
+  // The partner's battle-start standing buff used to be applied here. Removed
+  // 2026-07-13 (owner ruling): the effect was gated on `evaluateBattleStart(...)`
+  // returning something, which it never did for an engine-owned row — and all 104
+  // are engine-owned. The phase never fired, so this ran to completion and applied
+  // nothing on every single match. An ability that buffs on entry now does it
+  // through its own engine trigger (`start_of_battle`), which the tick handles.
 
   // Azelf #482 — resolve the culled options for the question now on screen. The
   // scheduler decided LAST question which question to cull and by how many; this
@@ -2027,18 +2012,9 @@ export function LivePvpBattleScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayedIndex, selected, now, frozen]);
 
-  // Bot driver — battle-start standing buff (once). No-op for a non-bot match
-  // or a bot whose partner has no battle_start ability.
-  useEffect(() => {
-    if (!match.isBotMatch || botBattleStartRef.current) return;
-    const botPartnerId = match.guestPartnerId;
-    if (botPartnerId == null) return;
-    botBattleStartRef.current = true;
-    const botAbility = signatureAbilityFor(botPartnerId);
-    if (!botAbility || botAbility.wiring !== "battle_start") return;
-    if (evaluateBattleStart(botAbility, 0).length === 0) return;
-    void applyBotPvpSignatureEffect(matchId, 0, botPartnerId, "battle_start");
-  }, [match.isBotMatch, match.guestPartnerId, matchId]);
+  // The bot's battle-start standing buff was applied here. Removed 2026-07-13 for
+  // the same reason as the human one above — it could never fire, so the bot was
+  // already playing without it. Deleting it changes no behaviour.
 
   // Bot driver — one move per question. The bot answers on its own delay, deals
   // client-computed / server-clamped damage (respecting its stat stages + Burn,

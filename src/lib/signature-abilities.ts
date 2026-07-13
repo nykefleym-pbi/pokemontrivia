@@ -40,8 +40,17 @@ export type SideRef = "self" | "opponent";
 
 /** How the live loop should handle an ability. */
 export type WiringMode =
-  /** Standing buff/debuff resolved once at battle start (persistent stage). */
-  | "battle_start"
+  /** No legacy client path at all — the `engine` spec is the sole delivery.
+   *
+   * There used to be a `"battle_start"` mode here: a standing buff applied once
+   * at the start of the match. It has been removed. Every one of the 104 rows is
+   * engine-owned, so `evaluateBattleStart` bailed on all of them (`isEngineOwned`)
+   * and the phase could never fire — the eight rows that carried the label, and
+   * the five `pvp_signature_effects` rows the SQL generator emitted from it, were
+   * inert. Their entry buffs are delivered by their own engine spec or not at all
+   * (owner ruling 2026-07-13). Do not reintroduce the mode: `gen-signature-sql`
+   * keys off `wiring`, so a `battle_start` label silently recreates dead rows. */
+  | "engine"
   /** Modifies the CURRENT correct answer's damage calc (ignore def, bonus atk/crit). */
   | "passive_damage"
   /** Fires an effect after an answer resolves (persistent stage / status / heal / hamper). */
@@ -891,7 +900,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     rarity: 3,
     trigger: { type: "battle_start" },
     effect: selfStage("defense", 1, "passive"),
-    wiring: "battle_start",
+    wiring: "engine",
     note: "Once-per-battle 40% opp -1 Def shot is a bespoke secondary, not auto-wired.",
     // 00-owner-spec.md row 14.
     engine: {
@@ -1505,7 +1514,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     rarity: 3,
     trigger: { type: "battle_start" },
     effect: selfStage("speed", 1, "passive"),
-    wiring: "battle_start",
+    wiring: "engine",
     note: "Genesect — Techno Blast: standing +1 Speed at battle start (default Shock drive encoded). The Drive loadout choice (Shock/Burn/Chill/Douse) + one mid-battle hot-swap is a bespoke secondary, not wired.",
     // 00-owner-spec.md row 48. "Random status condition" has no dedicated
     // primitive — extended `status.status` to accept "random" alongside the
@@ -1774,7 +1783,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     rarity: 2,
     trigger: { type: "battle_start" },
     effect: compound(selfStage("defense", 2, "passive"), selfStage("attack", -1, "passive")),
-    wiring: "battle_start",
+    wiring: "engine",
     note: "Every 4 questions survived, +1 Atk back (bespoke slow charge).",
     // 00-owner-spec.md row 62.
     engine: {
@@ -2032,7 +2041,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     rarity: 5,
     trigger: { type: "battle_start" },
     effect: selfStage("attack", 1, "passive"),
-    wiring: "battle_start",
+    wiring: "engine",
     note: "Intrepid Sword entry +1 Atk; extra +1 Atk while opponent leads on HP/stages is a bespoke conditional.",
     // M4 owner spec: 3-in-a-row -> x2 damage for 3 questions. The "or after 3
     // questions" half of the cooldown cell is `expireAfterQuestions`; the "after
@@ -2051,7 +2060,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     rarity: 5,
     trigger: { type: "battle_start" },
     effect: selfStage("defense", 1, "passive"),
-    wiring: "battle_start",
+    wiring: "engine",
     note: "Dauntless Shield entry +1 Def (→+2 on a 4+ streak); status-reflect while trailing is bespoke.",
     // M4 owner spec: 3-in-a-row -> "For 3 questions, damage from opponent is 0".
     // The mirror of its Zacian sibling: Zacian doubles output, Zamazenta blunts
@@ -2303,7 +2312,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     rarity: 3,
     trigger: { type: "battle_start" },
     effect: oppStage("attack", -1, "passive"),
-    wiring: "battle_start",
+    wiring: "engine",
     note: "Wo-Chien — Tablets of Ruin: standing -1 opp Attack all match.",
     // M4 owner spec: the Ruination quartet all read the same — FIVE-in-a-row ->
     // halve the opponent's CURRENT HP + a 10% status, once per battle. A single
@@ -2481,7 +2490,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     rarity: 3,
     trigger: { type: "pokedex_scaling", per: 25, max: 3 },
     effect: selfStage("attack", 1, "passive"),
-    wiring: "battle_start",
+    wiring: "engine",
     note: "Standing +1 Atk per 25 Pokédex entries captured (max +3), checked at battle start (v2 correction). Toxic Chain poison chance is a bespoke secondary.",
     // M4 owner spec: Loyal Three shape, but the nastiest of the three — the 5s
     // timer squeeze comes with a 10% INSTANT KO instead of a status. Also
@@ -2501,7 +2510,7 @@ export const SIGNATURE_ABILITIES: Record<number, SignatureAbility> = {
     rarity: 4,
     trigger: { type: "battle_start" },
     effect: selfStage("crit", 1, "passive"),
-    wiring: "battle_start",
+    wiring: "engine",
     note: "Ogerpon — Ivy Cudgel: standing +1 Crit at battle start (baseline Teal Mask encoded). The Mask loadout (Teal/Wellspring/Hearthflame/Cornerstone) + Embody Aspect swap is a bespoke secondary, not wired.",
     // M4 owner spec: the only row with TWO independent opponent conditions.
     // (a) +3 own Crit at battle start, but ONLY into grass/water/fire/rock —
@@ -3139,26 +3148,10 @@ export function evaluatePassiveDamageSideEffects(
   );
 }
 
-/**
- * Standing effects a `battle_start` ability applies once at the start of the
- * match (persistent stat stages, including pokedex-scaled deltas).
- */
-export function evaluateBattleStart(
-  ability: SignatureAbility | null,
-  pokedexCount: number,
-): SignatureEffect[] {
-  if (!ability || isEngineOwned(ability)) return [];
-  if (ability.wiring !== "battle_start") return [];
-  const out: SignatureEffect[] = [];
-  collectApplicable(ability.effect, out);
-  if (ability.trigger.type === "pokedex_scaling") {
-    const delta = Math.min(ability.trigger.max, Math.floor(pokedexCount / ability.trigger.per));
-    return delta <= 0
-      ? []
-      : [{ type: "stat_stage", target: "self", stat: "attack", delta, duration: "passive" }];
-  }
-  return out;
-}
+// `evaluateBattleStart` lived here. Deleted 2026-07-13 (owner ruling): it opened
+// with `if (isEngineOwned(ability)) return []`, and all 104 rows have an engine,
+// so it returned [] every time and the battle-start phase never fired in a live
+// match. See the `"engine"` note on `WiringMode`.
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Manual ("charge and fire") abilities

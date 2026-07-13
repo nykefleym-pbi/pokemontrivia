@@ -1,0 +1,51 @@
+-- Delete the five dead `battle_start` rows from the signature catalog.
+--
+-- WHY THEY ARE DEAD (owner ruling 2026-07-13: "the engine is the only source").
+--
+-- The client only ever fired this phase from two places, and both were gated on
+-- `evaluateBattleStart(ability, ...)` returning a non-empty list. That function
+-- opened with `if (isEngineOwned(ability)) return []`, and `isEngineOwned` is just
+-- `ability.engine !== undefined` — which is true for all 104 Legendary/Mythical
+-- rows since the M4 engine rework. So it returned [] every time, the RPC was never
+-- called with _phase = 'battle_start', and these rows have paid out nothing in a
+-- live match since M4 shipped. They are not a live buff being removed; they are
+-- data describing a buff the game already does not grant.
+--
+-- The five entry buffs they encoded:
+--   888  Zacian       +1 Attack
+--   889  Zamazenta    +1 Defence
+--   1001 Wo-Chien     -1 opponent Attack
+--   1016 Fezandipiti  +1 Attack per 25 Pokedex entries (max +3)
+--   1017 Ogerpon      +1 Crit
+--
+-- Each of those Pokemon keeps its real, engine-delivered ability untouched: Zacian's
+-- x2 damage window, Zamazenta's shield, the Ruination halve-HP bite, Fezandipiti's
+-- timer squeeze + instant-KO roll, Ogerpon's grass/water/fire/rock crit bump (which
+-- IS an entry effect — its engine trigger is `start_of_battle`, so it fires through
+-- the tick and is unaffected by this).
+--
+-- SAFETY. Every read of `pvp_signature_effects` is filtered by an explicit phase —
+-- 'manual', 'engine_status', 'm4_fx', 'm4_window', or the caller's own `_phase`.
+-- Nothing reads phase = 'battle_start' except a call passing that phase, and no
+-- caller does any more (the two client call sites were deleted in the same commit,
+-- and `battle_start` is gone from the TS phase union for signature abilities). The
+-- separate `apply_pvp_type_ability_effect` path has its OWN table and is untouched —
+-- type abilities still use a battle_start phase and still work.
+--
+-- The `pvp_signature_effects_phase_check` constraint is deliberately NOT tightened.
+-- Rewriting it would mean re-enumerating every phase added across nine migrations,
+-- and getting that list wrong would break inserts. The TS guard is upstream instead:
+-- `WiringMode` no longer has a "battle_start" member, so `gen-signature-sql.ts` —
+-- the generator that emitted these rows in the first place — can no longer produce
+-- one.
+--
+-- ROLLBACK (restores the exact five rows):
+--   insert into public.pvp_signature_effects (pokemon_id, effect_index, phase, target, kind, payload) values
+--     (888,  0, 'battle_start', 'self',     'stat_stage', '{"stat":"attack","delta":1}'::jsonb),
+--     (889,  0, 'battle_start', 'self',     'stat_stage', '{"stat":"defense","delta":1}'::jsonb),
+--     (1001, 0, 'battle_start', 'opponent', 'stat_stage', '{"stat":"attack","delta":-1}'::jsonb),
+--     (1016, 0, 'battle_start', 'self',     'stat_scale', '{"stat":"attack","per":25,"max":3}'::jsonb),
+--     (1017, 0, 'battle_start', 'self',     'stat_stage', '{"stat":"crit","delta":1}'::jsonb);
+
+delete from public.pvp_signature_effects
+ where phase = 'battle_start';

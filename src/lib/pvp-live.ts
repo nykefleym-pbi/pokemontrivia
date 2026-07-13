@@ -354,15 +354,17 @@ export async function submitBotPvpMove(
   }
 }
 
-/** Fire the bot's signature ability (guest side) for a battle_start/post_answer
- * phase. Same server-catalog trust model + host/is_bot ownership gate as the
- * bot move RPC. Best-effort — a no-op when the bot's partner has no catalog
- * effect for that phase. */
+/** Fire the bot's signature ability (guest side). Same server-catalog trust model
+ * + host/is_bot ownership gate as the bot move RPC. Best-effort — a no-op when
+ * the bot's partner has no catalog effect for that phase.
+ *
+ * "battle_start" is deliberately NOT in the union: the phase never fired (see
+ * `WiringMode`), and its catalog rows were deleted 2026-07-13. */
 export async function applyBotPvpSignatureEffect(
   matchId: string,
   questionIndex: number,
   pokemonId: number,
-  phase: "battle_start" | "post_answer" | "bespoke",
+  phase: "post_answer" | "bespoke",
   scaleCount = 0,
 ): Promise<{ ok: boolean }> {
   try {
@@ -750,17 +752,20 @@ export async function applyPvpLiveItem(
  * server looks up the fixed magnitude from the `pvp_signature_effects` catalog
  * by partner dex id (the client can't supply a magnitude — same trust model as
  * berries), mutates the authoritative row, and logs to `pvp_live_effects` with
- * source='ability' for the opponent's toast. `_phase` is "battle_start" (one
- * standing buff per side) or "post_answer" (a triggered effect). `scaleCount`
- * feeds pokedex-scaled abilities (Fezandipiti). Returns the resolved state, or
- * a noop when nothing applied (already-started battle_start, or no catalog row
- * — e.g. a damage-calc/bespoke/manual ability that has no server effect).
+ * source='ability' for the opponent's toast. `scaleCount` feeds pokedex-scaled
+ * abilities (Fezandipiti). Returns the resolved state, or a noop when nothing
+ * applied (no catalog row — e.g. a damage-calc/bespoke/manual ability that has
+ * no server effect).
+ *
+ * "battle_start" is deliberately NOT in the union. The server RPC still accepts
+ * the phase, but nothing calls it with one and its catalog rows were deleted
+ * 2026-07-13 — see the `"engine"` note on `WiringMode`.
  */
 export async function applyPvpSignatureEffect(
   matchId: string,
   questionIndex: number,
   pokemonId: number,
-  phase: "battle_start" | "post_answer" | "manual" | "sig_state" | "bespoke",
+  phase: "post_answer" | "manual" | "sig_state" | "bespoke",
   scaleCount = 0,
 ): Promise<
   | {
