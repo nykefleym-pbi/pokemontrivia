@@ -39,6 +39,19 @@ export const BerryEffectSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("inflictStatus"), status: StatusKindSchema, questions: z.number().int().positive() }),
 ]);
 
+// Deliberately shallow: SignatureEngineSpec's own invariants are already
+// covered by signature-abilities.test.ts, liveness.ts, and the balance-sim
+// byte-identical gate. Re-deriving that recursive shape here would be a
+// second, driftable copy of the same rules — exactly the kind of untyped
+// duplication CLAUDE.md warns against for this system.
+export const SignatureDefSchema = z.object({
+  id: z.string().min(1),
+  pokemonId: z.number().int().positive(),
+  species: z.string().min(1),
+  engine: z.object({ trigger: z.object({ type: z.string().min(1) }).passthrough() }).passthrough(),
+  describe: z.function().returns(z.string()),
+});
+
 export const ItemDefSchema = z
   .object({
     id: z.string().regex(/^[a-z]+$/),

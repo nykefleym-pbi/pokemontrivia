@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { ITEM_BY_ID, ITEM_LIST } from "./items";
 import { STATUS_BY_ID, STATUS_LIST, STATUS_META } from "./statuses";
-import { ItemDefSchema, StatusDefSchema } from "./schemas";
+import { SIGNATURE_BY_ID, SIGNATURE_BY_POKEMON_ID, SIGNATURE_LIST } from "./abilities/signature";
+import { ItemDefSchema, StatusDefSchema, SignatureDefSchema } from "./schemas";
 import { ITEMS, STATUS_META as LEGACY_STATUS_META } from "@/lib/game-data";
 import { CATEGORY_OF } from "@/lib/item-categories";
+import { ALL_LEGENDARY_MYTHICAL_IDS } from "@/lib/legendary-data";
+import { SIGNATURE_ABILITIES } from "@/lib/signature-abilities";
 
 describe("item registry", () => {
   it("every definition file passes its schema", () => {
@@ -53,5 +56,38 @@ describe("status registry", () => {
 
   it("registry is the single source for the legacy STATUS_META export", () => {
     expect(LEGACY_STATUS_META).toBe(STATUS_META);
+  });
+});
+
+describe("signature ability registry", () => {
+  it("has exactly one generated file per roster id", () => {
+    expect(SIGNATURE_LIST.length).toBe(ALL_LEGENDARY_MYTHICAL_IDS.length);
+    expect(SIGNATURE_LIST.length).toBe(104);
+  });
+
+  it("every definition file passes its schema", () => {
+    for (const s of SIGNATURE_LIST) {
+      const parsed = SignatureDefSchema.safeParse(s);
+      expect(parsed.success, `${s.id}: ${JSON.stringify(parsed.error?.issues)}`).toBe(true);
+    }
+  });
+
+  it("ids are unique and each file wraps the catalog row it claims to", () => {
+    const ids = SIGNATURE_LIST.map((s) => s.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const pokemonId of ALL_LEGENDARY_MYTHICAL_IDS) {
+      const def = SIGNATURE_BY_POKEMON_ID[pokemonId];
+      const row = SIGNATURE_ABILITIES[pokemonId];
+      expect(def, `missing generated file for roster id ${pokemonId}`).toBeDefined();
+      expect(def.id).toBe(row.internalKey);
+      expect(def.engine).toBe(row.engine);
+    }
+  });
+
+  it("each file's export matches its id and describe() says something", () => {
+    for (const [id, def] of Object.entries(SIGNATURE_BY_ID)) {
+      expect(def.id).toBe(id);
+      expect(def.describe().length).toBeGreaterThan(0);
+    }
   });
 });
