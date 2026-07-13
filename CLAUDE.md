@@ -54,3 +54,18 @@ Then falsify: delete the thing, re-run the balance sim
 (`run.ts`, same battles/pair as the baseline). If it was
 truly dead, results are BYTE-IDENTICAL. If numbers move,
 it was live and you were wrong.
+
+Falsify RENAMES too — a pure rename must also come back
+byte-identical. `scripts/` is NOT in tsconfig, so tsc will
+not check the simulator: a stale string comparison there
+compiles fine and silently un-wires abilities. That is a
+real bug caught this way (103/104 rows moved on a rename).
+
+## Two vocabularies, one word: `manual`
+TypeScript says `capped_payload`. The DATABASE phase token
+is still the string `'manual'` — a wire protocol the client
+sends, live RPCs filter on, and 20 production rows carry.
+They are NOT interchangeable. `gen-signature-sql` maps
+between them via `DB_PHASE`; never emit `phase: a.wiring`
+again, and never compare a trigger/wiring to `"manual"`.
+Neither mistake is caught by the compiler.
