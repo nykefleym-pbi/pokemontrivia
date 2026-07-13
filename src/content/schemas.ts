@@ -22,6 +22,35 @@ export const StatusDefSchema = z.object({
   describe: z.function().returns(z.string()),
 });
 
+export const PokeTypeSchema = z.enum([
+  "normal",
+  "fire",
+  "water",
+  "electric",
+  "grass",
+  "ice",
+  "fighting",
+  "poison",
+  "ground",
+  "flying",
+  "psychic",
+  "bug",
+  "rock",
+  "ghost",
+  "dragon",
+  "dark",
+  "steel",
+  "fairy",
+]);
+
+export const RolledAbilityDefSchema = z.object({
+  id: z.string().regex(/^[a-z]+(-[a-z0-9]+)*$/),
+  name: z.string().min(1),
+  type: PokeTypeSchema,
+  description: z.string().min(1),
+  slot: z.union([z.literal(0), z.literal(1), z.literal(2)]),
+});
+
 export const ItemCategorySchema = z.enum(["HEALING", "BATTLE", "UTILITY", "PREMIUM", "BERRY"]);
 
 export const PvpStatSchema = z.enum(["attack", "defense", "speed", "crit"]);

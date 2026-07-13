@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 import { ITEM_BY_ID, ITEM_LIST } from "./items";
 import { STATUS_BY_ID, STATUS_LIST, STATUS_META } from "./statuses";
 import { SIGNATURE_BY_ID, SIGNATURE_BY_POKEMON_ID, SIGNATURE_LIST } from "./abilities/signature";
-import { ItemDefSchema, StatusDefSchema, SignatureDefSchema } from "./schemas";
+import { ROLLED_BY_ID, ROLLED_LIST, ROLLED_SETS } from "./abilities/rolled";
+import { ItemDefSchema, StatusDefSchema, SignatureDefSchema, RolledAbilityDefSchema } from "./schemas";
 import { ITEMS, STATUS_META as LEGACY_STATUS_META } from "@/lib/game-data";
 import { CATEGORY_OF } from "@/lib/item-categories";
 import { ALL_LEGENDARY_MYTHICAL_IDS } from "@/lib/legendary-data";
 import { SIGNATURE_ABILITIES } from "@/lib/signature-abilities";
+import { ABILITY_SETS } from "@/lib/abilities";
 
 describe("item registry", () => {
   it("every definition file passes its schema", () => {
@@ -89,5 +91,34 @@ describe("signature ability registry", () => {
       expect(def.id).toBe(id);
       expect(def.describe().length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("rolled ability registry", () => {
+  it("every definition file passes its schema", () => {
+    for (const a of ROLLED_LIST) {
+      const parsed = RolledAbilityDefSchema.safeParse(a);
+      expect(parsed.success, `${a.id}: ${JSON.stringify(parsed.error?.issues)}`).toBe(true);
+    }
+  });
+
+  it("ids are unique and each file's export matches its id", () => {
+    const ids = ROLLED_LIST.map((a) => a.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const [id, def] of Object.entries(ROLLED_BY_ID)) expect(def.id).toBe(id);
+  });
+
+  it("every type rolls exactly 3 abilities, in matching slot order", () => {
+    for (const [type, set] of Object.entries(ROLLED_SETS)) {
+      expect(set.length, type).toBe(3);
+      set.forEach((a, slot) => {
+        expect(a.type, a.id).toBe(type);
+        expect(a.slot, a.id).toBe(slot);
+      });
+    }
+  });
+
+  it("registry is the single source for the legacy ABILITY_SETS export", () => {
+    expect(ABILITY_SETS).toBe(ROLLED_SETS);
   });
 });
