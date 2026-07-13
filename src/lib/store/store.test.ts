@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { useGameStore } from "@/lib/store";
 import { findPokemon } from "@/lib/pokemon-data";
-import type { Round } from "@/routes/whos-that-pokemon";
+import type { WhosThatRound as Round } from "@/lib/whos-that";
 
 beforeEach(() => {
   useGameStore.getState().reset();

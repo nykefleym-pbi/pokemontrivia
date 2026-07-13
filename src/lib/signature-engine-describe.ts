@@ -26,7 +26,7 @@ import type {
   SideRef,
   SignatureEngineSpec,
   StatChangeSpec,
-} from "./signature-abilities";
+} from "./signature-engine-types";
 import type { PvpStat, StatusKind } from "./game-data";
 
 /** Only the species that actually appear in a condition or disable clause. The

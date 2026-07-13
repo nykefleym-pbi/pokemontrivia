@@ -1,4 +1,4 @@
-import type { GameState, WeeklyLeagueAttempt } from "@/lib/store";
+import type { GameState, WeeklyLeagueAttempt } from "@/lib/store/types";
 import type { StoreSlice } from "@/lib/store/slice";
 import { getWeekRangeUtc } from "@/lib/game-data";
 import { pickRandomGymLeader } from "@/lib/gym-leaders";

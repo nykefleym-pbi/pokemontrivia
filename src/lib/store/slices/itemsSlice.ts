@@ -1,4 +1,4 @@
-import type { GameState } from "@/lib/store";
+import type { GameState } from "@/lib/store/types";
 import type { StoreSlice } from "@/lib/store/slice";
 import type { ItemId } from "@/lib/game-data";
 import { getWeekRangeUtc, EGG_HATCH_REQUIRED } from "@/lib/game-data";

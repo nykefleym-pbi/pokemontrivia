@@ -20,7 +20,7 @@ import { playSfx, playBattleResult } from "@/lib/audio";
 import { ShareCardDialog } from "@/components/share-card-dialog";
 import type { ShareData } from "@/components/share-card-builder";
 import type { Trivia } from "@/lib/trivia-core";
-import { TimerRing } from "@/components/battle-screen";
+import { TimerRing } from "@/components/timer-ring";
 import { syncActivity } from "@/lib/social";
 import { useForfeitGuard } from "@/lib/use-forfeit-guard";
 

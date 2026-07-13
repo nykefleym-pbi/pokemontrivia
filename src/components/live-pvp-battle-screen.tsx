@@ -97,7 +97,7 @@ import {
   THUNDERCLAP_COOLDOWN,
 } from "@/lib/signature-bespoke";
 import { isWeatherStatSource, isMyWeatherActive } from "@/lib/pvp-weather";
-import { TimerRing } from "@/components/battle-screen";
+import { TimerRing } from "@/components/timer-ring";
 import { useBattleFxCues } from "@/hooks/useBattleFxCues";
 import type { BattleSide, BattleStatusKind } from "@/lib/training-battle-fx-types";
 
