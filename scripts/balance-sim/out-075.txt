@@ -2,111 +2,111 @@
 
 ═══ ROUND-ROBIN (win rate vs the whole Legendary/Mythical field) ═══
   rank  dex   win%   solo%  ability                     trigger / cooldown
-    1   1022  70.2%  79.4%  Mighty Cleave              self_afflicted_or_hp_below / disable_effect_after_questions  <<< OP
+    1   1022  70.4%  79.4%  Mighty Cleave              self_afflicted_or_hp_below / disable_effect_after_questions  <<< OP
     2    893  68.0%  73.7%  Jungle Healing             self_afflicted_or_hp_below / once_per_battle  <<< OP
-    3    789  66.9%  75.3%  Splash                     start_of_battle / once_per_battle  <<< OP
-    4   1023  66.7%  75.4%  Tachyon Cutter             self_afflicted_or_hp_below / disable_effect_after_questions  <<< OP
-    5  10194  64.4%  76.3%  Astral Barrage             streak_in_a_row / disable_multiplier_after_incorrect  <<< OP
-    6    898  63.8%  74.2%  Glacial Lance              streak_in_a_row / disable_multiplier_after_incorrect  <<< OP
-    7    895  62.8%  69.0%  Dragon Energy              start_of_battle / disable_multiplier_after_incorrect  <<< OP
-    8   1016  62.4%  56.2%  Beat Up                    streak_in_a_row / disable_effect_after_questions  <<< OP
-    9   1025  62.4%  67.2%  Malignant Chain            on_questions / none  <<< OP
-   10   1020  61.7%  68.7%  Burning Bulwark            self_afflicted_or_hp_below / disable_effect_after_questions  <<< OP
-   11    888  60.9%  63.7%  Behemoth Blade             streak_in_a_row / disable_multiplier_after_incorrect  <<< OP
-   12    493  60.5%  67.8%  Judgment                   every_question / none  <<< OP
-   13   1021  58.4%  64.8%  Thunderclap                self_afflicted_or_hp_below / disable_effect_after_questions
-   14    649  58.4%  65.0%  Techno Blast               streak_in_a_row / revert_stat_after_incorrect
-   15    385  57.9%  64.3%  Doom Desire                self_afflicted_or_hp_below / disable_next_question_after_effect
-   16   1001  57.9%  61.1%  Ruination                  streak_in_a_row / once_per_battle
-   17    647  56.7%  63.1%  Sacred Sword               every_question / revert_stat_after_incorrect
-   18    244  56.4%  62.6%  Sacred Fire                streak_in_a_row / disable_next_question_after_effect
-   19    485  56.1%  62.3%  Magma Storm                streak_in_a_row / disable_effect_after_incorrect
-   20    809  55.2%  61.6%  Double Iron Bash           streak_in_a_row / disable_multiplier_after_incorrect
-   21    487  55.0%  62.1%  Shadow Force               on_questions / none
-   22    894  54.6%  58.6%  Thunder Cage               streak_in_a_row / disable_effect_after_incorrect
-   23   1002  54.3%  61.6%  Ruination                  streak_in_a_row / once_per_battle
-   24   1007  54.3%  65.3%  Collision Course           streak_in_a_row / disable_multiplier_after_incorrect
-   25   1004  54.0%  59.2%  Ruination                  streak_in_a_row / once_per_battle
-   26    250  54.0%  59.0%  Sacred Fire                hp_reaches_zero / revert_stat_after_incorrect
-   27   1003  53.8%  60.8%  Ruination                  streak_in_a_row / once_per_battle
-   28    788  53.6%  59.5%  Nature's Madness           streak_in_a_row / once_per_battle
-   29   1024  53.6%  61.1%  Tera Starstorm             opp_hp_multiple_of_self / disabled_if_used_healing_item
-   30    889  53.6%  56.3%  Behemoth Bash              streak_in_a_row / disable_effect_after_incorrect
-   31    787  53.0%  58.9%  Nature's Madness           streak_in_a_row / once_per_battle
-   32    646  53.0%  57.6%  Glaciate                   streak_in_a_row / revert_stat_after_incorrect
-   33    890  52.9%  59.1%  Dynamax Cannon             streak_in_a_row / disabled_if_opponent_species
-   34    800  52.8%  59.5%  Photon Geyser              streak_in_a_row / revert_stat_after_incorrect
-   35    785  52.3%  59.3%  Nature's Madness           streak_in_a_row / once_per_battle
-   36    786  52.3%  58.9%  Nature's Madness           streak_in_a_row / once_per_battle
-   37    718  51.7%  55.3%  Thousand Waves             streak_in_a_row / revert_stat_after_incorrect
-   38    716  51.5%  58.5%  Geomancy                   on_questions / disable_effect_after_incorrect
-   39    897  51.2%  59.2%  Astral Barrage             streak_in_a_row / disable_multiplier_after_incorrect
-   40    892  50.7%  56.7%  Surging Strikes            streak_in_a_row / disable_multiplier_after_incorrect
-   41    896  50.6%  54.8%  Glacial Lance              streak_in_a_row / disable_multiplier_after_incorrect
-   42    808  50.5%  57.6%  Flash Cannon               streak_in_a_row / revert_stat_after_incorrect
-   43    719  49.7%  56.8%  Diamond Storm              streak_in_a_row / revert_stat_after_incorrect
-   44   1008  49.7%  67.5%  Electro Drift              streak_in_a_row / disable_multiplier_after_incorrect
-   45    144  49.5%  54.2%  Freeze-Dry                 streak_in_a_row / disable_multiplier_after_incorrect
-   46    381  49.4%  55.0%  Luster Purge               streak_in_a_row / revert_stat_after_incorrect
-   47    379  49.3%  55.6%  Flash Cannon               self_afflicted_or_hp_below / revert_stat_after_incorrect
-   48    378  49.2%  57.1%  Blizzard                   streak_in_a_row / revert_stat_after_incorrect
-   49    491  49.2%  51.0%  Dark Void                  streak_in_a_row / revert_stat_after_incorrect
-   50   1010  48.8%  69.5%  Psyblade                   self_afflicted_or_hp_below / none
-   51    492  48.5%  55.5%  Seed Flare                 streak_in_a_row / revert_stat_after_incorrect
+    3    789  67.1%  75.3%  Splash                     start_of_battle / once_per_battle  <<< OP
+    4   1023  66.9%  75.4%  Tachyon Cutter             self_afflicted_or_hp_below / disable_effect_after_questions  <<< OP
+    5  10194  64.6%  76.3%  Astral Barrage             streak_in_a_row / disable_multiplier_after_incorrect  <<< OP
+    6    898  64.0%  74.2%  Glacial Lance              streak_in_a_row / disable_multiplier_after_incorrect  <<< OP
+    7    895  63.0%  69.0%  Dragon Energy              start_of_battle / disable_multiplier_after_incorrect  <<< OP
+    8   1025  62.5%  67.2%  Malignant Chain            on_questions / none  <<< OP
+    9   1020  62.0%  68.7%  Burning Bulwark            self_afflicted_or_hp_below / disable_effect_after_questions  <<< OP
+   10    493  60.7%  67.8%  Judgment                   every_question / none  <<< OP
+   11   1021  58.6%  64.8%  Thunderclap                self_afflicted_or_hp_below / disable_effect_after_questions
+   12    649  58.5%  65.0%  Techno Blast               streak_in_a_row / revert_stat_after_incorrect
+   13    385  58.0%  64.3%  Doom Desire                self_afflicted_or_hp_below / disable_next_question_after_effect
+   14    888  57.2%  63.8%  Behemoth Blade             streak_in_a_row / disable_multiplier_after_incorrect
+   15    647  56.9%  63.1%  Sacred Sword               every_question / revert_stat_after_incorrect
+   16    244  56.7%  62.6%  Sacred Fire                streak_in_a_row / disable_next_question_after_effect
+   17    485  56.3%  62.3%  Magma Storm                streak_in_a_row / disable_effect_after_incorrect
+   18    809  55.3%  61.6%  Double Iron Bash           streak_in_a_row / disable_multiplier_after_incorrect
+   19    487  55.2%  62.1%  Shadow Force               on_questions / none
+   20    894  54.7%  58.6%  Thunder Cage               streak_in_a_row / disable_effect_after_incorrect
+   21   1002  54.5%  61.6%  Ruination                  streak_in_a_row / once_per_battle
+   22   1007  54.4%  65.3%  Collision Course           streak_in_a_row / disable_multiplier_after_incorrect
+   23   1003  54.2%  60.8%  Ruination                  streak_in_a_row / once_per_battle
+   24    250  54.2%  59.0%  Sacred Fire                hp_reaches_zero / revert_stat_after_incorrect
+   25   1004  54.1%  59.2%  Ruination                  streak_in_a_row / once_per_battle
+   26   1024  53.9%  61.1%  Tera Starstorm             opp_hp_multiple_of_self / disabled_if_used_healing_item
+   27    788  53.7%  59.5%  Nature's Madness           streak_in_a_row / once_per_battle
+   28   1001  53.5%  59.8%  Ruination                  streak_in_a_row / once_per_battle
+   29    787  53.2%  58.9%  Nature's Madness           streak_in_a_row / once_per_battle
+   30    646  53.2%  57.6%  Glaciate                   streak_in_a_row / revert_stat_after_incorrect
+   31    890  53.0%  59.1%  Dynamax Cannon             streak_in_a_row / disabled_if_opponent_species
+   32    800  52.9%  59.5%  Photon Geyser              streak_in_a_row / revert_stat_after_incorrect
+   33   1016  52.8%  59.3%  Beat Up                    streak_in_a_row / disable_effect_after_questions
+   34    786  52.5%  58.9%  Nature's Madness           streak_in_a_row / once_per_battle
+   35    785  52.5%  59.3%  Nature's Madness           streak_in_a_row / once_per_battle
+   36    718  52.0%  55.3%  Thousand Waves             streak_in_a_row / revert_stat_after_incorrect
+   37    716  51.8%  58.5%  Geomancy                   on_questions / disable_effect_after_incorrect
+   38    897  51.4%  59.2%  Astral Barrage             streak_in_a_row / disable_multiplier_after_incorrect
+   39    892  51.1%  56.7%  Surging Strikes            streak_in_a_row / disable_multiplier_after_incorrect
+   40    896  50.8%  54.8%  Glacial Lance              streak_in_a_row / disable_multiplier_after_incorrect
+   41    808  50.7%  57.6%  Flash Cannon               streak_in_a_row / revert_stat_after_incorrect
+   42    889  50.4%  57.0%  Behemoth Bash              streak_in_a_row / disable_effect_after_incorrect
+   43   1008  49.9%  67.5%  Electro Drift              streak_in_a_row / disable_multiplier_after_incorrect
+   44    719  49.9%  56.8%  Diamond Storm              streak_in_a_row / revert_stat_after_incorrect
+   45    144  49.7%  54.2%  Freeze-Dry                 streak_in_a_row / disable_multiplier_after_incorrect
+   46    381  49.6%  55.0%  Luster Purge               streak_in_a_row / revert_stat_after_incorrect
+   47    379  49.5%  55.6%  Flash Cannon               self_afflicted_or_hp_below / revert_stat_after_incorrect
+   48    491  49.5%  51.0%  Dark Void                  streak_in_a_row / revert_stat_after_incorrect
+   49    378  49.3%  57.1%  Blizzard                   streak_in_a_row / revert_stat_after_incorrect
+   50   1010  49.1%  69.5%  Psyblade                   self_afflicted_or_hp_below / none
+   51    492  48.7%  55.5%  Seed Flare                 streak_in_a_row / revert_stat_after_incorrect
    52    790  48.5%  54.5%  Cosmic Power               streak_in_a_row / revert_stat_after_incorrect
-   53    145  48.0%  54.7%  Thunderous Kick            streak_in_a_row / revert_stat_after_incorrect
-   54    380  47.9%  54.9%  Mist Ball                  streak_in_a_row / revert_stat_after_incorrect
-   55    641  47.9%  54.7%  Bleakwind Storm            streak_in_a_row / revert_stat_after_incorrect
-   56   1009  47.8%  69.9%  Hydro Steam                self_afflicted_or_hp_below / none
-   57    643  47.5%  54.6%  Blue Flare                 streak_in_a_row / revert_stat_after_incorrect
-   58    488  46.9%  52.9%  Lunar Dance                self_afflicted_or_hp_below / once_per_battle
-   59    807  46.5%  54.1%  Plasma Fists               streak_in_a_row / revert_stat_after_incorrect
-   60    644  46.4%  52.9%  Bolt Strike                streak_in_a_row / revert_stat_after_incorrect
-   61   1014  46.3%  52.3%  Upper Hand                 streak_in_a_row / disable_effect_after_questions
-   62    146  46.2%  52.9%  Fiery Wrath                streak_in_a_row / revert_stat_after_incorrect
-   63    721  46.1%  51.8%  Steam Eruption             streak_in_a_row / revert_stat_after_incorrect
-   64    648  46.1%  52.7%  Relic Song                 streak_in_a_row / revert_stat_after_incorrect
-   65    639  45.9%  50.4%  Sacred Sword               every_even_question / revert_stat_after_incorrect
-   66    806  45.7%  52.3%  Mind Blown                 on_questions / none
-   67   1017  45.7%  51.7%  Ivy Cudgel                 start_of_battle / revert_stat_after_incorrect
-   68   1015  45.5%  52.2%  Sludge Wave                streak_in_a_row / disable_effect_after_questions
-   69    383  45.5%  53.2%  Precipice Blades           self_afflicted_or_hp_below / revert_stat_after_incorrect
-   70    640  45.3%  52.0%  Sacred Sword               every_odd_question / revert_stat_after_incorrect
-   71    377  45.3%  50.6%  Stone Edge                 streak_in_a_row / revert_stat_after_incorrect
-   72    386  44.9%  51.7%  Psycho Boost               streak_in_a_row / disable_increase_after_incorrect
-   73    484  44.7%  51.7%  Spacial Rend               streak_in_a_row / revert_stat_after_incorrect
-   74    805  44.6%  50.5%  Gyro Ball                  start_of_battle / revert_stat_after_incorrect
-   75    891  44.6%  51.6%  Focus Energy               streak_in_a_row / revert_stat_after_incorrect
-   76    382  44.5%  51.9%  Origin Pulse               self_afflicted_or_hp_below / revert_stat_after_incorrect
-   77    150  44.4%  49.7%  Psystrike                  streak_in_a_row / disable_next_question_after_effect
-   78    638  44.4%  50.4%  Sacred Sword               every_question / disable_multiplier_after_incorrect
-   79    645  44.3%  49.9%  Sandsear Storm             streak_in_a_row / revert_stat_after_incorrect
-   80    243  43.9%  49.8%  Thunder                    streak_in_a_row / revert_stat_after_incorrect
-   81    482  43.8%  49.8%  Future Sight               on_questions / disable_effect_after_incorrect
-   82    802  43.8%  50.5%  Spectral Thief             opponent_uses_item / none
-   83    249  43.8%  50.1%  Aeroblast                  streak_in_a_row / revert_stat_after_incorrect
-   84    490  43.7%  49.5%  Heart Swap                 opponent_signature / disable_effect_after_incorrect
-   85    801  43.7%  48.0%  Fleur Cannon               streak_in_a_row / disable_increase_after_incorrect
-   86    245  43.6%  50.6%  Aurora Beam                self_afflicted_or_hp_below / any_of
-   87    791  43.6%  51.6%  Sunsteel Strike            opponent_signature / revert_stat_after_incorrect
-   88    489  43.5%  49.0%  Bubble Beam                streak_in_a_row / revert_stat_after_incorrect
-   89    251  43.5%  49.9%  Time Travel                opponent_signature / disable_effect_after_incorrect
-   90    804  43.3%  48.7%  Air Slash                  start_of_battle / revert_stat_after_incorrect
-   91    642  43.3%  50.0%  Wildbolt Storm             streak_in_a_row / revert_stat_after_incorrect
-   92    480  43.3%  50.9%  Future Sight               start_of_battle / once_per_battle
-   93    483  43.2%  51.7%  Roar of Time               streak_in_a_row / revert_stat_after_incorrect
-   94    792  43.2%  49.2%  Moongeist Beam             opponent_signature / revert_stat_after_incorrect
-   95    773  43.2%  49.2%  Multi-Attack               start_of_battle / revert_stat_after_incorrect
-   96    717  43.1%  52.0%  Oblivion Wing              every_question / none
-   97    481  43.1%  49.5%  Future Sight               start_of_battle / disable_effect_after_incorrect
-   98    151  42.8%  50.6%  Transform                  start_of_battle / once_per_battle
-   99    720  42.8%  49.0%  Hyperspace Hole            every_question / none
-  100    772  42.4%  47.2%  Multi-Attack               start_of_battle / revert_stat_after_incorrect
-  101    486  42.3%  47.8%  Crush Grip                 on_questions / revert_stat_after_incorrect
-  102    494  42.2%  48.0%  V-create                   streak_in_a_row / revert_stat_after_incorrect
-  103    803  41.9%  47.6%  Fell Stinger               start_of_battle / revert_stat_after_incorrect
-  104    384  41.1%  46.4%  Dragon Ascent              self_afflicted_or_hp_below / revert_stat_after_incorrect
+   53    145  48.2%  54.7%  Thunderous Kick            streak_in_a_row / revert_stat_after_incorrect
+   54    380  48.1%  54.9%  Mist Ball                  streak_in_a_row / revert_stat_after_incorrect
+   55    641  48.1%  54.7%  Bleakwind Storm            streak_in_a_row / revert_stat_after_incorrect
+   56   1009  47.9%  69.9%  Hydro Steam                self_afflicted_or_hp_below / none
+   57    643  47.9%  54.6%  Blue Flare                 streak_in_a_row / revert_stat_after_incorrect
+   58    488  47.0%  52.9%  Lunar Dance                self_afflicted_or_hp_below / once_per_battle
+   59    807  46.7%  54.1%  Plasma Fists               streak_in_a_row / revert_stat_after_incorrect
+   60    644  46.6%  52.9%  Bolt Strike                streak_in_a_row / revert_stat_after_incorrect
+   61   1014  46.5%  52.3%  Upper Hand                 streak_in_a_row / disable_effect_after_questions
+   62    146  46.4%  52.9%  Fiery Wrath                streak_in_a_row / revert_stat_after_incorrect
+   63    648  46.3%  52.7%  Relic Song                 streak_in_a_row / revert_stat_after_incorrect
+   64    721  46.1%  51.8%  Steam Eruption             streak_in_a_row / revert_stat_after_incorrect
+   65    639  46.1%  50.4%  Sacred Sword               every_even_question / revert_stat_after_incorrect
+   66    806  46.0%  52.3%  Mind Blown                 on_questions / none
+   67   1015  45.9%  52.2%  Sludge Wave                streak_in_a_row / disable_effect_after_questions
+   68    383  45.7%  53.2%  Precipice Blades           self_afflicted_or_hp_below / revert_stat_after_incorrect
+   69    640  45.6%  52.0%  Sacred Sword               every_odd_question / revert_stat_after_incorrect
+   70    377  45.6%  50.6%  Stone Edge                 streak_in_a_row / revert_stat_after_incorrect
+   71   1017  45.5%  51.6%  Ivy Cudgel                 start_of_battle / revert_stat_after_incorrect
+   72    386  45.2%  51.7%  Psycho Boost               streak_in_a_row / disable_increase_after_incorrect
+   73    484  45.0%  51.7%  Spacial Rend               streak_in_a_row / revert_stat_after_incorrect
+   74    891  44.9%  51.6%  Focus Energy               streak_in_a_row / revert_stat_after_incorrect
+   75    382  44.9%  51.9%  Origin Pulse               self_afflicted_or_hp_below / revert_stat_after_incorrect
+   76    805  44.8%  50.5%  Gyro Ball                  start_of_battle / revert_stat_after_incorrect
+   77    150  44.7%  49.7%  Psystrike                  streak_in_a_row / disable_next_question_after_effect
+   78    638  44.6%  50.4%  Sacred Sword               every_question / disable_multiplier_after_incorrect
+   79    645  44.5%  49.9%  Sandsear Storm             streak_in_a_row / revert_stat_after_incorrect
+   80    243  44.1%  49.8%  Thunder                    streak_in_a_row / revert_stat_after_incorrect
+   81    249  44.1%  50.1%  Aeroblast                  streak_in_a_row / revert_stat_after_incorrect
+   82    791  44.0%  51.6%  Sunsteel Strike            opponent_signature / revert_stat_after_incorrect
+   83    490  44.0%  49.5%  Heart Swap                 opponent_signature / disable_effect_after_incorrect
+   84    245  43.9%  50.6%  Aurora Beam                self_afflicted_or_hp_below / any_of
+   85    482  43.9%  49.8%  Future Sight               on_questions / disable_effect_after_incorrect
+   86    801  43.9%  48.0%  Fleur Cannon               streak_in_a_row / disable_increase_after_incorrect
+   87    802  43.9%  50.5%  Spectral Thief             opponent_uses_item / none
+   88    489  43.7%  49.0%  Bubble Beam                streak_in_a_row / revert_stat_after_incorrect
+   89    251  43.7%  49.9%  Time Travel                opponent_signature / disable_effect_after_incorrect
+   90    804  43.6%  48.7%  Air Slash                  start_of_battle / revert_stat_after_incorrect
+   91    773  43.5%  49.2%  Multi-Attack               start_of_battle / revert_stat_after_incorrect
+   92    642  43.5%  50.0%  Wildbolt Storm             streak_in_a_row / revert_stat_after_incorrect
+   93    483  43.5%  51.7%  Roar of Time               streak_in_a_row / revert_stat_after_incorrect
+   94    480  43.4%  50.9%  Future Sight               start_of_battle / once_per_battle
+   95    792  43.4%  49.2%  Moongeist Beam             opponent_signature / revert_stat_after_incorrect
+   96    717  43.4%  52.0%  Oblivion Wing              every_question / none
+   97    481  43.2%  49.5%  Future Sight               start_of_battle / disable_effect_after_incorrect
+   98    151  43.1%  50.6%  Transform                  start_of_battle / once_per_battle
+   99    720  43.0%  49.0%  Hyperspace Hole            every_question / none
+  100    772  42.7%  47.2%  Multi-Attack               start_of_battle / revert_stat_after_incorrect
+  101    486  42.6%  47.8%  Crush Grip                 on_questions / revert_stat_after_incorrect
+  102    494  42.5%  48.0%  V-create                   streak_in_a_row / revert_stat_after_incorrect
+  103    803  42.2%  47.6%  Fell Stinger               start_of_battle / revert_stat_after_incorrect
+  104    384  41.2%  46.4%  Dragon Ascent              self_afflicted_or_hp_below / revert_stat_after_incorrect
 
-field mean  50.0%  sd 6.8pp  spread  70.2% …  41.1%
+field mean  50.0%  sd 6.6pp  spread  70.4% …  41.2%
 
 wrote scripts/balance-sim/results.json
