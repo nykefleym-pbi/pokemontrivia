@@ -2934,37 +2934,15 @@ function collectDamageCalc(effect: SignatureEffect, out: DamageCalcEffect[]): vo
   else if (effect.type === "compound") effect.effects.forEach((e) => collectDamageCalc(e, out));
 }
 
-/**
- * Modifiers to apply to the CURRENT correct answer's `computePvpDamage` call
- * for a `passive_damage` ability. Returns `NO_HIT_MODIFIERS` when nothing
- * fires. Only meaningful on a correct answer.
- */
-export function evaluateHitModifiers(
-  ability: SignatureAbility | null,
-  ctx: SignatureContext,
-): HitModifiers {
-  if (!ability || isEngineOwned(ability)) return NO_HIT_MODIFIERS;
-  if (!ctx.correct || ability.wiring !== "passive_damage") return NO_HIT_MODIFIERS;
-  if (!hitTriggerHolds(ability.trigger, ctx)) return NO_HIT_MODIFIERS;
-
-  const calcs: DamageCalcEffect[] = [];
-  collectDamageCalc(ability.effect, calcs);
-  if (calcs.length === 0) return NO_HIT_MODIFIERS;
-
-  const mods: HitModifiers = { ...NO_HIT_MODIFIERS };
-  for (const c of calcs) {
-    // Articuno's Freeze-Dry only routes around Defense the opponent actually has.
-    if (c.ignoreOppDefenseStage) {
-      if (ability.internalKey === "killing_frost" && ctx.oppDefenseStage <= 0) continue;
-      mods.ignoreOppDefenseStage = true;
-    }
-    if (c.ignoreOwnNegativeStages) mods.ignoreOwnNegativeStages = true;
-    if (c.bonusAttackStage) mods.bonusAttackStage += c.bonusAttackStage;
-    if (c.bonusCritStage) mods.bonusCritStage += c.bonusCritStage;
-    if (c.secondHitFraction) mods.secondHitFraction = c.secondHitFraction;
-  }
-  return mods;
-}
+// `evaluateHitModifiers` lived here. Deleted 2026-07-13.
+//
+// Two things made it worth removing rather than leaving alone. It was DEAD — it opened
+// with `if (isEngineOwned(ability)) return NO_HIT_MODIFIERS` and all 104 rows have an
+// engine. And its NAME COLLIDED with a completely different, LIVE `evaluateHitModifiers`
+// in `pvp-combat.ts` (the engine's damage multiplier). Both were imported into
+// live-pvp-battle-screen, one aliased to `evaluateSigMultiplier` — so you could not read
+// a call there and know which function you were looking at. There is now exactly one
+// `evaluateHitModifiers` in the codebase, and it is the live one.
 
 /** An effect the caller should actually apply (post-answer, non-damage-calc). */
 export interface AppliedSignatureEffect {
@@ -3096,62 +3074,23 @@ export function engineTriggerFired(
   return postTriggerFires(trigger, ctx as SignatureContext, rng);
 }
 
-/**
- * Post-answer effects a `post_answer` ability produces this question (stat
- * bumps, statuses, heals, drains, hampers), with any `chance` already rolled.
- * Returns [] when the trigger doesn't fire. `damage_calc` and `bespoke`
- * sub-effects are excluded (handled elsewhere / not auto-fired).
- */
-export function evaluatePostAnswer(
-  ability: SignatureAbility | null,
-  ctx: SignatureContext,
-  rng: () => number = Math.random,
-): SignatureEffect[] {
-  if (!ability || isEngineOwned(ability)) return [];
-  if (ability.wiring !== "post_answer") return [];
-  if (!postTriggerFires(ability.trigger, ctx, rng)) return [];
-  const out: SignatureEffect[] = [];
-  collectApplicable(ability.effect, out);
-  return out;
-}
-
-/**
- * The non-`damage_calc` sub-effects a `passive_damage` ability ALSO bundles and
- * that should fire on the SAME correct answer as its damage fold — the compound
- * slice that `evaluateHitModifiers` (damage-calc only) drops on the floor.
- * Returns [] unless the ability is a passive_damage entry, the answer is
- * correct, the hit trigger holds, and there is a non-damage-calc slice that
- * rolls through (a `status` sub-effect may carry a `chance`, rolled here
- * client-side exactly like `evaluatePostAnswer` does for a post_answer status).
- *
- * When non-empty, the live loop routes these through the SAME server-validated
- * `apply_pvp_signature_effect(phase='post_answer')` path as a post_answer
- * ability: the client only names WHICH partner fired; the server applies the
- * fixed magnitude from the `pvp_signature_effects` post_answer rows.
- *
- * Wired abilities (each has exactly one non-damage-calc slice, so a single RPC
- * faithfully delivers it): 243 Raikou (+1 Speed), 386 Deoxys / 801 Magearna
- * (-1 Atk recoil), 643 Zekrom (40% Burn), 809 Melmetal (30% Sleep).
- */
-export function evaluatePassiveDamageSideEffects(
-  ability: SignatureAbility | null,
-  ctx: SignatureContext,
-  rng: () => number = Math.random,
-): SignatureEffect[] {
-  if (!ability || isEngineOwned(ability)) return [];
-  if (!ctx.correct || ability.wiring !== "passive_damage") return [];
-  if (!hitTriggerHolds(ability.trigger, ctx)) return [];
-  const applicable: SignatureEffect[] = [];
-  collectApplicable(ability.effect, applicable);
-  return applicable.filter((e) =>
-    e.type === "status" && e.chance != null ? rng() < e.chance : true,
-  );
-}
-
-// `evaluateBattleStart` lived here. Deleted 2026-07-13 (owner ruling): it opened
-// with `if (isEngineOwned(ability)) return []`, and all 104 rows have an engine,
-// so it returned [] every time and the battle-start phase never fired in a live
-// match. See the `"engine"` note on `WiringMode`.
+// `evaluatePostAnswer`, `evaluatePassiveDamageSideEffects` and `evaluateBattleStart`
+// lived here. All three deleted 2026-07-13 (owner ruling), and for one reason:
+//
+//     if (!ability || isEngineOwned(ability)) return [];
+//
+// `isEngineOwned` is `ability.engine !== undefined`, and every one of the 104
+// Legendary/Mythical rows has an engine. So all three returned empty on every call,
+// for every Pokemon, in every match — the entire legacy delivery layer was inert.
+// The live screen gated its RPCs on their output, so those RPCs never fired either.
+//
+// This is the trap the whole system sets: a function can be exported, imported, called
+// from the live battle screen and backed by rows in production, and still do nothing.
+// `scripts/balance-sim/liveness.ts` now computes that from source instead of trusting
+// a comment like this one. Run it before deleting — or resurrecting — anything here.
+//
+// Everything they used to deliver comes from the engine tick now (`sigEngineTick` +
+// the `engine_status` / `m4_fx` / `m4_window` phases).
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Manual ("charge and fire") abilities

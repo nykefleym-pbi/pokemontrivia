@@ -5,9 +5,6 @@ import {
   signatureMoveName,
   describeSignatureEffect,
   describeSignatureFull,
-  evaluateHitModifiers,
-  evaluatePostAnswer,
-  evaluatePassiveDamageSideEffects,
   hasServerManualEffect,
   mergeHitModifiers,
   manualUsesPerBattle,
@@ -104,49 +101,25 @@ describe("gating", () => {
   });
 });
 
-// ── The legacy path is DEAD (owner ruling 2026-07-12: "remove the legacy") ───
+// ── The legacy delivery layer is GONE ────────────────────────────────────────
 //
-// These evaluators — evaluateHitModifiers, evaluatePassiveDamageSideEffects,
-// evaluatePostAnswer — used to be how Legendary/Mythical abilities actually did
-// anything. They are now inert for any row carrying an `engine` spec, which (as of
-// M4) is ALL 104 of them. A fourth, evaluateBattleStart, was deleted outright on
-// 2026-07-13 along with the `"battle_start"` WiringMode — the type system is now
-// the guard there, so there is nothing left to assert. The owner's spreadsheets are
-// the single source of truth; the engine tick, `engine_status`, and the bespoke /
-// m4_fx phases deliver every effect.
+// `evaluateHitModifiers`, `evaluatePassiveDamageSideEffects`, `evaluatePostAnswer` and
+// `evaluateBattleStart` used to be how Legendary/Mythical abilities did anything. All
+// four were deleted on 2026-07-13. Every one of them opened with
+// `if (isEngineOwned(ability)) return []`, and all 104 rows have an engine — so they
+// returned empty on every call and the RPCs gated on their output never fired.
 //
-// This block is the guard that keeps them dead. It is not ceremony: several rows
-// carry BOTH a legacy post_answer catalog row AND a new engine_status row (Zekrom
-// #643, Munkidori #1015, Melmetal #809...). If the legacy path were ever resurrected
-// alongside the engine, every one of those would inflict its status TWICE and every
-// buff would be applied twice. The tests that used to assert the legacy behaviour
-// were deleted with the behaviour itself.
-describe("the legacy signature path is inert for engine-owned rows", () => {
-  it("evaluateHitModifiers no longer fires for an engine row", () => {
-    // Cobalion #638 (ignore-Defense) is a passive_damage row whose legacy path used
-    // to fold modifiers into the hit. Its engine spec owns that now.
-    expect(evaluateHitModifiers(SIGNATURE_ABILITIES[638], ctx())).toEqual(NO_HIT_MODIFIERS);
-  });
-
-  it("evaluatePassiveDamageSideEffects no longer fires for an engine row", () => {
-    // Zekrom #643's 40% Burn — now delivered by engine_status, server-rolled.
-    expect(evaluatePassiveDamageSideEffects(SIGNATURE_ABILITIES[643], ctx(), () => 0)).toEqual([]);
-  });
-
-  it("evaluatePostAnswer no longer fires for an engine row", () => {
-    expect(evaluatePostAnswer(SIGNATURE_ABILITIES[243], ctx())).toEqual([]); // Raikou
-    expect(evaluatePostAnswer(SIGNATURE_ABILITIES[717], ctx())).toEqual([]); // Yveltal
-  });
-
-  it("holds for EVERY row on the roster — no legacy leak anywhere", () => {
-    for (const id of SIG_ENGINE_DEX_IDS) {
-      const a = SIGNATURE_ABILITIES[id];
-      expect(evaluatePostAnswer(a, ctx()), `#${id} post_answer`).toEqual([]);
-      expect(evaluatePassiveDamageSideEffects(a, ctx(), () => 0), `#${id} side-fx`).toEqual([]);
-      expect(evaluateHitModifiers(a, ctx()), `#${id} hit-mods`).toEqual(NO_HIT_MODIFIERS);
-    }
-  });
-
+// The tests that asserted "they stay inert" went with them: you cannot leak from a
+// function that does not exist. What replaces that guard is `scripts/balance-sim/
+// liveness.ts`, which reads the real source, finds the guards, and shouts if a dead
+// path is resurrected. It is checked into CLAUDE.md as a required step before deleting
+// anything here.
+//
+// Why the guard mattered, and still does: several rows carry BOTH a legacy post_answer
+// catalog row AND an engine_status row (Zekrom #643, Munkidori #1015, Melmetal #809).
+// Resurrect the legacy path alongside the engine and every one of them inflicts its
+// status TWICE.
+describe("the roster is fully engine-owned", () => {
   // The eight rows that used to carry `wiring: "battle_start"` now say "engine".
   // Their entry buff, if they still have one, comes from their own engine spec.
   // A regression here means someone reintroduced a legacy delivery path.
@@ -224,26 +197,20 @@ describe("question-category trigger primitive (Phase 3)", () => {
         typeNames: ["ice", "flying", "psychic", "dragon", "fairy"],
       },
     });
-    // ...and the old spike is inert.
-    expect(evaluateHitModifiers(koraidon, ctx({ newCategory: true }))).toEqual(NO_HIT_MODIFIERS);
   });
 
-  it("question_category_is fires a post_answer effect only when the category matches", () => {
-    const probe: SignatureAbility = {
-      pokemonId: 999999,
-      signatureMove: "Probe",
-      internalKey: "probe_category",
-      rarity: 1,
-      trigger: { type: "question_category_is", category: "History" },
-      effect: { type: "stat_stage", target: "self", stat: "attack", delta: 1, duration: "passive" },
-      wiring: "post_answer",
-    };
-    expect(evaluatePostAnswer(probe, ctx({ questionCategory: "History" })).length).toBe(1);
-    expect(evaluatePostAnswer(probe, ctx({ questionCategory: "Science" })).length).toBe(0);
+  // This used to assert through `evaluatePostAnswer`, which was deleted with the rest
+  // of the legacy layer. The thing it actually exercises is the trigger predicate, so
+  // it now calls that directly — same coverage, no dead wrapper.
+  it("question_category_is holds only when the category matches, and only when correct", () => {
+    const trigger = { type: "question_category_is", category: "History" } as const;
+    const always = () => 0; // no chance roll on this trigger; pin the rng anyway
+    expect(postTriggerFires(trigger, ctx({ questionCategory: "History" }), always)).toBe(true);
+    expect(postTriggerFires(trigger, ctx({ questionCategory: "Science" }), always)).toBe(false);
     // Not on a wrong answer.
     expect(
-      evaluatePostAnswer(probe, ctx({ questionCategory: "History", correct: false })).length,
-    ).toBe(0);
+      postTriggerFires(trigger, ctx({ questionCategory: "History", correct: false }), always),
+    ).toBe(false);
   });
 });
 

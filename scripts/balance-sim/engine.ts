@@ -34,9 +34,6 @@
 import {
   SIGNATURE_ABILITIES,
   engineTriggerFired,
-  evaluateHitModifiers as evaluateLegacyHitModifiers,
-  evaluatePostAnswer,
-  evaluatePassiveDamageSideEffects,
   NO_HIT_MODIFIERS,
   type SignatureAbility,
   type SignatureEngineSpec,
@@ -579,10 +576,13 @@ function takeTurn(
       const ctx = sigContext(me, opp, qIdx, true, streakAfter, elapsed, timer);
       const eng = me.engine;
 
-      // Legacy passive_damage modifiers still fold in alongside the engine.
-      const mods: HitModifiers = suppressed
-        ? NO_HIT_MODIFIERS
-        : evaluateLegacyHitModifiers(me.ability, ctx);
+      // No legacy passive_damage fold. The comment here used to claim those modifiers
+      // "still fold in alongside the engine" — they never did. `evaluateHitModifiers`
+      // (signature-abilities) bailed on every engine-owned row, i.e. all 104, so it
+      // always returned NO_HIT_MODIFIERS. It was deleted 2026-07-13. The engine's own
+      // multiplier is applied below via `evaluateSigMultiplier` (a DIFFERENT function
+      // that happened to share the name — see the note in signature-abilities).
+      const mods: HitModifiers = NO_HIT_MODIFIERS;
 
       if (eng?.latchOnTrigger && engineTriggerFired(eng.trigger, ctx)) me.latched = true;
       const triggerHeld =
@@ -629,10 +629,9 @@ function takeTurn(
       });
       dmg = computed + (mods.secondHitFraction ? Math.round(computed * mods.secondHitFraction) : 0);
 
-      // Legacy passive_damage side-effects route through the server catalog.
-      if (!suppressed && evaluatePassiveDamageSideEffects(me.ability, ctx).length > 0) {
-        applyDbEffects(me, opp, "post_answer", rng, qNo);
-      }
+      // The legacy passive_damage side-effect route was here, gated on
+      // `evaluatePassiveDamageSideEffects(...)` — which bailed on every engine-owned row
+      // and so returned [] always. It never fired. Deleted with the function.
     }
   } else {
     me.streak = 0;
@@ -674,14 +673,13 @@ function takeTurn(
     tickCure(me, k);
   }
 
-  // Legacy post_answer path — still fires for `wiring: "post_answer"` rows,
-  // alongside the engine tick below (this is the shipped behaviour).
-  if (me.ability?.wiring === "post_answer" && !suppressed) {
-    const ctx = sigContext(me, opp, qIdx, correct, streakAfter, elapsed, timer);
-    if (evaluatePostAnswer(me.ability, ctx).length > 0) {
-      applyDbEffects(me, opp, "post_answer", rng, qNo);
-    }
-  }
+  // The legacy post_answer path was here. Its comment claimed it "still fires for
+  // `wiring: post_answer` rows, alongside the engine tick below (this is the shipped
+  // behaviour)". That was false: it was gated on `evaluatePostAnswer(...)`, which bailed
+  // on every engine-owned row — all 104 — so it returned [] and the phase never fired,
+  // in the sim OR in the game. Deleted 2026-07-13 with the function. This is why the
+  // `post_answer` rows still sitting in `pvp_signature_effects` are inert (the audit
+  // reports them as INERT_POST_ANSWER).
 
   // Engine tick.
   const eng = me.engine;

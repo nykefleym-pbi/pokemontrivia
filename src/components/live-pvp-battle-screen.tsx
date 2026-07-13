@@ -79,10 +79,6 @@ import {
   signatureMoveName,
   describeSignatureEffect,
   describeSignatureFull,
-  evaluateHitModifiers,
-  evaluatePostAnswer,
-  evaluatePassiveDamageSideEffects,
-  describeHitModifiers,
   hasServerManualEffect,
   mergeHitModifiers,
   manualUsesPerBattle,
@@ -1467,35 +1463,17 @@ export function LivePvpBattleScreen({
         const burned = myStatuses.some((s) => s.kind === "burn");
         const category = questions[idxAtAnswer]?.category ?? "";
 
-        // Fold the partner's passive_damage signature modifiers into THIS hit
-        // (ignore-defense / bonus Attack / bonus Crit / double-strike). Damage
-        // is client-computed and server-clamped, so this needs no round trip.
+        // The partner's LEGACY passive_damage fold lived here (`evaluateHitModifiers`
+        // + `evaluatePassiveDamageSideEffects`), along with a "✨ Move — ignores their
+        // Defense!" toast. All three were dead: both evaluators bail on engine-owned
+        // rows, and all 104 are engine-owned, so the modifiers were always empty and
+        // the toast never had anything to describe. Deleted 2026-07-13 (owner ruling:
+        // the engine took over and the message is obsolete). The engine's own
+        // multiplier is folded in below via `evaluateSigMultiplier`.
         const suppressed = idxAtAnswer < mySuppressedUntil;
+        // Still needed: the ENGINE's trigger check below reads it (`engineTriggerFired`).
         const sigCtx = buildSigContext(idxAtAnswer, true, nextStreak, elapsedMs, totalMs, category);
-        // Phase 4: while suppressed, the partner's passive/armed signature
-        // modifiers don't apply (the ability is locked).
-        const abilityMods = suppressed ? NO_HIT_MODIFIERS : evaluateHitModifiers(ability, sigCtx);
-        const passiveSideEffects = suppressed ? [] : evaluatePassiveDamageSideEffects(ability, sigCtx);
-        let mods = abilityMods;
-        // Toast gap fix: a pure passive_damage ability (no bundled stat/status
-        // sub-effect — Freeze-Dry, Stone Edge, Sacred Sword, etc.) folds its
-        // bonus silently into the damage number with zero player-visible
-        // feedback. Describe what actually fired, straight off the resolved
-        // modifiers (never invented), so the acting player sees the effect.
-        // Bundled abilities (passiveSideEffects.length > 0) already get their
-        // own attribution when the post_answer RPC below applies; the
-        // opponent's client separately gets an "Opponent's X activates!"
-        // toast off the pvp_live_effects broadcast that RPC produces. A pure
-        // passive_damage-only ability makes no server round trip at all (there
-        // is no stat/status for the opponent to authoritatively receive), so a
-        // local-only toast for the acting player is the right scope here.
-        if (passiveSideEffects.length === 0) {
-          const desc = describeHitModifiers(abilityMods);
-          if (desc) {
-            const move = signatureMoveName(partnerId);
-            if (move) notify("success", `✨ ${move} — ${desc}!`);
-          }
-        }
+        let mods = NO_HIT_MODIFIERS;
         // Chien-Pao — Sword of Ruin (1002): the 2-charge ignore-Defense window
         // armed when Sword of Ruin was manually fired. Consumes one charge per
         // correct hit while suppressed doesn't block it (the -2 Def already
@@ -1529,21 +1507,9 @@ export function LivePvpBattleScreen({
             );
           }
         }
-        // Fix #3 — passive_damage abilities that ALSO bundle a stat_stage/status
-        // sub-effect (Raikou 243's +1 Speed, Deoxys 386 / Magearna 801's -1 Atk
-        // recoil, Zekrom 643's 40% Burn, Melmetal 809's 30% Sleep): the damage
-        // fold above only ever applies the damage_calc slice, so route the
-        // bundled non-damage-calc slice through the SAME server-validated
-        // post_answer RPC on this same hit (any chance roll already happened
-        // inside evaluatePassiveDamageSideEffects).
-        if (!suppressed) {
-          const sideEffects = passiveSideEffects;
-          if (sideEffects.length > 0) {
-            void applyPvpSignatureEffect(matchId, idxAtAnswer, partnerId as number, "post_answer").then(
-              applyAbilityResult,
-            );
-          }
-        }
+        // The bundled-side-effect RPC (Raikou's +1 Speed, Zekrom's Burn, …) fired here
+        // off `passiveSideEffects`. Deleted with it — those effects come from the
+        // engine's `engine_status` rows now, server-rolled.
         const baseAttack = mods.ignoreOwnNegativeStages
           ? Math.max(0, myStages.attack)
           : myStages.attack;
@@ -1775,65 +1741,16 @@ export function LivePvpBattleScreen({
         const move = signatureMoveName(partnerId);
         notify("warning", `🔒 ${move ?? "Signature move"} suppressed!`);
       }
-    } else if (!frozen && ability && ability.wiring === "post_answer") {
-      const totalMs = personalTimerMs;
-      const category = questions[idxAtAnswer]?.category ?? "";
-      const sigCtx = buildSigContext(idxAtAnswer, correct, correct ? streak + 1 : 0, elapsedMs, totalMs, category);
-      const postEffects = evaluatePostAnswer(ability, sigCtx);
-      // Phase 5: if this partner is a weather stat source (Kyogre/Groudon) and
-      // its weather isn't currently active (negated by an on-field Rayquaza, or
-      // suppressed as the non-owner in a Kyogre-vs-Groudon match), don't fire —
-      // the server would refuse the weather effect anyway. Show the Air Lock
-      // note once when Rayquaza is what negated it.
-      const weatherGatedOut =
-        isWeatherStatSource(partnerId) &&
-        !isMyWeatherActive(amIHost ? "host" : "guest", partnerId, {
-          hostPartnerId: match.hostPartnerId,
-          guestPartnerId: match.guestPartnerId,
-          weatherOwner: match.weatherOwner,
-        });
-      if (postEffects.length > 0 && weatherGatedOut) {
-        if (
-          !weatherNegatedToastedRef.current &&
-          (match.hostPartnerId === 384 || match.guestPartnerId === 384)
-        ) {
-          weatherNegatedToastedRef.current = true;
-          notify("warning", "🌪️ Rayquaza negated the weather!");
-        }
-      } else if (postEffects.length > 0) {
-        void applyPvpSignatureEffect(matchId, idxAtAnswer, partnerId as number, "post_answer").then(
-          (abilityRes) => {
-            if (abilityRes.ok && !abilityRes.noop) {
-              if (abilityRes.hostStages) {
-                useGameStore.setState({
-                  myStages: amIHost ? abilityRes.hostStages : abilityRes.guestStages,
-                  oppStages: amIHost ? abilityRes.guestStages : abilityRes.hostStages,
-                  battleStatuses: amIHost ? abilityRes.hostStatuses : abilityRes.guestStatuses,
-                  opponentStatuses: amIHost ? abilityRes.guestStatuses : abilityRes.hostStatuses,
-                });
-              }
-              if (typeof abilityRes.hostHp === "number") {
-                setMyHp(amIHost ? abilityRes.hostHp : abilityRes.guestHp!);
-                setOppHp(amIHost ? abilityRes.guestHp! : abilityRes.hostHp);
-              }
-              if (partnerId != null) {
-                emit({
-                  kind: "signature",
-                  side: "self",
-                  partnerId,
-                  hitsOpponent: true,
-                  questionIndex: idxAtAnswer,
-                  dedupeKey: `self:signature:${idxAtAnswer}:${partnerId}`,
-                });
-              }
-            }
-          },
-        );
-      }
-      // Client-only hamper effects (option scramble / hide / highlight) have no
-      // server magnitude to trust — they're purely cosmetic UI disruption on
-      // the OPPONENT's own screen, so nothing to apply on this client.
     }
+    // The legacy post_answer fire lived in an `else` here: evaluate the ability, and
+    // if anything came back, call the RPC. Deleted 2026-07-13. `evaluatePostAnswer`
+    // bails on engine-owned rows — all 104 of them — so it always returned [], the RPC
+    // never fired, and the "🌪️ Rayquaza negated the weather!" toast gated behind it
+    // could never show either (owner ruling: the engine took over; the message is
+    // obsolete). Every post_answer effect now comes from the engine tick below.
+    //
+    // The suppression toast above is KEPT — it is the one live thing in this block,
+    // because it keys off `wiring` alone and never consults the dead evaluator.
 
     // signature-rework M1 — run the server-authoritative signature engine once
     // per human answer, UNCONDITIONALLY (never gated by a "should fire" check;
