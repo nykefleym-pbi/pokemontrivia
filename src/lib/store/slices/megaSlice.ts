@@ -1,4 +1,4 @@
-import type { GameState } from "@/lib/store";
+import type { GameState } from "@/lib/store/types";
 import type { StoreSlice } from "@/lib/store/slice";
 
 export const createMegaSlice: StoreSlice<

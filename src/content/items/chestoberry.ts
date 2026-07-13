@@ -1,0 +1,15 @@
+import type { ItemDef } from "./item-def";
+import { spriteIconUrl } from "./icon";
+
+export const chestoberry: ItemDef = {
+  id: "chestoberry",
+  category: "BERRY",
+  name: "Chesto Berry",
+  emoji: "🫐",
+  iconUrl: spriteIconUrl("chesto-berry"),
+  desc: "Shakes off Sleep on yourself. (Nearby Battle only.)",
+  cost: 0,
+  isBerry: true,
+  pvpOnly: true,
+  berry: { target: "self", effect: { type: "cureStatus", status: "sleep" } },
+};

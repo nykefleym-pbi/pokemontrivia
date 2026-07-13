@@ -1,54 +1,17 @@
-import type { ItemId } from "@/lib/game-data";
-
 // Shared item categorisation used by the Shop bag and the in-battle bag so
 // both render the same grouped layout.
 // "BERRY" is deliberately omitted from CATEGORIES below so berries never render
 // as a tab in the Solo shop / in-battle bag; the Nearby-Battle screen renders
 // them through its own dedicated berry bag.
-export type ItemCategory = "HEALING" | "BATTLE" | "UTILITY" | "PREMIUM" | "BERRY";
+export type { ItemCategory } from "../content/items/item-def";
+import type { ItemCategory } from "../content/items/item-def";
+import type { ItemId } from "../content/items/item-def";
+import { ITEM_LIST } from "../content/items";
 
-export const CATEGORY_OF: Record<ItemId, ItemCategory> = {
-  cheriberry: "BERRY",
-  chestoberry: "BERRY",
-  pechaberry: "BERRY",
-  rawstberry: "BERRY",
-  persimberry: "BERRY",
-  lumberry: "BERRY",
-  liechiberry: "BERRY",
-  ganlonberry: "BERRY",
-  salacberry: "BERRY",
-  starfberry: "BERRY",
-  tangaberry: "BERRY",
-  kasibberry: "BERRY",
-  chopleberry: "BERRY",
-  colburberry: "BERRY",
-  potion: "HEALING",
-  superpotion: "HEALING",
-  maxpotion: "HEALING",
-  focusband: "HEALING",
-  revive: "HEALING",
-  oranberry: "HEALING",
-  kingsrock: "HEALING",
-  leftovers: "HEALING",
-  xattack: "BATTLE",
-  scope: "BATTLE",
-  xaccuracy: "BATTLE",
-  quickclaw: "BATTLE",
-  assaultvest: "BATTLE",
-  zoomlens: "BATTLE",
-  silkscarf: "BATTLE",
-  metronome: "BATTLE",
-  escape: "UTILITY",
-  amuletcoin: "UTILITY",
-  repel: "UTILITY",
-  expcharm: "UTILITY",
-  luckypunch: "UTILITY",
-  starpiece: "UTILITY",
-  choicespecs: "UTILITY",
-  candy: "PREMIUM",
-  luckyegg: "PREMIUM",
-  bignugget: "PREMIUM",
-};
+/** Derived from each item's own definition file — no second list to keep in sync. */
+export const CATEGORY_OF: Record<ItemId, ItemCategory> = Object.fromEntries(
+  ITEM_LIST.map((it) => [it.id, it.category]),
+) as Record<ItemId, ItemCategory>;
 
 export const CATEGORIES: Array<{ id: ItemCategory; label: string }> = [
   { id: "HEALING", label: "Healing" },

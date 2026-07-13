@@ -3,13 +3,14 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useGameStore } from "@/lib/store";
 import { ALL_POKEMON, spriteUrl, type PokeType } from "@/lib/pokemon-data";
 import { isLegendaryOrMythical } from "@/lib/legendary-data";
-import { ITEMS, type ItemId } from "@/lib/game-data";
+import { ITEMS } from "@/lib/game-data";
 import { WHOS_THAT_XP } from "@/lib/rewards";
 import { rollLevelUpRewards } from "@/lib/level-rewards";
 import { PokemonSprite } from "@/components/game-ui";
 import { playCry, playSfx, stopBgm, revealPokemon, playWhosThatShout } from "@/lib/audio";
 import { pokeApiUrls } from "@/lib/api/pokeapi";
 import { syncActivity } from "@/lib/social";
+import type { WhosThatMode as Mode, WhosThatRound as Round } from "@/lib/whos-that";
 
 export const Route = createFileRoute("/whos-that-pokemon")({
   component: WhosThatPokemon,
@@ -114,21 +115,6 @@ function fmtHMS(ms: number): string {
   return `${p(Math.floor(s / 3600))}:${p(Math.floor((s % 3600) / 60))}:${p(s % 60)}`;
 }
 
-type Mode = "1A" | "1B" | "2" | "3" | "4" | "5";
-export interface Round {
-  monId: number;
-  name: string;
-  types: PokeType[];
-  mode: Mode;
-  isShiny: boolean;
-  rewardId: ItemId;
-  rewardName: string;
-  rewardIcon: string;
-  cropBack: boolean;
-  cropDX: number;
-  cropDY: number;
-  choices: string[];
-}
 interface DexEntry {
   flavor: string;
   genus: string;

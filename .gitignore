@@ -34,3 +34,6 @@ dist-ssr
 
 # graphify knowledge-graph output (generated; rebuild with /graphify)
 graphify-out/
+
+# Local environment (never commit)
+.env
