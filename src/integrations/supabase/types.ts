@@ -184,6 +184,35 @@ export type Database = {
           },
         ]
       }
+      grants: {
+        Row: {
+          granted_at: string
+          kind: string
+          ref_id: string
+          user_id: string
+        }
+        Insert: {
+          granted_at?: string
+          kind: string
+          ref_id: string
+          user_id: string
+        }
+        Update: {
+          granted_at?: string
+          kind?: string
+          ref_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mega_event_questions: {
         Row: {
           event_id: string
@@ -414,74 +443,293 @@ export type Database = {
         }
         Relationships: []
       }
+      pvp_item_effects: {
+        Row: {
+          item_id: string
+          kind: string
+          payload: Json
+          target: string
+        }
+        Insert: {
+          item_id: string
+          kind: string
+          payload: Json
+          target: string
+        }
+        Update: {
+          item_id?: string
+          kind?: string
+          payload?: Json
+          target?: string
+        }
+        Relationships: []
+      }
+      pvp_live_effects: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string | null
+          kind: string
+          match_id: string
+          payload: Json
+          pokemon_id: number | null
+          question_index: number
+          source: string
+          source_id: string
+          target: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id?: string | null
+          kind: string
+          match_id: string
+          payload?: Json
+          pokemon_id?: number | null
+          question_index: number
+          source?: string
+          source_id: string
+          target: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string | null
+          kind?: string
+          match_id?: string
+          payload?: Json
+          pokemon_id?: number | null
+          question_index?: number
+          source?: string
+          source_id?: string
+          target?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pvp_live_effects_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "pvp_live_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pvp_live_effects_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pvp_live_matches: {
         Row: {
           created_at: string
           expires_at: string
+          guest_ability_id: string | null
+          guest_ability_started: boolean
+          guest_answered_live: number
           guest_completed_at: string | null
           guest_correct: number | null
+          guest_correct_live: number
+          guest_hp: number
           guest_id: string
+          guest_items_used: number
+          guest_last_submitted_idx: number
+          guest_manual_fires: number
+          guest_partner_id: number | null
+          guest_post_answer_last_idx: number
+          guest_revive_bonus_until: number
+          guest_revived: boolean
           guest_score: number | null
+          guest_sig_engine_last_idx: number
+          guest_sig_runtime: Json
+          guest_sig_state: Json
+          guest_stages: Json
+          guest_statuses: Json
           guest_streak: number | null
+          guest_suppressed_until: number
           guest_time_ms: number | null
+          guest_time_ms_live: number
           guest_total: number | null
+          guest_transform_id: number | null
+          guest_type_ability_started: boolean
+          guest_used_healing: boolean
+          host_ability_id: string | null
+          host_ability_started: boolean
+          host_answered_live: number
           host_completed_at: string | null
           host_correct: number | null
+          host_correct_live: number
+          host_hp: number
           host_id: string
+          host_items_used: number
+          host_last_submitted_idx: number
+          host_manual_fires: number
+          host_partner_id: number | null
+          host_post_answer_last_idx: number
+          host_revive_bonus_until: number
+          host_revived: boolean
           host_score: number | null
+          host_sig_engine_last_idx: number
+          host_sig_runtime: Json
+          host_sig_state: Json
+          host_stages: Json
+          host_statuses: Json
           host_streak: number | null
+          host_suppressed_until: number
           host_time_ms: number | null
+          host_time_ms_live: number
           host_total: number | null
+          host_transform_id: number | null
+          host_type_ability_started: boolean
+          host_used_healing: boolean
           id: string
+          is_bot_match: boolean
+          live_resolved_at: string | null
           questions: Json
           started_at: string
           status: string
+          weather_owner: string | null
           winner_id: string | null
         }
         Insert: {
           created_at?: string
           expires_at?: string
+          guest_ability_id?: string | null
+          guest_ability_started?: boolean
+          guest_answered_live?: number
           guest_completed_at?: string | null
           guest_correct?: number | null
+          guest_correct_live?: number
+          guest_hp?: number
           guest_id: string
+          guest_items_used?: number
+          guest_last_submitted_idx?: number
+          guest_manual_fires?: number
+          guest_partner_id?: number | null
+          guest_post_answer_last_idx?: number
+          guest_revive_bonus_until?: number
+          guest_revived?: boolean
           guest_score?: number | null
+          guest_sig_engine_last_idx?: number
+          guest_sig_runtime?: Json
+          guest_sig_state?: Json
+          guest_stages?: Json
+          guest_statuses?: Json
           guest_streak?: number | null
+          guest_suppressed_until?: number
           guest_time_ms?: number | null
+          guest_time_ms_live?: number
           guest_total?: number | null
+          guest_transform_id?: number | null
+          guest_type_ability_started?: boolean
+          guest_used_healing?: boolean
+          host_ability_id?: string | null
+          host_ability_started?: boolean
+          host_answered_live?: number
           host_completed_at?: string | null
           host_correct?: number | null
+          host_correct_live?: number
+          host_hp?: number
           host_id: string
+          host_items_used?: number
+          host_last_submitted_idx?: number
+          host_manual_fires?: number
+          host_partner_id?: number | null
+          host_post_answer_last_idx?: number
+          host_revive_bonus_until?: number
+          host_revived?: boolean
           host_score?: number | null
+          host_sig_engine_last_idx?: number
+          host_sig_runtime?: Json
+          host_sig_state?: Json
+          host_stages?: Json
+          host_statuses?: Json
           host_streak?: number | null
+          host_suppressed_until?: number
           host_time_ms?: number | null
+          host_time_ms_live?: number
           host_total?: number | null
+          host_transform_id?: number | null
+          host_type_ability_started?: boolean
+          host_used_healing?: boolean
           id?: string
+          is_bot_match?: boolean
+          live_resolved_at?: string | null
           questions: Json
           started_at: string
           status?: string
+          weather_owner?: string | null
           winner_id?: string | null
         }
         Update: {
           created_at?: string
           expires_at?: string
+          guest_ability_id?: string | null
+          guest_ability_started?: boolean
+          guest_answered_live?: number
           guest_completed_at?: string | null
           guest_correct?: number | null
+          guest_correct_live?: number
+          guest_hp?: number
           guest_id?: string
+          guest_items_used?: number
+          guest_last_submitted_idx?: number
+          guest_manual_fires?: number
+          guest_partner_id?: number | null
+          guest_post_answer_last_idx?: number
+          guest_revive_bonus_until?: number
+          guest_revived?: boolean
           guest_score?: number | null
+          guest_sig_engine_last_idx?: number
+          guest_sig_runtime?: Json
+          guest_sig_state?: Json
+          guest_stages?: Json
+          guest_statuses?: Json
           guest_streak?: number | null
+          guest_suppressed_until?: number
           guest_time_ms?: number | null
+          guest_time_ms_live?: number
           guest_total?: number | null
+          guest_transform_id?: number | null
+          guest_type_ability_started?: boolean
+          guest_used_healing?: boolean
+          host_ability_id?: string | null
+          host_ability_started?: boolean
+          host_answered_live?: number
           host_completed_at?: string | null
           host_correct?: number | null
+          host_correct_live?: number
+          host_hp?: number
           host_id?: string
+          host_items_used?: number
+          host_last_submitted_idx?: number
+          host_manual_fires?: number
+          host_partner_id?: number | null
+          host_post_answer_last_idx?: number
+          host_revive_bonus_until?: number
+          host_revived?: boolean
           host_score?: number | null
+          host_sig_engine_last_idx?: number
+          host_sig_runtime?: Json
+          host_sig_state?: Json
+          host_stages?: Json
+          host_statuses?: Json
           host_streak?: number | null
+          host_suppressed_until?: number
           host_time_ms?: number | null
+          host_time_ms_live?: number
           host_total?: number | null
+          host_transform_id?: number | null
+          host_type_ability_started?: boolean
+          host_used_healing?: boolean
           id?: string
+          is_bot_match?: boolean
+          live_resolved_at?: string | null
           questions?: Json
           started_at?: string
           status?: string
+          weather_owner?: string | null
           winner_id?: string | null
         }
         Relationships: [
@@ -599,6 +847,60 @@ export type Database = {
           },
         ]
       }
+      pvp_signature_effects: {
+        Row: {
+          effect_index: number
+          kind: string
+          payload: Json
+          phase: string
+          pokemon_id: number
+          target: string
+        }
+        Insert: {
+          effect_index: number
+          kind: string
+          payload: Json
+          phase: string
+          pokemon_id: number
+          target: string
+        }
+        Update: {
+          effect_index?: number
+          kind?: string
+          payload?: Json
+          phase?: string
+          pokemon_id?: number
+          target?: string
+        }
+        Relationships: []
+      }
+      pvp_type_ability_effects: {
+        Row: {
+          ability_id: string
+          effect_index: number
+          kind: string
+          payload: Json
+          phase: string
+          target: string
+        }
+        Insert: {
+          ability_id: string
+          effect_index: number
+          kind: string
+          payload: Json
+          phase: string
+          target: string
+        }
+        Update: {
+          ability_id?: string
+          effect_index?: number
+          kind?: string
+          payload?: Json
+          phase?: string
+          target?: string
+        }
+        Relationships: []
+      }
       referrals: {
         Row: {
           created_at: string
@@ -638,11 +940,172 @@ export type Database = {
           },
         ]
       }
+      saves: {
+        Row: {
+          state: Json
+          updated_at: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          state: Json
+          updated_at?: string
+          user_id: string
+          version?: number
+        }
+        Update: {
+          state?: Json
+          updated_at?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saves_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      _pvp_apply_engine_status: {
+        Args: {
+          _i_am_host: boolean
+          _match_id: string
+          _pokemon_id: number
+          _question_index: number
+        }
+        Returns: Json
+      }
+      _pvp_apply_m4_fx: {
+        Args: {
+          _i_am_host: boolean
+          _match_id: string
+          _pokemon_id: number
+          _question_index: number
+        }
+        Returns: Json
+      }
+      _pvp_apply_status: {
+        Args: { _cures: number; _kind: string; _statuses: Json }
+        Returns: Json
+      }
+      _pvp_bump_stage: {
+        Args: { _delta: number; _stages: Json; _stat: string }
+        Returns: Json
+      }
+      _pvp_bump_stage_tracked: {
+        Args: {
+          _cap: number
+          _dex: string
+          _per_fire: number
+          _runtime: Json
+          _stages: Json
+          _stat: string
+          _target: string
+        }
+        Returns: Json
+      }
+      _pvp_cure_status: {
+        Args: { _kind: string; _statuses: Json }
+        Returns: Json
+      }
+      _pvp_index_shield_zero: {
+        Args: { _dex: number; _q_no: number; _runtime: Json }
+        Returns: boolean
+      }
+      _pvp_is_major_status: { Args: { _kind: string }; Returns: boolean }
+      _pvp_m4_row_disabled: {
+        Args: {
+          _i_am_host: boolean
+          _match: Database["public"]["Tables"]["pvp_live_matches"]["Row"]
+          _pokemon_id: number
+        }
+        Returns: boolean
+      }
+      _pvp_m4_window_active: {
+        Args: { _dex: number; _key: string; _q_no: number; _runtime: Json }
+        Returns: boolean
+      }
+      _pvp_m4_window_apply: {
+        Args: {
+          _i_am_host: boolean
+          _match_id: string
+          _opp_timer_ms: number
+          _opp_timer_questions: number
+          _pokemon_id: number
+          _question_index: number
+          _self_dmg_zero: boolean
+          _shield_questions: number
+        }
+        Returns: Json
+      }
+      _pvp_poison_tick: { Args: { _statuses: Json }; Returns: Json }
+      _pvp_revert_ability_stat: {
+        Args: {
+          _dex: string
+          _opp_stages: Json
+          _runtime: Json
+          _self_stages: Json
+        }
+        Returns: Json
+      }
+      _pvp_shield_pct: { Args: { _dex: number }; Returns: number }
+      _pvp_sig_engine_apply: {
+        Args: {
+          _correct: boolean
+          _disable_kind: string
+          _disable_n: number
+          _disable_next_question: boolean
+          _expire_after_questions?: number
+          _i_am_host: boolean
+          _incorrect_stat_specs?: Json
+          _match_id: string
+          _opp_hp?: number
+          _pokemon_id: number
+          _question_index: number
+          _self_hp?: number
+          _stack_cap: number
+          _stat_specs: Json
+          _trigger_fired: boolean
+        }
+        Returns: Json
+      }
+      apply_bot_pvp_signature_effect: {
+        Args: {
+          _match_id: string
+          _phase: string
+          _pokemon_id: number
+          _question_index: number
+          _scale_count?: number
+        }
+        Returns: Json
+      }
+      apply_pvp_signature_effect: {
+        Args: {
+          _match_id: string
+          _phase: string
+          _pokemon_id: number
+          _question_index: number
+          _scale_count?: number
+        }
+        Returns: Json
+      }
+      apply_pvp_type_ability_effect: {
+        Args: {
+          _ability_id: string
+          _match_id: string
+          _phase: string
+          _question_index: number
+        }
+        Returns: Json
+      }
       claim_pending_referral_rewards: { Args: never; Returns: Json }
       claim_referral: { Args: { _code: string }; Returns: Json }
       claim_trainer_name: { Args: { _name: string }; Returns: Json }
@@ -651,7 +1114,9 @@ export type Database = {
         Returns: Json
       }
       decline_pvp_challenge: { Args: { _match_id: string }; Returns: Json }
-      forfeit_live_pvp_match: { Args: { _match_id: string }; Returns: Json }
+      forfeit_live_pvp_match:
+        | { Args: { _match_id: string }; Returns: Json }
+        | { Args: { _concede?: boolean; _match_id: string }; Returns: Json }
       get_curated_questions: {
         Args: {
           p_count: number
@@ -712,33 +1177,6 @@ export type Database = {
           trainer_name: string
           trainer_sprite: string
         }[]
-      }
-      lookup_profile_by_code: {
-        Args: { _code: string }
-        Returns: {
-          ace_pokemon_id: number | null
-          created_at: string
-          friend_code: string
-          id: string
-          last_daily_claim: string | null
-          last_gift_claim: string | null
-          last_mega_played: string | null
-          last_reminder_sent: string | null
-          last_weekly_attempt: string | null
-          last_whos_that_played: string | null
-          level: number
-          pokedex_count: number
-          trainer_name: string | null
-          trainer_sprite: string
-          updated_at: string
-          xp: number
-        }
-        SetofOptions: {
-          from: "*"
-          to: "profiles"
-          isOneToOne: true
-          isSetofReturn: false
-        }
       }
       list_pvp_invites: {
         Args: never
@@ -802,6 +1240,33 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      lookup_profile_by_code: {
+        Args: { _code: string }
+        Returns: {
+          ace_pokemon_id: number | null
+          created_at: string
+          friend_code: string
+          id: string
+          last_daily_claim: string | null
+          last_gift_claim: string | null
+          last_mega_played: string | null
+          last_reminder_sent: string | null
+          last_weekly_attempt: string | null
+          last_whos_that_played: string | null
+          level: number
+          pokedex_count: number
+          trainer_name: string | null
+          trainer_sprite: string
+          updated_at: string
+          xp: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       my_pending_request_targets: { Args: never; Returns: string[] }
       pick_battle_curated: {
         Args: { p_count: number; p_difficulty: string; p_exclude?: string[] }
@@ -825,6 +1290,100 @@ export type Database = {
           question: string
         }[]
       }
+      pvp_bot_sig_engine_status: {
+        Args: {
+          _match_id: string
+          _pokemon_id: number
+          _question_index: number
+        }
+        Returns: Json
+      }
+      pvp_bot_sig_engine_tick: {
+        Args: {
+          _correct: boolean
+          _disable_kind?: string
+          _disable_n?: number
+          _disable_next_question?: boolean
+          _expire_after_questions?: number
+          _incorrect_stat_specs?: Json
+          _match_id: string
+          _opp_hp?: number
+          _pokemon_id: number
+          _question_index: number
+          _self_hp?: number
+          _stack_cap?: number
+          _stat_specs?: Json
+          _trigger_fired: boolean
+        }
+        Returns: Json
+      }
+      pvp_bot_sig_m4_fx: {
+        Args: {
+          _match_id: string
+          _pokemon_id: number
+          _question_index: number
+        }
+        Returns: Json
+      }
+      pvp_bot_sig_m4_window: {
+        Args: {
+          _match_id: string
+          _opp_timer_ms?: number
+          _opp_timer_questions?: number
+          _pokemon_id: number
+          _question_index: number
+          _self_dmg_zero?: boolean
+          _shield_questions?: number
+        }
+        Returns: Json
+      }
+      pvp_sig_engine_status: {
+        Args: {
+          _match_id: string
+          _pokemon_id: number
+          _question_index: number
+        }
+        Returns: Json
+      }
+      pvp_sig_engine_tick: {
+        Args: {
+          _correct: boolean
+          _disable_kind?: string
+          _disable_n?: number
+          _disable_next_question?: boolean
+          _expire_after_questions?: number
+          _incorrect_stat_specs?: Json
+          _match_id: string
+          _opp_hp?: number
+          _pokemon_id: number
+          _question_index: number
+          _self_hp?: number
+          _stack_cap?: number
+          _stat_specs?: Json
+          _trigger_fired: boolean
+        }
+        Returns: Json
+      }
+      pvp_sig_m4_fx: {
+        Args: {
+          _match_id: string
+          _pokemon_id: number
+          _question_index: number
+        }
+        Returns: Json
+      }
+      pvp_sig_m4_window: {
+        Args: {
+          _match_id: string
+          _opp_timer_ms?: number
+          _opp_timer_questions?: number
+          _pokemon_id: number
+          _question_index: number
+          _self_dmg_zero?: boolean
+          _shield_questions?: number
+        }
+        Returns: Json
+      }
       respond_friend_request: {
         Args: { _accept: boolean; _request_id: string }
         Returns: Json
@@ -835,8 +1394,30 @@ export type Database = {
       }
       send_friend_request: { Args: { _code: string }; Returns: Json }
       send_friend_request_by_id: { Args: { _target: string }; Returns: Json }
+      set_live_pvp_partner: {
+        Args: { _ability_id?: string; _match_id: string; _partner_id: number }
+        Returns: Json
+      }
+      set_live_pvp_transform: {
+        Args: { _match_id: string; _transform_id: number }
+        Returns: Json
+      }
+      start_bot_pvp_match: {
+        Args: { _partner_id?: number; _questions: Json }
+        Returns: Json
+      }
       start_live_pvp_match: {
-        Args: { _opponent_code: string; _questions: Json }
+        Args: { _opponent_code: string; _partner_id?: number; _questions: Json }
+        Returns: Json
+      }
+      submit_bot_pvp_move: {
+        Args: {
+          _correct: boolean
+          _dmg: number
+          _match_id: string
+          _question_index: number
+          _time_ms: number
+        }
         Returns: Json
       }
       submit_live_pvp_result: {
@@ -877,6 +1458,35 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      submit_pvp_live_answer: {
+        Args: {
+          _correct: boolean
+          _dmg: number
+          _match_id: string
+          _question_index: number
+          _self_dmg: number
+          _time_ms: number
+        }
+        Returns: Json
+      }
+      submit_pvp_result: {
+        Args: {
+          _correct: number
+          _match_id: string
+          _max_streak: number
+          _time_ms: number
+          _total: number
+        }
+        Returns: Json
+      }
+      use_bot_pvp_live_item: {
+        Args: { _item_id: string; _match_id: string; _question_index: number }
+        Returns: Json
+      }
+      use_pvp_live_item: {
+        Args: { _item_id: string; _match_id: string; _question_index: number }
+        Returns: Json
       }
     }
     Enums: {
@@ -1002,7 +1612,7 @@ export type CompositeTypes<
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["Enums"][PublicCompositeTypeNameOrOptions]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
 
 export const Constants = {

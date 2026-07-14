@@ -628,7 +628,7 @@ export async function getLivePvpMatch(matchId: string): Promise<LivePvpMatch | n
     console.warn("[pvp-live] getLivePvpMatch failed:", error.message);
     return null;
   }
-  return data ? fromRow(data as LivePvpMatchRow) : null;
+  return data ? fromRow(data as unknown as LivePvpMatchRow) : null;
 }
 
 /**
