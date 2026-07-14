@@ -34,7 +34,7 @@ The app is client-heavy: game logic and state live in the browser (Zustand + loc
 - **Multiple single-player modes** — Regular battles, Daily Quest, Weekly Gym League, Elite Four, Mega Raids, and Who's That Pokémon.
 - **Real-time PvP** — async friend battles plus **Nearby Battle**, a live HP-endurance duel started by scanning a friend's QR/battle code, and **Training vs Bot** for solo practice against a computer opponent.
 - **Legendary/Mythical system** — a 104-Pokémon roster with data-driven **signature abilities**, egg-only exclusivity, and type-colored partner frames.
-- **PvP depth** — Attack/Defense/Speed/Crit stat stages, a shared status-condition system with on-sprite animations, and 14 PvP-exclusive **berries**.
+- **PvP depth** — Attack/Defense/Speed/Crit stat stages, a shared status-condition system with on-sprite animations, 14 PvP-exclusive **berries**, working in-battle items (potions, Scope Lens, X Accuracy), and per-type abilities that fire in Nearby Battle — with Legendary/Mythical partners running **both** their signature and their type ability.
 - **Progression & collection** — XP/level/rank curves, level-up rewards, Pokédex capture, partner selection & evolution, Poké-Egg hatching, trophies and gym badges.
 - **Social** — friends, friend-code sharing, referral campaign, and an in-app suggestion/bug form that **auto-files GitHub issues**.
 - **PWA** — installable, offline-capable service worker, and real **Web Push** notifications (mode reminders, daily promo, friend/PvP events).
@@ -54,7 +54,7 @@ See [`WORKLIST.md`](./WORKLIST.md) for the full shipped-features log and backlog
 | Who's That Pokémon | Battle tab | Silhouette-guessing mini-game on an hourly rotation. |
 | Async PvP | Profile → Friends → Challenge | Turn-a-friend-a-question-set battle via an inbox. |
 | Nearby Battle | Profile → PvP → Nearby Battle | Live, real-time HP battle by scanning a friend's battle code. |
-| Training vs Bot | Profile → PvP → Training | Live battle against a randomized bot opponent. |
+| Training vs Bot | Profile → PvP → Training | Live battle against a difficulty-tiered bot opponent (Rookie / Trainer / Ace). |
 
 ## Tech stack
 

@@ -2,7 +2,7 @@
 
 > A comprehensive, source-accurate reference for the game exactly as it exists in the codebase. Every number, formula, cost, name, and effect below is transcribed directly from the source and cited inline as `` (`path`) `` so future readers can verify it. This is a living reference for the product owner; where the code itself flags a simplification or an unwired mechanic, that is called out honestly rather than papered over.
 
-**Last updated:** 2026-07-07
+**Last updated:** 2026-07-10
 
 ---
 
@@ -28,7 +28,7 @@
 
 ## 1. Overview & Modes
 
-The game is a Pokémon-trivia PWA. The player picks a partner Pokémon, answers multiple-choice trivia questions across several modes, and every mode feeds a shared economy (XP, coins, Training Points, items, Poké Eggs). Questions are served from a curated Supabase bank with an AI gateway and a bundled offline fallback bank of 30 questions `` (`src/lib/game-data.ts` `FALLBACK_QUESTIONS`) ``.
+The game is a Pokémon-trivia PWA. The player picks a partner Pokémon, answers multiple-choice trivia questions across several modes, and every mode feeds a shared economy (XP, coins, Training Points, items, Poké Eggs). Questions are served from a **curated Supabase bank** (AI question generation was removed — every mode now serves curated questions `` (`src/routes/api.*.ts`, `src/lib/curated-questions.ts`, `trivia-core.ts`) ``) with a bundled offline fallback bank of 30 questions `` (`src/lib/game-data.ts` `FALLBACK_QUESTIONS`) ``.
 
 | Mode | Where | Length | Core loop |
 |------|-------|--------|-----------|
@@ -61,15 +61,24 @@ Enemy opponents in Solo modes are drawn from the full roster **excluding** Legen
 
 XP is stored as a single cumulative total; level and in-level progress are derived `` (`src/lib/game-data.ts`) ``.
 
-**Per-level XP requirement** `` (`xpForLevel`) ``:
+**Per-level XP requirement** `` (`xpForLevel`, `XP_TO_NEXT`) ``: the old linear-plus-quadratic formula was replaced (feedback adc10973) with a **Pokémon-GO trainer-level lookup table divided by 10** `` (`XP_TO_NEXT`) ``. `XP_TO_NEXT[k]` is the XP needed to advance **from** level `k+1`, so `xpForLevel(level) = XP_TO_NEXT[level - 1]`:
 
 ```
-xpForLevel(level) = round( 80 + (level - 1) * 40 + 0.5 * overCap² )
-  where overCap = max(0, level - 51)
+XP_TO_NEXT = [
+   250,  300,  350,  400,  500,  600,  700,  800,  900, 1000,   // L1→2 .. L10→11
+  1200, 1400, 1600, 1800, 2100, 2450, 2800, 3150, 3500, 4200,   // L11→12 .. L20→21
+  4900, 5600, 6300, 7000, 8300, 9600,10900,12200,13500,15800,   // L21→22 .. L30→31
+ 18100,20400,22700,25000,29000,33000,37000,41000,45000,52000,   // L31→32 .. L40→41
+ 59000,66000,73000,80000,90000,100000,110000,120000,130000,     // L41→42 .. L49→50
+]
+
+xpForLevel(level) =
+  level <= 49            → XP_TO_NEXT[level - 1]
+  level  > 49 (past L50) → 130000 + (level - 49) * 10000   // +10,000 per level, endless tail
 ```
 
-- Linear (+40 XP per level) up through level 51 (Monarch), then a quadratic tail makes the endless endgame progressively harder.
-- Level 1 → 2 needs 80 XP; L2 → 3 needs 120; L10 → 11 needs 440; L51 → 52 needs `80 + 50*40 + 0.5*1 = 2081` (`round`).
+- The 49-entry table covers levels 1→2 through 49→50 (the last entry, 130,000, is the cost of reaching level 50, matching the source table's end). Past that the endless endgame keeps climbing at the table's final gradient, `+10,000 XP` per level.
+- Worked values: Level 1 → 2 needs **250** XP; L2 → 3 needs **300**; L10 → 11 needs **1,200**; L49 → 50 needs **130,000**; L50 → 51 needs `130000 + 1*10000 = 140,000`.
 
 **Derived helpers:**
 ```
@@ -126,7 +135,7 @@ tp = round(0.2 · xp)
 Flat **+100 XP** per correct identification.
 
 ### 3.5 Mega Raid rewards `` (`src/lib/mega/schedule.ts`) ``
-Boss HP `MEGA_BOSS_HP = 400`, `MEGA_BOSS_DMG = 10` per correct, so `MEGA_WIN_CORRECT = 40` correct answers wins. 50 questions per run `` (`MEGA_QUESTION_COUNT`) ``, up to 2 attempts (`MEGA_MAX_ATTEMPTS`), shiny chance `0.10` (`MEGA_SHINY_CHANCE`). Base win reward `` (`MEGA_REWARD`) ``: `{ xp: 2500, coins: 2500, tp: 1000, items: 10 }`, plus a Poké Egg and the base final-evolution Pokédex entry. Leaderboard rank scales the reward `` (`megaRankScale`) ``: rank 1 → 1.0×, rank 2 → 0.5×, rank 3 → 0.3×, else → 0.05×. (Actual per-event reward values come from the `mega_events` row columns `win_xp/win_tp/win_items` and `champ_*`.)
+Boss HP `MEGA_BOSS_HP = 400`, `MEGA_BOSS_DMG = 10` per correct, so `MEGA_WIN_CORRECT = 40` correct answers wins. 50 questions per run `` (`MEGA_QUESTION_COUNT`) ``, up to 2 attempts (`MEGA_MAX_ATTEMPTS`), shiny chance `0.10` (`MEGA_SHINY_CHANCE`). **Leaving a run mid-way now counts as an attempt** — the back-button/leave path records the run as a loss via `submitMegaRun` instead of a free exit, so a player can't bail to preserve an attempt `` (`src/components/mega/MegaRaidScreen.tsx`) ``. Base win reward `` (`MEGA_REWARD`) ``: `{ xp: 2500, coins: 2500, tp: 1000, items: 10 }`, plus a Poké Egg and the base final-evolution Pokédex entry. Leaderboard rank scales the reward `` (`megaRankScale`) ``: rank 1 → 1.0×, rank 2 → 0.5×, rank 3 → 0.3×, else → 0.05×. (Actual per-event reward values come from the `mega_events` row columns `win_xp/win_tp/win_items` and `champ_*`.)
 
 ### 3.6 Level-up rewards `` (`src/lib/level-rewards.ts` `rollLevelUpRewards`) ``
 
@@ -160,7 +169,7 @@ TP fuels **evolution** and a **partner damage bonus**. TP damage tiers `` (`TP_D
 | 700 | 1.15× |
 | 1500 | 1.20× |
 
-Evolution TP cost `` (`EVOLUTION_TP_COST`) ``: stage 1 → 2 costs **150 TP**, stage 2 → 3 costs **350 TP**.
+Evolution TP cost `` (`EVOLUTION_TP_COST`) ``: raised sharply (feedback 582e8210) to follow the mainline games' level-to-evolve requirement at **1 level = 1,000 TP**. Per-species evolve levels aren't in the generated dataset, so each stage uses the typical mainline level for that stage: stage 1 → 2 costs **16,000 TP** (≈ level 16), stage 2 → 3 costs **36,000 TP** (≈ level 36).
 
 ---
 
@@ -281,11 +290,21 @@ Every type has **exactly three** abilities; a partner rolls one of its **primary
 
 (Bold = index-0 legacy ability for that type.) These descriptions match the implemented logic in `battle-screen.tsx` (spot-checked: `bulldoze` = ×1.25 when disadvantaged, `moxie` +1/3-streak accumulation, `stealth-rock` 3 dmg every 5 questions, `sturdy` revive-at-1, `iron-barbs` −3 wrong dmg).
 
+### 5.1 Type abilities in Nearby Battle (PvP) `` (`src/lib/pvp-type-abilities.ts`) ``
+
+The table above describes each ability's **Solo** effect. As of the "Nearby Battle: working items, type abilities" pass, **every partner also runs its type ability in Nearby Battle** — non-legendary partners run only their type ability; a Legendary/Mythical runs its type ability **in addition to** its signature (see §6). `pvp-type-abilities.ts` re-implements every ability's effect for the HP-endurance PvP model, since PvP has no type-matchup damage, no super-effective hits, no economy, and a shared wall-clock timer.
+
+- **Trust model** mirrors the signature system: pure damage / self-damage number tweaks are computed **client-side** and folded into the per-answer `dmg`/`selfDmg` that `submit_pvp_live_answer` already clamps to `[0, 60]`; anything that mutates the authoritative row (HP heals, stat stages, statuses, cures) routes through the server catalog `pvp_type_ability_effects` via `apply_pvp_type_ability_effect` — the client only names **which** ability + phase and the **timing**, the server owns every magnitude.
+- **Wiring shapes** `` (`TypeAbilityPvp`) ``: `damage` (correct-answer bonus — flat + pct), `selfDmg` (wrong-answer chip reduction/zero), `battleStart` (one-time standing catalog effect), `postAnswerFires` (server heal/stat/status/cure after an answer), `keepsStreakOnWrong` (Sand Force), `revealsWrongAt` (Foresight / Compound Eyes UI aid), `clampsLethalSelfDmg` (Sturdy 1-HP survive), and `inert` (announced "in play" but no mechanical PvP effect).
+- **Reinterpretations** (called out inline in source): abilities with no faithful HP-endurance analog are mapped to the closest conservative combat effect. E.g. `adaptable`/`swift-swim`/`sand-veil`/`aerilate` become a standing **+1 stat stage** at battle start (Defense or Speed); `intimidate` → opponent **−1 Attack**; `even-tempo` → flat +2 damage; `slush-rush`/`filter`/`iron-barbs` → flat/percent wrong-answer reduction; `bulldoze` → +25% while below half HP (underdog proxy). Abilities with no PvP hook are `inert`: `pickup`, `synthesis`, `magic-guard` (statuses never tick HP in PvP), `amnesia`, `solid-rock` (caps incoming damage, dealt by the *opponent's* client — unenforceable), `metalworks`, `dark-aura`.
+
 ---
 
 ## 6. Signature Abilities (Legendary / Mythical)
 
-Only **Legendary/Mythical partners** get a signature ability (non-legendary partners get nothing) `` (`src/lib/signature-abilities.ts` `signatureAbilityFor`, gated by `isLegendaryOrMythical`) ``. **Scope is PvP (Nearby Battle) only** — the v2 doc's "Solo Effect" column is intentionally ignored. The roster is **104 ids** `` (`src/lib/legendary-data.ts` `ALL_LEGENDARY_MYTHICAL_IDS`) `` and the catalog has one entry per id (Calyrex ships as two: dex 898 Ice Rider + synthetic id 10194 Shadow Rider).
+Only **Legendary/Mythical partners** get a signature ability (non-legendary partners get nothing) `` (`src/lib/signature-abilities.ts` `signatureAbilityFor`, gated by `isLegendaryOrMythical`) ``. **Scope is PvP (Nearby Battle) only** — the v2 doc's "Solo Effect" column is intentionally ignored.
+
+> **Legendary partners now run DUAL abilities in Nearby Battle** (commit 8a0cab9). The signature and type-ability systems used to be mutually exclusive (two `signature ? null : resolveType(...)` gates in `live-pvp-battle-screen.tsx` and `pvp.live.$matchId.tsx`); those gates were removed. A Legendary/Mythical partner now fires **BOTH** its signature ability AND its primary-type ability (§5.1): `typeAbilityId` resolves unconditionally, the signature codepaths gate independently on the partner's `ability`, and both fold into the same per-answer `dmg`/`selfDmg`. Each combat panel's tappable info popover surfaces both ability chips for a legendary; a non-legendary surfaces only its type ability. The data layer confirms both sources resolve non-null simultaneously for the same partner `` (`src/lib/dual-ability.test.ts`) ``. The roster is **104 ids** `` (`src/lib/legendary-data.ts` `ALL_LEGENDARY_MYTHICAL_IDS`) `` and the catalog has one entry per id (Calyrex ships as two: dex 898 Ice Rider + synthetic id 10194 Shadow Rider).
 
 ### 6.1 The engine
 
@@ -463,10 +482,18 @@ Bounded: fully-buffed attacker vs fully-defended opponent swings ~0.70/1.30 … 
 - **Sudden-KO** (a player hits 0 HP) ends the match early.
 - Otherwise, after 20 questions the server resolves via **HP → accuracy → average time** tiebreak (highest HP wins; tie broken by accuracy, then avg answer time).
 - Correct answers deal HP damage to the live opponent; wrong answers cost flat self damage.
+- **Forfeit** `` (`forfeit_live_pvp_match`, `pvp-live.ts` `forfeitLivePvpMatch(matchId, concede)`) `` has two directions (commit da833dc reversed the manual button's meaning): the **Forfeit button** and the **back-button guard** call it with `concede = true`, so the caller **gives up and the opponent is recorded as the winner** — the quitter earns no rewards. The **presence watchdog** calls it with `concede = false`, **claiming** the win for the caller when the opponent has been gone for `FORFEIT_GRACE_MS = 30s`. (Guests-against-their-own-bot are exempted from the presence auto-claim so a human doesn't instantly win against their bot.)
+- **Back-button forfeit guard** `` (`src/lib/use-forfeit-guard.ts`, `useForfeitGuard`) ``: while a battle is live, a hardware/browser back press pops a "Forfeit this battle?" confirm instead of silently leaving; confirming runs the concede path (commit b870672).
+- **Defeat review** (commit 8a0cab9): on a Nearby/Training loss screen the player can **review the questions they missed** — each miss is retained (`onMissed` → `MissedAnswer { question, correctAnswer, explanation }`, with `correctAnswer` taken after the per-client option shuffle) `` (`live-pvp-battle-screen.tsx`, `trivia-core.ts`) ``.
+- **Intro & toasts** (commits c0dca67, 11ddb3a): the Pokéball-throw SFX and battle-start buff toasts fire **only after the shared 3-2-1 countdown ends** (never mid-countdown), and local-side effect toasts announce your own ability/berry activations. See the presentation note below §7.6.
 
 ### 7.4 Items & berries in Nearby Battle
 - **3 items total per battle** (`MAX_ITEMS_PER_BATTLE = 3`, shared with Solo) `` (`src/lib/store/slices/itemsSlice.ts`) ``, plus a **per-item-type cap of 1 use** per battle `` (`live-pvp-battle-screen.tsx` `usedItemIdsRef`) ``.
-- Only a subset of Solo items are allowed in Nearby Battle; `scope`/`xaccuracy` are client-only there `` (`CLIENT_ONLY_ITEMS`) ``. Not all PvP item effects are wired into the live loop (see §15).
+- **Working item set** (commit 91ed56b wired items into the live loop). The Nearby-Battle bag now carries three groups of usable items `` (`live-pvp-battle-screen.tsx`) ``:
+  - **Server-effect healing** `` (`SERVER_EFFECT_ITEMS = ["potion", "superpotion", "maxpotion"]`) `` — the potion tier heals through the `pvp_item_effects` server catalog (authoritative HP).
+  - **Client-only UI aids** `` (`CLIENT_ONLY_ITEMS = ["scope", "xaccuracy"]`) `` — Scope Lens (remove one wrong option) and X Accuracy (reveal the answer), applied client-side exactly like Solo.
+  - **Berries** — all 14 (§10), applied through the server berry catalog.
+  - Everything else (X Attack, Zoom Lens, the auto/premium items, etc.) is **deliberately out of the Nearby-Battle bag** in this pass — the allowed set is narrower than Solo.
 - **Berries** (§10) are Nearby-Battle-only. **2 berries** are granted per battle **won** `` (`BERRIES_PER_NEARBY_BATTLE = 2`, `rollBerryDrops`) ``, rolled with replacement from the common drop pool (excludes the two premium berries). A one-time **Lum Berry** starter is granted on first entry `` (`STARTER_PVP_BERRY`, `routes/pvp.live.$matchId.tsx`) ``.
 
 ### 7.5 Weather mascots `` (`src/lib/pvp-weather.ts`) ``
@@ -475,8 +502,24 @@ Bounded: fully-buffed attacker vs fully-defended opponent swings ~0.70/1.30 … 
 - **Rayquaza (384)** — Air Lock: no standing weather of its own; **negates both** Kyogre's and Groudon's weather stat effects for the whole match (on either side).
 - Opposing weather (one rain + one sun): "latest establisher wins"; a turn-1 tie breaks to the **host**. Mirror matchups resolve independently.
 
-### 7.6 Bots
-Training-vs-Bot: the human is always host and drives the bot (guest) locally; the bot's skill profile is rolled once per match and its moves submitted through the bot RPCs `` (`live-pvp-battle-screen.tsx`, `src/lib/pvp-bot.ts`) ``.
+### 7.6 Bots `` (`src/lib/pvp-bot.ts`) ``
+Training-vs-Bot: the human is always host and drives the bot (guest) locally; the bot's skill profile is rolled once per match and its moves submitted through the bot RPCs. `pvp-bot.ts` is a pure, deterministic-given-`rng` brain (no server intelligence).
+
+- **Difficulty tiers** `` (`BotTier`, `rollBotTier`, `TIER_ROLL`) `` — each match rolls one of three tiers, roughly bell-shaped so most matches are Trainer: **Rookie** `rng < 0.30`, **Trainer** `< 0.75`, **Ace** otherwise. Each tier owns a non-overlapping band `` (`TIER_BANDS`) ``:
+
+  | Tier | Accuracy | Answer mean (ms) | Jitter (ms) | Aggression |
+  |------|:--------:|:----------------:|:-----------:|:----------:|
+  | Rookie  | 0.45–0.60 | 8,500–12,000 | 2,000–4,000 | 0.15–0.35 |
+  | Trainer | 0.62–0.80 | 5,500–8,500  | 1,500–3,000 | 0.35–0.60 |
+  | Ace     | 0.82–0.95 | 3,000–5,500  | 800–2,000   | 0.60–0.90 |
+
+- **Answer timing** `` (`botAnswerTimeMs`) `` — `mean ± jitter`, clamped to `[800ms, PVP_BASE_TIMER_MS − 1000ms]` so the bot always lands inside the shared slot.
+- **Ability/item use** `` (`botShouldFireAbility`, `botShouldUseItem`) `` — the bot fires its signature only after answering correctly (mirrors human `post_answer`) and having a fireable ability, rolled against `aggression`; it uses a healing item only when hurt (`hpPct ≤ 0.45`), likelier the more hurt and more aggressive it is, gated by the shared 3-item cap.
+- **Confused / no-answer scoring** `` (`botConfusionMiss`; commit 6df001a) `` — while confused, an otherwise-correct answer has a **25%** miss chance (`CONFUSION_MISS_CHANCE`, matching the human roll), and a miss consumes one confused tick; a wrong answer never misses/decrements.
+- **Re-seed & partner** — the bot's Legendary/Mythical partner is drawn from the exact egg-hatch roster `` (`rollBotPartner`, `ALL_LEGENDARY_MYTHICAL_IDS`) ``; the server rolls its own copy in `start_bot_pvp_match` and this client mirror shares the same source of truth (commit 1b0fd97 added the re-seed/protect logic so the bot's state stays consistent).
+
+### 7.7 Presentation (battle-fx / toasts) `` (commits 6e4e875, 11ddb3a, fcab6b7, 36febed) ``
+Cosmetic, but the doc references toasts: ability activations now show **grouped toasts** with an **info popover** carrying the ability's effect **and** its trigger ("when triggered") text, staggered one-by-one, gated on the countdown, with haptics. A **single global Toaster** is mounted (previously per-route, so toasts dropped on some routes — the Shop's local `<Toaster>` was removed). Cosmog's **Splash** signature now shows an explicit **no-op line** ("no mechanical effect") rather than silently doing nothing.
 
 ---
 
@@ -501,7 +544,7 @@ Training-vs-Bot: the human is always host and drives the bot (guest) locally; th
 
 ## 9. Items
 
-`MAX_ITEMS_PER_BATTLE = 3` (manual + auto combined) `` (`src/lib/store/slices/itemsSlice.ts`) ``. Categories `` (`src/lib/item-categories.ts`) ``: HEALING / BATTLE / UTILITY / PREMIUM (BERRY is a hidden 5th, never a Solo tab). Default starting inventory: 2 Potion, 1 X Attack, 1 Escape Rope, 1 Scope Lens, 1 X Accuracy.
+`MAX_ITEMS_PER_BATTLE = 3` (manual + auto combined) `` (`src/lib/store/slices/itemsSlice.ts`) ``. Categories `` (`src/lib/item-categories.ts` `CATEGORY_OF`, `CATEGORIES`) ``: HEALING / BATTLE / UTILITY / PREMIUM (BERRY is a hidden 5th, never a Solo tab). Note the **shop-tab category (`CATEGORY_OF`) is independent of the premium flag**: King's Rock and Leftovers file under **Healing** and Metronome under **Battle**, even though all three are premium (the Category and Premium columns below reflect this). Default starting inventory: 2 Potion, 1 X Attack, 1 Escape Rope, 1 Scope Lens, 1 X Accuracy.
 
 | Item | Emoji | Cost | Category | Premium | Effect (from `ITEMS` desc + `itemsSlice` logic) |
 |------|:-----:|-----:|----------|:-------:|-------------------------------------------------|
@@ -527,9 +570,9 @@ Training-vs-Bot: the human is always host and drives the bot (guest) locally; th
 | Focus Band | 🎽 | 2000 | HEALING | ✓ | **Auto**: at ≤10 HP, restore to 50%. Once/week. |
 | Rare Candy | 🍬 | 2000 | PREMIUM | ✓ | +50 TP to partner instantly. Usable anytime. |
 | Lucky Egg | 🥚 | 2000 | PREMIUM | ✓ | 2× XP for 24 hours. Once/week. |
-| King's Rock | 👑 | 2000 | PREMIUM | ✓ | **Auto**: 50% chance to negate wrong-answer HP loss, whole battle. Once/week. |
-| Leftovers | 🍞 | 2000 | PREMIUM | ✓ | **Auto**: heals 5 HP after every correct answer, whole battle. Once/week. |
-| Metronome | 🔁 | 2500 | PREMIUM | ✓ | **Auto**: streak multiplier locked at max (3.0×), whole battle. Once/week. |
+| King's Rock | 👑 | 2000 | HEALING | ✓ | **Auto**: 50% chance to negate wrong-answer HP loss, whole battle. Once/week. |
+| Leftovers | 🍞 | 2000 | HEALING | ✓ | **Auto**: heals 5 HP after every correct answer, whole battle. Once/week. |
+| Metronome | 🔁 | 2500 | BATTLE | ✓ | **Auto**: streak multiplier locked at max (3.0×), whole battle. Once/week. |
 | Big Nugget | 🪙 | 1500 | PREMIUM | ✓ | Requires fully-evolved partner. TP earned → coins (1:1) for 3 days. Usable anytime. |
 
 **Mechanics from `itemsSlice.ts`:**
@@ -585,9 +628,10 @@ Legendary/Mythical Pokémon are **egg-exclusive** — never battle opponents (ex
 
 - **Dataset**: `ALL_POKEMON` = generated one-entry-per-National-Dex roster (Gens 1–9) + synthetic forme entries (currently only Shadow Rider Calyrex, id `10194`) `` (`src/lib/pokemon-data.ts`) ``.
 - **Starting partners**: strict stage-1 Pokémon (`evolvesFromId === null`), pre-filtered as `STARTING_PARTNERS`. A chosen partner counts as captured (added to Pokédex) `` (`store.ts`) ``.
+- **Guest onboarding** `` (`store.ts` `startGuestSession`) ``: a brand-new guest is auto-assigned a **non-legendary, base-stage starter that can still evolve** (`isStartingPartner(p) && canEvolve(p)`, excluding Legendary/Mythical; falls back to any non-legendary if that strict pool is ever empty) plus a **random kid-friendly trainer name** (adjective + trainer-noun + 2 digits, e.g. `SwiftChamp42`) `` (`trainer-name.ts` `randomGuestName`) `` — not a Pokémon name. Legendaries stay Poké-Egg exclusive, and a base-stage starter lets the guest experience levelling and evolving.
 - **Partner re-pick** is limited to captured Pokémon (`partner-picker.tsx`).
 - **Capture**: Pokédex entries carry `firstSeenAt`, `shinyUnlocked`, `defeatCount`.
-- **Evolution** `` (`canEvolve`, `getEvolutionTargets`) ``: a partner can evolve if it has `evolvesToIds`; TP costs are 150 (stage 1→2) and 350 (stage 2→3) `` (`EVOLUTION_TP_COST`) ``. Evolving carries over the Pokédex metadata.
+- **Evolution** `` (`canEvolve`, `getEvolutionTargets`) ``: a partner can evolve if it has `evolvesToIds`; TP costs are **16,000** (stage 1→2) and **36,000** (stage 2→3) `` (`EVOLUTION_TP_COST`) `` — see §3.8 for the 1-level-=-1,000-TP derivation. Evolving carries over the Pokédex metadata.
 - **Type chart**: attacker→super-effective-targets (`TYPE_CHART`) and attacker→immune-defenders (`TYPE_IMMUNITIES`), Gen 6+ simplified.
 
 ---
@@ -596,8 +640,10 @@ Legendary/Mythical Pokémon are **egg-exclusive** — never battle opponents (ex
 
 `src/routes/shop.tsx`:
 - **Metalworks** ability (Steel partner) makes regular prices **10% off**: `priceOf(cost) = metalworks ? max(1, round(cost·0.9)) : cost`.
-- **Featured daily deal**: one rotating discounted item (berries never featured), discount picked by `day % steps.length`; discounted cost `max(1, round(cost·(100-pct)/100))`. **Limited to one purchase per day** — gated by `featuredDealLastPurchase` (today's ISO date) `` (`markFeaturedDealPurchased`, `itemsSlice.ts`) ``.
-- Category tabs: Healing / Battle / Utility / Premium.
+- **Featured daily deal**: one rotating discounted item (berries never featured), discount picked by `day % steps.length`; discounted cost `max(1, round(cost·(100-pct)/100))`. **Limited to one purchase per day** — gated by `featuredDealLastPurchase` (today's ISO date) `` (`markFeaturedDealPurchased`, `itemsSlice.ts`) ``. **Once bought, the big deal card collapses** to a slim "Daily deal claimed — a new deal lands tomorrow" note so a spent deal doesn't push the catalog down (feedback 994a9f8).
+- Category tabs: Healing / Battle / Utility / Premium `` (`CATEGORIES`) `` — a 4-tab grid (BERRY is deliberately omitted so berries never appear in the Solo shop/bag).
+- **Answer-option shuffling**: every mode shuffles a question's answer options client-side at display time so repeat questions can't be answered from memorized positions `` (`trivia-core.ts` `shuffleTriviaOptions` / `shuffleAllTriviaOptions`) `` — safe for PvP/Mega, which submit correctness/scores rather than the raw option index.
+- **Hydration guard**: the shop's onboarding redirect now waits for the persisted store to rehydrate before firing `` (`shop.tsx` `useStoreHydrated`) `` so deep-linked users aren't bounced (see §14).
 - **Bag** shows owned items grouped by category, plus a **read-only "Berries · Nearby Battle"** section (berries can't be used from the Solo bag).
 
 ---
@@ -623,15 +669,21 @@ Supabase project `dvdorceiasaipdvyfhil` (read-only enumeration). High-level map 
 | `pvp_item_effects` (17 rows) | Server berry/item effect catalog |
 | `pvp_live_effects` | Applied live-effect log (opponent-relay source) |
 | `pvp_signature_effects` (83 rows) | Server signature-ability effect catalog |
+| `pvp_type_ability_effects` | Server catalog for the PvP type-ability subsystem (§5.1) — heal/stat/status/cure magnitudes |
 
 **Key RPCs / server logic** (from `list_migrations`):
-- **PvP live**: `submit_pvp_live_answer` (authoritative answer + HP + Ho-Oh Rainbow Rebirth revive), `apply_pvp_signature_effect` (phases: manual / post_answer / sig_state; server-clamped magnitudes + rate-limit + ownership), `_pvp_bump_stage`, suppress-ability (`suppress_ability`), weather columns, swap/cleanse kinds.
-- **Bots**: `start_bot_pvp_match` + bot-move RPCs (`pvp_bot_match_rpcs`).
+- **PvP live**: `submit_pvp_live_answer` (authoritative answer + HP, clamped to `[0,60]`, + Ho-Oh Rainbow Rebirth revive), `apply_pvp_signature_effect` (phases: manual / post_answer / sig_state; server-clamped magnitudes + rate-limit + ownership), `apply_pvp_type_ability_effect` (server catalog for the type-ability subsystem, §5.1), `forfeit_live_pvp_match(_match_id, _concede)` (concede vs claim, §7.3), `_pvp_bump_stage`, suppress-ability (`suppress_ability`), weather columns, swap/cleanse kinds.
+- **Bots**: `start_bot_pvp_match` + bot-move RPCs (`pvp_bot_match_rpcs`); the bot brain is client-side and pure (`pvp-bot.ts`, §7.6).
 - **Questions**: `pick_battle_curated`, `get_curated_questions` (no-repeat rotation).
 - **Social / referrals / push**: friend-request RPCs (`send_friend_request_by_id`), push cron jobs, referral tables.
 - **Feedback → GitHub issue**: `feedback_to_issue_trigger` migration (server-side; the webhook secret is **not** included in this doc).
 
-Client data access goes through `supabase` client; the signature/berry trust model is "client names *which* effect/partner fired, server owns the magnitude and clamps."
+Client data access goes through `supabase` client; the signature/berry/type-ability trust model is "client names *which* effect/partner fired, server owns the magnitude and clamps."
+
+**Client-side notes:**
+- **Store hydration** `` (`src/lib/store-hydration.ts` `useStoreHydrated`) `` (new): returns `true` once the Zustand `persist` store has rehydrated from `localStorage`. Onboarding guards that redirect on persisted state (e.g. `hasOnboarded`) must wait for it, or they fire against default values mid-hydration and bounce deep-linked users away (fix bb60808).
+- **Trivia questions**: AI question generation has been **removed** — every mode serves **curated** questions `` (`src/routes/api.*.ts`, `src/lib/curated-questions.ts`) `` with the bundled 30-question `FALLBACK_QUESTIONS` as the offline last resort; `trivia-core.ts` is now just shared types + the client option-shuffle helpers.
+- **Sprite CDN chain** `` (`src/lib/pokemon-data.ts` `spriteUrl`) `` (commit 2855500): jsDelivr-first (`cdn.jsdelivr.net/gh/PokeAPI/sprites`), then `raw.githubusercontent.com` as fallback, then the official-artwork variants; the CORS-dead `img.pokemondb.net` fallbacks were dropped.
 
 ---
 
@@ -644,7 +696,7 @@ Pulled honestly from source code and comments:
 3. **Upper Hand (1014) is deliberately NOT wireable** with the current architecture — you can't pre-empt another player's server RPC, so its interrupt effect is intentionally left unwired `` (`signature-abilities.ts` 1014 note) ``.
 4. **5 doc-gap fill abilities** (494, 803–806) have no v2 doc source and are flagged "confirm with product owner."
 5. **Solo only actively tracks Confused & Poisoned.** The other five statuses exist in the shared model but Solo battle never inflicts burn/paralysis/sleep/freeze/badly-poisoned `` (`game-data.ts` `StatusKind` comment) ``.
-6. **Not all PvP items are wired into the live loop**; `scope`/`xaccuracy` are client-only there, and the allowed set is narrower than Solo `` (`live-pvp-battle-screen.tsx` `CLIENT_ONLY_ITEMS`) ``.
+6. **Nearby Battle carries a narrower item set than Solo** (no longer "mostly unwired" — the potion tier, Scope Lens, X Accuracy, and all 14 berries now work in the live loop, §7.4). `potion`/`superpotion`/`maxpotion` route through the server `pvp_item_effects` catalog; `scope`/`xaccuracy` are client-only UI aids `` (`SERVER_EFFECT_ITEMS`, `CLIENT_ONLY_ITEMS`) ``. The remaining Solo items (X Attack, Zoom Lens, the auto/premium items, etc.) are **deliberately excluded** from the Nearby-Battle bag in this pass, not merely unwired.
 7. **Weather latest-establisher / Rayquaza Air-Lock netcode** is partially bespoke; standing weather buffs apply but the conflict-resolution edge cases are documented as follow-up `` (`pvp-weather.ts`, catalog notes on 382/383/384) ``.
 8. **Zeraora Plasma Fists (807)** grants the chain buff but the "reset to 0 on any slow/wrong answer" is deliberately not modelled (the stage system has no per-source accounting) `` (`signature-abilities.ts` 807 note) ``.
 
