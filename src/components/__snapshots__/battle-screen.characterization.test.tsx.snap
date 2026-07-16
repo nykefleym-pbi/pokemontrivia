@@ -1,5 +1,157 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`Elite Four and Weekly League branches > elite battle: flat base damage, dark-aura elite bonus, elite-only rewards 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "169",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "138",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "96",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "96",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "65",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "65",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "65",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "34",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "3",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "2000",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "360",
+    "won": "true",
+    "xp": "0",
+  },
+]
+`;
+
+exports[`Elite Four and Weekly League branches > weekly league battle: flat base damage, dark-aura weekly bonus, badge/share-card path 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "219",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "188",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "146",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "146",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "115",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "115",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "115",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "84",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "40",
+  },
+  {
+    "action": "correct",
+    "coins": "54",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "36",
+    "won": "true",
+    "xp": "180",
+  },
+]
+`;
+
 exports[`battle-screen ability characterization (regression baseline) > ability: acrobatics 1`] = `
 [
   {
@@ -6277,27 +6429,14 @@ exports[`battle-screen ability characterization — attrition (near-KO branches)
   },
   {
     "action": "wrong",
-    "ended": false,
-    "enemyHp": "100",
-    "playerHp": "1",
-  },
-  {
-    "action": "wrong",
-    "ended": false,
-    "enemyHp": "100",
-    "playerHp": "0",
-  },
-  {
-    "action": "wrong",
-    "ended": false,
-    "enemyHp": "100",
-    "playerHp": "0",
-  },
-  {
-    "action": "wrong",
-    "ended": false,
-    "enemyHp": "100",
-    "playerHp": "0",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
   },
 ]
 `;
@@ -6893,6 +7032,559 @@ exports[`chance-based wrong-answer branches forced to proc > static procs 1`] = 
     "ended": false,
     "enemyHp": "11",
     "playerHp": "72",
+  },
+]
+`;
+
+exports[`confused-status miss chance > confused but the miss doesn't proc — the correct answer lands 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "70",
+  },
+]
+`;
+
+exports[`confused-status miss chance > confused miss forced to proc — the correct answer whiffs 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+]
+`;
+
+exports[`item auto-triggers > assault vest halves wrong-answer damage all battle 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "93",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "95",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "88",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "81",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "83",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`item auto-triggers > focus band auto-heals to 50% at <=10 HP 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "25",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "50",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "35",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "20",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "5",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`item auto-triggers > king's rock negates wrong-answer HP loss (forced proc) 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "100",
+  },
+]
+`;
+
+exports[`item auto-triggers > leftovers heals after every correct answer 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "92",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "77",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "62",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "69",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "76",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`item auto-triggers > metronome locks the streak multiplier at max 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "66",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "32",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`item auto-triggers > oran berry auto-heals 15 HP on first drop below 30% 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "25",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "10",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`item auto-triggers > revive survives a KO at 25% HP 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "25",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "10",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "25",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "10",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`item auto-triggers > silk scarf boosts the first correct answer 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "79",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "65",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "46",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "46",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "32",
+    "playerHp": "87",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "32",
+    "playerHp": "72",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "32",
+    "playerHp": "57",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "18",
+    "playerHp": "59",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "4",
+    "playerHp": "61",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
   },
 ]
 `;

@@ -1029,6 +1029,13 @@ function BattleMode({
   }
 
   function nextQuestion() {
+    // A battle can end (finish()) from a path other than the click that
+    // scheduled this timeout — e.g. the poison-tick interval detecting a
+    // KO independently. Without this guard, this stale callback fires after
+    // finish() already ran, calls loadQuestion(), and sets phase back to
+    // "question" — reviving an ended battle into a state no further click
+    // can recover from (battleEndedRef then blocks any real finish() call).
+    if (battleEndedRef.current) return;
     const next = questionIdx + 1;
     setQuestionIdx(next);
     if (next % QUESTIONS_PER_SET === 0) {

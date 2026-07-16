@@ -97,6 +97,9 @@ import { findPokemon } from "@/lib/pokemon-data";
 import { shuffleTriviaOptions, type Trivia } from "@/lib/trivia-core";
 import { ROLLED_LIST } from "@/content/abilities/rolled";
 import type { AbilityId } from "@/lib/abilities";
+import type { ItemId } from "@/content/items/item-def";
+import { ELITE_FOUR, type EliteMember } from "@/lib/elite-four";
+import { GYM_LEADERS, type GymLeader } from "@/lib/gym-leaders";
 
 const PLAYER = findPokemon(1)!; // Bulbasaur
 const QUESTION_COUNT = 16;
@@ -132,7 +135,10 @@ afterEach(() => {
   useGameStore.setState(initialStoreState, true);
 });
 
-function seedStore(abilityId: AbilityId | null) {
+function seedStore(
+  abilityId: AbilityId | null,
+  inventory?: Partial<Record<ItemId, number>>,
+) {
   useGameStore.setState(
     {
       ...initialStoreState,
@@ -140,6 +146,7 @@ function seedStore(abilityId: AbilityId | null) {
       level: 5,
       abilityId,
       flags: ["tutorial_done"],
+      ...(inventory ? { inventory: inventory as Record<ItemId, number> } : {}),
     },
     true,
   );
@@ -170,20 +177,36 @@ const SCRIPT: Action[] = [
 // below-30%-HP heal, and Amnesia's shifted confuse/poison thresholds.
 const ATTRITION_SCRIPT: Action[] = Array(10).fill("wrong");
 
-async function runBattle(abilityId: AbilityId | null, script: Action[]) {
-  seedStore(abilityId);
+interface RunBattleOpts {
+  inventory?: Partial<Record<ItemId, number>>;
+  mode?: "battle" | "elite" | "weekly";
+  eliteMember?: EliteMember;
+  gymLeader?: GymLeader;
+}
+
+async function runBattle(abilityId: AbilityId | null, script: Action[], opts: RunBattleOpts = {}) {
+  seedStore(abilityId, opts.inventory);
   const questions = makeQuestions(QUESTION_COUNT);
   // Same fixed Math.random as the component uses, so this predicts which
   // button index is "correct" after battle-screen's own per-question shuffle.
   const correctIdx = shuffleTriviaOptions(questions[0]).correct;
   const wrongIdx = correctIdx === 0 ? 1 : 0;
 
-  render(<BattleScreen questions={questions} onExit={() => {}} />);
+  render(
+    <BattleScreen
+      questions={questions}
+      onExit={() => {}}
+      mode={opts.mode}
+      eliteMember={opts.eliteMember}
+      gymLeader={opts.gymLeader}
+    />,
+  );
 
   // Intro sequencing (banner -> reveal partner -> loadQuestion(0)) resolves
-  // by ~2800ms for a regular (non-elite) battle.
+  // by ~2800ms for a regular battle, ~4900ms for an Elite Four battle (its
+  // introDelay is 3600ms, not 1500ms).
   await act(async () => {
-    await vi.advanceTimersByTimeAsync(3000);
+    await vi.advanceTimersByTimeAsync(opts.eliteMember ? 5000 : 3000);
   });
 
   const trace: Array<Record<string, unknown>> = [];
@@ -255,23 +278,136 @@ describe("chance-based wrong-answer branches forced to proc", () => {
   });
 });
 
-// FINDING (not fixed here — this suite characterizes current behavior, it
-// doesn't patch it): under this script, "sturdy"'s trace ends with
-// `ended: false` forever, i.e. a soft-locked battle. It's the only ability
-// of the 51 that doesn't reach a result. Reproduced with generous extra
-// timer-advance (10s+) beyond the normal ~1400ms finish() delay — it's a
-// real stuck state, not a test-timing race. Best-guess mechanism: Sturdy is
-// the only ability whose wrong-answer branch can revive playerHp from a
-// would-be <=0 back to 1 within the same click; if the poisoned-status
-// interval (wrongStreak reaches the poison threshold around the same time)
-// also drops that 1 HP to 0 on its own tick, its callback schedules a
-// competing `finish(false)` from inside a `setPlayerHp` functional updater —
-// which is itself a pre-existing pattern in battle-screen.tsx, not something
-// this harness introduced. Needs production investigation; flagged in the PR
-// rather than guessed at further here.
+// Previously "sturdy" alone soft-locked under this script: a pending
+// nextQuestion() timeout (scheduled by the click that Sturdy's revive kept
+// alive) fired *after* an independent finish(false) from the poison-tick
+// interval had already ended the battle, calling loadQuestion() and setting
+// phase back to "question" — reviving an ended battle into a state no
+// further click could recover from (battleEndedRef then silently swallowed
+// any real finish() call). Fixed in battle-screen.tsx by guarding
+// nextQuestion() with `if (battleEndedRef.current) return;`. All 51
+// abilities (including sturdy) now reach a result under this script.
 describe("battle-screen ability characterization — attrition (near-KO branches)", () => {
   it.each(ROLLED_LIST.map((a) => a.id))("ability: %s", async (abilityId) => {
     const trace = await runBattle(abilityId as AbilityId, ATTRITION_SCRIPT);
+    expect(trace).toMatchSnapshot();
+  });
+});
+
+describe("item auto-triggers", () => {
+  // Battle-start effect (useEffect on mount) — no ability, so the SCRIPT
+  // run's wrong-answer damage (15, since this fixture is disadvantaged) is
+  // halved throughout instead of just once.
+  it("assault vest halves wrong-answer damage all battle", async () => {
+    const trace = await runBattle(null, SCRIPT, { inventory: { assaultvest: 1 } });
+    expect(trace).toMatchSnapshot();
+  });
+
+  // 50% chance (per wrong answer) to negate HP loss entirely, whole battle.
+  // Force the proc so the effect is visible under a fixed script.
+  it("king's rock negates wrong-answer HP loss (forced proc)", async () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.01);
+    const trace = await runBattle(null, SCRIPT, { inventory: { kingsrock: 1 } });
+    expect(trace).toMatchSnapshot();
+  });
+
+  // +5 HP after every correct answer, whole battle.
+  it("leftovers heals after every correct answer", async () => {
+    const trace = await runBattle(null, SCRIPT, { inventory: { leftovers: 1 } });
+    expect(trace).toMatchSnapshot();
+  });
+
+  // Locks the streak multiplier at its max (3.0x) for every correct answer,
+  // whole battle — should hit noticeably harder than the no-item baseline.
+  it("metronome locks the streak multiplier at max", async () => {
+    const trace = await runBattle(null, SCRIPT, { inventory: { metronome: 1 } });
+    expect(trace).toMatchSnapshot();
+  });
+
+  // Bonus damage on the first correct answer only, once per battle.
+  it("silk scarf boosts the first correct answer", async () => {
+    const trace = await runBattle(null, SCRIPT, { inventory: { silkscarf: 1 } });
+    expect(trace).toMatchSnapshot();
+  });
+
+  // Auto-heals to 50% max HP the moment HP drops to <=10, once per week.
+  // Ability pinned to "magic-guard" for these three: it suppresses the
+  // poisoned-status tick (see startPoisonTick), which otherwise has its own,
+  // separate KO path that doesn't consult Revive/Focus Band/Oran Berry at
+  // all — under ATTRITION_SCRIPT with no ability, the poison tick can (and
+  // did, when this was first written) reach 0 HP before the wrong-answer
+  // click does, silently "stealing" the KO and making the item look
+  // untriggered. Pinning the ability removes that race so each item's own
+  // logic is what's actually characterized here.
+  it("focus band auto-heals to 50% at <=10 HP", async () => {
+    const trace = await runBattle("magic-guard", ATTRITION_SCRIPT, { inventory: { focusband: 1 } });
+    expect(trace).toMatchSnapshot();
+  });
+
+  // Auto-heals 15 HP the instant HP first drops below 30% max, once per battle.
+  it("oran berry auto-heals 15 HP on first drop below 30%", async () => {
+    const trace = await runBattle("magic-guard", ATTRITION_SCRIPT, { inventory: { oranberry: 1 } });
+    expect(trace).toMatchSnapshot();
+  });
+
+  // Survives a would-be KO at 25% max HP, once per battle, consuming the item.
+  it("revive survives a KO at 25% HP", async () => {
+    const trace = await runBattle("magic-guard", ATTRITION_SCRIPT, { inventory: { revive: 1 } });
+    expect(trace).toMatchSnapshot();
+  });
+
+  // Quick Claw resets the question timer to 20s the first time it drops
+  // below 5s, once per battle. Behavioral (not snapshot): verified by NOT
+  // clicking and confirming the ~20s auto-timeout-as-wrong-answer that would
+  // otherwise fire hasn't happened yet by t=21s, because the timer got reset
+  // partway through — there's no data-testid exposing the timer value itself.
+  it("quick claw resets the countdown once, delaying the auto-timeout", async () => {
+    seedStore(null, { quickclaw: 1 });
+    const questions = makeQuestions(QUESTION_COUNT);
+    render(<BattleScreen questions={questions} onExit={() => {}} />);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3000);
+    });
+    const hpBefore = screen.queryByTestId("player-hp")?.textContent;
+    // Without Quick Claw, the 20s countdown auto-answers (as wrong) well
+    // before this point, changing playerHp. With it, the timer's one reset
+    // buys another ~20s, so nothing has happened yet.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(21000);
+    });
+    const hpAfter = screen.queryByTestId("player-hp")?.textContent;
+    expect(hpAfter).toBe(hpBefore);
+  });
+});
+
+describe("Elite Four and Weekly League branches", () => {
+  it("elite battle: flat base damage, dark-aura elite bonus, elite-only rewards", async () => {
+    const trace = await runBattle("dark-aura", SCRIPT, { mode: "elite", eliteMember: ELITE_FOUR[0] });
+    expect(trace).toMatchSnapshot();
+  });
+
+  it("weekly league battle: flat base damage, dark-aura weekly bonus, badge/share-card path", async () => {
+    const trace = await runBattle("dark-aura", SCRIPT, { mode: "weekly", gymLeader: GYM_LEADERS[0] });
+    expect(trace).toMatchSnapshot();
+  });
+});
+
+describe("confused-status miss chance", () => {
+  // Two wrong answers in a row (wrongStreak reaches confuseAt=2 for a
+  // non-amnesia ability) applies "confused" before the third answer. "guts"
+  // has no Math.random-gated branches of its own, so the fixed random value
+  // below only governs the confused-miss check itself.
+  const CONFUSE_THEN_ANSWER: Action[] = ["wrong", "wrong", "correct"];
+
+  it("confused miss forced to proc — the correct answer whiffs", async () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.01); // < 0.25 threshold
+    const trace = await runBattle("guts", CONFUSE_THEN_ANSWER);
+    expect(trace).toMatchSnapshot();
+  });
+
+  it("confused but the miss doesn't proc — the correct answer lands", async () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.9); // >= 0.25 threshold
+    const trace = await runBattle("guts", CONFUSE_THEN_ANSWER);
     expect(trace).toMatchSnapshot();
   });
 });
