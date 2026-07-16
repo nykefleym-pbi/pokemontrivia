@@ -1,23 +1,44 @@
 // The action/event vocabulary for a server-authoritative solo battle
-// (02-architecture.md P3 scope). Isomorphic types only, matching the existing
-// engine/ convention of freezing a contract before building against it.
+// (02-architecture.md P3 scope), plus the pure turn engine for it.
 //
-// NOT included here: `reduce()` / `replay()`. Solo battle's actual damage
-// formula (src/components/battle-screen.tsx's handleAnswer) is ~50 distinct
-// per-ability special cases (Dragon Dance, Aerilate, Guts, Blaze, Moxie,
-// Cursed Body, ...) tightly interleaved with React state, timers, and toast
-// side effects. Porting that into a pure reducer is a real behavior-preserving
-// rewrite of live game-balance logic — exactly the kind of change this
-// codebase has gotten subtly wrong before when eyeballed rather than verified
-// (see CLAUDE.md's signature-ability liveness warning; the rolled-ability
-// system here has the same shape of risk, just no balance-sim harness built
-// for it yet). Shipping a guessed port under this contract without a
-// regression harness to diff it against battle-screen.tsx's real output on
-// fixed seeds/action-logs would risk silently changing every player's battle
-// balance. That harness — or an explicit decision to accept the risk — should
-// exist before `reduce()`/`replay()` are written, not after.
+// `applyAnswer` is a mechanical, behavior-preserving port of
+// battle-screen.tsx's `handleAnswer` (the correct/wrong-answer branches) and
+// `applyStatus`/`tickStatusCure`. It is verified byte-for-byte against the
+// REAL, unmodified BattleMode component (not a possibly-stale snapshot) — see
+// src/components/battle-screen-engine-verification.test.tsx, which renders
+// battle-screen.tsx via React Testing Library AND drives `applyAnswer`
+// through the identical fixed script, for all 51 rolled abilities plus the
+// confused-miss and Elite/Weekly cases, and asserts the resulting
+// playerHp/enemyHp/streak/won trajectory matches exactly (one documented
+// exception: "stealth-rock", see that test — the engine fixes a stale-closure
+// bug in the client's round-boundary chip rather than reproducing it). Any
+// future change here MUST be re-verified the same way — falsify by running
+// the comparison test, not by re-reading the code (see CLAUDE.md's
+// signature-ability liveness precedent: this is the same class of risk, just
+// a different ability system).
+//
+// DELIBERATELY NOT PORTED (documented gaps, not silent omissions):
+//   - Item auto-triggers (Focus Band, Oran Berry, Revive, Silk Scarf, King's
+//     Rock, Leftovers, Metronome, Quick Claw, Assault Vest, X Attack). These
+//     depend on the player's store-held inventory, which is out of scope for
+//     an isomorphic, store-free engine module. A caller that wants item
+//     support needs to fold item effects in around `applyAnswer` (e.g. halve
+//     `config.disadvantaged`'s wrongDmg baseline for Assault Vest) rather than
+//     this file reaching into inventory state.
+//   - The poisoned-status tick is redefined as PER-TURN, not real-time. The
+//     client's `startPoisonTick` runs a real `setInterval(…, 2000)` — there is
+//     no equivalent "keep ticking in the background" concept for a
+//     request/response server turn. Here, one poison tick (if the status is
+//     active and the ability isn't magic-guard) resolves at the start of each
+//     `applyAnswer` call instead, before that turn's own answer is scored.
+//     This is a deliberate redesign for the turn-based server model, not a
+//     bug — it is NOT verified against battle-screen.characterization.test's
+//     ATTRITION_SCRIPT snapshots (those bake in the client's real-time tick
+//     cadence, which this intentionally does not reproduce).
 import type { ItemId } from "../content/items/item-def";
-import type { StatusKind } from "../content/statuses/status-def";
+import type { AbilityId } from "../lib/abilities";
+import { baseDamageForLevel, getTpMultiplier, streakMultiplier } from "../lib/game-data";
+import type { Rng } from "./rng";
 
 /** A client-submitted action in a solo battle. */
 export type BattleAction =
@@ -32,3 +53,504 @@ export type BattleEvent =
   | { type: "status_cured"; target: "player" | "enemy"; kind: StatusKind }
   | { type: "item_consumed"; itemId: ItemId }
   | { type: "battle_ended"; won: boolean };
+
+// Solo battle only ever applies these two — mirrors battle-screen.tsx's own
+// local `type StatusKind = "confused" | "poisoned"` narrowing of the broader
+// content/statuses vocabulary (burn/paralysis/sleep/freeze/badly-poisoned are
+// PvP-only).
+export type StatusKind = "confused" | "poisoned";
+
+export interface BattleStatusEntry {
+  kind: StatusKind;
+  curesRemaining: number;
+}
+
+/** Mirrors battle-screen.tsx's `abilityStateRef` (minus `triggered`, which is
+ *  purely a toast-dedup concern, not battle math). */
+export interface BattleAbilityState {
+  sturdyUsed: boolean;
+  iceFirstWrongConsumed: boolean;
+  hydrationUsed: boolean;
+  cursedBodyPending: { hpBefore: number; appliedAtMs: number } | null;
+  torrentUsed: boolean;
+  sandForceUsed: number;
+  moxieBonus: number;
+  hadWrong: boolean;
+  lastWasWrong: boolean;
+  venom: number;
+}
+
+export function initialAbilityState(): BattleAbilityState {
+  return {
+    sturdyUsed: false,
+    iceFirstWrongConsumed: false,
+    hydrationUsed: false,
+    cursedBodyPending: null,
+    torrentUsed: false,
+    sandForceUsed: 0,
+    moxieBonus: 0,
+    hadWrong: false,
+    lastWasWrong: false,
+    venom: 0,
+  };
+}
+
+export interface BattleState {
+  playerHp: number;
+  enemyHp: number;
+  streak: number;
+  maxStreak: number;
+  wrongStreak: number;
+  correctCount: number;
+  topDmg: number;
+  /** Cumulative real time elapsed in the battle, in ms — the sum of every
+   *  action's `elapsedMs` so far. Used only for Cursed Body's 5s window. */
+  clockMs: number;
+  statuses: BattleStatusEntry[];
+  ability: BattleAbilityState;
+  phase: "in_progress" | "won" | "lost";
+}
+
+export function initialBattleState(playerMaxHp: number, enemyMaxHp: number): BattleState {
+  return {
+    playerHp: playerMaxHp,
+    enemyHp: enemyMaxHp,
+    streak: 0,
+    maxStreak: 0,
+    wrongStreak: 0,
+    correctCount: 0,
+    topDmg: 0,
+    clockMs: 0,
+    statuses: [],
+    ability: initialAbilityState(),
+    phase: "in_progress",
+  };
+}
+
+/** Everything about the battle that's fixed for its whole duration — the
+ *  equivalent of battle-screen.tsx's per-battle memoized values (superEff,
+ *  disadvantaged, immune) and store reads (level, TP) hoisted into one input
+ *  rather than re-derived every turn. */
+export interface BattleConfig {
+  abilityId: AbilityId | null;
+  level: number;
+  isElite: boolean;
+  isWeekly: boolean;
+  playerMaxHp: number;
+  enemyMaxHp: number;
+  superEff: boolean;
+  disadvantaged: boolean;
+  immune: boolean;
+  /** Player's current Training Points for this partner — feeds getTpMultiplier. */
+  trainingPoints: number;
+  /** Extra timer seconds this battle (Sand Veil's onBattleStart effect). */
+  bonusTime: number;
+}
+
+const TIMER_BASE = 20;
+const QUESTIONS_PER_SET = 5;
+
+/** The one piece of trivia-content knowledge `applyAnswer` needs that the
+ *  engine itself can't know (it has no access to the question bank): whether
+ *  the submitted choice was correct. The caller (the battle-solo Edge
+ *  Function, which holds the question set) resolves `BattleAction.submit_answer`
+ *  into this before calling in — that resolution is a content lookup, not
+ *  battle math, so it stays out of this isomorphic module. */
+export interface AnswerInput {
+  correct: boolean;
+  /** 0-indexed position of the question just answered within the battle. */
+  questionIdx: number;
+  elapsedMs: number;
+}
+
+export interface ApplyAnswerResult {
+  state: BattleState;
+  events: BattleEvent[];
+}
+
+function withMajorStatus(
+  statuses: BattleStatusEntry[],
+  entry: BattleStatusEntry,
+): BattleStatusEntry[] {
+  // Solo's only major status is "poisoned" ("confused" is the sole volatile
+  // and coexists with everything) — mirrors store.ts's applyBattleStatus.
+  const withoutSameKind = statuses.filter((s) => s.kind !== entry.kind);
+  const withoutOtherMajors =
+    entry.kind === "poisoned" ? withoutSameKind.filter((s) => s.kind !== "poisoned") : withoutSameKind;
+  return [...withoutOtherMajors, entry];
+}
+
+function tickCure(statuses: BattleStatusEntry[], kind: StatusKind): { statuses: BattleStatusEntry[]; cleared: boolean } {
+  const cleared = statuses.some((s) => s.kind === kind && s.curesRemaining === 1);
+  const next = statuses
+    .map((s) => (s.kind === kind ? { ...s, curesRemaining: s.curesRemaining - 1 } : s))
+    .filter((s) => s.curesRemaining > 0);
+  return { statuses: next, cleared };
+}
+
+/** Mirrors battle-screen.tsx's `applyStatus`. Returns the updated status list
+ *  and any events; a no-op (Hydration's first-confuse block) returns the
+ *  input list unchanged. */
+function applyStatus(
+  statuses: BattleStatusEntry[],
+  kind: StatusKind,
+  ability: BattleAbilityState,
+  abilityId: AbilityId | null,
+): { statuses: BattleStatusEntry[]; ability: BattleAbilityState; events: BattleEvent[] } {
+  if (kind === "confused" && abilityId === "hydration" && !ability.hydrationUsed) {
+    return { statuses, ability: { ...ability, hydrationUsed: true }, events: [] };
+  }
+  const curesRemaining = kind === "confused" ? (abilityId === "toxic" ? 1 : 2) : 3;
+  const nextStatuses = withMajorStatus(statuses, { kind, curesRemaining });
+  return {
+    statuses: nextStatuses,
+    ability,
+    events: [{ type: "status_applied", target: "player", kind }],
+  };
+}
+
+/**
+ * Pure port of `loadQuestion`'s Stealth Rock chip: 3 damage to the enemy at
+ * the start of every round after the first (`questionIdx > 0 && % 5 === 0`).
+ * This is a question-LOAD-time trigger, not a per-answer one — matching
+ * `handleAnswer`, `applyAnswer` doesn't call this itself. The caller invokes
+ * it once per question, right before resolving that question's answer, for
+ * every `questionIdx` (not just stealth-rock battles — the ability check is
+ * inside).
+ */
+export function applyRoundStart(
+  state: BattleState,
+  config: BattleConfig,
+  questionIdx: number,
+): ApplyAnswerResult {
+  if (state.phase !== "in_progress") return { state, events: [] };
+  if (config.abilityId !== "stealth-rock" || questionIdx === 0 || questionIdx % QUESTIONS_PER_SET !== 0) {
+    return { state, events: [] };
+  }
+  const enemyHp = Math.max(0, state.enemyHp - 3);
+  const events: BattleEvent[] = [{ type: "damage_dealt", target: "enemy", amount: 3 }];
+  if (enemyHp <= 0) {
+    events.push({ type: "battle_ended", won: true });
+    return { state: { ...state, enemyHp: 0, phase: "won" }, events };
+  }
+  return { state: { ...state, enemyHp }, events };
+}
+
+/**
+ * Pure port of `handleAnswer`'s correct/wrong branches. One `applyAnswer`
+ * call is one submitted answer; the poisoned-status tick (see the module
+ * doc's redesign note) resolves first, before this turn's own answer.
+ */
+export function applyAnswer(
+  state: BattleState,
+  config: BattleConfig,
+  input: AnswerInput,
+  rng: Rng,
+): ApplyAnswerResult {
+  if (state.phase !== "in_progress") return { state, events: [] };
+
+  const events: BattleEvent[] = [];
+  let s: BattleState = { ...state, clockMs: state.clockMs + input.elapsedMs };
+
+  // ── Poisoned tick (per-turn redesign — see module doc) ──────────────────
+  if (s.statuses.some((st) => st.kind === "poisoned") && config.abilityId !== "magic-guard") {
+    const tick = Math.max(1, Math.floor(config.playerMaxHp * 0.02));
+    const nextHp = Math.max(0, s.playerHp - tick);
+    events.push({ type: "damage_dealt", target: "player", amount: tick });
+    s = { ...s, playerHp: nextHp };
+    if (nextHp <= 0) {
+      events.push({ type: "battle_ended", won: false });
+      return { state: { ...s, phase: "lost" }, events };
+    }
+  }
+
+  const abilityId = config.abilityId;
+  let ability = s.ability;
+  let statuses = s.statuses;
+
+  if (input.correct) {
+    const correctCount = s.correctCount + 1;
+    const wrongStreak = 0;
+
+    // Confused miss: 25% chance to do nothing.
+    if (statuses.some((st) => st.kind === "confused") && rng.chance(0.25)) {
+      const cure = tickCure(statuses, "confused");
+      if (cure.cleared) events.push({ type: "status_cured", target: "player", kind: "confused" });
+      return {
+        state: {
+          ...s,
+          statuses: cure.statuses,
+          correctCount,
+          wrongStreak,
+          streak: 0,
+        },
+        events,
+      };
+    }
+
+    const newStreak = s.streak + 1;
+    const maxStreak = Math.max(s.maxStreak, newStreak);
+
+    let baseDmg = config.isElite || config.isWeekly ? 10 : baseDamageForLevel(config.level);
+    if (abilityId === "dragon-dance") baseDmg += Math.floor(input.questionIdx / QUESTIONS_PER_SET);
+    let dmg = Math.round(baseDmg * streakMultiplier(newStreak));
+
+    const tpMult = getTpMultiplier(config.trainingPoints);
+    if (tpMult > 1.0) dmg = Math.round(dmg * tpMult);
+
+    const elapsedSec = input.elapsedMs / 1000;
+    const totalTime = TIMER_BASE + config.bonusTime;
+    const speedRatio = Math.max(0, (totalTime - elapsedSec) / totalTime);
+    let speedBonus = Math.round(5 * speedRatio);
+    if (abilityId === "aerilate") speedBonus = Math.round(speedBonus * 1.5);
+    if (abilityId === "swift-swim") speedBonus = Math.max(3, speedBonus);
+    dmg += speedBonus;
+
+    if (config.superEff) dmg *= 2;
+    if (abilityId === "tailwind" && input.questionIdx < 3) dmg = Math.round(dmg * 1.2);
+    if (abilityId === "guts" && s.playerHp < config.playerMaxHp / 2) dmg = Math.round(dmg * 1.15);
+    if (abilityId === "flash-fire") dmg = Math.round(dmg * 1.08);
+    if (abilityId === "no-guard") dmg = Math.round(dmg * 1.18);
+    if (abilityId === "blaze" && s.playerHp < config.playerMaxHp * 0.4) dmg = Math.round(dmg * 1.2);
+    if (abilityId === "overgrow" && s.enemyHp > config.enemyMaxHp / 2) dmg = Math.round(dmg * 1.12);
+    if (abilityId === "bulldoze" && config.disadvantaged) dmg = Math.round(dmg * 1.25);
+    if (abilityId === "acrobatics" && s.playerHp === config.playerMaxHp) dmg = Math.round(dmg * 1.3);
+    if (abilityId === "berserk" && ability.hadWrong) dmg = Math.round(dmg * 1.12);
+    if (abilityId === "hex" && statuses.length > 0) dmg = Math.round(dmg * 1.3);
+    if (abilityId === "dark-aura" && (config.isElite || config.isWeekly)) dmg = Math.round(dmg * 1.1);
+    if (abilityId === "even-tempo" && !config.superEff && !config.disadvantaged && !config.immune) dmg += 2;
+    if (abilityId === "charge") dmg += 2;
+    if (abilityId === "swarm" && newStreak >= 3) dmg += 3;
+    if (abilityId === "moonblast" && newStreak >= 3) dmg += 4;
+    if (abilityId === "volt-absorb" && elapsedSec <= 5) dmg += 3;
+    if (abilityId === "counter" && ability.lastWasWrong) dmg += 4;
+
+    let moxieBonus = ability.moxieBonus;
+    if (abilityId === "moxie") {
+      dmg += moxieBonus;
+      if (newStreak > 0 && newStreak % 3 === 0) moxieBonus += 1;
+    }
+
+    // Poison Touch: venom from the previous correct answer lands now.
+    dmg += ability.venom;
+    let venom = 0;
+    if (abilityId === "poison-touch") venom = 2;
+    const lastWasWrong = false;
+
+    const newEnemyHp = Math.max(0, s.enemyHp - dmg);
+    const topDmg = Math.max(s.topDmg, dmg);
+    events.push({ type: "damage_dealt", target: "enemy", amount: dmg });
+
+    let playerHp = s.playerHp;
+    if (abilityId === "leech-seed") playerHp = Math.min(config.playerMaxHp, playerHp + 2);
+    if (abilityId === "ice-body" && correctCount % 4 === 0) {
+      playerHp = Math.min(config.playerMaxHp, playerHp + 6);
+    }
+    if (abilityId === "pixie-dust" && newStreak > 0 && newStreak % 3 === 0) {
+      playerHp = Math.min(config.playerMaxHp, playerHp + 5);
+    }
+    let cursedBodyPending = ability.cursedBodyPending;
+    if (abilityId === "cursed-body" && cursedBodyPending) {
+      if (s.clockMs - cursedBodyPending.appliedAtMs <= 5000) {
+        playerHp = cursedBodyPending.hpBefore;
+      }
+      cursedBodyPending = null;
+    }
+
+    const confuseCure = tickCure(statuses, "confused");
+    if (confuseCure.cleared) events.push({ type: "status_cured", target: "player", kind: "confused" });
+    const poisonCure = tickCure(confuseCure.statuses, "poisoned");
+    if (poisonCure.cleared) events.push({ type: "status_cured", target: "player", kind: "poisoned" });
+    statuses = poisonCure.statuses;
+
+    ability = {
+      ...ability,
+      moxieBonus,
+      venom,
+      lastWasWrong,
+      cursedBodyPending,
+    };
+
+    if (newEnemyHp <= 0) {
+      events.push({ type: "battle_ended", won: true });
+      return {
+        state: {
+          ...s,
+          playerHp,
+          enemyHp: 0,
+          streak: newStreak,
+          maxStreak,
+          wrongStreak,
+          correctCount,
+          topDmg,
+          statuses,
+          ability,
+          phase: "won",
+        },
+        events,
+      };
+    }
+
+    return {
+      state: {
+        ...s,
+        playerHp,
+        enemyHp: newEnemyHp,
+        streak: newStreak,
+        maxStreak,
+        wrongStreak,
+        correctCount,
+        topDmg,
+        statuses,
+        ability,
+      },
+      events,
+    };
+  }
+
+  // ── Wrong answer ──────────────────────────────────────────────────────────
+  const wrongStreak = s.wrongStreak + 1;
+
+  let wrongDmg = 10;
+  if (config.immune) wrongDmg = 5;
+  else if (config.disadvantaged) wrongDmg = 15;
+  if (abilityId === "no-guard") wrongDmg += 2;
+
+  if (abilityId === "multiscale" && s.playerHp === config.playerMaxHp) wrongDmg = Math.floor(wrongDmg / 2);
+  if (abilityId === "filter" && config.disadvantaged) wrongDmg = Math.floor(wrongDmg * 0.75);
+  if (abilityId === "slush-rush" && config.disadvantaged) wrongDmg = Math.max(0, wrongDmg - 5);
+  if (abilityId === "iron-barbs") wrongDmg = Math.max(0, wrongDmg - 3);
+  if (abilityId === "solid-rock" && wrongDmg > 12) wrongDmg = 12;
+  if (abilityId === "static" && rng.chance(0.2)) wrongDmg = Math.floor(wrongDmg / 2);
+  let iceFirstWrongConsumed = ability.iceFirstWrongConsumed;
+  if (abilityId === "snow-cloak" && !iceFirstWrongConsumed) {
+    wrongDmg = 0;
+    iceFirstWrongConsumed = true;
+  }
+  if (abilityId === "flame-body" && rng.chance(0.15)) wrongDmg = 0;
+  if (abilityId === "cute-charm" && rng.chance(0.15)) wrongDmg = 0;
+
+  let cursedBodyPending = ability.cursedBodyPending;
+  if (abilityId === "cursed-body") {
+    cursedBodyPending = { hpBefore: s.playerHp, appliedAtMs: s.clockMs };
+  }
+
+  let newPlayerHp = Math.max(0, s.playerHp - wrongDmg);
+  let sturdyUsed = ability.sturdyUsed;
+  if (abilityId === "sturdy" && newPlayerHp <= 0 && !sturdyUsed) {
+    newPlayerHp = 1;
+    sturdyUsed = true;
+  }
+
+  let torrentUsed = ability.torrentUsed;
+  if (abilityId === "torrent" && !torrentUsed && newPlayerHp > 0 && newPlayerHp < config.playerMaxHp * 0.3) {
+    torrentUsed = true;
+    newPlayerHp = Math.min(config.playerMaxHp, newPlayerHp + 10);
+  }
+
+  events.push({ type: "damage_dealt", target: "player", amount: wrongDmg });
+
+  let sandForceUsed = ability.sandForceUsed;
+  let streak = s.streak;
+  const keepStreak = abilityId === "sand-force" && sandForceUsed < 2;
+  if (keepStreak) {
+    sandForceUsed += 1;
+  } else {
+    streak = 0;
+  }
+
+  // Chip damage to the enemy (Corrosion / Shadow Tag / landed venom).
+  let chip = ability.venom;
+  const venom = 0;
+  if (abilityId === "corrosion") chip += 2;
+  if (abilityId === "shadow-tag" && wrongDmg > 0) chip += 2;
+  let enemyHp = s.enemyHp;
+  if (chip > 0 && newPlayerHp > 0) {
+    enemyHp = Math.max(0, enemyHp - chip);
+    if (chip > 0) events.push({ type: "damage_dealt", target: "enemy", amount: chip });
+  }
+
+  ability = {
+    ...ability,
+    sturdyUsed,
+    iceFirstWrongConsumed,
+    torrentUsed,
+    sandForceUsed,
+    venom,
+    cursedBodyPending,
+    hadWrong: true,
+    lastWasWrong: true,
+  };
+
+  if (enemyHp <= 0) {
+    events.push({ type: "battle_ended", won: true });
+    return {
+      state: {
+        ...s,
+        playerHp: newPlayerHp,
+        enemyHp: 0,
+        streak,
+        wrongStreak,
+        statuses,
+        ability,
+        phase: "won",
+      },
+      events,
+    };
+  }
+
+  // Status thresholds (Amnesia delays both by one wrong answer).
+  const confuseAt = abilityId === "amnesia" ? 3 : 2;
+  const poisonAt = abilityId === "amnesia" ? 6 : 5;
+  if (wrongStreak === confuseAt && !statuses.some((st) => st.kind === "confused") && abilityId !== "shield-dust") {
+    const applied = applyStatus(statuses, "confused", ability, abilityId);
+    statuses = applied.statuses;
+    ability = applied.ability;
+    events.push(...applied.events);
+  }
+  if (wrongStreak === poisonAt && !statuses.some((st) => st.kind === "poisoned") && abilityId !== "toxic") {
+    const applied = applyStatus(statuses, "poisoned", ability, abilityId);
+    statuses = applied.statuses;
+    ability = applied.ability;
+    events.push(...applied.events);
+  }
+
+  if (newPlayerHp <= 0) {
+    events.push({ type: "battle_ended", won: false });
+    return {
+      state: {
+        ...s,
+        playerHp: 0,
+        enemyHp,
+        streak,
+        wrongStreak,
+        statuses,
+        ability,
+        phase: "lost",
+      },
+      events,
+    };
+  }
+
+  return {
+    state: {
+      ...s,
+      playerHp: newPlayerHp,
+      enemyHp,
+      streak,
+      wrongStreak,
+      statuses,
+      ability,
+    },
+    events,
+  };
+}
+
+/** Pure port of the forfeit path — ends the battle as a loss immediately. */
+export function applyForfeit(state: BattleState): ApplyAnswerResult {
+  if (state.phase !== "in_progress") return { state, events: [] };
+  return {
+    state: { ...state, phase: "lost" },
+    events: [{ type: "battle_ended", won: false }],
+  };
+}
