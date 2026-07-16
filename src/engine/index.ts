@@ -5,3 +5,4 @@ export * from "./state";
 export * from "./timers";
 export * from "./damage";
 export * from "./rng";
+export * from "./turn";
