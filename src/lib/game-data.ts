@@ -14,6 +14,14 @@ export type { PvpStat } from "../engine/state";
 export type { BerryEffect, ItemDef, ItemId } from "../content/items/item-def";
 export { STATUS_META } from "../content/statuses";
 export { streakMultiplier } from "../engine/damage";
+export {
+  leagueIndex,
+  enemyHpForLevel,
+  baseDamageForLevel,
+  getTpMultiplier,
+  TP_DAMAGE_TIERS,
+  type TpDamageBoost,
+} from "./level-curve";
 
 export const ITEMS: ItemDef[] = [...ITEM_LIST];
 
@@ -92,25 +100,6 @@ export function rankForLevel(level: number): string {
   if (level >= 16) return RANKS[2];
   if (level >= 6) return RANKS[1];
   return RANKS[0];
-}
-
-export function leagueIndex(level: number): number {
-  if (level >= 51) return 4;
-  if (level >= 26) return 3;
-  if (level >= 16) return 2;
-  if (level >= 6) return 1;
-  return 0;
-}
-
-export function enemyHpForLevel(level: number): number {
-  return 100 + 50 * leagueIndex(level);
-}
-
-// The partner grows stronger with rank: base damage per correct answer scales
-// 10/12/14/16/18 alongside the enemy HP curve (100..300), so high-level
-// regular battles stay winnable within the 20-question budget.
-export function baseDamageForLevel(level: number): number {
-  return 10 + 2 * leagueIndex(level);
 }
 
 // Pokémon GO's trainer-level XP curve divided by 10 (feedback adc10973 —
@@ -208,19 +197,6 @@ export const EVOLUTION_TP_COST: Record<1 | 2, number> = {
   2: 36000,
 };
 
-export interface TpDamageBoost {
-  threshold: number;
-  multiplier: number;
-}
-
-export const TP_DAMAGE_TIERS: TpDamageBoost[] = [
-  { threshold: 0, multiplier: 1.0 },
-  { threshold: 100, multiplier: 1.05 },
-  { threshold: 300, multiplier: 1.1 },
-  { threshold: 700, multiplier: 1.15 },
-  { threshold: 1500, multiplier: 1.2 },
-];
-
 /** Returns UTC timestamp of the most recent Monday 00:00:00. */
 export function getCurrentWeekStartUtc(): number {
   const now = new Date();
@@ -292,14 +268,6 @@ export function getWeekRangeUtc(): { start: number; end: number; nextStart: numb
   const end = start + 7 * 24 * 60 * 60 * 1000 - 1;
   const nextStart = start + 7 * 24 * 60 * 60 * 1000;
   return { start, end, nextStart };
-}
-
-export function getTpMultiplier(tp: number): number {
-  let mult = 1.0;
-  for (const tier of TP_DAMAGE_TIERS) {
-    if (tp >= tier.threshold) mult = tier.multiplier;
-  }
-  return mult;
 }
 
 // Legendary/Mythical Pokémon are Poké-Egg exclusive — never a battle opponent.
