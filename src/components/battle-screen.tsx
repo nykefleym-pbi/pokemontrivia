@@ -74,6 +74,7 @@ function CombatPanel({
   abilityName,
   immune,
   disadvantaged,
+  testId,
 }: {
   align: "left" | "right";
   pokemonName: string;
@@ -84,6 +85,8 @@ function CombatPanel({
   abilityName: string | null;
   immune: boolean;
   disadvantaged: boolean;
+  /** Test-observability hook only — not read by any production code. */
+  testId?: string;
 }) {
   const pct = Math.max(0, Math.min(100, (hp / maxHp) * 100));
   const barColor = pct > 50 ? "bg-hp-good" : pct > 20 ? "bg-hp-warn" : "bg-hp-low";
@@ -109,7 +112,10 @@ function CombatPanel({
               transition={{ type: "spring", stiffness: 100, damping: 18 }}
             />
           </div>
-          <span className="text-[11px] font-bold tabular-nums text-foreground">
+          <span
+            className="text-[11px] font-bold tabular-nums text-foreground"
+            data-testid={testId && `${testId}-hp`}
+          >
             {Math.round(hp)}
           </span>
         </div>
@@ -1308,6 +1314,17 @@ function BattleMode({
     const pct = Math.min(100, (prog.current / Math.max(1, prog.need)) * 100);
     return (
       <>
+        {/* Test-observability hook only — not read by any production code. */}
+        <div
+          data-testid="battle-result"
+          data-won={String(resultWon)}
+          data-xp={xpEarned}
+          data-tp={tpEarned}
+          data-coins={coinsEarned}
+          data-speed-bonus={speedBonusTotalRef.current}
+          data-streak={maxStreakRef.current}
+          hidden
+        />
         <ResultScreen
           won={resultWon!}
           opponentName={enemy.name}
@@ -1405,6 +1422,7 @@ function BattleMode({
             abilityName={null}
             immune={false}
             disadvantaged={false}
+            testId="enemy"
           />
           <div className="relative mt-2 shrink-0">
             <div
@@ -1485,6 +1503,7 @@ function BattleMode({
             abilityName={playerAbility.name}
             immune={immune}
             disadvantaged={disadvantaged}
+            testId="player"
           />
         </div>
       </div>
@@ -1536,6 +1555,7 @@ function BattleMode({
                     return (
                       <button
                         key={i}
+                        data-testid={`option-${i}`}
                         disabled={phase !== "question" || isRevealed}
                         onClick={() => handleAnswer(i)}
                         className={`flex min-h-[48px] items-center justify-between rounded-2xl border-2 bg-card px-4 py-2.5 text-left text-[clamp(0.875rem,3.6vw,0.95rem)] font-semibold transition active:scale-[0.98] ${
