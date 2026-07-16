@@ -1,0 +1,6898 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`battle-screen ability characterization (regression baseline) > ability: acrobatics 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "82",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "64",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: adaptable 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "105",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "105",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "105",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "90",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "90",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "75",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "60",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "60",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "60",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: aerilate 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "84",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "68",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "47",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "47",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "31",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "31",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "31",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "15",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: amnesia 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: berserk 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "37",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "37",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "37",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "21",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "5",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: blaze 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: bulldoze 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "82",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "64",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "40",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "40",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "22",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "22",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "22",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "4",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: charge 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "84",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "68",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "47",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "47",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "31",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "31",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "31",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "15",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: compound-eyes 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: corrosion 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "51",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "37",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "35",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "33",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "19",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "5",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: counter 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "35",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "35",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "35",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "17",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "3",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: cursed-body 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "70",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: cute-charm 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: dark-aura 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: dragon-dance 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "24",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "9",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: even-tempo 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: filter 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "89",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "89",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "78",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "67",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "67",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "67",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: flame-body 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: flash-fire 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "85",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "70",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "49",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "49",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "34",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "34",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "34",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "19",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "4",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: foresight 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: guts 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: hex 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "21",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "3",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: hydration 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: ice-body 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "91",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "76",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "61",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "61",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "61",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: intimidate 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "76",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "62",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "43",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "43",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "29",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "29",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "29",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "15",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "1",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: iron-barbs 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "88",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "88",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "76",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "64",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "64",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "64",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: leech-seed 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "87",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "72",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "57",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "59",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "61",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: magic-guard 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: metalworks 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: moonblast 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "49",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "49",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "35",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "35",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "35",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "21",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "7",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: moxie 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "38",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "38",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "38",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "23",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "8",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: multiscale 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "93",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "93",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "78",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "63",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "63",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "63",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: no-guard 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "83",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "66",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "44",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "44",
+    "playerHp": "83",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "27",
+    "playerHp": "83",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "27",
+    "playerHp": "66",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "27",
+    "playerHp": "49",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "10",
+    "playerHp": "49",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: overgrow 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "84",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "68",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "47",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "47",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "33",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "33",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "33",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "19",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "5",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: pickup 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "29",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: pixie-dust 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: poison-touch 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "70",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "49",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "47",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "33",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "31",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "31",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "17",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "1",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: sand-force 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "34",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "34",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "34",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "20",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "6",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "4",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: sand-veil 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: shadow-tag 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "51",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "37",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "35",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "33",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "19",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "5",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: shield-dust 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: slush-rush 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "90",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "90",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "80",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "70",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "70",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "70",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: snow-cloak 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "70",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "70",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "70",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: solid-rock 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "88",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "88",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "76",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "64",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "64",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "64",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: static 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: stealth-rock 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "50",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "50",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "50",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "36",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "22",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "19",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "19",
+    "playerHp": "40",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "5",
+    "playerHp": "40",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: sturdy 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: swarm 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "50",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "50",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "36",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "36",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "36",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "22",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "8",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: swift-swim 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: synthesis 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: tailwind 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "83",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "66",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "43",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "43",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "29",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "29",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "29",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "15",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "1",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: torrent 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: toxic 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > ability: volt-absorb 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "83",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "66",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "44",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "44",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "27",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "27",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "27",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "10",
+    "playerHp": "55",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization (regression baseline) > baseline — unset abilityId (legacy fallback) 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "87",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "72",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "57",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "59",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "61",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: acrobatics 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: adaptable 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "90",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "75",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "60",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "45",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "28",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "9",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: aerilate 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: amnesia 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "25",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "8",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: berserk 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: blaze 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: bulldoze 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: charge 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: compound-eyes 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: corrosion 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "98",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "96",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "94",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "92",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "90",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "88",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: counter 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: cursed-body 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: cute-charm 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: dark-aura 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: dragon-dance 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: even-tempo 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: filter 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "89",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "78",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "67",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "56",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "43",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "28",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "11",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: flame-body 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: flash-fire 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: foresight 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: guts 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: hex 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: hydration 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: ice-body 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: intimidate 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "90",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "90",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "90",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "90",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "90",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "90",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: iron-barbs 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "88",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "76",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "64",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "52",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "38",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "22",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: leech-seed 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: magic-guard 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "25",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "10",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: metalworks 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: moonblast 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: moxie 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: multiscale 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "93",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "78",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "63",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "48",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "31",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "12",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: no-guard 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "83",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "66",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "49",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "32",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "13",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: overgrow 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: pickup 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: pixie-dust 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: poison-touch 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: sand-force 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: sand-veil 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: shadow-tag 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "98",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "96",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "94",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "92",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "90",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "88",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: shield-dust 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: slush-rush 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "90",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "80",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "60",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "48",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "34",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "18",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: snow-cloak 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "38",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "19",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: solid-rock 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "88",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "76",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "64",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "52",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "38",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "22",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: static 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: stealth-rock 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "97",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "97",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: sturdy 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "1",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "0",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "0",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "0",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: swarm 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: swift-swim 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: synthesis 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: tailwind 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: torrent 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "33",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "14",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: toxic 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "25",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "10",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`battle-screen ability characterization — attrition (near-KO branches) > ability: volt-absorb 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "23",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "4",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`chance-based wrong-answer branches forced to proc > cute-charm procs 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "100",
+  },
+]
+`;
+
+exports[`chance-based wrong-answer branches forced to proc > flame-body procs 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "100",
+  },
+]
+`;
+
+exports[`chance-based wrong-answer branches forced to proc > static procs 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "93",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "93",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "86",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "79",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "79",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "79",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "79",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "72",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "72",
+  },
+]
+`;
