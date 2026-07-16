@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useGameStore } from "@/lib/store";
 import { rollReferralReward } from "@/lib/referral-rewards";
+import { pushLocalSaveToServer } from "@/lib/store-sync";
 
 // Loosely-typed table client so this compiles even before Supabase types regenerate.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase Database type doesn't yet include every table here; chained query builder needs a loose return.
@@ -154,6 +155,7 @@ export function bootstrapSocial(): Promise<string | null> {
         await syncProfile();
         await reconcileTrainerName();
         void collectPendingReferralRewards();
+        void pushLocalSaveToServer();
       }
       return uid;
     })();

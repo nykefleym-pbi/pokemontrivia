@@ -115,6 +115,11 @@ export interface GameState {
   lastSeenWhatsNew: number;
   markWhatsNewSeen: (version: number) => void;
 
+  /** Optimistic-concurrency version last confirmed written to save-sync (0 =
+   * never pushed). Used as `baseVersion` on the next push; see store-sync.ts. */
+  serverSaveVersion: number;
+  setServerSaveVersion: (v: number) => void;
+
   // progression
   level: number;
   peakLevel: number;
