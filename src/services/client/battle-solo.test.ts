@@ -1,11 +1,24 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import type { SoloBattleCfg } from "@/engine";
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: { functions: { invoke } },
 }));
 
-import { startSoloBattle, getSoloBattle } from "./battle-solo";
+import { startSoloBattle, getSoloBattle, submitBattleAction } from "./battle-solo";
+
+const CFG: SoloBattleCfg = {
+  questions: [{ question: "Q?", options: ["A", "B"], correct: 0, explanation: "e", category: "c" }],
+  playerPokemonId: 1,
+  playerTypes: ["grass"],
+  abilityId: null,
+  level: 5,
+  mode: "battle",
+  enemyPokemonId: 4,
+  enemyTypes: ["fire"],
+  trainingPoints: 0,
+};
 
 beforeEach(() => {
   invoke.mockReset();
@@ -17,14 +30,14 @@ describe("startSoloBattle", () => {
       data: { ok: true, data: { battleId: "b1", seed: "s1" } },
       error: null,
     });
-    const result = await startSoloBattle({ mode: "regular" });
+    const result = await startSoloBattle(CFG);
     expect(result).toEqual({ battleId: "b1", seed: "s1" });
-    expect(invoke).toHaveBeenCalledWith("battle-solo", { body: { op: "start", cfg: { mode: "regular" } } });
+    expect(invoke).toHaveBeenCalledWith("battle-solo", { body: { op: "start", cfg: CFG } });
   });
 
   it("throws when the transport itself errors", async () => {
     invoke.mockResolvedValue({ data: null, error: { message: "network down" } });
-    await expect(startSoloBattle({})).rejects.toThrow(/network down/);
+    await expect(startSoloBattle(CFG)).rejects.toThrow(/network down/);
   });
 
   it("throws when the envelope reports ok:false", async () => {
@@ -32,7 +45,7 @@ describe("startSoloBattle", () => {
       data: { ok: false, error: { code: "unauthorized", msg: "no valid session" } },
       error: null,
     });
-    await expect(startSoloBattle({})).rejects.toThrow(/unauthorized/);
+    await expect(startSoloBattle(CFG)).rejects.toThrow(/unauthorized/);
   });
 });
 
@@ -41,7 +54,7 @@ describe("getSoloBattle", () => {
     const record = {
       id: "b1",
       seed: "s1",
-      cfg: {},
+      cfg: CFG,
       log: [],
       status: "in_progress" as const,
       result: null,
@@ -58,5 +71,28 @@ describe("getSoloBattle", () => {
       error: null,
     });
     await expect(getSoloBattle("missing")).rejects.toThrow(/not_found/);
+  });
+});
+
+describe("submitBattleAction", () => {
+  it("calls battle-solo with op:submit_action, the battleId, and the action", async () => {
+    const state = { playerHp: 85, enemyHp: 100 };
+    invoke.mockResolvedValue({ data: { ok: true, data: { state, events: [] } }, error: null });
+    const action = { type: "submit_answer" as const, questionIdx: 0, choiceIdx: 1, elapsedMs: 3000 };
+    const result = await submitBattleAction("b1", action);
+    expect(result).toEqual({ state, events: [] });
+    expect(invoke).toHaveBeenCalledWith("battle-solo", {
+      body: { op: "submit_action", battleId: "b1", action },
+    });
+  });
+
+  it("throws when the action is rejected (e.g. out-of-order question index)", async () => {
+    invoke.mockResolvedValue({
+      data: { ok: false, error: { code: "unexpected_question_idx", msg: "expected an answer for question 0" } },
+      error: null,
+    });
+    await expect(
+      submitBattleAction("b1", { type: "submit_answer", questionIdx: 5, choiceIdx: 0, elapsedMs: 1000 }),
+    ).rejects.toThrow(/unexpected_question_idx/);
   });
 });

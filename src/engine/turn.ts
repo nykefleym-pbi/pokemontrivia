@@ -37,7 +37,8 @@
 //     cadence, which this intentionally does not reproduce).
 import type { ItemId } from "../content/items/item-def";
 import type { AbilityId } from "../lib/abilities";
-import { baseDamageForLevel, getTpMultiplier, streakMultiplier } from "../lib/game-data";
+import { baseDamageForLevel, getTpMultiplier } from "../lib/level-curve";
+import { streakMultiplier } from "./damage";
 import type { Rng } from "./rng";
 
 /** A client-submitted action in a solo battle. */

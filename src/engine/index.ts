@@ -6,3 +6,5 @@ export * from "./timers";
 export * from "./damage";
 export * from "./rng";
 export * from "./turn";
+export * from "./solo-battle-config";
+export * from "./solo-battle-replay";
