@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence } from "framer-motion";
 import { Backpack } from "lucide-react";
 import { toast } from "sonner";
-import { PokemonSprite } from "@/components/game-ui";
+import { PokemonSprite, QuestionCard } from "@/components/game-ui";
 import type { Trivia } from "@/components/battle-screen";
-import { TimerRing } from "@/components/timer-ring";
 import { shuffleTriviaOptionsWithOrder } from "@/lib/trivia-core";
 import { useForfeitGuard } from "@/lib/use-forfeit-guard";
 import {
@@ -127,8 +127,10 @@ export function MegaRaidScreen({
   // Per-question correct index, learned from the server on answer / hint item.
   const [correctIdxByQ, setCorrectIdxByQ] = useState<Record<number, number>>({});
   const currentCorrect = correctIdxByQ[qIndex];
+  const [lastElapsedMs, setLastElapsedMs] = useState(0);
 
   const startRef = useRef<number>(Date.now());
+  const questionStart = useRef<number>(Date.now());
   const escapedRef = useRef(false);
   const endedRef = useRef(false);
 
@@ -266,6 +268,7 @@ export function MegaRaidScreen({
       setRemovedWrong(null);
       setRevealCorrect(false);
       setTimer(TIMER);
+      questionStart.current = Date.now();
     },
     [qIndex, total, finish],
   );
@@ -275,6 +278,7 @@ export function MegaRaidScreen({
       if (locked || phase !== "fighting") return;
       setLocked(true);
       setPicked(idx);
+      setLastElapsedMs(Date.now() - questionStart.current);
       // Fetch the correct index for this question from the server (cached per qIndex).
       let correctIdx = correctIdxByQ[qIndex];
       if (typeof correctIdx !== "number") {
@@ -481,7 +485,16 @@ export function MegaRaidScreen({
       className="relative flex h-full w-full flex-col overflow-hidden"
       style={{ background: "var(--brand-ink-deep)", fontFamily: "Outfit, sans-serif" }}
     >
-      {/* ARENA — boss + partner HP. Shrinks to fit so the question card always pins to the bottom. */}
+      {/* ARENA — boss + partner HP. Shrinks to fit so the question card always pins to the bottom.
+          Deliberately NOT built on game-ui.tsx's shared `CombatPanel`: that
+          component is a small side-by-side card (both combatants same size,
+          type badges + ability/status chips) matching Regular Battle's 1v1
+          layout — Mega Raid's arena is a full-width boss banner with a giant
+          centered sprite and a slim partner HP row underneath, an
+          intentionally different "raid boss" presentation with no
+          abilities/status/type-matchup concepts to show. Forcing CombatPanel
+          here would be a real visual regression, not a genuine dedup — see
+          the plan's Phase 2 UI note and this session's investigation. */}
       <div className="relative flex min-h-0 flex-1 flex-col">
         <div
           className="relative px-4 pb-2 pt-[calc(env(safe-area-inset-top)+1.25rem)]"
@@ -614,14 +627,6 @@ export function MegaRaidScreen({
 
       {/* QUESTION CARD — pinned bottom, shrink-0, no inner scroll. */}
       <div className="relative shrink-0 rounded-t-[28px] bg-card pt-12 px-[max(1rem,env(safe-area-inset-left))] pb-[calc(env(safe-area-inset-bottom)+0.75rem)] shadow-[0_-8px_30px_-12px_oklch(0.3_0.05_260/0.25)]">
-        {/* Floating timer pill + category label, sits in the negative gap above the card */}
-        <div className="pointer-events-none absolute left-1/2 -top-11 z-10 flex -translate-x-1/2 flex-col items-center">
-          <TimerRing timer={timer} maxTime={TIMER} />
-          <p className="mt-1 font-pixel text-foreground/70" style={{ fontSize: 7 }}>
-            {q.category?.toUpperCase() || "TRIVIA"}
-          </p>
-        </div>
-
         {lowHp && hasAnyPotion && (
           <div
             className="mb-2 flex items-center justify-between rounded-2xl px-3 py-1.5"
@@ -646,90 +651,67 @@ export function MegaRaidScreen({
           </div>
         )}
 
-        <p className="text-center text-[clamp(0.9rem,3.8vw,1.05rem)] font-bold leading-snug">
-          {q.question}
-        </p>
-
-        <div className="mt-2.5 grid grid-cols-1 gap-2">
-          {q.options.map((opt, i) => {
-            const isCorrect = locked && typeof currentCorrect === "number" && i === currentCorrect;
-            const isWrong =
-              locked && picked === i && typeof currentCorrect === "number" && i !== currentCorrect;
-            const removed = removedWrong === i;
-            const isAnswerRevealed =
-              !locked &&
-              revealCorrect &&
-              typeof currentCorrect === "number" &&
-              i === currentCorrect;
-            return (
-              <button
-                key={i}
-                data-testid={`option-${i}`}
-                disabled={locked || removed}
-                onClick={() => answer(i)}
-                className={`flex min-h-[44px] items-center justify-between rounded-2xl border-2 bg-card px-4 py-2 text-left text-[clamp(0.85rem,3.4vw,0.95rem)] font-semibold transition active:scale-[0.98] ${
-                  isCorrect
-                    ? "border-hp-good bg-hp-good/5 text-hp-good"
-                    : isWrong
-                      ? "border-destructive bg-destructive/5 text-destructive"
-                      : removed
-                        ? "border-border/60 line-through opacity-40"
-                        : isAnswerRevealed
-                          ? "border-hp-good bg-hp-good/10 text-hp-good"
-                          : "border-border/60 text-foreground hover:border-primary/50"
-                } disabled:cursor-not-allowed`}
-              >
-                <span className="min-w-0 flex-1 truncate">{opt}</span>
-                {isCorrect && (
-                  <span className="ml-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-hp-good text-[12px] text-white">
-                    ✓
-                  </span>
-                )}
-                {isWrong && (
-                  <span className="ml-2 shrink-0 text-[10px] font-bold uppercase tracking-wide text-destructive">
-                    Your Pick ×
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Item shortcuts row — Backpack trigger + quick item buttons (matches regular battle) */}
-        <div className="mt-3 flex items-center justify-center gap-3">
-          <button
-            data-testid="bag-button"
-            onClick={() => setBagOpen(true)}
-            className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition active:scale-95"
+        <AnimatePresence mode="wait">
+          <QuestionCard
+            key={qIndex}
+            trivia={{ ...q, category: q.category || "TRIVIA" }}
+            phase={locked ? "feedback" : "question"}
+            chosen={picked}
+            revealedWrong={removedWrong}
+            revealedWrong2={null}
+            revealedCorrect={revealCorrect && typeof currentCorrect === "number" ? currentCorrect : null}
+            timer={timer}
+            maxTime={TIMER}
+            lastElapsedMs={lastElapsedMs}
+            onAnswer={(i) => answer(i)}
           >
-            <Backpack className="h-6 w-6 text-muted-foreground" />
-          </button>
-          {quickShortcuts.map((id) => {
-            const def = itemDef(id);
-            const owned = inventory[id] ?? 0;
-            const disabled = owned <= 0 || playerHp >= PLAYER_MAX_HP || locked;
-            return (
+            {/* Item shortcuts row — Backpack trigger + quick item buttons (matches regular battle) */}
+            <div className="mt-3 flex items-center justify-center gap-3">
               <button
-                key={id}
-                data-testid={`item-${id}`}
-                disabled={disabled}
-                onClick={() => applyPotion(id)}
-                className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition active:scale-95 disabled:opacity-40"
+                data-testid="bag-button"
+                onClick={() => setBagOpen(true)}
+                className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition active:scale-95"
               >
-                <img
-                  src={def?.iconUrl}
-                  alt={def?.name}
-                  className="sprite h-8 w-8 object-contain [image-rendering:pixelated]"
-                />
-                <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-poke-dark px-1 font-pixel text-[9px] text-white">
-                  {owned}
-                </span>
+                <Backpack className="h-6 w-6 text-muted-foreground" />
               </button>
-            );
-          })}
-        </div>
+              {quickShortcuts.map((id) => {
+                const def = itemDef(id);
+                const owned = inventory[id] ?? 0;
+                const disabled = owned <= 0 || playerHp >= PLAYER_MAX_HP || locked;
+                return (
+                  <button
+                    key={id}
+                    data-testid={`item-${id}`}
+                    disabled={disabled}
+                    onClick={() => applyPotion(id)}
+                    className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition active:scale-95 disabled:opacity-40"
+                  >
+                    <img
+                      src={def?.iconUrl}
+                      alt={def?.name}
+                      className="sprite h-8 w-8 object-contain [image-rendering:pixelated]"
+                    />
+                    <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-poke-dark px-1 font-pixel text-[9px] text-white">
+                      {owned}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </QuestionCard>
+        </AnimatePresence>
       </div>
 
+      {/* Deliberately NOT built on game-ui.tsx's shared `ItemBagSheet`: that
+          component groups the FULL item catalog by `CATEGORY_OF` and gates
+          use on Regular-Battle-only concepts (`itemCapReached`,
+          `choiceSpecsActive`, a per-battle item cap) that don't exist in
+          Mega Raid — Mega only recognizes 6 items total (3 unlimited-use
+          potions, 3 once-per-raid battle items via `usedOnce`), and every
+          other item in the catalog does nothing here. Reusing ItemBagSheet
+          as-is would list those inert items as usable, misleading players;
+          this bespoke two-section (Healing / Battle · Once Per Battle) sheet
+          keeps the bag scoped to what actually works in this mode. */}
       {bagOpen && (
         <div
           className="absolute inset-0 z-50 flex flex-col justify-end"

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { playSfx } from "@/lib/audio";
 import { MEGA_REWARD, megaRankScale, type MegaEvent } from "@/lib/mega/schedule";
 import { rollLevelUpRewards } from "@/lib/level-rewards";
+import { claimMegaReward } from "@/services/client/mega-reward-claim";
 import {
   fetchMegaLeaderboard,
   getMyMegaRun,
@@ -178,16 +179,36 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
   const isMyChampion = !!(champion && mine && champion.user_id === mine.user_id);
   const myRank = mine ? rows.findIndex((r) => r.user_id === mine.user_id) + 1 : 0;
 
-  const claimReward = () => {
+  const [claiming, setClaiming] = useState(false);
+
+  const claimReward = async () => {
     const st = useGameStore.getState();
-    if (st.claimedMegaRewards.includes(event.id)) return;
+    if (st.claimedMegaRewards.includes(event.id) || claiming) return;
+    setClaiming(true);
+    let result;
+    try {
+      result = await claimMegaReward(event.id);
+    } catch {
+      setClaiming(false);
+      toast.error("Couldn't claim reward — check your connection.");
+      return;
+    }
+    setClaiming(false);
     st.markMegaRewardClaimed(event.id);
-    const rank = myRank > 0 ? myRank : 99;
-    const scale = megaRankScale(rank);
+
+    if (result.alreadyGranted || !result.reward) {
+      // Already paid out by a prior call (this device or another) — this
+      // device just never recorded that fact locally. Don't pay out (or
+      // grant champion-only bonuses) a second time.
+      toast.success("Rewards already claimed.");
+      return;
+    }
+
+    const { rank, reward } = result;
     const prevLevel = st.level;
-    st.addXp(Math.round(MEGA_REWARD.xp * scale));
-    st.addCoins(Math.round(MEGA_REWARD.coins * scale));
-    if (st.pokemon) st.addTrainingPoints(st.pokemon.id, Math.round(MEGA_REWARD.tp * scale));
+    st.addXp(reward.xp);
+    st.addCoins(reward.coins);
+    if (st.pokemon) st.addTrainingPoints(st.pokemon.id, reward.tp);
     const newLevel = useGameStore.getState().level;
     if (newLevel > prevLevel) {
       const rewards = rollLevelUpRewards(prevLevel, newLevel);
@@ -199,6 +220,10 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
       }
     }
     if (rank === 1) {
+      // Champion-only bonuses aren't part of the server-idempotent grant yet
+      // (see mega-reward-claim/index.ts's module doc) — still applied
+      // client-side, but only reached when `result.granted` (a genuinely new
+      // claim), never on `alreadyGranted`.
       const pool: ItemId[] = [
         "potion",
         "superpotion",
@@ -407,8 +432,9 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
                       ) : null}
                       {!(rewardClaimed || claimed) && (
                         <button
-                          onClick={claimReward}
-                          className="mt-3.5 flex h-[54px] w-full items-center justify-center rounded-full font-pixel active:scale-[0.99]"
+                          onClick={() => void claimReward()}
+                          disabled={claiming}
+                          className="mt-3.5 flex h-[54px] w-full items-center justify-center rounded-full font-pixel active:scale-[0.99] disabled:opacity-60"
                           style={{
                             fontSize: 11,
                             letterSpacing: 1,
@@ -418,7 +444,7 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
                             boxShadow: "0 5px 0 var(--brand-gold-shadow)",
                           }}
                         >
-                          CLAIM REWARDS
+                          {claiming ? "CLAIMING…" : "CLAIM REWARDS"}
                         </button>
                       )}
                     </div>
@@ -463,8 +489,9 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
                   ) : null}
                   {!rewardClaimed && (
                     <button
-                      onClick={claimReward}
-                      className="mt-3 flex h-12 w-full items-center justify-center rounded-full font-pixel active:scale-[0.99]"
+                      onClick={() => void claimReward()}
+                      disabled={claiming}
+                      className="mt-3 flex h-12 w-full items-center justify-center rounded-full font-pixel active:scale-[0.99] disabled:opacity-60"
                       style={{
                         fontSize: 10,
                         letterSpacing: 1,
@@ -473,7 +500,7 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
                         boxShadow: "0 4px 0 var(--brand-gold-shadow)",
                       }}
                     >
-                      CLAIM REWARDS
+                      {claiming ? "CLAIMING…" : "CLAIM REWARDS"}
                     </button>
                   )}
                 </div>
