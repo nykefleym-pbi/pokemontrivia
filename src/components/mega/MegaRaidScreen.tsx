@@ -24,10 +24,17 @@ import {
   MEGA_MAX_ATTEMPTS,
   type MegaEvent,
 } from "@/lib/mega/schedule";
-import { submitMegaRun } from "@/lib/mega/runs";
+import { submitMegaRun, getMyMegaRank } from "@/lib/mega/runs";
 import { revealMegaAnswer } from "@/lib/mega/questions";
 import { playSfx, revealPokemon } from "@/lib/audio";
 import { MegaResults, type MegaRewardItem } from "@/components/mega/MegaResults";
+import {
+  startMegaAttempt,
+  submitMegaAction,
+  abandonMegaAttempt,
+  type SubmitMegaActionResult,
+} from "@/services/client/mega-run";
+import type { MegaRaidAction, MegaHealItemId } from "@/engine/mega-battle-replay";
 
 const PLAYER_MAX_HP = 100;
 const TIMER = 20;
@@ -125,6 +132,37 @@ export function MegaRaidScreen({
   const escapedRef = useRef(false);
   const endedRef = useRef(false);
 
+  // server-first-refactor Phase 2 — mirror this run into mega-run so
+  // submit_mega_run stops trusting this component's own self-scored tally.
+  // `attemptIdRef` is set once startMegaAttempt resolves; every action fired
+  // at it afterward is fire-and-forget EXCEPT the run-concluding one, which
+  // finish() awaits so it can use mega-run's own authoritative submit result
+  // instead of calling submitMegaRun directly (calling both would double-
+  // consume the 2-attempt cap — see mega-run/index.ts's module doc).
+  // `mirrorQueueRef` chains mirror calls strictly in submission order (fire-
+  // and-forget without ordering would let the server's replay diverge from
+  // the real one whenever an item was used between two answers).
+  const attemptIdRef = useRef<string | null>(null);
+  const mirrorQueueRef = useRef<Promise<SubmitMegaActionResult | null>>(Promise.resolve(null));
+  const queueMirror = useCallback((action: MegaRaidAction) => {
+    const next = mirrorQueueRef.current.then(() =>
+      attemptIdRef.current
+        ? submitMegaAction(attemptIdRef.current, action).catch(() => null)
+        : Promise.resolve(null),
+    );
+    mirrorQueueRef.current = next;
+    return next;
+  }, []);
+
+  useEffect(() => {
+    void startMegaAttempt(event.id)
+      .then((r) => {
+        attemptIdRef.current = r.attemptId;
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [result, setResult] = useState<{
     outcome: "win" | "loss";
     accuracy: number;
@@ -141,27 +179,46 @@ export function MegaRaidScreen({
   );
 
   const finish = useCallback(
-    async (won: boolean, finalCorrect: number) => {
+    async (won: boolean, finalCorrect: number, mirror: SubmitMegaActionResult | null) => {
       if (endedRef.current) return;
       endedRef.current = true;
       const timeMs = Date.now() - startRef.current;
       const accuracy = Math.round((finalCorrect / total) * 100);
       let rank: number | null = null;
       let attempts = MEGA_MAX_ATTEMPTS;
-      const res = await submitMegaRun({
-        eventId: event.id,
-        accuracy,
-        correct: finalCorrect,
-        total,
-        timeMs,
-      });
-      if (res.ok) {
-        rank = res.rank || null;
-        attempts = res.row?.attempts ?? MEGA_MAX_ATTEMPTS;
-      } else if (/no attempts/i.test(res.error)) {
-        toast.error("No attempts left — this run doesn't count.");
+      if (mirror?.ended && mirror.submit) {
+        // mega-run's own replay already called submit_mega_run with the
+        // server-derived numbers — use ITS result rather than calling
+        // submitMegaRun again (that would double-consume the attempt cap).
+        if (mirror.submit.ok) {
+          attempts = mirror.submit.row.attempts;
+          const ranked = await getMyMegaRank(event.id);
+          rank = ranked?.rank ?? null;
+        } else if (/no attempts/i.test(mirror.submit.error)) {
+          toast.error("No attempts left — this run doesn't count.");
+        } else {
+          toast.error("Couldn't save your run — check your connection.");
+        }
       } else {
-        toast.error("Couldn't save your run — check your connection.");
+        // Fallback: the mega-run mirror never concluded this run (attemptId
+        // was never obtained, or a network hiccup dropped it) — submit
+        // directly so the run is still reliably recorded, same as before
+        // this wiring existed.
+        const res = await submitMegaRun({
+          eventId: event.id,
+          accuracy,
+          correct: finalCorrect,
+          total,
+          timeMs,
+        });
+        if (res.ok) {
+          rank = res.rank || null;
+          attempts = res.row?.attempts ?? MEGA_MAX_ATTEMPTS;
+        } else if (/no attempts/i.test(res.error)) {
+          toast.error("No attempts left — this run doesn't count.");
+        } else {
+          toast.error("Couldn't save your run — check your connection.");
+        }
       }
       setResult({
         outcome: won ? "win" : "loss",
@@ -185,17 +242,22 @@ export function MegaRaidScreen({
   );
 
   const advance = useCallback(
-    (nextCorrect: number, nextBossHp: number, nextPlayerHp: number) => {
+    (
+      nextCorrect: number,
+      nextBossHp: number,
+      nextPlayerHp: number,
+      mirror: SubmitMegaActionResult | null,
+    ) => {
       if (nextBossHp <= 0) {
-        void finish(true, nextCorrect);
+        void finish(true, nextCorrect, mirror);
         return;
       }
       if (nextPlayerHp <= 0) {
-        void finish(false, nextCorrect);
+        void finish(false, nextCorrect, mirror);
         return;
       }
       if (qIndex + 1 >= total) {
-        void finish(nextCorrect >= MEGA_BOSS_HP / BOSS_DMG, nextCorrect);
+        void finish(nextCorrect >= MEGA_BOSS_HP / BOSS_DMG, nextCorrect, mirror);
         return;
       }
       setQIndex((i) => i + 1);
@@ -250,7 +312,22 @@ export function MegaRaidScreen({
         setPlayerHp(nextPlayer);
       }
       setXAtkArmed(false);
-      window.setTimeout(() => advance(nextCorrect, nextBoss, nextPlayer), 1100);
+
+      // server-first-refactor Phase 2 — mirror into mega-run (see
+      // attemptIdRef's declaration for the ordering/fallback contract).
+      // `choiceIdx` is translated back into ORIGINAL option order: the
+      // server only knows the answer key in that order, never this run's
+      // display-side shuffle.
+      const originalChoiceIdx = idx !== null ? (shuffledSet[qIndex]?.order[idx] ?? null) : null;
+      const mirrorPromise = queueMirror({
+        type: "answer",
+        questionIdx: qIndex,
+        choiceIdx: originalChoiceIdx,
+      });
+
+      window.setTimeout(() => {
+        void mirrorPromise.then((mirror) => advance(nextCorrect, nextBoss, nextPlayer, mirror));
+      }, 1100);
     },
     [
       locked,
@@ -263,6 +340,8 @@ export function MegaRaidScreen({
       correctCount,
       xAtkArmed,
       advance,
+      shuffledSet,
+      queueMirror,
     ],
   );
 
@@ -294,8 +373,11 @@ export function MegaRaidScreen({
       setPlayerHp((hp) => Math.min(PLAYER_MAX_HP, hp + heal));
       grantItem(id, -1);
       toast.success(`${itemDef(id)?.name} used`);
+      // applyPotion is only ever called with the 3 heal items (quick shortcuts
+      // + the Healing bag section) — safe to narrow for the mirror action.
+      void queueMirror({ type: "use_potion", itemId: id as MegaHealItemId });
     },
-    [inventory, playerHp, grantItem],
+    [inventory, playerHp, grantItem, queueMirror],
   );
 
   const applyBattleItem = useCallback(
@@ -322,13 +404,20 @@ export function MegaRaidScreen({
         }
         if (id === "xaccuracy") setRevealCorrect(true);
       }
-      if (id === "xattack") setXAtkArmed(true);
+      if (id === "xattack") {
+        setXAtkArmed(true);
+        // scope/xaccuracy are hint-only — the server checks the submitted
+        // choice against its answer key regardless of any hint, so there's
+        // nothing for mega-battle-replay.ts to model for them (see its
+        // module doc). Only X Attack changes the HP math, so only it mirrors.
+        void queueMirror({ type: "use_xattack" });
+      }
       grantItem(id, -1);
       setUsedOnce((s) => new Set(s).add(id));
       toast.success(`${itemDef(id)?.name} used`);
       setBagOpen(false);
     },
-    [usedOnce, inventory, locked, qIndex, correctIdxByQ, event.id, grantItem],
+    [usedOnce, inventory, locked, qIndex, correctIdxByQ, event.id, grantItem, queueMirror],
   );
 
   const escape = useCallback(() => {
@@ -339,6 +428,11 @@ export function MegaRaidScreen({
     escapedRef.current = true;
     endedRef.current = true;
     grantItem("escape", -1);
+    // Free exit — never mirrored as a forfeit (that would consume an
+    // attempt server-side too). Clean up the shadow attempt row instead, so
+    // the next `start` begins a genuinely fresh log rather than resuming
+    // this abandoned one (see abandonMegaAttempt's doc).
+    if (attemptIdRef.current) void abandonMegaAttempt(attemptIdRef.current).catch(() => {});
     toast("You fled the raid — this attempt doesn't count.");
     onExit();
   }, [inventory, grantItem, onExit]);
@@ -738,8 +832,9 @@ export function MegaRaidScreen({
               onClick={() => {
                 setConfirmLeave(false);
                 // Record the abandoned run as a loss so it consumes an attempt,
-                // rather than a free exit.
-                void finish(false, correctCount);
+                // rather than a free exit — mirror the forfeit first so
+                // finish() can use mega-run's authoritative submit result.
+                void queueMirror({ type: "forfeit" }).then((mirror) => finish(false, correctCount, mirror));
               }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >

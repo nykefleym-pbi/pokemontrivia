@@ -53,8 +53,24 @@ vi.mock("sonner", () => {
 const { revealMegaAnswer } = vi.hoisted(() => ({ revealMegaAnswer: vi.fn() }));
 vi.mock("@/lib/mega/questions", () => ({ revealMegaAnswer }));
 
-const { submitMegaRun } = vi.hoisted(() => ({ submitMegaRun: vi.fn() }));
-vi.mock("@/lib/mega/runs", () => ({ submitMegaRun }));
+const { submitMegaRun, getMyMegaRank } = vi.hoisted(() => ({
+  submitMegaRun: vi.fn(),
+  getMyMegaRank: vi.fn(),
+}));
+vi.mock("@/lib/mega/runs", () => ({ submitMegaRun, getMyMegaRank }));
+
+// server-first-refactor Phase 2 — mega-run wiring. Defaulted to "never
+// concludes" (attemptId resolves, submitMegaAction always reports
+// ended:false) so finish() always takes its submitMegaRun fallback path —
+// this file's coverage is for MegaRaidScreen's own HP/correctCount math
+// (unchanged by this wiring), not the mirror's own success path, which
+// MegaRaidScreen.mega-run-wiring.test.tsx covers instead.
+const { startMegaAttempt, submitMegaAction, abandonMegaAttempt } = vi.hoisted(() => ({
+  startMegaAttempt: vi.fn(),
+  submitMegaAction: vi.fn(),
+  abandonMegaAttempt: vi.fn(),
+}));
+vi.mock("@/services/client/mega-run", () => ({ startMegaAttempt, submitMegaAction, abandonMegaAttempt }));
 
 import { MegaRaidScreen } from "./MegaRaidScreen";
 import { useGameStore } from "@/lib/store";
@@ -124,6 +140,14 @@ beforeEach(() => {
   revealMegaAnswer.mockResolvedValue({ correctIndex: 0, explanation: "because" });
   submitMegaRun.mockReset();
   submitMegaRun.mockResolvedValue(submitOk());
+  getMyMegaRank.mockReset();
+  getMyMegaRank.mockResolvedValue(null);
+  startMegaAttempt.mockReset();
+  startMegaAttempt.mockRejectedValue(new Error("no attemptId in this test file — see its module doc"));
+  submitMegaAction.mockReset();
+  submitMegaAction.mockResolvedValue({ state: {}, ended: false });
+  abandonMegaAttempt.mockReset();
+  abandonMegaAttempt.mockResolvedValue(undefined);
 });
 
 afterEach(() => {
