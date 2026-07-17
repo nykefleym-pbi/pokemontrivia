@@ -58,6 +58,8 @@ export type { Trivia };
 import { DailyScreen } from "@/components/daily-screen";
 import { TimerRing } from "@/components/timer-ring";
 import { ResultScreen } from "@/components/result-screen";
+import { startSoloBattle, submitBattleAction } from "@/services/client/battle-solo";
+import type { SoloBattleCfg } from "@/engine";
 
 const QUESTIONS_PER_SET = 5;
 const TIMER_BASE = 20;
@@ -338,6 +340,11 @@ function BattleMode({
   const questionStart = useRef<number>(0);
   const startedRef = useRef(false);
   const battleEndedRef = useRef(false);
+  // server-first-refactor P3 — set once startSoloBattle resolves; every
+  // action fired at this battle-solo record afterward is fire-and-forget
+  // (see the mirroring effect below for why: gameplay stays fully
+  // client-driven/instant, this is a best-effort replayable mirror only).
+  const soloBattleIdRef = useRef<string | null>(null);
   const maxStreakRef = useRef(0);
   const lastStreakLabelRef = useRef<string | null>(null);
   const correctCountRef = useRef(0);
@@ -581,6 +588,49 @@ function BattleMode({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // server-first-refactor P3 — mirror this battle into battle-solo
+  // (fire-and-forget; see soloBattleIdRef's declaration for why). Runs after
+  // the auto-trigger effects above so their refs are already populated.
+  // `silkScarfAvailable`/`focusBandAvailable`/`reviveAvailable`/
+  // `oranBerryAvailable` mirror `tryAuto*`'s own preconditions (inventory,
+  // per-item auto-toggle, Choice Specs exclusivity) without consuming
+  // anything — those items' own in-battle trigger conditions (first correct
+  // answer, HP thresholds) are what the engine itself decides, same as the
+  // client. NOT enforced here: the client's global MAX_ITEMS_PER_BATTLE cap
+  // across all items — a known, narrow gap, not silently assumed away.
+  useEffect(() => {
+    const store = useGameStore.getState();
+    const canAutoItem = (id: ItemId) =>
+      !store.choiceSpecsActive && (store.inventory[id] ?? 0) > 0 && store.autoItems[id] !== false;
+    const cfg: SoloBattleCfg = {
+      questions,
+      playerPokemonId: player.id,
+      playerTypes: player.types,
+      abilityId: playerAbility.id,
+      level,
+      mode: isElite ? "elite" : isWeekly ? "weekly" : "battle",
+      enemyPokemonId: enemy.pokemon.id,
+      enemyTypes: enemy.pokemon.types,
+      trainingPoints: store.trainingPoints[player.id] ?? 0,
+      items: {
+        assaultVestActive: assaultVestActiveRef.current,
+        kingsRockActive: kingsRockActiveRef.current,
+        leftoversActive: leftoversActiveRef.current,
+        metronomeActive: metronomeActiveRef.current,
+        silkScarfAvailable: canAutoItem("silkscarf"),
+        focusBandAvailable: canAutoItem("focusband"),
+        reviveAvailable: canAutoItem("revive"),
+        oranBerryAvailable: canAutoItem("oranberry"),
+      },
+    };
+    startSoloBattle(cfg)
+      .then(({ battleId }) => {
+        soloBattleIdRef.current = battleId;
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // timer
   useEffect(() => {
     if (phase !== "question") return;
@@ -681,6 +731,16 @@ function BattleMode({
     setLastElapsedMs(elapsed);
     totalElapsedMsRef.current += elapsed;
     answeredCountRef.current += 1;
+
+    // server-first-refactor P3 — fire-and-forget mirror (see soloBattleIdRef).
+    if (soloBattleIdRef.current) {
+      submitBattleAction(soloBattleIdRef.current, {
+        type: "submit_answer",
+        questionIdx,
+        choiceIdx: idx,
+        elapsedMs: elapsed,
+      }).catch(() => {});
+    }
 
     let newStreak = streak;
     if (correct) {
@@ -1275,6 +1335,11 @@ function BattleMode({
       return;
     }
     toast.success(`${def.emoji} Used ${def.name}!`);
+    // server-first-refactor P3 — fire-and-forget mirror (see soloBattleIdRef).
+    // escape maps to forfeit below instead, not a use_item action.
+    if (soloBattleIdRef.current && id !== "escape") {
+      submitBattleAction(soloBattleIdRef.current, { type: "use_item", itemId: id }).catch(() => {});
+    }
     const healMult = playerAbility.id === "synthesis" ? 1.5 : 1;
     if (id === "potion") {
       setPlayerHp((hp) => Math.min(playerMaxHp, hp + Math.round(30 * healMult)));
@@ -1304,6 +1369,9 @@ function BattleMode({
     }
     if (id === "escape") {
       setBagOpen(false);
+      if (soloBattleIdRef.current) {
+        submitBattleAction(soloBattleIdRef.current, { type: "forfeit" }).catch(() => {});
+      }
       abortBattle();
       setTimeout(() => onExit(), 300);
     }
@@ -1760,6 +1828,9 @@ function BattleMode({
             <AlertDialogCancel>Stay</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
+                if (soloBattleIdRef.current) {
+                  submitBattleAction(soloBattleIdRef.current, { type: "forfeit" }).catch(() => {});
+                }
                 abortBattle();
                 onExit();
               }}
