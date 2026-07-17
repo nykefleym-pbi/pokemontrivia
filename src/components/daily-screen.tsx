@@ -144,13 +144,22 @@ export function DailyScreen({ questions, onExit }: { questions: Trivia[]; onExit
   if (phase === "done") {
     const timeMs = Date.now() - startedAt.current;
     return (
-      <DailyResultScreen
-        correct={correctCount}
-        total={total}
-        timeMs={timeMs}
-        pattern={pattern}
-        onExit={onExit}
-      />
+      <>
+        {/* Test-observability hook only — not read by any production code. */}
+        <div
+          data-testid="daily-result"
+          data-correct={correctCount}
+          data-total={total}
+          hidden
+        />
+        <DailyResultScreen
+          correct={correctCount}
+          total={total}
+          timeMs={timeMs}
+          pattern={pattern}
+          onExit={onExit}
+        />
+      </>
     );
   }
 
@@ -244,6 +253,7 @@ export function DailyScreen({ questions, onExit }: { questions: Trivia[]; onExit
             return (
               <button
                 key={i}
+                data-testid={`option-${i}`}
                 disabled={phase !== "question"}
                 onClick={() => handleAnswer(i)}
                 className={`flex min-h-[48px] items-center justify-between rounded-2xl border-2 bg-card px-4 py-2.5 text-left text-[clamp(0.875rem,3.6vw,0.95rem)] font-semibold transition active:scale-[0.98] ${
