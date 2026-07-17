@@ -326,7 +326,15 @@ function runPure(
     items: { ...NO_ITEMS, ...opts.items },
   };
 
-  let state: BattleState = initialBattleState(playerMaxHp, startingEnemyHp);
+  // Mirrors solo-battle-config.ts's resolveBattleSetup: how many of the
+  // shared item budget the whole-battle auto-triggers already spent.
+  const startingItemsUsedCount = [
+    config.items.assaultVestActive,
+    config.items.kingsRockActive,
+    config.items.leftoversActive,
+    config.items.metronomeActive,
+  ].filter(Boolean).length;
+  let state: BattleState = initialBattleState(playerMaxHp, startingEnemyHp, startingItemsUsedCount);
   const rng = constantRng(rngValue);
   const script = opts.script ?? SCRIPT;
   const steps: ComparableStep[] = [];
@@ -534,6 +542,68 @@ describe("engine/turn.ts item support matches the real BattleMode component", ()
     });
     const pure = runPure("magic-guard", 0.5, false, false, {
       useItemsBeforeStep: { 3: [itemId] },
+      script: ATTRITION_SCRIPT,
+    });
+    expect(pure).toEqual(dom);
+  });
+});
+
+describe("MAX_ITEMS_PER_BATTLE cap (3 items, manual + auto combined) matches the real component", () => {
+  // Assault Vest (disadvantaged, activates) + King's Rock + Leftovers spend
+  // the whole 3-item budget at battle start — Silk Scarf stays "available"
+  // (inventory > 0, unused) but the shared budget is gone by the time its
+  // first-correct-answer trigger condition is checked, both in the real
+  // client and in the engine's own itemsUsedThisBattleCount tracking.
+  it("silk scarf doesn't fire once the budget is exhausted by whole-battle auto-triggers", async () => {
+    const dom = await runDom(null, false, false, {
+      inventory: { assaultvest: 1, kingsrock: 1, leftovers: 1, silkscarf: 1 },
+    });
+    const pure = runPure(null, 0.5, false, false, {
+      items: {
+        assaultVestActive: true,
+        kingsRockActive: true,
+        leftoversActive: true,
+        silkScarfAvailable: true,
+      },
+    });
+    expect(pure).toEqual(dom);
+  });
+
+  it("revive/focus band/oran berry don't fire once the budget is exhausted", async () => {
+    const dom = await runDom("magic-guard", false, false, {
+      inventory: {
+        assaultvest: 1,
+        kingsrock: 1,
+        leftovers: 1,
+        revive: 1,
+        focusband: 1,
+        oranberry: 1,
+      },
+      script: ATTRITION_SCRIPT,
+    });
+    const pure = runPure("magic-guard", 0.5, false, false, {
+      items: {
+        assaultVestActive: true,
+        kingsRockActive: true,
+        leftoversActive: true,
+        reviveAvailable: true,
+        focusBandAvailable: true,
+        oranBerryAvailable: true,
+      },
+      script: ATTRITION_SCRIPT,
+    });
+    expect(pure).toEqual(dom);
+  });
+
+  it("a manual item can't be used once the budget is exhausted", async () => {
+    const dom = await runDom("magic-guard", false, false, {
+      inventory: { assaultvest: 1, kingsrock: 1, leftovers: 1, potion: 1 },
+      useItemsBeforeStep: { 3: ["potion"] },
+      script: ATTRITION_SCRIPT,
+    });
+    const pure = runPure("magic-guard", 0.5, false, false, {
+      items: { assaultVestActive: true, kingsRockActive: true, leftoversActive: true },
+      useItemsBeforeStep: { 3: ["potion"] },
       script: ATTRITION_SCRIPT,
     });
     expect(pure).toEqual(dom);

@@ -54,8 +54,8 @@ function applyOneAction(
 /** Replays the whole `log` from the battle's start and returns the resulting
  *  state, plus the events the final logged action produced. */
 export function replayBattle(cfg: SoloBattleCfg, log: BattleAction[], seed: string): ReplayResult {
-  const { config, startingEnemyHp } = resolveBattleSetup(cfg);
-  let state = initialBattleState(config.playerMaxHp, startingEnemyHp);
+  const { config, startingEnemyHp, startingItemsUsedCount } = resolveBattleSetup(cfg);
+  let state = initialBattleState(config.playerMaxHp, startingEnemyHp, startingItemsUsedCount);
   const masterRng = createRng(seed);
   let lastEvents: BattleEvent[] = [];
 
