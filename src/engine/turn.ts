@@ -140,6 +140,13 @@ export function initialItemState(): BattleItemState {
   };
 }
 
+/** Mirrors src/lib/store/slices/itemsSlice.ts's MAX_ITEMS_PER_BATTLE (3) —
+ *  duplicated by hand, not imported: engine/** cannot import from lib/store/**
+ *  (the isomorphic engine/content boundary eslint enforces), and this is a
+ *  single small integer, not battle math that could silently drift. If the
+ *  client's cap ever changes, update this too. */
+export const MAX_ITEMS_PER_BATTLE = 3;
+
 export interface BattleState {
   playerHp: number;
   enemyHp: number;
@@ -154,10 +161,21 @@ export interface BattleState {
   statuses: BattleStatusEntry[];
   ability: BattleAbilityState;
   items: BattleItemState;
+  /** Manual + auto item uses so far, capped at MAX_ITEMS_PER_BATTLE — mirrors
+   *  the client's shared budget across ALL items (see the module doc). The
+   *  whole-battle auto-triggers (Assault Vest/King's Rock/Leftovers/
+   *  Metronome) each consume one slot too, already reflected in whatever
+   *  `startingCount` the caller passes in — see solo-battle-config.ts's
+   *  `resolveBattleSetup`. */
+  itemsUsedThisBattleCount: number;
   phase: "in_progress" | "won" | "lost";
 }
 
-export function initialBattleState(playerMaxHp: number, enemyMaxHp: number): BattleState {
+export function initialBattleState(
+  playerMaxHp: number,
+  enemyMaxHp: number,
+  startingItemsUsedCount = 0,
+): BattleState {
   return {
     playerHp: playerMaxHp,
     enemyHp: enemyMaxHp,
@@ -170,6 +188,7 @@ export function initialBattleState(playerMaxHp: number, enemyMaxHp: number): Bat
     statuses: [],
     ability: initialAbilityState(),
     items: initialItemState(),
+    itemsUsedThisBattleCount: startingItemsUsedCount,
     phase: "in_progress",
   };
 }
@@ -336,6 +355,7 @@ export function applyAnswer(
   let ability = s.ability;
   let statuses = s.statuses;
   let items = s.items;
+  let itemsUsedThisBattleCount = s.itemsUsedThisBattleCount;
 
   if (input.correct) {
     const correctCount = s.correctCount + 1;
@@ -382,9 +402,14 @@ export function applyAnswer(
       items = { ...items, xAttackActive: false };
     }
     // Silk Scarf: bonus on the first correct answer only, once per battle.
-    if (config.items.silkScarfAvailable && !items.silkScarfUsed) {
+    if (
+      config.items.silkScarfAvailable &&
+      !items.silkScarfUsed &&
+      itemsUsedThisBattleCount < MAX_ITEMS_PER_BATTLE
+    ) {
       dmg = Math.round(dmg * (config.isNormalType ? 1.75 : 1.5));
       items = { ...items, silkScarfUsed: true };
+      itemsUsedThisBattleCount += 1;
     }
     if (abilityId === "tailwind" && input.questionIdx < 3) dmg = Math.round(dmg * 1.2);
     if (abilityId === "guts" && s.playerHp < config.playerMaxHp / 2) dmg = Math.round(dmg * 1.15);
@@ -467,6 +492,7 @@ export function applyAnswer(
           statuses,
           ability,
           items,
+          itemsUsedThisBattleCount,
           phase: "won",
         },
         events,
@@ -486,6 +512,7 @@ export function applyAnswer(
         statuses,
         ability,
         items,
+        itemsUsedThisBattleCount,
       },
       events,
     };
@@ -530,16 +557,28 @@ export function applyAnswer(
 
   // Revive: survive a would-be KO at 25% max HP, once per battle.
   let reviveUsed = items.reviveUsed;
-  if (newPlayerHp <= 0 && config.items.reviveAvailable && !reviveUsed) {
+  if (
+    newPlayerHp <= 0 &&
+    config.items.reviveAvailable &&
+    !reviveUsed &&
+    itemsUsedThisBattleCount < MAX_ITEMS_PER_BATTLE
+  ) {
     newPlayerHp = Math.round(config.playerMaxHp * 0.25);
     reviveUsed = true;
+    itemsUsedThisBattleCount += 1;
   }
 
   // Focus Band: auto-heal to 50% max HP when HP is 10 or below, once per week.
   let focusBandUsed = items.focusBandUsed;
-  if (newPlayerHp <= 10 && config.items.focusBandAvailable && !focusBandUsed) {
+  if (
+    newPlayerHp <= 10 &&
+    config.items.focusBandAvailable &&
+    !focusBandUsed &&
+    itemsUsedThisBattleCount < MAX_ITEMS_PER_BATTLE
+  ) {
     newPlayerHp = Math.round(config.playerMaxHp * 0.5);
     focusBandUsed = true;
+    itemsUsedThisBattleCount += 1;
   }
 
   let torrentUsed = ability.torrentUsed;
@@ -550,9 +589,16 @@ export function applyAnswer(
 
   // Oran Berry: auto-heal 15 HP the instant HP first drops below 30% max, once per battle.
   let oranBerryUsed = items.oranBerryUsed;
-  if (newPlayerHp > 0 && newPlayerHp < config.playerMaxHp * 0.3 && config.items.oranBerryAvailable && !oranBerryUsed) {
+  if (
+    newPlayerHp > 0 &&
+    newPlayerHp < config.playerMaxHp * 0.3 &&
+    config.items.oranBerryAvailable &&
+    !oranBerryUsed &&
+    itemsUsedThisBattleCount < MAX_ITEMS_PER_BATTLE
+  ) {
     newPlayerHp = Math.min(config.playerMaxHp, newPlayerHp + 15);
     oranBerryUsed = true;
+    itemsUsedThisBattleCount += 1;
   }
 
   events.push({ type: "damage_dealt", target: "player", amount: wrongDmg });
@@ -608,6 +654,7 @@ export function applyAnswer(
         statuses,
         ability,
         items,
+        itemsUsedThisBattleCount,
         phase: "won",
       },
       events,
@@ -642,6 +689,7 @@ export function applyAnswer(
         statuses,
         ability,
         items,
+        itemsUsedThisBattleCount,
         phase: "lost",
       },
       events,
@@ -658,6 +706,7 @@ export function applyAnswer(
       statuses,
       ability,
       items,
+      itemsUsedThisBattleCount,
     },
     events,
   };
@@ -676,6 +725,12 @@ export function applyUseItem(
   itemId: ItemId,
 ): ApplyAnswerResult {
   if (state.phase !== "in_progress") return { state, events: [] };
+  if (itemId !== "potion" && itemId !== "superpotion" && itemId !== "maxpotion" && itemId !== "xattack") {
+    return { state, events: [] };
+  }
+  // Shared budget with the auto-triggers — mirrors useItem()'s own cap check.
+  if (state.itemsUsedThisBattleCount >= MAX_ITEMS_PER_BATTLE) return { state, events: [] };
+  const itemsUsedThisBattleCount = state.itemsUsedThisBattleCount + 1;
 
   const healMult = config.abilityId === "synthesis" ? 1.5 : 1;
   let playerHp = state.playerHp;
@@ -683,17 +738,19 @@ export function applyUseItem(
   else if (itemId === "superpotion") {
     playerHp = Math.min(config.playerMaxHp, playerHp + Math.round(60 * healMult));
   } else if (itemId === "maxpotion") playerHp = config.playerMaxHp;
-  else if (itemId === "xattack") {
+  else {
     return {
-      state: { ...state, items: { ...state.items, xAttackActive: true } },
+      state: {
+        ...state,
+        items: { ...state.items, xAttackActive: true },
+        itemsUsedThisBattleCount,
+      },
       events: [{ type: "item_consumed", itemId }],
     };
-  } else {
-    return { state, events: [] };
   }
 
   return {
-    state: { ...state, playerHp },
+    state: { ...state, playerHp, itemsUsedThisBattleCount },
     events: [{ type: "item_consumed", itemId }],
   };
 }

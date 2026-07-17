@@ -152,6 +152,206 @@ exports[`Elite Four and Weekly League branches > weekly league battle: flat base
 ]
 `;
 
+exports[`MAX_ITEMS_PER_BATTLE cap (3 items, manual + auto combined) > a manual item can't be used once the budget is exhausted 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "93",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "86",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "79",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "72",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "65",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "58",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "51",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "44",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "37",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "30",
+  },
+]
+`;
+
+exports[`MAX_ITEMS_PER_BATTLE cap (3 items, manual + auto combined) > revive/focus band/oran berry don't fire once the budget is exhausted 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "93",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "86",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "79",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "72",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "65",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "58",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "51",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "44",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "37",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "30",
+  },
+]
+`;
+
+exports[`MAX_ITEMS_PER_BATTLE cap (3 items, manual + auto combined) > silk scarf doesn't fire once the budget is exhausted by whole-battle auto-triggers 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "86",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "72",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "53",
+    "playerHp": "93",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "93",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "39",
+    "playerHp": "86",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "25",
+    "playerHp": "93",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "11",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;
+
 exports[`battle-screen ability characterization (regression baseline) > ability: acrobatics 1`] = `
 [
   {

@@ -426,6 +426,41 @@ describe("manual items", () => {
   });
 });
 
+describe("MAX_ITEMS_PER_BATTLE cap (3 items, manual + auto combined)", () => {
+  // Assault Vest (disadvantaged, activates) + King's Rock + Leftovers spend
+  // the whole 3-item budget at battle start, in that order — Silk Scarf is
+  // still "available" (inventory > 0, unused) but the shared budget is gone
+  // by the time its first-correct-answer trigger condition is checked.
+  it("silk scarf doesn't fire once the budget is exhausted by whole-battle auto-triggers", async () => {
+    const trace = await runBattle(null, SCRIPT, {
+      inventory: { assaultvest: 1, kingsrock: 1, leftovers: 1, silkscarf: 1 },
+    });
+    expect(trace).toMatchSnapshot();
+  });
+
+  it("revive/focus band/oran berry don't fire once the budget is exhausted", async () => {
+    const trace = await runBattle("magic-guard", ATTRITION_SCRIPT, {
+      inventory: {
+        assaultvest: 1,
+        kingsrock: 1,
+        leftovers: 1,
+        revive: 1,
+        focusband: 1,
+        oranberry: 1,
+      },
+    });
+    expect(trace).toMatchSnapshot();
+  });
+
+  it("a manual item can't be used once the budget is exhausted", async () => {
+    const trace = await runBattle("magic-guard", ATTRITION_SCRIPT, {
+      inventory: { assaultvest: 1, kingsrock: 1, leftovers: 1, potion: 1 },
+      useItemsBeforeStep: { 3: ["potion"] },
+    });
+    expect(trace).toMatchSnapshot();
+  });
+});
+
 describe("Elite Four and Weekly League branches", () => {
   it("elite battle: flat base damage, dark-aura elite bonus, elite-only rewards", async () => {
     const trace = await runBattle("dark-aura", SCRIPT, { mode: "elite", eliteMember: ELITE_FOUR[0] });

@@ -57,6 +57,15 @@ export interface ResolvedBattleSetup {
    *  mount; `enemyMaxHp` itself, used elsewhere for the Overgrow check and
    *  the HP bar, is untouched). */
   startingEnemyHp: number;
+  /** How many of MAX_ITEMS_PER_BATTLE's shared budget the whole-battle
+   *  auto-triggers (Assault Vest/King's Rock/Leftovers/Metronome) already
+   *  spent before the battle's first action — popcount of `cfg.items`'s 4
+   *  `*Active` flags. The client already enforced the cap when deciding
+   *  which of those to activate (see battle-screen.tsx's mirroring effect);
+   *  this is just carrying that decision's cost into the engine's shared
+   *  counter so later triggers (Silk Scarf, Revive, Focus Band, Oran Berry,
+   *  manual items) see the correct remaining budget. */
+  startingItemsUsedCount: number;
 }
 
 /** Pure, deterministic: same `cfg` always resolves to the same setup. */
@@ -86,5 +95,12 @@ export function resolveBattleSetup(cfg: SoloBattleCfg): ResolvedBattleSetup {
     items: cfg.items,
   };
 
-  return { config, startingEnemyHp };
+  const startingItemsUsedCount = [
+    cfg.items.assaultVestActive,
+    cfg.items.kingsRockActive,
+    cfg.items.leftoversActive,
+    cfg.items.metronomeActive,
+  ].filter(Boolean).length;
+
+  return { config, startingEnemyHp, startingItemsUsedCount };
 }
