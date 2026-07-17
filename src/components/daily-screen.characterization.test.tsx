@@ -77,6 +77,14 @@ vi.mock("sonner", () => {
 const { syncActivity } = vi.hoisted(() => ({ syncActivity: vi.fn() }));
 vi.mock("@/lib/social", () => ({ syncActivity }));
 
+// server-first-refactor Phase 3 — daily-run wiring. Defaulted to always
+// reject so every test in this file exercises the pre-existing fallback
+// path (client-computed dailyReward()), preserving this file's baseline
+// assertions unchanged — the server-submit success path is covered instead
+// by daily-screen.daily-run-wiring.test.tsx.
+const { submitDailyRun } = vi.hoisted(() => ({ submitDailyRun: vi.fn() }));
+vi.mock("@/services/client/daily-run", () => ({ submitDailyRun }));
+
 import { DailyScreen } from "./daily-screen";
 import { useGameStore } from "@/lib/store";
 import { findPokemon } from "@/lib/pokemon-data";
@@ -104,6 +112,8 @@ beforeEach(() => {
   vi.setSystemTime(new Date("2026-01-15T00:00:00Z"));
   syncActivity.mockReset();
   syncActivity.mockResolvedValue(undefined);
+  submitDailyRun.mockReset();
+  submitDailyRun.mockRejectedValue(new Error("no server in this test file — see its module doc"));
 });
 
 afterEach(() => {

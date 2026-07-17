@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useGameStore } from "@/lib/store";
 import { dailyReward } from "@/lib/rewards";
 import { rollLevelUpRewards } from "@/lib/level-rewards";
 import { rankForLevel, trainerSpriteUrl } from "@/lib/game-data";
-import { PokemonSprite, PokeballPattern, type DailyMark } from "@/components/game-ui";
+import { PokemonSprite, PokeballPattern, QuestionCard, type DailyMark } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -20,9 +20,9 @@ import { playSfx, playBattleResult } from "@/lib/audio";
 import { ShareCardDialog } from "@/components/share-card-dialog";
 import type { ShareData } from "@/components/share-card-builder";
 import type { Trivia } from "@/lib/trivia-core";
-import { TimerRing } from "@/components/timer-ring";
 import { syncActivity } from "@/lib/social";
 import { useForfeitGuard } from "@/lib/use-forfeit-guard";
+import { submitDailyRun } from "@/services/client/daily-run";
 
 export function DailyScreen({ questions, onExit }: { questions: Trivia[]; onExit: () => void }) {
   const recordDaily = useGameStore((s) => s.recordDaily);
@@ -43,10 +43,14 @@ export function DailyScreen({ questions, onExit }: { questions: Trivia[]; onExit
   useForfeitGuard(phase !== "done", () => setConfirmExit(true));
   const [correctCount, setCorrectCount] = useState(0);
   const [timer, setTimer] = useState(20);
+  const [lastElapsedMs, setLastElapsedMs] = useState(0);
   const startedAt = useRef(Date.now());
   const qStart = useRef(Date.now());
   const recordedRef = useRef(false);
   const dailyStreakRef = useRef(0);
+  // server-first-refactor Phase 3 — raw picks (null for a timeout), in
+  // question order, submitted to daily-run once the whole set is answered.
+  const picksRef = useRef<Array<number | null>>([]);
 
   const trivia = questions[idx];
   const total = questions.length;
@@ -72,12 +76,14 @@ export function DailyScreen({ questions, onExit }: { questions: Trivia[]; onExit
     setChosen(picked);
     const correct = picked === trivia.correct;
     const elapsed = Date.now() - qStart.current;
+    setLastElapsedMs(elapsed);
     const nextStreak = correct ? dailyStreakRef.current + 1 : 0;
     dailyStreakRef.current = nextStreak;
     recordAnswer(correct, elapsed, nextStreak);
     const sym: DailyMark = picked === -1 ? "timeout" : correct ? "correct" : "wrong";
     const nextPattern: DailyMark[] = [...pattern, sym];
     setPattern(nextPattern);
+    picksRef.current = [...picksRef.current, picked === -1 ? null : picked];
     if (correct) setCorrectCount((c) => c + 1);
     if (typeof navigator !== "undefined" && "vibrate" in navigator) {
       try {
@@ -111,24 +117,42 @@ export function DailyScreen({ questions, onExit }: { questions: Trivia[]; onExit
             timestamp: Date.now(),
             mode: "daily",
           });
-          const lvl = useGameStore.getState().level;
-          const daily = dailyReward({ correct: finalCorrect, total, level: lvl });
-          if (daily.xp > 0) {
-            const prevLevel = useGameStore.getState().level;
-            useGameStore.getState().addXp(daily.xp);
-            const partner = useGameStore.getState().pokemon;
-            if (partner) useGameStore.getState().addTrainingPoints(partner.id, daily.tp);
-            const newLevel = useGameStore.getState().level;
-            if (newLevel > prevLevel) {
-              const rewards = rollLevelUpRewards(prevLevel, newLevel);
-              if (rewards) {
-                useGameStore.getState().mergePendingLevelUp(rewards);
-                if (rewards.coins > 0) useGameStore.getState().addCoins(rewards.coins);
-                for (const it of rewards.items) useGameStore.getState().grantItem(it.id, it.qty);
-                if (rewards.eggs > 0) useGameStore.getState().grantPokeEgg(rewards.eggs);
+          // server-first-refactor Phase 3 — submit to daily-run for the
+          // idempotent, server-validated reward instead of trusting this
+          // component's own self-scored tally. Falls back to the old
+          // client-computed dailyReward() only if the submit itself fails
+          // (network hiccup) — never on `alreadyGranted`, which means the
+          // server already paid this out (or determined it didn't qualify).
+          void (async () => {
+            let reward: { xp: number; tp: number } | null = null;
+            try {
+              const res = await submitDailyRun(picksRef.current, timeMs);
+              reward = res.reward;
+            } catch {
+              const lvl = useGameStore.getState().level;
+              reward = dailyReward({ correct: finalCorrect, total, level: lvl });
+            }
+            if (reward && reward.xp > 0) {
+              const prevLevel = useGameStore.getState().level;
+              useGameStore.getState().addXp(reward.xp);
+              const partner = useGameStore.getState().pokemon;
+              if (partner) useGameStore.getState().addTrainingPoints(partner.id, reward.tp);
+              const newLevel = useGameStore.getState().level;
+              if (newLevel > prevLevel) {
+                const rewards = rollLevelUpRewards(prevLevel, newLevel);
+                if (rewards) {
+                  useGameStore.getState().mergePendingLevelUp(rewards);
+                  if (rewards.coins > 0) useGameStore.getState().addCoins(rewards.coins);
+                  for (const it of rewards.items) useGameStore.getState().grantItem(it.id, it.qty);
+                  if (rewards.eggs > 0) useGameStore.getState().grantPokeEgg(rewards.eggs);
+                }
               }
             }
-          }
+            playSfx("victory");
+            playBattleResult("daily", true);
+            setPhase("done");
+          })();
+          return;
         }
         playSfx("victory");
         playBattleResult("daily", true);
@@ -238,52 +262,21 @@ export function DailyScreen({ questions, onExit }: { questions: Trivia[]; onExit
       </div>
 
       <div className="relative shrink-0 rounded-t-[28px] bg-card pt-14 px-[max(1rem,env(safe-area-inset-left))] pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-[0_-8px_30px_-12px_oklch(0.3_0.05_260/0.25)]">
-        <div className="pointer-events-none absolute left-1/2 -top-12 z-10 flex -translate-x-1/2 flex-col items-center">
-          <TimerRing timer={timer} maxTime={20} />
-          <p className="mt-1.5 font-pixel-xs text-foreground/70">{trivia.category}</p>
-        </div>
-
-        <p className="text-center text-[clamp(0.95rem,4vw,1.125rem)] font-bold leading-snug">
-          {trivia.question}
-        </p>
-        <div className="mt-3 grid grid-cols-1 gap-2">
-          {trivia.options.map((opt, i) => {
-            const isCorrect = phase === "feedback" && i === trivia.correct;
-            const isWrong = phase === "feedback" && chosen === i && i !== trivia.correct;
-            return (
-              <button
-                key={i}
-                data-testid={`option-${i}`}
-                disabled={phase !== "question"}
-                onClick={() => handleAnswer(i)}
-                className={`flex min-h-[48px] items-center justify-between rounded-2xl border-2 bg-card px-4 py-2.5 text-left text-[clamp(0.875rem,3.6vw,0.95rem)] font-semibold transition active:scale-[0.98] ${
-                  isCorrect
-                    ? "border-hp-good bg-hp-good/5 text-hp-good"
-                    : isWrong
-                      ? "border-destructive bg-destructive/5 text-destructive"
-                      : "border-border/60 text-foreground hover:border-primary/50"
-                } disabled:cursor-not-allowed`}
-              >
-                <span className="min-w-0 flex-1 truncate">{opt}</span>
-                {isCorrect && (
-                  <span className="ml-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-hp-good text-[12px] text-white">
-                    ✓
-                  </span>
-                )}
-                {isWrong && (
-                  <span className="ml-2 shrink-0 text-[10px] font-bold uppercase tracking-wide text-destructive">
-                    Your Pick ×
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-        {phase === "feedback" && (
-          <p className="mt-2 rounded-xl bg-muted p-2 text-[11px] leading-snug text-muted-foreground">
-            💡 {trivia.explanation}
-          </p>
-        )}
+        <AnimatePresence mode="wait">
+          <QuestionCard
+            key={idx}
+            trivia={trivia}
+            phase={phase as "question" | "feedback"}
+            chosen={chosen}
+            revealedWrong={null}
+            revealedWrong2={null}
+            revealedCorrect={null}
+            timer={timer}
+            maxTime={20}
+            lastElapsedMs={lastElapsedMs}
+            onAnswer={(i) => handleAnswer(i)}
+          />
+        </AnimatePresence>
       </div>
     </div>
   );
