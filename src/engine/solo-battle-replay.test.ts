@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { applyNextAction, replayBattle, SoloBattleActionError } from "./solo-battle-replay";
 import type { SoloBattleCfg } from "./solo-battle-config";
-import type { BattleAction } from "./turn";
+import type { BattleAction, BattleItemConfig } from "./turn";
 
 // Bulbasaur (grass, id 1) vs Charmander (fire, id 4) — same fixture as
 // battle-screen.characterization.test.tsx / battle-screen-engine-verification.test.tsx.
@@ -12,6 +12,17 @@ const QUESTIONS = Array.from({ length: 16 }, (_, i) => ({
   explanation: "because",
   category: "Test",
 }));
+
+const NO_ITEMS: BattleItemConfig = {
+  assaultVestActive: false,
+  kingsRockActive: false,
+  leftoversActive: false,
+  metronomeActive: false,
+  silkScarfAvailable: false,
+  focusBandAvailable: false,
+  reviveAvailable: false,
+  oranBerryAvailable: false,
+};
 
 function cfgFor(abilityId: SoloBattleCfg["abilityId"]): SoloBattleCfg {
   return {
@@ -24,6 +35,7 @@ function cfgFor(abilityId: SoloBattleCfg["abilityId"]): SoloBattleCfg {
     enemyPokemonId: 4,
     enemyTypes: ["fire"],
     trainingPoints: 0,
+    items: NO_ITEMS,
   };
 }
 

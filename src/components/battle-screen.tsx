@@ -1728,6 +1728,7 @@ function BattleMode({
                       return (
                         <button
                           key={it.id}
+                          data-testid={`item-${it.id}`}
                           disabled={disabled}
                           onClick={() => tryUseItem(it.id)}
                           className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition active:scale-95 disabled:opacity-40"
