@@ -74,3 +74,21 @@ export function submitMegaAction(
 ): Promise<SubmitMegaActionResult> {
   return invokeMegaRun<SubmitMegaActionResult>({ op: "submit_action", attemptId, action });
 }
+
+/** Delete an in-progress attempt directly (no Edge Function op needed —
+ *  `mega_attempts` RLS already lets the owner delete their own row). For
+ *  Escape Rope's free exit: escaping never calls submit_action (no server
+ *  call should count against the 2-attempt cap), but leaving the row behind
+ *  would make the NEXT `start` call resume the abandoned log instead of
+ *  beginning a genuinely fresh one — silently desyncing that future run's
+ *  server-replayed accuracy/correct from what the player actually saw.
+ *  Best-effort: swallow errors, since a stray leftover row is a cosmetic
+ *  problem (resolved by that later mismatch getting overwritten on the NEXT
+ *  escape or natural conclusion), not a correctness one for the CURRENT run. */
+export async function abandonMegaAttempt(attemptId: string): Promise<void> {
+  // Loosely-typed: the Database type doesn't yet include mega_attempts
+  // (generated types not regenerated since its migration) — same convention
+  // as lib/mega/schedule.ts/runs.ts's own `db` casts.
+  const db = supabase as unknown as { from: (t: string) => { delete: () => { eq: (c: string, v: string) => Promise<unknown> } } };
+  await db.from("mega_attempts").delete().eq("id", attemptId);
+}

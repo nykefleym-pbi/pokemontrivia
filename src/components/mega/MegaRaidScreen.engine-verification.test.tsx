@@ -40,8 +40,22 @@ vi.mock("sonner", () => {
 const { revealMegaAnswer } = vi.hoisted(() => ({ revealMegaAnswer: vi.fn() }));
 vi.mock("@/lib/mega/questions", () => ({ revealMegaAnswer }));
 
-const { submitMegaRun } = vi.hoisted(() => ({ submitMegaRun: vi.fn() }));
-vi.mock("@/lib/mega/runs", () => ({ submitMegaRun }));
+const { submitMegaRun, getMyMegaRank } = vi.hoisted(() => ({
+  submitMegaRun: vi.fn(),
+  getMyMegaRank: vi.fn(),
+}));
+vi.mock("@/lib/mega/runs", () => ({ submitMegaRun, getMyMegaRank }));
+
+// server-first-refactor Phase 2 — mega-run wiring, defaulted the same way as
+// MegaRaidScreen.characterization.test.tsx: attemptId never resolves, so
+// finish() always falls back to submitMegaRun directly. This file verifies
+// engine/mega-replay.ts's HP math, unaffected by this wiring.
+const { startMegaAttempt, submitMegaAction, abandonMegaAttempt } = vi.hoisted(() => ({
+  startMegaAttempt: vi.fn(),
+  submitMegaAction: vi.fn(),
+  abandonMegaAttempt: vi.fn(),
+}));
+vi.mock("@/services/client/mega-run", () => ({ startMegaAttempt, submitMegaAction, abandonMegaAttempt }));
 
 import { MegaRaidScreen } from "./MegaRaidScreen";
 import { useGameStore } from "@/lib/store";
@@ -119,6 +133,14 @@ beforeEach(() => {
   revealMegaAnswer.mockResolvedValue({ correctIndex: 0, explanation: "because" });
   submitMegaRun.mockReset();
   submitMegaRun.mockResolvedValue(submitOk());
+  getMyMegaRank.mockReset();
+  getMyMegaRank.mockResolvedValue(null);
+  startMegaAttempt.mockReset();
+  startMegaAttempt.mockRejectedValue(new Error("no attemptId in this test file"));
+  submitMegaAction.mockReset();
+  submitMegaAction.mockResolvedValue({ state: {}, ended: false });
+  abandonMegaAttempt.mockReset();
+  abandonMegaAttempt.mockResolvedValue(undefined);
 });
 
 afterEach(() => {
