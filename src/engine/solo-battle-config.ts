@@ -104,3 +104,57 @@ export function resolveBattleSetup(cfg: SoloBattleCfg): ResolvedBattleSetup {
 
   return { config, startingEnemyHp, startingItemsUsedCount };
 }
+
+const ITEM_CONFIG_BOOL_FIELDS = [
+  "assaultVestActive",
+  "kingsRockActive",
+  "leftoversActive",
+  "metronomeActive",
+  "silkScarfAvailable",
+  "focusBandAvailable",
+  "reviveAvailable",
+  "oranBerryAvailable",
+] as const;
+
+function isValidItemConfig(items: unknown): items is BattleItemConfig {
+  if (!items || typeof items !== "object") return false;
+  const i = items as Record<string, unknown>;
+  return ITEM_CONFIG_BOOL_FIELDS.every((key) => typeof i[key] === "boolean");
+}
+
+/** Shared shape validator for a client-submitted `SoloBattleCfg` — used by
+ *  both battle-solo (validating `start`'s cfg and a fetched row's cfg) and
+ *  save-sync (validating a queued offline battle's cfg before replaying it),
+ *  so the two Edge Functions never drift on what counts as well-formed. */
+export function isValidSoloBattleCfg(cfg: unknown): cfg is SoloBattleCfg {
+  if (!cfg || typeof cfg !== "object") return false;
+  const c = cfg as Record<string, unknown>;
+  return (
+    Array.isArray(c.questions) &&
+    c.questions.length > 0 &&
+    c.questions.every((q) => {
+      if (!q || typeof q !== "object") return false;
+      const qq = q as Record<string, unknown>;
+      return (
+        typeof qq.question === "string" &&
+        Array.isArray(qq.options) &&
+        typeof qq.correct === "number" &&
+        typeof qq.explanation === "string" &&
+        typeof qq.category === "string"
+      );
+    }) &&
+    typeof c.playerPokemonId === "number" &&
+    Array.isArray(c.playerTypes) &&
+    c.playerTypes.length > 0 &&
+    c.playerTypes.every((t) => typeof t === "string") &&
+    (c.abilityId === null || typeof c.abilityId === "string") &&
+    typeof c.level === "number" &&
+    (c.mode === "battle" || c.mode === "elite" || c.mode === "weekly") &&
+    typeof c.enemyPokemonId === "number" &&
+    Array.isArray(c.enemyTypes) &&
+    c.enemyTypes.length > 0 &&
+    c.enemyTypes.every((t) => typeof t === "string") &&
+    typeof c.trainingPoints === "number" &&
+    isValidItemConfig(c.items)
+  );
+}

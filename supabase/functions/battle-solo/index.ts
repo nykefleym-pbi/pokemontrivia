@@ -26,12 +26,9 @@
 // produce a single self-contained ESM file, and deploy THAT. Never hand-edit
 // the bundle — edit this file and re-bundle.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
-import {
-  applyNextAction,
-  SoloBattleActionError,
-  type SoloBattleCfg,
-} from "../../../src/engine/solo-battle-replay";
-import type { BattleAction } from "../../../src/engine/turn";
+import { applyNextAction, SoloBattleActionError } from "../../../src/engine/solo-battle-replay";
+import { isValidSoloBattleCfg } from "../../../src/engine/solo-battle-config";
+import { isValidBattleAction, type BattleAction } from "../../../src/engine/turn";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -47,71 +44,6 @@ function json<T>(body: Envelope<T>, status = 200) {
 
 function err(code: string, msg: string, status: number) {
   return json({ ok: false, error: { code, msg } }, status);
-}
-
-function isValidCfg(cfg: unknown): cfg is SoloBattleCfg {
-  if (!cfg || typeof cfg !== "object") return false;
-  const c = cfg as Record<string, unknown>;
-  return (
-    Array.isArray(c.questions) &&
-    c.questions.length > 0 &&
-    c.questions.every((q) => {
-      if (!q || typeof q !== "object") return false;
-      const qq = q as Record<string, unknown>;
-      return (
-        typeof qq.question === "string" &&
-        Array.isArray(qq.options) &&
-        typeof qq.correct === "number" &&
-        typeof qq.explanation === "string" &&
-        typeof qq.category === "string"
-      );
-    }) &&
-    typeof c.playerPokemonId === "number" &&
-    Array.isArray(c.playerTypes) &&
-    c.playerTypes.length > 0 &&
-    c.playerTypes.every((t) => typeof t === "string") &&
-    (c.abilityId === null || typeof c.abilityId === "string") &&
-    typeof c.level === "number" &&
-    (c.mode === "battle" || c.mode === "elite" || c.mode === "weekly") &&
-    typeof c.enemyPokemonId === "number" &&
-    Array.isArray(c.enemyTypes) &&
-    c.enemyTypes.length > 0 &&
-    c.enemyTypes.every((t) => typeof t === "string") &&
-    typeof c.trainingPoints === "number" &&
-    isValidItemConfig(c.items)
-  );
-}
-
-const ITEM_CONFIG_BOOL_FIELDS = [
-  "assaultVestActive",
-  "kingsRockActive",
-  "leftoversActive",
-  "metronomeActive",
-  "silkScarfAvailable",
-  "focusBandAvailable",
-  "reviveAvailable",
-  "oranBerryAvailable",
-] as const;
-
-function isValidItemConfig(items: unknown): boolean {
-  if (!items || typeof items !== "object") return false;
-  const i = items as Record<string, unknown>;
-  return ITEM_CONFIG_BOOL_FIELDS.every((key) => typeof i[key] === "boolean");
-}
-
-function isValidAction(action: unknown): action is BattleAction {
-  if (!action || typeof action !== "object") return false;
-  const a = action as Record<string, unknown>;
-  if (a.type === "forfeit") return true;
-  if (a.type === "use_item") return typeof a.itemId === "string";
-  if (a.type === "submit_answer") {
-    return (
-      typeof a.questionIdx === "number" &&
-      typeof a.choiceIdx === "number" &&
-      typeof a.elapsedMs === "number"
-    );
-  }
-  return false;
 }
 
 interface StartOp {
@@ -152,7 +84,7 @@ Deno.serve(async (req) => {
   }
 
   if (body.op === "start") {
-    if (!isValidCfg(body.cfg)) return err("bad_request", "cfg is missing or malformed", 400);
+    if (!isValidSoloBattleCfg(body.cfg)) return err("bad_request", "cfg is missing or malformed", 400);
     const seed = crypto.randomUUID();
     const { data, error } = await supabase
       .from("solo_battles")
@@ -181,7 +113,7 @@ Deno.serve(async (req) => {
     if (typeof body.battleId !== "string" || body.battleId.length === 0) {
       return err("bad_request", "battleId is required", 400);
     }
-    if (!isValidAction(body.action)) return err("bad_request", "action is missing or malformed", 400);
+    if (!isValidBattleAction(body.action)) return err("bad_request", "action is missing or malformed", 400);
 
     const { data: row, error: selError } = await supabase
       .from("solo_battles")
@@ -191,7 +123,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (selError) return err("db_error", selError.message, 500);
     if (!row) return err("not_found", "no battle with that id", 404);
-    if (!isValidCfg(row.cfg)) return err("corrupt_row", "this battle's cfg is malformed", 500);
+    if (!isValidSoloBattleCfg(row.cfg)) return err("corrupt_row", "this battle's cfg is malformed", 500);
 
     const existingLog = (row.log ?? []) as BattleAction[];
     let result;
