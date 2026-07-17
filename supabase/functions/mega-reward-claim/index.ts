@@ -33,6 +33,7 @@
 // this pass. Not yet wired into MegaLeaderboard.tsx at all — see the plan's
 // UI-wiring step.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
+import { corsHeaders } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -56,7 +57,7 @@ type Envelope<T> = { ok: true; data: T } | { ok: false; error: { code: string; m
 function json<T>(body: Envelope<T>, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
 
@@ -69,6 +70,7 @@ interface Body {
 }
 
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return err("method_not_allowed", "POST only", 405);
 
   const authHeader = req.headers.get("Authorization");

@@ -28,6 +28,7 @@ import {
   type MegaRaidAction,
   type StoredMegaRaidAction,
 } from "../../../src/engine/mega-battle-replay";
+import { corsHeaders } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -37,7 +38,7 @@ type Envelope<T> = { ok: true; data: T } | { ok: false; error: { code: string; m
 function json<T>(body: Envelope<T>, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
 
@@ -61,6 +62,7 @@ interface SubmitActionOp {
 type Body = StartOp | GetOp | SubmitActionOp;
 
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return err("method_not_allowed", "POST only", 405);
 
   const authHeader = req.headers.get("Authorization");
