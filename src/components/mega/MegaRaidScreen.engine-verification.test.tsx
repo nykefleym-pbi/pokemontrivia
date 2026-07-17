@@ -14,8 +14,38 @@
 //
 // SCOPE MATCHES engine/mega-replay.ts's own documented gaps: Scope/X-Accuracy
 // and Escape Rope are not exercised here either — see that module's doc.
+import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+
+// See MegaRaidScreen.characterization.test.tsx's identical mock for why:
+// framer-motion's RAF-driven scheduling deadlocks vitest's fake timers.
+vi.mock("framer-motion", () => {
+  interface MotionDivProps extends ComponentPropsWithoutRef<"div"> {
+    initial?: unknown;
+    animate?: unknown;
+    exit?: unknown;
+    transition?: unknown;
+    layout?: unknown;
+    layoutId?: unknown;
+    variants?: unknown;
+  }
+  const stripMotionProps = ({
+    initial: _initial,
+    animate: _animate,
+    exit: _exit,
+    transition: _transition,
+    layout: _layout,
+    layoutId: _layoutId,
+    variants: _variants,
+    ...rest
+  }: MotionDivProps) => rest;
+  const Div = (props: MotionDivProps) => <div {...stripMotionProps(props)} />;
+  return {
+    motion: new Proxy({} as Record<string, typeof Div>, { get: () => Div }),
+    AnimatePresence: ({ children }: { children: ReactNode }) => <>{children}</>,
+  };
+});
 
 vi.mock("@/lib/audio", () => ({
   playSfx: vi.fn(),

@@ -27,8 +27,41 @@
 // leave-confirm dialog (counts as an immediate loss). NOT covered yet: Scope
 // / X-Accuracy hint items, the low-HP banner, and rematch/attempts-exhausted
 // branches. Extend this file rather than guessing they're covered.
+import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+
+// Animations are irrelevant to the raid math being characterized, and
+// framer-motion's internal RAF-driven scheduling deadlocks vitest's fake
+// timers (same precedent as battle-screen.characterization.test.tsx — Mega
+// Raid started using QuestionCard/AnimatePresence in Phase 2's UI-adoption
+// pass). Replace it with plain passthrough elements.
+vi.mock("framer-motion", () => {
+  interface MotionDivProps extends ComponentPropsWithoutRef<"div"> {
+    initial?: unknown;
+    animate?: unknown;
+    exit?: unknown;
+    transition?: unknown;
+    layout?: unknown;
+    layoutId?: unknown;
+    variants?: unknown;
+  }
+  const stripMotionProps = ({
+    initial: _initial,
+    animate: _animate,
+    exit: _exit,
+    transition: _transition,
+    layout: _layout,
+    layoutId: _layoutId,
+    variants: _variants,
+    ...rest
+  }: MotionDivProps) => rest;
+  const Div = (props: MotionDivProps) => <div {...stripMotionProps(props)} />;
+  return {
+    motion: new Proxy({} as Record<string, typeof Div>, { get: () => Div }),
+    AnimatePresence: ({ children }: { children: ReactNode }) => <>{children}</>,
+  };
+});
 
 vi.mock("@/lib/audio", () => ({
   playSfx: vi.fn(),
