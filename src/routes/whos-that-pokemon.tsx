@@ -1,23 +1,20 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useGameStore } from "@/lib/store";
-import { ALL_POKEMON, spriteUrl, type PokeType } from "@/lib/pokemon-data";
-import { isLegendaryOrMythical } from "@/lib/legendary-data";
-import { ITEMS } from "@/lib/game-data";
-import { WHOS_THAT_XP } from "@/lib/rewards";
+import { spriteUrl, type PokeType } from "@/lib/pokemon-data";
+import type { ItemId } from "@/lib/game-data";
 import { rollLevelUpRewards } from "@/lib/level-rewards";
 import { PokemonSprite } from "@/components/game-ui";
 import { playCry, playSfx, stopBgm, revealPokemon, playWhosThatShout } from "@/lib/audio";
 import { pokeApiUrls } from "@/lib/api/pokeapi";
 import { syncActivity } from "@/lib/social";
-import type { WhosThatMode as Mode, WhosThatRound as Round } from "@/lib/whos-that";
+import { checkGuess, findByNorm, HOUR, type WhosThatGuess, type WhosThatRound as Round } from "@/lib/whos-that";
+import { startWhosThat, submitWhosThat } from "@/services/client/whos-that";
 
 export const Route = createFileRoute("/whos-that-pokemon")({
   component: WhosThatPokemon,
 });
 
-const HOUR = 3_600_000;
-const SHINY_RATE = 1 / 20;
 const ANSWER_SECONDS = 20;
 const CRY_PLAYS = 3;
 
@@ -82,33 +79,6 @@ const TYPE_TEXT: Record<PokeType, string> = {
   fairy: "text-pink-400",
 };
 
-// Exclude premium and Nearby-Battle-only berries from the mini-game reward pool.
-const REWARD_POOL = ITEMS.filter((i) => !i.premium && !i.pvpOnly);
-
-function normalizeName(s: string): string {
-  return s
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "");
-}
-function findByNorm(input: string) {
-  const n = normalizeName(input);
-  if (!n) return undefined;
-  return ALL_POKEMON.find((p) => normalizeName(p.name) === n);
-}
-function sameTypes(a: PokeType[], b: PokeType[]): boolean {
-  if (a.length !== b.length) return false;
-  return [...a].sort().join(",") === [...b].sort().join(",");
-}
-function sample<T>(arr: T[], n: number): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a.slice(0, n);
-}
 function fmtHMS(ms: number): string {
   const s = Math.max(0, Math.floor(ms / 1000));
   const p = (n: number) => String(n).padStart(2, "0");
@@ -121,48 +91,17 @@ interface DexEntry {
   heightM: string;
 }
 
-// Legendary/Mythical Pokémon are Poké-Egg exclusive — never a round's answer,
-// since a correct guess here grants a Pokédex capture.
-const ROUND_POOL = ALL_POKEMON.filter((p) => !isLegendaryOrMythical(p.id));
-
-function makeRound(): Round {
-  const mon = ROUND_POOL[Math.floor(Math.random() * ROUND_POOL.length)];
-  const reward = REWARD_POOL[Math.floor(Math.random() * REWARD_POOL.length)];
-  const mode = (["1A", "1B", "2", "3", "4", "5"] as Mode[])[Math.floor(Math.random() * 6)];
-  const others = sample(
-    ALL_POKEMON.filter((p) => p.id !== mon.id),
-    3,
-  ).map((p) => p.name);
-  return {
-    monId: mon.id,
-    name: mon.name,
-    types: mon.types,
-    mode,
-    isShiny: Math.random() < SHINY_RATE,
-    rewardId: reward.id,
-    rewardName: reward.name,
-    rewardIcon: reward.iconUrl,
-    cropBack: mon.id <= 649 ? Math.random() < 0.5 : false,
-    cropDX: Math.round((Math.random() - 0.5) * 56),
-    cropDY: Math.round((Math.random() - 0.5) * 56),
-    choices: sample([mon.name, ...others], 4),
-  };
-}
-
-function WhosThatPokemon() {
+export function WhosThatPokemon() {
   const navigate = useNavigate();
-  const whosThatHourKey = useGameStore((s) => s.whosThatHourKey);
   const consumeWhosThat = useGameStore((s) => s.consumeWhosThat);
-  const whosThatActiveRound = useGameStore((s) => s.whosThatActiveRound);
-  const whosThatRoundHourKey = useGameStore((s) => s.whosThatRoundHourKey);
-  const setWhosThatRound = useGameStore((s) => s.setWhosThatRound);
-  const clearWhosThatRound = useGameStore((s) => s.clearWhosThatRound);
   const addXp = useGameStore((s) => s.addXp);
   const grantItem = useGameStore((s) => s.grantItem);
   const recordPokedexCapture = useGameStore((s) => s.recordPokedexCapture);
 
   const [round, setRound] = useState<Round | null>(null);
+  const [roundId, setRoundId] = useState<string | null>(null);
   const [locked, setLocked] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [phase, setPhase] = useState<"play" | "correct" | "incorrect">("play");
   const [guess, setGuess] = useState("");
   const [selTypes, setSelTypes] = useState<PokeType[]>([]);
@@ -174,28 +113,33 @@ function WhosThatPokemon() {
   const [dexNonce, setDexNonce] = useState(0);
   const [timeLeft, setTimeLeft] = useState(ANSWER_SECONDS);
   const [now, setNow] = useState(Date.now());
-  const claimedRef = useRef(false);
   const initRef = useRef(false);
   const burnedRef = useRef(false);
+  const resolvedRef = useRef(false);
 
   const ready = !round || round.mode !== "5" || (!!dexEntry && dexEntry.flavor !== "");
 
+  // Round generation now lives server-side (whos-that Edge Function) — the
+  // server picks the Pokémon/mode/reward/shiny-roll and enforces the
+  // one-round-per-hour gate itself, instead of trusting a client-generated
+  // round + client-only hour-key check.
   useEffect(() => {
     if (initRef.current) return;
     initRef.current = true;
-    const currentHour = Math.floor(Date.now() / HOUR);
-    if (currentHour === whosThatHourKey) {
-      setLocked(true);
-      return;
-    }
-    if (whosThatRoundHourKey === currentHour && whosThatActiveRound) {
-      setRound(whosThatActiveRound);
-    } else {
-      const r = makeRound();
-      setRound(r);
-      setWhosThatRound(r, currentHour);
-    }
-  }, [whosThatHourKey, whosThatRoundHourKey, whosThatActiveRound, setWhosThatRound]);
+    void (async () => {
+      try {
+        const res = await startWhosThat();
+        if (res.locked) {
+          setLocked(true);
+          return;
+        }
+        setRoundId(res.roundId);
+        setRound(res.round);
+      } catch {
+        setLoadError(true);
+      }
+    })();
+  }, []);
 
   // No background music here — only the "Who's that Pokémon?!" voice shout plays.
   useEffect(() => {
@@ -217,10 +161,9 @@ function WhosThatPokemon() {
       playSfx(phase === "correct" ? "correct" : "wrong");
       if (round) revealPokemon(round.monId);
       consumeWhosThat();
-      clearWhosThatRound();
       void syncActivity("last_whos_that_played");
     }
-  }, [phase, round, consumeWhosThat, clearWhosThatRound]);
+  }, [phase, round, consumeWhosThat]);
 
   useEffect(() => {
     if (round?.mode !== "5") return;
@@ -264,33 +207,37 @@ function WhosThatPokemon() {
     };
   }, [round?.mode, round?.monId, dexNonce]);
 
-  useEffect(() => {
-    if (phase !== "play" || !round || !ready) return;
-    if (timeLeft <= 0) {
-      setPhase("incorrect");
-      return;
-    }
-    const t = setTimeout(() => setTimeLeft((v) => v - 1), 1000);
-    return () => clearTimeout(t);
-  }, [phase, round, ready, timeLeft]);
-
-  useEffect(() => {
-    if (phase !== "incorrect" && !locked) return;
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, [phase, locked]);
-
-  useEffect(() => {
-    if (phase === "correct" && round && !claimedRef.current) {
-      claimedRef.current = true;
+  // The server validates the guess against its OWN held round and grants
+  // XP/the round's reward item exactly once — this is the sole place the
+  // reward actually gets applied, using the server's response rather than
+  // a client-recomputed WHOS_THAT_XP/round.rewardId (see whos-that/index.ts).
+  const resolveGuess = useCallback(
+    async (guessPayload: WhosThatGuess, caughtGuess: { id: number; name: string } | null) => {
+      if (!roundId || resolvedRef.current) return;
+      resolvedRef.current = true;
+      if (caughtGuess) setCaught(caughtGuess);
+      let res;
+      try {
+        res = await submitWhosThat(roundId, guessPayload);
+      } catch {
+        // Network failure — fall back to a local guess check so a hiccup
+        // doesn't strand the player mid-round with no verdict at all. No
+        // reward is applied here: it's only ever granted from the server's
+        // own response, so a network failure costs a round rather than
+        // risking an unverified grant.
+        setPhase(round && checkGuess(round, guessPayload) ? "correct" : "incorrect");
+        return;
+      }
+      setPhase(res.correct ? "correct" : "incorrect");
+      if (res.alreadyGranted || !res.reward) return;
       const prevLevel = useGameStore.getState().level;
-      addXp(WHOS_THAT_XP);
-      grantItem(round.rewardId, 1);
-      recordPokedexCapture(caught?.id ?? round.monId, round.isShiny);
+      addXp(res.reward.xp);
+      grantItem(res.reward.itemId as ItemId, res.reward.itemQty);
+      recordPokedexCapture(caughtGuess?.id ?? res.monId, res.isShiny);
       useGameStore.getState().pushBattleLog({
         opponent: "Who's That Pokémon",
         won: true,
-        xpGained: WHOS_THAT_XP,
+        xpGained: res.reward.xp,
         bestStreak: 0,
         timestamp: Date.now(),
         mode: "whosthat",
@@ -305,8 +252,28 @@ function WhosThatPokemon() {
           if (rewards.eggs > 0) useGameStore.getState().grantPokeEgg(rewards.eggs);
         }
       }
+    },
+    [roundId, round, addXp, grantItem, recordPokedexCapture],
+  );
+
+  useEffect(() => {
+    if (phase !== "play" || !round || !ready) return;
+    if (timeLeft <= 0) {
+      // An empty guess fails every mode's check server-side, so this both
+      // resolves the round (no lingering "unresolved" row to resume into)
+      // and matches the original always-incorrect-on-timeout behavior.
+      void resolveGuess({}, null);
+      return;
     }
-  }, [phase, round, caught, addXp, grantItem, recordPokedexCapture]);
+    const t = setTimeout(() => setTimeLeft((v) => v - 1), 1000);
+    return () => clearTimeout(t);
+  }, [phase, round, ready, timeLeft, resolveGuess]);
+
+  useEffect(() => {
+    if (phase !== "incorrect" && !locked) return;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [phase, locked]);
 
   const goHome = () => navigate({ to: "/battle", search: { autostart: 0 } as never });
 
@@ -321,22 +288,19 @@ function WhosThatPokemon() {
   function submit() {
     if (!round || !canSubmit) return;
     if (round.mode === "1B") {
-      setPhase(sameTypes(selTypes, round.types) ? "correct" : "incorrect");
+      void resolveGuess({ guessTypes: selTypes }, null);
       return;
     }
     if (round.mode === "3") {
-      setPhase(selChoice === round.name ? "correct" : "incorrect");
+      void resolveGuess({ guessChoice: selChoice ?? undefined }, null);
       return;
     }
     if (round.mode === "4") {
       const m = findByNorm(guess);
-      if (m && sameTypes(m.types, round.types)) {
-        setCaught({ id: m.id, name: m.name });
-        setPhase("correct");
-      } else setPhase("incorrect");
+      void resolveGuess({ guessText: guess }, m ? { id: m.id, name: m.name } : null);
       return;
     }
-    setPhase(normalizeName(guess) === normalizeName(round.name) ? "correct" : "incorrect");
+    void resolveGuess({ guessText: guess }, null);
   }
   function toggleType(t: PokeType) {
     setSelTypes((p) => (p.includes(t) ? p.filter((x) => x !== t) : p.length >= 2 ? p : [...p, t]));
@@ -367,6 +331,22 @@ function WhosThatPokemon() {
         <button
           onClick={goHome}
           className="rounded-full border-2 border-poke-dark/15 bg-white py-3.5 font-pixel text-sm tracking-wide text-poke-dark shadow-card active:scale-[0.98]"
+        >
+          CLOSE
+        </button>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-poke-cream px-5 text-center">
+        <div className="font-pixel text-[10px] text-poke-dark/60">
+          Couldn't load — check your connection.
+        </div>
+        <button
+          onClick={goHome}
+          className="rounded-full border-2 border-poke-dark/15 bg-white px-5 py-2.5 font-pixel text-[10px] text-poke-dark shadow-card active:scale-95"
         >
           CLOSE
         </button>
