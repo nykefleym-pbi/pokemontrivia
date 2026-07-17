@@ -36,16 +36,20 @@
 //     (unlike solo battles), so per-answer timing doesn't affect this
 //     module's output at all. The caller derives `time_ms` itself from
 //     wall-clock deltas around the whole run, same as `finish()` does today.
-import { MEGA_BOSS_HP } from "../lib/mega/schedule";
-
+/** Mirrors lib/mega/schedule.ts's `MEGA_BOSS_HP` constant. Duplicated by hand
+ *  rather than imported: `engine/**` cannot import from `lib/**` at all —
+ *  lib/mega/schedule.ts itself imports the Supabase client and uses React
+ *  hooks, so even a type-only-looking import would pull a non-isomorphic
+ *  module into the engine/content bundle (confirmed by the mega-run Edge
+ *  Function's esbuild step failing to resolve `@supabase/supabase-js` until
+ *  this was hand-duplicated instead). Same reason engine/turn.ts
+ *  hand-duplicates MAX_ITEMS_PER_BATTLE. Keep this in sync if either changes. */
+export const MEGA_BOSS_HP = 400;
 /** Mirrors MegaRaidScreen.tsx's local `PLAYER_MAX_HP` constant. */
 export const MEGA_PLAYER_MAX_HP = 100;
 /** Mirrors MegaRaidScreen.tsx's local `BOSS_DMG` constant (per correct answer;
- *  doubled while X Attack is armed). Duplicated by hand rather than importing
- *  `MEGA_BOSS_DMG` from lib/mega/schedule.ts: `engine/**` cannot import from
- *  `lib/**` (the isomorphic engine/content boundary eslint enforces), the
- *  same reason engine/turn.ts hand-duplicates MAX_ITEMS_PER_BATTLE. Keep
- *  this in sync with both if either ever changes. */
+ *  doubled while X Attack is armed). Hand-duplicated for the same reason as
+ *  MEGA_BOSS_HP above. */
 const BOSS_DMG = 10;
 /** Mirrors MegaRaidScreen.tsx's local `PLAYER_DMG` constant (per wrong/timed-
  *  out answer). */
