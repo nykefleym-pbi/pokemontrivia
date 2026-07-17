@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { Backpack, Sparkles, Crown } from "lucide-react";
+import { Sparkles, Crown } from "lucide-react";
 import { useGameStore, getItemDef } from "@/lib/store";
 import { MAX_ITEMS_PER_BATTLE } from "@/lib/store/slices/itemsSlice";
 import {
   pickRandomEnemy,
   type EnemyTrainer,
-  ITEMS,
   enemyHpForLevel,
   baseDamageForLevel,
   streakMultiplier,
@@ -26,12 +25,16 @@ import {
   isPlayerImmune,
   canEvolve,
   type PokeEntry,
-  type PokeType,
 } from "@/lib/pokemon-data";
 import { getAbility as getAbilityFn, type Ability } from "@/lib/abilities";
 import { TutorialOverlay } from "@/components/tutorial-overlay";
-import { TypeBadge, PokemonSprite, ItemIcon, StatusEffectOverlay } from "@/components/game-ui";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import {
+  PokemonSprite,
+  StatusEffectOverlay,
+  CombatPanel,
+  QuestionCard,
+  ItemBagSheet,
+} from "@/components/game-ui";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,21 +45,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import type { ItemId, StatusKind } from "@/lib/game-data";
+import type { ItemId } from "@/lib/game-data";
 import { ACHIEVEMENTS, unlockedAchievements } from "@/lib/achievements";
-import { CATEGORIES, CATEGORY_OF, BAG_SHORT_DESC } from "@/lib/item-categories";
 import { playSfx, revealPokemon, playBattleResult, playItemCue } from "@/lib/audio";
 import { type EliteMember, regionCompleted } from "@/lib/elite-four";
 import type { GymLeader } from "@/lib/gym-leaders";
 import { ShareCardDialog } from "@/components/share-card-dialog";
 import type { ShareData } from "@/components/share-card-builder";
-import { trainerSpriteUrl, STATUS_META } from "@/lib/game-data";
+import { trainerSpriteUrl } from "@/lib/game-data";
 import type { Trivia } from "@/lib/trivia-core";
 import { shuffleAllTriviaOptions } from "@/lib/trivia-core";
 import { useForfeitGuard } from "@/lib/use-forfeit-guard";
 export type { Trivia };
 import { DailyScreen } from "@/components/daily-screen";
-import { TimerRing } from "@/components/timer-ring";
 import { ResultScreen } from "@/components/result-screen";
 import { startSoloBattle, submitBattleAction } from "@/services/client/battle-solo";
 import type { SoloBattleCfg } from "@/engine";
@@ -65,94 +66,6 @@ const QUESTIONS_PER_SET = 5;
 const TIMER_BASE = 20;
 
 type Phase = "intro" | "question" | "feedback" | "result";
-
-function CombatPanel({
-  align,
-  pokemonName,
-  types,
-  hp,
-  maxHp,
-  statuses,
-  abilityName,
-  immune,
-  disadvantaged,
-  testId,
-}: {
-  align: "left" | "right";
-  pokemonName: string;
-  types: PokeType[];
-  hp: number;
-  maxHp: number;
-  statuses: Array<{ kind: StatusKind }>;
-  abilityName: string | null;
-  immune: boolean;
-  disadvantaged: boolean;
-  /** Test-observability hook only — not read by any production code. */
-  testId?: string;
-}) {
-  const pct = Math.max(0, Math.min(100, (hp / maxHp) * 100));
-  const barColor = pct > 50 ? "bg-hp-good" : pct > 20 ? "bg-hp-warn" : "bg-hp-low";
-  const alignCls = align === "right" ? "items-end text-right" : "items-start text-left";
-  const justifyCls = align === "right" ? "justify-end" : "justify-start";
-
-  return (
-    <div className="w-[clamp(8rem,38vw,10.5rem)] shrink-0 rounded-2xl bg-card px-3 py-2 backdrop-blur shadow-card">
-      <div className={`flex flex-col ${alignCls}`}>
-        <div className="w-full truncate text-sm font-bold leading-tight">{pokemonName}</div>
-
-        <div className={`mt-1 flex w-full gap-1 ${justifyCls}`}>
-          {types.map((t) => (
-            <TypeBadge key={t} type={t} size="sm" />
-          ))}
-        </div>
-        <div className="mt-1.5 flex w-full items-center gap-2">
-          <div className="h-2 flex-1 overflow-hidden rounded-full bg-poke-dark/15">
-            <motion.div
-              className={`h-full ${barColor}`}
-              initial={false}
-              animate={{ width: `${pct}%` }}
-              transition={{ type: "spring", stiffness: 100, damping: 18 }}
-            />
-          </div>
-          <span
-            className="text-[11px] font-bold tabular-nums text-foreground"
-            data-testid={testId && `${testId}-hp`}
-          >
-            {Math.round(hp)}
-          </span>
-        </div>
-        {(abilityName || immune || disadvantaged || statuses.length > 0) && (
-          <div className={`mt-1 flex w-full flex-wrap gap-0.5 ${justifyCls}`}>
-            {abilityName && (
-              <span className="rounded-full bg-primary/10 px-1.5 py-[1px] font-pixel-xs text-primary">
-                ⚡ {abilityName}
-              </span>
-            )}
-            {immune && (
-              <span className="rounded-full bg-hp-good/20 px-1.5 py-[1px] font-pixel-xs text-hp-good">
-                🛡
-              </span>
-            )}
-            {disadvantaged && !immune && (
-              <span className="rounded-full bg-destructive/20 px-1.5 py-[1px] font-pixel-xs text-destructive">
-                ⚠
-              </span>
-            )}
-            {statuses.map((s) => (
-              <span
-                key={s.kind}
-                className={`rounded-full px-1.5 py-[1px] font-pixel-xs ${s.kind === "confused" ? "bg-poke-yellow/30 text-foreground" : "bg-purple-500/20 text-purple-700"}`}
-              >
-                {STATUS_META[s.kind].emoji}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 
 interface Props {
   questions: Trivia[];
@@ -1604,213 +1517,33 @@ function BattleMode({
       <div className="relative shrink-0 rounded-t-[28px] bg-card pt-14 px-[max(1rem,env(safe-area-inset-left))] pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-[0_-8px_30px_-12px_oklch(0.3_0.05_260/0.25)]">
         <AnimatePresence mode="wait">
           {phase !== "intro" && trivia && (
-            <motion.div
+            <QuestionCard
               key={questionIdx}
-              initial={{ y: 40, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -10, opacity: 0 }}
-              className="relative"
+              trivia={trivia}
+              phase={phase as "question" | "feedback"}
+              chosen={chosen}
+              revealedWrong={revealedWrong}
+              revealedWrong2={revealedWrong2}
+              revealedCorrect={revealedCorrect}
+              timer={timer}
+              maxTime={TIMER_BASE + bonusTime}
+              lastElapsedMs={lastElapsedMs}
+              onAnswer={handleAnswer}
             >
-              {/* Floating timer pill + category label */}
-              <div className="pointer-events-none absolute left-1/2 -top-12 z-10 flex -translate-x-1/2 flex-col items-center">
-                <TimerRing timer={timer} maxTime={TIMER_BASE + bonusTime} />
-                <p className="mt-1.5 font-pixel-xs text-foreground/70">{trivia.category}</p>
-              </div>
-
-              <div className="pt-1">
-                <p className="text-center text-[clamp(0.95rem,4vw,1.125rem)] font-bold leading-snug">
-                  {trivia.question}
-                </p>
-                <div className="mt-3 grid grid-cols-1 gap-2">
-                  {trivia.options.map((opt, i) => {
-                    const isCorrect = phase === "feedback" && i === trivia.correct;
-                    const isWrong = phase === "feedback" && chosen === i && i !== trivia.correct;
-                    const isRevealed = revealedWrong === i || revealedWrong2 === i;
-                    const isAnswerRevealed = phase === "question" && revealedCorrect === i;
-                    return (
-                      <button
-                        key={i}
-                        data-testid={`option-${i}`}
-                        disabled={phase !== "question" || isRevealed}
-                        onClick={() => handleAnswer(i)}
-                        className={`flex min-h-[48px] items-center justify-between rounded-2xl border-2 bg-card px-4 py-2.5 text-left text-[clamp(0.875rem,3.6vw,0.95rem)] font-semibold transition active:scale-[0.98] ${
-                          isCorrect
-                            ? "border-hp-good bg-hp-good/5 text-hp-good"
-                            : isWrong
-                              ? "border-destructive bg-destructive/5 text-destructive"
-                              : isRevealed
-                                ? "border-border/60 line-through opacity-50"
-                                : isAnswerRevealed
-                                  ? "border-hp-good bg-hp-good/10 text-hp-good"
-                                  : "border-border/60 text-foreground hover:border-primary/50"
-                        } disabled:cursor-not-allowed`}
-                      >
-                        <span className="min-w-0 flex-1 truncate">{opt}</span>
-                        {isCorrect && (
-                          <span className="ml-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-hp-good text-[12px] text-white">
-                            ✓
-                          </span>
-                        )}
-                        {isWrong && (
-                          <span className="ml-2 shrink-0 text-[10px] font-bold uppercase tracking-wide text-destructive">
-                            Your Pick ×
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-                {phase === "feedback" && (
-                  <p className="mt-2 rounded-xl bg-muted p-2 text-[11px] leading-snug text-muted-foreground">
-                    💡 {trivia.explanation} · ⚡ {(lastElapsedMs / 1000).toFixed(1)}s
-                  </p>
-                )}
-
-                {/* Item shortcuts row */}
-                <div className="mt-3 flex items-center justify-center gap-3">
-                  <Sheet open={bagOpen} onOpenChange={setBagOpen}>
-                    <SheetTrigger asChild>
-                      <button className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition active:scale-95">
-                        <Backpack className="h-6 w-6 text-muted-foreground" />
-                      </button>
-                    </SheetTrigger>
-                    <SheetContent side="bottom" className="rounded-t-3xl">
-                      <SheetHeader>
-                        <SheetTitle className="text-center font-display-lg text-foreground">
-                          Your Bag
-                        </SheetTitle>
-                        <div className="text-center text-xs font-semibold text-muted-foreground">
-                          {itemsUsedThisBattleCount}/{MAX_ITEMS_PER_BATTLE} items used this battle
-                        </div>
-                      </SheetHeader>
-                      {(() => {
-                        // Same grouped, owned-only layout as the Shop bag.
-                        const bagGroups = CATEGORIES.map((cat) => ({
-                          ...cat,
-                          items: ITEMS.filter(
-                            (it) => CATEGORY_OF[it.id] === cat.id && (inventory[it.id] ?? 0) > 0,
-                          ),
-                        })).filter((g) => g.items.length > 0);
-                        return (
-                          <div className="my-4 max-h-[65vh] overflow-y-auto">
-                            {bagGroups.length === 0 ? (
-                              <div className="rounded-3xl bg-poke-yellow/15 p-6 text-center">
-                                <div className="mx-auto mb-2 text-4xl">🎒</div>
-                                <div className="font-display-md text-foreground">
-                                  Your bag is empty
-                                </div>
-                                <p className="mt-1 text-xs text-foreground/60">
-                                  Visit the Shop to stock up on items.
-                                </p>
-                              </div>
-                            ) : (
-                              <div className="space-y-4 pb-2">
-                                {bagGroups.map((group) => (
-                                  <div key={group.id}>
-                                    <div className="mb-2 font-pixel-xs uppercase tracking-wider text-foreground/45">
-                                      {group.label}
-                                    </div>
-                                    <div className="flex flex-col gap-2.5">
-                                      {group.items.map((it) => {
-                                        const owned = inventory[it.id] ?? 0;
-                                        const used = usedThisBattle[it.id] ?? false;
-                                        const isAuto =
-                                          it.id === "focusband" ||
-                                          it.id === "quickclaw" ||
-                                          it.id === "assaultvest" ||
-                                          it.id === "revive" ||
-                                          it.id === "oranberry" ||
-                                          it.id === "silkscarf" ||
-                                          it.id === "kingsrock" ||
-                                          it.id === "leftovers" ||
-                                          it.id === "metronome";
-                                        const disabled =
-                                          isAuto ||
-                                          used ||
-                                          ((isWeekly || isElite) && it.id === "escape") ||
-                                          (choiceSpecsActive && it.id !== "choicespecs") ||
-                                          (it.id === "choicespecs" && anyItemUsedThisBattle) ||
-                                          itemCapReached;
-                                        return (
-                                          <button
-                                            key={it.id}
-                                            disabled={disabled}
-                                            onClick={() => tryUseItem(it.id)}
-                                            className="flex items-center gap-3.5 rounded-[20px] bg-card px-4 py-3 text-left shadow-card transition active:scale-[0.99] disabled:opacity-40"
-                                          >
-                                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-primary/[0.08]">
-                                              <ItemIcon item={it} className="h-9 w-9" />
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                              <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                                                {it.name}
-                                                <span className="font-pixel text-[9px] text-primary">
-                                                  ×{owned}
-                                                </span>
-                                              </div>
-                                              <div className="text-[11px] leading-tight text-muted-foreground">
-                                                {BAG_SHORT_DESC[it.id] ?? it.desc}
-                                              </div>
-                                              {isAuto && (
-                                                <div className="text-[10px] text-primary">
-                                                  Auto-activates
-                                                </div>
-                                              )}
-                                              {used && !isAuto && (
-                                                <div className="text-[10px] text-destructive">
-                                                  Used this battle
-                                                </div>
-                                              )}
-                                            </div>
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })()}
-                    </SheetContent>
-                  </Sheet>
-                  {ITEMS.filter(
-                    (it) =>
-                      (inventory[it.id] ?? 0) > 0 &&
-                      it.id !== "focusband" &&
-                      it.id !== "quickclaw" &&
-                      it.id !== "assaultvest",
-                  )
-                    .slice(0, 3)
-                    .map((it) => {
-                      const owned = inventory[it.id] ?? 0;
-                      const used = usedThisBattle[it.id] ?? false;
-                      const disabled =
-                        owned <= 0 ||
-                        used ||
-                        ((isWeekly || isElite) && it.id === "escape") ||
-                        (choiceSpecsActive && it.id !== "choicespecs") ||
-                        (it.id === "choicespecs" && anyItemUsedThisBattle) ||
-                        itemCapReached;
-                      return (
-                        <button
-                          key={it.id}
-                          data-testid={`item-${it.id}`}
-                          disabled={disabled}
-                          onClick={() => tryUseItem(it.id)}
-                          className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition active:scale-95 disabled:opacity-40"
-                        >
-                          <ItemIcon item={it} className="h-8 w-8" />
-                          <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-poke-dark px-1 font-pixel text-[9px] text-white">
-                            {owned}
-                          </span>
-                        </button>
-                      );
-                    })}
-                </div>
-              </div>
-            </motion.div>
+                <ItemBagSheet
+                  bagOpen={bagOpen}
+                  onBagOpenChange={setBagOpen}
+                  inventory={inventory}
+                  usedThisBattle={usedThisBattle}
+                  itemsUsedThisBattleCount={itemsUsedThisBattleCount}
+                  maxItemsPerBattle={MAX_ITEMS_PER_BATTLE}
+                  itemCapReached={itemCapReached}
+                  choiceSpecsActive={choiceSpecsActive}
+                  anyItemUsedThisBattle={anyItemUsedThisBattle}
+                  escapeDisabled={isWeekly || isElite}
+                  onUseItem={tryUseItem}
+                />
+            </QuestionCard>
           )}
         </AnimatePresence>
       </div>
