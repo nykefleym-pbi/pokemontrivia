@@ -345,21 +345,33 @@ export function MegaRaidScreen({
 
   if (phase === "result" && result) {
     return (
-      <MegaResults
-        event={event}
-        outcome={result.outcome}
-        accuracy={result.accuracy}
-        correct={result.correct}
-        total={total}
-        timeMs={Date.now() - startRef.current}
-        rank={result.rank}
-        shiny={bossShiny}
-        items={result.items}
-        canRematch={result.outcome === "loss" && result.attempts < MEGA_MAX_ATTEMPTS}
-        onRematch={onRematch}
-        onHome={onExit}
-        onViewLeaderboard={onViewLeaderboard}
-      />
+      <>
+        {/* Test-observability hook only — not read by any production code. */}
+        <div
+          data-testid="mega-result"
+          data-outcome={result.outcome}
+          data-accuracy={result.accuracy}
+          data-correct={result.correct}
+          data-rank={result.rank ?? ""}
+          data-attempts={result.attempts}
+          hidden
+        />
+        <MegaResults
+          event={event}
+          outcome={result.outcome}
+          accuracy={result.accuracy}
+          correct={result.correct}
+          total={total}
+          timeMs={Date.now() - startRef.current}
+          rank={result.rank}
+          shiny={bossShiny}
+          items={result.items}
+          canRematch={result.outcome === "loss" && result.attempts < MEGA_MAX_ATTEMPTS}
+          onRematch={onRematch}
+          onHome={onExit}
+          onViewLeaderboard={onViewLeaderboard}
+        />
+      </>
     );
   }
 
@@ -436,7 +448,7 @@ export function MegaRaidScreen({
                   }}
                 />
               </div>
-              <span className="font-pixel text-white" style={{ fontSize: 7 }}>
+              <span className="font-pixel text-white" style={{ fontSize: 7 }} data-testid="boss-hp">
                 {bossHp}/{MEGA_BOSS_HP}
               </span>
             </div>
@@ -480,7 +492,11 @@ export function MegaRaidScreen({
               <span className="text-[13px] font-extrabold text-white">
                 <PartnerName />
               </span>
-              <span className="font-pixel" style={{ fontSize: 6.5, color: "var(--brand-red)" }}>
+              <span
+                className="font-pixel"
+                style={{ fontSize: 6.5, color: "var(--brand-red)" }}
+                data-testid="player-hp"
+              >
                 {playerHp}/{PLAYER_MAX_HP}
               </span>
             </div>
@@ -554,6 +570,7 @@ export function MegaRaidScreen({
             return (
               <button
                 key={i}
+                data-testid={`option-${i}`}
                 disabled={locked || removed}
                 onClick={() => answer(i)}
                 className={`flex min-h-[44px] items-center justify-between rounded-2xl border-2 bg-card px-4 py-2 text-left text-[clamp(0.85rem,3.4vw,0.95rem)] font-semibold transition active:scale-[0.98] ${
@@ -587,6 +604,7 @@ export function MegaRaidScreen({
         {/* Item shortcuts row — Backpack trigger + quick item buttons (matches regular battle) */}
         <div className="mt-3 flex items-center justify-center gap-3">
           <button
+            data-testid="bag-button"
             onClick={() => setBagOpen(true)}
             className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition active:scale-95"
           >
@@ -599,6 +617,7 @@ export function MegaRaidScreen({
             return (
               <button
                 key={id}
+                data-testid={`item-${id}`}
                 disabled={disabled}
                 onClick={() => applyPotion(id)}
                 className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition active:scale-95 disabled:opacity-40"
@@ -692,6 +711,7 @@ export function MegaRaidScreen({
               ))}
             </div>
             <button
+              data-testid="escape-button"
               onClick={escape}
               className="mt-4 flex h-12 w-full items-center justify-center rounded-full text-sm font-bold text-white"
               style={{ background: "rgba(28,35,51,0.9)" }}
@@ -712,8 +732,9 @@ export function MegaRaidScreen({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Keep fighting</AlertDialogCancel>
+            <AlertDialogCancel data-testid="keep-fighting-button">Keep fighting</AlertDialogCancel>
             <AlertDialogAction
+              data-testid="confirm-leave-button"
               onClick={() => {
                 setConfirmLeave(false);
                 // Record the abandoned run as a loss so it consumes an attempt,
@@ -781,6 +802,7 @@ function BagRow({
         </div>
       </div>
       <button
+        data-testid={`bag-item-${id}`}
         onClick={onUse}
         disabled={disabled}
         className="font-pixel"
