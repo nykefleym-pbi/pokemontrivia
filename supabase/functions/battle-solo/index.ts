@@ -77,8 +77,26 @@ function isValidCfg(cfg: unknown): cfg is SoloBattleCfg {
     Array.isArray(c.enemyTypes) &&
     c.enemyTypes.length > 0 &&
     c.enemyTypes.every((t) => typeof t === "string") &&
-    typeof c.trainingPoints === "number"
+    typeof c.trainingPoints === "number" &&
+    isValidItemConfig(c.items)
   );
+}
+
+const ITEM_CONFIG_BOOL_FIELDS = [
+  "assaultVestActive",
+  "kingsRockActive",
+  "leftoversActive",
+  "metronomeActive",
+  "silkScarfAvailable",
+  "focusBandAvailable",
+  "reviveAvailable",
+  "oranBerryAvailable",
+] as const;
+
+function isValidItemConfig(items: unknown): boolean {
+  if (!items || typeof items !== "object") return false;
+  const i = items as Record<string, unknown>;
+  return ITEM_CONFIG_BOOL_FIELDS.every((key) => typeof i[key] === "boolean");
 }
 
 function isValidAction(action: unknown): action is BattleAction {

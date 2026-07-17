@@ -12,6 +12,7 @@ import {
   applyAnswer,
   applyForfeit,
   applyRoundStart,
+  applyUseItem,
   initialBattleState,
   type BattleAction,
   type BattleEvent,
@@ -33,7 +34,7 @@ function applyOneAction(
   action: BattleAction,
 ): { state: BattleState; events: BattleEvent[] } {
   if (action.type === "forfeit") return applyForfeit(state);
-  if (action.type === "use_item") return { state, events: [] }; // not yet supported — see engine/turn.ts's module doc
+  if (action.type === "use_item") return applyUseItem(state, config, action.itemId);
 
   const roundStart = applyRoundStart(state, config, action.questionIdx);
   if (roundStart.state.phase !== "in_progress") return roundStart;

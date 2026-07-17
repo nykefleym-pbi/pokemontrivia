@@ -18,6 +18,16 @@ const CFG: SoloBattleCfg = {
   enemyPokemonId: 4,
   enemyTypes: ["fire"],
   trainingPoints: 0,
+  items: {
+    assaultVestActive: false,
+    kingsRockActive: false,
+    leftoversActive: false,
+    metronomeActive: false,
+    silkScarfAvailable: false,
+    focusBandAvailable: false,
+    reviveAvailable: false,
+    oranBerryAvailable: false,
+  },
 };
 
 beforeEach(() => {

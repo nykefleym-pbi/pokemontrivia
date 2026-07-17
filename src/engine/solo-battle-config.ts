@@ -23,13 +23,20 @@ import type { PokeType } from "../lib/pokemon-data.generated";
 import { enemyHpForLevel } from "../lib/level-curve";
 import type { AbilityId } from "../lib/abilities";
 import type { Trivia } from "../lib/trivia-core";
-import type { BattleConfig } from "./turn";
+import type { BattleConfig, BattleItemConfig } from "./turn";
 
 export type SoloBattleMode = "battle" | "elite" | "weekly";
 
 /** The frozen, raw configuration a solo battle is started and replayed with.
  *  `questions[i].correct` is the one place the server holds the answer key —
- *  see 02-architecture.md P3 / the "embed the question set at start" call. */
+ *  see 02-architecture.md P3 / the "embed the question set at start" call.
+ *
+ *  `items` carries the same trust tier as ability/level/types: claimed by
+ *  the authenticated client from its own inventory/weekly-cooldown state at
+ *  battle start, not independently verified against a server-tracked
+ *  inventory (which doesn't exist — items are a client-authoritative economy
+ *  concern, orthogonal to why solo battles are server-authoritative for
+ *  battle MATH). See engine/turn.ts's module doc for what each flag does. */
 export interface SoloBattleCfg {
   questions: Trivia[];
   playerPokemonId: number;
@@ -40,6 +47,7 @@ export interface SoloBattleCfg {
   enemyPokemonId: number;
   enemyTypes: PokeType[];
   trainingPoints: number;
+  items: BattleItemConfig;
 }
 
 export interface ResolvedBattleSetup {
@@ -74,6 +82,8 @@ export function resolveBattleSetup(cfg: SoloBattleCfg): ResolvedBattleSetup {
     immune: isPlayerImmune(player, enemy),
     trainingPoints: cfg.trainingPoints,
     bonusTime: cfg.abilityId === "sand-veil" ? 2 : 0,
+    isNormalType: cfg.playerTypes.includes("normal"),
+    items: cfg.items,
   };
 
   return { config, startingEnemyHp };

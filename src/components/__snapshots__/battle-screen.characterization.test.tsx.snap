@@ -7588,3 +7588,271 @@ exports[`item auto-triggers > silk scarf boosts the first correct answer 1`] = `
   },
 ]
 `;
+
+exports[`manual items > maxpotion fully heals 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "25",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "10",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`manual items > potion heals 30 HP 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "25",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "10",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`manual items > superpotion heals 60 HP 1`] = `
+[
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "85",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "70",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "55",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "40",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "25",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "100",
+    "playerHp": "10",
+  },
+  {
+    "action": "wrong",
+    "coins": "0",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "0",
+    "playerHp": null,
+    "tp": "0",
+    "won": "false",
+    "xp": "12",
+  },
+]
+`;
+
+exports[`manual items > x attack adds +20 damage to the next correct answer, single use 1`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "66",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "52",
+    "playerHp": "100",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "33",
+    "playerHp": "100",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "33",
+    "playerHp": "85",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "19",
+    "playerHp": "87",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "19",
+    "playerHp": "72",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "19",
+    "playerHp": "57",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "5",
+    "playerHp": "59",
+  },
+  {
+    "action": "correct",
+    "coins": "23",
+    "ended": true,
+    "enemyHp": null,
+    "maxStreak": "3",
+    "playerHp": null,
+    "tp": "9",
+    "won": "true",
+    "xp": "90",
+  },
+]
+`;

@@ -182,6 +182,10 @@ interface RunBattleOpts {
   mode?: "battle" | "elite" | "weekly";
   eliteMember?: EliteMember;
   gymLeader?: GymLeader;
+  /** Manually click the item-{id} quick-access button before the script step
+   *  at this 0-based index, e.g. { 0: ["xattack"] } clicks X Attack right
+   *  before the first scripted answer. */
+  useItemsBeforeStep?: Partial<Record<number, ItemId[]>>;
 }
 
 async function runBattle(abilityId: AbilityId | null, script: Action[], opts: RunBattleOpts = {}) {
@@ -211,13 +215,19 @@ async function runBattle(abilityId: AbilityId | null, script: Action[], opts: Ru
 
   const trace: Array<Record<string, unknown>> = [];
 
-  for (const action of script) {
+  for (let i = 0; i < script.length; i++) {
+    const action = script[i];
     if (screen.queryByTestId("player-hp") == null) break; // battle already ended
 
     // ~3s of "thinking time" before answering — feeds the speed bonus calc.
     await act(async () => {
       await vi.advanceTimersByTimeAsync(3000);
     });
+
+    for (const itemId of opts.useItemsBeforeStep?.[i] ?? []) {
+      const itemBtn = screen.queryByTestId(`item-${itemId}`);
+      if (itemBtn) await act(async () => fireEvent.click(itemBtn));
+    }
 
     const idx = action === "correct" ? correctIdx : wrongIdx;
     const btn = screen.queryByTestId(`option-${idx}`);
@@ -377,6 +387,42 @@ describe("item auto-triggers", () => {
     });
     const hpAfter = screen.queryByTestId("player-hp")?.textContent;
     expect(hpAfter).toBe(hpBefore);
+  });
+});
+
+describe("manual items", () => {
+  // +20 flat damage on the next correct answer only, single use (consumed
+  // immediately after applying).
+  it("x attack adds +20 damage to the next correct answer, single use", async () => {
+    const trace = await runBattle(null, SCRIPT, {
+      inventory: { xattack: 1 },
+      useItemsBeforeStep: { 0: ["xattack"] },
+    });
+    expect(trace).toMatchSnapshot();
+  });
+
+  it("potion heals 30 HP", async () => {
+    const trace = await runBattle("magic-guard", ATTRITION_SCRIPT, {
+      inventory: { potion: 1 },
+      useItemsBeforeStep: { 3: ["potion"] },
+    });
+    expect(trace).toMatchSnapshot();
+  });
+
+  it("superpotion heals 60 HP", async () => {
+    const trace = await runBattle("magic-guard", ATTRITION_SCRIPT, {
+      inventory: { superpotion: 1 },
+      useItemsBeforeStep: { 3: ["superpotion"] },
+    });
+    expect(trace).toMatchSnapshot();
+  });
+
+  it("maxpotion fully heals", async () => {
+    const trace = await runBattle("magic-guard", ATTRITION_SCRIPT, {
+      inventory: { maxpotion: 1 },
+      useItemsBeforeStep: { 3: ["maxpotion"] },
+    });
+    expect(trace).toMatchSnapshot();
   });
 });
 

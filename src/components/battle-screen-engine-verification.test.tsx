@@ -90,11 +90,14 @@ import { ROLLED_LIST } from "@/content/abilities/rolled";
 import { getAbility, type AbilityId } from "@/lib/abilities";
 import { ELITE_FOUR } from "@/lib/elite-four";
 import { GYM_LEADERS } from "@/lib/gym-leaders";
+import type { ItemId } from "@/content/items/item-def";
 import {
   applyAnswer,
   applyRoundStart,
+  applyUseItem,
   initialBattleState,
   type BattleConfig,
+  type BattleItemConfig,
   type BattleState,
 } from "@/engine/turn";
 import type { Rng } from "@/engine/rng";
@@ -132,9 +135,16 @@ afterEach(() => {
   useGameStore.setState(initialStoreState, true);
 });
 
-function seedStore(abilityId: AbilityId | null) {
+function seedStore(abilityId: AbilityId | null, inventory?: Partial<Record<ItemId, number>>) {
   useGameStore.setState(
-    { ...initialStoreState, pokemon: PLAYER, level: LEVEL, abilityId, flags: ["tutorial_done"] },
+    {
+      ...initialStoreState,
+      pokemon: PLAYER,
+      level: LEVEL,
+      abilityId,
+      flags: ["tutorial_done"],
+      ...(inventory ? { inventory: inventory as Record<ItemId, number> } : {}),
+    },
     true,
   );
 }
@@ -159,6 +169,22 @@ const SCRIPT: Action[] = [
   "correct",
 ];
 
+// Same as battle-screen.characterization.test.tsx's ATTRITION_SCRIPT — drives
+// playerHp toward (and past) 0, reaching the near-KO item branches (Revive,
+// Focus Band, Oran Berry) SCRIPT never touches.
+const ATTRITION_SCRIPT: Action[] = Array(10).fill("wrong");
+
+const NO_ITEMS: BattleItemConfig = {
+  assaultVestActive: false,
+  kingsRockActive: false,
+  leftoversActive: false,
+  metronomeActive: false,
+  silkScarfAvailable: false,
+  focusBandAvailable: false,
+  reviveAvailable: false,
+  oranBerryAvailable: false,
+};
+
 interface ComparableStep {
   action: Action;
   playerHp: string;
@@ -168,11 +194,23 @@ interface ComparableStep {
   maxStreak?: string;
 }
 
-async function runDom(abilityId: AbilityId | null, isElite = false, isWeekly = false): Promise<ComparableStep[]> {
-  seedStore(abilityId);
+interface DomOpts {
+  inventory?: Partial<Record<ItemId, number>>;
+  useItemsBeforeStep?: Partial<Record<number, ItemId[]>>;
+  script?: Action[];
+}
+
+async function runDom(
+  abilityId: AbilityId | null,
+  isElite = false,
+  isWeekly = false,
+  opts: DomOpts = {},
+): Promise<ComparableStep[]> {
+  seedStore(abilityId, opts.inventory);
   const questions = makeQuestions(QUESTION_COUNT);
   const correctIdx = shuffleTriviaOptions(questions[0]).correct;
   const wrongIdx = correctIdx === 0 ? 1 : 0;
+  const script = opts.script ?? SCRIPT;
 
   const eliteMember = isElite ? (await import("@/lib/elite-four")).ELITE_FOUR[0] : undefined;
   const gymLeader = isWeekly ? (await import("@/lib/gym-leaders")).GYM_LEADERS[0] : undefined;
@@ -192,11 +230,16 @@ async function runDom(abilityId: AbilityId | null, isElite = false, isWeekly = f
   });
 
   const steps: ComparableStep[] = [];
-  for (const action of SCRIPT) {
+  for (let i = 0; i < script.length; i++) {
+    const action = script[i];
     if (screen.queryByTestId("player-hp") == null) break;
     await act(async () => {
       await vi.advanceTimersByTimeAsync(3000);
     });
+    for (const itemId of opts.useItemsBeforeStep?.[i] ?? []) {
+      const itemBtn = screen.queryByTestId(`item-${itemId}`);
+      if (itemBtn) await act(async () => fireEvent.click(itemBtn));
+    }
     const idx = action === "correct" ? correctIdx : wrongIdx;
     const btn = screen.queryByTestId(`option-${idx}`);
     if (!btn) break;
@@ -235,11 +278,18 @@ function constantRng(value: number): Rng {
   return rng;
 }
 
+interface PureOpts {
+  items?: Partial<BattleItemConfig>;
+  useItemsBeforeStep?: Partial<Record<number, ItemId[]>>;
+  script?: Action[];
+}
+
 function runPure(
   rawAbilityId: AbilityId | null,
   rngValue: number,
   isElite = false,
   isWeekly = false,
+  opts: PureOpts = {},
 ): ComparableStep[] {
   // getAbility() resolves the fallback the real component uses: a legacy
   // player with no stored abilityId gets their primary type's first rolled
@@ -272,13 +322,16 @@ function runPure(
     immune,
     trainingPoints: 0,
     bonusTime,
+    isNormalType: PLAYER.types.includes("normal"),
+    items: { ...NO_ITEMS, ...opts.items },
   };
 
   let state: BattleState = initialBattleState(playerMaxHp, startingEnemyHp);
   const rng = constantRng(rngValue);
+  const script = opts.script ?? SCRIPT;
   const steps: ComparableStep[] = [];
 
-  for (let i = 0; i < SCRIPT.length; i++) {
+  for (let i = 0; i < script.length; i++) {
     if (state.phase !== "in_progress") break;
     const rs = applyRoundStart(state, config, i);
     state = rs.state;
@@ -287,7 +340,7 @@ function runPure(
       // combat panel, so player-hp/enemy-hp no longer exist in the DOM —
       // runDom's `?? ""` fallback reads empty strings on the ended step.
       steps.push({
-        action: SCRIPT[i],
+        action: script[i],
         playerHp: "",
         enemyHp: "",
         ended: true,
@@ -296,16 +349,19 @@ function runPure(
       });
       break;
     }
+    for (const itemId of opts.useItemsBeforeStep?.[i] ?? []) {
+      state = applyUseItem(state, config, itemId).state;
+    }
     const ar = applyAnswer(
       state,
       config,
-      { correct: SCRIPT[i] === "correct", questionIdx: i, elapsedMs: 3000 },
+      { correct: script[i] === "correct", questionIdx: i, elapsedMs: 3000 },
       rng,
     );
     state = ar.state;
     const ended = state.phase !== "in_progress";
     steps.push({
-      action: SCRIPT[i],
+      action: script[i],
       playerHp: ended ? "" : String(Math.round(state.playerHp)),
       enemyHp: ended ? "" : String(Math.round(state.enemyHp)),
       ended,
@@ -381,5 +437,105 @@ describe("engine/turn.ts applyAnswer matches the real BattleMode component", () 
     // Up to the first round boundary (question index 5, the 6th action),
     // nothing has diverged yet.
     expect(pure.slice(0, 4)).toEqual(dom.slice(0, 4));
+  });
+});
+
+describe("engine/turn.ts item support matches the real BattleMode component", () => {
+  // Auto-activates at battle start since Bulbasaur/grass vs Charmander/fire
+  // is disadvantaged — halves wrong-answer damage all battle.
+  it("assault vest halves wrong-answer damage all battle", async () => {
+    const dom = await runDom(null, false, false, { inventory: { assaultvest: 1 } });
+    const pure = runPure(null, 0.5, false, false, { items: { assaultVestActive: true } });
+    expect(pure).toEqual(dom);
+  });
+
+  // 50% chance per wrong answer to negate HP loss entirely — force the proc.
+  it("king's rock negates wrong-answer HP loss (forced proc)", async () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.01);
+    const dom = await runDom(null, false, false, { inventory: { kingsrock: 1 } });
+    const pure = runPure(null, 0.01, false, false, { items: { kingsRockActive: true } });
+    expect(pure).toEqual(dom);
+  });
+
+  it("leftovers heals after every correct answer", async () => {
+    const dom = await runDom(null, false, false, { inventory: { leftovers: 1 } });
+    const pure = runPure(null, 0.5, false, false, { items: { leftoversActive: true } });
+    expect(pure).toEqual(dom);
+  });
+
+  it("metronome locks the streak multiplier at max", async () => {
+    const dom = await runDom(null, false, false, { inventory: { metronome: 1 } });
+    const pure = runPure(null, 0.5, false, false, { items: { metronomeActive: true } });
+    expect(pure).toEqual(dom);
+  });
+
+  it("silk scarf boosts the first correct answer only", async () => {
+    const dom = await runDom(null, false, false, { inventory: { silkscarf: 1 } });
+    const pure = runPure(null, 0.5, false, false, { items: { silkScarfAvailable: true } });
+    expect(pure).toEqual(dom);
+  });
+
+  // Ability pinned to "magic-guard" for these three (and the potion tests
+  // below): it suppresses the poisoned-status tick, which otherwise has its
+  // own separate KO path that doesn't consult these items at all — see
+  // battle-screen.characterization.test.tsx's identical reasoning.
+  it("focus band auto-heals to 50% at <=10 HP", async () => {
+    const dom = await runDom("magic-guard", false, false, {
+      inventory: { focusband: 1 },
+      script: ATTRITION_SCRIPT,
+    });
+    const pure = runPure("magic-guard", 0.5, false, false, {
+      items: { focusBandAvailable: true },
+      script: ATTRITION_SCRIPT,
+    });
+    expect(pure).toEqual(dom);
+  });
+
+  it("oran berry auto-heals 15 HP on first drop below 30%", async () => {
+    const dom = await runDom("magic-guard", false, false, {
+      inventory: { oranberry: 1 },
+      script: ATTRITION_SCRIPT,
+    });
+    const pure = runPure("magic-guard", 0.5, false, false, {
+      items: { oranBerryAvailable: true },
+      script: ATTRITION_SCRIPT,
+    });
+    expect(pure).toEqual(dom);
+  });
+
+  it("revive survives a KO at 25% HP", async () => {
+    const dom = await runDom("magic-guard", false, false, {
+      inventory: { revive: 1 },
+      script: ATTRITION_SCRIPT,
+    });
+    const pure = runPure("magic-guard", 0.5, false, false, {
+      items: { reviveAvailable: true },
+      script: ATTRITION_SCRIPT,
+    });
+    expect(pure).toEqual(dom);
+  });
+
+  it("x attack adds +20 damage to the next correct answer, single use", async () => {
+    const dom = await runDom(null, false, false, {
+      inventory: { xattack: 1 },
+      useItemsBeforeStep: { 0: ["xattack"] },
+    });
+    const pure = runPure(null, 0.5, false, false, {
+      useItemsBeforeStep: { 0: ["xattack"] },
+    });
+    expect(pure).toEqual(dom);
+  });
+
+  it.each(["potion", "superpotion", "maxpotion"] as const)("%s heals correctly", async (itemId) => {
+    const dom = await runDom("magic-guard", false, false, {
+      inventory: { [itemId]: 1 },
+      useItemsBeforeStep: { 3: [itemId] },
+      script: ATTRITION_SCRIPT,
+    });
+    const pure = runPure("magic-guard", 0.5, false, false, {
+      useItemsBeforeStep: { 3: [itemId] },
+      script: ATTRITION_SCRIPT,
+    });
+    expect(pure).toEqual(dom);
   });
 });

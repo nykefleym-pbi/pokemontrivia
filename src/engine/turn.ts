@@ -17,14 +17,36 @@
 // signature-ability liveness precedent: this is the same class of risk, just
 // a different ability system).
 //
+// Item support: `config.items`/`state.items` carry the 8 whole-battle
+// auto-triggers (Assault Vest, King's Rock, Leftovers, Metronome, Silk Scarf,
+// Revive, Focus Band, Oran Berry) plus X Attack, mirroring how `abilityId`
+// already works — the CALLER (solo-battle-config.ts's resolveBattleSetup)
+// resolves whether each is active/available from raw inventory/cooldown
+// facts, the same way it resolves superEff/disadvantaged from raw types;
+// this file never reaches into inventory state itself. `applyUseItem`
+// handles the three manual heals (potion/superpotion/maxpotion) and X
+// Attack's activation as their own action, since (unlike the auto-triggers)
+// they're client-initiated mid-battle, not battle-start facts.
+//
 // DELIBERATELY NOT PORTED (documented gaps, not silent omissions):
-//   - Item auto-triggers (Focus Band, Oran Berry, Revive, Silk Scarf, King's
-//     Rock, Leftovers, Metronome, Quick Claw, Assault Vest, X Attack). These
-//     depend on the player's store-held inventory, which is out of scope for
-//     an isomorphic, store-free engine module. A caller that wants item
-//     support needs to fold item effects in around `applyAnswer` (e.g. halve
-//     `config.disadvantaged`'s wrongDmg baseline for Assault Vest) rather than
-//     this file reaching into inventory state.
+//   - Quick Claw: resets the client's on-screen countdown, which has no
+//     server-side equivalent — the engine already trusts whatever
+//     `elapsedMs` the client reports for its speed-bonus math regardless of
+//     how much real wall-clock time the player had, so Quick Claw needs no
+//     engine change at all.
+//   - scope/zoomlens/xaccuracy/repel: reveal-a-wrong-option (or skip) UI
+//     hints. They can influence which choiceIdx a player is likely to
+//     submit, but never the resulting math — the server independently
+//     checks choiceIdx against the question's own answer key regardless of
+//     any hint, so these have nothing for `applyAnswer` to model.
+//   - escape: ends the battle early — already exactly `{ type: "forfeit" }`
+//     (see `applyForfeit`); a caller wiring the manual-item UI to actions
+//     should submit forfeit, not a new item case.
+//   - amuletcoin/expcharm/luckypunch/starpiece/candy/bignugget/luckyegg/
+//     choicespecs: reward-multiplier or out-of-battle economy effects
+//     resolved at `finish()`, never touching the HP/streak/status trajectory
+//     `applyAnswer` computes. Reward calculation is out of scope for this
+//     module entirely (still resolved client-side).
 //   - The poisoned-status tick is redefined as PER-TURN, not real-time. The
 //     client's `startPoisonTick` runs a real `setInterval(…, 2000)` — there is
 //     no equivalent "keep ticking in the background" concept for a
@@ -96,6 +118,28 @@ export function initialAbilityState(): BattleAbilityState {
   };
 }
 
+/** Per-battle consumption tracking for the item effects `applyAnswer`/
+ *  `applyUseItem` model — mirrors `BattleAbilityState`'s "used once" flags,
+ *  just for items instead of abilities. */
+export interface BattleItemState {
+  silkScarfUsed: boolean;
+  focusBandUsed: boolean;
+  reviveUsed: boolean;
+  oranBerryUsed: boolean;
+  /** Set by `applyUseItem("xattack")`; consumed by the next correct answer. */
+  xAttackActive: boolean;
+}
+
+export function initialItemState(): BattleItemState {
+  return {
+    silkScarfUsed: false,
+    focusBandUsed: false,
+    reviveUsed: false,
+    oranBerryUsed: false,
+    xAttackActive: false,
+  };
+}
+
 export interface BattleState {
   playerHp: number;
   enemyHp: number;
@@ -109,6 +153,7 @@ export interface BattleState {
   clockMs: number;
   statuses: BattleStatusEntry[];
   ability: BattleAbilityState;
+  items: BattleItemState;
   phase: "in_progress" | "won" | "lost";
 }
 
@@ -124,6 +169,7 @@ export function initialBattleState(playerMaxHp: number, enemyMaxHp: number): Bat
     clockMs: 0,
     statuses: [],
     ability: initialAbilityState(),
+    items: initialItemState(),
     phase: "in_progress",
   };
 }
@@ -146,6 +192,27 @@ export interface BattleConfig {
   trainingPoints: number;
   /** Extra timer seconds this battle (Sand Veil's onBattleStart effect). */
   bonusTime: number;
+  /** True if the player's partner has the Normal type — feeds Silk Scarf's
+   *  bonus multiplier, which differs for Normal-type partners. A raw fact
+   *  (not a derived matchup boolean), like `playerMaxHp`. */
+  isNormalType: boolean;
+  items: BattleItemConfig;
+}
+
+/** Whole-battle item facts, claimed by the caller at battle start (mirrors
+ *  `abilityId`'s trust tier — resolved from the authenticated client's
+ *  inventory/cooldown state, not independently verified server-side; see
+ *  solo-battle-config.ts's module doc). */
+export interface BattleItemConfig {
+  assaultVestActive: boolean;
+  kingsRockActive: boolean;
+  leftoversActive: boolean;
+  metronomeActive: boolean;
+  /** Claimed as unused/in-inventory; consumed on the first correct answer. */
+  silkScarfAvailable: boolean;
+  focusBandAvailable: boolean;
+  reviveAvailable: boolean;
+  oranBerryAvailable: boolean;
 }
 
 const TIMER_BASE = 20;
@@ -268,6 +335,7 @@ export function applyAnswer(
   const abilityId = config.abilityId;
   let ability = s.ability;
   let statuses = s.statuses;
+  let items = s.items;
 
   if (input.correct) {
     const correctCount = s.correctCount + 1;
@@ -294,7 +362,8 @@ export function applyAnswer(
 
     let baseDmg = config.isElite || config.isWeekly ? 10 : baseDamageForLevel(config.level);
     if (abilityId === "dragon-dance") baseDmg += Math.floor(input.questionIdx / QUESTIONS_PER_SET);
-    let dmg = Math.round(baseDmg * streakMultiplier(newStreak));
+    // Metronome locks the streak multiplier at its max value all battle.
+    let dmg = Math.round(baseDmg * (config.items.metronomeActive ? 3.0 : streakMultiplier(newStreak)));
 
     const tpMult = getTpMultiplier(config.trainingPoints);
     if (tpMult > 1.0) dmg = Math.round(dmg * tpMult);
@@ -308,6 +377,15 @@ export function applyAnswer(
     dmg += speedBonus;
 
     if (config.superEff) dmg *= 2;
+    if (items.xAttackActive) {
+      dmg += 20;
+      items = { ...items, xAttackActive: false };
+    }
+    // Silk Scarf: bonus on the first correct answer only, once per battle.
+    if (config.items.silkScarfAvailable && !items.silkScarfUsed) {
+      dmg = Math.round(dmg * (config.isNormalType ? 1.75 : 1.5));
+      items = { ...items, silkScarfUsed: true };
+    }
     if (abilityId === "tailwind" && input.questionIdx < 3) dmg = Math.round(dmg * 1.2);
     if (abilityId === "guts" && s.playerHp < config.playerMaxHp / 2) dmg = Math.round(dmg * 1.15);
     if (abilityId === "flash-fire") dmg = Math.round(dmg * 1.08);
@@ -343,6 +421,8 @@ export function applyAnswer(
     events.push({ type: "damage_dealt", target: "enemy", amount: dmg });
 
     let playerHp = s.playerHp;
+    // Leftovers: +5 HP after every correct answer, whole battle.
+    if (config.items.leftoversActive) playerHp = Math.min(config.playerMaxHp, playerHp + 5);
     if (abilityId === "leech-seed") playerHp = Math.min(config.playerMaxHp, playerHp + 2);
     if (abilityId === "ice-body" && correctCount % 4 === 0) {
       playerHp = Math.min(config.playerMaxHp, playerHp + 6);
@@ -386,6 +466,7 @@ export function applyAnswer(
           topDmg,
           statuses,
           ability,
+          items,
           phase: "won",
         },
         events,
@@ -404,6 +485,7 @@ export function applyAnswer(
         topDmg,
         statuses,
         ability,
+        items,
       },
       events,
     };
@@ -416,6 +498,9 @@ export function applyAnswer(
   if (config.immune) wrongDmg = 5;
   else if (config.disadvantaged) wrongDmg = 15;
   if (abilityId === "no-guard") wrongDmg += 2;
+  if (config.items.assaultVestActive) wrongDmg = Math.floor(wrongDmg / 2);
+  // King's Rock: 50% chance to negate wrong-answer HP loss entirely, whole battle.
+  if (config.items.kingsRockActive && rng.chance(0.5)) wrongDmg = 0;
 
   if (abilityId === "multiscale" && s.playerHp === config.playerMaxHp) wrongDmg = Math.floor(wrongDmg / 2);
   if (abilityId === "filter" && config.disadvantaged) wrongDmg = Math.floor(wrongDmg * 0.75);
@@ -443,10 +528,31 @@ export function applyAnswer(
     sturdyUsed = true;
   }
 
+  // Revive: survive a would-be KO at 25% max HP, once per battle.
+  let reviveUsed = items.reviveUsed;
+  if (newPlayerHp <= 0 && config.items.reviveAvailable && !reviveUsed) {
+    newPlayerHp = Math.round(config.playerMaxHp * 0.25);
+    reviveUsed = true;
+  }
+
+  // Focus Band: auto-heal to 50% max HP when HP is 10 or below, once per week.
+  let focusBandUsed = items.focusBandUsed;
+  if (newPlayerHp <= 10 && config.items.focusBandAvailable && !focusBandUsed) {
+    newPlayerHp = Math.round(config.playerMaxHp * 0.5);
+    focusBandUsed = true;
+  }
+
   let torrentUsed = ability.torrentUsed;
   if (abilityId === "torrent" && !torrentUsed && newPlayerHp > 0 && newPlayerHp < config.playerMaxHp * 0.3) {
     torrentUsed = true;
     newPlayerHp = Math.min(config.playerMaxHp, newPlayerHp + 10);
+  }
+
+  // Oran Berry: auto-heal 15 HP the instant HP first drops below 30% max, once per battle.
+  let oranBerryUsed = items.oranBerryUsed;
+  if (newPlayerHp > 0 && newPlayerHp < config.playerMaxHp * 0.3 && config.items.oranBerryAvailable && !oranBerryUsed) {
+    newPlayerHp = Math.min(config.playerMaxHp, newPlayerHp + 15);
+    oranBerryUsed = true;
   }
 
   events.push({ type: "damage_dealt", target: "player", amount: wrongDmg });
@@ -483,6 +589,13 @@ export function applyAnswer(
     lastWasWrong: true,
   };
 
+  items = {
+    ...items,
+    reviveUsed,
+    focusBandUsed,
+    oranBerryUsed,
+  };
+
   if (enemyHp <= 0) {
     events.push({ type: "battle_ended", won: true });
     return {
@@ -494,6 +607,7 @@ export function applyAnswer(
         wrongStreak,
         statuses,
         ability,
+        items,
         phase: "won",
       },
       events,
@@ -527,6 +641,7 @@ export function applyAnswer(
         wrongStreak,
         statuses,
         ability,
+        items,
         phase: "lost",
       },
       events,
@@ -542,8 +657,44 @@ export function applyAnswer(
       wrongStreak,
       statuses,
       ability,
+      items,
     },
     events,
+  };
+}
+
+/**
+ * Pure port of `tryUseItem`'s battle-math-affecting manual items: the three
+ * flat heals and X Attack's activation. Other itemIds (scope/zoomlens/
+ * xaccuracy/repel/escape/etc.) have nothing for this function to do — see
+ * the module doc for why — and are a no-op here; the caller decides whether
+ * to even forward them.
+ */
+export function applyUseItem(
+  state: BattleState,
+  config: BattleConfig,
+  itemId: ItemId,
+): ApplyAnswerResult {
+  if (state.phase !== "in_progress") return { state, events: [] };
+
+  const healMult = config.abilityId === "synthesis" ? 1.5 : 1;
+  let playerHp = state.playerHp;
+  if (itemId === "potion") playerHp = Math.min(config.playerMaxHp, playerHp + Math.round(30 * healMult));
+  else if (itemId === "superpotion") {
+    playerHp = Math.min(config.playerMaxHp, playerHp + Math.round(60 * healMult));
+  } else if (itemId === "maxpotion") playerHp = config.playerMaxHp;
+  else if (itemId === "xattack") {
+    return {
+      state: { ...state, items: { ...state.items, xAttackActive: true } },
+      events: [{ type: "item_consumed", itemId }],
+    };
+  } else {
+    return { state, events: [] };
+  }
+
+  return {
+    state: { ...state, playerHp },
+    events: [{ type: "item_consumed", itemId }],
   };
 }
 
