@@ -5,7 +5,7 @@ vi.mock("@/integrations/supabase/client", () => ({
   supabase: { functions: { invoke } },
 }));
 
-import { loadSave, pushSave } from "./save";
+import { loadSave, pushSave, replayBattles, type OfflineBattle } from "./save";
 
 beforeEach(() => {
   invoke.mockReset();
@@ -47,5 +47,66 @@ describe("pushSave", () => {
     invoke.mockResolvedValue({ data: { ok: true, data: { conflict: true } }, error: null });
     const result = await pushSave(3, { xp: 10 });
     expect(result).toEqual({ conflict: true });
+  });
+});
+
+const BATTLE: OfflineBattle = {
+  id: "11111111-1111-1111-1111-111111111111",
+  cfg: {
+    questions: [{ question: "Q?", options: ["A", "B"], correct: 0, explanation: "e", category: "c" }],
+    playerPokemonId: 1,
+    playerTypes: ["grass"],
+    abilityId: null,
+    level: 5,
+    mode: "battle",
+    enemyPokemonId: 4,
+    enemyTypes: ["fire"],
+    trainingPoints: 0,
+    items: {
+      assaultVestActive: false,
+      kingsRockActive: false,
+      leftoversActive: false,
+      metronomeActive: false,
+      silkScarfAvailable: false,
+      focusBandAvailable: false,
+      reviveAvailable: false,
+      oranBerryAvailable: false,
+    },
+  },
+  seed: "offline-seed-1",
+  log: [{ type: "submit_answer", questionIdx: 0, choiceIdx: 0, elapsedMs: 3000 }],
+};
+
+describe("replayBattles", () => {
+  it("calls save-sync with op:replay and the given battles", async () => {
+    const responseData = {
+      results: [{ id: BATTLE.id, status: "recorded" as const }],
+      reward: { xp: 10, coins: 2, trainingPoints: { "1": 1 } },
+      save: { version: 5, state: { xp: 20 } },
+    };
+    invoke.mockResolvedValue({ data: { ok: true, data: responseData }, error: null });
+    const result = await replayBattles([BATTLE]);
+    expect(result).toEqual(responseData);
+    expect(invoke).toHaveBeenCalledWith("save-sync", { body: { op: "replay", battles: [BATTLE] } });
+  });
+
+  it("surfaces a null save when no server save exists yet", async () => {
+    const responseData = {
+      results: [{ id: BATTLE.id, status: "recorded" as const }],
+      reward: { xp: 10, coins: 2, trainingPoints: { "1": 1 } },
+      save: null,
+    };
+    invoke.mockResolvedValue({ data: { ok: true, data: responseData }, error: null });
+    const result = await replayBattles([BATTLE]);
+    expect(result.save).toBeNull();
+    expect(result.reward).not.toBeNull();
+  });
+
+  it("throws when the envelope reports ok:false", async () => {
+    invoke.mockResolvedValue({
+      data: { ok: false, error: { code: "bad_request", msg: "battles must be an array" } },
+      error: null,
+    });
+    await expect(replayBattles([BATTLE])).rejects.toThrow(/bad_request/);
   });
 });

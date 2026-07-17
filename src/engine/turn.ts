@@ -763,3 +763,22 @@ export function applyForfeit(state: BattleState): ApplyAnswerResult {
     events: [{ type: "battle_ended", won: false }],
   };
 }
+
+/** Shared shape validator for a client-submitted `BattleAction` — used by
+ *  both battle-solo (live submit_action) and save-sync (replaying a queued
+ *  offline battle's whole log), so the two Edge Functions never drift on
+ *  what counts as a well-formed action. */
+export function isValidBattleAction(action: unknown): action is BattleAction {
+  if (!action || typeof action !== "object") return false;
+  const a = action as Record<string, unknown>;
+  if (a.type === "forfeit") return true;
+  if (a.type === "use_item") return typeof a.itemId === "string";
+  if (a.type === "submit_answer") {
+    return (
+      typeof a.questionIdx === "number" &&
+      typeof a.choiceIdx === "number" &&
+      typeof a.elapsedMs === "number"
+    );
+  }
+  return false;
+}

@@ -1,4 +1,9 @@
-import { streakMultiplier } from "@/lib/game-data";
+// Imported directly from engine/damage (not @/lib/game-data, which re-exports
+// it): esbuild can't prove game-data.ts's OTHER top-level computations are
+// side-effect-free, so importing anything from it pulls in its whole
+// dependency graph — costly for callers bundled into an Edge Function (see
+// scripts/bundle-edge-function.mjs / save-sync's use of battleReward).
+import { streakMultiplier } from "@/engine/damage";
 
 /** Per-level reward scaling: +5% per level above 1. */
 export function levelMultiplier(level: number): number {
