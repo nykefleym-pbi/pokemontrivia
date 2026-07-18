@@ -717,7 +717,7 @@ export function LivePvpBattleScreen({
    *  - m4_fx:         the instant KO + the Ruination halve. SERVER-rolled: a client
    *                   that could report its own KO would be an instant-win cheat.
    *  - m4_window:     shield / self-damage-zero / opponent-timer windows, written
-   *                   into runtime for the OTHER side (or submit_pvp_live_answer)
+   *                   into runtime for the OTHER side (or apply_pvp_live_answer_v2)
    *                   to read back.
    */
   function fireM4Channels(args: {

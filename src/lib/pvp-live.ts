@@ -89,16 +89,13 @@ export interface LivePvpMatch {
   /** True when the guest is the shared Training Bot (Training-vs-Bot mode): the
    * host drives the bot locally via the bot RPCs, and presence/forfeit is off. */
   isBotMatch: boolean;
-  /** Server-authoritative correct-answer streak. Written by
-   * `submit_pvp_live_answer` from its own `_selected_index`-verified
-   * correctness (Phase 4) — ground truth, independent of the client's local
-   * `streak` state (which the UI still renders from until the ability-damage
-   * recompute Edge Function lands and the client stops computing its own
-   * `dmg`/`selfDmg` at all). */
+  /** Server-authoritative correct-answer streak, verified against the
+   * server's own `_selected_index`-checked correctness and returned directly
+   * by `resolvePvpLiveTurn`/`resolveBotPvpTurn` as `PvpLiveTurnResult.streak`. */
   hostStreakLive: number;
   guestStreakLive: number;
   /** Server-authoritative consecutive-wrong-answer streak, for confusion's
-   * arm-at-2 threshold. Same Phase 4 write, same ground-truth caveat above. */
+   * arm-at-2 threshold. Same write path as `hostStreakLive`/`guestStreakLive`. */
   hostWrongStreakLive: number;
   guestWrongStreakLive: number;
   /** Server-authoritative confusion duration counter — arms to 2 at a
@@ -328,61 +325,6 @@ export async function startBotPvpMatch(
     return { ok: false, error: (r && r.error) || "network" };
   } catch (e) {
     console.warn("[pvp-live] startBotPvpMatch threw:", e);
-    return { ok: false, error: "network" };
-  }
-}
-
-/**
- * Submit one of the bot's (guest-side) moves in a Training match. Security-gated
- * server-side to `auth.uid() = host_id` AND `is_bot_match = true`, and only ever
- * writes the bot's own side — it can never touch a real opponent in a real
- * match. `dmg` is server-clamped to [0,60] exactly like submit_pvp_live_answer.
- *
- * Superseded by `resolveBotPvpTurn` above (Phase 5 cutover) — see
- * `submitPvpLiveAnswer`'s doc comment for the same deferred-cleanup note.
- */
-export async function submitBotPvpMove(
-  matchId: string,
-  questionIndex: number,
-  correct: boolean,
-  dmg: number,
-  timeMs: number,
-): Promise<
-  | { ok: true; hostHp: number; guestHp: number; resolved: boolean; winnerId?: string | null }
-  | { ok: false; error: string }
-> {
-  try {
-    const { data, error } = await rpc.rpc("submit_bot_pvp_move", {
-      _match_id: matchId,
-      _question_index: questionIndex,
-      _correct: correct,
-      _dmg: Math.round(dmg),
-      _time_ms: Math.round(timeMs),
-    });
-    if (error) {
-      console.warn("[pvp-live] submitBotPvpMove failed:", error.message);
-      return { ok: false, error: "network" };
-    }
-    const r = data as {
-      ok?: boolean;
-      hostHp?: number;
-      guestHp?: number;
-      resolved?: boolean;
-      winnerId?: string | null;
-      error?: string;
-    } | null;
-    if (r && r.ok === true) {
-      return {
-        ok: true,
-        hostHp: r.hostHp ?? 120,
-        guestHp: r.guestHp ?? 120,
-        resolved: !!r.resolved,
-        winnerId: r.winnerId,
-      };
-    }
-    return { ok: false, error: (r && r.error) || "network" };
-  } catch (e) {
-    console.warn("[pvp-live] submitBotPvpMove threw:", e);
     return { ok: false, error: "network" };
   }
 }
@@ -662,76 +604,6 @@ export async function getLivePvpMatch(matchId: string): Promise<LivePvpMatch | n
     return null;
   }
   return data ? fromRow(data as unknown as LivePvpMatchRow) : null;
-}
-
-/**
- * Submit the caller's outcome for one question in the HP-endurance battle:
- * correct/incorrect, damage dealt to the opponent, self-damage taken, and
- * time spent. `dmg`/`selfDmg` are computed client-side via pvp-combat.ts (run
- * identically by both trainers) and clamped server-side to a sane ceiling.
- * Resolves the match (HP KO, or HP/accuracy/avg-time tiebreak after 20
- * questions) automatically when appropriate.
- *
- * `selectedOriginalIndex` is the player's choice mapped back to the SERVER's
- * unshuffled option order (each client shuffles independently for display —
- * see `shuffleTriviaOptionsWithOrder`), or `null` for a timeout/no-answer.
- * Not yet verified server-side (that lands with the Edge Function cutover);
- * this phase only carries the value so the server can start doing so.
- *
- * Superseded by `resolvePvpLiveTurn` below (Phase 4 cutover) — the client no
- * longer calls this RPC directly (its `authenticated` grant is revoked in a
- * later, separate step once the cutover is confirmed working). Left in place
- * rather than deleted: Phase 6 owns removing this alongside the rest of the
- * now-dead client-side damage computation it fed.
- */
-export async function submitPvpLiveAnswer(
-  matchId: string,
-  questionIndex: number,
-  correct: boolean,
-  dmg: number,
-  selfDmg: number,
-  timeMs: number,
-  selectedOriginalIndex: number | null,
-): Promise<
-  | { ok: true; hostHp: number; guestHp: number; resolved: boolean; winnerId?: string | null }
-  | { ok: false; error: string }
-> {
-  try {
-    const { data, error } = await rpc.rpc("submit_pvp_live_answer", {
-      _match_id: matchId,
-      _question_index: questionIndex,
-      _correct: correct,
-      _dmg: Math.round(dmg),
-      _self_dmg: Math.round(selfDmg),
-      _time_ms: Math.round(timeMs),
-      _selected_index: selectedOriginalIndex,
-    });
-    if (error) {
-      console.warn("[pvp-live] submitPvpLiveAnswer failed:", error.message);
-      return { ok: false, error: "network" };
-    }
-    const r = data as {
-      ok?: boolean;
-      hostHp?: number;
-      guestHp?: number;
-      resolved?: boolean;
-      winnerId?: string | null;
-      error?: string;
-    } | null;
-    if (r && r.ok === true) {
-      return {
-        ok: true,
-        hostHp: r.hostHp ?? 120,
-        guestHp: r.guestHp ?? 120,
-        resolved: !!r.resolved,
-        winnerId: r.winnerId,
-      };
-    }
-    return { ok: false, error: (r && r.error) || "network" };
-  } catch (e) {
-    console.warn("[pvp-live] submitPvpLiveAnswer threw:", e);
-    return { ok: false, error: "network" };
-  }
 }
 
 /** One resolved turn's outcome from `pvp-live-resolve-turn`, covering both the

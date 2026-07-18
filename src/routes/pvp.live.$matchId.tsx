@@ -438,8 +438,9 @@ function LivePvpMatchPage() {
 
   function handleFinish(result: LivePvpBattleResult) {
     // The server has already resolved status/winner_id by the time onFinish
-    // fires (submitPvpLiveAnswer only reports resolved:true once it has);
-    // the row-update subscription above will flip `phase` to "result".
+    // fires (resolvePvpLiveTurn/resolveBotPvpTurn only report resolved:true
+    // once it has); the row-update subscription above will flip `phase` to
+    // "result".
     void result;
   }
 
