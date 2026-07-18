@@ -407,3 +407,70 @@ export function armSwordOfRuinCharges(state: PvpEngineState, partnerId: number):
   if (partnerId !== SWORD_OF_RUIN_DEX_ID) return state;
   return { ...state, swordOfRuinCharges: 2 };
 }
+
+/**
+ * One side's `PvpEngineState`, persisted as `pvp_live_matches` columns (Phase
+ * 4/5 cutover, slice 1: 20260718140000). `correctCount` reuses the
+ * pre-existing `host_correct_live`/`guest_correct_live` columns (Phase 1,
+ * `20260705000000`) rather than a new one — they already track exactly this
+ * running total for both sides. Field names here are the "self" shape (no
+ * host_/guest_ prefix); the caller picks the right side's columns.
+ */
+export interface PvpEngineStateRow {
+  streakLive: number;
+  correctLive: number;
+  wrongStreakLive: number;
+  confusedTicksLive: number;
+  swordOfRuinCharges: number;
+  sigLatched: boolean;
+  moxieStacks: number;
+  wrongCount: number;
+  hadWrong: boolean;
+  sturdyUsed: boolean;
+  prevCorrect: boolean;
+  prevAnswerElapsedMs: number;
+}
+
+/**
+ * Reconstruct `PvpEngineState` from persisted columns (the new risk surface
+ * the Phase 4/5 cutover introduces — each question is a separate stateless
+ * RPC/Edge Function call, unlike the client's long-lived in-memory refs).
+ * See `pvp-live-answer.persistence.test.ts` for the round-trip proof this
+ * survives a full multi-question sequence byte-for-byte against continuous
+ * in-memory folding.
+ */
+export function pvpEngineStateFromRow(row: PvpEngineStateRow): PvpEngineState {
+  return {
+    streak: row.streakLive,
+    correctCount: row.correctLive,
+    selfWrongStreak: row.wrongStreakLive,
+    confusedTicks: row.confusedTicksLive,
+    swordOfRuinCharges: row.swordOfRuinCharges,
+    sigLatched: row.sigLatched,
+    moxieStacks: row.moxieStacks,
+    wrongCount: row.wrongCount,
+    hadWrong: row.hadWrong,
+    sturdyUsed: row.sturdyUsed,
+    prevCorrect: row.prevCorrect,
+    prevAnswerElapsedMs: row.prevAnswerElapsedMs,
+  };
+}
+
+/** Inverse of `pvpEngineStateFromRow` — what the apply RPC should persist
+ *  after `resolvePvpAnswer` returns its next `state`. */
+export function pvpEngineStateToRow(state: PvpEngineState): PvpEngineStateRow {
+  return {
+    streakLive: state.streak,
+    correctLive: state.correctCount,
+    wrongStreakLive: state.selfWrongStreak,
+    confusedTicksLive: state.confusedTicks,
+    swordOfRuinCharges: state.swordOfRuinCharges,
+    sigLatched: state.sigLatched,
+    moxieStacks: state.moxieStacks,
+    wrongCount: state.wrongCount,
+    hadWrong: state.hadWrong,
+    sturdyUsed: state.sturdyUsed,
+    prevCorrect: state.prevCorrect,
+    prevAnswerElapsedMs: state.prevAnswerElapsedMs,
+  };
+}
