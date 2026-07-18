@@ -337,6 +337,9 @@ export async function startBotPvpMatch(
  * server-side to `auth.uid() = host_id` AND `is_bot_match = true`, and only ever
  * writes the bot's own side — it can never touch a real opponent in a real
  * match. `dmg` is server-clamped to [0,60] exactly like submit_pvp_live_answer.
+ *
+ * Superseded by `resolveBotPvpTurn` above (Phase 5 cutover) — see
+ * `submitPvpLiveAnswer`'s doc comment for the same deferred-cleanup note.
  */
 export async function submitBotPvpMove(
   matchId: string,
@@ -674,6 +677,12 @@ export async function getLivePvpMatch(matchId: string): Promise<LivePvpMatch | n
  * see `shuffleTriviaOptionsWithOrder`), or `null` for a timeout/no-answer.
  * Not yet verified server-side (that lands with the Edge Function cutover);
  * this phase only carries the value so the server can start doing so.
+ *
+ * Superseded by `resolvePvpLiveTurn` below (Phase 4 cutover) — the client no
+ * longer calls this RPC directly (its `authenticated` grant is revoked in a
+ * later, separate step once the cutover is confirmed working). Left in place
+ * rather than deleted: Phase 6 owns removing this alongside the rest of the
+ * now-dead client-side damage computation it fed.
  */
 export async function submitPvpLiveAnswer(
   matchId: string,
@@ -721,6 +730,133 @@ export async function submitPvpLiveAnswer(
     return { ok: false, error: (r && r.error) || "network" };
   } catch (e) {
     console.warn("[pvp-live] submitPvpLiveAnswer threw:", e);
+    return { ok: false, error: "network" };
+  }
+}
+
+/** One resolved turn's outcome from `pvp-live-resolve-turn`, covering both the
+ *  applied HP/resolution state AND everything the battle screen needs to
+ *  drive its downstream toasts/RPCs (sigEngineTick, bespoke fx, M4 channels,
+ *  the confusion badge, the type-ability post_answer catalog effect) now that
+ *  `dmg`/`selfDmg`/`correct` are computed server-side (Phase 4 cutover). See
+ *  supabase/functions/pvp-live-resolve-turn/index.ts's `toastNotices` for
+ *  where `sturdyFired`/`sandForceKeptStreak`/`typeAbilityModFired` come from. */
+export interface PvpLiveTurnResult {
+  hostHp: number;
+  guestHp: number;
+  resolved: boolean;
+  winnerId?: string | null;
+  correct: boolean;
+  dmg: number;
+  selfDmg: number;
+  timeMs: number;
+  confusionMissed: boolean;
+  triggerFired: boolean;
+  /** Authoritative streak/correctCount/wrongStreak/confusedTicks AFTER this
+   *  answer — render these directly rather than folding a local increment. */
+  streak: number;
+  correctCount: number;
+  wrongStreak: number;
+  confusedTicks: number;
+  sturdyFired: boolean;
+  sandForceKeptStreak: boolean;
+  typeAbilityModFired: boolean;
+}
+
+interface FunctionsInvoke {
+  invoke: (
+    fn: string,
+    opts: { body: Record<string, unknown> },
+  ) => Promise<{ data: unknown; error: { message: string } | null }>;
+}
+const functionsClient = supabase as unknown as { functions: FunctionsInvoke };
+
+function fromTurnResponse(r: Record<string, unknown>): PvpLiveTurnResult {
+  return {
+    hostHp: (r.hostHp as number | undefined) ?? 120,
+    guestHp: (r.guestHp as number | undefined) ?? 120,
+    resolved: !!r.resolved,
+    winnerId: r.winnerId as string | null | undefined,
+    correct: !!r.correct,
+    dmg: (r.dmg as number | undefined) ?? 0,
+    selfDmg: (r.selfDmg as number | undefined) ?? 0,
+    timeMs: (r.timeMs as number | undefined) ?? 0,
+    confusionMissed: !!r.confusionMissed,
+    triggerFired: !!r.triggerFired,
+    streak: (r.streak as number | undefined) ?? 0,
+    correctCount: (r.correctCount as number | undefined) ?? 0,
+    wrongStreak: (r.wrongStreak as number | undefined) ?? 0,
+    confusedTicks: (r.confusedTicks as number | undefined) ?? 0,
+    sturdyFired: !!r.sturdyFired,
+    sandForceKeptStreak: !!r.sandForceKeptStreak,
+    typeAbilityModFired: !!r.typeAbilityModFired,
+  };
+}
+
+/**
+ * Submit the caller's own answer for one question — the Phase 4 cutover
+ * replacement for `submitPvpLiveAnswer`. The Edge Function verifies
+ * correctness against the server's own immutable `questions` array,
+ * recomputes ability-modified `dmg`/`selfDmg` itself (`resolvePvpAnswer`),
+ * and applies the result atomically server-side; the client only ever learns
+ * the outcome, never supplies it.
+ */
+export async function resolvePvpLiveTurn(
+  matchId: string,
+  questionIndex: number,
+  selectedOriginalIndex: number | null,
+  elapsedMs: number,
+): Promise<{ ok: true; result: PvpLiveTurnResult } | { ok: false; error: string }> {
+  try {
+    const { data, error } = await functionsClient.functions.invoke("pvp-live-resolve-turn", {
+      body: {
+        op: "answer",
+        matchId,
+        questionIndex,
+        selectedIndex: selectedOriginalIndex,
+        elapsedMs: Math.round(elapsedMs),
+      },
+    });
+    if (error) {
+      console.warn("[pvp-live] resolvePvpLiveTurn failed:", error.message);
+      return { ok: false, error: "network" };
+    }
+    const r = data as { ok?: boolean; data?: Record<string, unknown>; error?: { msg?: string } } | null;
+    if (r && r.ok === true && r.data) {
+      return { ok: true, result: fromTurnResponse(r.data) };
+    }
+    return { ok: false, error: r?.error?.msg || "network" };
+  } catch (e) {
+    console.warn("[pvp-live] resolvePvpLiveTurn threw:", e);
+    return { ok: false, error: "network" };
+  }
+}
+
+/**
+ * Roll and apply the Training bot's own move for one question — the Phase 5
+ * cutover replacement for `submitBotPvpMove`. Unlike the human path there is
+ * no client-reported outcome at all: the Edge Function rolls the bot's
+ * correctness/timing itself from the match's persisted `guest_bot_profile`.
+ */
+export async function resolveBotPvpTurn(
+  matchId: string,
+  questionIndex: number,
+): Promise<{ ok: true; result: PvpLiveTurnResult } | { ok: false; error: string }> {
+  try {
+    const { data, error } = await functionsClient.functions.invoke("pvp-live-resolve-turn", {
+      body: { op: "bot_turn", matchId, questionIndex },
+    });
+    if (error) {
+      console.warn("[pvp-live] resolveBotPvpTurn failed:", error.message);
+      return { ok: false, error: "network" };
+    }
+    const r = data as { ok?: boolean; data?: Record<string, unknown>; error?: { msg?: string } } | null;
+    if (r && r.ok === true && r.data) {
+      return { ok: true, result: fromTurnResponse(r.data) };
+    }
+    return { ok: false, error: r?.error?.msg || "network" };
+  } catch (e) {
+    console.warn("[pvp-live] resolveBotPvpTurn threw:", e);
     return { ok: false, error: "network" };
   }
 }

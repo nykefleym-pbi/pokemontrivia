@@ -31,6 +31,13 @@ import {
   botAnswerTimeMs,
   type BotProfile,
 } from "../lib/pvp-bot";
+import {
+  resolvePvpTypeAbilityId,
+  typeAbilityPvp,
+  typeAbilityDamageMod,
+  typeAbilitySelfDmgMod,
+  type TypeAbilityCtx,
+} from "../lib/pvp-type-abilities";
 
 const MAX_HP = 120;
 
@@ -163,4 +170,65 @@ export function rollBotTurn(
 
 export function resolve(input: PvpAnswerInput, state: PvpEngineState): PvpAnswerOutcome {
   return resolvePvpAnswer(input, state);
+}
+
+/**
+ * Recompute the three toast-activation checks a client-side caller used to
+ * derive itself from its OWN taCtx, purely to decide whether to show a toast
+ * (`mod.active`/`sturdyUsed` flipping/`keepsStreakOnWrong` never fed back
+ * into the ACTUAL dmg number, even before the Phase 4 cutover -- that's
+ * `resolvePvpAnswer`'s job). Recomputing them here, from the exact same
+ * before/after state `resolvePvpAnswer` already produced, keeps that toast
+ * fidelity without a caller rebuilding a taCtx of its own (and risking it
+ * drifting from what the engine actually used). All three predicates are
+ * pure/deterministic -- verified no `ctx.rng` consumer exists in
+ * pvp-type-abilities.ts -- so recomputing them is safe.
+ *
+ * Exported from this shared engine module (not defined inline in the Edge
+ * Function) so both the real Edge Function AND its test doubles call the
+ * exact same implementation -- never a hand-copied second version.
+ */
+export function toastNotices(
+  input: PvpAnswerInput,
+  before: PvpEngineState,
+  outcome: PvpAnswerOutcome,
+): { sturdyFired: boolean; sandForceKeptStreak: boolean; typeAbilityModFired: boolean } {
+  const typeAbilityId = resolvePvpTypeAbilityId(input.myTypes, input.storedAbilityId);
+  const typeWiring = typeAbilityPvp(typeAbilityId);
+  if (!typeAbilityId || !typeWiring || input.frozen) {
+    return { sturdyFired: false, sandForceKeptStreak: false, typeAbilityModFired: false };
+  }
+  const landedHit = input.correct && !outcome.confusionMissed;
+  const taCtx: TypeAbilityCtx = {
+    correct: landedHit,
+    selfHpPct: input.selfHp / input.maxHp,
+    oppHpPct: input.oppHp / input.maxHp,
+    streakAfter: outcome.state.streak,
+    answerElapsedMs: input.answerElapsedMs,
+    personalTimerMs: input.personalTimerMs,
+    questionIndex: input.questionIndex,
+    prevCorrect: before.prevCorrect,
+    hadWrong: before.hadWrong,
+    correctCount: outcome.state.correctCount,
+    moxieStacks: before.moxieStacks,
+    hasNegativeStatus: input.hasConfusedStatus || input.hasPoisonedStatus,
+    hasConfused: input.hasConfusedStatus,
+    hasPoisoned: input.hasPoisonedStatus,
+  };
+  let sturdyFired = false;
+  let sandForceKeptStreak = false;
+  let typeAbilityModFired = false;
+  if (landedHit) {
+    if (typeAbilityDamageMod(typeAbilityId, taCtx).active) typeAbilityModFired = true;
+  } else if (!input.correct) {
+    if (typeAbilitySelfDmgMod(typeAbilityId, taCtx).active) typeAbilityModFired = true;
+    if (typeWiring.clampsLethalSelfDmg && !before.sturdyUsed && outcome.state.sturdyUsed) {
+      sturdyFired = true;
+    }
+    if (typeWiring.keepsStreakOnWrong?.(before.wrongCount + 1)) {
+      sandForceKeptStreak = true;
+      typeAbilityModFired = true;
+    }
+  }
+  return { sturdyFired, sandForceKeptStreak, typeAbilityModFired };
 }
