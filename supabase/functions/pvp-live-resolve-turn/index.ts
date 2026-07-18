@@ -199,7 +199,9 @@ Deno.serve(async (req) => {
 
   // Service-role client for everything past identity verification: the apply
   // RPCs are granted to service_role only, so this is the only client that
-  // can ever reach them.
+  // can ever reach them. A service-role session has no request.jwt.claims, so
+  // auth.uid() inside those RPCs is always null -- they take _caller_id
+  // instead, set to the userId already verified above via the caller's own JWT.
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
   const { data: row, error: selError } = await admin
@@ -252,6 +254,7 @@ Deno.serve(async (req) => {
       _edge_self_dmg: Math.round(outcome.selfDmg),
       _confusion_missed: outcome.confusionMissed,
       _next_state: pvpEngineStateToRow(outcome.state),
+      _caller_id: userId,
     });
     if (rpcError) return err("db_error", rpcError.message, 500);
     return json({ ok: true, data: applied });
@@ -284,6 +287,7 @@ Deno.serve(async (req) => {
       _self_dmg: Math.round(outcome.selfDmg),
       _time_ms: Math.round(answerElapsedMs),
       _next_state: pvpEngineStateToRow(outcome.state),
+      _caller_id: userId,
     });
     if (rpcError) return err("db_error", rpcError.message, 500);
     return json({ ok: true, data: applied });
