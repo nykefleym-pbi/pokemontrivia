@@ -258,6 +258,18 @@ function LivePvpMatchPage() {
               (row.guest_revived as boolean | null) ?? matchRef.current?.guestRevived ?? false,
             isBotMatch:
               (row.is_bot_match as boolean | null) ?? matchRef.current?.isBotMatch ?? false,
+            hostStreakLive:
+              (row.host_streak_live as number | null) ?? matchRef.current?.hostStreakLive ?? 0,
+            guestStreakLive:
+              (row.guest_streak_live as number | null) ?? matchRef.current?.guestStreakLive ?? 0,
+            hostWrongStreakLive:
+              (row.host_wrong_streak_live as number | null) ??
+              matchRef.current?.hostWrongStreakLive ??
+              0,
+            guestWrongStreakLive:
+              (row.guest_wrong_streak_live as number | null) ??
+              matchRef.current?.guestWrongStreakLive ??
+              0,
           };
           setMatch(updated);
           if (updated.status === "forfeited") {

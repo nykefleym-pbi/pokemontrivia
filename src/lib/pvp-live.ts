@@ -89,6 +89,16 @@ export interface LivePvpMatch {
   /** True when the guest is the shared Training Bot (Training-vs-Bot mode): the
    * host drives the bot locally via the bot RPCs, and presence/forfeit is off. */
   isBotMatch: boolean;
+  /** Server-authoritative correct-answer streak (Phase 3 — not yet written by
+   * `submit_pvp_live_answer`; the client's local `streak` state remains the
+   * source of truth until the Phase 4 cutover wires `engine/pvp-live-answer.ts`
+   * into the answer RPC). */
+  hostStreakLive: number;
+  guestStreakLive: number;
+  /** Server-authoritative consecutive-wrong-answer streak, for confusion's
+   * arm-at-2 threshold (Phase 3 — same not-yet-written caveat as above). */
+  hostWrongStreakLive: number;
+  guestWrongStreakLive: number;
 }
 
 interface LivePvpMatchRow {
@@ -142,6 +152,10 @@ interface LivePvpMatchRow {
   host_revived: boolean | null;
   guest_revived: boolean | null;
   is_bot_match: boolean | null;
+  host_streak_live: number | null;
+  guest_streak_live: number | null;
+  host_wrong_streak_live: number | null;
+  guest_wrong_streak_live: number | null;
 }
 
 function fromRow(r: LivePvpMatchRow): LivePvpMatch {
@@ -196,6 +210,10 @@ function fromRow(r: LivePvpMatchRow): LivePvpMatch {
     hostRevived: r.host_revived ?? false,
     guestRevived: r.guest_revived ?? false,
     isBotMatch: r.is_bot_match ?? false,
+    hostStreakLive: r.host_streak_live ?? 0,
+    guestStreakLive: r.guest_streak_live ?? 0,
+    hostWrongStreakLive: r.host_wrong_streak_live ?? 0,
+    guestWrongStreakLive: r.guest_wrong_streak_live ?? 0,
   };
 }
 
