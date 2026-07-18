@@ -638,6 +638,12 @@ export async function getLivePvpMatch(matchId: string): Promise<LivePvpMatch | n
  * identically by both trainers) and clamped server-side to a sane ceiling.
  * Resolves the match (HP KO, or HP/accuracy/avg-time tiebreak after 20
  * questions) automatically when appropriate.
+ *
+ * `selectedOriginalIndex` is the player's choice mapped back to the SERVER's
+ * unshuffled option order (each client shuffles independently for display —
+ * see `shuffleTriviaOptionsWithOrder`), or `null` for a timeout/no-answer.
+ * Not yet verified server-side (that lands with the Edge Function cutover);
+ * this phase only carries the value so the server can start doing so.
  */
 export async function submitPvpLiveAnswer(
   matchId: string,
@@ -646,6 +652,7 @@ export async function submitPvpLiveAnswer(
   dmg: number,
   selfDmg: number,
   timeMs: number,
+  selectedOriginalIndex: number | null,
 ): Promise<
   | { ok: true; hostHp: number; guestHp: number; resolved: boolean; winnerId?: string | null }
   | { ok: false; error: string }
@@ -658,6 +665,7 @@ export async function submitPvpLiveAnswer(
       _dmg: Math.round(dmg),
       _self_dmg: Math.round(selfDmg),
       _time_ms: Math.round(timeMs),
+      _selected_index: selectedOriginalIndex,
     });
     if (error) {
       console.warn("[pvp-live] submitPvpLiveAnswer failed:", error.message);
