@@ -56,7 +56,7 @@ export const createProfileSlice: StoreSlice<
 
   setDarkMode: (v) => set({ darkMode: v }),
 
-  setOnboarded: (name, pokemon, trainerSprite) =>
+  setOnboarded: (name, pokemon, trainerSprite, abilityId) =>
     set({
       hasOnboarded: true,
       isGuest: false,
@@ -64,7 +64,7 @@ export const createProfileSlice: StoreSlice<
       engageShownThisSession: true,
       trainerName: name,
       pokemon,
-      abilityId: rollAbilityId(pokemon.types),
+      abilityId: abilityId ?? rollAbilityId(pokemon.types),
       // The starter counts as captured so the partner picker is never empty.
       pokedex: {
         ...get().pokedex,
