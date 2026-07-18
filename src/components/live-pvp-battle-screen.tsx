@@ -207,10 +207,10 @@ function PvpCombatPanel({
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    className="flex max-w-full items-center gap-0.5 overflow-hidden rounded-full bg-primary/10 px-1.5 py-[2px] text-[9px] font-bold uppercase tracking-wide text-primary active:scale-95"
+                    className="flex max-w-full items-start gap-0.5 rounded-xl bg-primary/10 px-1.5 py-[2px] text-[9px] font-bold uppercase tracking-wide text-primary active:scale-95"
                   >
-                    <span className="truncate">⚡ {a.name}</span>
-                    <Info className="h-2.5 w-2.5 shrink-0 opacity-70" />
+                    <span className="break-words text-left">⚡ {a.name}</span>
+                    <Info className="mt-[1px] h-2.5 w-2.5 shrink-0 opacity-70" />
                   </button>
                 </PopoverTrigger>
                 <PopoverContent align={align === "right" ? "end" : "start"} className="w-56 text-xs">

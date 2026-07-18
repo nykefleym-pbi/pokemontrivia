@@ -390,16 +390,31 @@ export function playCry(id: number) {
   if (!isSfxOn()) return;
   if (typeof window === "undefined") return;
   try {
+    // A cached element that already failed to load (network hiccup, a
+    // transient CDN error, ...) never recovers on its own — reusing it would
+    // turn every "retry" into a replay of the exact same broken element, so
+    // evict and rebuild from scratch whenever the cached one is in an error
+    // state.
     let a = cryCache.get(id);
+    if (a?.error) {
+      cryCache.delete(id);
+      a = undefined;
+    }
     if (!a) {
       a = new Audio(
         `https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/${id}.ogg`,
       );
+      a.addEventListener("error", () => cryCache.delete(id));
       cryCache.set(id, a);
     }
     a.volume = 0.4 * sfxVol();
     a.currentTime = 0;
-    void a.play().catch(() => {});
+    const el = a;
+    void el.play().catch(() => {
+      // A rejected play() (autoplay policy, a stalled/aborted load, ...) also
+      // shouldn't poison future attempts — let the next call start clean.
+      if (cryCache.get(id) === el) cryCache.delete(id);
+    });
   } catch {
     /* ignore */
   }
