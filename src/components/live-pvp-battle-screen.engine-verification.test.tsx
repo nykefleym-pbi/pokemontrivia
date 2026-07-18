@@ -177,6 +177,8 @@ function baseMatch(overrides: Partial<LivePvpMatch> = {}): LivePvpMatch {
     guestStreakLive: 0,
     hostWrongStreakLive: 0,
     guestWrongStreakLive: 0,
+    hostConfusedTicksLive: 0,
+    guestConfusedTicksLive: 0,
     ...overrides,
   };
 }

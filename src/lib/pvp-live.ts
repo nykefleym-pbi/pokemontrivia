@@ -89,16 +89,24 @@ export interface LivePvpMatch {
   /** True when the guest is the shared Training Bot (Training-vs-Bot mode): the
    * host drives the bot locally via the bot RPCs, and presence/forfeit is off. */
   isBotMatch: boolean;
-  /** Server-authoritative correct-answer streak (Phase 3 — not yet written by
-   * `submit_pvp_live_answer`; the client's local `streak` state remains the
-   * source of truth until the Phase 4 cutover wires `engine/pvp-live-answer.ts`
-   * into the answer RPC). */
+  /** Server-authoritative correct-answer streak. Written by
+   * `submit_pvp_live_answer` from its own `_selected_index`-verified
+   * correctness (Phase 4) — ground truth, independent of the client's local
+   * `streak` state (which the UI still renders from until the ability-damage
+   * recompute Edge Function lands and the client stops computing its own
+   * `dmg`/`selfDmg` at all). */
   hostStreakLive: number;
   guestStreakLive: number;
   /** Server-authoritative consecutive-wrong-answer streak, for confusion's
-   * arm-at-2 threshold (Phase 3 — same not-yet-written caveat as above). */
+   * arm-at-2 threshold. Same Phase 4 write, same ground-truth caveat above. */
   hostWrongStreakLive: number;
   guestWrongStreakLive: number;
+  /** Server-authoritative confusion duration counter — arms to 2 at a
+   * 2-wrong-streak, ticks down by 1 on a server-observed confusion-eaten hit
+   * (a `v_correct` answer whose reported `dmg` is 0). Mirrors
+   * `engine/pvp-live-answer.ts`'s `PvpEngineState.confusedTicks` exactly. */
+  hostConfusedTicksLive: number;
+  guestConfusedTicksLive: number;
 }
 
 interface LivePvpMatchRow {
@@ -156,6 +164,8 @@ interface LivePvpMatchRow {
   guest_streak_live: number | null;
   host_wrong_streak_live: number | null;
   guest_wrong_streak_live: number | null;
+  host_confused_ticks_live: number | null;
+  guest_confused_ticks_live: number | null;
 }
 
 function fromRow(r: LivePvpMatchRow): LivePvpMatch {
@@ -214,6 +224,8 @@ function fromRow(r: LivePvpMatchRow): LivePvpMatch {
     guestStreakLive: r.guest_streak_live ?? 0,
     hostWrongStreakLive: r.host_wrong_streak_live ?? 0,
     guestWrongStreakLive: r.guest_wrong_streak_live ?? 0,
+    hostConfusedTicksLive: r.host_confused_ticks_live ?? 0,
+    guestConfusedTicksLive: r.guest_confused_ticks_live ?? 0,
   };
 }
 

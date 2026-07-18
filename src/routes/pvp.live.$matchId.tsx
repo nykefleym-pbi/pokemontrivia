@@ -270,6 +270,14 @@ function LivePvpMatchPage() {
               (row.guest_wrong_streak_live as number | null) ??
               matchRef.current?.guestWrongStreakLive ??
               0,
+            hostConfusedTicksLive:
+              (row.host_confused_ticks_live as number | null) ??
+              matchRef.current?.hostConfusedTicksLive ??
+              0,
+            guestConfusedTicksLive:
+              (row.guest_confused_ticks_live as number | null) ??
+              matchRef.current?.guestConfusedTicksLive ??
+              0,
           };
           setMatch(updated);
           if (updated.status === "forfeited") {
