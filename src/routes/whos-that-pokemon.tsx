@@ -4,7 +4,7 @@ import { useGameStore } from "@/lib/store";
 import { spriteUrl, type PokeType } from "@/lib/pokemon-data";
 import type { ItemId } from "@/lib/game-data";
 import { rollLevelUpRewards } from "@/lib/level-rewards";
-import { PokemonSprite } from "@/components/game-ui";
+import { PokeballSpinner, PokemonSprite } from "@/components/game-ui";
 import { playCry, playSfx, stopBgm, revealPokemon, playWhosThatShout } from "@/lib/audio";
 import { pokeApiUrls } from "@/lib/api/pokeapi";
 import { syncActivity } from "@/lib/social";
@@ -353,7 +353,13 @@ export function WhosThatPokemon() {
       </div>
     );
   }
-  if (!round) return null;
+  if (!round) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-poke-cream">
+        <PokeballSpinner spinning />
+      </div>
+    );
+  }
 
   if (phase === "correct") {
     const shown = caught ?? { id: round.monId, name: round.name };
