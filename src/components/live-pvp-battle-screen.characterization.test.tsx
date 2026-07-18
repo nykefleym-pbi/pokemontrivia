@@ -6,13 +6,19 @@
 // component instead).
 //
 // This drives the REAL, unmodified LivePvpBattleScreen end-to-end (render +
-// simulated clicks) and captures the EXACT arguments the component sends to
-// `submitPvpLiveAnswer` (dmg/selfDmg/correct/streak) per question — that call
-// is precisely the payload the live-PvP server-authority initiative is making
-// fully server-verified, so this trace is the byte-for-byte baseline the new
-// `engine/pvp-live-answer.ts` module (a later phase) must match, exactly as
-// solo battle's engine/turn.ts was verified against its own characterization
-// harness.
+// simulated clicks) against a MOCKED `resolvePvpLiveTurn` (Phase 4 cutover
+// moved the actual damage/correctness computation server-side, into the
+// `pvp-live-resolve-turn` Edge Function — see that function's `index.ts`).
+// The mock stands in for the Edge Function by calling the exact same shared
+// engine (`buildAnswerTurn`/`resolve`/`toastNotices` from
+// `engine/pvp-live-turn.ts`) the real Edge Function calls, tracking match
+// state (hp/engine state/sig runtime) across questions the same way the real
+// DB row would. This still catches real regressions: a bug in how the
+// component builds the request (selectedIndex/elapsedMs), threads the
+// response through (HP/streak display, toasts, sigEngineTick/bespoke/M4
+// calls), or drives the click sequence would show up in the captured trace —
+// the ability MATH itself is `resolvePvpAnswer`'s own responsibility, already
+// separately verified byte-for-byte in `engine/pvp-live-answer.test.ts`.
 //
 // COVERAGE: a plain, non-Legendary partner (Bulbasaur) with the type-ability
 // fallback (no stored abilityId) through a fixed correct/wrong script, PLUS
@@ -76,38 +82,54 @@ vi.mock("framer-motion", () => {
   };
 });
 
-// Every pvp-live.ts RPC caller is mocked. `submitPvpLiveAnswer` is the one
-// under characterization — it's spied on AND computes a real HP delta so the
+// Every pvp-live.ts RPC caller is mocked. `resolvePvpLiveTurn` is the one
+// under characterization — it's spied on AND actually computes a real
+// response (via the shared engine, see the header comment above) so the
 // component's post-response branches (KO/resolve, Rainbow Rebirth check, HP
-// state) behave like the real server would. `sigEngineTick`/
+// state, toasts) behave like the real server would. `sigEngineTick`/
 // `applyPvpSignatureEffect` are ALSO spies (not hardcoded no-ops): most
-// signature-engine math (multiplier/fixedIndex/latch) is synchronous and
-// client-computed, so the default `{ ok: false }` no-op is fine for those —
-// but Chien-Pao's Sword-of-Ruin arm and any disable-transition scenario
-// require the tick/effect RPC to resolve `ok: true` with a specific runtime
-// shape (the component only reacts to a RESOLVED, ok:true response — see
-// `applyHumanSigTick`/`fireCappedPayload`), so individual tests override
-// these mocks' implementations where needed. Everything else defaults to a
-// safe `{ ok: false }` no-op — exactly what a real network hiccup looks like
-// to this component, which every call site already handles by skipping the
-// effect.
-const submitPvpLiveAnswerMock = vi.fn();
+// signature-engine math (multiplier/fixedIndex/latch) is now computed INSIDE
+// the `resolvePvpLiveTurn` mock, so the default `{ ok: false }` no-op is fine
+// for those — but Chien-Pao's Sword-of-Ruin arm and any disable-transition
+// scenario require the tick/effect RPC to resolve `ok: true` with a specific
+// runtime shape (the mock reads `hostSigRuntime`'s `disabled` flag back off a
+// resolved tick, mirroring how the real DB row would already reflect it), so
+// individual tests override these mocks' implementations where needed.
+// Everything else defaults to a safe `{ ok: false }` no-op — exactly what a
+// real network hiccup looks like to this component, which every call site
+// already handles by skipping the effect.
+import type { SigRuntimeMap } from "@/lib/signature-rework-types";
+
+const resolvePvpLiveTurnMock = vi.fn();
 const sigEngineTickMock = vi.fn();
 const applyPvpSignatureEffectMock = vi.fn();
+/** Mirrors the DB row's `host_sig_runtime` column — updated whenever a
+ *  (mocked) `sigEngineTick` resolves, read back by the NEXT `resolvePvpLiveTurn`
+ *  mock call, exactly like the real Edge Function reads the persisted column. */
+let liveSigRuntime: SigRuntimeMap = {};
+
 vi.mock("@/lib/pvp-live", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/pvp-live")>();
   const notMocked = async () => ({ ok: false as const, error: "not_mocked" });
   return {
     ...actual,
-    submitPvpLiveAnswer: (...args: unknown[]) => submitPvpLiveAnswerMock(...args),
+    resolvePvpLiveTurn: (...args: unknown[]) => resolvePvpLiveTurnMock(...args),
     applyPvpLiveItem: notMocked,
     applyPvpSignatureEffect: (...args: unknown[]) => applyPvpSignatureEffectMock(...args),
     applyPvpTypeAbilityEffect: notMocked,
     setLivePvpTransform: notMocked,
-    submitBotPvpMove: notMocked,
+    resolveBotPvpTurn: notMocked,
     applyBotPvpSignatureEffect: notMocked,
     applyBotPvpLiveItem: notMocked,
-    sigEngineTick: (...args: unknown[]) => sigEngineTickMock(...args),
+    sigEngineTick: async (...args: unknown[]) => {
+      const res = (await sigEngineTickMock(...args)) as {
+        ok: boolean;
+        noop?: boolean;
+        hostSigRuntime?: SigRuntimeMap;
+      };
+      if (res.ok && !res.noop && res.hostSigRuntime) liveSigRuntime = res.hostSigRuntime;
+      return res;
+    },
     botSigEngineTick: async () => ({ ok: false as const, reason: "not_mocked" }),
     sigEngineStatus: async () => ({ ok: false as const, reason: "not_mocked" }),
     sigM4Fx: notMocked,
@@ -122,6 +144,18 @@ import { shuffleTriviaOptionsWithOrder, type Trivia } from "@/lib/trivia-core";
 import type { LivePvpMatch } from "@/lib/pvp-live";
 import { PVP_BASE_TIMER_MS } from "@/lib/pvp-combat";
 import { toast } from "sonner";
+import {
+  buildAnswerTurn,
+  resolve,
+  toastNotices,
+  type PvpLiveTurnContext,
+} from "@/engine/pvp-live-turn";
+import {
+  armSwordOfRuinCharges,
+  INITIAL_PVP_ENGINE_STATE,
+  pvpEngineStateToRow,
+  type PvpEngineState,
+} from "@/engine/pvp-live-answer";
 
 const PLAYER = findPokemon(1)!; // Bulbasaur — no signature ability (not Legendary/Mythical)
 const MY_ID = "host-uuid";
@@ -211,11 +245,12 @@ beforeEach(() => {
   });
   vi.setSystemTime(FIXED_NOW);
   vi.spyOn(Math, "random").mockReturnValue(0.5);
-  submitPvpLiveAnswerMock.mockReset();
+  resolvePvpLiveTurnMock.mockReset();
   sigEngineTickMock.mockReset();
   sigEngineTickMock.mockResolvedValue({ ok: false, reason: "not_mocked" });
   applyPvpSignatureEffectMock.mockReset();
   applyPvpSignatureEffectMock.mockResolvedValue({ ok: false, error: "not_mocked" });
+  liveSigRuntime = {};
 });
 
 afterEach(() => {
@@ -257,6 +292,14 @@ type Action = "correct" | "wrong";
 // for a follow-up extension alongside the ability-coverage sweep).
 const SCRIPT: Action[] = ["correct", "correct", "wrong", "correct", "correct", "wrong", "correct"];
 
+interface Trace {
+  questionIndex: number;
+  correct: boolean;
+  dmg: number;
+  selfDmg: number;
+  selectedOriginalIndex?: number | null;
+}
+
 interface ScenarioOptions {
   playerPokemon?: typeof PLAYER;
   matchOverrides?: Partial<LivePvpMatch>;
@@ -288,27 +331,94 @@ async function runScenario({
   const correctIdx = shuffledFirst.correct;
   const wrongIdx = correctIdx === 0 ? 1 : 0;
 
+  const match = baseMatch(matchOverrides);
+  const opponent = match.guestPartnerId != null ? findPokemon(match.guestPartnerId) : null;
+
   let hostHp = 120;
   let guestHp = 120;
-  submitPvpLiveAnswerMock.mockImplementation(
-    async (
-      _matchId: string,
-      _questionIndex: number,
-      _correct: boolean,
-      dmg: number,
-      selfDmg: number,
-      _timeMs: number,
-      _selectedOriginalIndex: number | null,
-    ) => {
-      hostHp = Math.max(0, hostHp - Math.round(selfDmg));
-      guestHp = Math.max(0, guestHp - Math.round(dmg));
-      const resolved = hostHp <= 0 || guestHp <= 0 || _questionIndex >= QUESTION_COUNT - 1;
+  let engineState: PvpEngineState = INITIAL_PVP_ENGINE_STATE;
+  const trace: Trace[] = [];
+
+  resolvePvpLiveTurnMock.mockImplementation(
+    async (_matchId: string, questionIndex: number, selectedIndex: number | null, elapsedMs: number) => {
+      const store = useGameStore.getState();
+      const ctx: PvpLiveTurnContext = {
+        self: {
+          dex: match.hostPartnerId,
+          partnerId: match.hostPartnerId,
+          hp: hostHp,
+          stages: store.myStages,
+          statuses: store.battleStatuses,
+          abilityId: match.hostAbilityId,
+          sigRuntime: liveSigRuntime,
+          suppressedUntil: match.hostSuppressedUntil,
+          pokedexCount: 0,
+          engineState: pvpEngineStateToRow(engineState),
+        },
+        opp: {
+          dex: match.guestPartnerId,
+          partnerId: match.guestPartnerId,
+          hp: guestHp,
+          stages: store.oppStages,
+          statuses: store.opponentStatuses,
+          abilityId: null,
+          sigRuntime: {},
+          suppressedUntil: 0,
+          pokedexCount: 0,
+          engineState: pvpEngineStateToRow(INITIAL_PVP_ENGINE_STATE),
+        },
+        question: questions[Math.max(0, questionIndex)],
+        questionIndex,
+      };
+      const { input, state: beforeState } = buildAnswerTurn(ctx, {
+        selectedIndex,
+        answerElapsedMs: elapsedMs,
+        personalTimerMs: PVP_BASE_TIMER_MS,
+        rng: Math.random,
+      });
+      const outcome = resolve(input, beforeState);
+      const notices = toastNotices(input, beforeState, outcome);
+
+      hostHp = Math.max(0, hostHp - Math.round(outcome.selfDmg));
+      guestHp = Math.max(0, guestHp - Math.round(outcome.dmg));
+      // Mirrors fireCappedPayload + the SQL-side arming this repo's Phase 4/5
+      // cutover slice 2 wired into `apply_pvp_signature_effect`'s "manual"
+      // phase: once Chien-Pao's own trigger fires (and that RPC resolves,
+      // unconditionally here — `applyPvpSignatureEffectMock` below), the
+      // 2-charge ignore-Defense window arms before the NEXT step.
+      engineState =
+        outcome.triggerFired && match.hostPartnerId === 1002
+          ? armSwordOfRuinCharges(outcome.state, 1002)
+          : outcome.state;
+
+      const resolved = hostHp <= 0 || guestHp <= 0 || questionIndex >= QUESTION_COUNT - 1;
+      trace.push({
+        questionIndex,
+        correct: outcome.confusionMissed ? true : input.correct,
+        dmg: outcome.dmg,
+        selfDmg: outcome.selfDmg,
+        selectedOriginalIndex: selectedIndex,
+      });
+
       return {
         ok: true,
-        hostHp,
-        guestHp,
-        resolved,
-        winnerId: resolved ? (guestHp <= 0 ? MY_ID : hostHp <= 0 ? OPP_ID : null) : undefined,
+        result: {
+          hostHp,
+          guestHp,
+          resolved,
+          winnerId: resolved ? (guestHp <= 0 ? MY_ID : hostHp <= 0 ? OPP_ID : null) : undefined,
+          correct: input.correct,
+          dmg: outcome.dmg,
+          selfDmg: outcome.selfDmg,
+          timeMs: elapsedMs,
+          confusionMissed: outcome.confusionMissed,
+          triggerFired: outcome.triggerFired,
+          streak: outcome.state.streak,
+          correctCount: outcome.state.correctCount,
+          wrongStreak: outcome.state.selfWrongStreak,
+          confusedTicks: outcome.state.confusedTicks,
+          ...notices,
+        },
       };
     },
   );
@@ -321,11 +431,12 @@ async function runScenario({
       startedAt={FIXED_NOW.toISOString()}
       myId={MY_ID}
       hostId={MY_ID}
-      match={baseMatch(matchOverrides)}
+      match={match}
       opponentName="Rival"
       onFinish={onFinish}
     />,
   );
+  void opponent; // resolved purely to seed matchOverrides.guestPartnerId in fixtures above
 
   // One 100ms interval tick lets the wall-clock question-index effect enter
   // question 0 (startedAt == the fixed mount time, so elapsed is already >=0).
@@ -372,7 +483,7 @@ async function runScenario({
     elapsed = nextSlotStart;
   }
 
-  return { calls: submitPvpLiveAnswerMock.mock.calls, onFinish };
+  return { trace, onFinish };
 }
 
 async function runBattle(script: Action[]) {
@@ -381,14 +492,7 @@ async function runBattle(script: Action[]) {
 
 describe("live-pvp-battle-screen characterization (regression baseline)", () => {
   it("plain partner (no signature ability) — correct/wrong script", async () => {
-    const { calls } = await runBattle(SCRIPT);
-    const trace = calls.map(([, questionIndex, correct, dmg, selfDmg, , selectedOriginalIndex]) => ({
-      questionIndex,
-      correct,
-      dmg,
-      selfDmg,
-      selectedOriginalIndex,
-    }));
+    const { trace } = await runBattle(SCRIPT);
     expect(trace).toMatchSnapshot();
   });
 });
@@ -398,8 +502,8 @@ describe("live-pvp-battle-screen characterization (regression baseline)", () => 
 // shape, per CLAUDE.md's mandate to drive the REAL component rather than
 // infer behavior from names/comments. Traces are limited to the fields the
 // server-authority port cares about (questionIndex/correct/dmg/selfDmg).
-function traceOf(calls: unknown[][]) {
-  return calls.map(([, questionIndex, correct, dmg, selfDmg]) => ({
+function traceOf(trace: Trace[]) {
+  return trace.map(({ questionIndex, correct, dmg, selfDmg }) => ({
     questionIndex,
     correct,
     dmg,
@@ -413,12 +517,12 @@ describe("live-pvp-battle-screen characterization (signature-ability coverage)",
     // disable: disableMultiplierAfter(2) }. No phase/fixedIndex/latchOnTrigger/bespoke.
     // Articuno (opponent) is ice/flying, so the condition holds once streak >= 3.
     const koraidon = findPokemon(1007)!;
-    const { calls } = await runScenario({
+    const { trace } = await runScenario({
       playerPokemon: koraidon,
       matchOverrides: { hostPartnerId: 1007, guestPartnerId: 144 },
       script: ["correct", "correct", "correct"],
     });
-    expect(traceOf(calls)).toMatchSnapshot();
+    expect(traceOf(trace)).toMatchSnapshot();
   });
 
   it("phase/fixedIndex row (Giratina #487) — q2 fires a x2 outgoing mark, q1 does not", async () => {
@@ -426,41 +530,42 @@ describe("live-pvp-battle-screen characterization (signature-ability coverage)",
     // (not wired — see engine/damage.ts's evaluateIndexFactor), q2/q12
     // outgoingMultiplier:2], disable: noDisable }. evaluateIndexFactor keys purely
     // off the 1-indexed question number, independent of the `trigger`/`multiplier`
-    // channel, so it isn't gated on any RPC — the client computes it synchronously.
+    // channel, so it isn't gated on any RPC — the engine computes it synchronously.
     const giratina = findPokemon(487)!;
-    const { calls } = await runScenario({
+    const { trace } = await runScenario({
       playerPokemon: giratina,
       matchOverrides: { hostPartnerId: 487, guestPartnerId: 1 },
       script: ["correct", "correct"],
     });
-    expect(traceOf(calls)).toMatchSnapshot();
+    expect(traceOf(trace)).toMatchSnapshot();
   });
 
   it("latchOnTrigger row (Regidrago #895) — HP-tier multiplier stays latched after healthy-only trigger fires once", async () => {
     // Engine: { trigger: start_of_battle, multiplier: { hpTiers: [100->2.5, 80->2.25,
     // 60->2, 40->1.5, 0->1] }, latchOnTrigger: true, disable: disableMultiplierAfter(2)
     // (unimplemented server-side — see damage.ts, so it never actually disables here) }.
-    // The trigger arms permanently on the first correct answer (sigLatchedRef); the
+    // The trigger arms permanently on the first correct answer (sigLatched); the
     // ladder itself is RE-EVALUATED every question off live self HP (owner ruling
     // 2026-07-12), so 2 wrong answers (16 self-damage) should slide the factor from
     // the 100% tier down to the 80% tier on the following correct answer.
     const regidrago = findPokemon(895)!;
-    const { calls } = await runScenario({
+    const { trace } = await runScenario({
       playerPokemon: regidrago,
       matchOverrides: { hostPartnerId: 895, guestPartnerId: 1 },
       script: ["correct", "wrong", "wrong", "correct"],
     });
-    expect(traceOf(calls)).toMatchSnapshot();
+    expect(traceOf(trace)).toMatchSnapshot();
   });
 
   it("Chien-Pao #1002 — Sword of Ruin arms on a 5-streak, then consumes a 2-charge ignore-Defense window", async () => {
     // The -2 opp Def "manual capped_payload" phase only fires from
     // `fireCappedPayload`, which is reached from `sigEngineTick`'s resolved
-    // (ok:true) callback — the default `{ ok: false }` mock would leave
-    // `swordOfRuinChargesRef` at 0 forever, so this scenario overrides both
-    // RPC mocks to actually resolve. Opponent Defense stage is seeded to +2 so
-    // the ignore-Defense window (defenseStage forced to 0 instead of 2) is
-    // visible in the damage numbers, not just a no-op zero-vs-zero comparison.
+    // (ok:true) callback — the default `{ ok: false }` mock would leave the
+    // tracked engine state's Sword-of-Ruin charges at 0 forever, so this
+    // scenario overrides both RPC mocks to actually resolve. Opponent Defense
+    // stage is seeded to +2 so the ignore-Defense window (defenseStage forced
+    // to 0 instead of 2) is visible in the damage numbers, not just a no-op
+    // zero-vs-zero comparison.
     sigEngineTickMock.mockResolvedValue({
       ok: true,
       hostSigRuntime: {
@@ -483,13 +588,13 @@ describe("live-pvp-battle-screen characterization (signature-ability coverage)",
     );
 
     const chienPao = findPokemon(1002)!;
-    const { calls } = await runScenario({
+    const { trace } = await runScenario({
       playerPokemon: chienPao,
       matchOverrides: { hostPartnerId: 1002, guestPartnerId: 1 },
       oppStages: { attack: 0, defense: 2, speed: 0, crit: 0 },
       script: ["correct", "correct", "correct", "correct", "correct", "correct", "correct"],
     });
-    expect(traceOf(calls)).toMatchSnapshot();
+    expect(traceOf(trace)).toMatchSnapshot();
     // The arm fires once the streak hits 5 (the 5th correct answer, index 4).
     expect(applyPvpSignatureEffectMock).toHaveBeenCalledWith(
       MATCH_ID,
@@ -503,15 +608,15 @@ describe("live-pvp-battle-screen characterization (signature-ability coverage)",
   it("disable-bearing multiplier row (Darkrai #491) — a tracked-disable kind (revertAfter) flips off after 1 wrong", async () => {
     // Engine: { trigger: streakN(3), multiplier: x2 vs psychic/ghost, disable:
     // revertAfter(1) } — a TRACKED disable kind (unlike disableMultiplierAfter,
-    // which `engineToTickDisable` collapses to a no-op). `sigDisabledRef` only
-    // updates from a RESOLVED sigEngineTick response, so this scenario drives
-    // the mock itself off a local consecutive-wrong counter mirroring the real
-    // SQL rule (`_pvp_sig_engine_apply`), then asserts the resulting "signature
-    // on cooldown" cue — a much more direct characterization of the disable
-    // transition than trying to infer it from the streak-gated dmg trace (once
-    // the row's own trigger stops holding, the multiplier already goes quiet
-    // for the ordinary streak-broke reason, which would mask a real assertion
-    // about the disable flag itself).
+    // which `engineToTickDisable` collapses to a no-op). The mock's tracked
+    // `sigRuntime` only updates from a RESOLVED sigEngineTick response, so this
+    // scenario drives the mock itself off a local consecutive-wrong counter
+    // mirroring the real SQL rule (`_pvp_sig_engine_apply`), then asserts the
+    // resulting "signature on cooldown" cue — a much more direct
+    // characterization of the disable transition than trying to infer it from
+    // the streak-gated dmg trace (once the row's own trigger stops holding, the
+    // multiplier already goes quiet for the ordinary streak-broke reason,
+    // which would mask a real assertion about the disable flag itself).
     let consecutiveWrong = 0;
     sigEngineTickMock.mockImplementation(async (..._args: unknown[]) => {
       const correct = _args[3] as boolean;
@@ -533,29 +638,31 @@ describe("live-pvp-battle-screen characterization (signature-ability coverage)",
     });
 
     const darkrai = findPokemon(491)!;
-    const { calls } = await runScenario({
+    const { trace } = await runScenario({
       playerPokemon: darkrai,
       matchOverrides: { hostPartnerId: 491, guestPartnerId: 150 }, // Mewtwo — psychic
       script: ["correct", "correct", "correct", "wrong"],
     });
-    expect(traceOf(calls)).toMatchSnapshot();
+    expect(traceOf(trace)).toMatchSnapshot();
     const infoMessages = vi.mocked(toast.info).mock.calls.map(([message]) => message);
     expect(infoMessages).toContain("🔒 Dark Void — signature on cooldown");
   });
 
   it("confusion sequence — 2 consecutive wrong answers confuse, and a forced roll misses the next correct click", async () => {
-    // `selfWrongStreakRef === CONFUSE_AT(2)` arms confusion (client-authoritative,
-    // never synced through the store). With this suite's Math.random pinned at
-    // 0.5, `missedFromConfusion` (isConfused && Math.random() < 0.25) can never
-    // trip on its own — so this scenario overrides ONE roll, right before the
-    // 3rd click, to actually exercise the miss path: a `correct: true` click
-    // that still sends `dmg: 0` because confusion ate the hit.
-    const { calls } = await runScenario({
+    // `selfWrongStreak === CONFUSE_AT(2)` arms confusion server-side
+    // (`resolvePvpAnswer`'s own state, mirrored locally for the visual badge
+    // only). With this suite's Math.random pinned at 0.5, `missedFromConfusion`
+    // (isConfused && rng() < 0.25, rolled inside the mocked
+    // `resolvePvpLiveTurn` now) can never trip on its own — so this scenario
+    // overrides ONE roll, right before the 3rd click, to actually exercise the
+    // miss path: a `correct: true` click that still reports `dmg: 0` because
+    // confusion ate the hit.
+    const { trace } = await runScenario({
       script: ["wrong", "wrong", "correct"],
       onBeforeClick: (i) => {
         if (i === 2) vi.spyOn(Math, "random").mockReturnValueOnce(0.1);
       },
     });
-    expect(traceOf(calls)).toMatchSnapshot();
+    expect(traceOf(trace)).toMatchSnapshot();
   });
 });

@@ -20,24 +20,20 @@ import { MAX_ITEMS_PER_BATTLE } from "@/lib/store/slices/itemsSlice";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { CATEGORIES, CATEGORY_OF, BAG_SHORT_DESC } from "@/lib/item-categories";
 import {
-  computePvpDamage,
-  evaluateHitModifiers as evaluateSigMultiplier,
-  evaluateIndexFactor,
   multiplierConditionHolds,
   phasePayoffIndex,
-  NO_SIGNATURE_HIT_MODIFIERS,
   timerMsForSpeedStage,
   PVP_BASE_TIMER_MS,
   PVP_MAX_HP,
   PVP_QUESTIONS,
 } from "@/lib/pvp-combat";
 import {
-  submitPvpLiveAnswer,
+  resolvePvpLiveTurn,
   applyPvpLiveItem,
   applyPvpSignatureEffect,
   applyPvpTypeAbilityEffect,
   setLivePvpTransform,
-  submitBotPvpMove,
+  resolveBotPvpTurn,
   applyBotPvpSignatureEffect,
   applyBotPvpLiveItem,
   sigEngineTick,
@@ -58,20 +54,13 @@ import { getAbilityById, type AbilityId } from "@/lib/abilities";
 import {
   resolvePvpTypeAbilityId,
   typeAbilityPvp,
-  typeAbilityDamageMod,
-  typeAbilitySelfDmgMod,
   typeAbilityHasBattleStart,
   typeAbilityPostAnswerFires,
-  applyDamageMod,
-  applySelfDmgMod,
   type TypeAbilityCtx,
 } from "@/lib/pvp-type-abilities";
 import {
   rollBotProfile,
-  botAnswersCorrectly,
-  botAnswerTimeMs,
   botShouldUseItem,
-  botConfusionMiss,
   type BotProfile,
 } from "@/lib/pvp-bot";
 import {
@@ -80,19 +69,14 @@ import {
   describeSignatureEffect,
   describeSignatureFull,
   hasCappedPayload,
-  mergeHitModifiers,
   cappedPayloadUses,
   resolveMewTransform,
-  engineTriggerFired,
   MEW_ID,
-  NO_HIT_MODIFIERS,
-  type SignatureContext,
   type SignatureEngineSpec,
   type DisableSpec,
 } from "@/lib/signature-abilities";
 import {
   nextWrathStacks,
-  wrathDischarge,
   thunderclapFires,
   THUNDERCLAP_COOLDOWN,
 } from "@/lib/signature-bespoke";
@@ -558,7 +542,10 @@ export function LivePvpBattleScreen({
   // early-advance converge on it so neither re-enters nor rewinds a question).
   const displayedIndexRef = useRef(-1);
   const [selected, setSelected] = useState<number | null>(null);
-  const [streak, setStreak] = useState(0);
+  // The value itself is no longer read anywhere (Phase 4 cutover moved the
+  // streak-based damage math server-side) -- this now exists purely to drive
+  // `setStreak`, which the rest of the file still calls.
+  const [, setStreak] = useState(0);
   const [myHp, setMyHp] = useState(amIHost ? match.hostHp : match.guestHp);
   const [oppHp, setOppHp] = useState(amIHost ? match.guestHp : match.hostHp);
   const [bagOpen, setBagOpen] = useState(false);
@@ -587,10 +574,7 @@ export function LivePvpBattleScreen({
   const taBattleStartFiredRef = useRef(false);
   const taActivatedRef = useRef<Set<string>>(new Set()); // conditional fireNotes shown
   const hadWrongRef = useRef(false); // any wrong answer yet (Berserk / Snow Cloak)
-  const wrongCountRef = useRef(0); // wrong-answer tally (Sand Force)
-  const moxieStacksRef = useRef(0); // Moxie's accumulated flat bonus
   const torrentFiredRef = useRef(false); // Torrent's one-time sub-30% heal
-  const sturdyUsedRef = useRef(false); // Sturdy's one-time 1-HP save
   // `manual`-phase signature abilities. NOTE THE NAME LIES: nothing here is
   // player-fired any more. The Fire button was removed (owner ruling 2026-07-13);
   // a row's manual-phase effects are the payload its OWN engine trigger delivers,
@@ -662,7 +646,6 @@ export function LivePvpBattleScreen({
   // signature-abilities.ts). Kept in refs so they survive re-renders without
   // re-triggering effects.
   const prevCorrectRef = useRef(false);
-  const prevElapsedRef = useRef(Number.MAX_SAFE_INTEGER);
   const correctCountRef = useRef(0);
   const answeredCategoriesRef = useRef<Set<string>>(new Set());
   // Phase 1 — Moltres's Fiery Wrath (dex 146): Wrath stacks (0..3) live in the
@@ -686,17 +669,6 @@ export function LivePvpBattleScreen({
   const sigDisabledRef = useRef(false);
   const sigNetActiveRef = useRef(false);
   const sigTickErrorRef = useRef(false);
-  // The bot's own disabled flag, mirrored off ITS returned runtime entry, so the
-  // bot's engine multiplier respects a cooldown exactly as the human's does
-  // (otherwise the bot would keep a x2 the player has already lost).
-  const botSigDisabledRef = useRef(false);
-  // M4 `latchOnTrigger`: has this side's row ever fired? Walking Wake #1009 /
-  // Iron Leaves #1010 bank their x2 "for the rest of the battle" once they drop
-  // below 50% HP, and Regidrago #895 stays armed from battle start so its HP
-  // ladder is re-read every question. Refs (not state) — read inside the answer
-  // handler, and a re-render must not reset them.
-  const sigLatchedRef = useRef(false);
-  const botSigLatchedRef = useRef(false);
   // M3 bespoke scheduling (signature-bespoke-fx.ts): which question a delayed strike
   // lands on, how long Heatran's DoT window stays open, which question Azelf culls,
   // what Uxie foresaw. Per-side, because both a human and a bot can hold these rows.
@@ -1356,40 +1328,6 @@ export function LivePvpBattleScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bothAnsweredCount, displayedIndex]);
 
-  function buildSigContext(
-    idxAtAnswer: number,
-    correct: boolean,
-    streakAfter: number,
-    elapsedMs: number,
-    totalMs: number,
-    category: string,
-  ): SignatureContext {
-    return {
-      questionIndex: idxAtAnswer,
-      correct,
-      prevCorrect: prevCorrectRef.current,
-      streak: streakAfter,
-      streakBefore: streak,
-      correctCount: correctCountRef.current,
-      answerElapsedMs: elapsedMs,
-      prevAnswerElapsedMs: prevElapsedRef.current,
-      personalTimerMs: totalMs,
-      selfHpPct: myHp / PVP_MAX_HP,
-      oppHpPct: oppHp / PVP_MAX_HP,
-      newCategory: !answeredCategoriesRef.current.has(category),
-      questionCategory: category,
-      pokedexCount,
-      oppDefenseStage: oppStages.defense,
-      // signature-rework additions (§2 of 03-frontend-a.md).
-      questionNo: idxAtAnswer + 1,
-      // M4: statuses ONLY. The HP half of `self_afflicted_or_hp_below` is now the
-      // predicate's job (it reads the row's own `pct` against selfHpPct above) —
-      // baking `< 0.5` in here made every row a 50% row and mis-fired Zarude's 25%.
-      selfAfflicted: myStatuses.length > 0 || selfConfused,
-      oppType: opponentPartnerId != null ? (findPokemon(opponentPartnerId)?.types ?? []) : [],
-      oppSpecies: opponentPartnerId ?? undefined,
-    };
-  }
 
   // Apply a client-authoritative `confused` to a side after 2 consecutive wrong
   // answers (#1). Idempotent while already confused. Never touches the synced
@@ -1440,164 +1378,47 @@ export function LivePvpBattleScreen({
     // only advance, so this never blocks a legitimate later slot).
     if (idxAtAnswer <= lastResolvedIdxRef.current) return;
     lastResolvedIdxRef.current = idxAtAnswer;
-    let dmg = 0;
-    let selfDmg = 0;
-    // Type-ability bookkeeping for this answer: `landedHit` is a real correct
-    // hit (not a confusion miss / freeze), `streakAfterAnswer` is the streak the
-    // answer leaves us on.
-    let landedHit = false;
-    let streakAfterAnswer = 0;
 
     if (frozen) {
       // Freeze auto-forfeits the question: no damage either way, streak resets.
+      // (Every call site already guards on `!frozen` before invoking this
+      // function, so this is unreachable today — kept so a future caller
+      // can't silently skip the reset if that ever changes.)
       setStreak(0);
-    } else if (correct) {
+      return;
+    }
+
+    // Ability-modified dmg/selfDmg, correctness (re-verified against the
+    // server's own immutable `questions`), and the confusion-miss roll are
+    // all computed server-side now (`resolvePvpAnswer`, Phase 4 cutover) —
+    // this ONE round trip replaces both the local damage math that used to
+    // live here AND the old `submit_pvp_live_answer` RPC call this function
+    // used to make at the very end.
+    const res = await resolvePvpLiveTurn(matchId, idxAtAnswer, selectedOriginalIndex, elapsedMs);
+    if (!res.ok) return;
+    const { result } = res;
+    const landedHit = result.correct && !result.confusionMissed;
+
+    setStreak(result.streak);
+
+    if (result.correct) {
       // A landed correct answer breaks any building wrong-streak (#1). A
       // confusion miss below is still a `correct` answer, so it resets too —
       // no confused death-spiral.
       selfWrongStreakRef.current = 0;
-      const isConfused =
-        selfConfusedTicksRef.current > 0 || myStatuses.some((s) => s.kind === "confused");
-      const missedFromConfusion = isConfused && Math.random() < 0.25;
-      if (missedFromConfusion) {
+      if (result.confusionMissed) {
         notify("warning", "🌀 Confused — your attack missed!");
         tickBattleStatusCure("confused");
         tickConfusedOut("self", idxAtAnswer);
-        setStreak(0);
       } else {
-        const nextStreak = streak + 1;
-        setStreak(nextStreak);
-        streakAfterAnswer = nextStreak;
-        landedHit = true;
-        correctCountRef.current += 1;
-        const totalMs = personalTimerMs;
-        const speedRatio = Math.max(0, (totalMs - elapsedMs) / totalMs);
-        const firstHalf = elapsedMs <= totalMs / 2;
-        const burned = myStatuses.some((s) => s.kind === "burn");
-        const category = questions[idxAtAnswer]?.category ?? "";
-
-        // The partner's LEGACY passive_damage fold lived here (`evaluateHitModifiers`
-        // + `evaluatePassiveDamageSideEffects`), along with a "✨ Move — ignores their
-        // Defense!" toast. All three were dead: both evaluators bail on engine-owned
-        // rows, and all 104 are engine-owned, so the modifiers were always empty and
-        // the toast never had anything to describe. Deleted 2026-07-13 (owner ruling:
-        // the engine took over and the message is obsolete). The engine's own
-        // multiplier is folded in below via `evaluateSigMultiplier`.
-        const suppressed = idxAtAnswer < mySuppressedUntil;
-        // Still needed: the ENGINE's trigger check below reads it (`engineTriggerFired`).
-        const sigCtx = buildSigContext(idxAtAnswer, true, nextStreak, elapsedMs, totalMs, category);
-        let mods = NO_HIT_MODIFIERS;
-        // Chien-Pao — Sword of Ruin (1002): the 2-charge ignore-Defense window
-        // armed when Sword of Ruin was manually fired. Consumes one charge per
-        // correct hit while suppressed doesn't block it (the -2 Def already
-        // landed via the server manual row; this window is a pure client-side
-        // damage-calc fold, same trust model as the armed one-hit moves).
-        if (swordOfRuinChargesRef.current > 0) {
-          mods = mergeHitModifiers(mods, { ...NO_HIT_MODIFIERS, ignoreOppDefenseStage: true });
-          swordOfRuinChargesRef.current -= 1;
-        }
-        // Phase 1 — Moltres's Fiery Wrath discharge: a correct answer consumes
-        // all Wrath stacks for +1 Attack/stack on THIS hit, resets the stack
-        // (server-persisted), and rolls a 30%/stack Sleep on the opponent
-        // through the same server-validated catalog path as any other status.
-        // L2 de-dup: when the row carries an `engine` spec, the engine tick is the
-        // SOLE driver of its stat lifecycle. Moltres's legacy Wrath path grants the
-        // same +Attack and rolls the same Sleep the engine now does, so running both
-        // would double the buff. Skip the legacy path for engine-owned rows.
-        if (!suppressed && partnerId === 146 && !ability?.engine && wrathStacksRef.current > 0) {
-          const discharge = wrathDischarge(wrathStacksRef.current);
-          mods = mergeHitModifiers(mods, {
-            ...NO_HIT_MODIFIERS,
-            bonusAttackStage: discharge.bonusAttackStage,
-          });
-          wrathStacksRef.current = 0;
-          void applyPvpSignatureEffect(matchId, idxAtAnswer, 146, "sig_state", 0);
-          const move = signatureMoveName(146);
-          if (move) notify("success", `✨ ${move} — Wrath unleashed!`);
-          if (Math.random() < discharge.sleepChance) {
-            void applyPvpSignatureEffect(matchId, idxAtAnswer, 146, "post_answer").then(
-              applyAbilityResult,
-            );
-          }
-        }
-        // The bundled-side-effect RPC (Raikou's +1 Speed, Zekrom's Burn, …) fired here
-        // off `passiveSideEffects`. Deleted with it — those effects come from the
-        // engine's `engine_status` rows now, server-rolled.
-        const baseAttack = mods.ignoreOwnNegativeStages
-          ? Math.max(0, myStages.attack)
-          : myStages.attack;
-        const baseCrit = mods.ignoreOwnNegativeStages ? Math.max(0, myStages.crit) : myStages.crit;
-        // signature-rework (ruling 7): fold the partner's conditional
-        // engine.multiplier (x2-vs-type, ignore-Defense, …) into THIS correct
-        // hit. No-op (factor 1 / ignoreDefense false) when the row has no
-        // multiplier, the condition fails, or the ability is suppressed.
-        //
-        // Owner ruling 2026-07-12: a multiplier is NOT always-on. It applies only
-        // on an answer where the row's OWN trigger fires, and never while the row
-        // is disabled (cooldown) or suppressed. So Freeze-Dry's x2-vs-Water needs
-        // the 3-streak like everything else, and Psystrike's ignore-Defense no
-        // longer leaks onto question 1.
-        const engineSpec = ability?.engine;
-        // M4 `latchOnTrigger`: Walking Wake / Iron Leaves keep their x2 "for the
-        // rest of the battle" once they have dipped below 50% (owner ruling
-        // 2026-07-12 — healing back up does NOT revoke it), and Regidrago's
-        // start_of_battle trigger stays held so its HP ladder can be re-read
-        // every question. Once latched, the trigger counts as fired forever;
-        // the disable/suppress gates still apply.
-        if (engineSpec?.latchOnTrigger && engineTriggerFired(engineSpec.trigger, sigCtx)) {
-          sigLatchedRef.current = true;
-        }
-        const triggerHeld =
-          !!engineSpec &&
-          (engineTriggerFired(engineSpec.trigger, sigCtx) ||
-            (engineSpec.latchOnTrigger === true && sigLatchedRef.current));
-        const multiplierLive = !suppressed && !!engineSpec && !sigDisabledRef.current && triggerHeld;
-        const sigMult = multiplierLive
-          ? evaluateSigMultiplier(engineSpec.multiplier, {
-              correct: true,
-              oppType:
-                opponentPartnerId != null ? (findPokemon(opponentPartnerId)?.types ?? []) : [],
-              oppSpecies: opponentPartnerId ?? -1,
-              // Regidrago #895 reads its factor off MY live HP.
-              selfHpPct: myHp / PVP_MAX_HP,
-            })
-          : NO_SIGNATURE_HIT_MODIFIERS;
-        // M5: the question-indexed outgoing scale — the phase charge-window and the
-        // fixed-index marks. Unlike the multiplier above this is NOT gated on
-        // `triggerHeld`: a charge window is anchored on question 1 and held open by
-        // the question number itself, not by the trigger re-firing (see
-        // `evaluateIndexFactor`). Disable/suppress still switch it off.
-        const indexFactor =
-          !suppressed && engineSpec && !sigDisabledRef.current
-            ? evaluateIndexFactor(engineSpec, {
-                correct: true,
-                questionNo: idxAtAnswer + 1,
-                selfHpPct: myHp / PVP_MAX_HP,
-                oppHpPct: oppHp / PVP_MAX_HP,
-              })
-            : 1;
-        const { dmg: computed } = computePvpDamage({
-          streak: nextStreak,
-          speedRatio,
-          attackStage: baseAttack + mods.bonusAttackStage,
-          defenseStage: mods.ignoreOppDefenseStage ? 0 : oppStages.defense,
-          critStage: baseCrit + mods.bonusCritStage,
-          firstHalf,
-          burned,
-          hitFactor: sigMult.factor,
-          ignoreDefense: sigMult.ignoreDefense,
-          outgoingFactor: indexFactor,
-        });
-        dmg = computed + (mods.secondHitFraction ? Math.round(computed * mods.secondHitFraction) : 0);
-        answeredCategoriesRef.current.add(category);
+        answeredCategoriesRef.current.add(questions[idxAtAnswer]?.category ?? "");
         playSfx("correct");
       }
     } else {
-      setStreak(0);
       // Retain this miss for the defeat-screen review (feedback #1), mirroring
       // Solo's `missedRef` push (battle-screen.tsx:887-891). Every wrong path —
       // a real wrong answer, the no-answer ceiling resolve (#6), and the
-      // personal-timeout — routes through this single `else`, and the
+      // personal-timeout — routes through this branch, and the
       // lastResolvedIdxRef guard above means each slot reaches here at most once,
       // so the route accumulates one entry per missed question with no dupes.
       // Lifted to route state (not `onFinish`) so it survives the opponent-
@@ -1615,14 +1436,14 @@ export function LivePvpBattleScreen({
       // becomes confused. The no-answer ceiling resolve (#6) feeds this path too.
       selfWrongStreakRef.current += 1;
       if (selfWrongStreakRef.current === CONFUSE_AT) applyConfused("self", idxAtAnswer);
-      selfDmg = 8; // flat wrong-answer chip, mirroring solo's flat-loss model
       playSfx("wrong");
       // Phase 1 — Moltres's Fiery Wrath builds a Wrath stack on each wrong
       // answer (capped at 3), unless the ability is currently suppressed. The
       // new count is persisted to the authoritative row (server-clamped).
       // L2 de-dup: skipped once Moltres carries an `engine` spec — the engine's
       // own ramp/expiry lifecycle replaces the legacy stack counter (see the
-      // discharge site above).
+      // discharge site Phase 6 will remove — falsified dead per CLAUDE.md,
+      // untouched here to keep this PR to the trust-boundary change only).
       if (partnerId === 146 && !ability?.engine && idxAtAnswer >= mySuppressedUntil) {
         const next = nextWrathStacks(wrathStacksRef.current, false);
         if (next !== wrathStacksRef.current) {
@@ -1633,11 +1454,14 @@ export function LivePvpBattleScreen({
     }
 
     // ── TYPE ability wiring (feedback 29fd5d73) ───────────────────────────────
-    // Pure damage/self-damage tweaks are folded client-side (server-clamped);
-    // heals/stats/statuses/cures/chip route through the server catalog. Fires for
-    // EVERY partner now, including legendaries — it stacks on top of the signature
-    // block above (feedback #3), both folding into the same dmg/selfDmg locals.
-    if (typeAbilityId && typeWiring && !frozen) {
+    // The dmg/self-dmg mods themselves (Sturdy's clamp, Sand Force's streak
+    // save, Moxie's bonus, …) are folded server-side now (`resolvePvpAnswer`,
+    // Phase 4 cutover) — this block only drives the player-visible toast off
+    // the server's activation flags, plus the SEPARATE server-catalog
+    // post_answer effect (heals/stats/statuses/cures/chip), which
+    // `resolvePvpAnswer` deliberately does not cover (see
+    // engine/pvp-live-answer.ts's module header).
+    if (typeAbilityId && typeWiring) {
       const hasConfused = myStatuses.some((s) => s.kind === "confused");
       const hasPoisoned = myStatuses.some(
         (s) => s.kind === "poisoned" || s.kind === "badly-poisoned",
@@ -1646,14 +1470,14 @@ export function LivePvpBattleScreen({
         correct: landedHit,
         selfHpPct: myHp / PVP_MAX_HP,
         oppHpPct: oppHp / PVP_MAX_HP,
-        streakAfter: streakAfterAnswer,
+        streakAfter: result.streak,
         answerElapsedMs: elapsedMs,
         personalTimerMs,
         questionIndex: idxAtAnswer,
         prevCorrect: prevCorrectRef.current,
         hadWrong: hadWrongRef.current,
-        correctCount: correctCountRef.current,
-        moxieStacks: moxieStacksRef.current,
+        correctCount: result.correctCount,
+        moxieStacks: 0, // only the (now server-side) damage mod ever read this
         hasNegativeStatus: hasConfused || hasPoisoned,
         hasConfused,
         hasPoisoned,
@@ -1676,38 +1500,14 @@ export function LivePvpBattleScreen({
         }
       };
 
-      if (landedHit) {
-        const mod = typeAbilityDamageMod(typeAbilityId, taCtx);
-        if (mod.active) {
-          dmg = applyDamageMod(dmg, mod);
-          toastFireOnce();
-        }
-        // Moxie accrues a permanent +1 each time a 3-streak is reached.
-        if (typeAbilityId === "moxie" && streakAfterAnswer > 0 && streakAfterAnswer % 3 === 0) {
-          moxieStacksRef.current += 1;
-        }
-      } else if (!correct) {
-        const selfMod = typeAbilitySelfDmgMod(typeAbilityId, taCtx);
-        if (selfMod.active) {
-          selfDmg = applySelfDmgMod(selfDmg, selfMod);
-          toastFireOnce();
-        }
-        // Sturdy — survive one otherwise-lethal self hit at 1 HP.
-        if (
-          typeWiring.clampsLethalSelfDmg &&
-          !sturdyUsedRef.current &&
-          myHp > 1 &&
-          myHp - selfDmg <= 0
-        ) {
-          selfDmg = myHp - 1;
-          sturdyUsedRef.current = true;
-          if (typeWiring.fireNote) notify("success", typeWiring.fireNote);
-        }
-        // Sand Force — the first two wrong answers don't break the streak.
-        if (typeWiring.keepsStreakOnWrong?.(wrongCountRef.current + 1)) {
-          setStreak(streak);
-          toastFireOnce();
-        }
+      // Covers the damage mod, the self-dmg mod, and Sand Force's streak-save —
+      // the server (`toastNotices` in pvp-live-resolve-turn) recomputes the same
+      // pure activation predicates this block used to call directly.
+      if (result.typeAbilityModFired) toastFireOnce();
+      // Sturdy's save always announces (not gated once-per-battle, matching the
+      // original inline `notify` here rather than `toastFireOnce`).
+      if (result.sturdyFired && typeWiring.fireNote) {
+        notify("success", typeWiring.fireNote);
       }
 
       // Server catalog post_answer effect (heal / stat / status / cure / chip).
@@ -1717,9 +1517,9 @@ export function LivePvpBattleScreen({
         if (!torrentBlocked) {
           if (typeAbilityId === "torrent") torrentFiredRef.current = true;
           void applyPvpTypeAbilityEffect(matchId, idxAtAnswer, typeAbilityId, "post_answer").then(
-            (res) => {
-              if (res.ok && !res.noop) {
-                applyTypeAbilityResult(res);
+            (taRes) => {
+              if (taRes.ok && !taRes.noop) {
+                applyTypeAbilityResult(taRes);
                 toastFireOnce();
               }
             },
@@ -1727,10 +1527,7 @@ export function LivePvpBattleScreen({
         }
       }
 
-      if (!correct) {
-        hadWrongRef.current = true;
-        wrongCountRef.current += 1;
-      }
+      if (!result.correct) hadWrongRef.current = true;
     }
 
     // Status cure ticks (mirrors solo: every answer ticks confusion/poison etc.)
@@ -1746,7 +1543,7 @@ export function LivePvpBattleScreen({
     // berries: the client only names WHICH partner/phase fired, and the
     // server looks up the fixed magnitude from `pvp_signature_effects`.
     const suppressedNow = idxAtAnswer < mySuppressedUntil;
-    if (!frozen && suppressedNow && ability && ability.wiring === "post_answer") {
+    if (suppressedNow && ability && ability.wiring === "post_answer") {
       // Ability locked this question — show a distinct toast at most once per
       // suppression window, and consume no resource.
       if (suppressToastedForRef.current !== mySuppressedUntil) {
@@ -1755,43 +1552,25 @@ export function LivePvpBattleScreen({
         notify("warning", `🔒 ${move ?? "Signature move"} suppressed!`);
       }
     }
-    // The legacy post_answer fire lived in an `else` here: evaluate the ability, and
-    // if anything came back, call the RPC. Deleted 2026-07-13. `evaluatePostAnswer`
-    // bails on engine-owned rows — all 104 of them — so it always returned [], the RPC
-    // never fired, and the "🌪️ Rayquaza negated the weather!" toast gated behind it
-    // could never show either (owner ruling: the engine took over; the message is
-    // obsolete). Every post_answer effect now comes from the engine tick below.
-    //
-    // The suppression toast above is KEPT — it is the one live thing in this block,
-    // because it keys off `wiring` alone and never consults the dead evaluator.
 
     // signature-rework M1 — run the server-authoritative signature engine once
     // per human answer, UNCONDITIONALLY (never gated by a "should fire" check;
     // the engine itself decides no-op). It owns the ramp/decay/revert/disable
     // lifecycle so stat buffs EXPIRE instead of compounding. Only rows carrying
     // an `engine` spec have anything to tick; the DUAL-FIRE type-ability blocks
-    // above and the bespoke post_answer path are untouched (R1).
+    // above and the bespoke post_answer path are untouched (R1). `triggerFired`
+    // comes straight from the server now — it's the exact same formula this
+    // block used to recompute locally (same trigger/streak/questionIndex/
+    // selfAfflicted/HP-pct inputs), just no longer duplicated client-side.
     const tickEngine = ability?.engine;
     if (partnerId != null && tickEngine) {
-      const selfAfflicted = myStatuses.length > 0 || selfConfused;
-      const triggerFired = engineTriggerFired(tickEngine.trigger, {
-        correct,
-        streak: streakAfterAnswer,
-        questionIndex: idxAtAnswer,
-        questionNo: idxAtAnswer + 1,
-        selfAfflicted,
-        // M4: the HP gates (Zarude 25%, the 50% paradox rows, Terapagos's
-        // opponent-has-2x-my-HP) are resolved inside the predicate now.
-        selfHpPct: myHp / PVP_MAX_HP,
-        oppHpPct: oppHp / PVP_MAX_HP,
-      });
       const answeredDex = partnerId;
       void sigEngineTick(
         matchId,
         idxAtAnswer,
         answeredDex,
-        correct,
-        triggerFired,
+        result.correct,
+        result.triggerFired,
         engineToTickSpec(
           tickEngine,
           { selfHp: myHp, oppHp },
@@ -1817,7 +1596,7 @@ export function LivePvpBattleScreen({
         ];
         const outcome = stepBespokeFx(tickEngine.bespoke, bespokeFxRef.current, {
           questionNo: idxAtAnswer + 1,
-          triggerFired,
+          triggerFired: result.triggerFired,
           disabled: runtime?.disabled ?? false,
           oppHpPct: oppHp / PVP_MAX_HP,
           predictedStatus: runtime?.predictedStatus ?? null,
@@ -1846,54 +1625,43 @@ export function LivePvpBattleScreen({
           dex: answeredDex,
           questionIndex: idxAtAnswer,
           questionNo: idxAtAnswer + 1,
-          triggerFired,
+          triggerFired: result.triggerFired,
           disabled: runtime?.disabled ?? false,
           side: "self",
           asBot: false,
         });
         // Signature moves are automatic (owner ruling 2026-07-13): the row's
         // manual-phase effects fire on its own trigger now, not on a button tap.
-        if (triggerFired && !(runtime?.disabled ?? false)) {
+        if (result.triggerFired && !(runtime?.disabled ?? false)) {
           void fireCappedPayload(idxAtAnswer);
         }
       });
     }
 
-    prevCorrectRef.current = correct;
-    prevElapsedRef.current = elapsedMs;
+    prevCorrectRef.current = result.correct;
+    correctCountRef.current = result.correctCount;
 
-    const res = await submitPvpLiveAnswer(
-      matchId,
-      idxAtAnswer,
-      correct,
-      dmg,
-      selfDmg,
-      elapsedMs,
-      selectedOriginalIndex,
-    );
-    if (res.ok) {
-      const myNewHp = amIHost ? res.hostHp : res.guestHp;
-      // Ho-Oh's Rainbow Rebirth: we took lethal self-damage this question yet the
-      // authoritative server kept us alive (revived to 25% HP) — announce it once.
-      if (
-        partnerId === 250 &&
-        !rainbowRebirthToastedRef.current &&
-        selfDmg > 0 &&
-        myHp - selfDmg <= 0 &&
-        myNewHp > 0
-      ) {
-        rainbowRebirthToastedRef.current = true;
-        notify("success", "🌈 Ho-Oh revived you!");
-      }
-      setMyHp(amIHost ? res.hostHp : res.guestHp);
-      setOppHp(amIHost ? res.guestHp : res.hostHp);
-      if (res.resolved && !finishedRef.current) {
-        finishedRef.current = true;
-        const myFinalHp = amIHost ? res.hostHp : res.guestHp;
-        const oppFinalHp = amIHost ? res.guestHp : res.hostHp;
-        const won = res.winnerId ? res.winnerId === myId : null;
-        onFinish({ resolved: true, won, hp: myFinalHp, oppHp: oppFinalHp });
-      }
+    const myNewHp = amIHost ? result.hostHp : result.guestHp;
+    // Ho-Oh's Rainbow Rebirth: we took lethal self-damage this question yet the
+    // authoritative server kept us alive (revived to 25% HP) — announce it once.
+    if (
+      partnerId === 250 &&
+      !rainbowRebirthToastedRef.current &&
+      result.selfDmg > 0 &&
+      myHp - result.selfDmg <= 0 &&
+      myNewHp > 0
+    ) {
+      rainbowRebirthToastedRef.current = true;
+      notify("success", "🌈 Ho-Oh revived you!");
+    }
+    setMyHp(amIHost ? result.hostHp : result.guestHp);
+    setOppHp(amIHost ? result.guestHp : result.hostHp);
+    if (result.resolved && !finishedRef.current) {
+      finishedRef.current = true;
+      const myFinalHp = amIHost ? result.hostHp : result.guestHp;
+      const oppFinalHp = amIHost ? result.guestHp : result.hostHp;
+      const won = result.winnerId ? result.winnerId === myId : null;
+      onFinish({ resolved: true, won, hp: myFinalHp, oppHp: oppFinalHp });
     }
   }
 
@@ -1933,12 +1701,17 @@ export function LivePvpBattleScreen({
   // the same reason as the human one above — it could never fire, so the bot was
   // already playing without it. Deleting it changes no behaviour.
 
-  // Bot driver — one move per question. The bot answers on its own delay, deals
-  // client-computed / server-clamped damage (respecting its stat stages + Burn,
-  // exactly like a human), and may fire its signature ability or heal. Its own
-  // HP damage, ability debuffs, and item effects all land on the authoritative
-  // row, so the human's defensive/debuff play still matters; the bot doesn't
-  // model skipping its own turn for Freeze/Sleep/Paralysis (training simplification).
+  // Bot driver — one move per question. The bot's correctness/timing/dmg are
+  // rolled and computed entirely server-side now (`resolvePvpAnswer` via the
+  // Edge Function's op:"bot_turn", Phase 5 cutover) from the match's own
+  // persisted `guest_bot_profile` — this client never supplies an outcome.
+  // The call fires as soon as it's the bot's turn; the RETURNED `timeMs`
+  // paces the local reveal (toasts/HP/animations) so the pacing still looks
+  // like the bot "thought" for that long, without the client needing to guess
+  // the delay up front. Its own HP damage, ability debuffs, and item effects
+  // all land on the authoritative row, so the human's defensive/debuff play
+  // still matters; the bot doesn't model skipping its own turn for
+  // Freeze/Sleep/Paralysis (training simplification).
   useEffect(() => {
     if (!match.isBotMatch || displayedIndex < 0 || finishedRef.current) return;
     if (botLastIdxRef.current >= displayedIndex) return;
@@ -1948,197 +1721,110 @@ export function LivePvpBattleScreen({
     const botPartnerId = match.guestPartnerId;
     const botAbility = botPartnerId != null ? signatureAbilityFor(botPartnerId) : null;
     const idxAtAnswer = displayedIndex;
-    const correct = botAnswersCorrectly(p);
-    const timeMs = botAnswerTimeMs(p);
-    const submitAt = Math.min(timeMs, Math.max(0, personalTimerMs - 250));
-    const t = setTimeout(() => {
-      if (finishedRef.current) return;
-      let dmg = 0;
-      // Bot confusion (#1 mirror): while confused, an otherwise-correct answer
-      // may miss (25%, consuming one tick) — same magnitude/semantics as the
-      // human roll (:907-912), via the pure Backend helper. A miss deals no
-      // damage and breaks the bot's streak; the slot still counts as correct
-      // (parity with the human, who submits correct=true / dmg=0 on a miss).
-      let botMissed = false;
-      if (correct && oppConfusedTicksRef.current > 0) {
-        const cm = botConfusionMiss({
-          confusedTicks: oppConfusedTicksRef.current,
-          answeredCorrectly: true,
-        });
-        botMissed = cm.missed;
-        oppConfusedTicksRef.current = cm.confusedTicksRemaining;
-        if (botMissed && cm.confusedTicksRemaining <= 0) {
-          setOppConfused(false);
-          emit({
-            kind: "status-expired",
-            side: "opponent",
-            status: "confused",
-            questionIndex: idxAtAnswer,
-            dedupeKey: `opponent:status-expired:${idxAtAnswer}:confused`,
-          });
+    let cancelled = false;
+    let revealTimer: ReturnType<typeof setTimeout> | undefined;
+
+    void resolveBotPvpTurn(matchId, idxAtAnswer).then((res) => {
+      if (cancelled || finishedRef.current || !res.ok) return;
+      const { result } = res;
+      const revealDelay = Math.min(result.timeMs, Math.max(0, personalTimerMs - 250));
+      revealTimer = setTimeout(() => {
+        if (finishedRef.current) return;
+
+        // Bot confusion (#1 mirror): the server already rolled whether this
+        // otherwise-correct answer missed from confusion; this only drives
+        // the local badge/cue, same helper the human's own confusion uses.
+        if (result.correct && result.confusionMissed) {
+          tickConfusedOut("opponent", idxAtAnswer);
         }
-      }
-      if (correct && !botMissed) {
-        const next = botStreakRef.current + 1;
-        botStreakRef.current = next;
-        const totalMs = timerMsForSpeedStage(oppStages.speed, PVP_BASE_TIMER_MS);
-        const speedRatio = Math.max(0, (totalMs - timeMs) / totalMs);
-        const firstHalf = timeMs <= totalMs / 2;
-        const burned = oppStatuses.some((s) => s.kind === "burn");
-        // signature-rework (ruling 7): the bot's own conditional engine.multiplier
-        // vs the human partner (the bot's opponent). Trigger-gated and cooldown-
-        // gated on the bot's side too (owner ruling 2026-07-12) — same rule the
-        // human path applies above, so neither side gets an always-on multiplier.
-        const botEngineSpec = botAbility?.engine;
-        // M4: the bot latches exactly as the human does (above) — otherwise a bot
-        // Walking Wake would lose its rest-of-battle x2 the moment it healed.
-        const botTriggerNow =
-          !!botEngineSpec &&
-          engineTriggerFired(botEngineSpec.trigger, {
-            correct: true,
-            streak: next,
-            questionIndex: idxAtAnswer,
-            questionNo: idxAtAnswer + 1,
-            // M4: from the bot's point of view IT is "self" and the player is the
-            // "opponent" — so the HP fractions are mirrored.
-            selfAfflicted: oppStatuses.length > 0 || oppConfused,
-            selfHpPct: oppHp / PVP_MAX_HP,
-            oppHpPct: myHp / PVP_MAX_HP,
-          });
-        if (botEngineSpec?.latchOnTrigger && botTriggerNow) botSigLatchedRef.current = true;
-        const botMultLive =
-          !!botEngineSpec &&
-          !botSigDisabledRef.current &&
-          (botTriggerNow ||
-            (botEngineSpec.latchOnTrigger === true && botSigLatchedRef.current));
-        const botMult = botMultLive
-          ? evaluateSigMultiplier(botEngineSpec.multiplier, {
-              correct: true,
-              oppType: myPokemon?.types ?? [],
-              oppSpecies: partnerId ?? -1,
-              // Regidrago #895 on the bot's side reads ITS HP.
-              selfHpPct: oppHp / PVP_MAX_HP,
-            })
-          : NO_SIGNATURE_HIT_MODIFIERS;
-        // M5: the bot charges and pays off exactly as a human does — HP fractions
-        // mirrored, since from the bot's point of view IT is "self".
-        const botIndexFactor = botEngineSpec && !botSigDisabledRef.current
-          ? evaluateIndexFactor(botEngineSpec, {
-              correct: true,
-              questionNo: idxAtAnswer + 1,
-              selfHpPct: oppHp / PVP_MAX_HP,
-              oppHpPct: myHp / PVP_MAX_HP,
-            })
-          : 1;
-        const { dmg: computed } = computePvpDamage({
-          streak: next,
-          speedRatio,
-          attackStage: oppStages.attack,
-          defenseStage: myStages.defense,
-          critStage: oppStages.crit,
-          firstHalf,
-          burned,
-          hitFactor: botMult.factor,
-          ignoreDefense: botMult.ignoreDefense,
-          outgoingFactor: botIndexFactor,
-        });
-        dmg = computed;
-      } else {
-        botStreakRef.current = 0;
-      }
-      // Consecutive-wrong → confused for the bot (#1). A genuine wrong answer
-      // builds the streak; a correct answer (even a confusion miss) resets it.
-      if (correct) {
-        botWrongStreakRef.current = 0;
-      } else {
-        botWrongStreakRef.current += 1;
-        if (botWrongStreakRef.current === CONFUSE_AT) applyConfused("opponent", idxAtAnswer);
-      }
-      void submitBotPvpMove(matchId, idxAtAnswer, correct, dmg, timeMs).then((res) => {
-        if (res.ok && res.resolved && !finishedRef.current) {
+        // Consecutive-wrong → confused for the bot (#1). A genuine wrong answer
+        // builds the streak; a correct answer (even a confusion miss) resets it.
+        if (result.correct) {
+          botStreakRef.current = result.streak;
+          botWrongStreakRef.current = 0;
+        } else {
+          botStreakRef.current = 0;
+          botWrongStreakRef.current += 1;
+          if (botWrongStreakRef.current === CONFUSE_AT) applyConfused("opponent", idxAtAnswer);
+        }
+
+        if (result.resolved && !finishedRef.current) {
           finishedRef.current = true;
-          const won = res.winnerId ? res.winnerId === myId : null;
-          onFinish({ resolved: true, won, hp: res.hostHp, oppHp: res.guestHp });
+          const won = result.winnerId ? result.winnerId === myId : null;
+          onFinish({ resolved: true, won, hp: result.hostHp, oppHp: result.guestHp });
+        } else {
+          setMyHp(result.hostHp);
+          setOppHp(result.guestHp);
         }
-      });
-      // signature-rework M1 — run the engine tick for the bot's (guest) answer
-      // once per question, UNCONDITIONALLY (NOT gated by botShouldFireAbility —
-      // that gate stays for the bespoke fire below). Rows with an `engine` spec
-      // only. Targets `pvp_bot_sig_engine_tick`, which DB Engineer must still add
-      // (03-backend.md §4) — until then this no-ops/errors at runtime silently
-      // (expected; not toasted). The bot is always the guest.
-      const botTickEngine = botAbility?.engine;
-      if (botPartnerId != null && botTickEngine) {
-        const botAfflicted = oppStatuses.length > 0 || oppConfused;
-        const botTriggerFired = engineTriggerFired(botTickEngine.trigger, {
-          correct,
-          streak: botStreakRef.current,
-          questionIndex: idxAtAnswer,
-          questionNo: idxAtAnswer + 1,
-          selfAfflicted: botAfflicted,
-          // M4: mirrored — the bot is "self" here (see the multiplier gate above).
-          selfHpPct: oppHp / PVP_MAX_HP,
-          oppHpPct: myHp / PVP_MAX_HP,
-        });
-        void botSigEngineTick(
-          matchId,
-          idxAtAnswer,
-          botPartnerId,
-          correct,
-          botTriggerFired,
-          // The bot IS the opponent from this (host) client's view, so its own HP
-          // is `oppHp` and the HP it faces is ours.
-          // The bot's "opponent" is US, so its matchup conditions read OUR types.
-          engineToTickSpec(
-            botTickEngine,
-            { selfHp: oppHp, oppHp: myHp },
-            { oppType: myPokemon?.types ?? [], oppSpecies: partnerId ?? -1 },
-          ),
-        ).then((tickRes) => {
-          foldSigTickStages(tickRes);
-          // The bot is always the guest — mirror its disabled flag for the
-          // multiplier gate above.
-          const botEntry = tickRes.guestSigRuntime?.[String(botPartnerId)];
-          if (botEntry) botSigDisabledRef.current = botEntry.disabled;
-          // M3 — the bot schedules its bespoke rows on the same rules we do (owner
-          // ruling 5: the bot runs its signature identically to a human). HP is
-          // mirrored: the bot's "opponent" is us.
-          const botOutcome = stepBespokeFx(botTickEngine.bespoke, botBespokeFxRef.current, {
-            questionNo: idxAtAnswer + 1,
-            triggerFired: botTriggerFired,
-            disabled: botEntry?.disabled ?? false,
-            oppHpPct: myHp / PVP_MAX_HP,
-            predictedStatus: botEntry?.predictedStatus ?? null,
+
+        // signature-rework M1 — run the engine tick for the bot's (guest) answer
+        // once per question, UNCONDITIONALLY (NOT gated by botShouldFireAbility —
+        // that gate stays for the bespoke fire below). Rows with an `engine` spec
+        // only. `triggerFired` comes straight from the server now — the same
+        // formula this block used to recompute locally.
+        const botTickEngine = botAbility?.engine;
+        if (botPartnerId != null && botTickEngine) {
+          void botSigEngineTick(
+            matchId,
+            idxAtAnswer,
+            botPartnerId,
+            result.correct,
+            result.triggerFired,
+            // The bot IS the opponent from this (host) client's view, so its own HP
+            // is `oppHp` and the HP it faces is ours.
+            // The bot's "opponent" is US, so its matchup conditions read OUR types.
+            engineToTickSpec(
+              botTickEngine,
+              { selfHp: oppHp, oppHp: myHp },
+              { oppType: myPokemon?.types ?? [], oppSpecies: partnerId ?? -1 },
+            ),
+          ).then((tickRes) => {
+            foldSigTickStages(tickRes);
+            const botEntry = tickRes.guestSigRuntime?.[String(botPartnerId)];
+            // M3 — the bot schedules its bespoke rows on the same rules we do (owner
+            // ruling 5: the bot runs its signature identically to a human). HP is
+            // mirrored: the bot's "opponent" is us.
+            const botOutcome = stepBespokeFx(botTickEngine.bespoke, botBespokeFxRef.current, {
+              questionNo: idxAtAnswer + 1,
+              triggerFired: result.triggerFired,
+              disabled: botEntry?.disabled ?? false,
+              oppHpPct: myHp / PVP_MAX_HP,
+              predictedStatus: botEntry?.predictedStatus ?? null,
+            });
+            botBespokeFxRef.current = botOutcome.state;
+            if (botOutcome.fireBespoke) {
+              void applyBotPvpSignatureEffect(matchId, idxAtAnswer, botPartnerId, "bespoke");
+            }
+            // M4 — the bot gets the same three server-owned channels. It can KO us
+            // with Urshifu, shield itself with Zamazenta and crush our clock with the
+            // Loyal Three, exactly as a human holding those rows could.
+            fireM4Channels({
+              engine: botTickEngine,
+              dex: botPartnerId,
+              questionIndex: idxAtAnswer,
+              questionNo: idxAtAnswer + 1,
+              triggerFired: result.triggerFired,
+              disabled: botEntry?.disabled ?? false,
+              side: "opponent",
+              asBot: true,
+            });
           });
-          botBespokeFxRef.current = botOutcome.state;
-          if (botOutcome.fireBespoke) {
-            void applyBotPvpSignatureEffect(matchId, idxAtAnswer, botPartnerId, "bespoke");
-          }
-          // M4 — the bot gets the same three server-owned channels. It can KO us
-          // with Urshifu, shield itself with Zamazenta and crush our clock with the
-          // Loyal Three, exactly as a human holding those rows could.
-          fireM4Channels({
-            engine: botTickEngine,
-            dex: botPartnerId,
-            questionIndex: idxAtAnswer,
-            questionNo: idxAtAnswer + 1,
-            triggerFired: botTriggerFired,
-            disabled: botEntry?.disabled ?? false,
-            side: "opponent",
-            asBot: true,
-          });
-        });
-      }
-      if (
-        botShouldUseItem(p, {
-          hpPct: oppHp / PVP_MAX_HP,
-          itemsRemaining: MAX_ITEMS_PER_BATTLE - match.guestItemsUsed,
-        })
-      ) {
-        void applyBotPvpLiveItem(matchId, idxAtAnswer, "superpotion");
-      }
-    }, submitAt);
-    return () => clearTimeout(t);
+        }
+        if (
+          botShouldUseItem(p, {
+            hpPct: oppHp / PVP_MAX_HP,
+            itemsRemaining: MAX_ITEMS_PER_BATTLE - match.guestItemsUsed,
+          })
+        ) {
+          void applyBotPvpLiveItem(matchId, idxAtAnswer, "superpotion");
+        }
+      }, revealDelay);
+    });
+
+    return () => {
+      cancelled = true;
+      if (revealTimer) clearTimeout(revealTimer);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayedIndex, match.isBotMatch]);
 

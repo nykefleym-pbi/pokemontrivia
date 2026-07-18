@@ -38,7 +38,7 @@
 // remaining manual action, from wherever the Supabase CLI/service credentials
 // actually live.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
-import { buildAnswerTurn, rollBotTurn, resolve, type PvpLiveTurnContext, type PvpLiveSideState } from "../../../src/engine/pvp-live-turn";
+import { buildAnswerTurn, rollBotTurn, resolve, toastNotices, type PvpLiveTurnContext, type PvpLiveSideState } from "../../../src/engine/pvp-live-turn";
 import { pvpEngineStateToRow } from "../../../src/engine/pvp-live-answer";
 import type { BotProfile } from "../../../src/lib/pvp-bot";
 import { createRng } from "../../../src/engine/rng";
@@ -257,7 +257,23 @@ Deno.serve(async (req) => {
       _caller_id: userId,
     });
     if (rpcError) return err("db_error", rpcError.message, 500);
-    return json({ ok: true, data: applied });
+    const notices = toastNotices(input, state, outcome);
+    return json({
+      ok: true,
+      data: {
+        ...(applied as Record<string, unknown>),
+        correct: input.correct,
+        dmg: outcome.dmg,
+        selfDmg: outcome.selfDmg,
+        confusionMissed: outcome.confusionMissed,
+        triggerFired: outcome.triggerFired,
+        streak: outcome.state.streak,
+        correctCount: outcome.state.correctCount,
+        wrongStreak: outcome.state.selfWrongStreak,
+        confusedTicks: outcome.state.confusedTicks,
+        ...notices,
+      },
+    });
   }
 
   if (body.op === "bot_turn") {
@@ -290,7 +306,24 @@ Deno.serve(async (req) => {
       _caller_id: userId,
     });
     if (rpcError) return err("db_error", rpcError.message, 500);
-    return json({ ok: true, data: applied });
+    const notices = toastNotices(input, state, outcome);
+    return json({
+      ok: true,
+      data: {
+        ...(applied as Record<string, unknown>),
+        correct,
+        dmg: outcome.dmg,
+        selfDmg: outcome.selfDmg,
+        timeMs: answerElapsedMs,
+        confusionMissed: outcome.confusionMissed,
+        triggerFired: outcome.triggerFired,
+        streak: outcome.state.streak,
+        correctCount: outcome.state.correctCount,
+        wrongStreak: outcome.state.selfWrongStreak,
+        confusedTicks: outcome.state.confusedTicks,
+        ...notices,
+      },
+    });
   }
 
   return err("bad_op", "op must be answer or bot_turn", 400);

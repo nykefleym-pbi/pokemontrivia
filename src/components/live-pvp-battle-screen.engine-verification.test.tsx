@@ -3,8 +3,23 @@
 // against a possibly-stale committed snapshot. Same technique as
 // `battle-screen-engine-verification.test.tsx`: drive the real component (RTL)
 // through a fixed script and separately drive the pure engine through the
-// identical script, then assert the captured `submitPvpLiveAnswer` trace
-// (questionIndex/correct/dmg/selfDmg) is exactly equal.
+// identical script, then assert the captured trace (questionIndex/correct/
+// dmg/selfDmg) is exactly equal.
+//
+// Post Phase 4 cutover, the component no longer computes `dmg`/`selfDmg`
+// itself — it delegates to `resolvePvpLiveTurn` (the `pvp-live-resolve-turn`
+// Edge Function). The mocked `resolvePvpLiveTurn` below stands in for that
+// Edge Function by calling the SAME shared engine
+// (`buildAnswerTurn`/`resolve` from `engine/pvp-live-turn.ts`) the real one
+// calls, so `domTrace` still reflects what the real server would compute from
+// the component's own request sequence. This means the two traces being equal
+// no longer independently re-verifies `resolvePvpAnswer`'s math (both sides
+// call it now) — that byte-for-byte verification lives in
+// `engine/pvp-live-answer.test.ts`. What THIS file still catches: the
+// component correctly building each request (selectedIndex/elapsedMs/
+// questionIndex) from the click sequence, and correctly threading the
+// response back into its own state (HP/streak/confusion badge) across
+// questions — a real bug in either would show up as a trace mismatch.
 //
 // This file intentionally DUPLICATES
 // `live-pvp-battle-screen.characterization.test.tsx`'s mocks/fixtures rather
@@ -15,7 +30,7 @@
 // SCOPE MATCHES `resolvePvpAnswer`'s own documented gaps (see that module's
 // header): `sigDisabled` (the engine-runtime cooldown flag) and Sword of
 // Ruin's charge ARMING are async/RPC-driven and NOT computed by
-// `resolvePvpAnswer` itself — this file supplies them the same way a future
+// `resolvePvpAnswer` itself — this file supplies them the same way the real
 // Edge Function would, by mirroring the exact rule the mocked RPC uses.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
@@ -65,23 +80,35 @@ vi.mock("framer-motion", () => {
   };
 });
 
-const submitPvpLiveAnswerMock = vi.fn();
+import type { SigRuntimeMap } from "@/lib/signature-rework-types";
+
+const resolvePvpLiveTurnMock = vi.fn();
 const sigEngineTickMock = vi.fn();
 const applyPvpSignatureEffectMock = vi.fn();
+let liveSigRuntime: SigRuntimeMap = {};
+
 vi.mock("@/lib/pvp-live", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/pvp-live")>();
   const notMocked = async () => ({ ok: false as const, error: "not_mocked" });
   return {
     ...actual,
-    submitPvpLiveAnswer: (...args: unknown[]) => submitPvpLiveAnswerMock(...args),
+    resolvePvpLiveTurn: (...args: unknown[]) => resolvePvpLiveTurnMock(...args),
     applyPvpLiveItem: notMocked,
     applyPvpSignatureEffect: (...args: unknown[]) => applyPvpSignatureEffectMock(...args),
     applyPvpTypeAbilityEffect: notMocked,
     setLivePvpTransform: notMocked,
-    submitBotPvpMove: notMocked,
+    resolveBotPvpTurn: notMocked,
     applyBotPvpSignatureEffect: notMocked,
     applyBotPvpLiveItem: notMocked,
-    sigEngineTick: (...args: unknown[]) => sigEngineTickMock(...args),
+    sigEngineTick: async (...args: unknown[]) => {
+      const res = (await sigEngineTickMock(...args)) as {
+        ok: boolean;
+        noop?: boolean;
+        hostSigRuntime?: SigRuntimeMap;
+      };
+      if (res.ok && !res.noop && res.hostSigRuntime) liveSigRuntime = res.hostSigRuntime;
+      return res;
+    },
     botSigEngineTick: async () => ({ ok: false as const, reason: "not_mocked" }),
     sigEngineStatus: async () => ({ ok: false as const, reason: "not_mocked" }),
     sigM4Fx: notMocked,
@@ -98,8 +125,14 @@ import { PVP_BASE_TIMER_MS } from "@/lib/pvp-combat";
 import { PVP_MAX_HP } from "@/engine/state";
 import { signatureAbilityFor } from "@/lib/signature-abilities";
 import {
+  buildAnswerTurn,
+  resolve,
+  type PvpLiveTurnContext,
+} from "@/engine/pvp-live-turn";
+import {
   armSwordOfRuinCharges,
   INITIAL_PVP_ENGINE_STATE,
+  pvpEngineStateToRow,
   resolvePvpAnswer,
   type PvpEngineState,
 } from "@/engine/pvp-live-answer";
@@ -192,11 +225,12 @@ beforeEach(() => {
   });
   vi.setSystemTime(FIXED_NOW);
   vi.spyOn(Math, "random").mockReturnValue(0.5);
-  submitPvpLiveAnswerMock.mockReset();
+  resolvePvpLiveTurnMock.mockReset();
   sigEngineTickMock.mockReset();
   sigEngineTickMock.mockResolvedValue({ ok: false, reason: "not_mocked" });
   applyPvpSignatureEffectMock.mockReset();
   applyPvpSignatureEffectMock.mockResolvedValue({ ok: false, error: "not_mocked" });
+  liveSigRuntime = {};
 });
 
 afterEach(() => {
@@ -262,27 +296,87 @@ async function runDomScenario({
   const correctIdx = shuffledFirst.correct;
   const wrongIdx = correctIdx === 0 ? 1 : 0;
 
+  const match = baseMatch(matchOverrides);
   let hostHp = 120;
   let guestHp = 120;
-  submitPvpLiveAnswerMock.mockImplementation(
-    async (
-      _matchId: string,
-      _questionIndex: number,
-      _correct: boolean,
-      dmg: number,
-      selfDmg: number,
-      _timeMs: number,
-      _selectedOriginalIndex: number | null,
-    ) => {
-      hostHp = Math.max(0, hostHp - Math.round(selfDmg));
-      guestHp = Math.max(0, guestHp - Math.round(dmg));
-      const resolved = hostHp <= 0 || guestHp <= 0 || _questionIndex >= QUESTION_COUNT - 1;
+  let engineState: PvpEngineState = INITIAL_PVP_ENGINE_STATE;
+  const trace: Trace[] = [];
+
+  resolvePvpLiveTurnMock.mockImplementation(
+    async (_matchId: string, questionIndex: number, selectedIndex: number | null, elapsedMs: number) => {
+      const store = useGameStore.getState();
+      const ctx: PvpLiveTurnContext = {
+        self: {
+          dex: match.hostPartnerId,
+          partnerId: match.hostPartnerId,
+          hp: hostHp,
+          stages: store.myStages,
+          statuses: store.battleStatuses,
+          abilityId: match.hostAbilityId,
+          sigRuntime: liveSigRuntime,
+          suppressedUntil: match.hostSuppressedUntil,
+          pokedexCount: 0,
+          engineState: pvpEngineStateToRow(engineState),
+        },
+        opp: {
+          dex: match.guestPartnerId,
+          partnerId: match.guestPartnerId,
+          hp: guestHp,
+          stages: store.oppStages,
+          statuses: store.opponentStatuses,
+          abilityId: null,
+          sigRuntime: {},
+          suppressedUntil: 0,
+          pokedexCount: 0,
+          engineState: pvpEngineStateToRow(INITIAL_PVP_ENGINE_STATE),
+        },
+        question: questions[Math.max(0, questionIndex)],
+        questionIndex,
+      };
+      const { input, state: beforeState } = buildAnswerTurn(ctx, {
+        selectedIndex,
+        answerElapsedMs: elapsedMs,
+        personalTimerMs: PVP_BASE_TIMER_MS,
+        rng: Math.random,
+      });
+      const outcome = resolve(input, beforeState);
+
+      hostHp = Math.max(0, hostHp - Math.round(outcome.selfDmg));
+      guestHp = Math.max(0, guestHp - Math.round(outcome.dmg));
+      engineState =
+        outcome.triggerFired && match.hostPartnerId === 1002
+          ? armSwordOfRuinCharges(outcome.state, 1002)
+          : outcome.state;
+
+      const resolved = hostHp <= 0 || guestHp <= 0 || questionIndex >= QUESTION_COUNT - 1;
+      trace.push({
+        questionIndex,
+        correct: outcome.confusionMissed ? true : input.correct,
+        dmg: outcome.dmg,
+        selfDmg: outcome.selfDmg,
+      });
+
       return {
         ok: true,
-        hostHp,
-        guestHp,
-        resolved,
-        winnerId: resolved ? (guestHp <= 0 ? MY_ID : hostHp <= 0 ? OPP_ID : null) : undefined,
+        result: {
+          hostHp,
+          guestHp,
+          resolved,
+          winnerId: resolved ? (guestHp <= 0 ? MY_ID : hostHp <= 0 ? OPP_ID : null) : undefined,
+          correct: input.correct,
+          dmg: outcome.dmg,
+          selfDmg: outcome.selfDmg,
+          timeMs: elapsedMs,
+          confusionMissed: outcome.confusionMissed,
+          triggerFired: outcome.triggerFired,
+          streak: outcome.state.streak,
+          correctCount: outcome.state.correctCount,
+          wrongStreak: outcome.state.selfWrongStreak,
+          confusedTicks: outcome.state.confusedTicks,
+          sturdyFired: false,
+          sandForceKeptStreak: false,
+          typeAbilityModFired: false,
+        },
       };
     },
   );
@@ -295,7 +389,7 @@ async function runDomScenario({
       startedAt={FIXED_NOW.toISOString()}
       myId={MY_ID}
       hostId={MY_ID}
-      match={baseMatch(matchOverrides)}
+      match={match}
       opponentName="Rival"
       onFinish={onFinish}
     />,
@@ -334,12 +428,7 @@ async function runDomScenario({
     elapsed = nextSlotStart;
   }
 
-  return submitPvpLiveAnswerMock.mock.calls.map(([, questionIndex, correct, dmg, selfDmg]) => ({
-    questionIndex,
-    correct,
-    dmg,
-    selfDmg,
-  }));
+  return trace;
 }
 
 /** A per-step RNG that returns `overrideValue` (if provided) exactly once,
@@ -368,13 +457,14 @@ interface PureScenarioOptions {
   rngOverrideAt?: Record<number, number>;
   /** The engine-runtime `disabled` flag to use for step `i`, derived from the
    *  PREVIOUS step's outcome — mirrors a scenario's mocked `sigEngineTick`
-   *  response the same way the real component only updates `sigDisabledRef`
-   *  from a resolved tick. Defaults to always-false (the suite's default
-   *  `{ok:false}` no-op mock never updates it). */
+   *  response the same way the real component only updates the persisted
+   *  sig_runtime from a resolved tick. Defaults to always-false (the suite's
+   *  default `{ok:false}` no-op mock never updates it). */
   sigDisabledForStep?: (i: number, prevOutcomeCorrect: boolean | null) => boolean;
   /** Called after each step with that step's engine `triggerFired` verdict —
-   *  lets a scenario arm Sword of Ruin's charges the same way
-   *  `fireCappedPayload` does once its RPC resolves, before the NEXT step. */
+   *  lets a scenario arm Sword of Ruin's charges the same way the real
+   *  SQL-side arming (Phase 4/5 cutover slice 2) does once its RPC resolves,
+   *  before the NEXT step. */
   afterStep?: (i: number, triggerFired: boolean, state: PvpEngineState) => PvpEngineState;
 }
 
@@ -528,8 +618,8 @@ describe("live-pvp-battle-screen engine-verification (resolvePvpAnswer vs. the r
       oppStages: { attack: 0, defense: 2, speed: 0, crit: 0 },
       script,
     });
-    // Mirrors `fireCappedPayload`: once the row's OWN trigger fires (and the
-    // mocked RPC resolves, unconditionally here), arm the 2-charge window
+    // Mirrors the real SQL-side arming: once the row's OWN trigger fires (and
+    // the mocked RPC resolves, unconditionally here), arm the 2-charge window
     // before the NEXT step.
     const pureTrace = runPureScenario({
       playerPokemon: chienPao,
