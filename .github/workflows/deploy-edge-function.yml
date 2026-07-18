@@ -23,13 +23,21 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install dependencies
         run: npm ci
 
       - name: Bundle the function
         run: node scripts/bundle-edge-function.mjs "${{ inputs.function_name }}"
+
+      # supabase functions deploy only looks inside the function's own
+      # directory -- it can't see index.ts's real relative imports into
+      # ../../../src/**. Swap the self-contained bundle in as the deploy
+      # entrypoint (this checkout is thrown away after the job; the repo's
+      # real index.ts on disk is never touched).
+      - name: Use the bundle as the deploy entrypoint
+        run: cp "supabase/functions/${{ inputs.function_name }}/.bundle.ts" "supabase/functions/${{ inputs.function_name }}/index.ts"
 
       - uses: supabase/setup-cli@v1
         with:
