@@ -1,0 +1,26 @@
+-- Live PvP Phase 4/5 cutover, final flip: revoke the OLD
+-- submit_pvp_live_answer/submit_bot_pvp_move RPCs' execute grant.
+--
+-- These took the client's self-reported `_correct`/`_dmg`/`_self_dmg` at
+-- face value (only clamping magnitude) -- the exact trust gap this whole
+-- plan closes. The client was cut over to pvp-live-resolve-turn (which
+-- calls the new service-role-only apply_pvp_live_answer_v2/
+-- apply_bot_pvp_move_v2 RPCs instead) in a prior, already-merged/deployed/
+-- smoke-tested PR; nothing in this codebase calls these two RPCs anymore.
+-- This migration is the actual irreversible-ish flip: once revoked, no
+-- authenticated client can self-report a win by calling them directly.
+--
+-- Neither function ever had an explicit `revoke ... from public` -- Postgres
+-- grants EXECUTE to PUBLIC by default at creation time, so the repeated
+-- `grant ... to authenticated` on submit_pvp_live_answer was actually
+-- redundant, and submit_bot_pvp_move never got an explicit grant at all
+-- because it didn't need one. Revoking only `from authenticated` would NOT
+-- close this: PUBLIC's own grant would still let any authenticated (or even
+-- anon) session call it. Revoke from public/authenticated/anon explicitly,
+-- matching the v2 RPCs' own lockdown pattern
+-- (20260718160000_pvp_live_resolve_turn_apply_rpcs.sql).
+--
+-- The functions themselves are left in place (not dropped) -- deleting the
+-- dead bodies is Phase 6 cleanup (separate task), not this flip.
+revoke all on function public.submit_pvp_live_answer(uuid, int, boolean, int, int, int, int) from public, authenticated, anon;
+revoke all on function public.submit_bot_pvp_move(uuid, integer, boolean, integer, integer) from public, authenticated, anon;
