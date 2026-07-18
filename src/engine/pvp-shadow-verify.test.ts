@@ -120,4 +120,18 @@ describe("pvp-shadow-verify", () => {
     const [result] = verifyMatchSide([r]);
     expect(result.knownGap).toBe("sword_of_ruin_arming");
   });
+
+  it("verifies a guest-side (bot-mirror) row identically, since verifyMatchSide is side-agnostic", () => {
+    // Phase 5a shadow-logs the bot's own move as side:"guest" with myDex/oppDex
+    // swapped (self = bot, opponent = the human host) -- confirms that reuse
+    // holds rather than assuming it from reading the code, per this repo's
+    // CLAUDE.md falsify-before-trusting discipline.
+    const r: ShadowLogRow = { ...row(0, true, 0), side: "guest" };
+    const input = reconstructPvpAnswerInput(r, () => 0.99);
+    const { dmg } = resolvePvpAnswer(input, INITIAL_PVP_ENGINE_STATE);
+    r.clientReport.dmg = dmg;
+
+    const [result] = verifyMatchSide([r]);
+    expect(result.match).toBe(true);
+  });
 });
