@@ -1,0 +1,55 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`live-pvp-battle-screen characterization (regression baseline) > plain partner (no signature ability) — correct/wrong script 1`] = `
+[
+  {
+    "correct": true,
+    "dmg": 9,
+    "questionIndex": 0,
+    "selectedOriginalIndex": 0,
+    "selfDmg": 0,
+  },
+  {
+    "correct": true,
+    "dmg": 9,
+    "questionIndex": 1,
+    "selectedOriginalIndex": 0,
+    "selfDmg": 0,
+  },
+  {
+    "correct": false,
+    "dmg": 0,
+    "questionIndex": 2,
+    "selectedOriginalIndex": 3,
+    "selfDmg": 8,
+  },
+  {
+    "correct": true,
+    "dmg": 9,
+    "questionIndex": 3,
+    "selectedOriginalIndex": 0,
+    "selfDmg": 0,
+  },
+  {
+    "correct": true,
+    "dmg": 9,
+    "questionIndex": 4,
+    "selectedOriginalIndex": 0,
+    "selfDmg": 0,
+  },
+  {
+    "correct": false,
+    "dmg": 0,
+    "questionIndex": 5,
+    "selectedOriginalIndex": 3,
+    "selfDmg": 8,
+  },
+  {
+    "correct": true,
+    "dmg": 9,
+    "questionIndex": 6,
+    "selectedOriginalIndex": 0,
+    "selfDmg": 0,
+  },
+]
+`;

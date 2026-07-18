@@ -2443,6 +2443,7 @@ export function LivePvpBattleScreen({
                   return (
                     <button
                       key={i}
+                      data-testid={`option-${i}`}
                       disabled={selected !== null || isDimmed}
                       onClick={() => handleAnswer(i)}
                       className={`min-h-[48px] rounded-2xl border-2 px-4 py-3 text-left font-display text-base transition active:scale-[0.98] ${
