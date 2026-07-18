@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { Backpack, Info } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { Trivia, MissedAnswer } from "@/lib/trivia-core";
-import { shuffleAllTriviaOptions } from "@/lib/trivia-core";
+import { shuffleTriviaOptionsWithOrder } from "@/lib/trivia-core";
 import { playSfx, playCry } from "@/lib/audio";
 import { useGameStore, type ActiveStatus, type PvpStatStages } from "@/lib/store";
 import {
@@ -457,9 +457,17 @@ export function LivePvpBattleScreen({
   onFinish,
   onMissed,
 }: Props) {
-  // Shared question set, per-client option order (answers are submitted as
-  // correct/incorrect booleans, never as option indexes, so this is safe).
-  const questions = useMemo(() => shuffleAllTriviaOptions(rawQuestions), [rawQuestions]);
+  // Shared question set, per-client option order. `orders[i][displayIndex]`
+  // recovers the ORIGINAL (server-canonical) option index for question i's
+  // displayed choice — needed so the server can independently verify
+  // correctness against its own unshuffled `questions` column (server-first
+  // PvP refactor) despite every client shuffling options independently.
+  const shuffled = useMemo(
+    () => rawQuestions.map((q) => shuffleTriviaOptionsWithOrder(q)),
+    [rawQuestions],
+  );
+  const questions = useMemo(() => shuffled.map((s) => s.q), [shuffled]);
+  const orders = useMemo(() => shuffled.map((s) => s.order), [shuffled]);
   const amIHost = myId === hostId;
   const myStages = useGameStore((s) => s.myStages);
   const oppStages = useGameStore((s) => s.oppStages);
@@ -1320,7 +1328,7 @@ export function LivePvpBattleScreen({
         noAnswer: true,
         dedupeKey: `self:answer-result:${leaving}:no-answer`,
       });
-      void resolveQuestion(leaving, false, personalTimerMs);
+      void resolveQuestion(leaving, false, personalTimerMs, null);
     }
     enterQuestion(idx);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1420,7 +1428,12 @@ export function LivePvpBattleScreen({
     });
   }
 
-  async function resolveQuestion(idxAtAnswer: number, correct: boolean, elapsedMs: number) {
+  async function resolveQuestion(
+    idxAtAnswer: number,
+    correct: boolean,
+    elapsedMs: number,
+    selectedOriginalIndex: number | null,
+  ) {
     if (finishedRef.current) return;
     // No-double-submit guard (#6): each slot resolves exactly once. Protects the
     // no-answer ceiling resolve from racing the personal-timeout submit (indices
@@ -1849,7 +1862,15 @@ export function LivePvpBattleScreen({
     prevCorrectRef.current = correct;
     prevElapsedRef.current = elapsedMs;
 
-    const res = await submitPvpLiveAnswer(matchId, idxAtAnswer, correct, dmg, selfDmg, elapsedMs);
+    const res = await submitPvpLiveAnswer(
+      matchId,
+      idxAtAnswer,
+      correct,
+      dmg,
+      selfDmg,
+      elapsedMs,
+      selectedOriginalIndex,
+    );
     if (res.ok) {
       const myNewHp = amIHost ? res.hostHp : res.guestHp;
       // Ho-Oh's Rainbow Rebirth: we took lethal self-damage this question yet the
@@ -1891,7 +1912,8 @@ export function LivePvpBattleScreen({
     setSelected(choiceIndex);
     selectedRef.current = choiceIndex;
     const elapsedMs = Date.now() - questionStartRef.current;
-    void resolveQuestion(displayedIndex, choiceIndex === q.correct, elapsedMs);
+    const selectedOriginalIndex = orders[displayedIndex]?.[choiceIndex] ?? null;
+    void resolveQuestion(displayedIndex, choiceIndex === q.correct, elapsedMs, selectedOriginalIndex);
   }
 
   // Auto-timeout: if the personal timer expires with nothing selected, count
@@ -1902,7 +1924,7 @@ export function LivePvpBattleScreen({
     if (Date.now() >= deadline) {
       setSelected(-1);
       selectedRef.current = -1;
-      void resolveQuestion(displayedIndex, false, personalTimerMs);
+      void resolveQuestion(displayedIndex, false, personalTimerMs, null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayedIndex, selected, now, frozen]);
