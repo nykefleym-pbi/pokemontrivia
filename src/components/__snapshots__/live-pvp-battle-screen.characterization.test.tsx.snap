@@ -53,3 +53,171 @@ exports[`live-pvp-battle-screen characterization (regression baseline) > plain p
   },
 ]
 `;
+
+exports[`live-pvp-battle-screen characterization (signature-ability coverage) > Chien-Pao #1002 — Sword of Ruin arms on a 5-streak, then consumes a 2-charge ignore-Defense window 1`] = `
+[
+  {
+    "correct": true,
+    "dmg": 7,
+    "questionIndex": 0,
+    "selfDmg": 0,
+  },
+  {
+    "correct": true,
+    "dmg": 7,
+    "questionIndex": 1,
+    "selfDmg": 0,
+  },
+  {
+    "correct": true,
+    "dmg": 11,
+    "questionIndex": 2,
+    "selfDmg": 0,
+  },
+  {
+    "correct": true,
+    "dmg": 11,
+    "questionIndex": 3,
+    "selfDmg": 0,
+  },
+  {
+    "correct": true,
+    "dmg": 14,
+    "questionIndex": 4,
+    "selfDmg": 0,
+  },
+  {
+    "correct": true,
+    "dmg": 17,
+    "questionIndex": 5,
+    "selfDmg": 0,
+  },
+  {
+    "correct": true,
+    "dmg": 21,
+    "questionIndex": 6,
+    "selfDmg": 0,
+  },
+]
+`;
+
+exports[`live-pvp-battle-screen characterization (signature-ability coverage) > confusion sequence — 2 consecutive wrong answers confuse, and a forced roll misses the next correct click 1`] = `
+[
+  {
+    "correct": false,
+    "dmg": 0,
+    "questionIndex": 0,
+    "selfDmg": 8,
+  },
+  {
+    "correct": false,
+    "dmg": 0,
+    "questionIndex": 1,
+    "selfDmg": 8,
+  },
+  {
+    "correct": true,
+    "dmg": 0,
+    "questionIndex": 2,
+    "selfDmg": 0,
+  },
+]
+`;
+
+exports[`live-pvp-battle-screen characterization (signature-ability coverage) > disable-bearing multiplier row (Darkrai #491) — a tracked-disable kind (revertAfter) flips off after 1 wrong 1`] = `
+[
+  {
+    "correct": true,
+    "dmg": 9,
+    "questionIndex": 0,
+    "selfDmg": 0,
+  },
+  {
+    "correct": true,
+    "dmg": 9,
+    "questionIndex": 1,
+    "selfDmg": 0,
+  },
+  {
+    "correct": true,
+    "dmg": 26,
+    "questionIndex": 2,
+    "selfDmg": 0,
+  },
+  {
+    "correct": false,
+    "dmg": 0,
+    "questionIndex": 3,
+    "selfDmg": 8,
+  },
+]
+`;
+
+exports[`live-pvp-battle-screen characterization (signature-ability coverage) > latchOnTrigger row (Regidrago #895) — HP-tier multiplier stays latched after healthy-only trigger fires once 1`] = `
+[
+  {
+    "correct": true,
+    "dmg": 21,
+    "questionIndex": 0,
+    "selfDmg": 0,
+  },
+  {
+    "correct": false,
+    "dmg": 0,
+    "questionIndex": 1,
+    "selfDmg": 4,
+  },
+  {
+    "correct": false,
+    "dmg": 0,
+    "questionIndex": 2,
+    "selfDmg": 8,
+  },
+  {
+    "correct": true,
+    "dmg": 19,
+    "questionIndex": 3,
+    "selfDmg": 0,
+  },
+]
+`;
+
+exports[`live-pvp-battle-screen characterization (signature-ability coverage) > multiplier-only row (Koraidon #1007) — streak-3 x2 vs ice/flying/psychic/dragon/fairy 1`] = `
+[
+  {
+    "correct": true,
+    "dmg": 9,
+    "questionIndex": 0,
+    "selfDmg": 0,
+  },
+  {
+    "correct": true,
+    "dmg": 9,
+    "questionIndex": 1,
+    "selfDmg": 0,
+  },
+  {
+    "correct": true,
+    "dmg": 26,
+    "questionIndex": 2,
+    "selfDmg": 0,
+  },
+]
+`;
+
+exports[`live-pvp-battle-screen characterization (signature-ability coverage) > phase/fixedIndex row (Giratina #487) — q2 fires a x2 outgoing mark, q1 does not 1`] = `
+[
+  {
+    "correct": true,
+    "dmg": 9,
+    "questionIndex": 0,
+    "selfDmg": 0,
+  },
+  {
+    "correct": true,
+    "dmg": 17,
+    "questionIndex": 1,
+    "selfDmg": 0,
+  },
+]
+`;
