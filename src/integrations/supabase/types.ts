@@ -15,6 +15,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_config: {
+        Row: {
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
+      chat_banned_words: {
+        Row: {
+          created_at: string
+          word: string
+        }
+        Insert: {
+          created_at?: string
+          word: string
+        }
+        Update: {
+          created_at?: string
+          word?: string
+        }
+        Relationships: []
+      }
       curated_questions: {
         Row: {
           category: string
@@ -83,6 +116,44 @@ export type Database = {
           served_ids?: string[]
         }
         Relationships: []
+      }
+      daily_runs: {
+        Row: {
+          correct: number
+          created_at: string
+          date: string
+          id: string
+          time_ms: number
+          total: number
+          user_id: string
+        }
+        Insert: {
+          correct: number
+          created_at?: string
+          date: string
+          id?: string
+          time_ms: number
+          total: number
+          user_id: string
+        }
+        Update: {
+          correct?: number
+          created_at?: string
+          date?: string
+          id?: string
+          time_ms?: number
+          total?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_runs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       feedback: {
         Row: {
@@ -207,6 +278,54 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "grants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mega_attempts: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          log: Json
+          status: string
+          total: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          log?: Json
+          status?: string
+          total: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          log?: Json
+          status?: string
+          total?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mega_attempts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "mega_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mega_attempts_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -444,6 +563,122 @@ export type Database = {
         }
         Relationships: []
       }
+      pvp_chat_bans: {
+        Row: {
+          banned_by: string | null
+          created_at: string
+          expires_at: string | null
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          banned_by?: string | null
+          created_at?: string
+          expires_at?: string | null
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          banned_by?: string | null
+          created_at?: string
+          expires_at?: string | null
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pvp_chat_bans_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pvp_chat_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          match_id: string
+          trainer_name: string
+          trainer_sprite: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          match_id: string
+          trainer_name: string
+          trainer_sprite: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          match_id?: string
+          trainer_name?: string
+          trainer_sprite?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pvp_chat_messages_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "pvp_live_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pvp_chat_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pvp_chat_reports: {
+        Row: {
+          created_at: string
+          id: string
+          message_id: string
+          reason: string | null
+          reporter_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message_id: string
+          reason?: string | null
+          reporter_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message_id?: string
+          reason?: string | null
+          reporter_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pvp_chat_reports_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "pvp_chat_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pvp_chat_reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pvp_item_effects: {
         Row: {
           item_id: string
@@ -464,6 +699,47 @@ export type Database = {
           target?: string
         }
         Relationships: []
+      }
+      pvp_live_answer_shadow_log: {
+        Row: {
+          client_report: Json
+          created_at: string
+          id: number
+          match_id: string
+          question_index: number
+          runtime_snapshot: Json
+          side: string
+          verified_correct: boolean
+        }
+        Insert: {
+          client_report: Json
+          created_at?: string
+          id?: never
+          match_id: string
+          question_index: number
+          runtime_snapshot: Json
+          side: string
+          verified_correct: boolean
+        }
+        Update: {
+          client_report?: Json
+          created_at?: string
+          id?: never
+          match_id?: string
+          question_index?: number
+          runtime_snapshot?: Json
+          side?: string
+          verified_correct?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pvp_live_answer_shadow_log_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "pvp_live_matches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pvp_live_effects: {
         Row: {
@@ -529,61 +805,84 @@ export type Database = {
           guest_ability_id: string | null
           guest_ability_started: boolean
           guest_answered_live: number
+          guest_bot_profile: Json | null
           guest_completed_at: string | null
+          guest_confused_ticks_live: number
           guest_correct: number | null
           guest_correct_live: number
+          guest_had_wrong: boolean
           guest_hp: number
           guest_id: string
           guest_items_used: number
           guest_last_submitted_idx: number
           guest_manual_fires: number
+          guest_moxie_stacks: number
           guest_partner_id: number | null
           guest_post_answer_last_idx: number
+          guest_prev_answer_elapsed_ms: number
+          guest_prev_correct: boolean
           guest_revive_bonus_until: number
           guest_revived: boolean
           guest_score: number | null
           guest_sig_engine_last_idx: number
+          guest_sig_latched: boolean
           guest_sig_runtime: Json
           guest_sig_state: Json
           guest_stages: Json
           guest_statuses: Json
           guest_streak: number | null
+          guest_streak_live: number
+          guest_sturdy_used: boolean
           guest_suppressed_until: number
+          guest_sword_of_ruin_charges: number
           guest_time_ms: number | null
           guest_time_ms_live: number
           guest_total: number | null
           guest_transform_id: number | null
           guest_type_ability_started: boolean
           guest_used_healing: boolean
+          guest_wrong_count: number
+          guest_wrong_streak_live: number
           host_ability_id: string | null
           host_ability_started: boolean
           host_answered_live: number
           host_completed_at: string | null
+          host_confused_ticks_live: number
           host_correct: number | null
           host_correct_live: number
+          host_had_wrong: boolean
           host_hp: number
           host_id: string
           host_items_used: number
           host_last_submitted_idx: number
           host_manual_fires: number
+          host_moxie_stacks: number
           host_partner_id: number | null
           host_post_answer_last_idx: number
+          host_prev_answer_elapsed_ms: number
+          host_prev_correct: boolean
           host_revive_bonus_until: number
           host_revived: boolean
           host_score: number | null
           host_sig_engine_last_idx: number
+          host_sig_latched: boolean
           host_sig_runtime: Json
           host_sig_state: Json
           host_stages: Json
           host_statuses: Json
           host_streak: number | null
+          host_streak_live: number
+          host_sturdy_used: boolean
           host_suppressed_until: number
+          host_sword_of_ruin_charges: number
           host_time_ms: number | null
           host_time_ms_live: number
           host_total: number | null
           host_transform_id: number | null
           host_type_ability_started: boolean
           host_used_healing: boolean
+          host_wrong_count: number
+          host_wrong_streak_live: number
           id: string
           is_bot_match: boolean
           live_resolved_at: string | null
@@ -599,61 +898,84 @@ export type Database = {
           guest_ability_id?: string | null
           guest_ability_started?: boolean
           guest_answered_live?: number
+          guest_bot_profile?: Json | null
           guest_completed_at?: string | null
+          guest_confused_ticks_live?: number
           guest_correct?: number | null
           guest_correct_live?: number
+          guest_had_wrong?: boolean
           guest_hp?: number
           guest_id: string
           guest_items_used?: number
           guest_last_submitted_idx?: number
           guest_manual_fires?: number
+          guest_moxie_stacks?: number
           guest_partner_id?: number | null
           guest_post_answer_last_idx?: number
+          guest_prev_answer_elapsed_ms?: number
+          guest_prev_correct?: boolean
           guest_revive_bonus_until?: number
           guest_revived?: boolean
           guest_score?: number | null
           guest_sig_engine_last_idx?: number
+          guest_sig_latched?: boolean
           guest_sig_runtime?: Json
           guest_sig_state?: Json
           guest_stages?: Json
           guest_statuses?: Json
           guest_streak?: number | null
+          guest_streak_live?: number
+          guest_sturdy_used?: boolean
           guest_suppressed_until?: number
+          guest_sword_of_ruin_charges?: number
           guest_time_ms?: number | null
           guest_time_ms_live?: number
           guest_total?: number | null
           guest_transform_id?: number | null
           guest_type_ability_started?: boolean
           guest_used_healing?: boolean
+          guest_wrong_count?: number
+          guest_wrong_streak_live?: number
           host_ability_id?: string | null
           host_ability_started?: boolean
           host_answered_live?: number
           host_completed_at?: string | null
+          host_confused_ticks_live?: number
           host_correct?: number | null
           host_correct_live?: number
+          host_had_wrong?: boolean
           host_hp?: number
           host_id: string
           host_items_used?: number
           host_last_submitted_idx?: number
           host_manual_fires?: number
+          host_moxie_stacks?: number
           host_partner_id?: number | null
           host_post_answer_last_idx?: number
+          host_prev_answer_elapsed_ms?: number
+          host_prev_correct?: boolean
           host_revive_bonus_until?: number
           host_revived?: boolean
           host_score?: number | null
           host_sig_engine_last_idx?: number
+          host_sig_latched?: boolean
           host_sig_runtime?: Json
           host_sig_state?: Json
           host_stages?: Json
           host_statuses?: Json
           host_streak?: number | null
+          host_streak_live?: number
+          host_sturdy_used?: boolean
           host_suppressed_until?: number
+          host_sword_of_ruin_charges?: number
           host_time_ms?: number | null
           host_time_ms_live?: number
           host_total?: number | null
           host_transform_id?: number | null
           host_type_ability_started?: boolean
           host_used_healing?: boolean
+          host_wrong_count?: number
+          host_wrong_streak_live?: number
           id?: string
           is_bot_match?: boolean
           live_resolved_at?: string | null
@@ -669,61 +991,84 @@ export type Database = {
           guest_ability_id?: string | null
           guest_ability_started?: boolean
           guest_answered_live?: number
+          guest_bot_profile?: Json | null
           guest_completed_at?: string | null
+          guest_confused_ticks_live?: number
           guest_correct?: number | null
           guest_correct_live?: number
+          guest_had_wrong?: boolean
           guest_hp?: number
           guest_id?: string
           guest_items_used?: number
           guest_last_submitted_idx?: number
           guest_manual_fires?: number
+          guest_moxie_stacks?: number
           guest_partner_id?: number | null
           guest_post_answer_last_idx?: number
+          guest_prev_answer_elapsed_ms?: number
+          guest_prev_correct?: boolean
           guest_revive_bonus_until?: number
           guest_revived?: boolean
           guest_score?: number | null
           guest_sig_engine_last_idx?: number
+          guest_sig_latched?: boolean
           guest_sig_runtime?: Json
           guest_sig_state?: Json
           guest_stages?: Json
           guest_statuses?: Json
           guest_streak?: number | null
+          guest_streak_live?: number
+          guest_sturdy_used?: boolean
           guest_suppressed_until?: number
+          guest_sword_of_ruin_charges?: number
           guest_time_ms?: number | null
           guest_time_ms_live?: number
           guest_total?: number | null
           guest_transform_id?: number | null
           guest_type_ability_started?: boolean
           guest_used_healing?: boolean
+          guest_wrong_count?: number
+          guest_wrong_streak_live?: number
           host_ability_id?: string | null
           host_ability_started?: boolean
           host_answered_live?: number
           host_completed_at?: string | null
+          host_confused_ticks_live?: number
           host_correct?: number | null
           host_correct_live?: number
+          host_had_wrong?: boolean
           host_hp?: number
           host_id?: string
           host_items_used?: number
           host_last_submitted_idx?: number
           host_manual_fires?: number
+          host_moxie_stacks?: number
           host_partner_id?: number | null
           host_post_answer_last_idx?: number
+          host_prev_answer_elapsed_ms?: number
+          host_prev_correct?: boolean
           host_revive_bonus_until?: number
           host_revived?: boolean
           host_score?: number | null
           host_sig_engine_last_idx?: number
+          host_sig_latched?: boolean
           host_sig_runtime?: Json
           host_sig_state?: Json
           host_stages?: Json
           host_statuses?: Json
           host_streak?: number | null
+          host_streak_live?: number
+          host_sturdy_used?: boolean
           host_suppressed_until?: number
+          host_sword_of_ruin_charges?: number
           host_time_ms?: number | null
           host_time_ms_live?: number
           host_total?: number | null
           host_transform_id?: number | null
           host_type_ability_started?: boolean
           host_used_healing?: boolean
+          host_wrong_count?: number
+          host_wrong_streak_live?: number
           id?: string
           is_bot_match?: boolean
           live_resolved_at?: string | null
@@ -1014,6 +1359,77 @@ export type Database = {
           },
         ]
       }
+      whos_that_rounds: {
+        Row: {
+          choices: Json
+          correct: boolean | null
+          created_at: string
+          crop_back: boolean
+          crop_dx: number
+          crop_dy: number
+          hour_key: number
+          id: string
+          is_shiny: boolean
+          mode: string
+          mon_id: number
+          name: string
+          resolved: boolean
+          reward_icon: string
+          reward_id: string
+          reward_name: string
+          types: Json
+          user_id: string
+        }
+        Insert: {
+          choices: Json
+          correct?: boolean | null
+          created_at?: string
+          crop_back: boolean
+          crop_dx: number
+          crop_dy: number
+          hour_key: number
+          id?: string
+          is_shiny: boolean
+          mode: string
+          mon_id: number
+          name: string
+          resolved?: boolean
+          reward_icon: string
+          reward_id: string
+          reward_name: string
+          types: Json
+          user_id: string
+        }
+        Update: {
+          choices?: Json
+          correct?: boolean | null
+          created_at?: string
+          crop_back?: boolean
+          crop_dx?: number
+          crop_dy?: number
+          hour_key?: number
+          id?: string
+          is_shiny?: boolean
+          mode?: string
+          mon_id?: number
+          name?: string
+          resolved?: boolean
+          reward_icon?: string
+          reward_id?: string
+          reward_name?: string
+          types?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whos_that_rounds_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1122,6 +1538,19 @@ export type Database = {
         }
         Returns: Json
       }
+      apply_bot_pvp_move_v2: {
+        Args: {
+          _caller_id: string
+          _correct: boolean
+          _dmg: number
+          _match_id: string
+          _next_state: Json
+          _question_index: number
+          _self_dmg: number
+          _time_ms: number
+        }
+        Returns: Json
+      }
       apply_bot_pvp_signature_effect: {
         Args: {
           _match_id: string
@@ -1129,6 +1558,20 @@ export type Database = {
           _pokemon_id: number
           _question_index: number
           _scale_count?: number
+        }
+        Returns: Json
+      }
+      apply_pvp_live_answer_v2: {
+        Args: {
+          _caller_id: string
+          _confusion_missed: boolean
+          _edge_dmg: number
+          _edge_self_dmg: number
+          _match_id: string
+          _next_state: Json
+          _question_index: number
+          _selected_index: number
+          _time_ms: number
         }
         Returns: Json
       }
@@ -1455,16 +1898,6 @@ export type Database = {
         Args: { _opponent_code: string; _partner_id?: number; _questions: Json }
         Returns: Json
       }
-      submit_bot_pvp_move: {
-        Args: {
-          _correct: boolean
-          _dmg: number
-          _match_id: string
-          _question_index: number
-          _time_ms: number
-        }
-        Returns: Json
-      }
       submit_live_pvp_result: {
         Args: {
           _correct: number
@@ -1503,17 +1936,6 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
-      }
-      submit_pvp_live_answer: {
-        Args: {
-          _correct: boolean
-          _dmg: number
-          _match_id: string
-          _question_index: number
-          _self_dmg: number
-          _time_ms: number
-        }
-        Returns: Json
       }
       submit_pvp_result: {
         Args: {
