@@ -1,214 +1,260 @@
-# 01-spec — Global Chat (v1)
+# 01-spec — Chat (v1): post-match, not global
 
-**Feature slug:** `global-chat`
-**Author:** Product Owner
-**Date:** 2026-07-18
+**Feature slug:** `global-chat` (retained for traceability; v1 scope is no longer
+literally global — see below)
+**Author:** Product Owner, revised after a Fable design-critique pass
+**Date:** 2026-07-18 (revision 2)
 **Source:** Player feedback (`public.feedback`, TurboAce74, suggestion, 2026-07-09):
 "Add a Global Chat. Ensure profanities or incorrect behavior is banned."
-**Supersedes:** the "awaiting owner decisions 1–7" gate in `02-architecture.md`
-(2026-07-10) — this spec resolves those decisions so the plan can proceed.
+**History:**
+- `02-architecture.md` (2026-07-10) — first pass, global lobby room, stopped at
+  "plan only" pending 7 owner decisions.
+- Revision 1 (2026-07-18, superseded by this doc) — resolved all 7 decisions but
+  kept the global-room shape.
+- **This revision** — a Fable UI/UX+product critique of revision 1 pushed back on
+  the global-room framing itself (see "Why the re-scope" below) and its
+  recommendation is adopted here as the v1 plan.
 
 ---
 
-## Problem statement
+## Why the re-scope
 
-Players have no way to talk to each other outside a live 1:1 match. The request is
-for a shared space to chat, with an explicit (and correct) worry that public text
-input in a game invites abuse. v1 must ship a genuinely useful chat surface without
-shipping an unmoderated firehose.
+The original feedback's own justification, and this spec's own problem statement,
+say the gap is *"players have no way to talk to each other outside a live 1:1
+match."* That is a relationship gap — talk to the person I just played, talk to my
+friends — not a broadcast gap. Every existing social surface in this app is paired
+and contextual (friend codes, friend requests, PvP invites, Nearby Battle's
+face-to-face QR handshake). A global, server-wide room is the one shape that:
+
+- serves that actual want worst (a public firehose isn't "talk to my opponent"),
+- is emptiest most of the time in a small-population, short-session game (battles
+  run 2–5 minutes; nobody idles in a lobby) — and an empty global chat reads
+  worse than no chat at all,
+- and maximizes exactly the moderation/legal exposure (public text input, a game
+  that plausibly attracts minors) that revision 1 had flagged as "open, not
+  blocking" — backwards, since a paired/consenting surface mostly dissolves that
+  risk instead of requiring it be solved up front.
+
+**v1 is re-scoped to chat scoped to a single completed/active `pvp_live_matches`
+row** (Nearby Battle, human-vs-human only — Training-vs-bot has no
+`pvp_live_matches` row and is out of scope by construction, since there's no one
+on the other end to talk to). A true global lobby is not cancelled, just deferred
+to a possible M3, gated on real usage data plus the moderation tooling and legal
+review a public room actually needs.
+
+---
 
 ## In scope (v1)
 
-- One single, server-wide **global lobby chat room** — not per-match, not
-  per-friend-group, not regional.
-- Server-side **authoritative** profanity filtering (reject on send), not just
-  client-side cosmetic filtering.
+- Chat scoped to one `pvp_live_matches` row — both participants (`host_id`,
+  `guest_id`) of that specific Nearby Battle can message each other, during the
+  match and for a bounded window after it ends.
+- Server-side **authoritative** profanity filtering (reject on send).
 - Rate limiting and message-length caps.
-- Posting gated on having a **claimed `trainer_name`** (read is open to everyone,
-  including guests).
-- A basic **report-message** action that reaches a human (reuse the
-  `feedback_to_issue` webhook pattern).
-- Manual ban capability via existing service-role/dashboard access (no new admin UI
-  required for v1).
+- Posting gated on having a **claimed `trainer_name`** (same rule as before —
+  guests can still play Nearby Battle, but must claim a name before they can
+  chat).
+- **Report-message**, in M1 (moved up from M2 — see "Moderation" below).
+- **A kill switch**: a single server-checked flag that instantly disables all new
+  chat sends app-wide if abuse shows up, without needing a deploy.
+- Manual ban capability via existing service-role/dashboard access.
 
 ## Out of scope (v1 — explicitly deferred)
 
-- Per-match chat (attached to a live Nearby Battle) and friend-only/DM chat —
-  separate features, not this one.
-- In-app moderator dashboard / mute-mute-ban UI.
+- **A server-wide global lobby room** — this is the M3 candidate, not v1. Revisit
+  only after M1/M2 data shows real demand and only alongside real moderation
+  tooling + a completed legal/child-safety review.
+- Friends-only always-on chat / DMs outside of a shared match.
+- Chat for Training (bot) matches, Mega Raid, Daily Quest, Who's That Pokémon —
+  none of these have a second human to talk to.
+- In-app moderator dashboard / mute-ban UI.
 - Auto-hide-on-report-threshold automation.
 - Mask-vs-block nuance (v1 is block-only: a flagged message is rejected, never
   stored/shown).
-- Message edit/delete by the author, reactions, rich media, presence/typing
-  indicators.
+- Message edit/delete, reactions, rich media, presence/typing indicators.
 - Multi-language wordlist / i18n moderation.
-- Any anti-evasion beyond "must have a claimed name" (device fingerprinting, phone
-  verification, etc.).
-- Full legal/child-safety review (COPPA-style, ToS, code-of-conduct enforcement) —
-  flagged as an open question, not resolved here.
+- Device-level anti-evasion (fingerprinting, phone verification, etc.).
 
 ---
 
-## Resolved decisions (supersedes `02-architecture.md` §"Risks & open product decisions", items 1–7)
+## Resolved decisions
 
-1. **Ban evasion via anonymous accounts** — *Accepted risk for v1.* Posting requires
-   a claimed `trainer_name`, a real (if imperfect) deterrent since it's the same
-   public identity used for friends/leaderboards. Clearing storage and reclaiming a
-   fresh name still evades a ban — documented as a known v1 limitation, not a
-   blocker.
-2. **Guests** — May **read** the global chat freely. May **not post** until they've
-   claimed a trainer name. Concrete gate for decision 1.
+1. **Ban evasion** — Still possible (clear storage, reclaim a fresh name), but
+   materially lower-stakes than the global-room version: a ban only removes
+   someone from chatting with people they're matched against, not from a shared
+   public square. Accepted as a known v1 limitation.
+2. **Guests** — Can play Nearby Battle as guests today; must claim a
+   `trainer_name` before they can send a chat message in a match (read-along
+   without posting is fine, matching the original gate's spirit).
 3. **Wordlist maintenance** — Product Owner owns the initial word list and
-   block/severity tuning as a living doc, not engineering. English-only for v1;
-   i18n explicitly deferred.
-4. **No moderator tooling** — Acceptable for v1. Reports escalate to a GitHub issue
-   (mirrors `feedback_to_issue`) for human triage; bans applied manually via
-   Supabase dashboard/service-role in the interim. In-app mod surface is a later
-   milestone, not required for v1 DoD.
-5. **Legal/child-safety** — Not resolved by this spec; flagged as an **open
-   question requiring a business/legal call**, not an engineering one. Mitigation
-   shipped in v1: a one-time "be kind / community guidelines" acknowledgment shown
-   on first chat open. Full compliance review should happen before any broad
-   marketing push, not before shipping to the Vercel preview for internal
-   validation.
-6. **Realtime cost/scaling** — Deferred to the Solution Architect; no numeric SLA
-   fixed by product. Requirement: normal usage must not visibly degrade the
-   existing PvP realtime experience.
-7. **Chat scope** — **Resolved: one single global lobby room in v1.** Per-match and
-   friend-group scoping are real future asks but not this slice.
+   block-severity tuning. English-only for v1.
+4. **No moderator tooling** — Acceptable for v1 *because* scope is now paired
+   matches, not a public room: the blast radius of one bad actor is one
+   opponent, not everyone online. Report → GitHub issue (mirrors
+   `feedback_to_issue`) for human triage; kill switch for an emergency stop; bans
+   applied manually via dashboard.
+5. **Legal/child-safety** — Substantially de-risked by the re-scope (paired,
+   mutually-matched participants, not an open public room), but not eliminated —
+   still flagged as a business question before any future M3 global room, not
+   before shipping M1.
+6. **Realtime cost/scaling** — A non-issue at this scope: fan-out is bounded to
+   exactly the two participants of a match (RLS-scoped to `host_id`/`guest_id`),
+   not a global broadcast. No scaling design needed for v1.
+7. **Chat scope** — **Resolved: scoped to a single `pvp_live_matches` row.** No
+   global room in v1.
 
 ---
 
 ## User stories & acceptance criteria
 
-### Story 1 — Read the global chat (Must, M1)
-As any player (including a guest), I want to see recent global chat messages, so
-that I can follow the conversation before deciding to join in.
-- **Given** I open the chat surface, **When** it loads, **Then** I see the most
-  recent messages (bounded backfill, e.g. last 50) ordered oldest→newest, and new
-  messages arrive live without a refresh.
-- **Given** a message has been rejected by moderation or hidden, **Then** I never
-  see it (not a redacted placeholder — it simply isn't there).
-- **Given** I am a guest with no claimed name, **Then** I can still read; nothing
-  prompts me to sign up just to look.
+### Story 1 — Chat during/after a Nearby Battle (Must, M1)
+As a player in (or who just finished) a Nearby Battle, I want to message my
+opponent, so I can say gg, ask a rematch, or just talk to the person I played.
+- **Given** I'm a participant in a `pvp_live_matches` row, **When** I open that
+  match's chat, **Then** I see the messages exchanged in that match, live,
+  without a refresh.
+- **Given** I am not a participant in that match, **Then** I cannot read or post
+  to it (RLS-enforced, not just UI-hidden).
+- **Given** the match ends, **Then** chat for that match remains open for a
+  bounded grace window (exact duration is the Architect's call) before it's
+  retired — not indefinitely.
 
-### Story 2 — Post to the global chat (Must, M1)
-As a player with a claimed trainer name, I want to send a message that appears to
-everyone in near-real-time, so that I can participate.
+### Story 2 — Post a message (Must, M1)
+As a match participant with a claimed trainer name, I want to send a message that
+reaches my opponent in near-real-time.
 - **Given** I have a claimed `trainer_name`, **When** I send a valid message,
-  **Then** it appears in my view and every other open client's view within a
-  couple seconds, attributed to my trainer name/sprite.
-- **Given** I have **not** claimed a trainer name (guest), **When** I try to send,
-  **Then** I'm blocked with a clear message pointing at the existing name-claim
-  flow — not a silent failure.
+  **Then** it appears on both clients within a couple seconds.
+- **Given** I have not claimed a trainer name, **When** I try to send, **Then**
+  I'm blocked with a message pointing at the existing name-claim flow.
 - **Given** my message exceeds the length cap, **Then** it's rejected
-  client-side before it ever reaches the server.
+  client-side before it reaches the server.
 
-### Story 3 — Messages are filtered and rate-limited authoritatively (Must, M1)
-As the product, I want profanity and spam blocked server-side regardless of what
-client sent the request, so that a modified/bypassed client can't post anything
-the official app would refuse.
-- **Given** a message contains a blocked-list term (after normalization: case,
-  separators, repeats), **When** it's submitted, **Then** the server rejects it
-  outright — it is never stored, never broadcast.
-- **Given** I send messages faster than the allowed rate (e.g. more than one every
-  ~2s, or a burst above a short-window cap), **Then** the extra sends are rejected
-  with a clear "slow down" response, not silently dropped or queued.
-- **Given** I repeat the identical message back-to-back, **Then** the duplicate is
-  rejected (basic flood guard).
+### Story 3 — Authoritative filtering, rate-limit, and kill switch (Must, M1)
+As the product, I want abuse blocked server-side and a way to shut chat off
+instantly if something's wrong.
+- **Given** a message contains a blocked-list term (after normalization), **When**
+  submitted, **Then** the server rejects it outright — never stored, never sent.
+- **Given** I send faster than the allowed rate, or repeat an identical message,
+  **Then** the extra sends are rejected with a clear "slow down" response.
 - **Given** I am under an active ban, **Then** every send attempt is rejected
   regardless of client-side state.
+- **Given** the kill switch is flipped, **Then** every send attempt everywhere is
+  rejected immediately, with no deploy required.
 
-### Story 4 — Report a message (Must, M2)
-As a player who sees a message that slipped past filtering (harassment, evasion
-spelling, etc.), I want to report it, so that a human can act.
-- **Given** I report a message, **When** the report is submitted, **Then** it's
-  recorded once per (message, reporter) pair and reaches a person for triage
-  (reuse the feedback-to-issue webhook pattern).
-- **Given** I've already reported a message, **Then** I can't report it again from
-  the same account.
-- This story does **not** require automatic hide-on-threshold or an in-app mod UI
-  — manual follow-up by a human via existing dashboard access is sufficient for
-  v1's DoD.
+### Story 4 — Report a message (Must, M1 — moved up from M2)
+As a player who sees a message that slipped past filtering, I want to report it
+so a human can act, without waiting on a later milestone.
+- **Given** I report a message, **When** submitted, **Then** it's recorded once
+  per (message, reporter) pair and reaches a person for triage (reuse
+  `feedback_to_issue`'s webhook pattern).
+- **Given** I've already reported a message, **Then** I can't report it again
+  from the same account.
+
+---
+
+## UI/UX (folds in the Fable critique directly)
+
+- **No floating button, no bottom `Sheet`.** The bottom nav already suppresses
+  itself during battles and has no free slot; a persistent chat FAB would fight
+  that suppression logic and tax screens where chat is irrelevant (Shop, Dex,
+  Profile). A `Sheet` is also the wrong container for sustained chat + an
+  on-screen keyboard inside this app's `h-[100dvh] overflow-hidden` shell — the
+  keyboard eats a bottom sheet fast.
+- **Entry point:** a "Chat" action on `PvpResultScreen`
+  (`src/routes/pvp.live.$matchId.tsx`) next to the existing `onBack` action, and
+  (if the match is still active) a header icon inside `LivePvpBattleScreen`
+  itself — not a global always-present control.
+- **Surface:** a full-screen route (e.g. `src/routes/pvp.chat.$matchId.tsx`),
+  matching how every other mode in this app already works (its own route gets
+  keyboard handling, back behavior, and BGM-per-route for free — no new overlay
+  plumbing needed in `__root.tsx`).
+- **Visual treatment:** lean into the game's own vocabulary instead of a
+  generic avatar/name/body message list, which would read as a bolted-on
+  Discord widget. Trainer sprite + `font-pixel-xs` name tag + `rounded-3xl
+  bg-card shadow-card` speech-bubble rows, a pixel eyebrow label (e.g. "VS
+  {opponentName}", matching `NearbyBattleSheet`'s "FACE TO FACE" pattern).
+- **No numeric unread badge.** At most a quiet dot on the entry point if there
+  are unseen messages in an active match's chat — a message counter would tax
+  attention against the core trivia/battle loop.
 
 ---
 
 ## Data model implications (conceptual — Architect's call on exact shape)
 
-- **Messages** need: an author reference, a **room/scope identifier from day one**
-  even though v1 has exactly one room value — so a future per-match or per-group
-  room doesn't force a breaking schema change later.
-- **Moderation status** is binary in v1: a message either exists (passed
-  filtering) or was rejected at send time and was never persisted.
-- **Reports** need: which message, who reported, one-row-per-(message, reporter)
-  uniqueness.
-- **Bans** need: who, since when, optional expiry, applied by whom — v1 only needs
-  manual insert/update via dashboard.
-- **RLS shape:** read is open (any session including guest); insert is **never**
-  direct — must go through a server-side function that enforces
-  name-claimed + not-banned + rate-limit + filter, mirroring `pvp_live_matches`.
-  No client update/delete policy — messages are immutable once accepted.
-- **Retention:** bounded (days or row-count cap — Architect's call); client
-  backfill always capped to the most recent ~50 regardless of table depth.
+- **Messages**: author (`user_id`), `match_id` referencing `pvp_live_matches(id)`,
+  body, created_at. RLS: select/insert only if `auth.uid()` is that match's
+  `host_id` or `guest_id` — mirrors the existing `pvp_live_matches` row policy
+  directly, no separate room-membership concept needed.
+- **No RLS on a "who can read this room" join is needed at all** (unlike the
+  global-room design) — match participancy already answers it.
+- **Reports**: message id, reporter id, one-row-per-(message, reporter).
+- **Kill switch**: a single boolean/config row (or reuse an existing app-config
+  pattern if one exists) checked inside the send RPC.
+- **Bans**: who, since when, optional expiry, applied manually for v1.
+- **Retention**: bounded to match lifetime + a short grace window — trivially
+  boundable and prunable (existing `pg_cron` precedent), unlike an
+  ever-growing global log.
+- **Writes are RPC-only**, mirroring `pvp_live_matches`'s own write model — no
+  direct client INSERT policy.
 
 ## Priority (MoSCoW)
 
-- **Must:** Stories 1–4.
-- **Should:** client-side pre-filter for instant typing feedback (in addition to,
-  never instead of, the server check); one-time community-guidelines
-  acknowledgment.
-- **Could:** mask-vs-block severity tiers, auto-hide on report threshold, in-app
-  moderator surface, presence/typing indicators.
-- **Won't (this feature cycle):** DMs, per-match/room-scoped chat variants,
-  message edit/delete, reactions, rich media, i18n wordlist, device-level
-  anti-evasion, full admin dashboard.
+- **Must:** Stories 1–4 (all of M1 — reporting and the kill switch are no longer
+  deferred).
+- **Should:** client-side pre-filter for instant typing feedback (never a
+  substitute for the server check).
+- **Could:** message-hide propagation to already-open clients on moderation,
+  extending match-scoped chat to other paired contexts (friend-to-friend outside
+  a match) if requested later.
+- **Won't (this cycle):** a global lobby room (M3 candidate only), DMs outside a
+  shared match, edit/delete, reactions, rich media, i18n wordlist, in-app
+  moderator dashboard.
 
-## Milestone breakdown (small, independently shippable PRs)
+## Milestone breakdown
 
-- **M1 — Read & post, moderated:** Stories 1–3. Ships a usable, safe-by-default
-  global chat. No reporting yet.
-- **M2 — Reporting loop:** Story 4, reusing the `feedback_to_issue` webhook shape.
-  Manual bans via dashboard in the meantime.
-- **M3 (not committed in this spec, Could-tier):** auto-hide-on-threshold, in-app
-  moderator tooling, Realtime scaling migration if needed, wordlist i18n. Only
-  pick up if usage/abuse volume post-M2 warrants it.
+- **M1 — Match-scoped chat, fully moderated:** Stories 1–4 together (chat,
+  filter/rate-limit, report, kill switch). Ships as one coherent, safe-by-default
+  slice — splitting reporting into a later PR was the part revision 1 got wrong.
+- **M2 — Polish:** propagate moderation hides to already-open clients on
+  reconnect; UI refinement from real usage.
+- **M3 (not committed — Could-tier, gated):** a true global lobby room, only if
+  M1/M2 usage data shows real demand for it, and only alongside actual moderator
+  tooling and a completed legal/child-safety review.
 
 ## Definition of Done
 
-- Every Must story's acceptance criteria verified on the Vercel preview with a
-  real (or seeded) second account, not just unit tests.
-- Server-side filter and rate-limit cannot be bypassed by calling the write path
-  directly (i.e., verified as RPC-enforced, not merely client-enforced).
-- Guests can read but a guest posting attempt is cleanly rejected with actionable
-  messaging.
-- `tsc` + ESLint + Vitest green for each milestone's PR.
-- M1 and M2 ship as separate, independently reviewable PRs — no big-bang PR.
-- Retention/backfill cap in place before merge (not left as a follow-up).
+- Every Must story's acceptance criteria verified on the Vercel preview with two
+  real accounts in an actual Nearby Battle match.
+- RLS independently verified: a non-participant cannot read or write to another
+  match's chat, even by calling the write path directly.
+- Server-side filter, rate-limit, and kill switch cannot be bypassed by calling
+  the write path directly.
+- Guests can play Nearby Battle; a guest posting attempt without a claimed name
+  is cleanly rejected with actionable messaging.
+- `tsc` + ESLint + Vitest green.
+- Retention/grace-window pruning in place before merge.
 
-## Open questions (flagged, not blocking M1/M2)
+## Open questions (flagged, not blocking M1)
 
-1. **Legal/child-safety review** — business/legal call, not resolved here;
-   recommend completing before any broad public launch push, does not block
-   shipping to preview for internal validation.
-2. Exact retention window and exact rate-limit numbers — Architect's call within
-   the guardrails above.
-3. Whether/when usage volume justifies M3 — revisit after M2 ships with real data.
+1. Exact grace-window duration after a match ends before its chat closes —
+   Architect's call.
+2. Whether/when to revisit M3 (global room) — only after M1/M2 ships with real
+   usage data, and only alongside a legal review that doesn't gate M1.
 
 ---
 
 ## Handoff
-- **Status:** done — decisions 1–7 resolved; ready for architecture re-validation.
-- **Produced:** `docs/handoffs/global-chat/01-spec.md` (this doc)
-- **Next agent:** solution-architect — re-validate/update `02-architecture.md`
-  against the resolved decisions above and produce the migration/RPC/component
-  plan. **Not started — awaiting owner go-ahead to proceed past scoping.**
-- **Context the next agent needs:** reuse `profiles` identity (`ensureSession`,
-  `claimTrainerName` in `src/lib/social.ts`) for the post-gate; reuse the
-  `pvp_live_matches` realtime + RPC-write pattern
-  (`src/routes/pvp.live.$matchId.tsx`) as the precedent for the chat write path;
-  reuse `feedback_to_issue`
-  (`supabase/migrations/20260707111000_feedback_to_issue_trigger.sql`) as the
-  precedent for report escalation. No role/moderator system exists yet — not
-  required for v1 DoD.
-- **Open questions / risks:** the three flagged above; #1 is the only one with
-  real stakes outside engineering.
+- **Status:** done — re-scoped after design critique; ready for architecture
+  re-validation.
+- **Produced:** `docs/handoffs/global-chat/01-spec.md` (this doc, revision 2)
+- **Next agent:** solution-architect — produce the migration/RPC/component plan
+  for match-scoped chat (reusing `pvp_live_matches` RLS precedent directly).
+  **Not started — awaiting owner go-ahead to proceed past scoping.**
+- **Context the next agent needs:** reuse `pvp_live_matches`'s own
+  `host_id = auth.uid() or guest_id = auth.uid()` RLS pattern
+  (`supabase/migrations/20260704030000_pvp_live_matches.sql:40`) directly for
+  chat-row access — no separate room/membership table needed; entry points are
+  `PvpResultScreen` and `LivePvpBattleScreen`
+  (`src/routes/pvp.live.$matchId.tsx`), not a global overlay; reuse
+  `feedback_to_issue` for report escalation.
+- **Open questions / risks:** the two flagged above.
