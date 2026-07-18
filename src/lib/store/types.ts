@@ -222,7 +222,12 @@ export interface GameState {
   darkMode: boolean;
 
   // actions
-  setOnboarded: (name: string, pokemon: PokeEntry, trainerSprite: string) => void;
+  setOnboarded: (
+    name: string,
+    pokemon: PokeEntry,
+    trainerSprite: string,
+    abilityId?: AbilityId,
+  ) => void;
   setFriendCode: (code: string) => void;
   setLastEngagePromptDate: (date: string) => void;
   recordEngageDismiss: () => void;

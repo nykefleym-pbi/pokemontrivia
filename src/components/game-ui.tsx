@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Backpack } from "lucide-react";
+import { Backpack, Info } from "lucide-react";
 import { spriteFallbacks, type PokeType } from "@/lib/pokemon-data";
 import type { ItemDef, ItemId, StatusKind } from "@/lib/game-data";
 import { STATUS_META, ITEMS } from "@/lib/game-data";
@@ -9,6 +9,7 @@ import { legendaryCategory, isMascotTier } from "@/lib/legendary-data";
 import type { Trivia } from "@/lib/trivia-core";
 import { TimerRing } from "@/components/timer-ring";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CATEGORIES, CATEGORY_OF, BAG_SHORT_DESC } from "@/lib/item-categories";
 
 /** Item icon (PokeAPI sprite via item.iconUrl), falling back to its emoji if the
@@ -495,6 +496,7 @@ export function CombatPanel({
   maxHp,
   statuses,
   abilityName,
+  abilityDescription,
   immune,
   disadvantaged,
   testId,
@@ -506,6 +508,8 @@ export function CombatPanel({
   maxHp: number;
   statuses: Array<{ kind: StatusKind }>;
   abilityName: string | null;
+  /** Tappable Popover body for the ability chip — omit/null to render a plain chip. */
+  abilityDescription?: string | null;
   immune: boolean;
   disadvantaged: boolean;
   /** Test-observability hook only — not read by any production code. */
@@ -545,9 +549,23 @@ export function CombatPanel({
         {(abilityName || immune || disadvantaged || statuses.length > 0) && (
           <div className={`mt-1 flex w-full flex-wrap gap-0.5 ${justifyCls}`}>
             {abilityName && (
-              <span className="rounded-full bg-primary/10 px-1.5 py-[1px] font-pixel-xs text-primary">
-                ⚡ {abilityName}
-              </span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex max-w-full items-center gap-0.5 overflow-hidden rounded-full bg-primary/10 px-1.5 py-[1px] font-pixel-xs text-primary active:scale-95"
+                  >
+                    <span className="truncate">⚡ {abilityName}</span>
+                    <Info className="h-2.5 w-2.5 shrink-0 opacity-70" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align={align === "right" ? "end" : "start"} className="w-56 text-xs">
+                  <div className="font-bold text-primary">⚡ {abilityName}</div>
+                  {abilityDescription && (
+                    <p className="mt-1 leading-snug text-muted-foreground">{abilityDescription}</p>
+                  )}
+                </PopoverContent>
+              </Popover>
             )}
             {immune && (
               <span className="rounded-full bg-hp-good/20 px-1.5 py-[1px] font-pixel-xs text-hp-good">

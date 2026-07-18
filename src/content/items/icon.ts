@@ -1,4 +1,4 @@
-const BASE = "https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/items";
+const BASE = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items";
 
 export const spriteIconUrl = (slug: string) => `${BASE}/${slug}.png`;
 

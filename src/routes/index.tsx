@@ -5,7 +5,7 @@ import { Search, ChevronLeft, Check } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { STARTING_PARTNERS, type PokeEntry } from "@/lib/pokemon-data";
 import { toast } from "sonner";
-import { ABILITY_SETS, getAbilityById } from "@/lib/abilities";
+import { getAbilityById, rollAbilityId } from "@/lib/abilities";
 import { TypeBadge, PokemonSprite } from "@/components/game-ui";
 import { TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
 import { trainerQuote } from "@/lib/trainer-quotes";
@@ -215,6 +215,10 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
   const [query, setQuery] = useState("");
   const [trainerQuery, setTrainerQuery] = useState("");
   const [pick, setPick] = useState<PokeEntry | null>(null);
+  // Rolled once per selection (not re-rolled on every render) so the ability
+  // previewed here is the exact one `setOnboarded` grants below — no showing
+  // three "possible" abilities and then silently handing out a different one.
+  const previewAbilityId = useMemo(() => (pick ? rollAbilityId(pick.types) : null), [pick]);
   const [brokenTrainerIds, setBrokenTrainerIds] = useState<Set<string>>(new Set());
   const setOnboarded = useGameStore((s) => s.setOnboarded);
   const navigate = useNavigate();
@@ -334,7 +338,7 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
 
   function start() {
     if (!claimedName || !pick) return;
-    setOnboarded(claimedName, pick, trainerSprite);
+    setOnboarded(claimedName, pick, trainerSprite, previewAbilityId ?? undefined);
     useGameStore.getState().setNameReconciled(true);
     const rolled = getAbilityById(useGameStore.getState().abilityId);
     if (rolled) toast.success(`⚡ ${pick.name} has the ${rolled.name} ability!`);
@@ -596,28 +600,23 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
 
             {pick &&
               (() => {
-                const trio = ABILITY_SETS[pick.types[0]];
+                const ability = getAbilityById(previewAbilityId);
+                if (!ability) return null;
                 return (
                   <div className="mt-5 rounded-2xl bg-primary/10 p-3">
-                    <div className="font-pixel-xs uppercase text-foreground/60">
-                      Possible abilities — one is rolled when you start!
-                    </div>
-                    <div className="mt-2 space-y-2">
-                      {trio.map((ability) => (
-                        <div key={ability.id} className="flex items-center gap-3">
-                          <div
-                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white shadow ${TYPE_BG[ability.type] ?? "bg-primary"}`}
-                          >
-                            <span className="text-sm">●</span>
-                          </div>
-                          <div className="min-w-0">
-                            <div className="text-sm font-bold text-foreground">{ability.name}</div>
-                            <p className="text-xs leading-snug text-foreground/70">
-                              {ability.description}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
+                    <div className="font-pixel-xs uppercase text-foreground/60">Its ability</div>
+                    <div className="mt-2 flex items-center gap-3">
+                      <div
+                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white shadow ${TYPE_BG[ability.type] ?? "bg-primary"}`}
+                      >
+                        <span className="text-sm">●</span>
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-sm font-bold text-foreground">{ability.name}</div>
+                        <p className="text-xs leading-snug text-foreground/70">
+                          {ability.description}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 );

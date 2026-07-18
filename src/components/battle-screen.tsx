@@ -26,7 +26,7 @@ import {
   canEvolve,
   type PokeEntry,
 } from "@/lib/pokemon-data";
-import { getAbility as getAbilityFn, type Ability } from "@/lib/abilities";
+import { getAbility as getAbilityFn, rollAbilityId, type Ability } from "@/lib/abilities";
 import { TutorialOverlay } from "@/components/tutorial-overlay";
 import {
   PokemonSprite,
@@ -222,6 +222,13 @@ function BattleMode({
     [player.types, abilityId],
   );
   const playerMaxHp = playerAbility.id === "adaptable" ? 105 : 100;
+  // Cosmetic-only: the enemy trainer's Pokémon gets a random type ability too
+  // (matches the partner's ⚡ chip in the UI) but never affects damage math —
+  // Solo has no "enemy acts" turn for an ability to hook into.
+  const enemyAbility = useMemo(
+    () => getAbilityFn(enemy.pokemon.types, rollAbilityId(enemy.pokemon.types)),
+    [enemy.pokemon.types],
+  );
   const [playerHp, setPlayerHp] = useState(playerMaxHp);
   const [enemyHp, setEnemyHp] = useState(enemyMaxHp);
   const [phase, setPhase] = useState<Phase>("intro");
@@ -1407,7 +1414,8 @@ function BattleMode({
             hp={enemyHp}
             maxHp={enemyMaxHp}
             statuses={[]}
-            abilityName={null}
+            abilityName={enemyAbility.name}
+            abilityDescription={enemyAbility.description}
             immune={false}
             disadvantaged={false}
             testId="enemy"
@@ -1489,6 +1497,7 @@ function BattleMode({
             maxHp={playerMaxHp}
             statuses={statuses}
             abilityName={playerAbility.name}
+            abilityDescription={playerAbility.description}
             immune={immune}
             disadvantaged={disadvantaged}
             testId="player"
