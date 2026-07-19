@@ -1637,6 +1637,7 @@ export type Database = {
         }[]
       }
       get_mega_questions_public: { Args: { p_event_id: string }; Returns: Json }
+      get_pvp_chat_state: { Args: { _match_id: string }; Returns: Json }
       increment_curated_correct: {
         Args: { question_id: string }
         Returns: undefined
@@ -1872,6 +1873,10 @@ export type Database = {
         }
         Returns: Json
       }
+      report_pvp_chat_message: {
+        Args: { _message_id: string; _reason: string }
+        Returns: Json
+      }
       respond_friend_request: {
         Args: { _accept: boolean; _request_id: string }
         Returns: Json
@@ -1882,6 +1887,10 @@ export type Database = {
       }
       send_friend_request: { Args: { _code: string }; Returns: Json }
       send_friend_request_by_id: { Args: { _target: string }; Returns: Json }
+      send_pvp_chat_message: {
+        Args: { _body: string; _match_id: string }
+        Returns: Json
+      }
       set_live_pvp_partner: {
         Args: { _ability_id?: string; _match_id: string; _partner_id: number }
         Returns: Json
