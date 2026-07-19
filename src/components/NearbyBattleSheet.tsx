@@ -1,98 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import QRCode from "qrcode";
 import jsQR from "jsqr";
 import { toast } from "sonner";
-import { Loader2, ScanLine, QrCode } from "lucide-react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useGameStore } from "@/lib/store";
 import { startLivePvpMatch } from "@/lib/pvp-live";
 import { fetchBattleQuestions } from "@/lib/api/trivia";
 import { difficultyForLevel } from "@/lib/game-data";
 
-interface Props {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
-
 /**
- * Mirrors Pokémon GO's Trainer Battle QR flow: your friend code doubles as
- * your Battle Code (shown as a QR), and scanning someone else's Battle Code
- * with the in-app camera instantly starts a live match — no waiting lobby,
- * since you're already face to face.
+ * Camera scan-to-battle panel: point the in-app camera at a nearby trainer's
+ * Battle Code QR and a live match starts instantly — no lobby, since you're
+ * already face to face. Mounted inline by `/arena`'s Nearby Battle card
+ * (toggled via local `scanOpen` state); the "My Code" half of the old
+ * Nearby Battle sheet now lives in `battle-code-qr.tsx`.
  */
-export function NearbyBattleSheet({ open, onOpenChange }: Props) {
-  const [tab, setTab] = useState<"code" | "scan">("code");
-  const friendCode = useGameStore((s) => s.friendCode);
-  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!open || tab !== "code" || !friendCode) return;
-    let cancelled = false;
-    void QRCode.toDataURL(friendCode, { width: 280, margin: 1 }).then((url) => {
-      if (!cancelled) setQrDataUrl(url);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [open, tab, friendCode]);
-
-  useEffect(() => {
-    if (!open) setTab("code");
-  }, [open]);
-
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="rounded-t-3xl bg-poke-cream max-h-[90vh]">
-        <SheetHeader>
-          <div className="font-pixel-xs text-primary">FACE TO FACE</div>
-          <SheetTitle className="font-display-xl text-foreground">Nearby Battle</SheetTitle>
-        </SheetHeader>
-        <div className="mt-3 flex gap-2">
-          <button
-            onClick={() => setTab("code")}
-            className={`flex flex-1 items-center justify-center gap-1.5 rounded-full py-2.5 font-display-md transition ${
-              tab === "code" ? "bg-primary text-primary-foreground" : "bg-card text-foreground/60"
-            }`}
-          >
-            <QrCode className="h-4 w-4" /> My Code
-          </button>
-          <button
-            onClick={() => setTab("scan")}
-            className={`flex flex-1 items-center justify-center gap-1.5 rounded-full py-2.5 font-display-md transition ${
-              tab === "scan" ? "bg-primary text-primary-foreground" : "bg-card text-foreground/60"
-            }`}
-          >
-            <ScanLine className="h-4 w-4" /> Scan
-          </button>
-        </div>
-        <div className="mt-4">
-          {tab === "code" ? (
-            <div className="flex flex-col items-center gap-3 rounded-3xl bg-card p-6 shadow-card">
-              {qrDataUrl ? (
-                <img src={qrDataUrl} alt="Your Battle Code QR" className="h-56 w-56" />
-              ) : (
-                <div className="flex h-56 w-56 items-center justify-center">
-                  <Loader2 className="h-8 w-8 animate-spin text-foreground/40" />
-                </div>
-              )}
-              <div className="text-2xl font-extrabold tracking-[0.15em] text-foreground">
-                {friendCode ?? "------"}
-              </div>
-              <div className="text-center text-xs text-foreground/55">
-                Have a nearby trainer scan this to start a battle instantly.
-              </div>
-            </div>
-          ) : (
-            <ScanPanel active={open && tab === "scan"} onClose={() => onOpenChange(false)} />
-          )}
-        </div>
-      </SheetContent>
-    </Sheet>
-  );
-}
-
-function ScanPanel({ active, onClose }: { active: boolean; onClose: () => void }) {
+export function ScanPanel({ active, onClose }: { active: boolean; onClose: () => void }) {
   const navigate = useNavigate();
   const level = useGameStore((s) => s.level);
   const partnerId = useGameStore((s) => s.pokemon?.id ?? null);

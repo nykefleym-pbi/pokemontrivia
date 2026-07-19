@@ -462,14 +462,19 @@ function MatchPageContent({ matchId }: { matchId: string }) {
       timestamp: Date.now(),
       mode: "nearby",
     });
+    const drops = won ? rollBerryDrops() : [];
     if (won) {
-      const drops = rollBerryDrops();
       for (const id of drops) useGameStore.getState().grantItem(id, 1);
       setBerryDrops(drops.length);
       toast.success(`🍒 You picked up ${drops.length} berries from this battle!`);
     } else {
       setBerryDrops(0);
     }
+    useGameStore.getState().recordArenaBattle({
+      won,
+      isBot: match?.isBotMatch ?? false,
+      berries: drops,
+    });
   }, [phase, match, myId, opponentProfile]);
 
   function handleFinish(result: LivePvpBattleResult) {

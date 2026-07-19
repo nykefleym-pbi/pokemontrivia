@@ -61,6 +61,7 @@ import { ALL_POKEMON, type PokeEntry } from "@/lib/pokemon-data";
 
 import { EvolutionScreen } from "@/components/evolution-screen";
 import { PokemonSprite } from "@/components/game-ui";
+import { BattleLogList } from "@/components/battle-log-list";
 import {
   PartnerCard,
   CardStat,
@@ -649,7 +650,7 @@ function ProfilePage() {
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-destructive/10 text-2xl">
               <Swords className="h-5 w-5 text-destructive" />
             </div>
-            <span className="font-display-md text-foreground">PvP</span>
+            <span className="font-display-md text-foreground">Battle History</span>
             <span className="font-pixel-xs text-foreground/50">match history</span>
           </button>
           <button
@@ -947,8 +948,8 @@ function ProfilePage() {
           className="rounded-t-3xl bg-poke-cream max-h-[85vh] overflow-y-auto"
         >
           <SheetHeader>
-            <div className="font-pixel-xs text-primary">RECENT MATCHES</div>
-            <SheetTitle className="font-display-xl text-foreground">PvP history</SheetTitle>
+            <div className="font-pixel-xs text-primary">BATTLE LOG</div>
+            <SheetTitle className="font-display-xl text-foreground">Battle History</SheetTitle>
           </SheetHeader>
           <div className="mt-3">
             <Button
@@ -962,7 +963,11 @@ function ProfilePage() {
               <Swords className="mr-1.5 h-4 w-4" /> Start a new battle in the Arena
             </Button>
           </div>
-          <div className="mt-3 space-y-2.5">
+          <div className="mt-4">
+            <BattleLogList entries={battleLog.slice(0, 30)} />
+          </div>
+          <div className="mt-4 font-pixel-xs text-primary">ASYNC PVP MATCHES</div>
+          <div className="mt-2 space-y-2.5">
             {pvpMatches.length === 0 ? (
               <div className="rounded-3xl bg-card p-6 text-center text-sm text-foreground/55 shadow-card">
                 No PvP matches yet. Challenge a friend from your Friends list!

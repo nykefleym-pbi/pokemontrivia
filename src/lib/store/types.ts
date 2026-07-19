@@ -85,6 +85,24 @@ export interface WeeklyLeagueAttempt {
   won: boolean;
 }
 
+/** Battle Arena lifetime stats + the current GO-style set-of-5 win-reward
+ * tracker (5 battles per set, slot i unlocks at the (i+1)th win). */
+export interface ArenaStats {
+  nearbyBattles: number;
+  trainingBattles: number;
+  wins: number;
+  battles: number;
+  currentWinStreak: number;
+  longestWinStreak: number;
+  /** Berries picked up from Nearby Battle wins, cap 3, newest first. */
+  lastBerries: ItemId[];
+  set: {
+    battles: number;
+    wins: number;
+    claimed: [boolean, boolean, boolean, boolean, boolean];
+  };
+}
+
 export interface GameState {
   // profile
   hasOnboarded: boolean;
@@ -202,6 +220,9 @@ export interface GameState {
   // battle log (cap 20)
   battleLog: BattleLogEntry[];
 
+  // Battle Arena stats + set-of-5 win rewards
+  arenaStats: ArenaStats;
+
   // pokédex
   pokedex: Record<number, PokedexEntry>;
   defeatedEliteRegions: string[];
@@ -304,6 +325,14 @@ export interface GameState {
   raiseFlag: (name: string) => void;
   recordDaily: (r: DailyResult) => void;
   pushBattleLog: (e: BattleLogEntry) => void;
+  /** Records one Arena battle's outcome into `arenaStats` (mode counters, win
+   * streak, berries, set-of-5 progress) — auto-granting any unclaimed but
+   * unlocked set rewards before rolling over to a fresh set. */
+  recordArenaBattle: (args: { won: boolean; isBot: boolean; berries: ItemId[] }) => void;
+  /** Claims the Arena set-of-5 reward at `slot` (0-4). Returns the grant
+   * descriptor for toasting, or null if the slot isn't unlocked/already
+   * claimed/out of range. */
+  claimArenaReward: (slot: number) => { text: string } | null;
   recordPokedexCapture: (pokemonId: number, isShiny: boolean) => void;
   markEliteDefeated: (memberId: string, region: string, regionDone: boolean) => void;
   registerAbilityTriggered: (abilityId: string) => void;
