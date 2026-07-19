@@ -86,10 +86,34 @@ review a public room actually needs.
 2. **Guests** — Can play Nearby Battle as guests today; must claim a
    `trainer_name` before they can send a chat message in a match (read-along
    without posting is fine, matching the original gate's spirit).
-3. **Wordlist maintenance** — Product Owner owns the initial word list and
-   block-severity tuning. Seeded with English and Tagalog/Filipino terms for
-   v1 (owner direction, 2026-07-19); further languages remain deferred until
-   there's a concrete need.
+3. **Wordlist maintenance** — **Reviewed and blessed as intentional v1 policy
+   (2026-07-19), not a provisional placeholder.** The 14-word block-only list
+   (6 English + 8 Tagalog/Filipino, seeded across two migrations) is right-sized
+   for this scope: match-scoped 1:1 chat between already-matched, consenting
+   players, backed by report + kill-switch + manual-ban. Confirmed policy:
+   - Stay in the "obvious profanity, no slurs" tier — slurs are a distinct
+     harassment/hate-speech category needing dedicated, deliberately-owned
+     handling (ideally with legal input), not a rider on a generic swear
+     filter.
+   - Block-only stays for v1 — no masking/severity tiers. Masking would need a
+     schema/RPC change for a UX benefit that doesn't matter much 1:1 (the
+     recipient just re-asks); block is also strictly safer (nothing bad is
+     ever stored/shown).
+   - **Additions/new languages are reactive, not proactive**: the trigger for
+     adding a word or a third language is a real report that got through, not
+     guessing at what someone might type — proactive guessing is how a
+     wordlist balloons with false-positive risk and drifts from real player
+     behavior.
+   - Spot-checked all 14 words against Pokémon/move names and ordinary
+     trivia-chat vocabulary — no false-positive collisions found; whole-word
+     matching after normalization already avoids the classic Scunthorpe
+     substring problem.
+   - Ownership stays PO-via-migration (as already practiced) — no admin UI for
+     v1, correctly out of scope at this volume.
+   - **Backlog, not blocking**: the normalizer doesn't collapse repeated
+     letters (`fuuuck` → `fuck`), the most common real evasion pattern for
+     this kind of filter. Not required for v1 — report/manual-ban catches
+     what slips through — but worth a Database/Architect follow-up later.
 4. **No moderator tooling** — Acceptable for v1 *because* scope is now paired
    matches, not a public room: the blast radius of one bad actor is one
    opponent, not everyone online. Report → GitHub issue (mirrors

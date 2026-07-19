@@ -284,8 +284,10 @@ regen. Everything merges together as M1 (reporting + kill switch included, not d
 ## Risks
 1. **Ban evasion** — clearing storage yields a fresh `auth.uid()`. Accepted v1 limitation
    (spec decision 1); blast radius is one opponent, not a public square.
-2. **Wordlist false positives (Scunthorpe)** — PO tunes the seed; block-only means a false
-   positive is a rejected send, recoverable by rephrasing (no stored damage).
+2. **Wordlist false positives (Scunthorpe)** — spot-checked and blessed as v1 policy
+   2026-07-19 (see `01-spec.md` decision 3); block-only means a false positive is a
+   rejected send, recoverable by rephrasing (no stored damage). Repeated-letter
+   evasion (`fuuuck`) isn't normalized — backlog, not blocking.
 3. **`app_config` is a new shared surface** — keep it un-granted to `authenticated` and only
    ever read via security-definer RPCs so it can't become a client-writable flag store.
 4. **Snapshotted `trainer_name`/`trainer_sprite`** can go stale vs a later rename — acceptable
