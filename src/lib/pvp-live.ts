@@ -1,7 +1,10 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Trivia } from "@/lib/trivia-core";
+import { useGameStore } from "@/lib/store";
 import type { ActiveStatus, PvpStatStages } from "@/lib/store";
+import { difficultyForLevel } from "@/lib/game-data";
 import type { ItemId } from "@/lib/game-data";
+import { fetchBattleQuestions } from "@/lib/api/trivia";
 import type {
   StatChangeSpec,
   SigEngineTickResult,
@@ -325,6 +328,46 @@ export async function startBotPvpMatch(
     return { ok: false, error: (r && r.error) || "network" };
   } catch (e) {
     console.warn("[pvp-live] startBotPvpMatch threw:", e);
+    return { ok: false, error: "network" };
+  }
+}
+
+/**
+ * Fetch a fresh batch of trivia questions for the caller's current level and
+ * start a Training-vs-Bot match — the exact recipe `arena.tsx`'s "Start
+ * Training" card and the PvP result screen's Rematch button both need, kept
+ * in one place so a bot rematch is never a third copy-paste of this sequence.
+ * Marks the served questions/curated ids seen on success (same bookkeeping
+ * `arena.tsx` did inline). The caller owns its own busy-state and navigates to
+ * `/pvp/live/$matchId` with the returned id; `error` distinguishes "couldn't
+ * prepare the questions" (`"questions"`) from a `startBotPvpMatch` failure
+ * (`"network"` or whatever it returned) so call sites can keep their existing,
+ * differently-worded toasts.
+ */
+export async function startTrainingMatch(): Promise<
+  { ok: true; matchId: string } | { ok: false; error: "questions" | string }
+> {
+  try {
+    const s = useGameStore.getState();
+    const data = await fetchBattleQuestions({
+      difficulty: difficultyForLevel(s.level),
+      seenHashes: s.seenQuestionHashes,
+      seenSamples: s.seenQuestions.slice(-80),
+      excludeIds: s.seenCuratedIds.slice(-500),
+      flowSeed: Math.floor(Math.random() * 1_000_000),
+    });
+    if (!data.questions || data.questions.length < 5) {
+      return { ok: false, error: "questions" };
+    }
+    const res = await startBotPvpMatch(data.questions, s.pokemon?.id ?? null);
+    if (!res.ok) {
+      return { ok: false, error: res.error };
+    }
+    s.markQuestionsSeen(data.questions.map((q) => q.question));
+    s.markCuratedSeen(data.servedIds ?? []);
+    return { ok: true, matchId: res.matchId };
+  } catch (e) {
+    console.warn("[pvp-live] startTrainingMatch threw:", e);
     return { ok: false, error: "network" };
   }
 }

@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { useStoreHydrated } from "@/lib/store-hydration";
 import { PokeballSpinner, PokemonSprite } from "@/components/game-ui";
@@ -21,6 +22,7 @@ import {
   forfeitLivePvpMatch,
   subscribeToLivePvpEffects,
   setLivePvpPartner,
+  startTrainingMatch,
   type LivePvpMatch,
   type LivePvpEffect,
 } from "@/lib/pvp-live";
@@ -58,8 +60,25 @@ function phaseFor(m: LivePvpMatch): Phase {
   return "battle";
 }
 
+/**
+ * Route component: just resolves `matchId` and keys `MatchPageContent` on it.
+ * TanStack Router does NOT remount the component on a param-only navigation
+ * (`/pvp/live/$matchId` -> `/pvp/live/$otherMatchId`) — it's the same route,
+ * so `LivePvpMatchPage` stays mounted and every one of its `useState`/`useRef`
+ * would otherwise carry over from the finished match into the new one (stale
+ * `phase`/`match` flashing the old result screen, `rewardsGrantedRef` staying
+ * true and silently skipping the new match's reward grant, `missed`/
+ * `berryDrops` leaking across matches). Keying on `matchId` forces React to
+ * tear down and remount `MatchPageContent` from scratch — the simplest robust
+ * fix, verified against how every effect below is already keyed on `matchId`
+ * (PvP Rematch, docs/handoffs/.../03-frontend.md).
+ */
 function LivePvpMatchPage() {
   const { matchId } = Route.useParams();
+  return <MatchPageContent key={matchId} matchId={matchId} />;
+}
+
+function MatchPageContent({ matchId }: { matchId: string }) {
   const hasOnboarded = useGameStore((s) => s.hasOnboarded);
   const hydrated = useStoreHydrated();
   const navigate = useNavigate();
@@ -69,6 +88,7 @@ function LivePvpMatchPage() {
   const [opponentProfile, setOpponentProfile] = useState<TrainerProfile | null>(null);
   const [forfeitConfirmOpen, setForfeitConfirmOpen] = useState(false);
   const [berryDrops, setBerryDrops] = useState<number | null>(null);
+  const [rematchBusy, setRematchBusy] = useState(false);
   // Missed-answer history for the defeat review (feedback #1). Accumulated here
   // (not in the battle screen) so it survives the battle→result unmount that a
   // loss resolved by the OPPONENT's answer triggers.
@@ -460,6 +480,40 @@ function LivePvpMatchPage() {
     void result;
   }
 
+  // PvP Rematch (docs/handoffs/.../03-frontend.md): a bot match starts a fresh
+  // Training match with the exact same recipe arena.tsx's "Start Training"
+  // card uses (shared via `startTrainingMatch`), then navigates to the new
+  // match id — `LivePvpMatchPage` above re-keys `MatchPageContent` on that id,
+  // so every piece of this route's state resets cleanly. A human (Nearby
+  // Battle) match has no bot to restart against: "rematch" means going
+  // through the Battle Code scan again, so this hands off to /arena with a
+  // one-shot `nearby=1` flag that auto-opens the Battle Code sheet there.
+  async function handleRematch() {
+    if (rematchBusy) return;
+    if (!match?.isBotMatch) {
+      void navigate({ to: "/arena", search: { nearby: 1 } as never });
+      return;
+    }
+    setRematchBusy(true);
+    try {
+      const res = await startTrainingMatch();
+      if (!res.ok) {
+        toast.error(
+          res.error === "questions"
+            ? "Couldn't prepare the battle. Try again."
+            : "Couldn't start training. Try again.",
+        );
+        return;
+      }
+      void navigate({ to: "/pvp/live/$matchId", params: { matchId: res.matchId } });
+    } catch (e) {
+      console.warn("[pvp-live] rematch failed:", e);
+      toast.error("Couldn't start training. Try again.");
+    } finally {
+      setRematchBusy(false);
+    }
+  }
+
   if (!hydrated || !hasOnboarded) return null;
 
   if (phase === "loading") {
@@ -553,6 +607,8 @@ function LivePvpMatchPage() {
       missed={missed}
       onBack={() => navigate({ to: "/arena" })}
       onChat={() => navigate({ to: "/pvp/chat/$matchId", params: { matchId } })}
+      onRematch={() => void handleRematch()}
+      rematchBusy={rematchBusy}
     />
   );
 }
@@ -579,6 +635,8 @@ function PvpResultScreen({
   missed,
   onBack,
   onChat,
+  onRematch,
+  rematchBusy,
 }: {
   won: boolean;
   tied: boolean;
@@ -596,6 +654,16 @@ function PvpResultScreen({
   /** Opens this match's full-screen chat route (docs/handoffs/global-chat).
    * Renders a "Chat" button beside "Back to Profile" when provided. */
   onChat?: () => void;
+  /** PvP Rematch (docs/handoffs/.../03-frontend.md): renders a full-width
+   * "Rematch" button above the Back/Chat row when provided. For a bot match
+   * this starts a fresh Training match; for a human match it hands off to
+   * the Battle Code sheet on /arena. Omitted entirely when not provided (no
+   * behavior change for any caller that doesn't pass it). */
+  onRematch?: () => void;
+  /** Disables the Rematch button + shows a spinner while the rematch's
+   * fetch/RPC round-trip is in flight (bot path only — the human path
+   * navigates instantly). */
+  rematchBusy?: boolean;
 }) {
   const hpLine = (
     <>
@@ -684,24 +752,36 @@ function PvpResultScreen({
           )}
         </div>
 
-        <div className="mx-auto mt-auto flex w-full max-w-sm gap-2 pt-8">
-          <Button
-            size="lg"
-            onClick={onBack}
-            className="h-14 flex-1 rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
-          >
-            Back to Arena
-          </Button>
-          {onChat && (
+        <div className="mx-auto mt-auto flex w-full max-w-sm flex-col gap-2 pt-8">
+          {onRematch && (
             <Button
               size="lg"
-              variant="outline"
-              onClick={onChat}
-              className="h-14 flex-1 rounded-full border-2 font-bold shadow-card"
+              onClick={onRematch}
+              disabled={rematchBusy}
+              className="h-14 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop disabled:opacity-70"
             >
-              Chat
+              {rematchBusy ? <Loader2 className="h-5 w-5 animate-spin" /> : "Rematch"}
             </Button>
           )}
+          <div className="flex gap-2">
+            <Button
+              size="lg"
+              onClick={onBack}
+              className="h-14 flex-1 rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
+            >
+              Back to Arena
+            </Button>
+            {onChat && (
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={onChat}
+                className="h-14 flex-1 rounded-full border-2 font-bold shadow-card"
+              >
+                Chat
+              </Button>
+            )}
+          </div>
         </div>
       </motion.div>
     );
@@ -758,24 +838,36 @@ function PvpResultScreen({
           Renders nothing when the loss had no wrong answers (HP/forfeit). */}
       <MissedReview missed={missed} />
 
-      <div className="mx-auto mt-auto flex w-full max-w-sm gap-2 pt-8">
-        <Button
-          size="lg"
-          onClick={onBack}
-          className="h-14 flex-1 rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
-        >
-          Back to Arena
-        </Button>
-        {onChat && (
+      <div className="mx-auto mt-auto flex w-full max-w-sm flex-col gap-2 pt-8">
+        {onRematch && (
           <Button
             size="lg"
-            variant="outline"
-            onClick={onChat}
-            className="h-14 flex-1 rounded-full border-2 border-white/30 font-bold text-white shadow-card"
+            onClick={onRematch}
+            disabled={rematchBusy}
+            className="h-14 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop disabled:opacity-70"
           >
-            Chat
+            {rematchBusy ? <Loader2 className="h-5 w-5 animate-spin" /> : "Rematch"}
           </Button>
         )}
+        <div className="flex gap-2">
+          <Button
+            size="lg"
+            onClick={onBack}
+            className="h-14 flex-1 rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
+          >
+            Back to Arena
+          </Button>
+          {onChat && (
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={onChat}
+              className="h-14 flex-1 rounded-full border-2 border-white/30 font-bold text-white shadow-card"
+            >
+              Chat
+            </Button>
+          )}
+        </div>
       </div>
     </motion.div>
   );

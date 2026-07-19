@@ -667,10 +667,21 @@
 
 /* Accessibility: honor the OS "reduce motion" preference for every combat
  * status overlay (burn/freeze/spark/poison/bubble/toxic/sleep/orbit — incl. the
- * client-authoritative Confusion overlay). The sprite/emoji still renders as a
- * static cue so the status stays legible; only the looping animation is stilled.
- * This is the reduced-motion complement to the `motion-safe:` intent for the
- * confusion overlay in game-ui.tsx. */
+ * client-authoritative Confusion overlay), the PokeballSpinner spin, the
+ * mega-glow/shiny-glow/pulse-ring accent loops, and Tailwind's own
+ * animate-pulse/animate-spin/animate-bounce/animate-ping utilities (loading
+ * skeletons, busy-state cards). The sprite/emoji still renders as a static cue
+ * so the status stays legible; only the looping animation is stilled. This is
+ * the reduced-motion complement to the `motion-safe:` intent for the confusion
+ * overlay in game-ui.tsx.
+ *
+ * The same rules also apply under `:root.reduce-motion` — set by
+ * `RootComponent` (src/routes/__root.tsx) from the Settings > Reduce motion
+ * store flag (`reducedMotion`) — so a user can force this off in-app even
+ * when their OS-level preference doesn't request it. `<MotionConfig
+ * reducedMotion>` (also wired from that same flag) handles framer-motion
+ * animations; this class covers the plain-CSS `animate-*`/`status-anim-*`
+ * keyframe classes MotionConfig can't reach. */
 @media (prefers-reduced-motion: reduce) {
   .status-anim-burn,
   .status-anim-freeze,
@@ -680,7 +691,35 @@
   .status-anim-toxic-spark,
   .status-anim-sleep,
   .status-anim-orbit,
-  .status-anim-orbit-counter {
+  .status-anim-orbit-counter,
+  .animate-pokeball,
+  .mega-glow,
+  .animate-pulse-ring,
+  .shiny-glow,
+  .animate-pulse,
+  .animate-spin,
+  .animate-bounce,
+  .animate-ping {
     animation: none;
   }
+}
+
+:root.reduce-motion .status-anim-burn,
+:root.reduce-motion .status-anim-freeze,
+:root.reduce-motion .status-anim-spark,
+:root.reduce-motion .status-anim-poison-glow,
+:root.reduce-motion .status-anim-bubble,
+:root.reduce-motion .status-anim-toxic-spark,
+:root.reduce-motion .status-anim-sleep,
+:root.reduce-motion .status-anim-orbit,
+:root.reduce-motion .status-anim-orbit-counter,
+:root.reduce-motion .animate-pokeball,
+:root.reduce-motion .mega-glow,
+:root.reduce-motion .animate-pulse-ring,
+:root.reduce-motion .shiny-glow,
+:root.reduce-motion .animate-pulse,
+:root.reduce-motion .animate-spin,
+:root.reduce-motion .animate-bounce,
+:root.reduce-motion .animate-ping {
+  animation: none;
 }
