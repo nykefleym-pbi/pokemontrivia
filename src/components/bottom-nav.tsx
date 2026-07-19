@@ -1,10 +1,11 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { ShoppingBag, BookOpen, User } from "lucide-react";
+import { ShoppingBag, BookOpen, User, Swords } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 
 const TABS = [
-  { to: "/battle", label: "Battle", Icon: PokeballIcon },
+  { to: "/battle", label: "Home", Icon: PokeballIcon },
   { to: "/shop", label: "Shop", Icon: ShoppingBag },
+  { to: "/arena", label: "Arena", Icon: Swords },
   { to: "/pokedex", label: "Dex", Icon: BookOpen },
   { to: "/profile", label: "Profile", Icon: User },
 ] as const;
@@ -23,9 +24,9 @@ export function BottomNav() {
       className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center"
       style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}
     >
-      <div className="pointer-events-auto grid h-16 w-[min(440px,calc(100%-1.5rem))] grid-cols-4 items-center rounded-full border border-border/60 bg-card/95 px-2 shadow-[var(--shadow-float)] backdrop-blur-xl">
+      <div className="pointer-events-auto grid h-16 w-[min(440px,calc(100%-1.5rem))] grid-cols-5 items-center rounded-full border border-border/60 bg-card/95 px-2 shadow-[var(--shadow-float)] backdrop-blur-xl">
         {TABS.map((t) => (
-          <NavCell key={t.to} tab={t} active={path.startsWith(t.to)} />
+          <NavCell key={t.to} tab={t} active={path.startsWith(t.to)} emphasize={t.to === "/arena"} />
         ))}
       </div>
     </nav>
@@ -35,9 +36,11 @@ export function BottomNav() {
 function NavCell({
   tab,
   active,
+  emphasize,
 }: {
   tab: { to: string; label: string; Icon: React.ComponentType<{ className?: string }> };
   active: boolean;
+  emphasize?: boolean;
 }) {
   const { Icon, label, to } = tab;
   return (
@@ -46,8 +49,12 @@ function NavCell({
       className="relative flex h-full flex-col items-center justify-center transition active:scale-95"
     >
       {active ? (
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-pop">
-          <Icon className="h-[18px] w-[18px]" />
+        <span
+          className={`flex items-center justify-center rounded-full bg-primary text-primary-foreground shadow-pop ${
+            emphasize ? "h-10 w-10" : "h-9 w-9"
+          }`}
+        >
+          <Icon className={emphasize ? "h-5 w-5" : "h-[18px] w-[18px]"} />
         </span>
       ) : (
         <span className="text-[15px] font-bold text-foreground/60">{label}</span>

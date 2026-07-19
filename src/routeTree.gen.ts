@@ -15,6 +15,7 @@ import { Route as ReferRouteImport } from './routes/refer'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PokedexRouteImport } from './routes/pokedex'
 import { Route as BattleRouteImport } from './routes/battle'
+import { Route as ArenaRouteImport } from './routes/arena'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PvpMatchIdRouteImport } from './routes/pvp.$matchId'
 import { Route as ApiTriviaEliteRouteImport } from './routes/api.trivia-elite'
@@ -53,6 +54,11 @@ const PokedexRoute = PokedexRouteImport.update({
 const BattleRoute = BattleRouteImport.update({
   id: '/battle',
   path: '/battle',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ArenaRoute = ArenaRouteImport.update({
+  id: '/arena',
+  path: '/arena',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -103,6 +109,7 @@ const PvpChatMatchIdRoute = PvpChatMatchIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/arena': typeof ArenaRoute
   '/battle': typeof BattleRoute
   '/pokedex': typeof PokedexRoute
   '/profile': typeof ProfileRoute
@@ -120,6 +127,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/arena': typeof ArenaRoute
   '/battle': typeof BattleRoute
   '/pokedex': typeof PokedexRoute
   '/profile': typeof ProfileRoute
@@ -138,6 +146,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/arena': typeof ArenaRoute
   '/battle': typeof BattleRoute
   '/pokedex': typeof PokedexRoute
   '/profile': typeof ProfileRoute
@@ -157,6 +166,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/arena'
     | '/battle'
     | '/pokedex'
     | '/profile'
@@ -174,6 +184,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/arena'
     | '/battle'
     | '/pokedex'
     | '/profile'
@@ -191,6 +202,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/arena'
     | '/battle'
     | '/pokedex'
     | '/profile'
@@ -209,6 +221,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ArenaRoute: typeof ArenaRoute
   BattleRoute: typeof BattleRoute
   PokedexRoute: typeof PokedexRoute
   ProfileRoute: typeof ProfileRoute
@@ -267,6 +280,13 @@ declare module '@tanstack/react-router' {
       path: '/battle'
       fullPath: '/battle'
       preLoaderRoute: typeof BattleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/arena': {
+      id: '/arena'
+      path: '/arena'
+      fullPath: '/arena'
+      preLoaderRoute: typeof ArenaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -337,6 +357,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ArenaRoute: ArenaRoute,
   BattleRoute: BattleRoute,
   PokedexRoute: PokedexRoute,
   ProfileRoute: ProfileRoute,
