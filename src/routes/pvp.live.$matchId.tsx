@@ -476,7 +476,7 @@ function LivePvpMatchPage() {
         <div className="font-display text-lg text-foreground">
           This battle isn't available anymore.
         </div>
-        <Button onClick={() => navigate({ to: "/profile" })}>Back to Profile</Button>
+        <Button onClick={() => navigate({ to: "/arena" })}>Back to Arena</Button>
       </div>
     );
   }
@@ -551,7 +551,7 @@ function LivePvpMatchPage() {
       partnerName={partner?.name ?? "Your partner"}
       berryDrops={berryDrops}
       missed={missed}
-      onBack={() => navigate({ to: "/profile" })}
+      onBack={() => navigate({ to: "/arena" })}
       onChat={() => navigate({ to: "/pvp/chat/$matchId", params: { matchId } })}
     />
   );
@@ -690,7 +690,7 @@ function PvpResultScreen({
             onClick={onBack}
             className="h-14 flex-1 rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
           >
-            Back to Profile
+            Back to Arena
           </Button>
           {onChat && (
             <Button
@@ -764,7 +764,7 @@ function PvpResultScreen({
           onClick={onBack}
           className="h-14 flex-1 rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
         >
-          Back to Profile
+          Back to Arena
         </Button>
         {onChat && (
           <Button

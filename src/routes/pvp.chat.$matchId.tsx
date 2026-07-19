@@ -83,18 +83,18 @@ function PvpChatPage() {
         <div className="font-display text-lg text-foreground">
           This chat isn't available anymore.
         </div>
-        <Button onClick={() => navigate({ to: "/profile" })}>Back to Profile</Button>
+        <Button onClick={() => navigate({ to: "/arena" })}>Back to Arena</Button>
       </div>
     );
   }
 
   // Still-active matches go back into the battle; a finished/forfeited match
-  // (or one whose grace window has simply lapsed) goes back to Profile,
+  // (or one whose grace window has simply lapsed) goes back to the Arena,
   // matching PvpResultScreen's own onBack destination.
   const backTo =
     match?.status === "active"
       ? () => navigate({ to: "/pvp/live/$matchId", params: { matchId } })
-      : () => navigate({ to: "/profile" });
+      : () => navigate({ to: "/arena" });
 
   return (
     <MatchChatScreen

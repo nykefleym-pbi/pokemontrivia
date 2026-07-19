@@ -34,6 +34,7 @@ export const Route = createFileRoute("/battle")({
   component: BattlePage,
   validateSearch: (s: Record<string, unknown>) => ({
     autostart: s.autostart ? 1 : 0,
+    mega: s.mega ? 1 : 0,
     mode: s.mode === "daily" ? "daily" : "battle",
   }),
 });
@@ -68,6 +69,7 @@ function BattlePage() {
   const [battleKey, setBattleKey] = useState(0);
 
   const autoStartedRef = useRef(false);
+  const megaAutoStartedRef = useRef(false);
   const dailyResult = useGameStore((s) => s.dailyResult);
   const today = new Date().toISOString().slice(0, 10);
   const dailyDone = dailyResult?.date === today;
@@ -230,6 +232,13 @@ function BattlePage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasOnboarded, search.autostart, phase]);
+
+  useEffect(() => {
+    if (hasOnboarded && search.mega === 1 && !megaAutoStartedRef.current && phase === "home") {
+      megaAutoStartedRef.current = true;
+      startMega();
+    }
+  }, [hasOnboarded, search.mega, phase]);
 
   async function startBattle() {
     if (pendingElite) {

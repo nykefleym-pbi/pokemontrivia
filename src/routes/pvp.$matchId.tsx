@@ -119,7 +119,7 @@ function PvpMatchPage() {
         <div className="font-display text-lg text-foreground">
           This challenge isn't available anymore.
         </div>
-        <Button onClick={() => navigate({ to: "/profile" })}>Back to Profile</Button>
+        <Button onClick={() => navigate({ to: "/arena" })}>Back to Arena</Button>
       </div>
     );
   }
@@ -156,7 +156,7 @@ function PvpMatchPage() {
         {myScore !== null && (
           <div className="font-pixel-xs text-foreground/60">Your score: {myScore}</div>
         )}
-        <Button onClick={() => navigate({ to: "/profile" })}>Back to Profile</Button>
+        <Button onClick={() => navigate({ to: "/arena" })}>Back to Arena</Button>
       </div>
     );
   }
@@ -195,7 +195,7 @@ function PvpMatchPage() {
           </div>
         </>
       )}
-      <Button onClick={() => navigate({ to: "/profile" })}>Back to Profile</Button>
+      <Button onClick={() => navigate({ to: "/arena" })}>Back to Arena</Button>
     </div>
   );
 }
