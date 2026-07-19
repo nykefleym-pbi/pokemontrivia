@@ -630,17 +630,17 @@ export function WhosThatPokemon() {
                 <span className="h-2.5 w-2.5 rounded-full bg-green-400" />
               </div>
               <div className="mt-3 rounded-2xl border-2 border-poke-dark/80 bg-[#dfe8d6] p-4">
-                <div className="font-pixel text-[8px] tracking-wide text-poke-dark/70">
+                <div className="font-pixel text-[9px] tracking-wide text-poke-dark/70">
                   POKÉDEX ENTRY
                 </div>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {dexEntry.genus && (
-                    <span className="rounded-md bg-yellow-200 px-2 py-1 font-pixel text-[8px] text-poke-dark">
+                    <span className="rounded-md bg-yellow-200 px-2 py-1 font-pixel text-[9px] text-poke-dark">
                       {dexEntry.genus}
                     </span>
                   )}
                   {dexEntry.heightM && (
-                    <span className="rounded-md bg-blue-200 px-2 py-1 font-pixel text-[8px] text-poke-dark">
+                    <span className="rounded-md bg-blue-200 px-2 py-1 font-pixel text-[9px] text-poke-dark">
                       {dexEntry.heightM}
                     </span>
                   )}

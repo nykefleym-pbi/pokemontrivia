@@ -714,7 +714,7 @@ function BattlePage() {
           <div className="relative w-[360px] max-w-[94vw]">
             <div className="px-10 text-center">
               <div className="text-[26px] font-black tracking-tight text-white">Ready to play?</div>
-              <div className="mt-1.5 font-pixel text-[8px] tracking-widest text-[var(--brand-gold)]">
+              <div className="mt-1.5 font-pixel text-[9px] tracking-widest text-[var(--brand-gold)]">
                 {engageCards.length} {engageCards.length === 1 ? "ACTIVITY" : "ACTIVITIES"}{" "}
                 AVAILABLE
               </div>
@@ -896,7 +896,7 @@ function BattlePage() {
                           </>
                         )}
                         <div
-                          className="absolute left-4 top-4 rounded-full px-2.5 py-1.5 font-pixel text-[7px] tracking-wider"
+                          className="absolute left-4 top-4 rounded-full px-2.5 py-1.5 font-pixel text-[9px] tracking-wider"
                           style={{ background: t.labelBg, color: t.labelColor }}
                         >
                           {t.label}
@@ -906,7 +906,7 @@ function BattlePage() {
                     <div className="flex flex-1 flex-col px-5 pb-6 pt-4">
                       {card.kind === "whatsnew" && (
                         <div
-                          className="mb-2 inline-flex w-fit rounded-full px-2.5 py-1.5 font-pixel text-[7px] tracking-wider"
+                          className="mb-2 inline-flex w-fit rounded-full px-2.5 py-1.5 font-pixel text-[9px] tracking-wider"
                           style={{ background: t.labelBg, color: t.labelColor }}
                         >
                           ✨ {t.label}
@@ -960,7 +960,7 @@ function BattlePage() {
                               strokeLinecap="round"
                             />
                           </svg>
-                          <span className="font-pixel text-[7px]" style={{ color: t.chipColor }}>
+                          <span className="font-pixel text-[9px]" style={{ color: t.chipColor }}>
                             {card.chip}
                           </span>
                         </div>

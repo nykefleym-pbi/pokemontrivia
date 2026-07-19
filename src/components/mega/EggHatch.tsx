@@ -83,12 +83,12 @@ export function EggHatch() {
               </svg>
             </button>
 
-            <div className="font-pixel text-[8px] tracking-wide text-brand-amber">POKÉ EGGS</div>
+            <div className="font-pixel text-[9px] tracking-wide text-brand-amber">POKÉ EGGS</div>
 
             {result ? (
               <div className="mt-4 flex flex-col items-center">
                 <div
-                  className={`font-pixel text-[8px] ${result.shiny ? "text-brand-amber" : "text-green-600 dark:text-green-400"}`}
+                  className={`font-pixel text-[9px] ${result.shiny ? "text-brand-amber" : "text-green-600 dark:text-green-400"}`}
                 >
                   {result.shiny ? "✨ SHINY HATCH! ✨" : "IT HATCHED!"}
                 </div>

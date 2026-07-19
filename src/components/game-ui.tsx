@@ -70,7 +70,7 @@ export const TypeBadge = React.memo(function TypeBadge({
 }) {
   const sizeCls =
     size === "sm"
-      ? "px-1.5 py-[1px] text-[7px] tracking-tight"
+      ? "px-1.5 py-[2px] text-[9px] tracking-tight"
       : "px-2.5 py-0.5 text-[9px] tracking-wide";
   return (
     <span
@@ -171,7 +171,7 @@ export const HpBar = React.memo(function HpBar({
             transition={{ type: "spring", stiffness: 100, damping: 18 }}
           />
         </div>
-        <span className="font-pixel text-[8px] tabular-nums">
+        <span className="font-pixel text-[9px] tabular-nums">
           {Math.round(hp)}/{max}
         </span>
       </div>

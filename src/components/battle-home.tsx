@@ -11,7 +11,7 @@ import {
   trainerSpriteUrl,
   getWeekRangeUtc,
 } from "@/lib/game-data";
-import { findGymLeader } from "@/lib/gym-leaders";
+import { findGymLeader, GYM_LEADERS } from "@/lib/gym-leaders";
 
 export function BattleHome({
   onStart,
@@ -48,17 +48,31 @@ export function BattleHome({
   };
   const navigate = useNavigate();
   const whosThatHourKey = useGameStore((s) => s.whosThatHourKey);
-  const [nowTick, setNowTick] = useState(Date.now());
+
+  // Single clock driving every countdown on this screen. Ticks every 30s —
+  // coarse enough to avoid re-rendering the whole home screen every second —
+  // except the Who's That countdown switches to a 1s tick for its final
+  // minute so it can show live seconds without a second interval existing.
+  const [now, setNow] = useState(Date.now());
   useEffect(() => {
-    const t = setInterval(() => setNowTick(Date.now()), 1000);
+    const msLeftInHour = 3_600_000 - (now % 3_600_000);
+    const onCooldown = Math.floor(now / 3_600_000) === whosThatHourKey;
+    const fast = onCooldown && msLeftInHour < 60_000;
+    const t = setInterval(() => setNow(Date.now()), fast ? 1_000 : 30_000);
     return () => clearInterval(t);
-  }, []);
-  const whosThatOnCooldown = Math.floor(nowTick / 3_600_000) === whosThatHourKey;
-  const whosThatMsLeft = 3_600_000 - (nowTick % 3_600_000);
+  }, [now, whosThatHourKey]);
+
+  const whosThatOnCooldown = Math.floor(now / 3_600_000) === whosThatHourKey;
+  const whosThatMsLeft = 3_600_000 - (now % 3_600_000);
+  const whosThatUnderMinute = whosThatMsLeft < 60_000;
   const whosThatClock = `${String(Math.floor(whosThatMsLeft / 60000)).padStart(2, "0")}:${String(Math.floor((whosThatMsLeft % 60000) / 1000)).padStart(2, "0")}`;
-  const _nd = new Date(nowTick);
-  const msToNextDay =
-    Date.UTC(_nd.getUTCFullYear(), _nd.getUTCMonth(), _nd.getUTCDate() + 1) - nowTick;
+  const whosThatLabel = !whosThatOnCooldown
+    ? "TAP TO BEGIN"
+    : whosThatUnderMinute
+      ? whosThatClock
+      : `NEXT IN ${Math.ceil(whosThatMsLeft / 60_000)}M`;
+  const _nd = new Date(now);
+  const msToNextDay = Date.UTC(_nd.getUTCFullYear(), _nd.getUTCMonth(), _nd.getUTCDate() + 1) - now;
   const dailyClock = `${Math.floor(msToNextDay / 3_600_000)}h ${String(Math.floor((msToNextDay % 3_600_000) / 60_000)).padStart(2, "0")}m`;
   const trainerName = useGameStore((s) => s.trainerName);
   const trainerSprite = useGameStore((s) => s.trainerSprite);
@@ -68,30 +82,18 @@ export function BattleHome({
   const coins = useGameStore((s) => s.coins);
   const trainingPoints = useGameStore((s) => s.trainingPoints);
   const weeklyLeague = useGameStore((s) => s.weeklyLeague);
+  const gymBadges = useGameStore((s) => s.gymBadges);
   const bestStreak = useGameStore((s) => s.stats.bestStreak);
   const weekRange = getWeekRangeUtc();
 
   const weeklyLeader = weeklyLeague ? findGymLeader(weeklyLeague.gymLeaderId) : null;
   const weeklyFinished = weeklyLeague?.status === "won" || weeklyLeague?.status === "lost";
 
-  const [weeklyTimeLeft, setWeeklyTimeLeft] = useState("");
-  useEffect(() => {
-    if (!weeklyFinished) return;
-    const tick = () => {
-      const ms = weekRange.nextStart - Date.now();
-      if (ms <= 0) {
-        setWeeklyTimeLeft("Refreshing...");
-        return;
-      }
-      const days = Math.floor(ms / (24 * 60 * 60 * 1000));
-      const hours = Math.floor((ms % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
-      const minutes = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
-      setWeeklyTimeLeft(`${days}d ${hours}h ${minutes}m`);
-    };
-    tick();
-    const i = setInterval(tick, 1000);
-    return () => clearInterval(i);
-  }, [weekRange.nextStart, weeklyFinished]);
+  const weeklyMsLeft = weekRange.nextStart - now;
+  const weeklyTimeLeft =
+    weeklyMsLeft <= 0
+      ? "Refreshing..."
+      : `${Math.floor(weeklyMsLeft / 86_400_000)}d ${Math.floor((weeklyMsLeft % 86_400_000) / 3_600_000)}h ${Math.floor((weeklyMsLeft % 3_600_000) / 60_000)}m`;
 
   if (!pokemon) return null;
 
@@ -101,7 +103,9 @@ export function BattleHome({
   const tpMult = getTpMultiplier(partnerTp);
   const xpPct = Math.min(100, (xpProg.current / xpProg.need) * 100);
 
-  // Avatar with progress ring (GO-style)
+  // Avatar frame. The ring is intentionally decorative (a GO-style badge
+  // frame) — it is NOT an XP gauge; XP progress is shown by the bar next to
+  // the trainer name below, which is the only progress indicator here.
   const ring = (
     <div className="relative h-20 w-20 shrink-0">
       <svg viewBox="0 0 80 80" className="absolute inset-0 h-full w-full -rotate-90">
@@ -113,7 +117,7 @@ export function BattleHome({
           stroke="oklch(0.22 0.04 260 / 0.12)"
           strokeWidth="5"
         />
-        {/* Static full ring — XP progress lives in the bar next to the name. */}
+        {/* Decorative full ring, always drawn solid — not an XP gauge. */}
         <circle cx="40" cy="40" r="35" fill="none" stroke="var(--color-primary)" strokeWidth="5" />
       </svg>
       <div className="absolute inset-[6px] flex items-center justify-center overflow-hidden rounded-full bg-card">
@@ -126,7 +130,7 @@ export function BattleHome({
           }}
         />
       </div>
-      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-poke-dark px-2 py-[2px] font-pixel text-[7px] leading-none text-poke-yellow shadow-sm">
+      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-poke-dark px-2.5 py-[3px] font-pixel text-[9px] leading-none text-poke-yellow shadow-sm">
         LV {level}
       </div>
     </div>
@@ -191,7 +195,7 @@ export function BattleHome({
                 {loading && pending === null ? "Summoning..." : "Up for a battle?"}
               </h3>
               <p className="mt-1 text-xs text-muted-foreground">
-                20 questions · difficulty scales with your level
+                20 questions · +XP · +coins · TP for your partner
               </p>
             </div>
           </div>
@@ -217,14 +221,14 @@ export function BattleHome({
           } ${pending === "daily" ? "animate-pulse ring-2 ring-[oklch(0.35_0.06_80)]/40" : ""}`}
         >
           <div className="min-w-0 flex-1">
-            <div className="whitespace-nowrap font-pixel text-[7px] leading-none text-[oklch(0.35_0.06_80)]">
+            <div className="whitespace-nowrap font-pixel text-[9px] leading-none text-[oklch(0.35_0.06_80)]">
               DAILY QUEST
             </div>
             <h3 className="mt-1.5 text-base font-extrabold leading-tight text-[oklch(0.25_0.05_80)]">
               {dailyDone ? "Done" : "Beat Rotom"}
             </h3>
             <p className="mt-0.5 text-[11px] font-semibold leading-tight text-[oklch(0.35_0.06_80/0.8)]">
-              {dailyDone ? `Next in ${dailyClock}` : "Tap to begin"}
+              {dailyDone ? `Next in ${dailyClock}` : "Rewards await"}
             </p>
           </div>
           <PokemonSprite id={479} alt="Rotom" className="sprite -mr-1 h-[52px] w-[52px] shrink-0" />
@@ -238,7 +242,7 @@ export function BattleHome({
           } ${pending === "weekly" ? "animate-pulse ring-2 ring-white/60" : ""}`}
         >
           <div className="min-w-0 flex-1">
-            <div className="whitespace-nowrap font-pixel text-[7px] leading-none text-white/85">
+            <div className="whitespace-nowrap font-pixel text-[9px] leading-none text-white/85">
               WEEKLY LEAGUE
             </div>
             <h3 className="mt-1.5 text-base font-extrabold leading-tight">
@@ -249,7 +253,7 @@ export function BattleHome({
                 ? `Next in ${weeklyTimeLeft}`
                 : weeklyLeague?.status === "in_progress"
                   ? "Resume your run"
-                  : "Tap to begin"}
+                  : `Badges ${gymBadges.length}/${GYM_LEADERS.length}`}
             </p>
           </div>
           {weeklyLeader && (
@@ -266,7 +270,7 @@ export function BattleHome({
         <button
           onClick={() => navigate({ to: "/whos-that-pokemon" })}
           disabled={whosThatOnCooldown}
-          className={`relative flex w-full items-center gap-3 overflow-hidden rounded-[18px] bg-gradient-to-br from-[oklch(0.62_0.2_25)] to-[oklch(0.5_0.2_25)] px-4 py-3.5 text-left text-white shadow-card disabled:opacity-80 ${whosThatOnCooldown ? "grayscale" : ""}`}
+          className={`relative flex w-full items-center gap-2.5 overflow-hidden rounded-[18px] bg-gradient-to-br from-[oklch(0.62_0.2_25)] to-[oklch(0.5_0.2_25)] px-3.5 py-2.5 text-left text-white shadow-card disabled:opacity-80 ${whosThatOnCooldown ? "grayscale" : ""}`}
         >
           <div
             className="absolute inset-0 opacity-25"
@@ -275,24 +279,23 @@ export function BattleHome({
                 "repeating-conic-gradient(from 0deg at 16% 50%, rgba(255,255,255,0.18) 0deg 4deg, transparent 4deg 10deg)",
             }}
           />
-          <div className="relative flex h-11 w-11 shrink-0 items-center justify-center">
+          <div className="relative flex h-8 w-8 shrink-0 items-center justify-center">
             <PokemonSprite
               id={25}
               alt=""
-              className="h-9 w-9 [filter:brightness(0)_invert(1)] [image-rendering:pixelated]"
+              className="h-6 w-6 [filter:brightness(0)_invert(1)] [image-rendering:pixelated]"
             />
-            <span className="absolute -right-0.5 -top-1 font-pixel text-base text-poke-yellow drop-shadow">
+            <span className="absolute -right-1 -top-1 font-pixel text-[10px] text-poke-yellow drop-shadow">
               ?
             </span>
           </div>
-          <div className="relative min-w-0 flex-1">
-            <div className="font-pixel text-[7px] leading-none text-white/85">HOURLY MINI-GAME</div>
-            <h3 className="mt-1.5 text-base font-extrabold leading-tight">Who's That Pokémon?</h3>
-            <p className="mt-0.5 font-pixel text-[8px] leading-none text-white/85">
-              {whosThatOnCooldown ? `NEXT IN ${whosThatClock}` : "TAP TO BEGIN"}
-            </p>
+          <div className="relative flex min-w-0 flex-1 items-baseline gap-2">
+            <h3 className="truncate text-sm font-extrabold leading-tight">Who's That Pokémon?</h3>
+            <span className="shrink-0 font-pixel text-[9px] leading-none text-white/85">
+              {whosThatLabel}
+            </span>
           </div>
-          <span className="relative shrink-0 text-lg text-white/80">›</span>
+          <span className="relative shrink-0 text-base text-white/80">›</span>
         </button>
       </div>
     </div>
