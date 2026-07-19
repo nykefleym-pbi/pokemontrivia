@@ -233,7 +233,7 @@ function ArenaPage() {
             <QrCode className="h-7 w-7" />
           </div>
           <div className="relative min-w-0 flex-1">
-            <div className="font-pixel text-[7px] leading-none text-white/85">FACE TO FACE</div>
+            <div className="font-pixel text-[9px] leading-none text-white/85">FACE TO FACE</div>
             <h3 className="mt-1.5 text-lg font-extrabold leading-tight">Nearby Battle</h3>
             <p className="mt-0.5 text-xs font-semibold leading-tight text-white/85">
               Scan a Battle Code to fight instantly
@@ -290,7 +290,7 @@ function ArenaPage() {
             }`}
           >
             <div className="min-w-0 flex-1">
-              <div className="font-pixel text-[7px] leading-none text-white/85">
+              <div className="font-pixel text-[9px] leading-none text-white/85">
                 ⚡ MEGA RAID
               </div>
               <h3 className="mt-1.5 text-base font-extrabold leading-tight">

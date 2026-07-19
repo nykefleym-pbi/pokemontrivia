@@ -1,5 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { ShoppingBag, BookOpen, User, Swords } from "lucide-react";
+import { motion } from "framer-motion";
 import { useGameStore } from "@/lib/store";
 
 const TABS = [
@@ -46,18 +47,23 @@ function NavCell({
   return (
     <Link
       to={to}
+      aria-label={label}
       className="relative flex h-full flex-col items-center justify-center transition active:scale-95"
     >
       {active ? (
-        <span
+        <motion.span
+          layoutId="bottom-nav-active-pill"
+          transition={{ type: "spring", stiffness: 500, damping: 32 }}
+          initial={{ opacity: 0, scale: 0.7 }}
+          animate={{ opacity: 1, scale: 1 }}
           className={`flex items-center justify-center rounded-full bg-primary text-primary-foreground shadow-pop ${
             emphasize ? "h-10 w-10" : "h-9 w-9"
           }`}
         >
           <Icon className={emphasize ? "h-5 w-5" : "h-[18px] w-[18px]"} />
-        </span>
+        </motion.span>
       ) : (
-        <span className="text-[15px] font-bold text-foreground/60">{label}</span>
+        <span className="text-[13px] font-bold text-foreground/60">{label}</span>
       )}
     </Link>
   );

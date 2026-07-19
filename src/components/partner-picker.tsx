@@ -55,7 +55,7 @@ export function PartnerPicker({ onPick, selected, limit = 24 }: Props) {
                   <TypeBadge key={t} type={t} size="sm" />
                 ))}
               </div>
-              <div className="truncate font-pixel text-[8px] text-primary">
+              <div className="truncate font-pixel text-[9px] text-primary">
                 ⚡ {ABILITY_SETS[p.types[0]].map((a) => a.name).join(" · ")}
               </div>
             </button>

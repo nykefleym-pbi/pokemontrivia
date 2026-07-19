@@ -134,7 +134,7 @@ export function ResultScreen({
               label={
                 <>
                   Speed bonus{" "}
-                  <span className="font-pixel text-[8px] text-hp-good">UNDER 5S AVG</span>
+                  <span className="font-pixel text-[9px] text-hp-good">UNDER 5S AVG</span>
                 </>
               }
               value={`+${speedBonus}`}
