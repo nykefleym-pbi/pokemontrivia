@@ -5,6 +5,28 @@ import { TRAINER_SPRITES } from "@/lib/game-data";
 import { rollAbilityId } from "@/lib/abilities";
 import { WHATS_NEW } from "@/lib/whats-new";
 
+/** Item pools shared by the daily gift and the Arena's set-of-5 win rewards
+ * (slots 3/5 draw from these — one source, no duplicated lists). */
+export const DAILY_COMMON_POOL: ItemId[] = [
+  "potion",
+  "xattack",
+  "scope",
+  "superpotion",
+  "xaccuracy",
+  "escape",
+  "quickclaw",
+  "maxpotion",
+  "starpiece",
+];
+export const DAILY_PREMIUM_POOL: ItemId[] = [
+  "candy",
+  "luckyegg",
+  "focusband",
+  "assaultvest",
+  "bignugget",
+  "choicespecs",
+];
+
 export const createProfileSlice: StoreSlice<
   Pick<
     GameState,
@@ -107,32 +129,13 @@ export const createProfileSlice: StoreSlice<
     const yesterday = yd.toISOString().slice(0, 10);
     const continuing = s.dailyGiftLastClaim === yesterday;
     const day = ((continuing ? s.dailyGiftStreak : 0) % 7) + 1;
-    const commonPool: ItemId[] = [
-      "potion",
-      "xattack",
-      "scope",
-      "superpotion",
-      "xaccuracy",
-      "escape",
-      "quickclaw",
-      "maxpotion",
-      "starpiece",
-    ];
-    const premiumPool: ItemId[] = [
-      "candy",
-      "luckyegg",
-      "focusband",
-      "assaultvest",
-      "bignugget",
-      "choicespecs",
-    ];
     const shiny = day === 7;
     let itemId: ItemId;
     let qty = 1;
     if (shiny) {
-      itemId = premiumPool[Math.floor(Math.random() * premiumPool.length)];
+      itemId = DAILY_PREMIUM_POOL[Math.floor(Math.random() * DAILY_PREMIUM_POOL.length)];
     } else {
-      itemId = commonPool[Math.floor(Math.random() * commonPool.length)];
+      itemId = DAILY_COMMON_POOL[Math.floor(Math.random() * DAILY_COMMON_POOL.length)];
       qty = Math.random() < 0.3 ? 2 : 1;
     }
     set({
