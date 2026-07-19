@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { Backpack, Info } from "lucide-react";
+import { Backpack, Info, MessageCircle } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { Trivia, MissedAnswer } from "@/lib/trivia-core";
 import { shuffleTriviaOptionsWithOrder } from "@/lib/trivia-core";
@@ -105,6 +105,14 @@ interface Props {
    * answer), so the route can retain the missed list above the battle→result
    * unmount for the defeat review. Never fires for a correct/confusion-miss. */
   onMissed?: (m: MissedAnswer) => void;
+  /** Opens the match's full-screen chat route (docs/handoffs/global-chat).
+   * Only rendered as a header icon when provided — the route owns the
+   * navigation destination, this component stays presentational. */
+  onOpenChat?: () => void;
+  /** Quiet "unseen message" dot on the chat icon (no numeric badge, per spec)
+   * — the route tracks this via its own `subscribeToMatchChat` subscription
+   * and resets it naturally on remount when the player returns from chat. */
+  hasUnseenChat?: boolean;
 }
 
 /** Non-battle items usable in Nearby Battle without a server round-trip
@@ -440,6 +448,8 @@ export function LivePvpBattleScreen({
   opponentName,
   onFinish,
   onMissed,
+  onOpenChat,
+  hasUnseenChat,
 }: Props) {
   // Shared question set, per-client option order. `orders[i][displayIndex]`
   // recovers the ORIGINAL (server-canonical) option index for question i's
@@ -2020,24 +2030,45 @@ export function LivePvpBattleScreen({
         <div className="flex items-center gap-1 rounded-full bg-card/90 px-2.5 py-1 font-pixel text-[9px] text-foreground shadow-card backdrop-blur">
           QUESTION {displayedIndex + 1}/{PVP_QUESTIONS}
         </div>
-        {/* Owner ruling 2026-07-13: signature moves are AUTOMATIC. The Fire button
-            is gone — a row's manual-phase effects now fire off its own engine
-            trigger (see `fireCappedPayload`), still capped at the uses they always
-            had. The signature name and what it does stay visible on the combat
-            panel's ability chip. */}
-        {hasPayload && (
-          <div
-            title={signatureMoveName(partnerId) ?? "Signature move"}
-            className="flex items-center gap-1 rounded-full bg-card/90 px-3 py-1.5 font-pixel text-[9px] text-foreground shadow-card backdrop-blur"
-          >
-            {displayedIndex < mySuppressedUntil ? "🔒" : "⚡"} {signatureMoveName(partnerId)}
-            <span className="tabular-nums opacity-70">
-              {displayedIndex < mySuppressedUntil
-                ? "locked"
-                : `${Math.max(0, payloadCap - payloadUsed)}/${payloadCap}`}
-            </span>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {/* Owner ruling 2026-07-13: signature moves are AUTOMATIC. The Fire button
+              is gone — a row's manual-phase effects now fire off its own engine
+              trigger (see `fireCappedPayload`), still capped at the uses they always
+              had. The signature name and what it does stay visible on the combat
+              panel's ability chip. */}
+          {hasPayload && (
+            <div
+              title={signatureMoveName(partnerId) ?? "Signature move"}
+              className="flex items-center gap-1 rounded-full bg-card/90 px-3 py-1.5 font-pixel text-[9px] text-foreground shadow-card backdrop-blur"
+            >
+              {displayedIndex < mySuppressedUntil ? "🔒" : "⚡"} {signatureMoveName(partnerId)}
+              <span className="tabular-nums opacity-70">
+                {displayedIndex < mySuppressedUntil
+                  ? "locked"
+                  : `${Math.max(0, payloadCap - payloadUsed)}/${payloadCap}`}
+              </span>
+            </div>
+          )}
+          {/* Match chat entry point (docs/handoffs/global-chat) — a full-screen
+              route, not an overlay, so this is just a nav trigger. Quiet dot
+              only, no numeric badge (spec: no unread counter). */}
+          {onOpenChat && (
+            <button
+              type="button"
+              onClick={onOpenChat}
+              aria-label="Open match chat"
+              className="relative flex h-8 w-8 items-center justify-center rounded-full bg-card/90 shadow-card backdrop-blur transition active:scale-95"
+            >
+              <MessageCircle className="h-4 w-4 text-foreground" />
+              {hasUnseenChat && (
+                <span
+                  aria-hidden="true"
+                  className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-destructive"
+                />
+              )}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* COMBAT ARENA — FRLG diagonal layout, mirroring Solo */}

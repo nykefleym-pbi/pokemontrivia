@@ -24,6 +24,7 @@ import {
   type LivePvpMatch,
   type LivePvpEffect,
 } from "@/lib/pvp-live";
+import { subscribeToMatchChat } from "@/lib/pvp-chat";
 import type { SigRuntimeMap } from "@/lib/signature-rework-types";
 import { LivePvpBattleScreen, type LivePvpBattleResult } from "@/components/live-pvp-battle-screen";
 import { getProfileById, ensureSession, type TrainerProfile } from "@/lib/social";
@@ -72,6 +73,10 @@ function LivePvpMatchPage() {
   // (not in the battle screen) so it survives the battle→result unmount that a
   // loss resolved by the OPPONENT's answer triggers.
   const [missed, setMissed] = useState<MissedAnswer[]>([]);
+  // Quiet "unseen chat message" dot on the battle screen's chat icon (docs/
+  // handoffs/global-chat) — no numeric badge, per spec. Naturally resets on
+  // remount when the player returns here from the chat route.
+  const [hasUnseenChat, setHasUnseenChat] = useState(false);
   const partner = useGameStore((s) => s.pokemon);
   // Opponent-side combat cues funnel through the same frozen `emit` path as the
   // battle screen's local cues, so wording/ordering/dedupe are identical.
@@ -404,6 +409,17 @@ function LivePvpMatchPage() {
     };
   }, [hasOnboarded, myId, match, matchId]);
 
+  // Match chat unseen-dot (docs/handoffs/global-chat): a lightweight parallel
+  // subscription just to flip a boolean when the OPPONENT sends a message.
+  // The chat route itself owns backfill/full history; this only ever needs to
+  // know "something new arrived since I last opened chat."
+  useEffect(() => {
+    if (!hasOnboarded || !myId) return;
+    return subscribeToMatchChat(matchId, (msg) => {
+      if (msg.userId !== myId) setHasUnseenChat(true);
+    });
+  }, [hasOnboarded, myId, matchId]);
+
   // Grant the per-battle berry drops exactly once when the match reaches a
   // terminal phase — WINNERS ONLY (win on HP/tiebreak, or a forfeit win). A
   // loss/tie/forfeit-loss records the battle log but grants no berries and
@@ -478,6 +494,11 @@ function LivePvpMatchPage() {
           opponentName={opponentProfile?.trainer_name || "Opponent"}
           onFinish={handleFinish}
           onMissed={(m) => setMissed((prev) => [...prev, m])}
+          onOpenChat={() => {
+            setHasUnseenChat(false);
+            void navigate({ to: "/pvp/chat/$matchId", params: { matchId } });
+          }}
+          hasUnseenChat={hasUnseenChat}
         />
         <AlertDialog open={forfeitConfirmOpen} onOpenChange={setForfeitConfirmOpen}>
           <AlertDialogContent className="max-w-xs rounded-3xl">
@@ -531,6 +552,7 @@ function LivePvpMatchPage() {
       berryDrops={berryDrops}
       missed={missed}
       onBack={() => navigate({ to: "/profile" })}
+      onChat={() => navigate({ to: "/pvp/chat/$matchId", params: { matchId } })}
     />
   );
 }
@@ -556,6 +578,7 @@ function PvpResultScreen({
   berryDrops,
   missed,
   onBack,
+  onChat,
 }: {
   won: boolean;
   tied: boolean;
@@ -570,6 +593,9 @@ function PvpResultScreen({
   berryDrops: number | null;
   missed: MissedAnswer[];
   onBack: () => void;
+  /** Opens this match's full-screen chat route (docs/handoffs/global-chat).
+   * Renders a "Chat" button beside "Back to Profile" when provided. */
+  onChat?: () => void;
 }) {
   const hpLine = (
     <>
@@ -658,14 +684,24 @@ function PvpResultScreen({
           )}
         </div>
 
-        <div className="mx-auto mt-auto w-full max-w-sm pt-8">
+        <div className="mx-auto mt-auto flex w-full max-w-sm gap-2 pt-8">
           <Button
             size="lg"
             onClick={onBack}
-            className="h-14 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
+            className="h-14 flex-1 rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
           >
             Back to Profile
           </Button>
+          {onChat && (
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={onChat}
+              className="h-14 flex-1 rounded-full border-2 font-bold shadow-card"
+            >
+              Chat
+            </Button>
+          )}
         </div>
       </motion.div>
     );
@@ -722,14 +758,24 @@ function PvpResultScreen({
           Renders nothing when the loss had no wrong answers (HP/forfeit). */}
       <MissedReview missed={missed} />
 
-      <div className="mx-auto mt-auto w-full max-w-sm pt-8">
+      <div className="mx-auto mt-auto flex w-full max-w-sm gap-2 pt-8">
         <Button
           size="lg"
           onClick={onBack}
-          className="h-14 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
+          className="h-14 flex-1 rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
         >
           Back to Profile
         </Button>
+        {onChat && (
+          <Button
+            size="lg"
+            variant="outline"
+            onClick={onChat}
+            className="h-14 flex-1 rounded-full border-2 border-white/30 font-bold text-white shadow-card"
+          >
+            Chat
+          </Button>
+        )}
       </div>
     </motion.div>
   );
