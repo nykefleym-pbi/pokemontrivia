@@ -23,6 +23,7 @@ import { Route as ApiTriviaRouteImport } from './routes/api.trivia'
 import { Route as ApiMegaQuestionsRouteImport } from './routes/api.mega-questions'
 import { Route as ApiDailyChallengeRouteImport } from './routes/api.daily-challenge'
 import { Route as PvpLiveMatchIdRouteImport } from './routes/pvp.live.$matchId'
+import { Route as PvpChatMatchIdRouteImport } from './routes/pvp.chat.$matchId'
 
 const WhosThatPokemonRoute = WhosThatPokemonRouteImport.update({
   id: '/whos-that-pokemon',
@@ -94,6 +95,11 @@ const PvpLiveMatchIdRoute = PvpLiveMatchIdRouteImport.update({
   path: '/pvp/live/$matchId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PvpChatMatchIdRoute = PvpChatMatchIdRouteImport.update({
+  id: '/pvp/chat/$matchId',
+  path: '/pvp/chat/$matchId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -109,6 +115,7 @@ export interface FileRoutesByFullPath {
   '/api/trivia-batch': typeof ApiTriviaBatchRoute
   '/api/trivia-elite': typeof ApiTriviaEliteRoute
   '/pvp/$matchId': typeof PvpMatchIdRoute
+  '/pvp/chat/$matchId': typeof PvpChatMatchIdRoute
   '/pvp/live/$matchId': typeof PvpLiveMatchIdRoute
 }
 export interface FileRoutesByTo {
@@ -125,6 +132,7 @@ export interface FileRoutesByTo {
   '/api/trivia-batch': typeof ApiTriviaBatchRoute
   '/api/trivia-elite': typeof ApiTriviaEliteRoute
   '/pvp/$matchId': typeof PvpMatchIdRoute
+  '/pvp/chat/$matchId': typeof PvpChatMatchIdRoute
   '/pvp/live/$matchId': typeof PvpLiveMatchIdRoute
 }
 export interface FileRoutesById {
@@ -142,6 +150,7 @@ export interface FileRoutesById {
   '/api/trivia-batch': typeof ApiTriviaBatchRoute
   '/api/trivia-elite': typeof ApiTriviaEliteRoute
   '/pvp/$matchId': typeof PvpMatchIdRoute
+  '/pvp/chat/$matchId': typeof PvpChatMatchIdRoute
   '/pvp/live/$matchId': typeof PvpLiveMatchIdRoute
 }
 export interface FileRouteTypes {
@@ -160,6 +169,7 @@ export interface FileRouteTypes {
     | '/api/trivia-batch'
     | '/api/trivia-elite'
     | '/pvp/$matchId'
+    | '/pvp/chat/$matchId'
     | '/pvp/live/$matchId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -176,6 +186,7 @@ export interface FileRouteTypes {
     | '/api/trivia-batch'
     | '/api/trivia-elite'
     | '/pvp/$matchId'
+    | '/pvp/chat/$matchId'
     | '/pvp/live/$matchId'
   id:
     | '__root__'
@@ -192,6 +203,7 @@ export interface FileRouteTypes {
     | '/api/trivia-batch'
     | '/api/trivia-elite'
     | '/pvp/$matchId'
+    | '/pvp/chat/$matchId'
     | '/pvp/live/$matchId'
   fileRoutesById: FileRoutesById
 }
@@ -209,6 +221,7 @@ export interface RootRouteChildren {
   ApiTriviaBatchRoute: typeof ApiTriviaBatchRoute
   ApiTriviaEliteRoute: typeof ApiTriviaEliteRoute
   PvpMatchIdRoute: typeof PvpMatchIdRoute
+  PvpChatMatchIdRoute: typeof PvpChatMatchIdRoute
   PvpLiveMatchIdRoute: typeof PvpLiveMatchIdRoute
 }
 
@@ -312,6 +325,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PvpLiveMatchIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pvp/chat/$matchId': {
+      id: '/pvp/chat/$matchId'
+      path: '/pvp/chat/$matchId'
+      fullPath: '/pvp/chat/$matchId'
+      preLoaderRoute: typeof PvpChatMatchIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -329,6 +349,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTriviaBatchRoute: ApiTriviaBatchRoute,
   ApiTriviaEliteRoute: ApiTriviaEliteRoute,
   PvpMatchIdRoute: PvpMatchIdRoute,
+  PvpChatMatchIdRoute: PvpChatMatchIdRoute,
   PvpLiveMatchIdRoute: PvpLiveMatchIdRoute,
 }
 export const routeTree = rootRouteImport
