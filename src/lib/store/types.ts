@@ -220,6 +220,7 @@ export interface GameState {
 
   // preferences
   darkMode: boolean;
+  reducedMotion: boolean;
 
   // actions
   setOnboarded: (
@@ -320,4 +321,5 @@ export interface GameState {
 
   // preferences actions
   setDarkMode: (v: boolean) => void;
+  setReducedMotion: (v: boolean) => void;
 }

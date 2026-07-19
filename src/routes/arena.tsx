@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Swords, QrCode, ChevronRight, Loader2, MessageCircle } from "lucide-react";
 import { useGameStore } from "@/lib/store";
@@ -7,9 +7,7 @@ import { useStoreHydrated } from "@/lib/store-hydration";
 import { PokemonSprite } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
 import { NearbyBattleSheet } from "@/components/NearbyBattleSheet";
-import { fetchBattleQuestions } from "@/lib/api/trivia";
-import { startBotPvpMatch } from "@/lib/pvp-live";
-import { difficultyForLevel } from "@/lib/game-data";
+import { startTrainingMatch } from "@/lib/pvp-live";
 import {
   fetchActiveMegaEvent,
   MEGA_MAX_ATTEMPTS,
@@ -22,6 +20,12 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/arena")({
   component: ArenaPage,
+  // `nearby: 1` is a one-shot flag (PvP Rematch, docs/handoffs/.../03-frontend.md):
+  // landing here from a human-match result auto-opens the Battle Code sheet so a
+  // rematch is one tap away. Optional (like index.tsx's `ref`/refer.tsx's `code`)
+  // so every existing `navigate({ to: "/arena" })` call site stays valid.
+  validateSearch: (s: Record<string, unknown>): { nearby?: 1 } =>
+    s.nearby ? { nearby: 1 } : {},
 });
 
 const MODE_LABELS: Record<string, string> = {
@@ -72,10 +76,12 @@ function ArenaPage() {
   const hasOnboarded = useGameStore((s) => s.hasOnboarded);
   const hydrated = useStoreHydrated();
   const navigate = useNavigate();
+  const search = Route.useSearch();
   const battleLog = useGameStore((s) => s.battleLog);
 
   const [nearbyBattleOpen, setNearbyBattleOpen] = useState(false);
   const [trainingBusy, setTrainingBusy] = useState(false);
+  const nearbyAutoOpenedRef = useRef(false);
 
   const [megaLoading, setMegaLoading] = useState(true);
   const [megaEvent, setMegaEvent] = useState<MegaEvent | null>(null);
@@ -88,6 +94,17 @@ function ArenaPage() {
   useEffect(() => {
     if (hydrated && !hasOnboarded) navigate({ to: "/" });
   }, [hydrated, hasOnboarded, navigate]);
+
+  useEffect(() => {
+    if (
+      hasOnboarded &&
+      search.nearby === 1 &&
+      !nearbyAutoOpenedRef.current
+    ) {
+      nearbyAutoOpenedRef.current = true;
+      setNearbyBattleOpen(true);
+    }
+  }, [hasOnboarded, search.nearby]);
 
   // Mega Raid permanent slot: active event + this trainer's attempts/win state.
   useEffect(() => {
@@ -167,25 +184,15 @@ function ArenaPage() {
     if (trainingBusy) return;
     setTrainingBusy(true);
     try {
-      const s = useGameStore.getState();
-      const data = await fetchBattleQuestions({
-        difficulty: difficultyForLevel(s.level),
-        seenHashes: s.seenQuestionHashes,
-        seenSamples: s.seenQuestions.slice(-80),
-        excludeIds: s.seenCuratedIds.slice(-500),
-        flowSeed: Math.floor(Math.random() * 1_000_000),
-      });
-      if (!data.questions || data.questions.length < 5) {
-        toast.error("Couldn't prepare the battle. Try again.");
-        return;
-      }
-      const res = await startBotPvpMatch(data.questions, s.pokemon?.id ?? null);
+      const res = await startTrainingMatch();
       if (!res.ok) {
-        toast.error("Couldn't start training. Try again.");
+        toast.error(
+          res.error === "questions"
+            ? "Couldn't prepare the battle. Try again."
+            : "Couldn't start training. Try again.",
+        );
         return;
       }
-      s.markQuestionsSeen(data.questions.map((q) => q.question));
-      s.markCuratedSeen(data.servedIds ?? []);
       void navigate({ to: "/pvp/live/$matchId", params: { matchId: res.matchId } });
     } catch (e) {
       console.warn("[arena] startTraining failed:", e);

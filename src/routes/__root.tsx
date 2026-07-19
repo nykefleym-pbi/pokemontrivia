@@ -7,6 +7,7 @@ import {
   useRouterState,
 } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { MotionConfig } from "framer-motion";
 import { unlockAudio, playSfx, playBgm } from "@/lib/audio";
 import { BottomNav } from "@/components/bottom-nav";
 import { PwaRegister } from "@/components/pwa-register";
@@ -184,6 +185,13 @@ function RootComponent() {
     else root.classList.remove("dark");
   }, [darkMode]);
 
+  const reducedMotion = useGameStore((s) => s.reducedMotion);
+  useEffect(() => {
+    const root = document.documentElement;
+    if (reducedMotion) root.classList.add("reduce-motion");
+    else root.classList.remove("reduce-motion");
+  }, [reducedMotion]);
+
   // Unlock audio on the first user gesture, and play a subtle tap on any
   // button / link press app-wide.
   useEffect(() => {
@@ -207,23 +215,25 @@ function RootComponent() {
     else if (pathname === "/profile") playBgm("profile");
   }, [pathname]);
   return (
-    <div className="h-[100dvh] w-full overflow-hidden bg-background">
-      <div className="mx-auto flex h-[100dvh] w-full max-w-[480px] flex-col overflow-hidden bg-background">
-        <Outlet />
-        <BottomNav />
-      </div>
-      {/* Single app-wide toaster: every route (incl. /pvp/live Training & Nearby
-          Battle) renders toasts through this. Do NOT add per-route <Toaster>s —
-          multiple mounts double every toast. Sonner uses fixed positioning, so
-          the ancestor overflow-hidden here does not clip it. */}
-      <Toaster position="top-center" />
-      <FriendRequestInbox />
-      <PvpInviteInbox />
-      <LivePvpWatcher />
-      <NameReclaimPrompt />
+    <MotionConfig reducedMotion={reducedMotion ? "always" : "user"}>
+      <div className="h-[100dvh] w-full overflow-hidden bg-background">
+        <div className="mx-auto flex h-[100dvh] w-full max-w-[480px] flex-col overflow-hidden bg-background">
+          <Outlet />
+          <BottomNav />
+        </div>
+        {/* Single app-wide toaster: every route (incl. /pvp/live Training & Nearby
+            Battle) renders toasts through this. Do NOT add per-route <Toaster>s —
+            multiple mounts double every toast. Sonner uses fixed positioning, so
+            the ancestor overflow-hidden here does not clip it. */}
+        <Toaster position="top-center" />
+        <FriendRequestInbox />
+        <PvpInviteInbox />
+        <LivePvpWatcher />
+        <NameReclaimPrompt />
 
-      <PwaRegister />
-      <Analytics />
-    </div>
+        <PwaRegister />
+        <Analytics />
+      </div>
+    </MotionConfig>
   );
 }

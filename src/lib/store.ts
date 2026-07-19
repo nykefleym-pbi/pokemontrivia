@@ -100,6 +100,7 @@ export function buildSavePayload(s: GameState) {
     gymBadges: s.gymBadges,
     weeklyLeagueHistory: s.weeklyLeagueHistory,
     darkMode: s.darkMode,
+    reducedMotion: s.reducedMotion,
     friendCode: s.friendCode,
     lastEngagePromptDate: s.lastEngagePromptDate,
     engageDismissCount: s.engageDismissCount,

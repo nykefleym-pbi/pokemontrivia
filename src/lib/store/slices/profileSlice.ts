@@ -23,6 +23,7 @@ export const createProfileSlice: StoreSlice<
     | "dailyGiftStreak"
     | "guaranteedShinyPending"
     | "darkMode"
+    | "reducedMotion"
     | "setName"
     | "setTrainerSprite"
     | "setOnboarded"
@@ -35,6 +36,7 @@ export const createProfileSlice: StoreSlice<
     | "claimDailyGift"
     | "consumeGuaranteedShiny"
     | "setDarkMode"
+    | "setReducedMotion"
   >
 > = (set, get) => ({
   hasOnboarded: false,
@@ -53,8 +55,10 @@ export const createProfileSlice: StoreSlice<
   dailyGiftStreak: 0,
   guaranteedShinyPending: false,
   darkMode: false,
+  reducedMotion: false,
 
   setDarkMode: (v) => set({ darkMode: v }),
+  setReducedMotion: (v) => set({ reducedMotion: v }),
 
   setOnboarded: (name, pokemon, trainerSprite, abilityId) =>
     set({
