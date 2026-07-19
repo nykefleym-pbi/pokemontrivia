@@ -24,7 +24,8 @@ import { createProfileSlice } from "@/lib/store/slices/profileSlice";
 import { createItemsSlice, defaultInventory } from "@/lib/store/slices/itemsSlice";
 import { createCollectionsSlice } from "@/lib/store/slices/collectionsSlice";
 import { WHATS_NEW } from "./whats-new";
-import type { GameState, PlayerStats, PvpStatStages, DailyMark } from "./store/types";
+import { grantArenaReward } from "@/lib/arena-rewards";
+import type { GameState, PlayerStats, PvpStatStages, DailyMark, ArenaStats } from "./store/types";
 
 const zeroStages = (): PvpStatStages => ({ attack: 0, defense: 0, speed: 0, crit: 0 });
 
@@ -91,6 +92,7 @@ export function buildSavePayload(s: GameState) {
     flags: s.flags,
     dailyResult: s.dailyResult,
     battleLog: s.battleLog,
+    arenaStats: s.arenaStats,
     pokedex: s.pokedex,
     defeatedEliteRegions: s.defeatedEliteRegions,
     defeatedElites: s.defeatedElites,
@@ -130,6 +132,17 @@ const defaultStats: PlayerStats = {
   answered: 0,
   bestStreak: 0,
   totalAnswerTime: 0,
+};
+
+const defaultArenaStats: ArenaStats = {
+  nearbyBattles: 0,
+  trainingBattles: 0,
+  wins: 0,
+  battles: 0,
+  currentWinStreak: 0,
+  longestWinStreak: 0,
+  lastBerries: [],
+  set: { battles: 0, wins: 0, claimed: [false, false, false, false, false] },
 };
 
 export const useGameStore = create<GameState>()(
@@ -206,6 +219,7 @@ export const useGameStore = create<GameState>()(
       flags: [],
       dailyResult: null,
       battleLog: [],
+      arenaStats: defaultArenaStats,
 
       evolvePartner: (toPokemon) => {
         const s = get();
@@ -362,6 +376,7 @@ export const useGameStore = create<GameState>()(
           flags: [],
           dailyResult: null,
           battleLog: [],
+          arenaStats: defaultArenaStats,
           pokedex: {},
           defeatedEliteRegions: [],
           defeatedElites: [],
@@ -587,6 +602,64 @@ export const useGameStore = create<GameState>()(
         }
         set({ battleLog: nextLog, pokeEggs: nextEggs });
       },
+
+      recordArenaBattle: ({ won, isBot, berries }) => {
+        const s = get();
+        const cur = s.arenaStats;
+        const nextCurrentStreak = won ? cur.currentWinStreak + 1 : 0;
+        const nextLongestStreak = Math.max(cur.longestWinStreak, nextCurrentStreak);
+        const nextLastBerries = [...berries, ...cur.lastBerries].slice(0, 3);
+
+        // Rollover check uses the PRE-battle set: if a full set-of-5 has
+        // already been played, auto-grant any unlocked-but-unclaimed slots
+        // BEFORE starting a fresh set, so a reward is never silently lost.
+        // Each grant call is its own `set()` (it mutates coins/xp/items/TP via
+        // the store's own actions) — they must all complete before this
+        // action's own final `set()` below, or they'd race/overwrite.
+        let nextSet = cur.set;
+        if (cur.set.battles >= 5) {
+          for (let i = 0; i < 5; i++) {
+            if (i < cur.set.wins && !cur.set.claimed[i]) {
+              grantArenaReward(i, get());
+            }
+          }
+          nextSet = {
+            battles: 1,
+            wins: won ? 1 : 0,
+            claimed: [false, false, false, false, false],
+          };
+        } else {
+          nextSet = {
+            battles: cur.set.battles + 1,
+            wins: cur.set.wins + (won ? 1 : 0),
+            claimed: cur.set.claimed,
+          };
+        }
+
+        set({
+          arenaStats: {
+            nearbyBattles: cur.nearbyBattles + (isBot ? 0 : 1),
+            trainingBattles: cur.trainingBattles + (isBot ? 1 : 0),
+            battles: cur.battles + 1,
+            wins: cur.wins + (won ? 1 : 0),
+            currentWinStreak: nextCurrentStreak,
+            longestWinStreak: nextLongestStreak,
+            lastBerries: nextLastBerries,
+            set: nextSet,
+          },
+        });
+      },
+
+      claimArenaReward: (slot) => {
+        const s = get();
+        const { set: curSet } = s.arenaStats;
+        if (slot < 0 || slot >= 5 || slot >= curSet.wins || curSet.claimed[slot]) return null;
+        const result = grantArenaReward(slot, get());
+        const nextClaimed = [...curSet.claimed] as [boolean, boolean, boolean, boolean, boolean];
+        nextClaimed[slot] = true;
+        set({ arenaStats: { ...get().arenaStats, set: { ...curSet, claimed: nextClaimed } } });
+        return result;
+      },
     }),
 
     {
@@ -646,6 +719,7 @@ export const useGameStore = create<GameState>()(
           lastSeenWhatsNew: p.lastSeenWhatsNew ?? 0,
           flags: p.flags ?? [],
           battleLog: p.battleLog ?? [],
+          arenaStats: p.arenaStats ?? defaultArenaStats,
           dailyResult,
           pokedex: p.pokedex ?? {},
           defeatedEliteRegions: p.defeatedEliteRegions ?? [],
