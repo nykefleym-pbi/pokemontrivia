@@ -87,7 +87,9 @@ review a public room actually needs.
    `trainer_name` before they can send a chat message in a match (read-along
    without posting is fine, matching the original gate's spirit).
 3. **Wordlist maintenance** — Product Owner owns the initial word list and
-   block-severity tuning. English-only for v1.
+   block-severity tuning. Seeded with English and Tagalog/Filipino terms for
+   v1 (owner direction, 2026-07-19); further languages remain deferred until
+   there's a concrete need.
 4. **No moderator tooling** — Acceptable for v1 *because* scope is now paired
    matches, not a public room: the blast radius of one bad actor is one
    opponent, not everyone online. Report → GitHub issue (mirrors
