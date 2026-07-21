@@ -1,10 +1,19 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Swords, QrCode, ChevronRight, Loader2, MessageCircle, Lock, Check } from "lucide-react";
+import {
+  Swords,
+  QrCode,
+  ChevronRight,
+  Loader2,
+  MessageCircle,
+  Lock,
+  Check,
+  Trophy,
+} from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { useStoreHydrated } from "@/lib/store-hydration";
-import { PokemonSprite, ItemIcon } from "@/components/game-ui";
+import { ItemIcon } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
 import { BattleCodeQr } from "@/components/battle-code-qr";
 import { ScanPanel } from "@/components/NearbyBattleSheet";
@@ -13,13 +22,6 @@ import { ITEM_BY_ID } from "@/content/items";
 import { ARENA_REWARD_SLOTS, trophyTier, type TrophyTier } from "@/lib/arena-rewards";
 import { relativeTime } from "@/lib/battle-log-format";
 import { startTrainingMatch } from "@/lib/pvp-live";
-import {
-  fetchActiveMegaEvent,
-  MEGA_MAX_ATTEMPTS,
-  MEGA_WIN_CORRECT,
-  type MegaEvent,
-} from "@/lib/mega/schedule";
-import { getMegaAttempts, getMyMegaRun } from "@/lib/mega/runs";
 import { ensureSession, getProfileById } from "@/lib/social";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -33,31 +35,54 @@ export const Route = createFileRoute("/arena")({
     s.nearby ? { nearby: 1 } : {},
 });
 
-/** "Xd Yh" while more than a day remains, else "Yh Zm", else "Zm" — minute
- * granularity is enough since the caller only re-computes this every 30-60s. */
-function formatEndsIn(ms: number): string {
-  if (ms <= 0) return "ending soon";
-  const totalMin = Math.floor(ms / 60_000);
-  const days = Math.floor(totalMin / 1440);
-  const hours = Math.floor((totalMin % 1440) / 60);
-  const mins = totalMin % 60;
-  if (days > 0) return `${days}d ${hours}h`;
-  if (hours > 0) return `${hours}h ${mins}m`;
-  return `${mins}m`;
-}
-
 interface RecentNearbyMatch {
   id: string;
   opponentName: string;
   createdAt: string;
 }
 
-const TROPHY_RING_CLASS: Record<TrophyTier, string> = {
-  none: "border-foreground/15 text-foreground/40",
-  bronze: "border-amber-600 text-amber-700",
-  silver: "border-slate-400 text-slate-500",
-  gold: "border-poke-yellow text-poke-dark",
-  platinum: "border-violet-300 text-violet-500",
+/** Per-tier medal styling — a gradient disc + shine so the trophy reads as
+ * something to chase, not a bordered number. `none` is a muted "unranked"
+ * state that still hints at the medal shape ahead. */
+const TROPHY_STYLE: Record<
+  TrophyTier,
+  { name: string; disc: string; ring: string; icon: string; bar: string }
+> = {
+  none: {
+    name: "Unranked",
+    disc: "from-slate-200 to-slate-300",
+    ring: "ring-slate-300/50",
+    icon: "text-slate-400",
+    bar: "bg-slate-400",
+  },
+  bronze: {
+    name: "Bronze",
+    disc: "from-amber-500 to-amber-700",
+    ring: "ring-amber-500/40",
+    icon: "text-amber-50",
+    bar: "bg-amber-600",
+  },
+  silver: {
+    name: "Silver",
+    disc: "from-slate-300 to-slate-500",
+    ring: "ring-slate-400/40",
+    icon: "text-white",
+    bar: "bg-slate-500",
+  },
+  gold: {
+    name: "Gold",
+    disc: "from-yellow-300 to-amber-500",
+    ring: "ring-yellow-400/50",
+    icon: "text-amber-900",
+    bar: "bg-poke-yellow",
+  },
+  platinum: {
+    name: "Platinum",
+    disc: "from-violet-300 to-indigo-400",
+    ring: "ring-violet-300/50",
+    icon: "text-white",
+    bar: "bg-violet-400",
+  },
 };
 
 const REWARD_GLYPH: Record<string, string> = {
@@ -70,15 +95,28 @@ const REWARD_GLYPH: Record<string, string> = {
 
 function TrophyCard({ label, count }: { label: string; count: number }) {
   const { tier, next } = trophyTier(count);
+  const st = TROPHY_STYLE[tier];
+  const pct = next === null ? 100 : Math.min(100, Math.round((count / next) * 100));
   return (
     <div className="flex flex-1 flex-col items-center gap-1.5 rounded-3xl bg-card p-4 shadow-card">
       <div
-        className={`flex h-16 w-16 items-center justify-center rounded-full border-4 bg-card font-display-md ${TROPHY_RING_CLASS[tier]}`}
+        className={`relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br shadow-md ring-4 ${st.disc} ${st.ring}`}
       >
-        {count}
+        <Trophy className={`h-7 w-7 ${st.icon}`} />
+        <span className="pointer-events-none absolute left-2.5 top-2.5 h-2.5 w-2.5 rounded-full bg-white/50 blur-[1px]" />
       </div>
       <span className="font-pixel-xs text-primary">{label}</span>
-      <span className="text-[11px] text-foreground/55">{next === null ? "MAX" : `${count}/${next}`}</span>
+      <span className="text-[10px] font-bold uppercase tracking-wide text-foreground/70">
+        {st.name}
+      </span>
+      <div className="w-full">
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+          <div className={`h-full rounded-full ${st.bar}`} style={{ width: `${pct}%` }} />
+        </div>
+        <div className="mt-1 text-center text-[10px] text-foreground/55">
+          {next === null ? `${count} · MAX` : `${count}/${next}`}
+        </div>
+      </div>
     </div>
   );
 }
@@ -106,12 +144,6 @@ function ArenaPage() {
   const [trainingBusy, setTrainingBusy] = useState(false);
   const forcedBattleTabRef = useRef(false);
 
-  const [megaLoading, setMegaLoading] = useState(true);
-  const [megaEvent, setMegaEvent] = useState<MegaEvent | null>(null);
-  const [megaAttempts, setMegaAttempts] = useState(0);
-  const [megaWon, setMegaWon] = useState(false);
-  const [nowTick, setNowTick] = useState(Date.now());
-
   const [recentMatches, setRecentMatches] = useState<RecentNearbyMatch[]>([]);
 
   useEffect(() => {
@@ -127,32 +159,6 @@ function ArenaPage() {
       setTab("battle");
     }
   }, [hasOnboarded, search.nearby]);
-
-  // Mega Raid permanent slot: active event + this trainer's attempts/win state.
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const ev = await fetchActiveMegaEvent();
-      if (cancelled) return;
-      setMegaEvent(ev);
-      if (ev) {
-        const [attempts, run] = await Promise.all([getMegaAttempts(ev.id), getMyMegaRun(ev.id)]);
-        if (cancelled) return;
-        setMegaAttempts(attempts);
-        setMegaWon(!!run && run.correct >= MEGA_WIN_CORRECT);
-      }
-      setMegaLoading(false);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // Countdown refresh — minute granularity, no per-second interval.
-  useEffect(() => {
-    const t = setInterval(() => setNowTick(Date.now()), 60_000);
-    return () => clearInterval(t);
-  }, []);
 
   // Recent Nearby Battles strip — a lightweight entry point into match chat,
   // not an inbox. RLS on pvp_live_matches already scopes rows to matches the
@@ -228,17 +234,6 @@ function ArenaPage() {
   }
 
   if (!hydrated || !hasOnboarded) return null;
-
-  const megaExhausted = megaAttempts >= MEGA_MAX_ATTEMPTS;
-  const megaDisabled = !megaEvent || megaWon || megaExhausted;
-  const megaEndsIn = megaEvent ? formatEndsIn(Date.parse(megaEvent.endsAt) - nowTick) : "";
-  const megaStatusCopy = !megaEvent
-    ? "No active raid — check back soon"
-    : megaWon
-      ? `Cleared! Ends in ${megaEndsIn}`
-      : megaExhausted
-        ? `Out of attempts · Ends in ${megaEndsIn}`
-        : `Ends in ${megaEndsIn}`;
 
   return (
     <div className="bg-poke-cream h-full w-full overflow-y-auto pb-nav safe-x">
@@ -364,72 +359,31 @@ function ArenaPage() {
         </div>
       </div>
 
-      {/* Mega Raid — permanent full-width slot */}
-      <div className="px-5 pt-3">
-        {megaLoading ? (
-          <div className="flex w-full animate-pulse items-center gap-3 rounded-3xl bg-card/60 p-4 shadow-card">
-            <div className="h-14 w-14 shrink-0 rounded-2xl bg-muted" />
-            <div className="min-w-0 flex-1 space-y-2">
-              <div className="h-2.5 w-20 rounded bg-muted" />
-              <div className="h-3 w-32 rounded bg-muted" />
-            </div>
-          </div>
-        ) : (
-          <button
-            onClick={() => {
-              if (!megaDisabled) void navigate({ to: "/battle", search: { mega: 1 } as never });
-            }}
-            disabled={megaDisabled}
-            className={`relative flex w-full items-center gap-3 overflow-hidden rounded-3xl bg-gradient-to-br from-[oklch(0.62_0.16_250)] to-[oklch(0.5_0.18_270)] p-4 text-left text-white shadow-card disabled:opacity-80 ${
-              megaDisabled ? "grayscale" : ""
-            }`}
-          >
-            <div className="min-w-0 flex-1">
-              <div className="font-pixel text-[9px] leading-none text-white/85">
-                ⚡ MEGA RAID
-              </div>
-              <h3 className="mt-1.5 text-base font-extrabold leading-tight">
-                {megaEvent ? megaEvent.name : "No Raid Active"}
-              </h3>
-              <p className="mt-0.5 text-[11px] font-semibold leading-tight text-white/85">
-                {megaStatusCopy}
-              </p>
-            </div>
-            {megaEvent && (
-              <PokemonSprite
-                id={megaEvent.megaId}
-                alt={megaEvent.name}
-                className="sprite -mr-1 h-[56px] w-[56px] shrink-0"
-              />
-            )}
-          </button>
-        )}
-      </div>
-
       {/* Tab-dependent */}
       {tab === "battle" ? (
         <div className="px-5 pt-3">
           <div className="rounded-3xl bg-card p-4 shadow-card">
             <div className="font-pixel-xs text-primary">NEARBY BATTLE</div>
             <p className="mt-0.5 text-xs text-foreground/55">
-              Your friend code doubles as your Battle Code — have a nearby trainer scan it to
-              fight instantly.
+              {scanOpen
+                ? "Point your camera at a nearby trainer's Battle Code to fight instantly."
+                : "Your friend code doubles as your Battle Code — have a nearby trainer scan it to fight instantly."}
             </p>
+            {/* Scanner replaces the QR in place — same footprint, no layout jump. */}
             <div className="mt-3">
-              <BattleCodeQr />
+              {scanOpen ? (
+                <ScanPanel active={scanOpen} onClose={() => setScanOpen(false)} />
+              ) : (
+                <BattleCodeQr />
+              )}
             </div>
             <Button
               onClick={() => setScanOpen((v) => !v)}
               className="mt-3 h-11 w-full rounded-full"
             >
               <QrCode className="mr-1.5 h-4 w-4" />
-              {scanOpen ? "Close Scanner" : "Scan a Battle Code"}
+              {scanOpen ? "Show My Battle Code" : "Scan a Battle Code"}
             </Button>
-            {scanOpen && (
-              <div className="mt-3">
-                <ScanPanel active={scanOpen} onClose={() => setScanOpen(false)} />
-              </div>
-            )}
           </div>
         </div>
       ) : (
