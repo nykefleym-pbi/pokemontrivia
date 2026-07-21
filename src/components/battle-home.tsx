@@ -13,10 +13,39 @@ import {
 } from "@/lib/game-data";
 import { findGymLeader, GYM_LEADERS } from "@/lib/gym-leaders";
 
+/** Home-screen Mega Raid card state. `null` while the event is still loading
+ * (render nothing), `"none"` once confirmed there's no active raid (grayed
+ * placeholder), or the event details when one is live. */
+export type MegaHomeState =
+  | null
+  | "none"
+  | {
+      name: string;
+      megaId: number;
+      endsAt: string;
+      disabled: boolean; // cleared or attempts exhausted
+      reason: "cleared" | "exhausted" | "active";
+    };
+
+/** "Xd Yh" / "Yh Zm" / "Zm" — minute granularity is enough for the raid
+ * countdown, which refreshes off the home screen's shared 30s ticker. */
+function formatEndsIn(ms: number): string {
+  if (ms <= 0) return "ending soon";
+  const totalMin = Math.floor(ms / 60_000);
+  const days = Math.floor(totalMin / 1440);
+  const hours = Math.floor((totalMin % 1440) / 60);
+  const mins = totalMin % 60;
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${mins}m`;
+  return `${mins}m`;
+}
+
 export function BattleHome({
   onStart,
   onStartDaily,
   onStartWeekly,
+  onStartMega,
+  mega,
   loading,
   dailyDone,
   dailyResult: _dailyResult,
@@ -24,6 +53,8 @@ export function BattleHome({
   onStart: () => void;
   onStartDaily: () => void;
   onStartWeekly: () => void;
+  onStartMega: () => void;
+  mega: MegaHomeState;
   loading: boolean;
   dailyDone: boolean;
   dailyResult: {
@@ -265,6 +296,49 @@ export function BattleHome({
           )}
         </button>
       </div>
+
+      {/* Mega Raid event card (moved here from the Battle Arena tab). Hidden
+          while still loading; grayed once confirmed no raid is active. */}
+      {mega !== null && (
+        <div className="px-5 pt-2.5">
+          {mega === "none" ? (
+            <div className="flex w-full items-center gap-3 overflow-hidden rounded-[18px] bg-gradient-to-br from-[oklch(0.62_0.16_250)] to-[oklch(0.5_0.18_270)] p-3.5 text-white opacity-80 grayscale shadow-card">
+              <div className="min-w-0 flex-1">
+                <div className="font-pixel text-[9px] leading-none text-white/85">⚡ MEGA RAID</div>
+                <h3 className="mt-1.5 text-base font-extrabold leading-tight">No Raid Active</h3>
+                <p className="mt-0.5 text-[11px] font-semibold leading-tight text-white/85">
+                  Check back soon
+                </p>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={onStartMega}
+              disabled={mega.disabled}
+              className={`relative flex w-full items-center gap-3 overflow-hidden rounded-[18px] bg-gradient-to-br from-[oklch(0.62_0.16_250)] to-[oklch(0.5_0.18_270)] p-3.5 text-left text-white shadow-card disabled:opacity-80 ${
+                mega.disabled ? "grayscale" : ""
+              }`}
+            >
+              <div className="min-w-0 flex-1">
+                <div className="font-pixel text-[9px] leading-none text-white/85">⚡ MEGA RAID</div>
+                <h3 className="mt-1.5 text-base font-extrabold leading-tight">{mega.name}</h3>
+                <p className="mt-0.5 text-[11px] font-semibold leading-tight text-white/85">
+                  {mega.reason === "cleared"
+                    ? `Cleared! Ends in ${formatEndsIn(Date.parse(mega.endsAt) - now)}`
+                    : mega.reason === "exhausted"
+                      ? `Out of attempts · Ends in ${formatEndsIn(Date.parse(mega.endsAt) - now)}`
+                      : `Ends in ${formatEndsIn(Date.parse(mega.endsAt) - now)}`}
+                </p>
+              </div>
+              <PokemonSprite
+                id={mega.megaId}
+                alt={mega.name}
+                className="sprite -mr-1 h-[52px] w-[52px] shrink-0"
+              />
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="px-5 pt-2.5">
         <button

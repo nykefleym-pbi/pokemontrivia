@@ -11,7 +11,7 @@ import { playBgm } from "@/lib/audio";
 import { ApiError } from "@/lib/api/client";
 import { MegaRaidScreen } from "@/components/mega/MegaRaidScreen";
 import { MegaLeaderboard } from "@/components/mega/MegaLeaderboard";
-import { BattleHome } from "@/components/battle-home";
+import { BattleHome, type MegaHomeState } from "@/components/battle-home";
 import { ElitePendingTakeover } from "@/components/elite-pending-takeover";
 import { LevelUpScreen } from "@/components/level-up-screen";
 
@@ -111,6 +111,26 @@ function BattlePage() {
   // The Elite Four takeover screen blocks the hub whenever an elite is pending
   // and we're not already in the elite battle.
   const eliteTakeover = !!pendingElite && phase !== "elite";
+
+  // Home-screen Mega Raid card state (the raid entry moved here from the Battle
+  // Arena tab). `null` while stats are still loading, `"none"` once we've
+  // confirmed no raid is live, else the event with its disabled/reason state.
+  const megaHomeState: MegaHomeState =
+    megaStats === null
+      ? null
+      : !activeMega
+        ? "none"
+        : (() => {
+            const won = megaStats.won;
+            const exhausted = megaStats.attempts >= MEGA_MAX_ATTEMPTS;
+            return {
+              name: activeMega.name,
+              megaId: activeMega.megaId,
+              endsAt: activeMega.endsAt,
+              disabled: won || exhausted,
+              reason: won ? "cleared" : exhausted ? "exhausted" : "active",
+            };
+          })();
 
   // Background music per battle phase / mode. Keyed on `phase` (NOT level):
   // winning awards XP which can change `level` mid-battle — re-running this
@@ -1068,6 +1088,8 @@ function BattlePage() {
           onStart={startBattle}
           onStartDaily={startDaily}
           onStartWeekly={startWeekly}
+          onStartMega={startMega}
+          mega={megaHomeState}
           loading={phase === "loading"}
           dailyDone={dailyDone}
           dailyResult={dailyDone ? dailyResult : null}

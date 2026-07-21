@@ -213,6 +213,9 @@ function RootComponent() {
     else if (pathname === "/shop") playBgm("shop");
     else if (pathname === "/pokedex") playBgm("dex");
     else if (pathname === "/profile") playBgm("profile");
+    // Battle Arena has no dedicated track — borrow the Elite Four intro's
+    // "face off" energy so the tab isn't musically silent.
+    else if (pathname === "/arena") playBgm("elite_intro");
   }, [pathname]);
   return (
     <MotionConfig reducedMotion={reducedMotion ? "always" : "user"}>
