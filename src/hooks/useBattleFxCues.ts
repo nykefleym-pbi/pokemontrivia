@@ -94,19 +94,22 @@ function resolveCue(event: BattleFxEvent): Cue | null {
     case "item": {
       const def = ITEMS.find((i) => i.id === event.itemId);
       if (!def) return null;
+      // Some items carry no emoji (they rely on their sprite); skip the prefix
+      // so the toast doesn't start with a stray space.
+      const pre = def.emoji ? `${def.emoji} ` : "";
       if (mine) {
         return {
           // Offensive berry reads as a positive action; self buffs/reveals stay
           // low-key info — matches the shipped local-item toast levels.
           level: event.hitsOpponent ? "success" : "info",
           message: event.hitsOpponent
-            ? `${def.emoji} You used ${def.name} on the opponent!`
-            : `${def.emoji} You used ${def.name}.`,
+            ? `${pre}You used ${def.name} on the opponent!`
+            : `${pre}You used ${def.name}.`,
         };
       }
       return event.hitsOpponent
-        ? { level: "warning", message: `${def.emoji} Opponent's ${def.name} hit you!` }
-        : { level: "info", message: `${def.emoji} Opponent used ${def.name}.` };
+        ? { level: "warning", message: `${pre}Opponent's ${def.name} hit you!` }
+        : { level: "info", message: `${pre}Opponent used ${def.name}.` };
     }
 
     case "type-ability": {

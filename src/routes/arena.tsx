@@ -8,7 +8,6 @@ import {
   Loader2,
   MessageCircle,
   Lock,
-  Check,
   Trophy,
 } from "lucide-react";
 import { useGameStore } from "@/lib/store";
@@ -327,10 +326,7 @@ function ArenaPage() {
                   }`}
                 >
                   {claimed ? (
-                    <>
-                      <span className="text-lg">{REWARD_GLYPH[kind]}</span>
-                      <Check className="h-3.5 w-3.5 text-hp-good" />
-                    </>
+                    <span className="text-lg">{REWARD_GLYPH[kind]}</span>
                   ) : unlocked ? (
                     <>
                       <span className="text-lg">{REWARD_GLYPH[kind]}</span>
