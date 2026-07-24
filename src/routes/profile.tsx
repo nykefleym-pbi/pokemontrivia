@@ -651,7 +651,7 @@ function ProfilePage() {
               <Swords className="h-5 w-5 text-destructive" />
             </div>
             <span className="font-display-md text-foreground">Battle History</span>
-            <span className="font-pixel-xs text-foreground/50">match history</span>
+            <span className="font-pixel-xs text-foreground/50">&nbsp;</span>
           </button>
           <button
             onClick={() => setSettingsOpen(true)}

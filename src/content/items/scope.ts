@@ -5,7 +5,7 @@ export const scope: ItemDef = {
   id: "scope",
   category: "BATTLE",
   name: "Scope Lens",
-  emoji: "🔭",
+  emoji: "",
   iconUrl: spriteIconUrl("scope-lens"),
   desc: "Removes one wrong answer. Once per battle.",
   cost: 100,

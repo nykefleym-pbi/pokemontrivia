@@ -83,10 +83,10 @@ function ShopPage() {
     const it = ITEMS.find((x) => x.id === res.itemId);
     if (res.shiny) {
       toast.success(
-        `Day 7 reward! ${res.qty}× ${it?.name ?? "item"} ${it?.emoji ?? "🎁"} — your next battle win is a guaranteed shiny! ✨`,
+        `Day 7 reward! ${res.qty}× ${it?.name ?? "item"} ${it?.emoji || "🎁"} — your next battle win is a guaranteed shiny! ✨`,
       );
     } else {
-      toast.success(`Daily Gift opened: ${res.qty}× ${it?.name ?? "item"} ${it?.emoji ?? "🎁"}`);
+      toast.success(`Daily Gift opened: ${res.qty}× ${it?.name ?? "item"} ${it?.emoji || "🎁"}`);
     }
   }
   const toggleAutoItem = useGameStore((s) => s.toggleAutoItem);

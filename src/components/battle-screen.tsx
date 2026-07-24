@@ -1254,7 +1254,7 @@ function BattleMode({
       toast.error(`Cannot use ${def.name} right now.`);
       return;
     }
-    toast.success(`${def.emoji} Used ${def.name}!`);
+    toast.success(`${def.emoji ? `${def.emoji} ` : ""}Used ${def.name}!`);
     // server-first-refactor P3 — fire-and-forget mirror (see soloBattleIdRef).
     // escape maps to forfeit below instead, not a use_item action.
     if (soloBattleIdRef.current && id !== "escape") {
