@@ -460,6 +460,7 @@ export type BgmContext =
   | "daily"
   | "battle_elite"
   | "elite_intro" // Elite Four takeover screen (loops the intro)
+  | "arena" // Battle Arena hub tab — borrows the Elite intro clip as hub music
   | "weekly_league"
   | "mega"
   | "whos_that"
@@ -628,6 +629,11 @@ export function playBgm(context: BgmContext, opts?: { level?: number }) {
       return loopTrack(CLIP.leaderboard, "leaderboard", false);
     case "elite_intro":
       return loopTrack(CLIP.eliteIntro, "elite_intro", true);
+    case "arena":
+      // The Battle Arena is a hub tab, not a battle: it borrows the Elite Four
+      // intro clip for its "face off" energy but plays as NON-battle music, so
+      // the Settings "Music" toggle silences it like every other hub tab.
+      return loopTrack(CLIP.eliteIntro, "arena", false);
     case "battle_elite":
       // Intro already played on the takeover screen — go straight to the BGM.
       return loopTrack(CLIP.elite, "elite", true);
