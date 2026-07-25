@@ -6,7 +6,7 @@ export const lumberry: ItemDef = {
   category: "BERRY",
   name: "Lum Berry",
   iconUrl: spriteIconUrl("lum-berry"),
-  desc: "Cures any one status on yourself and grants 1 question of status immunity. (Nearby Battle only.)",
+  desc: "Cures any one status on yourself and grants 1 question of status immunity. (PvP only.)",
   cost: 0,
   premium: true,
   isBerry: true,

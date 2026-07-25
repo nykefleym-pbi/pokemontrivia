@@ -36,9 +36,6 @@ export function BattleCodeQr() {
       <div className="text-2xl font-extrabold tracking-[0.15em] text-foreground">
         {friendCode ?? "------"}
       </div>
-      <div className="text-center text-xs text-foreground/55">
-        Have a nearby trainer scan this to start a battle instantly.
-      </div>
     </div>
   );
 }

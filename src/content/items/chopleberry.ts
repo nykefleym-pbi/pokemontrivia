@@ -6,7 +6,7 @@ export const chopleberry: ItemDef = {
   category: "BERRY",
   name: "Chople Berry",
   iconUrl: spriteIconUrl("chople-berry"),
-  desc: "Scrambles a rival's senses — inflicts Confusion on the opponent for 2 questions. (Nearby Battle only.)",
+  desc: "Scrambles a rival's senses — inflicts Confusion on the opponent for 2 questions. (PvP only.)",
   cost: 0,
   isBerry: true,
   pvpOnly: true,

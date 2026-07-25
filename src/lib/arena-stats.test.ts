@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { useGameStore } from "@/lib/store";
 import { findPokemon } from "@/lib/pokemon-data";
-import { ARENA_TP_REWARD, ARENA_XP_REWARD, ARENA_COIN_REWARD } from "@/lib/arena-rewards";
+import {
+  ARENA_TP_REWARD,
+  ARENA_XP_REWARD,
+  ARENA_COIN_REWARD,
+  trophyTier,
+} from "@/lib/arena-rewards";
 import type { ItemId } from "@/lib/game-data";
 
 const PARTNER_ID = 1; // Bulbasaur — any partner works, just needs to be non-null.
@@ -146,5 +151,36 @@ describe("arenaStats: recordArenaBattle", () => {
       expect(s.battles).toBe(6);
       expect(s.wins).toBe(5);
     });
+  });
+});
+
+describe("trophyTier ladder", () => {
+  // Owner-set thresholds: Bronze 50 / Silver 250 / Gold 500 / Platinum 1000.
+  // Each tier is asserted at its exact boundary and one battle below it, since
+  // an off-by-one here silently shows players the wrong rank.
+  it.each([
+    [0, "none", 50],
+    [49, "none", 50],
+    [50, "bronze", 250],
+    [249, "bronze", 250],
+    [250, "silver", 500],
+    [499, "silver", 500],
+    [500, "gold", 1000],
+    [999, "gold", 1000],
+  ])("%i battles -> %s, chasing %i", (count, tier, next) => {
+    expect(trophyTier(count as number)).toEqual({ tier, next });
+  });
+
+  it("platinum is terminal — no next threshold to chase", () => {
+    expect(trophyTier(1000)).toEqual({ tier: "platinum", next: null });
+    expect(trophyTier(99_999)).toEqual({ tier: "platinum", next: null });
+  });
+
+  it("never reports a next threshold at or below the current count", () => {
+    for (const c of [0, 1, 49, 50, 100, 250, 499, 500, 999]) {
+      const { next } = trophyTier(c);
+      expect(next).not.toBeNull();
+      expect(next as number).toBeGreaterThan(c);
+    }
   });
 });

@@ -7,7 +7,7 @@ export const cheriberry: ItemDef = {
   category: "BERRY",
   name: "Cheri Berry",
   iconUrl: spriteIconUrl("cheri-berry"),
-  desc: "Cures Paralysis on yourself. (Nearby Battle only.)",
+  desc: "Cures Paralysis on yourself. (PvP only.)",
   cost: 0,
   isBerry: true,
   pvpOnly: true,

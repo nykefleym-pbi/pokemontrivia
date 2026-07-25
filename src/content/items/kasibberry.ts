@@ -6,7 +6,7 @@ export const kasibberry: ItemDef = {
   category: "BERRY",
   name: "Kasib Berry",
   iconUrl: spriteIconUrl("kasib-berry"),
-  desc: "Clouds a rival's guard — −1 Defense stage on the opponent for 3 questions. (Nearby Battle only.)",
+  desc: "Clouds a rival's guard — −1 Defense stage on the opponent for 3 questions. (PvP only.)",
   cost: 0,
   isBerry: true,
   pvpOnly: true,

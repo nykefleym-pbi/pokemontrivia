@@ -6,7 +6,7 @@ export const liechiberry: ItemDef = {
   category: "BERRY",
   name: "Liechi Berry",
   iconUrl: spriteIconUrl("liechi-berry"),
-  desc: "+1 Attack stage for 3 questions. (Nearby Battle only.)",
+  desc: "+1 Attack stage for 3 questions. (PvP only.)",
   cost: 0,
   isBerry: true,
   pvpOnly: true,

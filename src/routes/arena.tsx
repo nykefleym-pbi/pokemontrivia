@@ -200,7 +200,7 @@ function ArenaPage() {
     <div className="bg-poke-cream h-full w-full overflow-y-auto pb-nav safe-x">
       {/* Header */}
       <div className="px-5 pt-[calc(env(safe-area-inset-top)+1.25rem)] pb-2">
-        <p className="font-pixel-xs text-primary">FACE OFF</p>
+        <p className="font-pixel-xs text-primary">WELCOME TO</p>
         <h1 className="font-display-lg text-foreground">Battle Arena</h1>
       </div>
 
@@ -214,7 +214,7 @@ function ArenaPage() {
               : "text-foreground/40"
           }`}
         >
-          Battle
+          PvP
         </button>
         <button
           onClick={() => setTab("training")}
@@ -268,7 +268,7 @@ function ArenaPage() {
       {/* Trophies */}
       <div className="flex gap-3 px-5 pt-3">
         <TrophyCard
-          label="NEARBY"
+          label="PVP"
           count={arenaStats.nearbyBattles}
           art={ARENA_BADGE_ICON.nearby}
         />
@@ -324,7 +324,7 @@ function ArenaPage() {
       {tab === "battle" ? (
         <div className="px-5 pt-3">
           <div className="rounded-3xl bg-card p-4 shadow-card">
-            <div className="font-pixel-xs text-primary">NEARBY BATTLE</div>
+            <div className="font-pixel-xs text-primary">PVP</div>
             <p className="mt-0.5 text-xs text-foreground/55">
               {scanOpen
                 ? "Point your camera at a nearby trainer's Battle Code to fight instantly."
@@ -366,7 +366,8 @@ function ArenaPage() {
                 {trainingBusy ? "Summoning..." : "Start Training"}
               </h3>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                Practice against the Training Bot — no friend required
+                Sharpen your skills against the Training Bot. Wins count toward your rewards
+                and your Training badge.
               </p>
             </div>
             <ChevronRight className="h-5 w-5 shrink-0 text-foreground/40" />
@@ -377,7 +378,7 @@ function ArenaPage() {
       {/* Recent Nearby Battles — lightweight chat entry point, fixed on both tabs */}
       {recentMatches.length > 0 && (
         <div className="px-5 pt-4">
-          <div className="font-pixel-xs text-primary">RECENT NEARBY BATTLES</div>
+          <div className="font-pixel-xs text-primary">RECENT PVP BATTLES</div>
           <div className="mt-2 space-y-2">
             {recentMatches.map((m) => (
               <div

@@ -6,7 +6,7 @@ export const chestoberry: ItemDef = {
   category: "BERRY",
   name: "Chesto Berry",
   iconUrl: spriteIconUrl("chesto-berry"),
-  desc: "Shakes off Sleep on yourself. (Nearby Battle only.)",
+  desc: "Shakes off Sleep on yourself. (PvP only.)",
   cost: 0,
   isBerry: true,
   pvpOnly: true,

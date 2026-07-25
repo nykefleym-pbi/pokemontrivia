@@ -6,7 +6,7 @@ export const persimberry: ItemDef = {
   category: "BERRY",
   name: "Persim Berry",
   iconUrl: spriteIconUrl("persim-berry"),
-  desc: "Restores focus — cures Confusion on yourself. (Nearby Battle only.)",
+  desc: "Restores focus — cures Confusion on yourself. (PvP only.)",
   cost: 0,
   isBerry: true,
   pvpOnly: true,

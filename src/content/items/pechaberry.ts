@@ -6,7 +6,7 @@ export const pechaberry: ItemDef = {
   category: "BERRY",
   name: "Pecha Berry",
   iconUrl: spriteIconUrl("pecha-berry"),
-  desc: "Neutralises Poison / Badly Poisoned on yourself. (Nearby Battle only.)",
+  desc: "Neutralises Poison / Badly Poisoned on yourself. (PvP only.)",
   cost: 0,
   isBerry: true,
   pvpOnly: true,

@@ -10,7 +10,7 @@ export function BattleLogList({ entries }: { entries: BattleLogEntry[] }) {
   if (entries.length === 0) {
     return (
       <div className="rounded-3xl bg-card p-6 text-center text-sm text-foreground/55 shadow-card">
-        No battles yet — jump into Nearby Battle or Training to get started!
+        No battles yet — jump into PvP or Training to get started!
       </div>
     );
   }

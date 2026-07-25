@@ -177,9 +177,6 @@ export function ScanPanel({ active, onClose }: { active: boolean; onClose: () =>
           </div>
         )}
       </div>
-      <div className="text-center text-xs text-foreground/55">
-        Point your camera at a nearby trainer's Battle Code.
-      </div>
     </div>
   );
 }

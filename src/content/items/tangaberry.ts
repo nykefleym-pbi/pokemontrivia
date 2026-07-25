@@ -6,7 +6,7 @@ export const tangaberry: ItemDef = {
   category: "BERRY",
   name: "Tanga Berry",
   iconUrl: spriteIconUrl("tanga-berry"),
-  desc: "Snares a rival — −1 Attack stage on the opponent for 3 questions. (Nearby Battle only.)",
+  desc: "Snares a rival — −1 Attack stage on the opponent for 3 questions. (PvP only.)",
   cost: 0,
   isBerry: true,
   pvpOnly: true,
