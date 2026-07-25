@@ -18,6 +18,8 @@ import {
   claimReferral,
   syncProfile,
 } from "@/lib/social";
+import { AppIcon } from "@/components/app-icon";
+import { UI_ICON } from "@/lib/app-icons";
 import { rollReferralReward } from "@/lib/referral-rewards";
 import { validateTrainerName, claimErrorMessage, TRAINER_NAME_MAX } from "@/lib/trainer-name";
 
@@ -68,14 +70,13 @@ function SplashPage() {
             {/* hero block */}
             <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-7 pt-[calc(env(safe-area-inset-top)+2rem)] text-center">
               <PokeballEmblem />
-              <img
-                src="/icons/logo/pokemonLogo.png"
-                alt="Pokémon"
-                className="mt-6 h-auto w-[168px] select-none"
-                draggable={false}
-              />
-              <h1 className="mt-1 text-[2.625rem] font-black leading-none tracking-tight text-foreground">
-                Trivia Battle
+              <h1 className="mt-6">
+                <AppIcon
+                  src={UI_ICON.appLogo}
+                  alt="Pokémon Trivia Battle"
+                  className="w-[224px]"
+                  eager
+                />
               </h1>
               <p className="mt-4 max-w-[17rem] text-[15px] leading-relaxed text-foreground/65">
                 Battle trainers with your knowledge. Earn XP, climb leagues, fill your Pokédex.

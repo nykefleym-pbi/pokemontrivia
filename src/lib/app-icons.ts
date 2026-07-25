@@ -15,6 +15,9 @@
 
 /** Profile buttons and one-off chrome. */
 export const UI_ICON = {
+  /** Master wordmark (Pokémon + Pokéball + Trivia Battle) — the onboarding hero.
+   *  Also the source the PWA icons and Apple splash screens were generated from. */
+  appLogo: "/icons/Pokemon Trivia Battle Logo.webp",
   battleHistory: "/ui/Battle History.webp",
   trophies: "/ui/Trophies.webp",
   badges: "/ui/Badges.webp",

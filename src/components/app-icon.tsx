@@ -15,12 +15,16 @@ export function AppIcon({
   alt = "",
   className = "",
   style,
+  eager = false,
 }: {
   src: string;
   alt?: string;
   className?: string;
   /** Escape hatch for one-off effects (e.g. a drop-shadow on a hero icon). */
   style?: React.CSSProperties;
+  /** Set for above-the-fold art (a hero logo) so it isn't lazy-loaded into a
+   *  visible pop-in on first paint. */
+  eager?: boolean;
 }) {
   return (
     <img
@@ -28,8 +32,9 @@ export function AppIcon({
       src={encodeURI(src)}
       alt={alt}
       aria-hidden={alt === "" ? true : undefined}
-      loading="lazy"
-      decoding="async"
+      loading={eager ? "eager" : "lazy"}
+      fetchPriority={eager ? "high" : undefined}
+      decoding={eager ? "sync" : "async"}
       draggable={false}
       className={`select-none object-contain ${className}`}
       style={style}
