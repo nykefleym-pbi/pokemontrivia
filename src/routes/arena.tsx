@@ -40,7 +40,9 @@ interface RecentNearbyMatch {
  * `none` stays dim and desaturated so reaching Bronze reads as an unlock.
  * (A filter tint approximates metal; dedicated per-tier art would be crisper.) */
 const TROPHY_STYLE: Record<TrophyTier, { name: string; bar: string; filter: string }> = {
-  none: { name: "Unranked", bar: "bg-slate-400", filter: "grayscale(1) brightness(0.9) opacity(0.45)" },
+  // Deliberately unnamed: an untiered badge shows no label at all (the dimmed
+  // art and the "0/250" progress hint already say it).
+  none: { name: "", bar: "bg-slate-400", filter: "grayscale(1) brightness(0.9) opacity(0.45)" },
   bronze: {
     name: "Bronze",
     bar: "bg-amber-600",
@@ -73,8 +75,10 @@ function TrophyCard({ label, count, art }: { label: string; count: number; art: 
           rank-up visibly changes the metal. */}
       <AppIcon src={art} className="h-20 w-20 drop-shadow" style={{ filter: st.filter }} />
       <span className="font-pixel-xs text-primary">{label}</span>
+      {/* Non-breaking space when untiered so a ranked card sitting beside an
+          untiered one keeps both progress bars on the same line. */}
       <span className="text-[10px] font-bold uppercase tracking-wide text-foreground/70">
-        {st.name}
+        {st.name || " "}
       </span>
       <div className="w-full">
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
