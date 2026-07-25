@@ -3,13 +3,14 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { playSfx, playItemCue } from "@/lib/audio";
-import { Star, Coins, ShoppingBag, Minus, Plus } from "lucide-react";
+import { Star, ShoppingBag, Minus, Plus } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { useStoreHydrated } from "@/lib/store-hydration";
 import { ITEMS, type ItemDef } from "@/lib/game-data";
 import { getAbility } from "@/lib/abilities";
 import { CATEGORIES, CATEGORY_OF, BAG_SHORT_DESC, type ItemCategory } from "@/lib/item-categories";
-import { PixelGift } from "@/components/pixel-icons";
+import { AppIcon } from "@/components/app-icon";
+import { UI_ICON, COIN_ICON } from "@/lib/app-icons";
 import { ItemIcon } from "@/components/game-ui";
 import { syncActivity } from "@/lib/social";
 import { Button } from "@/components/ui/button";
@@ -83,10 +84,10 @@ function ShopPage() {
     const it = ITEMS.find((x) => x.id === res.itemId);
     if (res.shiny) {
       toast.success(
-        `Day 7 reward! ${res.qty}× ${it?.name ?? "item"} ${it?.emoji || "🎁"} — your next battle win is a guaranteed shiny! ✨`,
+        `Day 7 reward! ${res.qty}× ${it?.name ?? "item"} — your next battle win is a guaranteed shiny!`,
       );
     } else {
-      toast.success(`Daily Gift opened: ${res.qty}× ${it?.name ?? "item"} ${it?.emoji || "🎁"}`);
+      toast.success(`Daily Gift opened: ${res.qty}× ${it?.name ?? "item"}`);
     }
   }
   const toggleAutoItem = useGameStore((s) => s.toggleAutoItem);
@@ -178,9 +179,9 @@ function ShopPage() {
     }
     if (it.id === "potion" || it.id === "superpotion" || it.id === "maxpotion") playItemCue();
     else playSfx("item_use");
-    if (it.id === "candy") toast.success("🍬 +50 TP added to your partner!");
-    else if (it.id === "luckyegg") toast.success("🥚 2× XP active for 24 hours!");
-    else if (it.id === "bignugget") toast.success("🪙 TP → coins for the next 3 days!");
+    if (it.id === "candy") toast.success("+50 TP added to your partner!");
+    else if (it.id === "luckyegg") toast.success("2× XP active for 24 hours!");
+    else if (it.id === "bignugget") toast.success("TP → coins for the next 3 days!");
     else toast.success(`Used ${it.name}!`);
   }
 
@@ -208,7 +209,7 @@ function ShopPage() {
               )}
             </button>
             <div className="flex items-center gap-1.5 rounded-full bg-poke-yellow px-3.5 py-2 shadow-card">
-              <Coins className="h-4 w-4 text-foreground" />
+              <AppIcon src={COIN_ICON} alt="Coins" className="h-5 w-5" />
               <span className="text-sm font-extrabold text-foreground">
                 {coins.toLocaleString()}
               </span>
@@ -228,7 +229,7 @@ function ShopPage() {
               Free
             </span>
             <div className="shrink-0 drop-shadow">
-              <PixelGift className="h-12 w-12" />
+              <AppIcon src={UI_ICON.dailyGift} className="h-12 w-12" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="font-pixel-xs uppercase text-foreground/70">
@@ -257,7 +258,7 @@ function ShopPage() {
         ) : (
           <div className="relative mb-5 flex w-full items-center gap-4 overflow-hidden rounded-3xl bg-card p-5 shadow-card">
             <div className="shrink-0 opacity-40 grayscale">
-              <PixelGift className="h-12 w-12" />
+              <AppIcon src={UI_ICON.dailyGift} className="h-12 w-12" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="font-pixel-xs uppercase text-foreground/55">
@@ -551,8 +552,7 @@ function ShopPage() {
               <div className="my-4 max-h-[65vh] overflow-y-auto">
                 {ownedInBag.length === 0 ? (
                   <div className="rounded-3xl bg-poke-yellow/15 p-6 text-center">
-                    <div className="mx-auto mb-2 text-4xl">🎒</div>
-                    <div className="font-display-md text-foreground">Your bag is empty</div>
+                                        <div className="font-display-md text-foreground">Your bag is empty</div>
                     <p className="mt-1 text-xs text-foreground/60">Buy items below to stock up.</p>
                   </div>
                 ) : (
@@ -650,7 +650,7 @@ function ShopPage() {
                       </div>
                     )}
                     <div className="rounded-2xl bg-poke-blue/10 px-4 py-3 text-xs leading-snug text-foreground/70">
-                      💡 Battle items appear in your item dock during a match. Berries are used only
+                      Battle items appear in your item dock during a match. Berries are used only
                       in Nearby Battle.
                     </div>
                   </div>

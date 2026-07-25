@@ -1,11 +1,11 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { playSfx } from "@/lib/audio";
 import { ITEMS, trainerSpriteUrl, rankForLevel } from "@/lib/game-data";
 import { ItemIcon } from "@/components/game-ui";
-import { PixelEgg } from "@/components/pixel-icons";
+import { AppIcon } from "@/components/app-icon";
+import { UI_ICON, COIN_ICON } from "@/lib/app-icons";
 import { useGameStore } from "@/lib/store";
 import type { LevelUpRewards } from "@/lib/level-rewards";
 
@@ -113,8 +113,9 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
             transition={{ type: "spring", stiffness: 200 }}
             className="mt-4 rounded-full bg-poke-dark px-4 py-2 text-center shadow-pop"
           >
-            <div className="font-pixel-xs uppercase tracking-wide text-poke-yellow">
-              🎖 New Rank Unlocked
+            <div className="flex items-center justify-center gap-1.5 font-pixel-xs uppercase tracking-wide text-poke-yellow">
+              <AppIcon src={UI_ICON.badges} className="h-4 w-4" />
+              New Rank Unlocked
             </div>
             <div className="font-display-md text-white">{newRank}</div>
           </motion.div>
@@ -133,7 +134,7 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
               {rewards.coins > 0 && (
                 <RewardRow
                   index={0}
-                  icon={<Coins className="h-6 w-6 text-poke-yellow" />}
+                  icon={<AppIcon src={COIN_ICON} className="h-7 w-7" />}
                   label={`+${rewards.coins} Coins`}
                 />
               )}
@@ -157,7 +158,7 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
               {rewards.eggs > 0 && (
                 <RewardRow
                   index={rewards.items.length + 1}
-                  icon={<PixelEgg className="h-7 w-7" />}
+                  icon={<AppIcon src={UI_ICON.pokeEgg} className="h-7 w-7" />}
                   label={`+${rewards.eggs} Poké Egg${rewards.eggs > 1 ? "s" : ""}`}
                 />
               )}

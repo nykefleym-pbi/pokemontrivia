@@ -514,7 +514,7 @@ export function MegaRaidScreen({
           <div className="relative text-center">
             <div className="text-[20px] font-black text-white">
               {event.name}
-              {bossShiny ? " ✨" : ""}
+              {bossShiny ? "" : ""}
             </div>
             <div className="mt-1 flex justify-center gap-1.5">
               {event.types.map((t) => (
@@ -792,7 +792,7 @@ export function MegaRaidScreen({
               className="mt-4 flex h-12 w-full items-center justify-center rounded-full text-sm font-bold text-white"
               style={{ background: "rgba(28,35,51,0.9)" }}
             >
-              🪢 Flee with Escape Rope (doesn't count)
+              Flee with Escape Rope (doesn't count)
             </button>
           </div>
         </div>

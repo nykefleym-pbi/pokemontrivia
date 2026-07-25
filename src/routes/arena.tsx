@@ -1,18 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import {
-  Swords,
-  QrCode,
-  ChevronRight,
-  Loader2,
-  MessageCircle,
-  Lock,
-  Trophy,
-} from "lucide-react";
+import { Swords, QrCode, ChevronRight, Loader2, MessageCircle } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { useStoreHydrated } from "@/lib/store-hydration";
 import { ItemIcon } from "@/components/game-ui";
+import { AppIcon } from "@/components/app-icon";
+import { REWARD_ICON, LOCK_ICON, ARENA_BADGE_ICON } from "@/lib/app-icons";
 import { Button } from "@/components/ui/button";
 import { BattleCodeQr } from "@/components/battle-code-qr";
 import { ScanPanel } from "@/components/NearbyBattleSheet";
@@ -40,74 +34,42 @@ interface RecentNearbyMatch {
   createdAt: string;
 }
 
-/** Per-tier medal styling — a gradient disc + shine so the trophy reads as
- * something to chase, not a bordered number. `none` is a muted "unranked"
- * state that still hints at the medal shape ahead. */
-const TROPHY_STYLE: Record<
-  TrophyTier,
-  { name: string; disc: string; ring: string; icon: string; bar: string }
-> = {
-  none: {
-    name: "Unranked",
-    disc: "from-slate-200 to-slate-300",
-    ring: "ring-slate-300/50",
-    icon: "text-slate-400",
-    bar: "bg-slate-400",
-  },
+/** Per-tier badge styling. There is deliberately no textual tier label: the
+ * badge art is unframed and recoloured to the tier, so the colour IS the rank.
+ * `grayscale` first flattens whatever colours the webp ships with, then
+ * sepia/hue-rotate/saturate tint it to the target metal; `none` stays dim and
+ * desaturated so reaching Bronze reads as an unlock.
+ * (A filter tint approximates metal; dedicated per-tier art would be crisper.) */
+const TROPHY_STYLE: Record<TrophyTier, { bar: string; filter: string }> = {
+  none: { bar: "bg-slate-400", filter: "grayscale(1) brightness(0.9) opacity(0.45)" },
   bronze: {
-    name: "Bronze",
-    disc: "from-amber-500 to-amber-700",
-    ring: "ring-amber-500/40",
-    icon: "text-amber-50",
     bar: "bg-amber-600",
+    filter: "grayscale(1) sepia(0.9) saturate(2.6) hue-rotate(-18deg) brightness(0.92)",
   },
   silver: {
-    name: "Silver",
-    disc: "from-slate-300 to-slate-500",
-    ring: "ring-slate-400/40",
-    icon: "text-white",
     bar: "bg-slate-500",
+    filter: "grayscale(1) brightness(1.12) contrast(1.05)",
   },
   gold: {
-    name: "Gold",
-    disc: "from-yellow-300 to-amber-500",
-    ring: "ring-yellow-400/50",
-    icon: "text-amber-900",
     bar: "bg-poke-yellow",
+    filter: "grayscale(1) sepia(0.95) saturate(3.4) hue-rotate(-6deg) brightness(1.06)",
   },
   platinum: {
-    name: "Platinum",
-    disc: "from-violet-300 to-indigo-400",
-    ring: "ring-violet-300/50",
-    icon: "text-white",
     bar: "bg-violet-400",
+    filter: "grayscale(1) brightness(1.2) sepia(0.25) hue-rotate(175deg) saturate(1.6)",
   },
 };
 
-const REWARD_GLYPH: Record<string, string> = {
-  tp: "⭐",
-  xp: "✨",
-  item: "🎁",
-  coins: "🪙",
-  premium: "💎",
-};
-
-function TrophyCard({ label, count }: { label: string; count: number }) {
+function TrophyCard({ label, count, art }: { label: string; count: number; art: string }) {
   const { tier, next } = trophyTier(count);
   const st = TROPHY_STYLE[tier];
   const pct = next === null ? 100 : Math.min(100, Math.round((count / next) * 100));
   return (
     <div className="flex flex-1 flex-col items-center gap-1.5 rounded-3xl bg-card p-4 shadow-card">
-      <div
-        className={`relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br shadow-md ring-4 ${st.disc} ${st.ring}`}
-      >
-        <Trophy className={`h-7 w-7 ${st.icon}`} />
-        <span className="pointer-events-none absolute left-2.5 top-2.5 h-2.5 w-2.5 rounded-full bg-white/50 blur-[1px]" />
-      </div>
+      {/* No frame — the badge art stands on its own, tinted to its tier so each
+          rank-up visibly changes the metal. */}
+      <AppIcon src={art} className="h-20 w-20 drop-shadow" style={{ filter: st.filter }} />
       <span className="font-pixel-xs text-primary">{label}</span>
-      <span className="text-[10px] font-bold uppercase tracking-wide text-foreground/70">
-        {st.name}
-      </span>
       <div className="w-full">
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
           <div className={`h-full rounded-full ${st.bar}`} style={{ width: `${pct}%` }} />
@@ -305,8 +267,16 @@ function ArenaPage() {
 
       {/* Trophies */}
       <div className="flex gap-3 px-5 pt-3">
-        <TrophyCard label="NEARBY" count={arenaStats.nearbyBattles} />
-        <TrophyCard label="TRAINING" count={arenaStats.trainingBattles} />
+        <TrophyCard
+          label="NEARBY"
+          count={arenaStats.nearbyBattles}
+          art={ARENA_BADGE_ICON.nearby}
+        />
+        <TrophyCard
+          label="TRAINING"
+          count={arenaStats.trainingBattles}
+          art={ARENA_BADGE_ICON.training}
+        />
       </div>
 
       {/* Rewards card */}
@@ -321,15 +291,15 @@ function ArenaPage() {
               return (
                 <div
                   key={slot}
-                  className={`flex flex-col items-center gap-1 rounded-2xl p-2 text-center ${
+                  className={`flex flex-col items-center justify-center gap-1 rounded-2xl p-2 text-center ${
                     claimed ? "bg-muted/60 opacity-60" : "bg-muted/60"
                   }`}
                 >
                   {claimed ? (
-                    <span className="text-lg">{REWARD_GLYPH[kind]}</span>
+                    <AppIcon src={REWARD_ICON[kind]} className="h-7 w-7" />
                   ) : unlocked ? (
                     <>
-                      <span className="text-lg">{REWARD_GLYPH[kind]}</span>
+                      <AppIcon src={REWARD_ICON[kind]} className="h-7 w-7" />
                       <button
                         onClick={() => handleClaim(slot)}
                         className="rounded-full bg-primary px-2 py-0.5 font-pixel text-[8px] text-primary-foreground"
@@ -338,12 +308,7 @@ function ArenaPage() {
                       </button>
                     </>
                   ) : (
-                    <>
-                      <Lock className="h-4 w-4 text-foreground/35" />
-                      <span className="font-pixel text-[8px] text-foreground/45">
-                        {slot + 1} WIN{slot + 1 > 1 ? "S" : ""}
-                      </span>
-                    </>
+                    <AppIcon src={LOCK_ICON} className="h-9 w-9 opacity-50" />
                   )}
                 </div>
               );

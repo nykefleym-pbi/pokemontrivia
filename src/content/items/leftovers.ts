@@ -5,7 +5,7 @@ export const leftovers: ItemDef = {
   id: "leftovers",
   category: "HEALING",
   name: "Leftovers",
-  emoji: "🍞",
+  emoji: "",
   iconUrl: spriteIconUrl("leftovers"),
   desc: "Auto: heals 5 HP after every correct answer, for the whole battle. Once per week.",
   cost: 2000,

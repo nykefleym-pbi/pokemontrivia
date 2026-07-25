@@ -11,31 +11,56 @@ import { TimerRing } from "@/components/timer-ring";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CATEGORIES, CATEGORY_OF, BAG_SHORT_DESC } from "@/lib/item-categories";
+import { ITEM_CATEGORY_ICON } from "@/lib/app-icons";
 
-/** Item icon (PokeAPI sprite via item.iconUrl), falling back to its emoji if the
- * image fails to load. Shared by the Shop, in-battle bag, and Level Up screen
- * so every surface renders items identically. */
+/** Owner-supplied category art, used when an item's own sprite fails to load:
+ * every berry shares one image, the three potions another. Items outside these
+ * groups have no category art and fall back to their emoji as before. */
+const POTION_IDS: ReadonlySet<string> = new Set(["potion", "superpotion", "maxpotion"]);
+function categoryArtFor(item: ItemDef): string | null {
+  if (item.isBerry) return ITEM_CATEGORY_ICON.berries;
+  if (POTION_IDS.has(item.id)) return ITEM_CATEGORY_ICON.potions;
+  return null;
+}
+
+/** Item icon, shared by the Shop, in-battle bag and Level Up screen so every
+ * surface renders items identically. Fallback ladder when an image fails:
+ * the item's own PokeAPI sprite → its category art → its emoji (some items
+ * carry no emoji at all, in which case nothing is rendered). */
 export function ItemIcon({ item, className }: { item: ItemDef; className: string }) {
+  // Tracked with the item id so switching items restarts the ladder instead of
+  // inheriting the previous item's failures.
+  const [failure, setFailure] = useState<{ id: string; stage: 1 | 2 }>({ id: "", stage: 1 });
+  const stage = failure.id === item.id ? failure.stage : 0;
+  const categoryArt = categoryArtFor(item);
+
+  if (stage === 2 || (stage === 1 && !categoryArt)) {
+    if (!item.emoji) return null;
+    return (
+      <span className={`inline-flex items-center justify-center text-3xl ${className}`}>
+        {item.emoji}
+      </span>
+    );
+  }
+
   // Dream World sprites (used by X Accuracy) fill their whole canvas with no
   // padding, unlike the flat in-game item sprites (~2/3 fill) used by every
   // other item — pad them down so all items render at a consistent size.
-  const isDreamWorld = item.iconUrl.includes("/dream-world/");
+  const isDreamWorld = stage === 0 && item.iconUrl.includes("/dream-world/");
   return (
     <img
-      src={item.iconUrl}
+      src={stage === 0 ? item.iconUrl : encodeURI(categoryArt as string)}
       alt={item.name}
-      crossOrigin="anonymous"
-      className={`sprite object-contain ${className}`}
+      // Only the remote PokeAPI sprite needs CORS (the share-card canvas reads
+      // it back); the category art is same-origin.
+      crossOrigin={stage === 0 ? "anonymous" : undefined}
+      // Category art is smooth high-res webp, so it must not get `.sprite`'s
+      // image-rendering: pixelated.
+      className={`${stage === 0 ? "sprite" : ""} object-contain ${className}`}
       style={isDreamWorld ? { padding: "16.5%", boxSizing: "border-box" } : undefined}
-      onError={(e) => {
-        const el = e.currentTarget as HTMLImageElement;
-        el.replaceWith(
-          Object.assign(document.createElement("span"), {
-            textContent: item.emoji,
-            className: "text-3xl",
-          }),
-        );
-      }}
+      onError={() =>
+        setFailure({ id: item.id, stage: stage === 0 && categoryArt ? 1 : 2 })
+      }
     />
   );
 }
@@ -473,7 +498,7 @@ export function PokeballPattern({ marks }: { marks: DailyMark[] }) {
           )}
           {m === "timeout" && (
             <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-[10px]">
-              ⏱
+              –
             </span>
           )}
         </div>
@@ -553,14 +578,14 @@ export function CombatPanel({
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    className="flex max-w-full items-start gap-0.5 rounded-xl bg-primary/10 px-1.5 py-[1px] font-pixel-xs text-primary active:scale-95"
+                    className="flex max-w-full items-center gap-0.5 rounded-xl bg-primary/10 px-1.5 py-[1px] font-pixel-xs text-primary active:scale-95"
                   >
-                    <span className="break-words text-left">⚡ {abilityName}</span>
+                    <span className="min-w-0 truncate text-left">{abilityName}</span>
                     <Info className="mt-[1px] h-2.5 w-2.5 shrink-0 opacity-70" />
                   </button>
                 </PopoverTrigger>
                 <PopoverContent align={align === "right" ? "end" : "start"} className="w-56 text-xs">
-                  <div className="font-bold text-primary">⚡ {abilityName}</div>
+                  <div className="font-bold text-primary">{abilityName}</div>
                   {abilityDescription && (
                     <p className="mt-1 leading-snug text-muted-foreground">{abilityDescription}</p>
                   )}
@@ -569,12 +594,12 @@ export function CombatPanel({
             )}
             {immune && (
               <span className="rounded-full bg-hp-good/20 px-1.5 py-[1px] font-pixel-xs text-hp-good">
-                🛡
+                IMMUNE
               </span>
             )}
             {disadvantaged && !immune && (
               <span className="rounded-full bg-destructive/20 px-1.5 py-[1px] font-pixel-xs text-destructive">
-                ⚠
+                WEAK
               </span>
             )}
             {statuses.map((s) => (
@@ -688,7 +713,7 @@ export function QuestionCard({
         </div>
         {phase === "feedback" && (
           <p className="mt-2 rounded-xl bg-muted p-2 text-[11px] leading-snug text-muted-foreground">
-            💡 {trivia.explanation} · ⚡ {(lastElapsedMs / 1000).toFixed(1)}s
+            {trivia.explanation} · {(lastElapsedMs / 1000).toFixed(1)}s
           </p>
         )}
         {children}
@@ -769,8 +794,7 @@ export function ItemBagSheet({
               <div className="my-4 max-h-[65vh] overflow-y-auto">
                 {bagGroups.length === 0 ? (
                   <div className="rounded-3xl bg-poke-yellow/15 p-6 text-center">
-                    <div className="mx-auto mb-2 text-4xl">🎒</div>
-                    <div className="font-display-md text-foreground">Your bag is empty</div>
+                                        <div className="font-display-md text-foreground">Your bag is empty</div>
                     <p className="mt-1 text-xs text-foreground/60">
                       Visit the Shop to stock up on items.
                     </p>

@@ -27,6 +27,8 @@ import { fetchMegaLeaderboard, getMyMegaRun, getMegaAttempts } from "@/lib/mega/
 import { nextPendingElite, type EliteMember } from "@/lib/elite-four";
 import { findGymLeader, type GymLeader } from "@/lib/gym-leaders";
 import { syncActivity } from "@/lib/social";
+import { AppIcon } from "@/components/app-icon";
+import { UI_ICON } from "@/lib/app-icons";
 
 const ENGAGE_DELAY_MS = 10000; // safety cap: show carousel by now even if mega data never resolves
 
@@ -677,7 +679,7 @@ function BattlePage() {
       glow: "rgba(242,214,78,0.5)",
       labelBg: "rgba(0,0,0,0.3)",
       labelColor: "var(--brand-gold)",
-      label: "⚡ LIMITED EVENT",
+      label: "LIMITED EVENT",
       chipBg: "#E9E1F4",
       chipColor: "#5B3F95",
       chipStroke: "#6B4FA0",
@@ -799,7 +801,7 @@ function BattlePage() {
                               className="relative h-[150px] w-[150px] object-contain [filter:brightness(0)] [image-rendering:pixelated]"
                             />
                           ) : (
-                            <div className="relative text-[110px] leading-none">🏆</div>
+                            <AppIcon src={UI_ICON.trophies} className="relative h-[110px] w-[110px]" />
                           ))}
                         {card.kind === "whosthat" && (
                           <div
@@ -826,12 +828,11 @@ function BattlePage() {
                         {card.kind === "megaleaderboard" && (
                           <>
                             <div className="absolute top-[44px] flex flex-col items-center">
-                              <div
-                                className="text-[40px] leading-none"
+                              <AppIcon
+                                src={UI_ICON.trophies}
+                                className="h-10 w-10"
                                 style={{ filter: "drop-shadow(0 6px 10px rgba(0,0,0,0.5))" }}
-                              >
-                                🏆
-                              </div>
+                              />
                               <div
                                 className="font-pixel"
                                 style={{ fontSize: 9, color: "var(--brand-gold)", marginTop: 2 }}
@@ -929,7 +930,7 @@ function BattlePage() {
                           className="mb-2 inline-flex w-fit rounded-full px-2.5 py-1.5 font-pixel text-[9px] tracking-wider"
                           style={{ background: t.labelBg, color: t.labelColor }}
                         >
-                          ✨ {t.label}
+                          {t.label}
                         </div>
                       )}
                       <div

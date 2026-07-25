@@ -6,6 +6,8 @@ import { canEvolve, getEvolutionTargets, type PokeEntry } from "@/lib/pokemon-da
 import { type TrainerProfile } from "@/lib/social";
 import { GYM_LEADERS, type GymLeader } from "@/lib/gym-leaders";
 import { TypeBadge, PokemonSprite, LegendaryFrame } from "@/components/game-ui";
+import { AppIcon } from "@/components/app-icon";
+import { UI_ICON } from "@/lib/app-icons";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -83,7 +85,7 @@ export function PartnerCard({
       )}
       {pokemon.isFullyEvolved && (
         <div className="mt-4 rounded-full bg-muted py-2 text-center text-xs font-bold text-foreground/60">
-          ⭐ Fully evolved
+          Fully evolved
         </div>
       )}
 
@@ -240,7 +242,10 @@ function BadgeCell({ leader, got }: { leader: GymLeader; got: boolean }) {
           onError={() => setImgBroken(true)}
         />
       ) : (
-        <div className={`text-3xl ${got ? "" : "opacity-20 grayscale"}`}>🎖</div>
+        <AppIcon
+          src={UI_ICON.badges}
+          className={`h-12 w-12 ${got ? "" : "opacity-20 grayscale"}`}
+        />
       )}
       {got && (
         <div className="mt-1 truncate text-center text-[10px] font-semibold leading-tight text-foreground">

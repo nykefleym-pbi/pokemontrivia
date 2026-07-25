@@ -137,7 +137,6 @@ export function MatchChatScreen({
       <div ref={listRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4">
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
-            <div className="text-3xl">💬</div>
             <p className="font-display text-sm text-foreground/60">
               No messages yet — say gg or ask for a rematch!
             </p>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { PokemonSprite } from "@/components/game-ui";
-import { PixelEgg } from "@/components/pixel-icons";
+import { AppIcon } from "@/components/app-icon";
+import { UI_ICON } from "@/lib/app-icons";
 import { useGameStore } from "@/lib/store";
 import { findPokemon } from "@/lib/pokemon-data";
 import { ALL_LEGENDARY_MYTHICAL_IDS } from "@/lib/legendary-data";
@@ -50,7 +51,7 @@ export function EggHatch() {
         className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-card shadow-card active:scale-95"
         aria-label="Poké Eggs"
       >
-        <PixelEgg className="h-7 w-7" />
+        <AppIcon src={UI_ICON.pokeEgg} className="h-7 w-7" />
         {eggs.length > 0 && (
           <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-poke-dark px-1 text-[11px] font-extrabold text-white">
             {eggs.length}
@@ -90,7 +91,7 @@ export function EggHatch() {
                 <div
                   className={`font-pixel text-[9px] ${result.shiny ? "text-brand-amber" : "text-green-600 dark:text-green-400"}`}
                 >
-                  {result.shiny ? "✨ SHINY HATCH! ✨" : "IT HATCHED!"}
+                  {result.shiny ? "SHINY HATCH!" : "IT HATCHED!"}
                 </div>
                 <div className="relative mt-2">
                   <div
@@ -108,7 +109,7 @@ export function EggHatch() {
                 </div>
                 <div className="mt-1 text-[22px] font-black text-foreground">{result.name}</div>
                 <div className="mt-1 text-[13px] font-semibold text-muted-foreground">
-                  Added to your Pokédex! You also got a 🍬 Rare Candy.
+                  Added to your Pokédex! You also got a Rare Candy.
                 </div>
                 <button
                   onClick={() => setResult(null)}
@@ -124,7 +125,7 @@ export function EggHatch() {
               </div>
             ) : eggs.length === 0 ? (
               <div className="mt-4 flex flex-col items-center">
-                <PixelEgg className="h-24 w-24" />
+                <AppIcon src={UI_ICON.pokeEgg} className="h-24 w-24" />
                 <div className="mt-3 text-[15px] font-bold text-foreground">No eggs yet</div>
                 <div className="mt-1 text-[13px] text-muted-foreground">
                   Win a Mega Raid, level up, or refer a friend to earn a Poké Egg. Each egg only
@@ -147,7 +148,7 @@ export function EggHatch() {
                               : undefined
                           }
                         >
-                          <PixelEgg className="h-12 w-12" />
+                          <AppIcon src={UI_ICON.pokeEgg} className="h-12 w-12" />
                         </div>
                         <div className="min-w-0 flex-1 text-left">
                           <div className="h-2.5 overflow-hidden rounded-full bg-background">

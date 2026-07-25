@@ -188,7 +188,7 @@ function PvpMatchPage() {
       ) : (
         <>
           <div className="font-display-xl text-foreground">
-            {won ? "You won! 🎉" : tied ? "It's a tie!" : "You lost this one."}
+            {won ? "You won!" : tied ? "It's a tie!" : "You lost this one."}
           </div>
           <div className="font-pixel-xs text-foreground/60">
             You: {myFinal} · {opponentProfile?.trainer_name || "Opponent"}: {oppFinal}

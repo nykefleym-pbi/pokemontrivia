@@ -8,6 +8,8 @@ import { PokeballSpinner, PokemonSprite } from "@/components/game-ui";
 import { playCry, playSfx, stopBgm, revealPokemon, playWhosThatShout } from "@/lib/audio";
 import { pokeApiUrls } from "@/lib/api/pokeapi";
 import { syncActivity } from "@/lib/social";
+import { AppIcon } from "@/components/app-icon";
+import { REWARD_ICON } from "@/lib/app-icons";
 import { checkGuess, findByNorm, HOUR, type WhosThatGuess, type WhosThatRound as Round } from "@/lib/whos-that";
 import { startWhosThat, submitWhosThat } from "@/services/client/whos-that";
 
@@ -322,7 +324,6 @@ export function WhosThatPokemon() {
           POKÉMON?
         </h1>
         <div className="flex flex-1 flex-col items-center justify-center gap-3">
-          <div className="text-5xl">⏰</div>
           <div className="font-pixel text-[10px] uppercase tracking-wide text-foreground/50">
             Play again in
           </div>
@@ -375,7 +376,7 @@ export function WhosThatPokemon() {
           />
           {round.isShiny && (
             <div className="z-10 mb-1 rounded-full bg-poke-yellow px-3 py-1 font-pixel text-[10px] text-poke-dark shadow-card">
-              ✨ SHINY!
+              SHINY!
             </div>
           )}
           <PokemonSprite
@@ -389,8 +390,8 @@ export function WhosThatPokemon() {
         <div className="mt-6 space-y-3">
           <Row
             icon={
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-poke-yellow/30 text-xl">
-                ⭐
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-poke-yellow/30">
+                <AppIcon src={REWARD_ICON.xp} className="h-7 w-7" />
               </div>
             }
             title="+100 XP"
@@ -515,7 +516,6 @@ export function WhosThatPokemon() {
           ‹
         </button>
         <div className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 font-pixel text-[11px] text-primary shadow-card">
-          <span>⏱</span>
           {`0:${String(timeLeft).padStart(2, "0")}`}
         </div>
       </div>
@@ -549,7 +549,7 @@ export function WhosThatPokemon() {
               disabled={playsLeft <= 0}
               className="flex items-center gap-2 rounded-full border-b-4 border-primary/60 bg-white px-7 py-3.5 font-pixel text-base text-primary shadow-card disabled:opacity-40 active:translate-y-0.5 active:border-b-0"
             >
-              <span className="text-lg">🔊</span> PLAY CRY
+              PLAY CRY
             </button>
             <div className="mt-2 font-pixel text-[9px] uppercase tracking-wide text-foreground/45">
               {playsLeft} {playsLeft === 1 ? "play" : "plays"} left

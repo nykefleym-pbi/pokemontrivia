@@ -223,7 +223,7 @@ function BattleMode({
   );
   const playerMaxHp = playerAbility.id === "adaptable" ? 105 : 100;
   // Cosmetic-only: the enemy trainer's Pokémon gets a random type ability too
-  // (matches the partner's ⚡ chip in the UI) but never affects damage math —
+  // (matches the partner's chip in the UI) but never affects damage math —
   // Solo has no "enemy acts" turn for an ability to hook into.
   const enemyAbility = useMemo(
     () => getAbilityFn(enemy.pokemon.types, rollAbilityId(enemy.pokemon.types)),
@@ -294,7 +294,7 @@ function BattleMode({
   const missedRef = useRef<Array<{ question: string; correctAnswer: string; explanation: string }>>(
     [],
   );
-  const newTrophiesRef = useRef<Array<{ icon: string; name: string }>>([]);
+  const newTrophiesRef = useRef<Array<{ name: string }>>([]);
   const speedBonusTotalRef = useRef(0);
 
   const poisonTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -320,7 +320,7 @@ function BattleMode({
     const now = Date.now();
     const recentlyShown = now - lastAbilityToastRef.current < 1500;
     if (!recentlyShown) {
-      toast.info(`✨ ${ability.name} activated!`, {
+      toast.info(`${ability.name} activated!`, {
         description: ability.description,
         duration: 2200,
       });
@@ -432,7 +432,7 @@ function BattleMode({
     }
     if (enemy.isShiny) {
       playSfx("shiny");
-      toast.success(`✨ A SHINY ${enemy.pokemon.name} appeared!`, {
+      toast.success(`A SHINY ${enemy.pokemon.name} appeared!`, {
         duration: 3000,
         style: { background: "linear-gradient(90deg, #fde68a, #fbbf24)", color: "#1f2937" },
       });
@@ -486,7 +486,7 @@ function BattleMode({
   useEffect(() => {
     if (disadvantaged && tryAutoAssaultVest()) {
       assaultVestActiveRef.current = true;
-      toast.success("🦺 Assault Vest — damage halved this battle!");
+      toast.success("Assault Vest — damage halved this battle!");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -495,15 +495,15 @@ function BattleMode({
   useEffect(() => {
     if (tryAutoKingsRock()) {
       kingsRockActiveRef.current = true;
-      toast.success("👑 King's Rock — chance to shrug off wrong answers this battle!");
+      toast.success("King's Rock — chance to shrug off wrong answers this battle!");
     }
     if (tryAutoLeftovers()) {
       leftoversActiveRef.current = true;
-      toast.success("🍞 Leftovers — healing after every correct answer this battle!");
+      toast.success("Leftovers — healing after every correct answer this battle!");
     }
     if (tryAutoMetronome()) {
       metronomeActiveRef.current = true;
-      toast.success("🔁 Metronome — streak multiplier locked at max this battle!");
+      toast.success("Metronome — streak multiplier locked at max this battle!");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -571,7 +571,7 @@ function BattleMode({
     if (phase === "question" && timer > 0 && timer < 5) {
       if (tryAutoQuickClaw()) {
         setTimer(20);
-        toast.success("⏱️ Quick Claw — timer reset to 20s!");
+        toast.success("Quick Claw — timer reset to 20s!");
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -718,7 +718,7 @@ function BattleMode({
       // Silk Scarf: first correct answer this battle deals bonus damage (more for a Normal-type partner)
       if (tryAutoSilkScarf()) {
         dmg = Math.round(dmg * (player.types.includes("normal") ? 1.75 : 1.5));
-        toast.success("🧣 Silk Scarf — bonus damage!");
+        toast.success("Silk Scarf — bonus damage!");
       }
       // Tailwind: +20% dmg on first 3 questions
       if (playerAbility.id === "tailwind" && questionIdx < 3) {
@@ -911,13 +911,13 @@ function BattleMode({
       // Revive: survive a knockout at 25% HP (once per battle, consumes an item)
       if (newPlayerHp <= 0 && tryAutoRevive()) {
         newPlayerHp = Math.round(playerMaxHp * 0.25);
-        toast.success("✨ Revive — survived at 25% HP!");
+        toast.success("Revive — survived at 25% HP!");
       }
 
       // Focus Band: auto-heal to 50% when HP is 10 or below (once per week)
       if (newPlayerHp <= 10 && tryAutoFocusBand()) {
         newPlayerHp = Math.round(playerMaxHp * 0.5);
-        toast.success("🎽 Focus Band — restored to 50% HP!");
+        toast.success("Focus Band — restored to 50% HP!");
       }
 
       // Torrent: first drop below 30% HP heals 10 (once per battle)
@@ -935,7 +935,7 @@ function BattleMode({
       // Oran Berry: auto-heal 15 HP the instant HP first drops below 30% (once per battle)
       if (newPlayerHp > 0 && newPlayerHp < playerMaxHp * 0.3 && tryAutoOranBerry()) {
         newPlayerHp = Math.min(playerMaxHp, newPlayerHp + 15);
-        toast.success("🫐 Oran Berry — healed 15 HP!");
+        toast.success("Oran Berry — healed 15 HP!");
       }
 
       setPlayerHp(newPlayerHp);
@@ -1052,30 +1052,30 @@ function BattleMode({
       if (Math.random() < 0.5) {
         xpAward *= 2;
         coinAward *= 2;
-        toast.success("🥊 Lucky Punch — doubled!");
+        toast.success("Lucky Punch — doubled!");
       } else {
         xpAward = 0;
         coinAward = 0;
-        toast.error("🥊 Lucky Punch — nothing this time!");
+        toast.error("Lucky Punch — nothing this time!");
       }
     }
     if (itemState.starPieceActive && won) {
       xpAward = Math.round(xpAward * 1.5);
       coinAward = Math.round(coinAward * 1.5);
-      toast.success("⭐ Star Piece — win rewards boosted!");
+      toast.success("Star Piece — win rewards boosted!");
     }
     if (itemState.choiceSpecsActive) {
       xpAward *= 2;
       coinAward *= 2;
       tpAward *= 2;
-      toast.success("🥽 Choice Specs — rewards doubled!");
+      toast.success("Choice Specs — rewards doubled!");
     }
     // Big Nugget: while active, a fully evolved partner's TP rewards convert
     // straight to coins instead (a fully evolved Pokémon has no more use for TP).
     if (Date.now() < itemState.bigNuggetExpiresAt && !canEvolve(player) && tpAward > 0) {
       coinAward += tpAward;
       tpAward = 0;
-      toast.success("🪙 Big Nugget — TP converted to coins!");
+      toast.success("Big Nugget — TP converted to coins!");
     }
 
     const adjustedCoins = playerAbility.id === "pickup" ? Math.round(coinAward * 1.25) : coinAward;
@@ -1113,9 +1113,11 @@ function BattleMode({
           luckyegg: (inv.luckyegg ?? 0) + 1,
         },
       });
-      toast.success("🍬 Rare Candy +1 · 🥚 Lucky Egg +1", { duration: 4000 });
+      // Both glyphs dropped, not just Lucky Egg's: one item keeping an emoji
+      // while the other lost it reads as a bug in a single composed line.
+      toast.success("Rare Candy +1 · Lucky Egg +1", { duration: 4000 });
       if (regionDone) {
-        toast.success(`🏆 ${eliteMember.region} Elite Four cleared!`, { duration: 4500 });
+        toast.success(`${eliteMember.region} Elite Four cleared!`, { duration: 4500 });
       }
     }
 
@@ -1151,7 +1153,7 @@ function BattleMode({
           rank: rankForLevel(level),
         });
         shareSet = true;
-        toast.success(`🎖 ${gymLeader.badge} earned!`, { duration: 4500 });
+        toast.success(`${gymLeader.badge} earned!`, { duration: 4500 });
       }
     }
 
@@ -1212,13 +1214,13 @@ function BattleMode({
       mode: isElite ? "elite" : isWeekly ? "weekly" : "battle",
     });
     const after = unlockedAchievements(useGameStore.getState());
-    const unlocked: Array<{ icon: string; name: string }> = [];
+    const unlocked: Array<{ name: string }> = [];
     for (const id of after) {
       if (!before.has(id)) {
         const a = ACHIEVEMENTS.find((x) => x.id === id);
         if (a) {
-          unlocked.push({ icon: a.icon, name: a.name });
-          toast.success(`${a.icon} ${a.name}`, { description: a.desc, duration: 4000 });
+          unlocked.push({ name: a.name });
+          toast.success(a.name, { description: a.desc, duration: 4000 });
         }
       }
     }
@@ -1449,8 +1451,8 @@ function BattleMode({
               {floatDmg?.who === "enemy" && (
                 <div className="animate-float-up pointer-events-none absolute top-4 left-1/2 z-20 -translate-x-1/2 font-pixel text-base text-destructive">
                   -{floatDmg.n}
-                  {floatDmg.super && " 💥"}
-                  {floatDmg.speedy && " ⚡"}
+                  {floatDmg.super && " SUPER"}
+                  {floatDmg.speedy && " FAST"}
                 </div>
               )}
             </motion.div>

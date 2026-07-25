@@ -645,7 +645,7 @@ describe("live-pvp-battle-screen characterization (signature-ability coverage)",
     });
     expect(traceOf(trace)).toMatchSnapshot();
     const infoMessages = vi.mocked(toast.info).mock.calls.map(([message]) => message);
-    expect(infoMessages).toContain("🔒 Dark Void — signature on cooldown");
+    expect(infoMessages).toContain("Dark Void — signature on cooldown");
   });
 
   it("confusion sequence — 2 consecutive wrong answers confuse, and a forced roll misses the next correct click", async () => {

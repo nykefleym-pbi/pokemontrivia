@@ -38,6 +38,8 @@ import { useForfeitGuard } from "@/lib/use-forfeit-guard";
 import { resolvePvpTypeAbilityId } from "@/lib/pvp-type-abilities";
 import { useBattleFxCues } from "@/hooks/useBattleFxCues";
 import { MissedReview } from "@/components/MissedReview";
+import { AppIcon } from "@/components/app-icon";
+import { ITEM_CATEGORY_ICON } from "@/lib/app-icons";
 import type { MissedAnswer } from "@/lib/trivia-core";
 
 export const Route = createFileRoute("/pvp/live/$matchId")({
@@ -162,7 +164,7 @@ function MatchPageContent({ matchId }: { matchId: string }) {
       if (useGameStore.getState().markNearbyBattleEntered()) {
         useGameStore.getState().grantItem(STARTER_PVP_BERRY, 1);
         const berry = ITEMS.find((i) => i.id === STARTER_PVP_BERRY);
-        toast.success(`${berry?.emoji ?? "🟢"} You received a starter ${berry?.name ?? "Lum Berry"}!`);
+        toast.success(`You received a starter ${berry?.name ?? "Lum Berry"}!`);
       }
 
       setPhase(
@@ -466,7 +468,7 @@ function MatchPageContent({ matchId }: { matchId: string }) {
     if (won) {
       for (const id of drops) useGameStore.getState().grantItem(id, 1);
       setBerryDrops(drops.length);
-      toast.success(`🍒 You picked up ${drops.length} berries from this battle!`);
+      toast.success(`You picked up ${drops.length} berries from this battle!`);
     } else {
       setBerryDrops(0);
     }
@@ -751,8 +753,9 @@ function PvpResultScreen({
         <div className="mx-auto mt-6 w-full max-w-sm rounded-2xl bg-card p-4 text-center shadow-card">
           <div className="font-pixel-xs text-foreground/70">{hpLine}</div>
           {berryDrops != null && berryDrops > 0 && (
-            <div className="mt-2 font-display-md text-hp-good">
-              🍒 +{berryDrops} berr{berryDrops === 1 ? "y" : "ies"}
+            <div className="mt-2 flex items-center justify-center gap-1.5 font-display-md text-hp-good">
+              <AppIcon src={ITEM_CATEGORY_ICON.berries} className="h-5 w-5" />
+              +{berryDrops} berr{berryDrops === 1 ? "y" : "ies"}
             </div>
           )}
         </div>

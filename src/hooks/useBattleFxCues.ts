@@ -119,8 +119,8 @@ function resolveCue(event: BattleFxEvent): Cue | null {
       // Regular battle's `toast.info(name activated, { description })`.
       const effect = typeAbilityPvp(event.abilityId as AbilityId)?.note ?? ability.description;
       return mine
-        ? { level: "success", message: `⚡ ${ability.name} activated!`, description: effect }
-        : { level: "warning", message: `⚡ Opponent's ${ability.name}!`, description: effect };
+        ? { level: "success", message: `${ability.name} activated!`, description: effect }
+        : { level: "warning", message: `Opponent's ${ability.name}!`, description: effect };
     }
 
     case "signature": {
@@ -128,8 +128,8 @@ function resolveCue(event: BattleFxEvent): Cue | null {
       if (!move) return null;
       const effect = describeSignatureEffect(event.partnerId);
       return mine
-        ? { level: "success", message: `✨ ${move}!`, description: effect }
-        : { level: "warning", message: `✨ Opponent's ${move}!`, description: effect };
+        ? { level: "success", message: `${move}!`, description: effect }
+        : { level: "warning", message: `Opponent's ${move}!`, description: effect };
     }
 
     case "status-applied": {
@@ -164,8 +164,8 @@ function resolveCue(event: BattleFxEvent): Cue | null {
       // through the HP bars / streak UI, so toasting every answer would flood.
       if (!event.noAnswer) return null;
       return mine
-        ? { level: "error", message: "⏱️ No answer — counted wrong." }
-        : { level: "info", message: "⏱️ Opponent didn't answer." };
+        ? { level: "error", message: "No answer — counted wrong." }
+        : { level: "info", message: "Opponent didn't answer." };
     }
   }
 }

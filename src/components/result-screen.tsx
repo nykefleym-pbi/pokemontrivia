@@ -43,7 +43,7 @@ export function ResultScreen({
   xpIntoLevel: number;
   xpForThisLevel: number;
   levelProgressPct: number;
-  newTrophies: Array<{ icon: string; name: string }>;
+  newTrophies: Array<{ name: string }>;
   missed: Array<{ question: string; correctAnswer: string; explanation: string }>;
   onRebattle: () => void;
   onBackHome: () => void;
@@ -223,7 +223,7 @@ export function ResultScreen({
           <p className="text-xs text-white/70">
             Consolation: <span className="font-bold text-poke-yellow">+{xpEarned} XP</span>
             {" · "}
-            {streakKept ? "streak kept 🔥" : "streak reset"}
+            {streakKept ? "streak kept" : "streak reset"}
           </p>
         }
       />

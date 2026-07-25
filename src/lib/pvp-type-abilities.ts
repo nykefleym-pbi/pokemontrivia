@@ -132,12 +132,12 @@ export const TABLE: Record<AbilityId, TypeAbilityPvp> = {
         ? { pct: 0, flat: 0, zero: true, active: true }
         : NO_SELF,
     note: "15% chance to shrug off wrong-answer damage",
-    fireNote: "🔥 Flame Body — no damage taken!",
+    fireNote: "Flame Body — no damage taken!",
   },
   blaze: {
     damage: (c) => dmg(0.2, 0, c.selfHpPct < 0.4),
     note: "+20% damage while below 40% HP",
-    fireNote: "🔥 Blaze — fired up!",
+    fireNote: "Blaze — fired up!",
   },
   "flash-fire": {
     damage: () => dmg(0.08, 0, true),
@@ -149,13 +149,13 @@ export const TABLE: Record<AbilityId, TypeAbilityPvp> = {
     // Cure a Confused status when it's on you (Solo cures the first one).
     postAnswerFires: (c) => c.hasConfused,
     note: "washes away Confusion",
-    fireNote: "💧 Hydration — status cleared!",
+    fireNote: "Hydration — status cleared!",
   },
   torrent: {
     // Heal 10 HP the first time you drop below 30% — caller one-shots the fire.
     postAnswerFires: (c) => c.selfHpPct < 0.3,
     note: "heals when you drop below 30% HP",
-    fireNote: "💧 Torrent — surged back!",
+    fireNote: "Torrent — surged back!",
   },
   "swift-swim": {
     // Solo: raises the speed bonus floor. PvP: standing Speed +1 (more time).
@@ -170,7 +170,7 @@ export const TABLE: Record<AbilityId, TypeAbilityPvp> = {
         ? { pct: 0.5, flat: 0, zero: false, active: true }
         : NO_SELF,
     note: "20% chance to halve wrong-answer damage",
-    fireNote: "⚡ Static — damage halved!",
+    fireNote: "Static — damage halved!",
   },
   "volt-absorb": {
     damage: (c) => dmg(0, 3, c.answerElapsedMs <= 5000),
@@ -185,13 +185,13 @@ export const TABLE: Record<AbilityId, TypeAbilityPvp> = {
   "leech-seed": {
     postAnswerFires: (c) => c.correct,
     note: "heals a little on every correct answer",
-    fireNote: "🌱 Leech Seed — HP drained back!",
+    fireNote: "Leech Seed — HP drained back!",
   },
   synthesis: { inert: true, note: "boosts potions (no direct battle effect)" },
   overgrow: {
     damage: (c) => dmg(0.12, 0, c.oppHpPct > 0.5),
     note: "+12% damage while the opponent is above half HP",
-    fireNote: "🌿 Overgrow — surging!",
+    fireNote: "Overgrow — surging!",
   },
 
   // ── ice ────────────────────────────────────────────────────────────────
@@ -199,12 +199,12 @@ export const TABLE: Record<AbilityId, TypeAbilityPvp> = {
     // First wrong of the battle deals 0 — caller one-shots via the wrong counter.
     selfDmg: (c) => (c.hadWrong ? NO_SELF : { pct: 0, flat: 0, zero: true, active: true }),
     note: "your first wrong answer deals no damage",
-    fireNote: "❄️ Snow Cloak — first slip shrugged off!",
+    fireNote: "Snow Cloak — first slip shrugged off!",
   },
   "ice-body": {
     postAnswerFires: (c) => c.correct && c.correctCount > 0 && c.correctCount % 4 === 0,
     note: "heals every 4th correct answer",
-    fireNote: "🧊 Ice Body — recovered HP!",
+    fireNote: "Ice Body — recovered HP!",
   },
   "slush-rush": {
     // Solo halves disadvantaged wrong damage; no matchup here → flat -5.
@@ -216,7 +216,7 @@ export const TABLE: Record<AbilityId, TypeAbilityPvp> = {
   guts: {
     damage: (c) => dmg(0.15, 0, c.selfHpPct < 0.5),
     note: "+15% damage while below 50% HP",
-    fireNote: "💪 Guts — pushing through!",
+    fireNote: "Guts — pushing through!",
   },
   "no-guard": {
     damage: () => dmg(0.18, 0, true),
@@ -226,7 +226,7 @@ export const TABLE: Record<AbilityId, TypeAbilityPvp> = {
   counter: {
     damage: (c) => dmg(0, 4, !c.prevCorrect),
     note: "+4 damage right after a wrong answer",
-    fireNote: "🥊 Counter — struck back!",
+    fireNote: "Counter — struck back!",
   },
 
   // ── poison ────────────────────────────────────────────────────────────────
@@ -235,18 +235,18 @@ export const TABLE: Record<AbilityId, TypeAbilityPvp> = {
     // off yourself when present (keeps the defensive identity).
     postAnswerFires: (c) => c.hasPoisoned || c.hasConfused,
     note: "shrugs off Poison and Confusion",
-    fireNote: "☠️ Toxic — toxins purged!",
+    fireNote: "Toxic — toxins purged!",
   },
   corrosion: {
     // Wrong answers still chip the opponent for a little.
     postAnswerFires: (c) => !c.correct,
     note: "wrong answers still chip the opponent",
-    fireNote: "🧪 Corrosion — it still bit!",
+    fireNote: "Corrosion — it still bit!",
   },
   "poison-touch": {
     postAnswerFires: (c) => c.correct,
     note: "correct answers poison the opponent",
-    fireNote: "🟣 Poison Touch — opponent poisoned!",
+    fireNote: "Poison Touch — opponent poisoned!",
   },
 
   // ── ground ────────────────────────────────────────────────────────────────
@@ -258,20 +258,20 @@ export const TABLE: Record<AbilityId, TypeAbilityPvp> = {
   "sand-force": {
     keepsStreakOnWrong: (n) => n <= 2,
     note: "your first two wrong answers don't break your streak",
-    fireNote: "🏜️ Sand Force — streak held!",
+    fireNote: "Sand Force — streak held!",
   },
   bulldoze: {
     // Solo: +25% when disadvantaged. No matchup → underdog proxy (below half HP).
     damage: (c) => dmg(0.25, 0, c.selfHpPct < 0.5),
     note: "+25% damage while below half HP",
-    fireNote: "⛰️ Bulldoze — heavy hit!",
+    fireNote: "Bulldoze — heavy hit!",
   },
 
   // ── flying ────────────────────────────────────────────────────────────────
   tailwind: {
     damage: (c) => dmg(0.2, 0, c.questionIndex < 3),
     note: "+20% damage on the first 3 questions",
-    fireNote: "🌀 Tailwind — early burst!",
+    fireNote: "Tailwind — early burst!",
   },
   aerilate: {
     // Solo: bigger speed bonuses. PvP: standing Speed +1.
@@ -281,14 +281,14 @@ export const TABLE: Record<AbilityId, TypeAbilityPvp> = {
   acrobatics: {
     damage: (c) => dmg(0.3, 0, c.selfHpPct >= 1),
     note: "+30% damage while at full HP",
-    fireNote: "🪶 Acrobatics — nimble strike!",
+    fireNote: "Acrobatics — nimble strike!",
   },
 
   // ── psychic ────────────────────────────────────────────────────────────────
   foresight: {
     revealsWrongAt: (i) => (i + 1) % 5 === 0,
     note: "reveals a wrong option every 5th question",
-    fireNote: "🔮 Foresight — a wrong answer revealed!",
+    fireNote: "Foresight — a wrong answer revealed!",
   },
   "magic-guard": {
     // Solo: statuses deal no HP damage. PvP statuses never tick HP → inert.
@@ -304,25 +304,25 @@ export const TABLE: Record<AbilityId, TypeAbilityPvp> = {
   "compound-eyes": {
     revealsWrongAt: (i) => i % 5 === 0 || i % 5 === 4,
     note: "reveals a wrong option on the first & last of each set",
-    fireNote: "🐛 Compound Eyes — a wrong answer revealed!",
+    fireNote: "Compound Eyes — a wrong answer revealed!",
   },
   "shield-dust": {
     // Immune to Confusion → clear it the moment it lands.
     postAnswerFires: (c) => c.hasConfused,
     note: "brushes off Confusion",
-    fireNote: "🛡️ Shield Dust — Confusion brushed off!",
+    fireNote: "Shield Dust — Confusion brushed off!",
   },
   swarm: {
     damage: (c) => dmg(0, 3, c.correct && c.streakAfter >= 3),
     note: "+3 damage while on a 3+ streak",
-    fireNote: "🐝 Swarm — swarming!",
+    fireNote: "Swarm — swarming!",
   },
 
   // ── rock ────────────────────────────────────────────────────────────────
   sturdy: {
     clampsLethalSelfDmg: true,
     note: "survives one otherwise-fatal hit at 1 HP",
-    fireNote: "🪨 Sturdy — held on at 1 HP!",
+    fireNote: "Sturdy — held on at 1 HP!",
   },
   "solid-rock": {
     // Caps INCOMING damage, which is dealt by the opponent's client — can't be
@@ -333,7 +333,7 @@ export const TABLE: Record<AbilityId, TypeAbilityPvp> = {
   "stealth-rock": {
     postAnswerFires: (c) => c.questionIndex > 0 && c.questionIndex % 5 === 0,
     note: "chips the opponent at the start of each 5-question round",
-    fireNote: "🪨 Stealth Rock — the opponent took chip damage!",
+    fireNote: "Stealth Rock — the opponent took chip damage!",
   },
 
   // ── ghost ────────────────────────────────────────────────────────────────
@@ -341,29 +341,29 @@ export const TABLE: Record<AbilityId, TypeAbilityPvp> = {
     // Heal back the wrong-answer chip if the NEXT answer is correct within 5s.
     postAnswerFires: (c) => c.correct && !c.prevCorrect && c.answerElapsedMs <= 5000,
     note: "recovers a wrong answer's damage with a fast follow-up",
-    fireNote: "👻 Cursed Body — damage undone!",
+    fireNote: "Cursed Body — damage undone!",
   },
   "shadow-tag": {
     postAnswerFires: (c) => !c.correct,
     note: "the opponent loses HP whenever you take damage",
-    fireNote: "👥 Shadow Tag — opponent dragged down!",
+    fireNote: "Shadow Tag — opponent dragged down!",
   },
   hex: {
     damage: (c) => dmg(0.3, 0, c.hasNegativeStatus),
     note: "+30% damage while you're Confused or Poisoned",
-    fireNote: "🔮 Hex — cursed power!",
+    fireNote: "Hex — cursed power!",
   },
 
   // ── dragon ────────────────────────────────────────────────────────────────
   multiscale: {
     selfDmg: (c) => (c.selfHpPct >= 1 ? { pct: 0.5, flat: 0, zero: false, active: true } : NO_SELF),
     note: "halves wrong-answer damage while at full HP",
-    fireNote: "🐉 Multiscale — damage halved!",
+    fireNote: "Multiscale — damage halved!",
   },
   berserk: {
     damage: (c) => dmg(0.12, 0, c.hadWrong),
     note: "+12% damage after your first wrong answer",
-    fireNote: "🐲 Berserk — enraged!",
+    fireNote: "Berserk — enraged!",
   },
   "dragon-dance": {
     damage: (c) => {
@@ -371,7 +371,7 @@ export const TABLE: Record<AbilityId, TypeAbilityPvp> = {
       return dmg(0, rounds, rounds > 0);
     },
     note: "damage grows each 5-question round",
-    fireNote: "🐉 Dragon Dance — building power!",
+    fireNote: "Dragon Dance — building power!",
   },
 
   // ── dark ────────────────────────────────────────────────────────────────
@@ -383,7 +383,7 @@ export const TABLE: Record<AbilityId, TypeAbilityPvp> = {
   moxie: {
     damage: (c) => dmg(0, c.moxieStacks, c.moxieStacks > 0),
     note: "+1 permanent damage each 3-streak (stacks)",
-    fireNote: "😼 Moxie — power rising!",
+    fireNote: "Moxie — power rising!",
   },
   "dark-aura": {
     inert: true,
@@ -409,17 +409,17 @@ export const TABLE: Record<AbilityId, TypeAbilityPvp> = {
         ? { pct: 0, flat: 0, zero: true, active: true }
         : NO_SELF,
     note: "15% chance to shrug off wrong-answer damage",
-    fireNote: "💕 Cute Charm — no damage taken!",
+    fireNote: "Cute Charm — no damage taken!",
   },
   "pixie-dust": {
     postAnswerFires: (c) => c.correct && c.streakAfter > 0 && c.streakAfter % 3 === 0,
     note: "heals each time you reach a 3-streak",
-    fireNote: "✨ Pixie Dust — healed!",
+    fireNote: "Pixie Dust — healed!",
   },
   moonblast: {
     damage: (c) => dmg(0, 4, c.correct && c.streakAfter >= 3),
     note: "+4 damage while on a 3+ streak",
-    fireNote: "🌙 Moonblast — empowered!",
+    fireNote: "Moonblast — empowered!",
   },
 };
 

@@ -5,7 +5,7 @@ export const escape: ItemDef = {
   id: "escape",
   category: "UTILITY",
   name: "Escape Rope",
-  emoji: "🪢",
+  emoji: "",
   iconUrl: spriteIconUrl("escape-rope"),
   desc: "End the battle with no XP lost. Once per battle.",
   cost: 500,

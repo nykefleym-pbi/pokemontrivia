@@ -199,7 +199,7 @@ export function BattleHome({
           <div className="rounded-2xl bg-card px-2 py-2 text-center shadow-card">
             <div className="font-pixel-xs text-foreground/60">Streak</div>
             <div className="text-lg font-extrabold text-foreground">
-              {bestStreak} <span className="text-base">🔥</span>
+              {bestStreak}
             </div>
           </div>
           <div className="rounded-2xl bg-card px-2 py-2 text-center shadow-card">
@@ -226,7 +226,7 @@ export function BattleHome({
                 {loading && pending === null ? "Summoning..." : "Up for a battle?"}
               </h3>
               <p className="mt-1 text-xs text-muted-foreground">
-                20 questions · +XP · +coins · TP for your partner
+                Answer 20 questions to earn XP, coins and Training Points for your partner.
               </p>
             </div>
           </div>
@@ -304,7 +304,7 @@ export function BattleHome({
           {mega === "none" ? (
             <div className="flex w-full items-center gap-3 overflow-hidden rounded-[18px] bg-gradient-to-br from-[oklch(0.62_0.16_250)] to-[oklch(0.5_0.18_270)] p-3.5 text-white opacity-80 grayscale shadow-card">
               <div className="min-w-0 flex-1">
-                <div className="font-pixel text-[9px] leading-none text-white/85">⚡ MEGA RAID</div>
+                <div className="font-pixel text-[9px] leading-none text-white/85">MEGA RAID</div>
                 <h3 className="mt-1.5 text-base font-extrabold leading-tight">No Raid Active</h3>
                 <p className="mt-0.5 text-[11px] font-semibold leading-tight text-white/85">
                   Check back soon
@@ -320,7 +320,7 @@ export function BattleHome({
               }`}
             >
               <div className="min-w-0 flex-1">
-                <div className="font-pixel text-[9px] leading-none text-white/85">⚡ MEGA RAID</div>
+                <div className="font-pixel text-[9px] leading-none text-white/85">MEGA RAID</div>
                 <h3 className="mt-1.5 text-base font-extrabold leading-tight">{mega.name}</h3>
                 <p className="mt-0.5 text-[11px] font-semibold leading-tight text-white/85">
                   {mega.reason === "cleared"

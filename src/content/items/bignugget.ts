@@ -5,7 +5,7 @@ export const bignugget: ItemDef = {
   id: "bignugget",
   category: "PREMIUM",
   name: "Big Nugget",
-  emoji: "🪙",
+  emoji: "",
   iconUrl: spriteIconUrl("big-nugget"),
   desc: "Requires a fully evolved partner. Converts all TP earned into coins (1:1) for 3 days. Usable anytime.",
   cost: 1500,
