@@ -625,9 +625,7 @@ function ProfilePage() {
             onClick={() => setTrophiesOpen(true)}
             className="flex flex-col items-center gap-1 rounded-3xl bg-card p-4 shadow-card transition active:scale-95"
           >
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-poke-yellow/20">
-              <AppIcon src={UI_ICON.trophies} className="h-8 w-8" />
-            </div>
+            <AppIcon src={UI_ICON.trophies} className="h-12 w-12" />
             <span className="font-display-md text-foreground">Trophies</span>
             <span className="font-pixel-xs text-foreground/50">
               {unlocked.size}/{ACHIEVEMENTS.length}
@@ -637,9 +635,7 @@ function ProfilePage() {
             onClick={() => setBadgesOpen(true)}
             className="flex flex-col items-center gap-1 rounded-3xl bg-card p-4 shadow-card transition active:scale-95"
           >
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10">
-              <AppIcon src={UI_ICON.badges} className="h-8 w-8" />
-            </div>
+            <AppIcon src={UI_ICON.badges} className="h-12 w-12" />
             <span className="font-display-md text-foreground">Badges</span>
             <span className="font-pixel-xs text-foreground/50">
               {gymBadges.length}/{GYM_LEADERS.length}
@@ -649,9 +645,7 @@ function ProfilePage() {
             onClick={() => setPvpHistoryOpen(true)}
             className="flex flex-col items-center gap-1 rounded-3xl bg-card p-4 shadow-card transition active:scale-95"
           >
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-destructive/10">
-              <AppIcon src={UI_ICON.battleHistory} className="h-8 w-8" />
-            </div>
+            <AppIcon src={UI_ICON.battleHistory} className="h-12 w-12" />
             <span className="font-display-md text-foreground">Battle History</span>
             <span className="font-pixel-xs text-foreground/50">&nbsp;</span>
           </button>
@@ -659,9 +653,7 @@ function ProfilePage() {
             onClick={() => setSettingsOpen(true)}
             className="flex flex-col items-center gap-1 rounded-3xl bg-card p-4 shadow-card transition active:scale-95"
           >
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-muted">
-              <AppIcon src={UI_ICON.settings} className="h-8 w-8" />
-            </div>
+            <AppIcon src={UI_ICON.settings} className="h-12 w-12" />
             <span className="font-display-md text-foreground">Settings</span>
             <span className="font-pixel-xs text-foreground/50">&nbsp;</span>
           </button>

@@ -199,7 +199,7 @@ export function BattleHome({
           <div className="rounded-2xl bg-card px-2 py-2 text-center shadow-card">
             <div className="font-pixel-xs text-foreground/60">Streak</div>
             <div className="text-lg font-extrabold text-foreground">
-              {bestStreak} <span className="text-base"></span>
+              {bestStreak}
             </div>
           </div>
           <div className="rounded-2xl bg-card px-2 py-2 text-center shadow-card">
@@ -226,7 +226,7 @@ export function BattleHome({
                 {loading && pending === null ? "Summoning..." : "Up for a battle?"}
               </h3>
               <p className="mt-1 text-xs text-muted-foreground">
-                20 questions · +XP · +coins · TP for your partner
+                Answer 20 questions to earn XP, coins and Training Points for your partner.
               </p>
             </div>
           </div>

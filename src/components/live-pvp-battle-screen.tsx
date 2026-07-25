@@ -217,9 +217,9 @@ function PvpCombatPanel({
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    className="flex max-w-full items-start gap-0.5 rounded-xl bg-primary/10 px-1.5 py-[2px] text-[9px] font-bold uppercase tracking-wide text-primary active:scale-95"
+                    className="flex max-w-full items-center gap-0.5 rounded-xl bg-primary/10 px-1.5 py-[2px] text-[9px] font-bold uppercase tracking-wide text-primary active:scale-95"
                   >
-                    <span className="break-words text-left">{a.name}</span>
+                    <span className="min-w-0 truncate text-left">{a.name}</span>
                     <Info className="mt-[1px] h-2.5 w-2.5 shrink-0 opacity-70" />
                   </button>
                 </PopoverTrigger>
@@ -2241,7 +2241,6 @@ export function LivePvpBattleScreen({
               <div className="my-4 max-h-[65vh] overflow-y-auto">
                 {bagGroups.length === 0 ? (
                   <div className="rounded-3xl bg-poke-yellow/15 p-6 text-center">
-                    <div className="mx-auto mb-2 text-4xl"></div>
                     <div className="font-display-md text-foreground">Your bag is empty</div>
                     <p className="mt-1 text-xs text-foreground/60">
                       Play more Nearby Battles to earn berries!

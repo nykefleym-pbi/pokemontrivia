@@ -34,42 +34,32 @@ interface RecentNearbyMatch {
   createdAt: string;
 }
 
-/** Per-tier medal styling — a gradient disc + shine so the trophy reads as
- * something to chase, not a bordered number. `none` is a muted "unranked"
- * state that still hints at the medal shape ahead. */
-const TROPHY_STYLE: Record<
-  TrophyTier,
-  { name: string; disc: string; ring: string; bar: string }
-> = {
-  none: {
-    name: "Unranked",
-    disc: "from-slate-200 to-slate-300",
-    ring: "ring-slate-300/50",
-    bar: "bg-slate-400",
-  },
+/** Per-tier badge styling. The badge art is unframed, so the tier is conveyed by
+ * recolouring the art itself: `grayscale` first flattens whatever colours the
+ * webp ships with, then sepia/hue-rotate/saturate tint it to the target metal.
+ * `none` stays dim and desaturated so reaching Bronze reads as an unlock.
+ * (A filter tint approximates metal; dedicated per-tier art would be crisper.) */
+const TROPHY_STYLE: Record<TrophyTier, { name: string; bar: string; filter: string }> = {
+  none: { name: "Unranked", bar: "bg-slate-400", filter: "grayscale(1) brightness(0.9) opacity(0.45)" },
   bronze: {
     name: "Bronze",
-    disc: "from-amber-500 to-amber-700",
-    ring: "ring-amber-500/40",
     bar: "bg-amber-600",
+    filter: "grayscale(1) sepia(0.9) saturate(2.6) hue-rotate(-18deg) brightness(0.92)",
   },
   silver: {
     name: "Silver",
-    disc: "from-slate-300 to-slate-500",
-    ring: "ring-slate-400/40",
     bar: "bg-slate-500",
+    filter: "grayscale(1) brightness(1.12) contrast(1.05)",
   },
   gold: {
     name: "Gold",
-    disc: "from-yellow-300 to-amber-500",
-    ring: "ring-yellow-400/50",
     bar: "bg-poke-yellow",
+    filter: "grayscale(1) sepia(0.95) saturate(3.4) hue-rotate(-6deg) brightness(1.06)",
   },
   platinum: {
     name: "Platinum",
-    disc: "from-violet-300 to-indigo-400",
-    ring: "ring-violet-300/50",
     bar: "bg-violet-400",
+    filter: "grayscale(1) brightness(1.2) sepia(0.25) hue-rotate(175deg) saturate(1.6)",
   },
 };
 
@@ -79,16 +69,9 @@ function TrophyCard({ label, count, art }: { label: string; count: number; art: 
   const pct = next === null ? 100 : Math.min(100, Math.round((count / next) * 100));
   return (
     <div className="flex flex-1 flex-col items-center gap-1.5 rounded-3xl bg-card p-4 shadow-card">
-      <div
-        className={`relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br shadow-md ring-4 ${st.disc} ${st.ring}`}
-      >
-        {/* Unranked badges stay desaturated so hitting Bronze reads as an unlock. */}
-        <AppIcon
-          src={art}
-          className={`h-11 w-11 drop-shadow ${tier === "none" ? "opacity-45 grayscale" : ""}`}
-        />
-        <span className="pointer-events-none absolute left-2.5 top-2.5 h-2.5 w-2.5 rounded-full bg-white/50 blur-[1px]" />
-      </div>
+      {/* No frame — the badge art stands on its own, tinted to its tier so each
+          rank-up visibly changes the metal. */}
+      <AppIcon src={art} className="h-20 w-20 drop-shadow" style={{ filter: st.filter }} />
       <span className="font-pixel-xs text-primary">{label}</span>
       <span className="text-[10px] font-bold uppercase tracking-wide text-foreground/70">
         {st.name}
@@ -314,7 +297,7 @@ function ArenaPage() {
               return (
                 <div
                   key={slot}
-                  className={`flex flex-col items-center gap-1 rounded-2xl p-2 text-center ${
+                  className={`flex flex-col items-center justify-center gap-1 rounded-2xl p-2 text-center ${
                     claimed ? "bg-muted/60 opacity-60" : "bg-muted/60"
                   }`}
                 >
@@ -331,12 +314,7 @@ function ArenaPage() {
                       </button>
                     </>
                   ) : (
-                    <>
-                      <AppIcon src={LOCK_ICON} className="h-7 w-7 opacity-50" />
-                      <span className="font-pixel text-[8px] text-foreground/45">
-                        {slot + 1} WIN{slot + 1 > 1 ? "S" : ""}
-                      </span>
-                    </>
+                    <AppIcon src={LOCK_ICON} className="h-9 w-9 opacity-50" />
                   )}
                 </div>
               );

@@ -578,9 +578,9 @@ export function CombatPanel({
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    className="flex max-w-full items-start gap-0.5 rounded-xl bg-primary/10 px-1.5 py-[1px] font-pixel-xs text-primary active:scale-95"
+                    className="flex max-w-full items-center gap-0.5 rounded-xl bg-primary/10 px-1.5 py-[1px] font-pixel-xs text-primary active:scale-95"
                   >
-                    <span className="break-words text-left">{abilityName}</span>
+                    <span className="min-w-0 truncate text-left">{abilityName}</span>
                     <Info className="mt-[1px] h-2.5 w-2.5 shrink-0 opacity-70" />
                   </button>
                 </PopoverTrigger>

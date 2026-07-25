@@ -549,7 +549,7 @@ export function WhosThatPokemon() {
               disabled={playsLeft <= 0}
               className="flex items-center gap-2 rounded-full border-b-4 border-primary/60 bg-white px-7 py-3.5 font-pixel text-base text-primary shadow-card disabled:opacity-40 active:translate-y-0.5 active:border-b-0"
             >
-              <span className="text-lg"></span> PLAY CRY
+              PLAY CRY
             </button>
             <div className="mt-2 font-pixel text-[9px] uppercase tracking-wide text-foreground/45">
               {playsLeft} {playsLeft === 1 ? "play" : "plays"} left
