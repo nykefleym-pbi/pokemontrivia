@@ -34,32 +34,27 @@ interface RecentNearbyMatch {
   createdAt: string;
 }
 
-/** Per-tier badge styling. The badge art is unframed, so the tier is conveyed by
- * recolouring the art itself: `grayscale` first flattens whatever colours the
- * webp ships with, then sepia/hue-rotate/saturate tint it to the target metal.
- * `none` stays dim and desaturated so reaching Bronze reads as an unlock.
+/** Per-tier badge styling. There is deliberately no textual tier label: the
+ * badge art is unframed and recoloured to the tier, so the colour IS the rank.
+ * `grayscale` first flattens whatever colours the webp ships with, then
+ * sepia/hue-rotate/saturate tint it to the target metal; `none` stays dim and
+ * desaturated so reaching Bronze reads as an unlock.
  * (A filter tint approximates metal; dedicated per-tier art would be crisper.) */
-const TROPHY_STYLE: Record<TrophyTier, { name: string; bar: string; filter: string }> = {
-  // Deliberately unnamed: an untiered badge shows no label at all (the dimmed
-  // art and the "0/250" progress hint already say it).
-  none: { name: "", bar: "bg-slate-400", filter: "grayscale(1) brightness(0.9) opacity(0.45)" },
+const TROPHY_STYLE: Record<TrophyTier, { bar: string; filter: string }> = {
+  none: { bar: "bg-slate-400", filter: "grayscale(1) brightness(0.9) opacity(0.45)" },
   bronze: {
-    name: "Bronze",
     bar: "bg-amber-600",
     filter: "grayscale(1) sepia(0.9) saturate(2.6) hue-rotate(-18deg) brightness(0.92)",
   },
   silver: {
-    name: "Silver",
     bar: "bg-slate-500",
     filter: "grayscale(1) brightness(1.12) contrast(1.05)",
   },
   gold: {
-    name: "Gold",
     bar: "bg-poke-yellow",
     filter: "grayscale(1) sepia(0.95) saturate(3.4) hue-rotate(-6deg) brightness(1.06)",
   },
   platinum: {
-    name: "Platinum",
     bar: "bg-violet-400",
     filter: "grayscale(1) brightness(1.2) sepia(0.25) hue-rotate(175deg) saturate(1.6)",
   },
@@ -75,11 +70,6 @@ function TrophyCard({ label, count, art }: { label: string; count: number; art: 
           rank-up visibly changes the metal. */}
       <AppIcon src={art} className="h-20 w-20 drop-shadow" style={{ filter: st.filter }} />
       <span className="font-pixel-xs text-primary">{label}</span>
-      {/* Non-breaking space when untiered so a ranked card sitting beside an
-          untiered one keeps both progress bars on the same line. */}
-      <span className="text-[10px] font-bold uppercase tracking-wide text-foreground/70">
-        {st.name || " "}
-      </span>
       <div className="w-full">
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
           <div className={`h-full rounded-full ${st.bar}`} style={{ width: `${pct}%` }} />
