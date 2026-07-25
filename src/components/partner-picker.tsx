@@ -24,7 +24,7 @@ export function PartnerPicker({ onPick, selected, limit = 24 }: Props) {
   return (
     <div className="flex flex-col gap-3">
       <p className="rounded-2xl bg-poke-yellow/15 px-3 py-2 text-[11px] text-foreground/80">
-        🌱 Choose a starter — train it through battles to evolve into stronger forms.
+        Choose a starter — train it through battles to evolve into stronger forms.
       </p>
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -56,7 +56,7 @@ export function PartnerPicker({ onPick, selected, limit = 24 }: Props) {
                 ))}
               </div>
               <div className="truncate font-pixel text-[9px] text-primary">
-                ⚡ {ABILITY_SETS[p.types[0]].map((a) => a.name).join(" · ")}
+                {ABILITY_SETS[p.types[0]].map((a) => a.name).join(" · ")}
               </div>
             </button>
           );

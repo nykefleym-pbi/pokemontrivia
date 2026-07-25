@@ -82,6 +82,8 @@ import {
 } from "@/lib/signature-bespoke";
 import { isWeatherStatSource, isMyWeatherActive } from "@/lib/pvp-weather";
 import { TimerRing } from "@/components/timer-ring";
+import { AppIcon } from "@/components/app-icon";
+import { LOCK_ICON } from "@/lib/app-icons";
 import { useBattleFxCues } from "@/hooks/useBattleFxCues";
 import type { BattleSide, BattleStatusKind } from "@/lib/training-battle-fx-types";
 
@@ -217,12 +219,12 @@ function PvpCombatPanel({
                     type="button"
                     className="flex max-w-full items-start gap-0.5 rounded-xl bg-primary/10 px-1.5 py-[2px] text-[9px] font-bold uppercase tracking-wide text-primary active:scale-95"
                   >
-                    <span className="break-words text-left">⚡ {a.name}</span>
+                    <span className="break-words text-left">{a.name}</span>
                     <Info className="mt-[1px] h-2.5 w-2.5 shrink-0 opacity-70" />
                   </button>
                 </PopoverTrigger>
                 <PopoverContent align={align === "right" ? "end" : "start"} className="w-56 text-xs">
-                  <div className="font-bold text-primary">⚡ {a.name}</div>
+                  <div className="font-bold text-primary">{a.name}</div>
                   {a.desc && <p className="mt-1 leading-snug text-muted-foreground">{a.desc}</p>}
                 </PopoverContent>
               </Popover>
@@ -754,8 +756,8 @@ export function LivePvpBattleScreen({
           notify(
             side === "self" ? "success" : "error",
             side === "self"
-              ? `💀 ${move ?? "Signature"} — ONE-HIT KO!`
-              : `💀 ${move ?? "Their signature"} knocked you out!`,
+              ? `${move ?? "Signature"} — ONE-HIT KO!`
+              : `${move ?? "Their signature"} knocked you out!`,
           );
         }
         emit({
@@ -822,10 +824,10 @@ export function LivePvpBattleScreen({
         if (!res.ok || res.noop) return;
         const move = signatureMoveName(dex);
         if (engine.shield && side === "self") {
-          notify("success", `🛡️ ${move ?? "Signature"} — no damage for ${engine.shield.questions} questions`);
+          notify("success", `${move ?? "Signature"} — no damage for ${engine.shield.questions} questions`);
         }
         if (engine.opponentTimer && side === "self") {
-          notify("success", `⏱️ ${move ?? "Signature"} — their clock is down to ${engine.opponentTimer.ms / 1000}s`);
+          notify("success", `${move ?? "Signature"} — their clock is down to ${engine.opponentTimer.ms / 1000}s`);
         }
       });
     }
@@ -862,7 +864,7 @@ export function LivePvpBattleScreen({
     sigNetActiveRef.current = hasNet;
     if (!move) return;
     if (!wasDisabled && entry.disabled) {
-      notify("info", `🔒 ${move} — signature on cooldown`);
+      notify("info", `${move} — signature on cooldown`);
     } else if (hadNet && !hasNet) {
       notify("info", `${move} — stat change wore off`);
     }
@@ -905,7 +907,7 @@ export function LivePvpBattleScreen({
     const finishTransform = () => {
       setTransformTargetId(target);
       const move = signatureMoveName(target);
-      if (move) notify("success", `✨ Mew copied ${move}!`);
+      if (move) notify("success", `Mew copied ${move}!`);
     };
     if (target != null) {
       void setLivePvpTransform(matchId, target).then(finishTransform, finishTransform);
@@ -944,7 +946,7 @@ export function LivePvpBattleScreen({
     setEliminatedChoices(culled);
     if (culled.length > 0) {
       const move = signatureMoveName(partnerId);
-      notify("success", `🧠 ${move ?? "Future Sight"} cleared ${culled.length} wrong answer${culled.length === 1 ? "" : "s"}!`);
+      notify("success", `${move ?? "Future Sight"} cleared ${culled.length} wrong answer${culled.length === 1 ? "" : "s"}!`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayedIndex]);
@@ -977,7 +979,7 @@ export function LivePvpBattleScreen({
       if (res.ok && !res.noop) {
         applyAbilityResult(res);
         const move = signatureMoveName(partnerId);
-        if (move) notify("success", `✨ ${move} struck first!`);
+        if (move) notify("success", `${move} struck first!`);
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1030,7 +1032,7 @@ export function LivePvpBattleScreen({
       ];
       if (runtime?.disabled) return; // row is on cooldown — observed, but it does not act
       const move = signatureMoveName(reactingDex);
-      if (move) notify("success", `✨ ${move} answered their signature!`);
+      if (move) notify("success", `${move} answered their signature!`);
 
       const outcome = stepBespokeFx(engine.bespoke, bespokeFxRef.current, {
         questionNo: myIdx + 1,
@@ -1146,7 +1148,7 @@ export function LivePvpBattleScreen({
   useEffect(() => {
     if (partnerId !== 250 || !myRevived || rainbowRebirthToastedRef.current) return;
     rainbowRebirthToastedRef.current = true;
-    notify("success", "🌈 Ho-Oh revived you!");
+    notify("success", "Ho-Oh revived you!");
   }, [myRevived, partnerId, notify]);
 
   useEffect(() => {
@@ -1184,7 +1186,7 @@ export function LivePvpBattleScreen({
 
   // Each side's ability (signature move or type ability) is no longer announced
   // with a start-of-battle toast — the tappable info popover on the combat panel
-  // (⚡ chip) now surfaces the name + effect on demand, which keeps the opening
+  // (chip) now surfaces the name + effect on demand, which keeps the opening
   // calm instead of firing several toasts before the first question.
 
   // Type-ability battle-start standing buff (Adaptable/Intimidate/Speed movers).
@@ -1198,7 +1200,7 @@ export function LivePvpBattleScreen({
       if (res.ok && !res.noop) {
         applyTypeAbilityResult(res);
         const a = getAbilityById(typeAbilityId);
-        if (a) notify("success", `⚡ ${a.name} activated!`, { description: typeWiring?.note });
+        if (a) notify("success", `${a.name} activated!`, { description: typeWiring?.note });
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1559,7 +1561,7 @@ export function LivePvpBattleScreen({
       if (suppressToastedForRef.current !== mySuppressedUntil) {
         suppressToastedForRef.current = mySuppressedUntil;
         const move = signatureMoveName(partnerId);
-        notify("warning", `🔒 ${move ?? "Signature move"} suppressed!`);
+        notify("warning", `${move ?? "Signature move"} suppressed!`);
       }
     }
 
@@ -1662,7 +1664,7 @@ export function LivePvpBattleScreen({
       myNewHp > 0
     ) {
       rainbowRebirthToastedRef.current = true;
-      notify("success", "🌈 Ho-Oh revived you!");
+      notify("success", "Ho-Oh revived you!");
     }
     setMyHp(amIHost ? result.hostHp : result.guestHp);
     setOppHp(amIHost ? result.guestHp : result.hostHp);
@@ -1974,7 +1976,7 @@ export function LivePvpBattleScreen({
     }
     playSfx("item_use");
     const move = signatureMoveName(partnerId);
-    if (move) notify("success", `⚡ ${move}!`);
+    if (move) notify("success", `${move}!`);
     emit({
       kind: "signature",
       side: "self",
@@ -2041,7 +2043,10 @@ export function LivePvpBattleScreen({
               title={signatureMoveName(partnerId) ?? "Signature move"}
               className="flex items-center gap-1 rounded-full bg-card/90 px-3 py-1.5 font-pixel text-[9px] text-foreground shadow-card backdrop-blur"
             >
-              {displayedIndex < mySuppressedUntil ? "🔒" : "⚡"} {signatureMoveName(partnerId)}
+              {displayedIndex < mySuppressedUntil && (
+                <AppIcon src={LOCK_ICON} className="h-2.5 w-2.5" />
+              )}{" "}
+              {signatureMoveName(partnerId)}
               <span className="tabular-nums opacity-70">
                 {displayedIndex < mySuppressedUntil
                   ? "locked"
@@ -2236,7 +2241,7 @@ export function LivePvpBattleScreen({
               <div className="my-4 max-h-[65vh] overflow-y-auto">
                 {bagGroups.length === 0 ? (
                   <div className="rounded-3xl bg-poke-yellow/15 p-6 text-center">
-                    <div className="mx-auto mb-2 text-4xl">🎒</div>
+                    <div className="mx-auto mb-2 text-4xl"></div>
                     <div className="font-display-md text-foreground">Your bag is empty</div>
                     <p className="mt-1 text-xs text-foreground/60">
                       Play more Nearby Battles to earn berries!

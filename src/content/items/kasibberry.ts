@@ -5,7 +5,7 @@ export const kasibberry: ItemDef = {
   id: "kasibberry",
   category: "BERRY",
   name: "Kasib Berry",
-  emoji: "🟣",
+  emoji: "",
   iconUrl: spriteIconUrl("kasib-berry"),
   desc: "Clouds a rival's guard — −1 Defense stage on the opponent for 3 questions. (Nearby Battle only.)",
   cost: 0,

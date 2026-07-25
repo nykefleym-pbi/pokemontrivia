@@ -14,10 +14,13 @@ export function AppIcon({
   src,
   alt = "",
   className = "",
+  style,
 }: {
   src: string;
   alt?: string;
   className?: string;
+  /** Escape hatch for one-off effects (e.g. a drop-shadow on a hero icon). */
+  style?: React.CSSProperties;
 }) {
   return (
     <img
@@ -29,6 +32,7 @@ export function AppIcon({
       decoding="async"
       draggable={false}
       className={`select-none object-contain ${className}`}
+      style={style}
     />
   );
 }

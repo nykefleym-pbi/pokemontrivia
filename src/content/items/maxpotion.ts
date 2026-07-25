@@ -5,7 +5,7 @@ export const maxpotion: ItemDef = {
   id: "maxpotion",
   category: "HEALING",
   name: "Max Potion",
-  emoji: "🍶",
+  emoji: "",
   iconUrl: spriteIconUrl("max-potion"),
   desc: "Fully restores HP. Once per battle.",
   cost: 1000,

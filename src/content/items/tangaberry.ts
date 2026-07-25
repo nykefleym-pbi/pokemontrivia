@@ -5,7 +5,7 @@ export const tangaberry: ItemDef = {
   id: "tangaberry",
   category: "BERRY",
   name: "Tanga Berry",
-  emoji: "🟠",
+  emoji: "",
   iconUrl: spriteIconUrl("tanga-berry"),
   desc: "Snares a rival — −1 Attack stage on the opponent for 3 questions. (Nearby Battle only.)",
   cost: 0,

@@ -102,10 +102,10 @@ export function stepBespokeFx(
         if (state.pendingStrikeAtQ === ctx.questionNo) {
           state = { ...state, pendingStrikeAtQ: null };
           fireBespoke = true;
-          cue = "💥 Doom Desire struck!";
+          cue = "Doom Desire struck!";
         } else if (ctx.triggerFired && !ctx.disabled && state.pendingStrikeAtQ === null) {
           state = { ...state, pendingStrikeAtQ: ctx.questionNo + DOOM_DESIRE_DELAY_Q };
-          cue = `🌠 Doom Desire — impact in ${DOOM_DESIRE_DELAY_Q} questions`;
+          cue = `Doom Desire — impact in ${DOOM_DESIRE_DELAY_Q} questions`;
         }
         break;
       }
@@ -127,7 +127,7 @@ export function stepBespokeFx(
         const dotOpen = state.dotThroughQ !== null && ctx.questionNo <= state.dotThroughQ;
         if (dotOpen) fireBespoke = true;
         if (ctx.triggerFired) {
-          if (!dotOpen) cue = "🔥 Magma Storm — the opponent is burning";
+          if (!dotOpen) cue = "Magma Storm — the opponent is burning";
           state = { ...state, dotThroughQ: ctx.questionNo + fx.questions };
         } else if (state.dotThroughQ !== null && ctx.questionNo >= state.dotThroughQ) {
           state = { ...state, dotThroughQ: null };
@@ -151,7 +151,7 @@ export function stepBespokeFx(
         const chipOpen = state.chipThroughQ !== null && ctx.questionNo <= state.chipThroughQ;
         if (chipOpen) fireBespoke = true;
         if (ctx.triggerFired) {
-          if (!chipOpen) cue = "⚡ Thunder Cage — they can't escape";
+          if (!chipOpen) cue = "Thunder Cage — they can't escape";
           state = { ...state, chipThroughQ: ctx.questionNo + fx.questions };
         } else if (state.chipThroughQ !== null && ctx.questionNo >= state.chipThroughQ) {
           state = { ...state, chipThroughQ: null };
@@ -166,7 +166,7 @@ export function stepBespokeFx(
         // all we do here is fire on the trigger.
         if (ctx.triggerFired && !ctx.disabled) {
           fireBespoke = true;
-          cue = "🌿 Jungle Healing — back to full";
+          cue = "Jungle Healing — back to full";
         }
         break;
       }
@@ -176,7 +176,7 @@ export function stepBespokeFx(
         // triggerFired). Server flips Manaphy's own debuffs into buffs.
         if (ctx.triggerFired && !ctx.disabled) {
           fireBespoke = true;
-          cue = "🔄 Heart Swap — the debuff turned in your favour";
+          cue = "Heart Swap — the debuff turned in your favour";
         }
         break;
       }
@@ -188,7 +188,7 @@ export function stepBespokeFx(
           const span = Math.max(0, fx.max - fx.min);
           const count = fx.min + Math.floor(rng() * (span + 1));
           state = { ...state, eliminateOnQ: ctx.questionNo + 1, eliminateCount: count };
-          cue = `🧠 Future Sight — ${count} wrong answer${count === 1 ? "" : "s"} removed next question`;
+          cue = `Future Sight — ${count} wrong answer${count === 1 ? "" : "s"} removed next question`;
         }
         break;
       }
@@ -200,7 +200,7 @@ export function stepBespokeFx(
         // the threshold — once per battle.
         if (ctx.predictedStatus && state.predictedStatus === null) {
           state = { ...state, predictedStatus: ctx.predictedStatus };
-          cue = `🔮 Future Sight foresees: ${ctx.predictedStatus}`;
+          cue = `Future Sight foresees: ${ctx.predictedStatus}`;
         }
         const known = state.predictedStatus ?? ctx.predictedStatus ?? null;
         if (
@@ -211,7 +211,7 @@ export function stepBespokeFx(
         ) {
           state = { ...state, predictionLanded: true };
           fireBespoke = true;
-          cue = `🔮 The future arrived — ${known}!`;
+          cue = `The future arrived — ${known}!`;
         }
         break;
       }

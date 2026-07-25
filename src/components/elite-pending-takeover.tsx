@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
 import { Crown } from "lucide-react";
+import { AppIcon } from "@/components/app-icon";
+import { UI_ICON, COIN_ICON } from "@/lib/app-icons";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PokemonSprite } from "@/components/game-ui";
@@ -62,13 +64,16 @@ export function ElitePendingTakeover({
 
         <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
           <span className="inline-flex items-center gap-1 rounded-full border border-poke-yellow/40 bg-poke-dark/50 px-3 py-1 text-[11px] font-semibold text-poke-yellow">
-            🏅 Region unlock
+            <AppIcon src={UI_ICON.badges} className="h-4 w-4" />
+            Region unlock
           </span>
           <span className="inline-flex items-center gap-1 rounded-full border border-poke-yellow/40 bg-poke-dark/50 px-3 py-1 text-[11px] font-semibold text-poke-yellow">
-            🪙 2,000 Coins
+            <AppIcon src={COIN_ICON} className="h-4 w-4" />
+            2,000 Coins
           </span>
           <span className="inline-flex items-center gap-1 rounded-full border border-poke-yellow/40 bg-poke-dark/50 px-3 py-1 text-[11px] font-semibold text-poke-yellow">
-            🎁 Rare Candy + Lucky Egg
+            <AppIcon src={UI_ICON.dailyGift} className="h-4 w-4" />
+            Rare Candy + Lucky Egg
           </span>
         </div>
       </motion.div>

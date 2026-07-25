@@ -5,7 +5,7 @@ export const colburberry: ItemDef = {
   id: "colburberry",
   category: "BERRY",
   name: "Colbur Berry",
-  emoji: "⚫",
+  emoji: "",
   iconUrl: spriteIconUrl("colbur-berry"),
   // Reworked: was a −3s opponent timer (Paralysis-lite); now a stronger
   // opponent Speed-stage debuff (no timer-based berries).

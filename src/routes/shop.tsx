@@ -84,10 +84,10 @@ function ShopPage() {
     const it = ITEMS.find((x) => x.id === res.itemId);
     if (res.shiny) {
       toast.success(
-        `Day 7 reward! ${res.qty}× ${it?.name ?? "item"} ${it?.emoji || "🎁"} — your next battle win is a guaranteed shiny! ✨`,
+        `Day 7 reward! ${res.qty}× ${it?.name ?? "item"} — your next battle win is a guaranteed shiny!`,
       );
     } else {
-      toast.success(`Daily Gift opened: ${res.qty}× ${it?.name ?? "item"} ${it?.emoji || "🎁"}`);
+      toast.success(`Daily Gift opened: ${res.qty}× ${it?.name ?? "item"}`);
     }
   }
   const toggleAutoItem = useGameStore((s) => s.toggleAutoItem);
@@ -179,9 +179,9 @@ function ShopPage() {
     }
     if (it.id === "potion" || it.id === "superpotion" || it.id === "maxpotion") playItemCue();
     else playSfx("item_use");
-    if (it.id === "candy") toast.success("🍬 +50 TP added to your partner!");
+    if (it.id === "candy") toast.success("+50 TP added to your partner!");
     else if (it.id === "luckyegg") toast.success("2× XP active for 24 hours!");
-    else if (it.id === "bignugget") toast.success("🪙 TP → coins for the next 3 days!");
+    else if (it.id === "bignugget") toast.success("TP → coins for the next 3 days!");
     else toast.success(`Used ${it.name}!`);
   }
 
@@ -552,8 +552,7 @@ function ShopPage() {
               <div className="my-4 max-h-[65vh] overflow-y-auto">
                 {ownedInBag.length === 0 ? (
                   <div className="rounded-3xl bg-poke-yellow/15 p-6 text-center">
-                    <div className="mx-auto mb-2 text-4xl">🎒</div>
-                    <div className="font-display-md text-foreground">Your bag is empty</div>
+                                        <div className="font-display-md text-foreground">Your bag is empty</div>
                     <p className="mt-1 text-xs text-foreground/60">Buy items below to stock up.</p>
                   </div>
                 ) : (
@@ -651,7 +650,7 @@ function ShopPage() {
                       </div>
                     )}
                     <div className="rounded-2xl bg-poke-blue/10 px-4 py-3 text-xs leading-snug text-foreground/70">
-                      💡 Battle items appear in your item dock during a match. Berries are used only
+                      Battle items appear in your item dock during a match. Berries are used only
                       in Nearby Battle.
                     </div>
                   </div>

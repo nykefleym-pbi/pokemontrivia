@@ -142,7 +142,7 @@ async function collectPendingReferralRewards(): Promise<void> {
     for (const it of reward.items) useGameStore.getState().grantItem(it.id, it.qty);
   }
   toast.success(
-    `🎉 ${count} friend${count > 1 ? "s" : ""} joined using your invite! +${coins} coins, +${eggs} Poké Egg${eggs === 1 ? "" : "s"}, +${itemCount} items!`,
+    `${count} friend${count > 1 ? "s" : ""} joined using your invite! +${coins} coins, +${eggs} Poké Egg${eggs === 1 ? "" : "s"}, +${itemCount} items!`,
   );
 }
 

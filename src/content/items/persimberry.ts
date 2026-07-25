@@ -5,7 +5,7 @@ export const persimberry: ItemDef = {
   id: "persimberry",
   category: "BERRY",
   name: "Persim Berry",
-  emoji: "🫐",
+  emoji: "",
   iconUrl: spriteIconUrl("persim-berry"),
   desc: "Restores focus — cures Confusion on yourself. (Nearby Battle only.)",
   cost: 0,

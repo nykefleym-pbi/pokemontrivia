@@ -1,5 +1,7 @@
 import { useEffect } from "react";
 import { PokemonSprite } from "@/components/game-ui";
+import { AppIcon } from "@/components/app-icon";
+import { UI_ICON } from "@/lib/app-icons";
 import { playSfx } from "@/lib/audio";
 import type { MegaEvent } from "@/lib/mega/schedule";
 
@@ -165,7 +167,7 @@ export function MegaResults({
           style={{ background: "rgba(242,214,78,0.10)", border: "1px solid rgba(242,214,78,0.35)" }}
         >
           <div className="flex items-start gap-2.5">
-            <span className="text-xl leading-none">🏆</span>
+            <AppIcon src={UI_ICON.trophies} className="h-5 w-5 shrink-0" />
             <div
               className="text-[13px] font-semibold leading-snug"
               style={{ color: "rgba(255,255,255,0.85)" }}

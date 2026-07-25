@@ -5,7 +5,7 @@ export const chopleberry: ItemDef = {
   id: "chopleberry",
   category: "BERRY",
   name: "Chople Berry",
-  emoji: "🌶️",
+  emoji: "",
   iconUrl: spriteIconUrl("chople-berry"),
   desc: "Scrambles a rival's senses — inflicts Confusion on the opponent for 2 questions. (Nearby Battle only.)",
   cost: 0,

@@ -341,7 +341,7 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
     setOnboarded(claimedName, pick, trainerSprite, previewAbilityId ?? undefined);
     useGameStore.getState().setNameReconciled(true);
     const rolled = getAbilityById(useGameStore.getState().abilityId);
-    if (rolled) toast.success(`⚡ ${pick.name} has the ${rolled.name} ability!`);
+    if (rolled) toast.success(`${pick.name} has the ${rolled.name} ability!`);
     void syncProfile().then(async () => {
       if (!refCode) return;
       const res = await claimReferral(refCode);
@@ -351,7 +351,7 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
         useGameStore.getState().grantPokeEgg(reward.eggs);
         for (const it of reward.items) useGameStore.getState().grantItem(it.id, it.qty);
         toast.success(
-          `🎉 Referral bonus! +${reward.coins} coins, +${reward.eggs} Poké Egg, +${reward.items.length} items!`,
+          `Referral bonus! +${reward.coins} coins, +${reward.eggs} Poké Egg, +${reward.items.length} items!`,
         );
       }
     });

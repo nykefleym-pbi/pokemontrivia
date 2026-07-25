@@ -91,7 +91,7 @@ export function EggHatch() {
                 <div
                   className={`font-pixel text-[9px] ${result.shiny ? "text-brand-amber" : "text-green-600 dark:text-green-400"}`}
                 >
-                  {result.shiny ? "✨ SHINY HATCH! ✨" : "IT HATCHED!"}
+                  {result.shiny ? "SHINY HATCH!" : "IT HATCHED!"}
                 </div>
                 <div className="relative mt-2">
                   <div
@@ -109,7 +109,7 @@ export function EggHatch() {
                 </div>
                 <div className="mt-1 text-[22px] font-black text-foreground">{result.name}</div>
                 <div className="mt-1 text-[13px] font-semibold text-muted-foreground">
-                  Added to your Pokédex! You also got a 🍬 Rare Candy.
+                  Added to your Pokédex! You also got a Rare Candy.
                 </div>
                 <button
                   onClick={() => setResult(null)}

@@ -198,7 +198,7 @@ export async function buildShareCard(data: ShareData): Promise<string> {
       color: "#23252f",
     },
     { val: `+${data.xpEarned ?? 0}`, label: "XP", color: "#e23b2e" },
-    { val: `${data.topStreak}🔥`, label: "STREAK", color: "#23252f" },
+    { val: `${data.topStreak}`, label: "STREAK", color: "#23252f" },
   ];
   chips.forEach((chip, i) => {
     const cx = 60 + i * (chipW + chipGap);
@@ -484,7 +484,7 @@ async function buildEvolutionCard(data: EvolutionShareData): Promise<string> {
     { v: `${data.statWins}`, l: "WINS", c: GREEN },
     { v: `${data.statLosses}`, l: "LOSSES", c: DARK },
     { v: `${winRate}%`, l: "WIN RATE", c: GREEN },
-    { v: `${data.statBestStreak}🔥`, l: "BEST STREAK", c: DARK },
+    { v: `${data.statBestStreak}`, l: "BEST STREAK", c: DARK },
     { v: `${accuracy}%`, l: "ACCURACY", c: PURPLE },
     { v: avgTime, l: "AVG TIME", c: DARK },
     { v: `${data.statAnswered}`, l: "QUESTIONS", c: DARK },

@@ -7,6 +7,8 @@ import { playSfx } from "@/lib/audio";
 import { MEGA_REWARD, megaRankScale, type MegaEvent } from "@/lib/mega/schedule";
 import { rollLevelUpRewards } from "@/lib/level-rewards";
 import { claimMegaReward } from "@/services/client/mega-reward-claim";
+import { AppIcon } from "@/components/app-icon";
+import { UI_ICON } from "@/lib/app-icons";
 import {
   fetchMegaLeaderboard,
   getMyMegaRun,
@@ -243,7 +245,7 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
       st.recordPokedexCapture(event.baseDexId, false);
       st.claimMegaChampion(event.id, event.champion.trophyName, event.megaId);
     }
-    toast.success(rank === 1 ? `Champion rewards claimed! 🏆` : `Rank #${rank} rewards claimed!`);
+    toast.success(rank === 1 ? `Champion rewards claimed!` : `Rank #${rank} rewards claimed!`);
     playSfx("claim_reward");
   };
 
@@ -398,7 +400,7 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
                       }}
                     />
                     <div className="relative">
-                      <div className="text-[38px]">🏆</div>
+                      <AppIcon src={UI_ICON.trophies} className="mx-auto h-[38px] w-[38px]" />
                       <div
                         className="mt-1.5 font-pixel"
                         style={{ fontSize: 10, letterSpacing: 1, color: "var(--brand-gold)" }}
@@ -558,7 +560,7 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
                         className="font-pixel"
                         style={{ fontSize: 6, color: "var(--brand-gold)" }}
                       >
-                        CHAMPION 👑
+                        CHAMPION
                       </div>
                     )}
                   </div>
@@ -588,7 +590,7 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
                 background: "linear-gradient(95deg, var(--brand-gold), var(--brand-amber))",
               }}
             >
-              <span className="text-sm">🏆</span>
+              <AppIcon src={UI_ICON.trophies} className="h-4 w-4 shrink-0" />
               <span className="text-[11.5px] font-bold leading-tight" style={{ color: "#5A3E12" }}>
                 Champion: {MEGA_REWARD.xp.toLocaleString()} XP ·{" "}
                 {MEGA_REWARD.coins.toLocaleString()} Coins · {MEGA_REWARD.tp} TP ·{" "}
@@ -603,7 +605,6 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
               const p = PODIUM[rank];
               return (
                 <div key={rank} className="flex flex-col items-center" style={{ width: p.w }}>
-                  {rank === 1 && <div className="text-lg leading-none">👑</div>}
                   <div
                     className={rank === 1 ? "mt-0.5" : ""}
                     style={

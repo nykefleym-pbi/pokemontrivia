@@ -498,7 +498,7 @@ export function PokeballPattern({ marks }: { marks: DailyMark[] }) {
           )}
           {m === "timeout" && (
             <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-[10px]">
-              ⏱
+              –
             </span>
           )}
         </div>
@@ -580,12 +580,12 @@ export function CombatPanel({
                     type="button"
                     className="flex max-w-full items-start gap-0.5 rounded-xl bg-primary/10 px-1.5 py-[1px] font-pixel-xs text-primary active:scale-95"
                   >
-                    <span className="break-words text-left">⚡ {abilityName}</span>
+                    <span className="break-words text-left">{abilityName}</span>
                     <Info className="mt-[1px] h-2.5 w-2.5 shrink-0 opacity-70" />
                   </button>
                 </PopoverTrigger>
                 <PopoverContent align={align === "right" ? "end" : "start"} className="w-56 text-xs">
-                  <div className="font-bold text-primary">⚡ {abilityName}</div>
+                  <div className="font-bold text-primary">{abilityName}</div>
                   {abilityDescription && (
                     <p className="mt-1 leading-snug text-muted-foreground">{abilityDescription}</p>
                   )}
@@ -594,12 +594,12 @@ export function CombatPanel({
             )}
             {immune && (
               <span className="rounded-full bg-hp-good/20 px-1.5 py-[1px] font-pixel-xs text-hp-good">
-                🛡
+                IMMUNE
               </span>
             )}
             {disadvantaged && !immune && (
               <span className="rounded-full bg-destructive/20 px-1.5 py-[1px] font-pixel-xs text-destructive">
-                ⚠
+                WEAK
               </span>
             )}
             {statuses.map((s) => (
@@ -713,7 +713,7 @@ export function QuestionCard({
         </div>
         {phase === "feedback" && (
           <p className="mt-2 rounded-xl bg-muted p-2 text-[11px] leading-snug text-muted-foreground">
-            💡 {trivia.explanation} · ⚡ {(lastElapsedMs / 1000).toFixed(1)}s
+            {trivia.explanation} · {(lastElapsedMs / 1000).toFixed(1)}s
           </p>
         )}
         {children}
@@ -794,8 +794,7 @@ export function ItemBagSheet({
               <div className="my-4 max-h-[65vh] overflow-y-auto">
                 {bagGroups.length === 0 ? (
                   <div className="rounded-3xl bg-poke-yellow/15 p-6 text-center">
-                    <div className="mx-auto mb-2 text-4xl">🎒</div>
-                    <div className="font-display-md text-foreground">Your bag is empty</div>
+                                        <div className="font-display-md text-foreground">Your bag is empty</div>
                     <p className="mt-1 text-xs text-foreground/60">
                       Visit the Shop to stock up on items.
                     </p>

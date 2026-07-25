@@ -5,7 +5,7 @@ export const pechaberry: ItemDef = {
   id: "pechaberry",
   category: "BERRY",
   name: "Pecha Berry",
-  emoji: "🍑",
+  emoji: "",
   iconUrl: spriteIconUrl("pecha-berry"),
   desc: "Neutralises Poison / Badly Poisoned on yourself. (Nearby Battle only.)",
   cost: 0,

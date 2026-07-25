@@ -263,7 +263,7 @@ function ProfilePage() {
         const res = await enablePushNotifications();
         if (res.ok) {
           setPushSubscribed(true);
-          toast.success("🔔 Notifications enabled!");
+          toast.success("Notifications enabled!");
         } else {
           toast.error(res.error ?? "Couldn't enable notifications.");
         }
@@ -592,7 +592,7 @@ function ProfilePage() {
         <div className="mt-3 rounded-3xl bg-card p-4 shadow-card">
           <div className="flex items-center justify-between">
             <div className="font-display-md text-foreground">This week</div>
-            <div className="font-pixel-xs text-primary">{weekStreak}-DAY STREAK 🔥</div>
+            <div className="font-pixel-xs text-primary">{weekStreak}-DAY STREAK</div>
           </div>
           <div className="mt-3 flex justify-between gap-1">
             {heatmap.map((d) => {

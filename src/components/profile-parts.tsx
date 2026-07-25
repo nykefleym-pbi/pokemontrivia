@@ -85,7 +85,7 @@ export function PartnerCard({
       )}
       {pokemon.isFullyEvolved && (
         <div className="mt-4 rounded-full bg-muted py-2 text-center text-xs font-bold text-foreground/60">
-          ⭐ Fully evolved
+          Fully evolved
         </div>
       )}
 

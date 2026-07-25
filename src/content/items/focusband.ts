@@ -5,7 +5,7 @@ export const focusband: ItemDef = {
   id: "focusband",
   category: "HEALING",
   name: "Focus Band",
-  emoji: "🎽",
+  emoji: "",
   iconUrl: spriteIconUrl("focus-band"),
   desc: "Auto: at 10 HP or less, restores HP to 50%. Once per week.",
   cost: 2000,

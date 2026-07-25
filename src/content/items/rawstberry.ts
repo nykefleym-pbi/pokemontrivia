@@ -5,7 +5,7 @@ export const rawstberry: ItemDef = {
   id: "rawstberry",
   category: "BERRY",
   name: "Rawst Berry",
-  emoji: "🍃",
+  emoji: "",
   iconUrl: spriteIconUrl("rawst-berry"),
   desc: "Soothes Burn on yourself (removes its −15% and −1 Attack). (Nearby Battle only.)",
   cost: 0,
