@@ -6,7 +6,7 @@ import {
   Scripts,
   useRouterState,
 } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { MotionConfig } from "framer-motion";
 import { unlockAudio, playSfx, playBgm } from "@/lib/audio";
 import { BottomNav } from "@/components/bottom-nav";
@@ -103,7 +103,11 @@ export const Route = createRootRoute({
         content:
           "A vibrant Pokémon trivia battler with AI-generated questions, type effectiveness, items and ranks.",
       },
-      { name: "theme-color", content: "#dc2626" },
+      // theme-color is deliberately NOT declared here. The OS tints the status
+      // bar from it, and the boot screen needs a different tint than the app, so
+      // RootComponent renders it as a reactive <meta> instead (see THEME_COLOR).
+      // Declaring it here too would have the router re-assert the app's red over
+      // that on every navigation.
       { property: "og:title", content: "Pokémon Trivia Battle" },
       {
         property: "og:description",
@@ -178,8 +182,26 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * Status-bar tint, owned here rather than by the route's `head()` because it has
+ * to change partway through a page load.
+ *
+ * In an installed PWA the OS tints the status bar from <meta name="theme-color">.
+ * The app wants its red, but the boot loading screen sits under a black platform
+ * splash and over full-bleed artwork, where a red strip across the top reads as a
+ * stray band of chrome. `boot` matches the platform splash's `background_color`
+ * (vite.config.ts) so the two run together.
+ *
+ * React hoists a <meta> rendered from a component into <head>, so this stays a
+ * plain reactive value. Mutating the tag imperatively does not work: the router
+ * re-applies head tags, and a returning player's "/" → /battle redirect fires
+ * during the boot screen and would reset it.
+ */
+const THEME_COLOR = { boot: "#000000", app: "#dc2626" } as const;
+
 function RootComponent() {
   useEnsureSocial();
+  const [bootDone, setBootDone] = useState(false);
 
   const darkMode = useGameStore((s) => s.darkMode);
   useEffect(() => {
@@ -223,6 +245,7 @@ function RootComponent() {
   }, [pathname]);
   return (
     <MotionConfig reducedMotion={reducedMotion ? "always" : "user"}>
+      <meta name="theme-color" content={bootDone ? THEME_COLOR.app : THEME_COLOR.boot} />
       <div className="h-[100dvh] w-full overflow-hidden bg-background">
         <div className="mx-auto flex h-[100dvh] w-full max-w-[480px] flex-col overflow-hidden bg-background">
           <Outlet />
@@ -241,9 +264,9 @@ function RootComponent() {
         <PwaRegister />
         <Analytics />
 
-        {/* Last child, and fixed at z-[300]: the boot sequence covers the whole
+        {/* Last child, and fixed at z-[300]: the boot screen covers the whole
             app — including the overlays above — until it retires itself. */}
-        <BootSplash />
+        <BootSplash onDone={() => setBootDone(true)} />
       </div>
     </MotionConfig>
   );
