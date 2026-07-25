@@ -69,7 +69,6 @@ function SplashPage() {
 
             {/* hero block */}
             <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-7 pt-[calc(env(safe-area-inset-top)+2rem)] text-center">
-              <PokeballEmblem />
               <h1 className="mt-6">
                 <AppIcon
                   src={UI_ICON.appLogo}
@@ -124,26 +123,6 @@ function SplashPage() {
         )}
       </AnimatePresence>
     </div>
-  );
-}
-
-function PokeballEmblem() {
-  return (
-    <motion.div
-      className="relative h-[108px] w-[108px] overflow-hidden rounded-full border-[5px] border-poke-dark"
-      animate={{ rotate: [0, 0, 360, 360] }}
-      transition={{
-        duration: 6,
-        times: [0, 0.4, 0.7, 1],
-        ease: "easeInOut",
-        repeat: Infinity,
-      }}
-    >
-      <div className="absolute inset-x-0 top-0 h-1/2 bg-primary" />
-      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-white" />
-      <div className="absolute inset-x-0 top-1/2 h-3 -translate-y-1/2 bg-poke-dark" />
-      <div className="absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full border-[5px] border-poke-dark bg-white" />
-    </motion.div>
   );
 }
 
