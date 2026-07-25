@@ -6,7 +6,7 @@ export const ganlonberry: ItemDef = {
   category: "BERRY",
   name: "Ganlon Berry",
   iconUrl: spriteIconUrl("ganlon-berry"),
-  desc: "+1 Defense stage for 3 questions. (Nearby Battle only.)",
+  desc: "+1 Defense stage for 3 questions. (PvP only.)",
   cost: 0,
   isBerry: true,
   pvpOnly: true,

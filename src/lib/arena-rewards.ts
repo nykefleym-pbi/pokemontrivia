@@ -71,11 +71,14 @@ export function grantArenaReward(slot: number, store: GameState): { text: string
 export type TrophyTier = "none" | "bronze" | "silver" | "gold" | "platinum";
 
 const TROPHY_THRESHOLDS: Array<{ tier: TrophyTier; at: number }> = [
-  { tier: "platinum", at: 2500 },
-  { tier: "gold", at: 1000 },
-  { tier: "silver", at: 500 },
-  { tier: "bronze", at: 250 },
+  { tier: "platinum", at: 1000 },
+  { tier: "gold", at: 500 },
+  { tier: "silver", at: 250 },
+  { tier: "bronze", at: 50 },
 ];
+
+/** Ascending thresholds, derived so the ladder is declared in one place only. */
+const TROPHY_LADDER = [...TROPHY_THRESHOLDS].map((t) => t.at).sort((a, b) => a - b);
 
 /** Battle-count trophy tier + the next threshold to chase (null at platinum). */
 export function trophyTier(count: number): { tier: TrophyTier; next: number | null } {
@@ -84,11 +87,10 @@ export function trophyTier(count: number): { tier: TrophyTier; next: number | nu
       return { tier, next: tier === "platinum" ? null : nextThreshold(at) };
     }
   }
-  return { tier: "none", next: 250 };
+  return { tier: "none", next: TROPHY_LADDER[0] };
 }
 
 function nextThreshold(current: number): number {
-  const order = [250, 500, 1000, 2500];
-  const idx = order.indexOf(current);
-  return order[idx + 1] ?? 2500;
+  const idx = TROPHY_LADDER.indexOf(current);
+  return TROPHY_LADDER[idx + 1] ?? TROPHY_LADDER[TROPHY_LADDER.length - 1];
 }

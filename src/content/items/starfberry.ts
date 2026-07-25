@@ -6,7 +6,7 @@ export const starfberry: ItemDef = {
   category: "BERRY",
   name: "Starf Berry",
   iconUrl: spriteIconUrl("starf-berry"),
-  desc: "Randomly unleashes power — +2 to a random stat (Atk/Def/Spd/Crit) for 3 questions. (Nearby Battle only.)",
+  desc: "Randomly unleashes power — +2 to a random stat (Atk/Def/Spd/Crit) for 3 questions. (PvP only.)",
   cost: 0,
   premium: true,
   isBerry: true,

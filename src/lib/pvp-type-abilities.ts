@@ -293,7 +293,7 @@ export const TABLE: Record<AbilityId, TypeAbilityPvp> = {
   "magic-guard": {
     // Solo: statuses deal no HP damage. PvP statuses never tick HP → inert.
     inert: true,
-    note: "immune to status HP damage (none in Nearby Battle)",
+    note: "immune to status HP damage (none in PvP)",
   },
   amnesia: {
     inert: true,
@@ -328,7 +328,7 @@ export const TABLE: Record<AbilityId, TypeAbilityPvp> = {
     // Caps INCOMING damage, which is dealt by the opponent's client — can't be
     // enforced on our side, so it's announced but inert in PvP.
     inert: true,
-    note: "cushions big hits (limited in Nearby Battle)",
+    note: "cushions big hits (limited in PvP)",
   },
   "stealth-rock": {
     postAnswerFires: (c) => c.questionIndex > 0 && c.questionIndex % 5 === 0,
@@ -387,7 +387,7 @@ export const TABLE: Record<AbilityId, TypeAbilityPvp> = {
   },
   "dark-aura": {
     inert: true,
-    note: "stronger in Elite Four / League (no Nearby Battle effect)",
+    note: "stronger in Elite Four / League (no PvP effect)",
   },
 
   // ── steel ────────────────────────────────────────────────────────────────

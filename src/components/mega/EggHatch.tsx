@@ -128,8 +128,8 @@ export function EggHatch() {
                 <AppIcon src={UI_ICON.pokeEgg} className="h-24 w-24" />
                 <div className="mt-3 text-[15px] font-bold text-foreground">No eggs yet</div>
                 <div className="mt-1 text-[13px] text-muted-foreground">
-                  Win a Mega Raid, level up, or refer a friend to earn a Poké Egg. Each egg only
-                  hatches a Legendary or Mythical Pokémon — the only way to get one.
+                  Poké Eggs come from Mega Raid wins, level-ups and referrals. Hatching one is
+                  the only way to add a Legendary or Mythical Pokémon to your Pokédex.
                 </div>
               </div>
             ) : (

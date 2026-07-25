@@ -8,7 +8,7 @@ export const salacberry: ItemDef = {
   iconUrl: spriteIconUrl("salac-berry"),
   // Reworked: was a self timer/Speed boost; now an opponent-facing Speed debuff
   // (no timer-based berries now that Speed is a real stat).
-  desc: "Drags at your rival's reflexes — −1 Speed stage on the opponent for 3 questions. (Nearby Battle only.)",
+  desc: "Drags at your rival's reflexes — −1 Speed stage on the opponent for 3 questions. (PvP only.)",
   cost: 0,
   isBerry: true,
   pvpOnly: true,

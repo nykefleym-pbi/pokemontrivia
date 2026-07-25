@@ -6,7 +6,7 @@ export const rawstberry: ItemDef = {
   category: "BERRY",
   name: "Rawst Berry",
   iconUrl: spriteIconUrl("rawst-berry"),
-  desc: "Soothes Burn on yourself (removes its −15% and −1 Attack). (Nearby Battle only.)",
+  desc: "Soothes Burn on yourself (removes its −15% and −1 Attack). (PvP only.)",
   cost: 0,
   isBerry: true,
   pvpOnly: true,

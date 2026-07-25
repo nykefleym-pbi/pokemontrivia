@@ -2243,7 +2243,7 @@ export function LivePvpBattleScreen({
                   <div className="rounded-3xl bg-poke-yellow/15 p-6 text-center">
                     <div className="font-display-md text-foreground">Your bag is empty</div>
                     <p className="mt-1 text-xs text-foreground/60">
-                      Play more Nearby Battles to earn berries!
+                      Play more PvP battles to earn berries!
                     </p>
                   </div>
                 ) : (

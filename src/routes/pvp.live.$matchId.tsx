@@ -457,7 +457,7 @@ function MatchPageContent({ matchId }: { matchId: string }) {
     // Battle rides the "regular" battle track, so reuse its win/lose clips.
     playBattleResult("regular", won);
     useGameStore.getState().pushBattleLog({
-      opponent: opponentProfile?.trainer_name || "Nearby Battle",
+      opponent: opponentProfile?.trainer_name || "PvP",
       won,
       xpGained: 0,
       bestStreak: 0,

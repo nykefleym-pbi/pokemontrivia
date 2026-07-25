@@ -626,7 +626,7 @@ function ShopPage() {
                     {ownedBerries.length > 0 && (
                       <div>
                         <div className="mb-2 font-pixel-xs uppercase tracking-wider text-foreground/45">
-                          Berries · Nearby Battle
+                          Berries · PvP
                         </div>
                         <div className="flex flex-col gap-2.5">
                           {ownedBerries.map((it) => (
@@ -651,7 +651,7 @@ function ShopPage() {
                     )}
                     <div className="rounded-2xl bg-poke-blue/10 px-4 py-3 text-xs leading-snug text-foreground/70">
                       Battle items appear in your item dock during a match. Berries are used only
-                      in Nearby Battle.
+                      in PvP.
                     </div>
                   </div>
                 )}
