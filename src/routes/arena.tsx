@@ -1,18 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import {
-  Swords,
-  QrCode,
-  ChevronRight,
-  Loader2,
-  MessageCircle,
-  Lock,
-  Trophy,
-} from "lucide-react";
+import { Swords, QrCode, ChevronRight, Loader2, MessageCircle } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { useStoreHydrated } from "@/lib/store-hydration";
 import { ItemIcon } from "@/components/game-ui";
+import { AppIcon } from "@/components/app-icon";
+import { REWARD_ICON, LOCK_ICON, ARENA_BADGE_ICON } from "@/lib/app-icons";
 import { Button } from "@/components/ui/button";
 import { BattleCodeQr } from "@/components/battle-code-qr";
 import { ScanPanel } from "@/components/NearbyBattleSheet";
@@ -45,54 +39,41 @@ interface RecentNearbyMatch {
  * state that still hints at the medal shape ahead. */
 const TROPHY_STYLE: Record<
   TrophyTier,
-  { name: string; disc: string; ring: string; icon: string; bar: string }
+  { name: string; disc: string; ring: string; bar: string }
 > = {
   none: {
     name: "Unranked",
     disc: "from-slate-200 to-slate-300",
     ring: "ring-slate-300/50",
-    icon: "text-slate-400",
     bar: "bg-slate-400",
   },
   bronze: {
     name: "Bronze",
     disc: "from-amber-500 to-amber-700",
     ring: "ring-amber-500/40",
-    icon: "text-amber-50",
     bar: "bg-amber-600",
   },
   silver: {
     name: "Silver",
     disc: "from-slate-300 to-slate-500",
     ring: "ring-slate-400/40",
-    icon: "text-white",
     bar: "bg-slate-500",
   },
   gold: {
     name: "Gold",
     disc: "from-yellow-300 to-amber-500",
     ring: "ring-yellow-400/50",
-    icon: "text-amber-900",
     bar: "bg-poke-yellow",
   },
   platinum: {
     name: "Platinum",
     disc: "from-violet-300 to-indigo-400",
     ring: "ring-violet-300/50",
-    icon: "text-white",
     bar: "bg-violet-400",
   },
 };
 
-const REWARD_GLYPH: Record<string, string> = {
-  tp: "⭐",
-  xp: "✨",
-  item: "🎁",
-  coins: "🪙",
-  premium: "💎",
-};
-
-function TrophyCard({ label, count }: { label: string; count: number }) {
+function TrophyCard({ label, count, art }: { label: string; count: number; art: string }) {
   const { tier, next } = trophyTier(count);
   const st = TROPHY_STYLE[tier];
   const pct = next === null ? 100 : Math.min(100, Math.round((count / next) * 100));
@@ -101,7 +82,11 @@ function TrophyCard({ label, count }: { label: string; count: number }) {
       <div
         className={`relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br shadow-md ring-4 ${st.disc} ${st.ring}`}
       >
-        <Trophy className={`h-7 w-7 ${st.icon}`} />
+        {/* Unranked badges stay desaturated so hitting Bronze reads as an unlock. */}
+        <AppIcon
+          src={art}
+          className={`h-11 w-11 drop-shadow ${tier === "none" ? "opacity-45 grayscale" : ""}`}
+        />
         <span className="pointer-events-none absolute left-2.5 top-2.5 h-2.5 w-2.5 rounded-full bg-white/50 blur-[1px]" />
       </div>
       <span className="font-pixel-xs text-primary">{label}</span>
@@ -305,8 +290,16 @@ function ArenaPage() {
 
       {/* Trophies */}
       <div className="flex gap-3 px-5 pt-3">
-        <TrophyCard label="NEARBY" count={arenaStats.nearbyBattles} />
-        <TrophyCard label="TRAINING" count={arenaStats.trainingBattles} />
+        <TrophyCard
+          label="NEARBY"
+          count={arenaStats.nearbyBattles}
+          art={ARENA_BADGE_ICON.nearby}
+        />
+        <TrophyCard
+          label="TRAINING"
+          count={arenaStats.trainingBattles}
+          art={ARENA_BADGE_ICON.training}
+        />
       </div>
 
       {/* Rewards card */}
@@ -326,10 +319,10 @@ function ArenaPage() {
                   }`}
                 >
                   {claimed ? (
-                    <span className="text-lg">{REWARD_GLYPH[kind]}</span>
+                    <AppIcon src={REWARD_ICON[kind]} className="h-7 w-7" />
                   ) : unlocked ? (
                     <>
-                      <span className="text-lg">{REWARD_GLYPH[kind]}</span>
+                      <AppIcon src={REWARD_ICON[kind]} className="h-7 w-7" />
                       <button
                         onClick={() => handleClaim(slot)}
                         className="rounded-full bg-primary px-2 py-0.5 font-pixel text-[8px] text-primary-foreground"
@@ -339,7 +332,7 @@ function ArenaPage() {
                     </>
                   ) : (
                     <>
-                      <Lock className="h-4 w-4 text-foreground/35" />
+                      <AppIcon src={LOCK_ICON} className="h-7 w-7 opacity-50" />
                       <span className="font-pixel text-[8px] text-foreground/45">
                         {slot + 1} WIN{slot + 1 > 1 ? "S" : ""}
                       </span>

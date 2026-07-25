@@ -11,31 +11,56 @@ import { TimerRing } from "@/components/timer-ring";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CATEGORIES, CATEGORY_OF, BAG_SHORT_DESC } from "@/lib/item-categories";
+import { ITEM_CATEGORY_ICON } from "@/lib/app-icons";
 
-/** Item icon (PokeAPI sprite via item.iconUrl), falling back to its emoji if the
- * image fails to load. Shared by the Shop, in-battle bag, and Level Up screen
- * so every surface renders items identically. */
+/** Owner-supplied category art, used when an item's own sprite fails to load:
+ * every berry shares one image, the three potions another. Items outside these
+ * groups have no category art and fall back to their emoji as before. */
+const POTION_IDS: ReadonlySet<string> = new Set(["potion", "superpotion", "maxpotion"]);
+function categoryArtFor(item: ItemDef): string | null {
+  if (item.isBerry) return ITEM_CATEGORY_ICON.berries;
+  if (POTION_IDS.has(item.id)) return ITEM_CATEGORY_ICON.potions;
+  return null;
+}
+
+/** Item icon, shared by the Shop, in-battle bag and Level Up screen so every
+ * surface renders items identically. Fallback ladder when an image fails:
+ * the item's own PokeAPI sprite → its category art → its emoji (some items
+ * carry no emoji at all, in which case nothing is rendered). */
 export function ItemIcon({ item, className }: { item: ItemDef; className: string }) {
+  // Tracked with the item id so switching items restarts the ladder instead of
+  // inheriting the previous item's failures.
+  const [failure, setFailure] = useState<{ id: string; stage: 1 | 2 }>({ id: "", stage: 1 });
+  const stage = failure.id === item.id ? failure.stage : 0;
+  const categoryArt = categoryArtFor(item);
+
+  if (stage === 2 || (stage === 1 && !categoryArt)) {
+    if (!item.emoji) return null;
+    return (
+      <span className={`inline-flex items-center justify-center text-3xl ${className}`}>
+        {item.emoji}
+      </span>
+    );
+  }
+
   // Dream World sprites (used by X Accuracy) fill their whole canvas with no
   // padding, unlike the flat in-game item sprites (~2/3 fill) used by every
   // other item — pad them down so all items render at a consistent size.
-  const isDreamWorld = item.iconUrl.includes("/dream-world/");
+  const isDreamWorld = stage === 0 && item.iconUrl.includes("/dream-world/");
   return (
     <img
-      src={item.iconUrl}
+      src={stage === 0 ? item.iconUrl : encodeURI(categoryArt as string)}
       alt={item.name}
-      crossOrigin="anonymous"
-      className={`sprite object-contain ${className}`}
+      // Only the remote PokeAPI sprite needs CORS (the share-card canvas reads
+      // it back); the category art is same-origin.
+      crossOrigin={stage === 0 ? "anonymous" : undefined}
+      // Category art is smooth high-res webp, so it must not get `.sprite`'s
+      // image-rendering: pixelated.
+      className={`${stage === 0 ? "sprite" : ""} object-contain ${className}`}
       style={isDreamWorld ? { padding: "16.5%", boxSizing: "border-box" } : undefined}
-      onError={(e) => {
-        const el = e.currentTarget as HTMLImageElement;
-        el.replaceWith(
-          Object.assign(document.createElement("span"), {
-            textContent: item.emoji,
-            className: "text-3xl",
-          }),
-        );
-      }}
+      onError={() =>
+        setFailure({ id: item.id, stage: stage === 0 && categoryArt ? 1 : 2 })
+      }
     />
   );
 }
