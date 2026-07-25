@@ -5,7 +5,6 @@ export const candy: ItemDef = {
   id: "candy",
   category: "PREMIUM",
   name: "Rare Candy",
-  emoji: "",
   iconUrl: spriteIconUrl("rare-candy"),
   desc: "+50 TP to your partner, instantly. Usable anytime.",
   cost: 2000,

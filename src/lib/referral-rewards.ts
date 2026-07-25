@@ -9,7 +9,6 @@ const REFERRAL_ITEM_COUNT = 5;
 export interface ReferralItemGrant {
   id: ItemId;
   name: string;
-  emoji: string;
   qty: number;
 }
 
@@ -36,6 +35,6 @@ export function rollReferralReward(): ReferralReward {
   return {
     coins: REFERRAL_COINS,
     eggs: REFERRAL_EGGS,
-    items: picked.map((it) => ({ id: it.id, name: it.name, emoji: it.emoji, qty: 1 })),
+    items: picked.map((it) => ({ id: it.id, name: it.name, qty: 1 })),
   };
 }

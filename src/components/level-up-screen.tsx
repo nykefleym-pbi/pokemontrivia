@@ -144,13 +144,10 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
                   <RewardRow
                     key={it.id}
                     index={i + 1}
-                    icon={
-                      def ? (
-                        <ItemIcon item={def} className="h-7 w-7" />
-                      ) : (
-                        <span className="text-xl">{it.emoji}</span>
-                      )
-                    }
+                    // `def` always resolves for a real granted id; the null arm
+                    // is just belt-and-braces for an unknown one (the row's
+                    // label already names the item).
+                    icon={def ? <ItemIcon item={def} className="h-7 w-7" /> : null}
                     label={`+${it.qty} ${it.name}`}
                   />
                 );

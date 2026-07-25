@@ -47,7 +47,7 @@ export const ARENA_BADGE_ICON = {
 /**
  * Item category art, used as ItemIcon's visual fallback when an item's own
  * sprite fails to load. Only categories with supplied art appear here; items
- * outside it fall back to their emoji as before.
+ * outside it have no fallback and render nothing.
  */
 export const ITEM_CATEGORY_ICON = {
   berries: "/items/Berries.webp",

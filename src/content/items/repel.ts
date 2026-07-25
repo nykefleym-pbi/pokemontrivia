@@ -5,7 +5,6 @@ export const repel: ItemDef = {
   id: "repel",
   category: "UTILITY",
   name: "Repel",
-  emoji: "",
   iconUrl: spriteIconUrl("repel"),
   desc: "Skip one question with no HP or streak penalty. Once per battle.",
   cost: 400,

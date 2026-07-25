@@ -5,7 +5,6 @@ export const amuletcoin: ItemDef = {
   id: "amuletcoin",
   category: "UTILITY",
   name: "Amulet Coin",
-  emoji: "",
   iconUrl: spriteIconUrl("amulet-coin"),
   desc: "2× coins earned this battle. Once per battle.",
   cost: 300,

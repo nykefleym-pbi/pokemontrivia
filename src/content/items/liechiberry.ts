@@ -5,7 +5,6 @@ export const liechiberry: ItemDef = {
   id: "liechiberry",
   category: "BERRY",
   name: "Liechi Berry",
-  emoji: "",
   iconUrl: spriteIconUrl("liechi-berry"),
   desc: "+1 Attack stage for 3 questions. (Nearby Battle only.)",
   cost: 0,

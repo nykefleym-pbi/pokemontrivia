@@ -15,7 +15,7 @@ import { ITEM_CATEGORY_ICON } from "@/lib/app-icons";
 
 /** Owner-supplied category art, used when an item's own sprite fails to load:
  * every berry shares one image, the three potions another. Items outside these
- * groups have no category art and fall back to their emoji as before. */
+ * groups have no fallback art. */
 const POTION_IDS: ReadonlySet<string> = new Set(["potion", "superpotion", "maxpotion"]);
 function categoryArtFor(item: ItemDef): string | null {
   if (item.isBerry) return ITEM_CATEGORY_ICON.berries;
@@ -24,9 +24,9 @@ function categoryArtFor(item: ItemDef): string | null {
 }
 
 /** Item icon, shared by the Shop, in-battle bag and Level Up screen so every
- * surface renders items identically. Fallback ladder when an image fails:
- * the item's own PokeAPI sprite → its category art → its emoji (some items
- * carry no emoji at all, in which case nothing is rendered). */
+ * surface renders items identically. If the item's own PokeAPI sprite fails to
+ * load it falls back to its category art (berries / potions); items with no
+ * category art render nothing. */
 export function ItemIcon({ item, className }: { item: ItemDef; className: string }) {
   // Tracked with the item id so switching items restarts the ladder instead of
   // inheriting the previous item's failures.
@@ -34,14 +34,8 @@ export function ItemIcon({ item, className }: { item: ItemDef; className: string
   const stage = failure.id === item.id ? failure.stage : 0;
   const categoryArt = categoryArtFor(item);
 
-  if (stage === 2 || (stage === 1 && !categoryArt)) {
-    if (!item.emoji) return null;
-    return (
-      <span className={`inline-flex items-center justify-center text-3xl ${className}`}>
-        {item.emoji}
-      </span>
-    );
-  }
+  // Out of fallbacks — an empty slot beats a broken-image icon.
+  if (stage === 2 || (stage === 1 && !categoryArt)) return null;
 
   // Dream World sprites (used by X Accuracy) fill their whole canvas with no
   // padding, unlike the flat in-game item sprites (~2/3 fill) used by every

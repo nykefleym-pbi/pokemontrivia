@@ -114,11 +114,6 @@ export const ItemDefSchema = z
     id: z.string().regex(/^[a-z]+$/),
     category: ItemCategorySchema,
     name: z.string().min(1),
-    // Empty is allowed: an item may opt out of an emoji glyph entirely and rely
-    // solely on its sprite (iconUrl). ItemIcon renders the sprite and only falls
-    // back to the emoji if the image fails, so a blank emoji simply means "no
-    // fallback / no text glyph in toasts."
-    emoji: z.string(),
     iconUrl: z.string().url(),
     desc: z.string().min(1),
     cost: z.number().int().min(0),
