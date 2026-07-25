@@ -5,7 +5,6 @@ export const salacberry: ItemDef = {
   id: "salacberry",
   category: "BERRY",
   name: "Salac Berry",
-  emoji: "",
   iconUrl: spriteIconUrl("salac-berry"),
   // Reworked: was a self timer/Speed boost; now an opponent-facing Speed debuff
   // (no timer-based berries now that Speed is a real stat).

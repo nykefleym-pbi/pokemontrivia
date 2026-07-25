@@ -5,7 +5,6 @@ export const chestoberry: ItemDef = {
   id: "chestoberry",
   category: "BERRY",
   name: "Chesto Berry",
-  emoji: "",
   iconUrl: spriteIconUrl("chesto-berry"),
   desc: "Shakes off Sleep on yourself. (Nearby Battle only.)",
   cost: 0,

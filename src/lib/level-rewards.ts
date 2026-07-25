@@ -8,7 +8,6 @@ const NON_PREMIUM_ITEMS = ITEMS.filter((i) => !i.premium && !i.pvpOnly);
 export interface LevelUpItemGrant {
   id: ItemId;
   name: string;
-  emoji: string;
   qty: number;
 }
 
@@ -64,7 +63,7 @@ export function rollLevelUpRewards(fromLevel: number, toLevel: number): LevelUpR
 
   const items: LevelUpItemGrant[] = [...itemTally.entries()].map(([id, qty]) => {
     const def = itemDef(id);
-    return { id, name: def.name, emoji: def.emoji, qty };
+    return { id, name: def.name, qty };
   });
 
   return { fromLevel, toLevel, coins, eggs, items };

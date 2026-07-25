@@ -15,7 +15,6 @@ export type BerryEffect =
 export interface ItemDef {
   id: ItemId;
   name: string;
-  emoji: string;
   iconUrl: string;
   desc: string;
   cost: number;

@@ -6,7 +6,6 @@ export const cheriberry: ItemDef = {
   id: "cheriberry",
   category: "BERRY",
   name: "Cheri Berry",
-  emoji: "",
   iconUrl: spriteIconUrl("cheri-berry"),
   desc: "Cures Paralysis on yourself. (Nearby Battle only.)",
   cost: 0,
