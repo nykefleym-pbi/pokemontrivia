@@ -8,14 +8,24 @@ import { randomTip } from "@/lib/loading-tips";
 /**
  * Pokémon GO-style two-phase boot sequence, mounted once by RootComponent.
  *
- * The platform splash (the Apple launch image / PWA icon) is only shown while
- * the browser fetches the bundle — a second or less on a warm cache, which is
- * why the logo used to flash past. This component takes over the moment React
- * paints and holds the brand on screen for a fixed beat instead:
- *
- *   phase "logo"    — LOGO_MS on the wordmark, matching the platform splash
- *   phase "loading" — LOADING_MS on the month's artwork, progress bar, tip
+ *   phase "logo"    — LOGO_MS of black-background wordmark
+ *   phase "loading" — LOADING_MS of the month's artwork, progress bar, tip
  *   phase "done"    — unmounts, revealing the app
+ *
+ * ## Why phase 1 is pure black
+ *
+ * The platform splash — the black screen Android/iOS paints from the manifest's
+ * `background_color` and icon — is shown only while the browser fetches and
+ * parses the bundle, and its duration is owned by the OS. Nothing in this app
+ * can make it last five seconds.
+ *
+ * So phase 1 *impersonates* it: same `#000000`, same centred wordmark, no
+ * decoration. The platform hands off to this component invisibly, and the black
+ * splash the user sees holds for LOGO_MS in total before the loading screen
+ * arrives. Keeping the background an exact match matters more than matching the
+ * logo's size to the pixel, because a background colour change reads as a flash
+ * while a slight scale difference does not. If you restyle this phase, keep it
+ * in sync with `background_color` in vite.config.ts.
  *
  * It renders during SSR at phase "logo", so the very first HTML the browser
  * paints is already the splash — that is what closes the gap the platform
@@ -29,6 +39,19 @@ import { randomTip } from "@/lib/loading-tips";
  * re-triggers it: it plays once per page load, which is what "whenever the app
  * is opened" means for an installed PWA.
  */
+
+/**
+ * Must match `background_color` in vite.config.ts — see the note above.
+ *
+ * One seam remains and is deliberately left alone: in an installed PWA the OS
+ * tints the status bar from <meta name="theme-color"> (the app's red), so a thin
+ * red strip sits above this black phase. Overriding that meta from here does not
+ * hold — the router re-applies head tags, and for a returning player "/"
+ * redirects to /battle within the first phase and resets it. Making it stick
+ * would mean routing theme-color through the root route's head as app state,
+ * which is a far larger change than a 4px strip justifies.
+ */
+const PLATFORM_SPLASH_BG = "#000000";
 
 const LOGO_MS = 5000;
 const LOADING_MS = 5000;
@@ -88,30 +111,39 @@ export function BootSplash() {
 const BRAND_GRADIENT =
   "radial-gradient(circle at 15% 12%, oklch(0.9 0.13 95 / 0.55) 0%, transparent 42%), radial-gradient(circle at 88% 90%, oklch(0.62 0.22 25 / 0.16) 0%, transparent 48%), linear-gradient(168deg, oklch(0.975 0.025 95) 0%, oklch(0.93 0.05 230) 100%)";
 
+/**
+ * The wordmark's box, shared by phase 1 and by phase 2's no-artwork fallback.
+ *
+ * They must stay identical. The two phases cross-fade, so a logo in a different
+ * place or size in each renders as two overlapping logos sliding past one
+ * another for 400ms. Sharing the layout instead pins it: the wordmark holds
+ * still while the background turns from black to gradient and the bar and tip
+ * fade up beneath it.
+ *
+ * Width is tuned to sit close to the icon in the platform splash.
+ */
+const SPLASH_LOGO_BOX = "absolute inset-0 flex items-center justify-center px-10";
+const SPLASH_LOGO_WIDTH = "w-[min(52vw,260px)]";
+
 function LogoPhase() {
   return (
     <motion.div
       exit={{ opacity: 0 }}
       transition={{ duration: 0.4 }}
-      className="absolute inset-0 flex items-center justify-center px-10"
-      style={{ background: BRAND_GRADIENT }}
+      className={SPLASH_LOGO_BOX}
+      // Bare black, no gradient and no decoration: this phase continues the
+      // platform splash rather than introducing a second, different one.
+      style={{ background: PLATFORM_SPLASH_BG }}
     >
-      {/* Decorative rings, same language as the onboarding splash. */}
-      <div className="pointer-events-none absolute -right-[120px] -top-20 h-80 w-80 rounded-full border-[26px] border-poke-dark/5" />
-      <div className="pointer-events-none absolute -left-[90px] bottom-[90px] h-60 w-60 rounded-full border-[22px] border-poke-dark/5" />
-
-      {/* CSS entrance, not framer-motion: this phase is server-rendered, and a
-          framer `initial` would put opacity:0 in that HTML — so the splash would
-          sit there as an empty gradient until hydration ran, which is the very
-          gap it exists to cover. A keyframe animates with no JS. */}
-      <div className="animate-boot-logo-in relative z-10">
-        <AppIcon
-          src={UI_ICON.appLogo}
-          alt="Pokémon Trivia Battle"
-          className="w-[min(78vw,320px)]"
-          eager
-        />
-      </div>
+      {/* No entrance animation. The platform splash is already showing this
+          wordmark on this background, so fading or scaling it in would announce
+          the handoff that the matching background exists to hide. */}
+      <AppIcon
+        src={UI_ICON.appLogo}
+        alt="Pokémon Trivia Battle"
+        className={SPLASH_LOGO_WIDTH}
+        eager
+      />
     </motion.div>
   );
 }
@@ -152,9 +184,11 @@ function LoadingPhase({ art }: { art: string | null }) {
       ) : (
         // No artwork for this month: fall back to the wordmark over the brand
         // gradient rather than an empty frame. This is what ships until the
-        // first month's art is uploaded, so it has to stand on its own.
-        <div className="absolute inset-x-0 top-0 flex h-1/2 items-center justify-center px-12">
-          <AppIcon src={UI_ICON.appLogo} className="w-[min(58vw,240px)] opacity-90" />
+        // first month's art is uploaded, so it has to stand on its own — and it
+        // reuses phase 1's exact logo box so the cross-fade leaves the wordmark
+        // sitting still instead of doubling it.
+        <div className={SPLASH_LOGO_BOX}>
+          <AppIcon src={UI_ICON.appLogo} className={SPLASH_LOGO_WIDTH} />
         </div>
       )}
 
