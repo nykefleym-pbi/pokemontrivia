@@ -180,7 +180,7 @@ function ShopPage() {
     if (it.id === "potion" || it.id === "superpotion" || it.id === "maxpotion") playItemCue();
     else playSfx("item_use");
     if (it.id === "candy") toast.success("🍬 +50 TP added to your partner!");
-    else if (it.id === "luckyegg") toast.success("🥚 2× XP active for 24 hours!");
+    else if (it.id === "luckyegg") toast.success("2× XP active for 24 hours!");
     else if (it.id === "bignugget") toast.success("🪙 TP → coins for the next 3 days!");
     else toast.success(`Used ${it.name}!`);
   }

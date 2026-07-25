@@ -5,7 +5,7 @@ export const luckyegg: ItemDef = {
   id: "luckyegg",
   category: "PREMIUM",
   name: "Lucky Egg",
-  emoji: "🥚",
+  emoji: "",
   iconUrl: spriteIconUrl("lucky-egg"),
   desc: "2× XP for 24 hours. Once per week. Usable anytime.",
   cost: 2000,

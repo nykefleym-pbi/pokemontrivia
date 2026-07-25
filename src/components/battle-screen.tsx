@@ -1113,7 +1113,9 @@ function BattleMode({
           luckyegg: (inv.luckyegg ?? 0) + 1,
         },
       });
-      toast.success("🍬 Rare Candy +1 · 🥚 Lucky Egg +1", { duration: 4000 });
+      // Both glyphs dropped, not just Lucky Egg's: one item keeping an emoji
+      // while the other lost it reads as a bug in a single composed line.
+      toast.success("Rare Candy +1 · Lucky Egg +1", { duration: 4000 });
       if (regionDone) {
         toast.success(`🏆 ${eliteMember.region} Elite Four cleared!`, { duration: 4500 });
       }

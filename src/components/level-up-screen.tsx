@@ -113,8 +113,9 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
             transition={{ type: "spring", stiffness: 200 }}
             className="mt-4 rounded-full bg-poke-dark px-4 py-2 text-center shadow-pop"
           >
-            <div className="font-pixel-xs uppercase tracking-wide text-poke-yellow">
-              🎖 New Rank Unlocked
+            <div className="flex items-center justify-center gap-1.5 font-pixel-xs uppercase tracking-wide text-poke-yellow">
+              <AppIcon src={UI_ICON.badges} className="h-4 w-4" />
+              New Rank Unlocked
             </div>
             <div className="font-display-md text-white">{newRank}</div>
           </motion.div>
