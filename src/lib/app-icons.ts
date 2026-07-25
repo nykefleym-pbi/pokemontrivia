@@ -11,6 +11,7 @@
  *   public/rewards/  — Arena set-of-5 reward glyphs + the locked-slot padlock
  *   public/trophies/ — achievement trophies + the two Arena tier badges
  *   public/items/    — item category art
+ *   public/loading/  — boot loading-screen artwork, one per calendar month
  */
 
 /** Profile buttons and one-off chrome. */
@@ -56,3 +57,18 @@ export const ITEM_CATEGORY_ICON = {
   berries: "/items/Berries.webp",
   potions: "/items/Potions.webp",
 } as const;
+
+/**
+ * Boot loading-screen artwork for the month `date` falls in.
+ *
+ * One file per calendar month, named by zero-padded month number
+ * (public/loading/01.webp … 12.webp) so adding next month's art is a drop-in
+ * upload with no code change. The date is a parameter rather than read from the
+ * clock so this stays pure and testable.
+ *
+ * Months with no uploaded file are expected, not an error: BootSplash preloads
+ * the path and falls back to a plain gradient if it 404s.
+ */
+export function loadingArtForMonth(date: Date): string {
+  return `/loading/${String(date.getMonth() + 1).padStart(2, "0")}.webp`;
+}

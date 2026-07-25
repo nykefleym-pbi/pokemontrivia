@@ -458,6 +458,25 @@
   animation: appear 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
+/* Boot-splash logo entrance. Deliberately CSS rather than framer-motion: the
+ * boot splash is server-rendered so it covers the gap the platform splash
+ * leaves behind, and a framer `initial={{ opacity: 0 }}` would ship an
+ * invisible logo in that HTML — leaving a blank gradient on screen until
+ * hydration runs. A keyframe animates with no JS at all. */
+@keyframes boot-logo-in {
+  0% {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.animate-boot-logo-in {
+  animation: boot-logo-in 0.7s ease-out forwards;
+}
+
 @keyframes mega-pulse {
   0%,
   100% {
@@ -699,7 +718,10 @@
   .animate-pulse,
   .animate-spin,
   .animate-bounce,
-  .animate-ping {
+  .animate-ping,
+  /* Cancelling this leaves the logo at its natural opacity 1, so the boot
+     splash still shows the wordmark — just without the scale-in. */
+  .animate-boot-logo-in {
     animation: none;
   }
 }
@@ -720,6 +742,7 @@
 :root.reduce-motion .animate-pulse,
 :root.reduce-motion .animate-spin,
 :root.reduce-motion .animate-bounce,
-:root.reduce-motion .animate-ping {
+:root.reduce-motion .animate-ping,
+:root.reduce-motion .animate-boot-logo-in {
   animation: none;
 }

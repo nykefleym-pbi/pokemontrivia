@@ -10,6 +10,7 @@ import { useEffect } from "react";
 import { MotionConfig } from "framer-motion";
 import { unlockAudio, playSfx, playBgm } from "@/lib/audio";
 import { BottomNav } from "@/components/bottom-nav";
+import { BootSplash } from "@/components/boot-splash";
 import { PwaRegister } from "@/components/pwa-register";
 import { useGameStore } from "@/lib/store";
 import { useEnsureSocial } from "@/lib/social";
@@ -239,6 +240,10 @@ function RootComponent() {
 
         <PwaRegister />
         <Analytics />
+
+        {/* Last child, and fixed at z-[300]: the boot sequence covers the whole
+            app — including the overlays above — until it retires itself. */}
+        <BootSplash />
       </div>
     </MotionConfig>
   );
