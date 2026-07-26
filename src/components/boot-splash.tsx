@@ -38,45 +38,50 @@ import { setBootSilence } from "@/lib/audio";
  * reading it here would show the screen first and hide it a frame later. CSS
  * keeps the overlay hidden until that class proves otherwise (see .boot-splash
  * in styles.css), which covers the server-rendered frame, and the effect below
- * retires the component outright so its timers stop and the app is told the boot
- * sequence is over.
+ * retires the component outright so its timers never run.
  */
 
 const LOADING_MS = 5000;
 /** The bar finishes slightly early, leaving a beat of full bar before handoff. */
 const BAR_MS = 4400;
+/** The app's status-bar tint. Must match the fallback in __root.tsx's script. */
+const APP_THEME_COLOR = "#dc2626";
 
 /** Shared with the onboarding hero so the boot screen and step one are one look. */
 const BRAND_GRADIENT =
   "radial-gradient(circle at 15% 12%, oklch(0.9 0.13 95 / 0.55) 0%, transparent 42%), radial-gradient(circle at 88% 90%, oklch(0.62 0.22 25 / 0.16) 0%, transparent 48%), linear-gradient(168deg, oklch(0.975 0.025 95) 0%, oklch(0.93 0.05 230) 100%)";
 
-export function BootSplash({ onDone }: { onDone: () => void }) {
+/**
+ * Hand the OS status bar back to the app's colour.
+ *
+ * The tag itself is created before first paint by the inline script in
+ * __root.tsx, which is the only place that can pick the right initial value —
+ * see the comment there. All this does is release it.
+ */
+function releaseStatusBarTint() {
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", APP_THEME_COLOR);
+}
+
+export function BootSplash() {
   const [done, setDone] = useState(false);
   const [progress, setProgress] = useState(0);
   // Both are picked on the client only, so the server and first client render
   // agree. The tip lands a frame after mount; the bar starts at 0 either way.
   const [tip, setTip] = useState("");
 
-  // Read through a ref so the timer effect can have an empty dep list. With
-  // `onDone` in the deps, a parent passing an inline arrow would re-run the
-  // effect on every render and restart the five seconds indefinitely.
-  const onDoneRef = useRef(onDone);
-  onDoneRef.current = onDone;
-
   useEffect(() => {
-    // No trainer yet — retire immediately rather than run five seconds of
-    // timers behind a screen CSS is already hiding. Calling onDone is what
-    // matters: it releases the status-bar tint and the background music, both of
-    // which wait on the boot sequence being over.
+    // No trainer yet — retire immediately rather than run five seconds of timers
+    // behind a screen CSS is already hiding. The tint needs no release here: the
+    // inline script already chose the app colour for a player without one.
     if (!document.documentElement.classList.contains("has-trainer")) {
       setDone(true);
-      onDoneRef.current();
       return;
     }
 
-    // The loading screen plays silent. Released below rather than in a cleanup,
-    // because reaching `done` renders null without unmounting this component —
-    // a cleanup would never run and the app would stay muted for the session.
+    // The loading screen plays silent. Both the silence and the tint are released
+    // on the timer below rather than from a cleanup, because reaching `done`
+    // renders null without unmounting this component — a cleanup would never run,
+    // and the app would stay muted and black-tinted for the whole session.
     setBootSilence(true);
     setTip(randomTip());
 
@@ -86,8 +91,8 @@ export function BootSplash({ onDone }: { onDone: () => void }) {
     timers.push(
       setTimeout(() => {
         setBootSilence(false);
+        releaseStatusBarTint();
         setDone(true);
-        onDoneRef.current();
       }, LOADING_MS),
     );
     // Still restore on unmount, so a teardown mid-sequence (a dev remount, a
@@ -95,27 +100,35 @@ export function BootSplash({ onDone }: { onDone: () => void }) {
     return () => {
       timers.forEach(clearTimeout);
       setBootSilence(false);
+      releaseStatusBarTint();
     };
   }, []);
 
   // The artwork is in the markup from the start (rather than preloaded into
-  // state) so the browser begins fetching it as it parses the HTML. It stays
-  // invisible until it actually loads: a month with no uploaded file 404s, and
-  // the browser paints its broken-image glyph in the corner before onError can
-  // fire — visible on every launch until the first upload. Hiding it until
-  // onLoad means the wordmark layer behind is all that ever shows.
-  const [artLoaded, setArtLoaded] = useState(false);
+  // state) so the browser begins fetching it as it parses the HTML.
+  //
+  // Three visual states, and the distinction between the last two is what keeps
+  // the wordmark from flashing before the artwork arrives:
+  //   loading — gradient only. The <img> is present but transparent, because a
+  //             404 paints the browser's broken-image glyph before onError can
+  //             fire.
+  //   loaded  — artwork, full bleed.
+  //   failed  — wordmark, the fallback for a month with no uploaded file.
+  // Showing the wordmark during `loading` (as this once did) means every launch
+  // on a cold cache flashes the logo for as long as the download takes.
+  const [artState, setArtState] = useState<"loading" | "loaded" | "failed">("loading");
   const art = encodeURI(loadingArtForMonth(new Date()));
 
-  // onLoad alone is not enough. The <img> is server-rendered, so a cached image
-  // can finish loading before React hydrates and attaches the handler — the load
-  // event is already gone and onLoad never fires, leaving the artwork stuck at
-  // opacity 0 forever. Ask the element directly on mount instead. `complete` is
-  // also true for a failed load, hence the naturalWidth check.
+  // onLoad/onError alone are not enough. The <img> is server-rendered, so it can
+  // finish loading before React hydrates and attaches the handlers — the event is
+  // already gone and neither fires, leaving the artwork stuck transparent forever
+  // (or, for a missing month, never falling back). Ask the element directly on
+  // mount instead. `complete` is true for a failed load too, so naturalWidth is
+  // what separates the two outcomes.
   const imgRef = useRef<HTMLImageElement>(null);
   useEffect(() => {
     const img = imgRef.current;
-    if (img?.complete && img.naturalWidth > 0) setArtLoaded(true);
+    if (img?.complete) setArtState(img.naturalWidth > 0 ? "loaded" : "failed");
   }, []);
 
   if (done) return null;
@@ -135,18 +148,18 @@ export function BootSplash({ onDone }: { onDone: () => void }) {
       aria-busy
       aria-label="Loading Pokémon Trivia Battle"
     >
-      {/* Wordmark layer, always rendered. Loaded artwork is full-bleed and covers
-          it completely, so this is simultaneously the no-artwork fallback and the
-          backdrop while the artwork is still in flight — no swap, no empty frame,
-          and nothing to lay out differently between the two cases. */}
-      <div className="absolute inset-0 flex items-center justify-center px-10">
-        <AppIcon
-          src={UI_ICON.appLogo}
-          alt="Pokémon Trivia Battle"
-          className="w-[min(52vw,260px)]"
-          eager
-        />
-      </div>
+      {/* Only once the artwork is known to be missing — never while it is still
+          downloading, or the logo flashes on every cold-cache launch. */}
+      {artState === "failed" && (
+        <div className="absolute inset-0 flex items-center justify-center px-10">
+          <AppIcon
+            src={UI_ICON.appLogo}
+            alt="Pokémon Trivia Battle"
+            className="w-[min(52vw,260px)]"
+            eager
+          />
+        </div>
+      )}
 
       <img
         ref={imgRef}
@@ -154,9 +167,13 @@ export function BootSplash({ onDone }: { onDone: () => void }) {
         alt=""
         aria-hidden
         draggable={false}
-        onLoad={() => setArtLoaded(true)}
+        // Images are fetched at low priority by default and this one is the whole
+        // screen, so it competes with the app's own bundle for no reason.
+        fetchPriority="high"
+        onLoad={() => setArtState("loaded")}
+        onError={() => setArtState("failed")}
         className={`absolute inset-0 h-full w-full select-none object-cover ${
-          artLoaded ? "opacity-100" : "opacity-0"
+          artState === "loaded" ? "opacity-100" : "opacity-0"
         }`}
       />
 
