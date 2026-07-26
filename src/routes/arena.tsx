@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Swords, QrCode, ChevronRight, Loader2, MessageCircle } from "lucide-react";
+import { Swords, QrCode, ChevronRight, Loader2, MessageCircle, Globe } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { useStoreHydrated } from "@/lib/store-hydration";
 import { ItemIcon } from "@/components/game-ui";
@@ -14,7 +14,13 @@ import { trainerSpriteUrl } from "@/lib/game-data";
 import { ITEM_BY_ID } from "@/content/items";
 import { ARENA_REWARD_SLOTS, trophyTier, type TrophyTier } from "@/lib/arena-rewards";
 import { relativeTime } from "@/lib/battle-log-format";
-import { startTrainingMatch } from "@/lib/pvp-live";
+import {
+  startTrainingMatch,
+  prepareQueueTicket,
+  attemptQueueMatch,
+  leaveQueue,
+  type QueueTicket,
+} from "@/lib/pvp-live";
 import { ensureSession, getProfileById } from "@/lib/social";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -161,10 +167,15 @@ function ArenaPage() {
       const uid = await ensureSession();
       if (!uid || cancelled) return;
       const cutoffIso = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      // Queue matches are excluded: this strip exists only to reopen a chat,
+      // and strangers paired by matchmaking have no chat channel to reopen
+      // (send_pvp_chat_message refuses them server-side). Listing them would
+      // offer a button that is guaranteed to fail.
       const { data, error } = await supabase
         .from("pvp_live_matches")
-        .select("id, host_id, guest_id, created_at, status")
+        .select("id, host_id, guest_id, created_at, status, match_source")
         .eq("is_bot_match", false)
+        .or("match_source.is.null,match_source.neq.queue")
         .gt("created_at", cutoffIso)
         .order("created_at", { ascending: false })
         .limit(5);
@@ -197,6 +208,70 @@ function ArenaPage() {
       cancelled = true;
     };
   }, []);
+
+  // ── Online matchmaking ────────────────────────────────────────────────────
+  // Polling rather than realtime on purpose: the pairing RPC is the only thing
+  // that can pair, and calling it is also what keeps this player's place in the
+  // line alive, so one call does both jobs. The waiting side needs no signal of
+  // its own — LivePvpWatcher pulls it into the match the instant the row lands.
+  const QUEUE_POLL_MS = 5000;
+  const QUEUE_BOT_OFFER_S = 30;
+  const [queueWaitS, setQueueWaitS] = useState<number | null>(null);
+  const queueTicketRef = useRef<QueueTicket | null>(null);
+  const queueTimersRef = useRef<number[]>([]);
+  const searching = queueWaitS !== null;
+
+  const stopQueue = useCallback((leave: boolean) => {
+    for (const t of queueTimersRef.current) window.clearInterval(t);
+    queueTimersRef.current = [];
+    queueTicketRef.current = null;
+    setQueueWaitS(null);
+    if (leave) void leaveQueue();
+  }, []);
+
+  // Abandoning the screen must abandon the line: a row left behind would pair
+  // someone into a battle nobody is watching.
+  useEffect(() => () => stopQueue(true), [stopQueue]);
+
+  async function handleBattleOnline() {
+    if (searching) return;
+    if (rewardsBlockBattling) {
+      toast.error(claimFirstMessage);
+      return;
+    }
+    const prep = await prepareQueueTicket();
+    if (!prep.ok) {
+      toast.error(
+        prep.error === "questions"
+          ? "Couldn't prepare the battle. Try again."
+          : "Couldn't reach matchmaking. Try again.",
+      );
+      return;
+    }
+    queueTicketRef.current = prep.ticket;
+    setQueueWaitS(0);
+
+    const attempt = async () => {
+      const ticket = queueTicketRef.current;
+      if (!ticket) return;
+      const res = await attemptQueueMatch(ticket);
+      if (!res.ok) {
+        stopQueue(true);
+        toast.error("Matchmaking dropped out. Try again.");
+        return;
+      }
+      if (res.matched) {
+        stopQueue(false); // the pairing already took us out of the queue
+        void navigate({ to: "/pvp/live/$matchId", params: { matchId: res.matchId } });
+      }
+    };
+
+    void attempt();
+    queueTimersRef.current.push(
+      window.setInterval(() => void attempt(), QUEUE_POLL_MS),
+      window.setInterval(() => setQueueWaitS((s) => (s === null ? s : s + 1)), 1000),
+    );
+  }
 
   async function handleStartTraining() {
     if (trainingBusy) return;
@@ -384,9 +459,62 @@ function ArenaPage() {
 
       {/* Tab-dependent */}
       {tab === "battle" ? (
-        <div className="px-5 pt-3">
+        <div className="space-y-3 px-5 pt-3">
+          {/* Online first: it is the only entry point that works when there is
+              nobody in the room, which is almost always. */}
           <div className="rounded-3xl bg-card p-4 shadow-card">
-            <div className="font-pixel-xs text-primary">PVP</div>
+            <div className="font-pixel-xs text-primary">ONLINE</div>
+            {searching ? (
+              <>
+                <div className="mt-2 flex items-center gap-3">
+                  <Loader2 className="h-5 w-5 shrink-0 animate-spin text-primary" />
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-display-md text-foreground">Finding an opponent…</h3>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {queueWaitS}s · we&rsquo;ll widen the level range the longer you wait
+                    </p>
+                  </div>
+                </div>
+                {(queueWaitS ?? 0) >= QUEUE_BOT_OFFER_S && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      stopQueue(true);
+                      void handleStartTraining();
+                    }}
+                    className="mt-3 h-11 w-full rounded-full font-bold"
+                  >
+                    <Swords className="mr-1.5 h-4 w-4" />
+                    Battle the Training Bot instead
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  onClick={() => stopQueue(true)}
+                  className="mt-2 h-10 w-full rounded-full font-bold text-foreground/60"
+                >
+                  Cancel
+                </Button>
+              </>
+            ) : (
+              <>
+                <p className="mt-0.5 text-xs text-foreground/55">
+                  Get matched with another trainer anywhere. No chat — just the battle.
+                </p>
+                <Button
+                  onClick={() => void handleBattleOnline()}
+                  disabled={rewardsBlockBattling}
+                  className="mt-3 h-12 w-full rounded-full text-base font-bold"
+                >
+                  <Globe className="mr-1.5 h-4 w-4" />
+                  Battle Online
+                </Button>
+              </>
+            )}
+          </div>
+
+          <div className="rounded-3xl bg-card p-4 shadow-card">
+            <div className="font-pixel-xs text-primary">NEARBY</div>
             <p className="mt-0.5 text-xs text-foreground/55">
               {scanOpen
                 ? "Point your camera at a nearby trainer's Battle Code to fight instantly."

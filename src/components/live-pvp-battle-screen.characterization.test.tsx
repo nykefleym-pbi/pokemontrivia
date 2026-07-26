@@ -229,6 +229,7 @@ function baseMatch(overrides: Partial<LivePvpMatch> = {}): LivePvpMatch {
     hostRevived: false,
     guestRevived: false,
     isBotMatch: false,
+    matchSource: null,
     hostStreakLive: 0,
     guestStreakLive: 0,
     hostWrongStreakLive: 0,

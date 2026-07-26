@@ -150,6 +150,8 @@ export interface LivePvpMatch {
   /** True when the guest is the shared Training Bot (Training-vs-Bot mode): the
    * host drives the bot locally via the bot RPCs, and presence/forfeit is off. */
   isBotMatch: boolean;
+  /** How the pairing happened. Null on matches created before matchmaking. */
+  matchSource: "qr" | "queue" | "bot" | null;
   /** Server-authoritative correct-answer streak, verified against the
    * server's own `_selected_index`-checked correctness and returned directly
    * by `resolvePvpLiveTurn`/`resolveBotPvpTurn` as `PvpLiveTurnResult.streak`. */
@@ -219,6 +221,7 @@ interface LivePvpMatchRow {
   host_revived: boolean | null;
   guest_revived: boolean | null;
   is_bot_match: boolean | null;
+  match_source: string | null;
   host_streak_live: number | null;
   guest_streak_live: number | null;
   host_wrong_streak_live: number | null;
@@ -280,6 +283,7 @@ function fromRow(r: LivePvpMatchRow): LivePvpMatch {
     hostRevived: r.host_revived ?? false,
     guestRevived: r.guest_revived ?? false,
     isBotMatch: r.is_bot_match ?? false,
+    matchSource: (r.match_source as "qr" | "queue" | "bot" | null) ?? null,
     hostStreakLive: r.host_streak_live ?? 0,
     guestStreakLive: r.guest_streak_live ?? 0,
     hostWrongStreakLive: r.host_wrong_streak_live ?? 0,
@@ -433,6 +437,87 @@ export async function startTrainingMatch(): Promise<
   } catch (e) {
     console.warn("[pvp-live] startTrainingMatch threw:", e);
     return { ok: false, error: "network" };
+  }
+}
+
+// ── Online matchmaking ──────────────────────────────────────────────────────
+// The queue is the first way to reach a human who is not standing next to you.
+// Everything downstream is unchanged: whoever pairs second becomes the host and
+// supplies the questions, exactly as a Battle Code scanner does, and the
+// waiting player is pulled in by LivePvpWatcher the moment the row appears.
+
+/** Questions are fetched once per queue session and reused on every attempt —
+ * re-fetching on each poll would burn through the curated pool while waiting. */
+export interface QueueTicket {
+  questions: Trivia[];
+  servedIds: string[];
+}
+
+export type QueueAttempt =
+  | { ok: true; matched: true; matchId: string }
+  | { ok: true; matched: false }
+  | { ok: false; error: "questions" | "network" | string };
+
+/** Prepares the question set a queue session will use if it pairs. */
+export async function prepareQueueTicket(): Promise<
+  { ok: true; ticket: QueueTicket } | { ok: false; error: "questions" | "network" }
+> {
+  try {
+    const s = useGameStore.getState();
+    const data = await fetchBattleQuestions({
+      difficulties: difficultyBandForLevel(s.level),
+      seenHashes: s.seenQuestionHashes,
+      seenSamples: s.seenQuestions.slice(-80),
+      excludeIds: s.seenCuratedIds.slice(-500),
+      flowSeed: Math.floor(Math.random() * 1_000_000),
+    });
+    if (!data.questions || data.questions.length < 5) return { ok: false, error: "questions" };
+    return { ok: true, ticket: { questions: data.questions, servedIds: data.servedIds ?? [] } };
+  } catch (e) {
+    console.warn("[pvp-live] prepareQueueTicket threw:", e);
+    return { ok: false, error: "network" };
+  }
+}
+
+/**
+ * One attempt at pairing. Safe to call repeatedly: the RPC pairs if it can and
+ * otherwise just keeps the caller's place in the line alive, so the same call
+ * doubles as the heartbeat.
+ */
+export async function attemptQueueMatch(ticket: QueueTicket): Promise<QueueAttempt> {
+  try {
+    const s = useGameStore.getState();
+    const { data, error } = await rpc.rpc("enqueue_pvp", {
+      _questions: ticket.questions,
+      _partner_id: s.pokemon?.id ?? null,
+    });
+    if (error) {
+      console.warn("[pvp-live] enqueue_pvp failed:", error.message);
+      return { ok: false, error: "network" };
+    }
+    const r = data as { ok?: boolean; matched?: boolean; matchId?: string; error?: string } | null;
+    if (!r || r.ok !== true) return { ok: false, error: r?.error ?? "network" };
+    if (r.matched === true && r.matchId) {
+      // Only the pairing side marks the questions seen — the guest never used
+      // this ticket, and its own ticket is discarded unspent.
+      s.markQuestionsSeen(ticket.questions.map((q) => q.question));
+      s.markCuratedSeen(ticket.servedIds);
+      track("pvp_match_started", { opponent: "human", via: "queue" });
+      return { ok: true, matched: true, matchId: r.matchId };
+    }
+    return { ok: true, matched: false };
+  } catch (e) {
+    console.warn("[pvp-live] attemptQueueMatch threw:", e);
+    return { ok: false, error: "network" };
+  }
+}
+
+/** Leaves the line. Best-effort: a row left behind expires on its own. */
+export async function leaveQueue(): Promise<void> {
+  try {
+    await rpc.rpc("leave_pvp_queue");
+  } catch (e) {
+    console.warn("[pvp-live] leave_pvp_queue threw:", e);
   }
 }
 
