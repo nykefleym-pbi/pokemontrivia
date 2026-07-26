@@ -117,6 +117,14 @@ export interface GameState {
   nameReconciled: boolean;
   needsNameReclaim: boolean;
 
+  /**
+   * How far the "turn on notifications" ask has got with this player.
+   * `asked` is terminal — either they said yes, or they said no twice.
+   */
+  pushPromptState: "unasked" | "soft-declined" | "asked";
+  /** YYYY-MM-DD of the last ask, so the second one waits for another day. */
+  pushPromptLastDate: string | null;
+
   dailyGiftLastClaim: string | null;
   dailyGiftStreak: number;
   /** YYYY-MM-DD of the last day the discounted featured shop item was bought
@@ -253,6 +261,7 @@ export interface GameState {
   setFriendCode: (code: string) => void;
   setLastEngagePromptDate: (date: string) => void;
   recordEngageDismiss: () => void;
+  recordPushPrompt: (outcome: "soft-declined" | "asked") => void;
   setNameReconciled: (v: boolean) => void;
   setNeedsNameReclaim: (v: boolean) => void;
   setEngageShownThisSession: (v: boolean) => void;

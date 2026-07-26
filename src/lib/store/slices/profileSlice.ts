@@ -55,6 +55,9 @@ export const createProfileSlice: StoreSlice<
     | "setLastEngagePromptDate"
     | "setEngageShownThisSession"
     | "recordEngageDismiss"
+    | "pushPromptState"
+    | "pushPromptLastDate"
+    | "recordPushPrompt"
     | "claimDailyGift"
     | "consumeGuaranteedShiny"
     | "setDarkMode"
@@ -72,6 +75,8 @@ export const createProfileSlice: StoreSlice<
   engageShownThisSession: false,
   nameReconciled: false,
   needsNameReclaim: false,
+  pushPromptState: "unasked",
+  pushPromptLastDate: null,
 
   dailyGiftLastClaim: null,
   dailyGiftStreak: 0,
@@ -119,6 +124,9 @@ export const createProfileSlice: StoreSlice<
       set({ engageDismissCount: s.engageDismissCount + 1 });
     }
   },
+
+  recordPushPrompt: (outcome) =>
+    set({ pushPromptState: outcome, pushPromptLastDate: new Date().toISOString().slice(0, 10) }),
 
   claimDailyGift: () => {
     const s = get();
