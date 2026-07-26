@@ -85,9 +85,30 @@ Deno.serve(async (req) => {
 
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
 
+  // A hatchable Poké Egg is the only route to a Legendary, and it was visible
+  // nowhere but a small badge on the Pokédex tab — nothing told a player it had
+  // filled. Egg progress lives in the save blob rather than a profile column,
+  // so it is read from there; a missing or malformed save just means no egg.
+  const eggReady = new Map<string, boolean>();
+  const ids = (profiles ?? []).map((p) => p.id);
+  if (ids.length > 0) {
+    const { data: saves } = await admin.from("saves").select("user_id, state").in("user_id", ids);
+    for (const row of saves ?? []) {
+      const eggs = (row.state as { pokeEggs?: { progress?: number; required?: number }[] } | null)
+        ?.pokeEggs;
+      if (!Array.isArray(eggs)) continue;
+      eggReady.set(
+        row.user_id as string,
+        eggs.some((e) => (e?.progress ?? 0) >= (e?.required ?? Infinity)),
+      );
+    }
+  }
+
   let notified = 0;
   for (const p of profiles ?? []) {
     const modes = readyModes(p, now, megaEventActive);
+    // Named first: it is the rarest and most valuable thing in the list.
+    if (eggReady.get(p.id)) modes.unshift("a Poké Egg");
     if (modes.length === 0) continue;
 
     const body =

@@ -3,6 +3,7 @@ import type { StoreSlice } from "@/lib/store/slice";
 import type { ItemId } from "@/lib/game-data";
 import { TRAINER_SPRITES } from "@/lib/game-data";
 import { rollAbilityId } from "@/lib/abilities";
+import { planDailyGift } from "@/lib/daily-gift";
 import { WHATS_NEW } from "@/lib/whats-new";
 
 /** Item pools shared by the daily gift and the Arena's set-of-5 win rewards
@@ -43,6 +44,7 @@ export const createProfileSlice: StoreSlice<
     | "engageShownThisSession"
     | "dailyGiftLastClaim"
     | "dailyGiftStreak"
+    | "dailyGiftFreezeUsedDate"
     | "guaranteedShinyPending"
     | "darkMode"
     | "reducedMotion"
@@ -80,6 +82,7 @@ export const createProfileSlice: StoreSlice<
 
   dailyGiftLastClaim: null,
   dailyGiftStreak: 0,
+  dailyGiftFreezeUsedDate: null,
   guaranteedShinyPending: false,
   darkMode: false,
   reducedMotion: false,
@@ -131,12 +134,16 @@ export const createProfileSlice: StoreSlice<
   claimDailyGift: () => {
     const s = get();
     const today = new Date().toISOString().slice(0, 10);
-    if (s.dailyGiftLastClaim === today) return null;
-    const yd = new Date();
-    yd.setUTCDate(yd.getUTCDate() - 1);
-    const yesterday = yd.toISOString().slice(0, 10);
-    const continuing = s.dailyGiftLastClaim === yesterday;
-    const day = ((continuing ? s.dailyGiftStreak : 0) % 7) + 1;
+    // Cadence (missed-day forgiveness, welcome-back purse) lives in daily-gift.ts;
+    // this action only grants what that plan says.
+    const plan = planDailyGift({
+      lastClaim: s.dailyGiftLastClaim,
+      streak: s.dailyGiftStreak,
+      freezeUsedDate: s.dailyGiftFreezeUsedDate,
+      today,
+    });
+    if (!plan) return null;
+    const { day, usedFreeze, comebackCoins } = plan;
     const shiny = day === 7;
     let itemId: ItemId;
     let qty = 1;
@@ -150,9 +157,11 @@ export const createProfileSlice: StoreSlice<
       inventory: { ...s.inventory, [itemId]: (s.inventory[itemId] ?? 0) + qty },
       dailyGiftStreak: day,
       dailyGiftLastClaim: today,
+      dailyGiftFreezeUsedDate: usedFreeze ? today : s.dailyGiftFreezeUsedDate,
+      coins: s.coins + comebackCoins,
       guaranteedShinyPending: shiny ? true : s.guaranteedShinyPending,
     });
-    return { itemId, qty, day, shiny };
+    return { itemId, qty, day, shiny, usedFreeze, comebackCoins };
   },
   consumeGuaranteedShiny: () => set({ guaranteedShinyPending: false }),
 

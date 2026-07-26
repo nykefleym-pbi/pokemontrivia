@@ -12,6 +12,7 @@ import {
   getWeekRangeUtc,
 } from "@/lib/game-data";
 import { findGymLeader, GYM_LEADERS } from "@/lib/gym-leaders";
+import { HomeStreakStrip } from "@/components/home-streak-strip";
 
 /** Home-screen Mega Raid card state. `null` while the event is still loading
  * (render nothing), `"none"` once confirmed there's no active raid (grayed
@@ -212,6 +213,8 @@ export function BattleHome({
           </div>
         </div>
       </div>
+
+      <HomeStreakStrip />
 
       {/* Battle card */}
       <div className="px-5 pt-3">

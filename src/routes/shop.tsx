@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { playSfx, playItemCue } from "@/lib/audio";
 import { Star, ShoppingBag, Minus, Plus } from "lucide-react";
 import { useGameStore } from "@/lib/store";
+import { litGiftPips } from "@/lib/daily-gift";
 import { useStoreHydrated } from "@/lib/store-hydration";
 import { ITEMS, type ItemDef } from "@/lib/game-data";
 import { getAbility } from "@/lib/abilities";
@@ -53,6 +54,7 @@ function ShopPage() {
   const autoItems = useGameStore((s) => s.autoItems);
   const dailyGiftLastClaim = useGameStore((s) => s.dailyGiftLastClaim);
   const dailyGiftStreak = useGameStore((s) => s.dailyGiftStreak);
+  const dailyGiftFreezeUsedDate = useGameStore((s) => s.dailyGiftFreezeUsedDate);
   const claimDailyGift = useGameStore((s) => s.claimDailyGift);
   const [giftNow, setGiftNow] = useState(Date.now());
   useEffect(() => {
@@ -60,15 +62,16 @@ function ShopPage() {
     return () => clearInterval(i);
   }, []);
   const giftToday = new Date(giftNow).toISOString().slice(0, 10);
-  const giftYesterday = (() => {
-    const d = new Date(giftNow);
-    d.setUTCDate(d.getUTCDate() - 1);
-    return d.toISOString().slice(0, 10);
-  })();
   const giftClaimable = dailyGiftLastClaim !== giftToday;
-  const giftClaimedToday = dailyGiftLastClaim === giftToday;
-  const giftContinuing = dailyGiftLastClaim === giftYesterday;
-  const giftLit = giftClaimedToday ? dailyGiftStreak : giftContinuing ? dailyGiftStreak : 0;
+  // Shared with Home's strip, and aware of the weekly forgiven miss — a streak
+  // the freeze can still rescue must keep its pips lit, or the player sees it
+  // "reset" and stops trying a day before it would have been saved.
+  const giftLit = litGiftPips({
+    lastClaim: dailyGiftLastClaim,
+    streak: dailyGiftStreak,
+    freezeUsedDate: dailyGiftFreezeUsedDate,
+    today: giftToday,
+  });
   const giftNextDay = (giftLit % 7) + 1;
   const giftMsToNext =
     Date.UTC(
@@ -88,6 +91,18 @@ function ShopPage() {
       );
     } else {
       toast.success(`Daily Gift opened: ${res.qty}× ${it?.name ?? "item"}`);
+    }
+    // Worth its own toast: the player is about to see a streak number that
+    // arithmetic says should have reset, and an unexplained one reads as a bug.
+    if (res.usedFreeze) {
+      toast.success("Streak saved", {
+        description: "You missed a day — this one's forgiven. One free miss a week.",
+      });
+    }
+    if (res.comebackCoins > 0) {
+      toast.success(`Welcome back! +${res.comebackCoins} coins`, {
+        description: "Good to see you again.",
+      });
     }
   }
   const toggleAutoItem = useGameStore((s) => s.toggleAutoItem);
