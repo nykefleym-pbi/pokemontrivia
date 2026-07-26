@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { Backpack, Info, MessageCircle } from "lucide-react";
+import { Backpack, Info } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { Trivia, MissedAnswer } from "@/lib/trivia-core";
 import { shuffleTriviaOptionsWithOrder } from "@/lib/trivia-core";
@@ -56,6 +56,7 @@ import {
   typeAbilityPvp,
   typeAbilityHasBattleStart,
   typeAbilityPostAnswerFires,
+  typeAbilityPreventsConfusion,
   type TypeAbilityCtx,
 } from "@/lib/pvp-type-abilities";
 import {
@@ -107,14 +108,6 @@ interface Props {
    * answer), so the route can retain the missed list above the battle→result
    * unmount for the defeat review. Never fires for a correct/confusion-miss. */
   onMissed?: (m: MissedAnswer) => void;
-  /** Opens the match's full-screen chat route (docs/handoffs/global-chat).
-   * Only rendered as a header icon when provided — the route owns the
-   * navigation destination, this component stays presentational. */
-  onOpenChat?: () => void;
-  /** Quiet "unseen message" dot on the chat icon (no numeric badge, per spec)
-   * — the route tracks this via its own `subscribeToMatchChat` subscription
-   * and resets it naturally on remount when the player returns from chat. */
-  hasUnseenChat?: boolean;
 }
 
 /** Non-battle items usable in Nearby Battle without a server round-trip
@@ -191,7 +184,7 @@ function PvpCombatPanel({
       <div className={`flex flex-col ${alignCls}`}>
         <div className="w-full truncate text-sm font-bold leading-tight">{name}</div>
         {types.length > 0 && (
-          <div className={`mt-1 flex w-full gap-1 ${justifyCls}`}>
+          <div className={`mt-1 flex w-full flex-wrap gap-1 ${justifyCls}`}>
             {types.map((t) => (
               <TypeBadge key={t} type={t} size="sm" />
             ))}
@@ -450,8 +443,6 @@ export function LivePvpBattleScreen({
   opponentName,
   onFinish,
   onMissed,
-  onOpenChat,
-  hasUnseenChat,
 }: Props) {
   // Shared question set, per-client option order. `orders[i][displayIndex]`
   // recovers the ORIGINAL (server-canonical) option index for question i's
@@ -1345,6 +1336,24 @@ export function LivePvpBattleScreen({
   // answers (#1). Idempotent while already confused. Never touches the synced
   // status row — the visual is merged in locally (selfConfused / oppConfused).
   function applyConfused(side: BattleSide, atIdx: number) {
+    // Shield Dust blocks the chain outright, matching the authoritative
+    // `confusedTicks` guard in engine/pvp-live-answer.ts. Both sides read the
+    // same predicate so the badge can never disagree with the server.
+    const sideAbilityId = side === "self" ? typeAbilityId : oppAbilityId;
+    if (typeAbilityPreventsConfusion(sideAbilityId) && sideAbilityId) {
+      if (!taActivatedRef.current.has(sideAbilityId)) {
+        taActivatedRef.current.add(sideAbilityId);
+        emit({
+          kind: "type-ability",
+          side,
+          abilityId: sideAbilityId,
+          hitsOpponent: false,
+          questionIndex: atIdx,
+          dedupeKey: `${side}:type-ability:${atIdx}:${sideAbilityId}`,
+        });
+      }
+      return;
+    }
     const ticksRef = side === "self" ? selfConfusedTicksRef : oppConfusedTicksRef;
     if (ticksRef.current > 0) return;
     ticksRef.current = CONFUSE_TICKS;
@@ -1896,7 +1905,9 @@ export function LivePvpBattleScreen({
     }));
     itemsUsedRef.current += 1;
     usedItemIdsRef.current.add(itemId);
-    setMyHp(amIHost ? res.hostHp : res.guestHp);
+    const myHpAfter = amIHost ? res.hostHp : res.guestHp;
+    const healedHp = Math.max(0, Math.round(myHpAfter - myHp));
+    setMyHp(myHpAfter);
     setOppHp(amIHost ? res.guestHp : res.hostHp);
     useGameStore.setState({
       myStages: amIHost ? res.hostStages : res.guestStages,
@@ -1912,6 +1923,7 @@ export function LivePvpBattleScreen({
       side: "self",
       itemId,
       hitsOpponent: def.berry?.target === "opponent",
+      healedHp: healedHp > 0 ? healedHp : undefined,
       questionIndex: Math.max(0, displayedIndex),
       dedupeKey: `self:item:${Math.max(0, displayedIndex)}:${itemId}`,
     });
@@ -2054,25 +2066,9 @@ export function LivePvpBattleScreen({
               </span>
             </div>
           )}
-          {/* Match chat entry point (docs/handoffs/global-chat) — a full-screen
-              route, not an overlay, so this is just a nav trigger. Quiet dot
-              only, no numeric badge (spec: no unread counter). */}
-          {onOpenChat && (
-            <button
-              type="button"
-              onClick={onOpenChat}
-              aria-label="Open match chat"
-              className="relative flex h-8 w-8 items-center justify-center rounded-full bg-card/90 shadow-card backdrop-blur transition active:scale-95"
-            >
-              <MessageCircle className="h-4 w-4 text-foreground" />
-              {hasUnseenChat && (
-                <span
-                  aria-hidden="true"
-                  className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-destructive"
-                />
-              )}
-            </button>
-          )}
+          {/* No chat entry point here by design (owner ruling 2026-07-26):
+              chat lives on the Battle Arena screen and on the post-battle
+              result screen, never mid-battle. */}
         </div>
       </div>
 

@@ -54,6 +54,14 @@ export interface ItemFxEvent extends BattleFxBase {
   itemId: ItemId;
   /** true when the item was aimed at the OTHER combatant (berry debuffs). */
   hitsOpponent: boolean;
+  /**
+   * HP the user's own Pokémon gained from this item, when it healed. Surfaced
+   * in the cue because a Max/Super Potion is otherwise a silent jump in the HP
+   * bar — the damage flash only fires on a DROP, so a heal has no feedback at
+   * all and reads as the game spontaneously healing you (owner report
+   * 2026-07-26). Omit for non-healing items.
+   */
+  healedHp?: number;
 }
 
 /** Non-legendary TYPE ability activation (spec Story 3). */

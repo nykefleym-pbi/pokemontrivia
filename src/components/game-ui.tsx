@@ -544,7 +544,10 @@ export function CombatPanel({
       <div className={`flex flex-col ${alignCls}`}>
         <div className="w-full truncate text-sm font-bold leading-tight">{pokemonName}</div>
 
-        <div className={`mt-1 flex w-full gap-1 ${justifyCls}`}>
+        {/* Wraps: the panel is a fixed clamp() width, and a long two-type pair
+            (ELECTRIC/DRAGON) is wider than it. Without this the badges spill
+            outside the card instead of stacking. */}
+        <div className={`mt-1 flex w-full flex-wrap gap-1 ${justifyCls}`}>
           {types.map((t) => (
             <TypeBadge key={t} type={t} size="sm" />
           ))}
