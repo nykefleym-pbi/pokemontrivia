@@ -64,11 +64,40 @@ function TrophyCard({ label, count, art }: { label: string; count: number; art: 
   const { tier, next } = trophyTier(count);
   const st = TROPHY_STYLE[tier];
   const pct = next === null ? 100 : Math.min(100, Math.round((count / next) * 100));
+  // Hold to see the badge in its own colours; releasing returns it to the tier
+  // tint. Pointer events rather than onTouchStart/onMouseDown so one pair of
+  // handlers covers touch, pen and mouse, and `onPointerCancel` catches the
+  // scroll-steals-the-gesture case that would otherwise leave it stuck coloured.
+  const [held, setHeld] = useState(false);
+  const release = () => setHeld(false);
   return (
     <div className="flex flex-1 flex-col items-center gap-1.5 rounded-3xl bg-card p-4 shadow-card">
       {/* No frame — the badge art stands on its own, tinted to its tier so each
           rank-up visibly changes the metal. */}
-      <AppIcon src={art} className="h-20 w-20 drop-shadow" style={{ filter: st.filter }} />
+      <button
+        type="button"
+        aria-label={`${label} badge — hold to see it in full colour`}
+        aria-pressed={held}
+        onPointerDown={() => setHeld(true)}
+        onPointerUp={release}
+        onPointerCancel={release}
+        onPointerLeave={release}
+        // Keyboard parity: hold Space/Enter for the same effect.
+        onKeyDown={(e) => {
+          if (e.key === " " || e.key === "Enter") setHeld(true);
+        }}
+        onKeyUp={release}
+        onBlur={release}
+        // Stops the long-press text/callout selection that otherwise fires on
+        // iOS when you hold an image.
+        className="touch-none select-none rounded-full transition active:scale-95"
+      >
+        <AppIcon
+          src={art}
+          className="h-20 w-20 drop-shadow transition-[filter] duration-150"
+          style={{ filter: held ? "none" : st.filter }}
+        />
+      </button>
       <span className="font-pixel-xs text-primary">{label}</span>
       <div className="w-full">
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
@@ -169,6 +198,10 @@ function ArenaPage() {
 
   async function handleStartTraining() {
     if (trainingBusy) return;
+    if (rewardsBlockBattling) {
+      toast.error(claimFirstMessage);
+      return;
+    }
     setTrainingBusy(true);
     try {
       const res = await startTrainingMatch();
@@ -188,6 +221,19 @@ function ArenaPage() {
       setTrainingBusy(false);
     }
   }
+
+  // Battling is gated until every unlocked reward has been collected (owner
+  // ruling 2026-07-26). Without this, an unclaimed slot can be silently
+  // auto-granted when the set rolls over at 5 battles played, so the player
+  // never sees what they earned. `set.wins` is how many slots are unlocked.
+  const unclaimedRewards = ARENA_REWARD_SLOTS.filter(
+    ({ slot }) => slot < arenaStats.set.wins && !arenaStats.set.claimed[slot],
+  ).length;
+  const rewardsBlockBattling = unclaimedRewards > 0;
+  const claimFirstMessage =
+    unclaimedRewards === 1
+      ? "Collect your battle reward first."
+      : `Collect your ${unclaimedRewards} battle rewards first.`;
 
   function handleClaim(slot: number) {
     const res = claimArenaReward(slot);
@@ -324,6 +370,13 @@ function ArenaPage() {
           <div className="mt-3 text-center text-[11px] text-foreground/55">
             {arenaStats.set.battles}/5 battles played
           </div>
+          {/* Says WHY the battle buttons below are disabled — a dead button with
+              no explanation is the worse failure. */}
+          {rewardsBlockBattling && (
+            <p className="mt-2 text-center text-[11px] font-semibold text-primary">
+              {claimFirstMessage}
+            </p>
+          )}
         </div>
       </div>
 
@@ -346,7 +399,14 @@ function ArenaPage() {
               )}
             </div>
             <Button
-              onClick={() => setScanOpen((v) => !v)}
+              onClick={() => {
+                if (rewardsBlockBattling) {
+                  toast.error(claimFirstMessage);
+                  return;
+                }
+                setScanOpen((v) => !v);
+              }}
+              disabled={rewardsBlockBattling && !scanOpen}
               className="mt-3 h-11 w-full rounded-full"
             >
               <QrCode className="mr-1.5 h-4 w-4" />
@@ -358,7 +418,7 @@ function ArenaPage() {
         <div className="px-5 pt-3">
           <button
             onClick={() => void handleStartTraining()}
-            disabled={trainingBusy}
+            disabled={trainingBusy || rewardsBlockBattling}
             className="flex w-full items-center gap-3 rounded-3xl bg-card p-4 text-left shadow-card transition active:scale-[0.99] disabled:opacity-70"
           >
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
