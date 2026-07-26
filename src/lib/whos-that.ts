@@ -116,3 +116,75 @@ export function checkGuess(round: WhosThatRound, guess: WhosThatGuess): boolean 
   }
   return normalizeName(guess.guessText ?? "") === normalizeName(round.name);
 }
+
+/** Redaction shown in place of the answer's name in a Pokédex hint. */
+export const NAME_MASK = "???";
+
+/** Words that are also a species-name token but far too common in English to
+ *  redact wholesale — masking these would shred the entry ("Type: Null"). */
+const UNMASKABLE_TOKENS = new Set(["type", "null", "max", "eternal", "zen", "ash"]);
+
+/** Any token this long or longer is masked on its own, so a form name still
+ *  hides its base ("Alolan Raichu" must also hide a bare "RAICHU"). */
+const MIN_TOKEN_LEN = 4;
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Hide a Pokémon's name inside text that is meant to be a HINT about it.
+ *
+ * Pokédex flavor text routinely names the species outright — older entries in
+ * block capitals ("PIKACHU has small electric sacs...") — which hands over the
+ * whole answer in the one mode built around reading the entry (owner report
+ * 2026-07-26). PokeAPI is the source, so this cannot be fixed upstream; the
+ * text has to be redacted at the point of display.
+ *
+ * Matching is deliberately loose, because the entry's spelling of a name and
+ * the roster's often differ:
+ *  - case-insensitive, and accent-insensitive via NFKD (Flabébé / FLABEBE);
+ *  - separators are flexible, so "Ho-Oh" also catches "HO OH" and "HoOh", and
+ *    "Mr. Mime" catches "MR MIME";
+ *  - each long token is masked individually, so a form's base name is caught
+ *    too ("Alolan Raichu" hides a bare "RAICHU");
+ *  - a trailing possessive or plural is swallowed, so "PIKACHU's" does not
+ *    leave a dangling "???'s".
+ *
+ * Short tokens are left alone: masking "Ho" or "Z" would redact ordinary words.
+ * The full-name pattern covers those species instead.
+ */
+export function maskSpeciesName(text: string, name: string): string {
+  if (!text || !name) return text;
+
+  // Compare on a form that ignores accents, so the pattern can be built from
+  // the plain-ASCII shape while still matching the accented original.
+  const deaccent = (s: string) => s.normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
+  const asciiText = deaccent(text);
+  const asciiName = deaccent(name);
+
+  // Longest first: mask "Alolan Raichu" before its parts, so the multi-word
+  // form is replaced once rather than becoming "??? ???".
+  const tokens = asciiName
+    .split(/[^A-Za-z0-9]+/)
+    .filter((t) => t.length >= MIN_TOKEN_LEN && !UNMASKABLE_TOKENS.has(t.toLowerCase()));
+  const patterns = [asciiName, ...tokens].sort((a, b) => b.length - a.length);
+
+  // Work on the de-accented copy so indices line up with the patterns; the
+  // de-accented form is what gets rendered, which is acceptable for a hint and
+  // avoids a fragile index mapping back onto the original.
+  let out = asciiText;
+  for (const p of patterns) {
+    // Flexible separators between the name's own parts — but only the
+    // punctuation that actually occurs INSIDE names. Allowing any non-alphanumeric
+    // run here let "Ho-Oh" match across the comma in "Ho, oh my!" and redact
+    // ordinary prose.
+    const body = escapeRegExp(p).replace(/[^A-Za-z0-9]+/g, "[-.'\u2019: ]*");
+    // Trailing 's / s is swallowed; leading/trailing boundaries keep the match
+    // from firing inside a longer unrelated word.
+    const re = new RegExp(`(?<![A-Za-z0-9])${body}(?:'?s)?(?![A-Za-z0-9])`, "gi");
+    out = out.replace(re, NAME_MASK);
+  }
+  // Collapse "??? ???" runs left by a name the entry repeats back to back.
+  return out.replace(new RegExp(`(?:${escapeRegExp(NAME_MASK)}[ ]?){2,}`, "g"), `${NAME_MASK} `).trim();
+}
