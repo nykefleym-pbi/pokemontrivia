@@ -2,7 +2,7 @@ import { postJson, getJson } from "./client";
 import type { Trivia } from "@/lib/trivia-core";
 
 export interface BattleQuestionsParams {
-  difficulty: string;
+  difficulties: string[];
   seenHashes: string[];
   seenSamples: string[];
   excludeIds: string[];

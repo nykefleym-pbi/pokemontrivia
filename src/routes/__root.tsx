@@ -10,6 +10,7 @@ import { useEffect } from "react";
 import { MotionConfig } from "framer-motion";
 import { unlockAudio, playSfx, playBgm } from "@/lib/audio";
 import { installNativeGestureGuards } from "@/lib/native-gestures";
+import { trackReturnVisit } from "@/lib/analytics";
 import { BottomNav } from "@/components/bottom-nav";
 import { BootSplash } from "@/components/boot-splash";
 import { PwaRegister } from "@/components/pwa-register";
@@ -222,6 +223,11 @@ function RootComponent() {
   // colourise) rather than the browser's image / selection menu. The CSS half of
   // this lives in styles.css.
   useEffect(() => installNativeGestureGuards(document), []);
+
+  // How long since this player was last here. Fires at most once a day, on the
+  // first open of that day; the whole point of the engagement work is to move
+  // this number, so it is measured before anything is built to move it.
+  useEffect(() => trackReturnVisit(), []);
 
   // Unlock audio on the first user gesture, and play a subtle tap on any
   // button / link press app-wide.

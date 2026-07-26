@@ -2,9 +2,10 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Trivia } from "@/lib/trivia-core";
 import { useGameStore } from "@/lib/store";
 import type { ActiveStatus, PvpStatStages } from "@/lib/store";
-import { difficultyForLevel } from "@/lib/game-data";
+import { difficultyBandForLevel } from "@/lib/game-data";
 import type { ItemId } from "@/lib/game-data";
 import { fetchBattleQuestions } from "@/lib/api/trivia";
+import { track } from "@/lib/analytics";
 import type {
   StatChangeSpec,
   SigEngineTickResult,
@@ -342,6 +343,9 @@ export async function startLivePvpMatch(
       error?: string;
     } | null;
     if (r && r.ok === true && r.matchId && r.startedAt && r.opponent) {
+      // Host side only. The guest is pulled in by LivePvpWatcher, so counting
+      // here gives one event per match rather than two per match.
+      track("pvp_match_started", { opponent: "human" });
       return { ok: true, matchId: r.matchId, startedAt: r.startedAt, opponent: r.opponent };
     }
     return { ok: false, error: (r && r.error) || "network" };
@@ -382,6 +386,7 @@ export async function startBotPvpMatch(
       error?: string;
     } | null;
     if (r && r.ok === true && r.matchId && r.startedAt && r.opponent) {
+      track("pvp_match_started", { opponent: "bot" });
       return { ok: true, matchId: r.matchId, startedAt: r.startedAt, opponent: r.opponent };
     }
     return { ok: false, error: (r && r.error) || "network" };
@@ -409,7 +414,7 @@ export async function startTrainingMatch(): Promise<
   try {
     const s = useGameStore.getState();
     const data = await fetchBattleQuestions({
-      difficulty: difficultyForLevel(s.level),
+      difficulties: difficultyBandForLevel(s.level),
       seenHashes: s.seenQuestionHashes,
       seenSamples: s.seenQuestions.slice(-80),
       excludeIds: s.seenCuratedIds.slice(-500),

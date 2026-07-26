@@ -61,6 +61,7 @@ import { DailyScreen } from "@/components/daily-screen";
 import { ResultScreen } from "@/components/result-screen";
 import { startSoloBattle, submitBattleAction } from "@/services/client/battle-solo";
 import type { SoloBattleCfg } from "@/engine";
+import { track } from "@/lib/analytics";
 
 const QUESTIONS_PER_SET = 5;
 const TIMER_BASE = 20;
@@ -1213,6 +1214,12 @@ function BattleMode({
       timestamp: Date.now(),
       mode: isElite ? "elite" : isWeekly ? "weekly" : "battle",
     });
+    // Read the count back out rather than tracking one here: endBattle() above
+    // is what increments it, so `1` is unambiguously this player's first.
+    const battlesSoFar = useGameStore.getState().stats.battles;
+    const battleMode = isElite ? "elite" : isWeekly ? "weekly" : "battle";
+    track("battle_complete", { mode: battleMode, won, battles: battlesSoFar });
+    if (battlesSoFar === 1) track("first_battle_complete", { mode: battleMode, won });
     const after = unlockedAchievements(useGameStore.getState());
     const unlocked: Array<{ name: string }> = [];
     for (const id of after) {

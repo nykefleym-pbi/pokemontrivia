@@ -55,7 +55,7 @@ import {
   rankForLevel,
   TRAINER_SPRITES,
   trainerSpriteUrl,
-  difficultyForLevel,
+  difficultyBandForLevel,
 } from "@/lib/game-data";
 import { ALL_POKEMON, type PokeEntry } from "@/lib/pokemon-data";
 
@@ -102,6 +102,7 @@ import {
   setSfxVolume,
 } from "@/lib/audio";
 import { Slider } from "@/components/ui/slider";
+import { track } from "@/lib/analytics";
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
@@ -197,7 +198,7 @@ function ProfilePage() {
     setChallengingId(friend.id);
     try {
       const data = await fetchBattleQuestions({
-        difficulty: difficultyForLevel(level),
+        difficulties: difficultyBandForLevel(level),
         seenHashes,
         seenSamples: seenQuestions.slice(-80),
         excludeIds: seenCuratedIds.slice(-500),
@@ -263,11 +264,14 @@ function ProfilePage() {
     setPushBusy(true);
     try {
       if (next) {
+        track("push_prompt_shown", { source: "settings" });
         const res = await enablePushNotifications();
         if (res.ok) {
           setPushSubscribed(true);
+          track("push_prompt_accepted", { source: "settings" });
           toast.success("Notifications enabled!");
         } else {
+          track("push_prompt_dismissed", { source: "settings", reason: res.error ?? "unknown" });
           toast.error(res.error ?? "Couldn't enable notifications.");
         }
       } else {

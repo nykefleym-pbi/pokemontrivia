@@ -5,6 +5,7 @@ import { UI_ICON } from "@/lib/app-icons";
 import { useGameStore } from "@/lib/store";
 import { findPokemon } from "@/lib/pokemon-data";
 import { ALL_LEGENDARY_MYTHICAL_IDS } from "@/lib/legendary-data";
+import { track } from "@/lib/analytics";
 
 const SHINY_CHANCE = 0.1;
 
@@ -39,6 +40,7 @@ export function EggHatch() {
     window.setTimeout(() => {
       st.recordPokedexCapture(p.id, shiny);
       st.grantItem("candy", 1);
+      track("egg_hatched", { pokemon: p.name, shiny });
       setResult({ id: p.id, name: p.name, shiny });
       setHatchingId(null);
     }, 1200);

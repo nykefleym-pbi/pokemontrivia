@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { useGameStore } from "@/lib/store";
 import { useStoreHydrated } from "@/lib/store-hydration";
 import { PokemonSprite } from "@/components/game-ui";
-import { difficultyForLevel } from "@/lib/game-data";
+import { difficultyBandForLevel } from "@/lib/game-data";
 import { BattleScreen, type Trivia } from "@/components/battle-screen";
 import { fetchBattleQuestions, fetchEliteQuestions, fetchDailyChallenge } from "@/lib/api/trivia";
 import { playBgm } from "@/lib/audio";
@@ -270,7 +270,7 @@ function BattlePage() {
     setPhase("loading");
     try {
       const data = await fetchBattleQuestions({
-        difficulty: difficultyForLevel(level),
+        difficulties: difficultyBandForLevel(level),
         seenHashes,
         seenSamples: seenQuestions.slice(-80),
         excludeIds: seenCuratedIds.slice(-500),

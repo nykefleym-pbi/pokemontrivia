@@ -158,14 +158,50 @@ export function streakLabel(streak: number): string | null {
   return null;
 }
 
-export function difficultyForLevel(
-  level: number,
-): "easy" | "medium" | "hard" | "expert" | "master" {
-  if (level >= 26) return "master";
-  if (level >= 16) return "expert";
-  if (level >= 6) return "hard";
-  if (level >= 2) return "medium";
-  return "easy";
+/** The only difficulty values the curated bank actually stores. */
+export type CuratedDifficulty = "easy" | "medium" | "hard" | "expert";
+
+const CURATED_DIFFICULTIES: readonly CuratedDifficulty[] = ["easy", "medium", "hard", "expert"];
+
+/**
+ * The band of curated difficulties a trainer of this level draws from.
+ *
+ * Bands, not a single tier: the bank is lopsided (easy 792, medium 1872,
+ * hard 944, expert 392 as of launch), and a single tier would hand a level-16
+ * player a 392-question pool — about twenty battles before `pick_battle_curated`
+ * starts recycling. Overlapping bands keep every level above ~900 questions.
+ *
+ * There is deliberately no band above 16: expert alone is too thin to stand on,
+ * so a level-40 trainer draws the same hard+expert pool as a level-16 one.
+ * Making the top end genuinely harder needs more expert questions written, not
+ * another branch here.
+ */
+export function difficultyBandForLevel(level: number): CuratedDifficulty[] {
+  if (level >= 16) return ["hard", "expert"];
+  if (level >= 6) return ["medium", "hard"];
+  if (level >= 2) return ["easy", "medium"];
+  return ["easy"];
+}
+
+/**
+ * Coerces whatever a client sent into a band the bank can serve.
+ *
+ * Accepts the current array shape and the single-string shape that older
+ * cached PWA shells still post. `"master"` is the important case: this used to
+ * be a real return value of the old `difficultyForLevel`, and the API's
+ * "unknown difficulty" branch clamped it to `"easy"` — so every level-26+
+ * trainer silently got beginner questions. It maps to the top band instead.
+ *
+ * Returns null when nothing usable was sent, so the caller picks the default.
+ */
+export function normalizeDifficultyBand(input: unknown): CuratedDifficulty[] | null {
+  const raw = Array.isArray(input) ? input : [input];
+  const known = raw.filter((d): d is CuratedDifficulty =>
+    CURATED_DIFFICULTIES.includes(d as CuratedDifficulty),
+  );
+  if (known.length > 0) return [...new Set(known)];
+  if (raw.includes("master")) return ["hard", "expert"];
+  return null;
 }
 
 export interface EnemyTrainer {
