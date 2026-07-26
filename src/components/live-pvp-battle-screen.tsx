@@ -123,10 +123,10 @@ const BOT_REVEAL_MS = 600;
  *  still the hard ceiling for a stalling opponent. */
 const BOTH_ANSWERED_BEAT_MS = 700;
 
-/** How long "Frozen solid! This question is skipped." stays up before the
- *  battle moves on by itself. See the frozen-slot effect for why it cannot be
- *  left to the shared wall clock. */
-const FROZEN_SKIP_MS = 1600;
+/** Minimum time "Frozen solid! This question is skipped." stays readable before
+ *  the frozen side counts itself done. Only has an effect when the opponent has
+ *  already answered — otherwise the wait is the opponent's turn, not this. */
+const FROZEN_MIN_SHOW_MS = 900;
 
 const CLIENT_ONLY_ITEMS: ItemId[] = ["scope", "xaccuracy"];
 /** Server-effect-backed items (see pvp_item_effects catalog): the healing
@@ -1403,33 +1403,47 @@ export function LivePvpBattleScreen({
   }, [bothAnsweredCount, displayedIndex]);
 
 
-  // A frozen question skips itself.
+  // A frozen question waits for the OPPONENT, then moves on.
   //
   // Freeze is the one slot the player cannot answer: `resolveQuestion` returns
   // early on it and the personal-timeout effect skips it, so nothing ever marks
   // it done. That used to be harmless because the shared wall clock advanced
   // the slot — but the both-answered early-advance runs AHEAD of that clock
   // whenever both sides answer briskly, so by mid-match `displayedIndex` can sit
-  // several slots in front of it. A frozen question there has no early-advance
+  // several slots in front of it. A frozen question there had no early-advance
   // (we never answered) and no wall clock for another minute or more, which is
   // the "Frozen solid, and the game never moves on" stall (owner report
   // 2026-07-26, question 14/20 with the timer already at 0s).
   //
-  // So the frozen slot advances on its own short timer, and counts itself as
-  // answered locally so the gate above stays consistent. No server round trip:
-  // a freeze deals no damage to either side, and `resolveQuestion` would refuse
-  // it anyway.
+  // Rather than a fixed skip timer, the frozen side simply counts itself done
+  // (owner ruling 2026-07-26: "move to the next question as soon as the
+  // opponent is able to answer"). The ordinary both-answered path above then
+  // does the advancing, so a freeze costs exactly as long as the opponent's
+  // turn and not a moment more. No server round trip: a freeze deals no damage
+  // to either side, and `resolveQuestion` would refuse it anyway.
   useEffect(() => {
     if (!frozen || finishedRef.current || displayedIndex < 0) return;
-    const nextIdx = displayedIndex + 1;
-    const t = setTimeout(() => {
+    const slot = displayedIndex;
+    // Floor, not a delay before advancing: it only bites when the opponent has
+    // ALREADY answered, where marking ourselves done instantly would flash
+    // "Frozen solid!" past too fast to read.
+    const readable = setTimeout(() => {
+      setSelfAnsweredIdx((n) => Math.max(n, slot));
+    }, FROZEN_MIN_SHOW_MS);
+    // Ceiling for an opponent who never answers at all. The shared wall clock
+    // is nominally the backstop but can be minutes behind by this point, so a
+    // frozen slot caps at one ordinary question's length instead.
+    const ceiling = setTimeout(() => {
       if (finishedRef.current) return;
-      setSelfAnsweredIdx((n) => Math.max(n, displayedIndex));
+      const nextIdx = slot + 1;
       if (nextIdx >= PVP_QUESTIONS || nextIdx >= questions.length) return;
       if (nextIdx <= displayedIndexRef.current) return;
       enterQuestion(nextIdx);
-    }, FROZEN_SKIP_MS);
-    return () => clearTimeout(t);
+    }, personalTimerMs);
+    return () => {
+      clearTimeout(readable);
+      clearTimeout(ceiling);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [frozen, displayedIndex]);
 
