@@ -102,6 +102,8 @@ function resolveCue(event: BattleFxEvent): Cue | null {
           message: event.hitsOpponent
             ? `You used ${def.name} on the opponent!`
             : `You used ${def.name}.`,
+          // Names the heal so the HP jump is attributable — see `healedHp`.
+          description: event.healedHp ? `Restored ${event.healedHp} HP.` : undefined,
         };
       }
       return event.hitsOpponent

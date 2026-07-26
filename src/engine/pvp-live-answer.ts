@@ -42,6 +42,7 @@ import {
   applySelfDmgMod,
   resolvePvpTypeAbilityId,
   typeAbilityDamageMod,
+  typeAbilityPreventsConfusion,
   typeAbilityPvp,
   typeAbilitySelfDmgMod,
   type TypeAbilityCtx,
@@ -187,6 +188,11 @@ export function resolvePvpAnswer(input: PvpAnswerInput, state: PvpEngineState): 
   const isConfused = confusedTicks > 0 || input.hasConfusedStatus;
   const selfAfflicted = input.hasAnyStatus || isConfused;
 
+  // Resolved once up here because the wrong-answer branch below needs it too
+  // (Shield Dust's confusion immunity), not just the type-ability layer.
+  const resolvedTypeAbilityId = resolvePvpTypeAbilityId(input.myTypes, input.storedAbilityId);
+  const confusionPrevented = typeAbilityPreventsConfusion(resolvedTypeAbilityId);
+
   if (input.frozen) {
     streak = 0;
   } else if (input.correct) {
@@ -296,14 +302,20 @@ export function resolvePvpAnswer(input: PvpAnswerInput, state: PvpEngineState): 
   } else {
     streak = 0;
     selfWrongStreak += 1;
-    if (selfWrongStreak === CONFUSE_AT) confusedTicks = CONFUSE_TICKS;
+    // Shield Dust is immune: the chain never arms. Mirrors Solo's
+    // `abilityId !== "shield-dust"` guard in engine/turn.ts. This has to live
+    // here, not in the server-catalog `cure` effect — PvP confusion is
+    // `confusedTicks`, which no `cure` row can reach.
+    if (selfWrongStreak === CONFUSE_AT && !confusionPrevented) {
+      confusedTicks = CONFUSE_TICKS;
+    }
     selfDmg = 8; // flat wrong-answer chip, mirroring solo's flat-loss model
   }
 
   // ── TYPE ability wiring — fires for EVERY partner (feedback #3), stacking
   // on top of the signature block above. Skipped entirely on a freeze.
   if (!input.frozen) {
-    const typeAbilityId = resolvePvpTypeAbilityId(input.myTypes, input.storedAbilityId);
+    const typeAbilityId = resolvedTypeAbilityId;
     const typeWiring = typeAbilityPvp(typeAbilityId);
     if (typeAbilityId && typeWiring) {
       const taCtx: TypeAbilityCtx = {

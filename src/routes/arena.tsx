@@ -288,28 +288,35 @@ function ArenaPage() {
             {ARENA_REWARD_SLOTS.map(({ slot, kind }) => {
               const unlocked = slot < arenaStats.set.wins;
               const claimed = arenaStats.set.claimed[slot];
-              return (
-                <div
-                  key={slot}
-                  className={`flex flex-col items-center justify-center gap-1 rounded-2xl p-2 text-center ${
-                    claimed ? "bg-muted/60 opacity-60" : "bg-muted/60"
-                  }`}
-                >
-                  {claimed ? (
+              // The whole tile is the tap target when there's something to
+              // collect — the COLLECT pill alone is ~14px tall, small enough
+              // that a thumb regularly misses it and the tap reads as "nothing
+              // happened, tap again".
+              const tileCls = `flex min-h-[68px] w-full flex-col items-center justify-center gap-1 rounded-2xl p-2 text-center bg-muted/60 ${
+                claimed ? "opacity-60" : ""
+              }`;
+              if (!claimed && unlocked) {
+                return (
+                  <button
+                    key={slot}
+                    type="button"
+                    onClick={() => handleClaim(slot)}
+                    aria-label={`Collect reward ${slot + 1}`}
+                    className={`${tileCls} transition active:scale-95`}
+                  >
                     <AppIcon src={REWARD_ICON[kind]} className="h-7 w-7" />
-                  ) : unlocked ? (
-                    <>
-                      <AppIcon src={REWARD_ICON[kind]} className="h-7 w-7" />
-                      <button
-                        onClick={() => handleClaim(slot)}
-                        className="rounded-full bg-primary px-2 py-0.5 font-pixel text-[8px] text-primary-foreground"
-                      >
-                        COLLECT
-                      </button>
-                    </>
-                  ) : (
-                    <AppIcon src={LOCK_ICON} className="h-9 w-9 opacity-50" />
-                  )}
+                    <span className="rounded-full bg-primary px-2 py-0.5 font-pixel text-[8px] text-primary-foreground">
+                      COLLECT
+                    </span>
+                  </button>
+                );
+              }
+              return (
+                <div key={slot} className={tileCls}>
+                  <AppIcon
+                    src={claimed ? REWARD_ICON[kind] : LOCK_ICON}
+                    className={claimed ? "h-7 w-7" : "h-9 w-9 opacity-50"}
+                  />
                 </div>
               );
             })}

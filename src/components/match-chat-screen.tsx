@@ -15,6 +15,18 @@ import type { ChatMessage, ChatState, SendChatError } from "@/lib/pvp-chat-types
 
 const BODY_MAX_LEN = 300;
 
+/** One-tap canned messages. Deliberately short, positive and rematch-oriented:
+ * they carry the whole "say gg / ask for a rematch" flow without a keyboard,
+ * which is the only thing most players want out of a post-battle chat. */
+const QUICK_MESSAGES = [
+  "gg!",
+  "Good luck!",
+  "Rematch?",
+  "Nice battle!",
+  "Well played!",
+  "Thanks!",
+] as const;
+
 function sendErrorMessage(err: SendChatError): string {
   switch (err) {
     case "no_session":
@@ -90,16 +102,25 @@ export function MatchChatScreen({
   const trimmed = draft.trim();
   const canSend = !sending && !reason && trimmed.length > 0 && trimmed.length <= BODY_MAX_LEN;
 
-  async function handleSend() {
-    if (!canSend) return;
+  /** Shared by the composer and the quick-message chips. `clearDraft` is only
+   * true for the composer — a chip must never wipe something being typed. */
+  async function send(body: string, clearDraft: boolean) {
+    if (sending || reason) return;
+    const text = body.trim();
+    if (!text || text.length > BODY_MAX_LEN) return;
     setSending(true);
-    const res = await sendChatMessage(matchId, trimmed);
+    const res = await sendChatMessage(matchId, text);
     setSending(false);
     if (res.ok) {
-      setDraft("");
+      if (clearDraft) setDraft("");
     } else {
       toast.error(sendErrorMessage(res.error));
     }
+  }
+
+  async function handleSend() {
+    if (!canSend) return;
+    await send(trimmed, true);
   }
 
   async function handleReport(messageId: string) {
@@ -196,6 +217,21 @@ export function MatchChatScreen({
         {reason && (
           <div className="mb-2 rounded-2xl bg-muted px-3 py-2 text-center text-xs text-foreground/60">
             {reason}
+          </div>
+        )}
+        {!reason && (
+          <div className="-mx-4 mb-2 flex gap-2 overflow-x-auto px-4 pb-1">
+            {QUICK_MESSAGES.map((q) => (
+              <button
+                key={q}
+                type="button"
+                disabled={sending}
+                onClick={() => void send(q, false)}
+                className="shrink-0 rounded-full bg-muted px-3.5 py-2 text-xs font-semibold text-foreground shadow-sm transition active:scale-95 disabled:opacity-40"
+              >
+                {q}
+              </button>
+            ))}
           </div>
         )}
         <div className="flex items-center gap-2">

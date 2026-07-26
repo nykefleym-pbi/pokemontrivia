@@ -18,6 +18,10 @@ export function BottomNav() {
 
   if (path === "/" || path === "") return null;
   if (path.startsWith("/whos-that-pokemon")) return null;
+  // Every /pvp route is a full-screen flow of its own (the live battle, the
+  // result screen, match chat). `battleScreenActive` only covers the battle
+  // itself, which left the nav floating over the chat composer.
+  if (path.startsWith("/pvp")) return null;
   if (battleScreenActive) return null;
 
   return (

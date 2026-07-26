@@ -29,7 +29,6 @@ import {
   type LivePvpMatch,
   type LivePvpEffect,
 } from "@/lib/pvp-live";
-import { subscribeToMatchChat } from "@/lib/pvp-chat";
 import type { SigRuntimeMap } from "@/lib/signature-rework-types";
 import { LivePvpBattleScreen, type LivePvpBattleResult } from "@/components/live-pvp-battle-screen";
 import { getProfileById, ensureSession, type TrainerProfile } from "@/lib/social";
@@ -98,10 +97,6 @@ function MatchPageContent({ matchId }: { matchId: string }) {
   // (not in the battle screen) so it survives the battle→result unmount that a
   // loss resolved by the OPPONENT's answer triggers.
   const [missed, setMissed] = useState<MissedAnswer[]>([]);
-  // Quiet "unseen chat message" dot on the battle screen's chat icon (docs/
-  // handoffs/global-chat) — no numeric badge, per spec. Naturally resets on
-  // remount when the player returns here from the chat route.
-  const [hasUnseenChat, setHasUnseenChat] = useState(false);
   const partner = useGameStore((s) => s.pokemon);
   // Opponent-side combat cues funnel through the same frozen `emit` path as the
   // battle screen's local cues, so wording/ordering/dedupe are identical.
@@ -454,17 +449,6 @@ function MatchPageContent({ matchId }: { matchId: string }) {
     };
   }, [hasOnboarded, myId, match, matchId]);
 
-  // Match chat unseen-dot (docs/handoffs/global-chat): a lightweight parallel
-  // subscription just to flip a boolean when the OPPONENT sends a message.
-  // The chat route itself owns backfill/full history; this only ever needs to
-  // know "something new arrived since I last opened chat."
-  useEffect(() => {
-    if (!hasOnboarded || !myId) return;
-    return subscribeToMatchChat(matchId, (msg) => {
-      if (msg.userId !== myId) setHasUnseenChat(true);
-    });
-  }, [hasOnboarded, myId, matchId]);
-
   // Grant the per-battle berry drops exactly once when the match reaches a
   // terminal phase — WINNERS ONLY (win on HP/tiebreak, or a forfeit win). A
   // loss/tie/forfeit-loss records the battle log but grants no berries and
@@ -578,11 +562,6 @@ function MatchPageContent({ matchId }: { matchId: string }) {
           opponentName={opponentProfile?.trainer_name || "Opponent"}
           onFinish={handleFinish}
           onMissed={(m) => setMissed((prev) => [...prev, m])}
-          onOpenChat={() => {
-            setHasUnseenChat(false);
-            void navigate({ to: "/pvp/chat/$matchId", params: { matchId } });
-          }}
-          hasUnseenChat={hasUnseenChat}
         />
         <AlertDialog open={forfeitConfirmOpen} onOpenChange={setForfeitConfirmOpen}>
           <AlertDialogContent className="max-w-xs rounded-3xl">

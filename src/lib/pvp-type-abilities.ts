@@ -92,6 +92,10 @@ export interface TypeAbilityPvp {
   revealsWrongAt?: (questionIndex: number) => boolean;
   /** Survive an otherwise-lethal self-hit at 1 HP, once per battle — Sturdy. */
   clampsLethalSelfDmg?: boolean;
+  /** The consecutive-wrong → Confused chain never arms for this partner —
+   *  Shield Dust. Prevention, not a cure: PvP confusion lives in the engine's
+   *  `confusedTicks`, which the server-catalog `cure` effect cannot reach. */
+  preventsConfusion?: boolean;
   /** Announced "in play" but with no mechanical PvP effect. */
   inert?: boolean;
   /** Short plain-language effect line for the battle-start "in play" toast. */
@@ -307,10 +311,17 @@ export const TABLE: Record<AbilityId, TypeAbilityPvp> = {
     fireNote: "Compound Eyes — a wrong answer revealed!",
   },
   "shield-dust": {
-    // Immune to Confusion → clear it the moment it lands.
+    // Immune to Confusion. Solo prevents it outright (engine/turn.ts) and PvP
+    // now does the same: `preventsConfusion` stops the consecutive-wrong chain
+    // from ever arming `confusedTicks`.
+    //
+    // `postAnswerFires` stays as the cure for the OTHER way confusion can
+    // arrive — a `confused` row written to the synced status jsonb by an
+    // opponent's signature ability, which the prevention above doesn't see.
+    preventsConfusion: true,
     postAnswerFires: (c) => c.hasConfused,
-    note: "brushes off Confusion",
-    fireNote: "Shield Dust — Confusion brushed off!",
+    note: "immune to Confusion",
+    fireNote: "Shield Dust — Confusion blocked!",
   },
   swarm: {
     damage: (c) => dmg(0, 3, c.correct && c.streakAfter >= 3),
@@ -471,6 +482,18 @@ export function applyDamageMod(base: number, mod: TypeAbilityDamageMod): number 
 /** Does this ability have a one-time battle-start server catalog effect? */
 export function typeAbilityHasBattleStart(abilityId: AbilityId | null | undefined): boolean {
   return !!typeAbilityPvp(abilityId)?.battleStart;
+}
+
+/**
+ * Is this partner immune to the consecutive-wrong → Confused chain?
+ *
+ * Single source of truth for both sides of that chain: the authoritative
+ * `confusedTicks` in `engine/pvp-live-answer.ts` and the client-only visual in
+ * `live-pvp-battle-screen.tsx`. Keep them reading the same predicate — a guard
+ * on only one of them looks fixed while confusion still eats answers.
+ */
+export function typeAbilityPreventsConfusion(abilityId: AbilityId | null | undefined): boolean {
+  return !!typeAbilityPvp(abilityId)?.preventsConfusion;
 }
 
 /** Should the server post_answer catalog effect fire for this answer? */
