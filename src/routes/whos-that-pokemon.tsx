@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useGameStore } from "@/lib/store";
-import { spriteUrl, type PokeType } from "@/lib/pokemon-data";
+import { findPokemon, spriteUrl, type PokeType } from "@/lib/pokemon-data";
 import type { ItemId } from "@/lib/game-data";
 import { rollLevelUpRewards } from "@/lib/level-rewards";
 import { PokeballSpinner, PokemonSprite } from "@/components/game-ui";
@@ -10,7 +10,14 @@ import { pokeApiUrls } from "@/lib/api/pokeapi";
 import { syncActivity } from "@/lib/social";
 import { AppIcon } from "@/components/app-icon";
 import { REWARD_ICON } from "@/lib/app-icons";
-import { checkGuess, findByNorm, HOUR, type WhosThatGuess, type WhosThatRound as Round } from "@/lib/whos-that";
+import {
+  checkGuess,
+  findByNorm,
+  HOUR,
+  maskSpeciesName,
+  type WhosThatGuess,
+  type WhosThatRound as Round,
+} from "@/lib/whos-that";
 import { startWhosThat, submitWhosThat } from "@/services/client/whos-that";
 
 export const Route = createFileRoute("/whos-that-pokemon")({
@@ -184,14 +191,24 @@ export function WhosThatPokemon() {
         const fe = (sp.flavor_text_entries || []).find(
           (e: { language?: { name: string } }) => e.language?.name === "en",
         );
-        const flavor = ((fe?.flavor_text as string) || "")
+        // Redact the species name before this ever reaches state: PokeAPI's
+        // flavor text names the Pokémon outright in a great many entries (older
+        // ones in block capitals), which gives away the answer in the one mode
+        // whose whole point is reading the entry. The genus goes through the
+        // same masking — a few of those carry the name too.
+        const answerName = findPokemon(round.monId)?.name ?? "";
+        const rawFlavor = ((fe?.flavor_text as string) || "")
           .replace(/[\f\n\r]/g, " ")
           .replace(/\s+/g, " ")
           .trim();
+        const flavor = maskSpeciesName(rawFlavor, answerName);
         const ge = (sp.genera || []).find(
           (g: { language?: { name: string } }) => g.language?.name === "en",
         );
-        const genus = ((ge?.genus as string) || "").replace(/\s*Pokémon\s*$/i, "").toUpperCase();
+        const genus = maskSpeciesName(
+          ((ge?.genus as string) || "").replace(/\s*Pokémon\s*$/i, ""),
+          answerName,
+        ).toUpperCase();
         const heightM = pk?.height ? `${(pk.height / 10).toFixed(1)} m` : "";
         if (!cancelled) {
           setDexEntry({ flavor, genus, heightM });
