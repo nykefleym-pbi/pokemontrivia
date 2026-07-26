@@ -9,6 +9,7 @@ import {
 import { useEffect } from "react";
 import { MotionConfig } from "framer-motion";
 import { unlockAudio, playSfx, playBgm } from "@/lib/audio";
+import { installNativeGestureGuards } from "@/lib/native-gestures";
 import { BottomNav } from "@/components/bottom-nav";
 import { BootSplash } from "@/components/boot-splash";
 import { PwaRegister } from "@/components/pwa-register";
@@ -216,6 +217,11 @@ function RootComponent() {
     if (reducedMotion) root.classList.add("reduce-motion");
     else root.classList.remove("reduce-motion");
   }, [reducedMotion]);
+
+  // Long-press must reach the app's own handlers (the Arena badges' hold-to-
+  // colourise) rather than the browser's image / selection menu. The CSS half of
+  // this lives in styles.css.
+  useEffect(() => installNativeGestureGuards(document), []);
 
   // Unlock audio on the first user gesture, and play a subtle tap on any
   // button / link press app-wide.
