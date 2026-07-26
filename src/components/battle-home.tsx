@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Sparkles } from "lucide-react";
+import { Flame, Sparkles } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { PokeballSpinner, PokemonSprite, type DailyMark } from "@/components/game-ui";
@@ -12,7 +12,6 @@ import {
   getWeekRangeUtc,
 } from "@/lib/game-data";
 import { findGymLeader, GYM_LEADERS } from "@/lib/gym-leaders";
-import { HomeStreakStrip } from "@/components/home-streak-strip";
 
 /** Home-screen Mega Raid card state. `null` while the event is still loading
  * (render nothing), `"none"` once confirmed there's no active raid (grayed
@@ -116,6 +115,7 @@ export function BattleHome({
   const weeklyLeague = useGameStore((s) => s.weeklyLeague);
   const gymBadges = useGameStore((s) => s.gymBadges);
   const bestStreak = useGameStore((s) => s.stats.bestStreak);
+  const winStreak = useGameStore((s) => s.arenaStats.currentWinStreak);
   const weekRange = getWeekRangeUtc();
 
   const weeklyLeader = weeklyLeague ? findGymLeader(weeklyLeague.gymLeaderId) : null;
@@ -214,8 +214,6 @@ export function BattleHome({
         </div>
       </div>
 
-      <HomeStreakStrip />
-
       {/* Battle card */}
       <div className="px-5 pt-3">
         <div className="relative overflow-hidden rounded-3xl bg-card p-5 shadow-card">
@@ -233,6 +231,16 @@ export function BattleHome({
               </p>
             </div>
           </div>
+          {/* The live win streak sits with the button that puts it at risk. Two
+              is where it starts: one win is just a win, two is the first time
+              there is something to lose. */}
+          {winStreak >= 2 && (
+            <div className="relative mt-3 flex items-center gap-2 rounded-2xl bg-primary/10 px-3 py-2">
+              <Flame className="h-4 w-4 shrink-0 text-primary" />
+              <span className="text-sm font-bold text-foreground">{winStreak} wins in a row</span>
+              <span className="ml-auto text-xs text-foreground/60">Don&rsquo;t break it</span>
+            </div>
+          )}
           <Button
             size="lg"
             onClick={onStart}
