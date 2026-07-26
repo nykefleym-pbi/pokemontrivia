@@ -168,9 +168,16 @@ function RootShell({ children }: { children: React.ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
+        {/* Runs synchronously before first paint, so both flags are decided
+            without a flash of the wrong thing. `dark` is the theme; `has-trainer`
+            gates the boot loading screen, which only applies to players who
+            already have a trainer (onboarding sets hasOnboarded, and so does
+            "Play as Guest" — one flag covers both). It has to be read here rather
+            than from the store: the store rehydrates after React mounts, by which
+            point a new player would already have seen the loading screen. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var s=JSON.parse(localStorage.getItem('poke-trivia-store')||'{}');if(s&&s.state&&s.state.darkMode)document.documentElement.classList.add('dark');}catch(e){}`,
+            __html: `try{var s=JSON.parse(localStorage.getItem('poke-trivia-store')||'{}');var d=document.documentElement;if(s&&s.state&&s.state.darkMode)d.classList.add('dark');if(s&&s.state&&s.state.hasOnboarded)d.classList.add('has-trainer');}catch(e){}`,
           }}
         />
       </head>
@@ -232,6 +239,11 @@ function RootComponent() {
 
   // Background music per top-level screen. /battle and /whos-that-pokemon manage
   // their own (mode-dependent) music.
+  //
+  // Not gated on the boot screen: silencing it is handled inside audio.ts (see
+  // setBootSilence), which covers the routes that start their own music too —
+  // gating only here would leave /battle audible under the boot screen, which is
+  // precisely where a returning player is redirected.
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   useEffect(() => {
     if (pathname === "/") playBgm("splash");

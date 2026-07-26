@@ -238,6 +238,22 @@
   text-transform: uppercase;
 }
 
+/* The boot loading screen (src/components/boot-splash.tsx) only applies to
+ * players who already have a trainer. `has-trainer` is set on <html> before
+ * first paint by the inline script in src/routes/__root.tsx, from the same
+ * localStorage the store persists to.
+ *
+ * Hidden by default and revealed by the class — not the other way round —
+ * because the overlay is server-rendered: defaulting to visible would show a
+ * loading screen to a brand-new player for the frame before the class is
+ * evaluated, which is exactly what this gate exists to prevent. */
+.boot-splash {
+  display: none;
+}
+:root.has-trainer .boot-splash {
+  display: block;
+}
+
 @layer utilities {
   .safe-top {
     padding-top: env(safe-area-inset-top);
