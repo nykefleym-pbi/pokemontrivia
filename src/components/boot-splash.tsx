@@ -3,6 +3,7 @@ import { AppIcon } from "@/components/app-icon";
 import { UI_ICON, loadingArtForMonth } from "@/lib/app-icons";
 import { buildProgressSteps } from "@/lib/loading-progress";
 import { randomTip } from "@/lib/loading-tips";
+import { setBootSilence } from "@/lib/audio";
 
 /**
  * Pokémon GO-style loading screen, mounted once by RootComponent: the month's
@@ -25,6 +26,20 @@ import { randomTip } from "@/lib/loading-tips";
  * Lives in RootComponent rather than a route so in-app navigation never
  * re-triggers it: it plays once per page load, which is what "whenever the app
  * is opened" means for an installed PWA.
+ *
+ * ## Players without a trainer never see it
+ *
+ * Someone still choosing a starter, or who has not tapped "Play as Guest" yet,
+ * goes straight to onboarding — a loading screen in front of a first run is five
+ * seconds of nothing before they have any reason to wait.
+ *
+ * The gate is the `has-trainer` class that the pre-paint script in __root.tsx
+ * puts on <html>, not store state: the store rehydrates after React mounts, so
+ * reading it here would show the screen first and hide it a frame later. CSS
+ * keeps the overlay hidden until that class proves otherwise (see .boot-splash
+ * in styles.css), which covers the server-rendered frame, and the effect below
+ * retires the component outright so its timers stop and the app is told the boot
+ * sequence is over.
  */
 
 const LOADING_MS = 5000;
@@ -49,6 +64,20 @@ export function BootSplash({ onDone }: { onDone: () => void }) {
   onDoneRef.current = onDone;
 
   useEffect(() => {
+    // No trainer yet — retire immediately rather than run five seconds of
+    // timers behind a screen CSS is already hiding. Calling onDone is what
+    // matters: it releases the status-bar tint and the background music, both of
+    // which wait on the boot sequence being over.
+    if (!document.documentElement.classList.contains("has-trainer")) {
+      setDone(true);
+      onDoneRef.current();
+      return;
+    }
+
+    // The loading screen plays silent. Released below rather than in a cleanup,
+    // because reaching `done` renders null without unmounting this component —
+    // a cleanup would never run and the app would stay muted for the session.
+    setBootSilence(true);
     setTip(randomTip());
 
     const timers = buildProgressSteps(BAR_MS).map((step) =>
@@ -56,11 +85,17 @@ export function BootSplash({ onDone }: { onDone: () => void }) {
     );
     timers.push(
       setTimeout(() => {
+        setBootSilence(false);
         setDone(true);
         onDoneRef.current();
       }, LOADING_MS),
     );
-    return () => timers.forEach(clearTimeout);
+    // Still restore on unmount, so a teardown mid-sequence (a dev remount, a
+    // route-level error boundary) cannot leave the app permanently silent.
+    return () => {
+      timers.forEach(clearTimeout);
+      setBootSilence(false);
+    };
   }, []);
 
   // The artwork is in the markup from the start (rather than preloaded into
@@ -91,7 +126,10 @@ export function BootSplash({ onDone }: { onDone: () => void }) {
       // z-[200]) — nothing should ever draw over the boot screen. The handoff to
       // the app is a hard cut, so this never sits half-faded over a live screen
       // swallowing taps.
-      className="fixed inset-0 z-[300] overflow-hidden"
+      // .boot-splash is the CSS half of the has-trainer gate (styles.css): it
+      // keeps this hidden in the server-rendered frame, before the effect above
+      // has had a chance to run.
+      className="boot-splash fixed inset-0 z-[300] overflow-hidden"
       style={{ background: BRAND_GRADIENT }}
       role="status"
       aria-busy

@@ -523,7 +523,33 @@ let overlayEl: HTMLAudioElement | null = null;
 // Whether music may play right now for a track of the given kind. Battle music
 // ignores the Music toggle (only the master mute silences it); non-battle
 // music also respects the Music toggle.
+/**
+ * True while the boot loading screen is up, during which the app is silent.
+ *
+ * Enforced here rather than at the call sites because there are too many to
+ * gate individually: the root route drives most tabs, but /battle, Mega and the
+ * Elite screens start their own tracks — and a returning player is redirected
+ * onto /battle *while* the boot screen is still showing, so its music would
+ * start underneath. Blocking inside musicAllowed() catches every one of them.
+ *
+ * loopTrack still builds the audio element when this is set; only playback is
+ * declined. That is what lets setBootSilence(false) simply resume: whatever the
+ * live route asked for during the boot screen starts then, with no need to know
+ * which route that was.
+ */
+let bootSilent = false;
+
+/** Silence (and release) music for the duration of the boot loading screen. */
+export function setBootSilence(on: boolean) {
+  bootSilent = on;
+  if (on) stopBgm();
+  else resumeBgm();
+}
+
 function musicAllowed(isBattle: boolean): boolean {
+  // Ahead of the isBattle bypass: battle music has to be silenced here too,
+  // since /battle is exactly the route a returning player lands on.
+  if (bootSilent) return false;
   if (isMuted()) return false;
   if (isBattle) return true;
   return lsGet(MUSIC_KEY, true);
