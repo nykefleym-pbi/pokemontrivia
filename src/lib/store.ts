@@ -109,6 +109,8 @@ export function buildSavePayload(s: GameState) {
     engageDismissDate: s.engageDismissDate,
     nameReconciled: s.nameReconciled,
     needsNameReclaim: s.needsNameReclaim,
+    pushPromptState: s.pushPromptState,
+    pushPromptLastDate: s.pushPromptLastDate,
 
     dailyGiftLastClaim: s.dailyGiftLastClaim,
     dailyGiftStreak: s.dailyGiftStreak,
@@ -370,6 +372,8 @@ export const useGameStore = create<GameState>()(
           engageDismissCount: 0,
           engageDismissDate: null,
           lastEngagePromptDate: null,
+          pushPromptState: "unasked",
+          pushPromptLastDate: null,
           seenQuestionHashes: [],
           seenQuestions: [],
           seenCuratedIds: [],

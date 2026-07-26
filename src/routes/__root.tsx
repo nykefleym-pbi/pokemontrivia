@@ -11,6 +11,8 @@ import { MotionConfig } from "framer-motion";
 import { unlockAudio, playSfx, playBgm } from "@/lib/audio";
 import { installNativeGestureGuards } from "@/lib/native-gestures";
 import { trackReturnVisit } from "@/lib/analytics";
+import { captureInstallPrompt } from "@/lib/install-prompt";
+import { PushOptIn } from "@/components/push-opt-in";
 import { BottomNav } from "@/components/bottom-nav";
 import { BootSplash } from "@/components/boot-splash";
 import { PwaRegister } from "@/components/pwa-register";
@@ -229,6 +231,11 @@ function RootComponent() {
   // this number, so it is measured before anything is built to move it.
   useEffect(() => trackReturnVisit(), []);
 
+  // Chrome fires beforeinstallprompt once, early, and only keeps the event if
+  // it is preventDefault()ed — so it has to be captured here, long before the
+  // opt-in card wants to offer an install.
+  useEffect(() => captureInstallPrompt(), []);
+
   // Unlock audio on the first user gesture, and play a subtle tap on any
   // button / link press app-wide.
   useEffect(() => {
@@ -276,6 +283,7 @@ function RootComponent() {
         <PvpInviteInbox />
         <LivePvpWatcher />
         <NameReclaimPrompt />
+        <PushOptIn />
 
         <PwaRegister />
         <Analytics />
