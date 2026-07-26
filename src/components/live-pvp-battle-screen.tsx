@@ -33,6 +33,7 @@ import {
   applyPvpLiveItem,
   applyPvpSignatureEffect,
   applyPvpTypeAbilityEffect,
+  shouldApplyRev,
   setLivePvpTransform,
   resolveBotPvpTurn,
   applyBotPvpSignatureEffect,
@@ -113,6 +114,15 @@ interface Props {
 
 /** Non-battle items usable in Nearby Battle without a server round-trip
  * (pure client-side UI aids, exactly like Solo). */
+/** How long the bot's turn is held back purely so the player can register it
+ *  landing. Short by design — the server has already applied the damage. */
+const BOT_REVEAL_MS = 600;
+
+/** Beat between "both sides have answered" and the next question, just long
+ *  enough for the answer highlight to register. The wall-clock slot timer is
+ *  still the hard ceiling for a stalling opponent. */
+const BOTH_ANSWERED_BEAT_MS = 700;
+
 const CLIENT_ONLY_ITEMS: ItemId[] = ["scope", "xaccuracy"];
 /** Server-effect-backed items (see pvp_item_effects catalog): the healing
  * potion tier plus all berries. Everything else stays out of the Nearby
@@ -549,6 +559,11 @@ export function LivePvpBattleScreen({
   const startedAtMs = useRef(new Date(startedAt).getTime()).current;
   const [now, setNow] = useState(() => Date.now());
   const [displayedIndex, setDisplayedIndex] = useState(-1);
+  // Highest question index each side is known — first-hand, by this tab — to
+  // have answered. Feeds the both-answered early-advance so it does not depend
+  // on a realtime round trip. -1 = nothing answered yet.
+  const [selfAnsweredIdx, setSelfAnsweredIdx] = useState(-1);
+  const [oppAnsweredIdx, setOppAnsweredIdx] = useState(-1);
   // Mirror of displayedIndex read inside timers/effects that must see the latest
   // value without a stale closure (Fix 3: wall-clock ceiling and both-answered
   // early-advance converge on it so neither re-enters nor rewinds a question).
@@ -699,6 +714,31 @@ export function LivePvpBattleScreen({
   // one-question reaction lag we already accept for Raging Bolt's Thunderclap.
   const oppSigPhaseIdxRef = useRef<number | null>(null);
 
+  /**
+   * The ONE place local HP is written from server state.
+   *
+   * HP reaches this client through two channels that are not ordered against
+   * each other — the response of whatever call this tab made, and the
+   * postgres_changes row that write emitted — plus, previously, a `setTimeout`
+   * holding a bot snapshot for as long as the bot's simulated answer time. Any
+   * of those landing out of order repaints HP the player has already moved
+   * past, which reads as the bars jumping backwards and forwards for no
+   * reason (owner report 2026-07-26; the row itself was strictly monotonic).
+   *
+   * Every writer now hands over the revision its payload describes, and
+   * anything not newer than what is already drawn is discarded. `rev` is the
+   * row's own trigger-maintained counter, so this orders both channels against
+   * one another, not just within themselves.
+   */
+  function applyServerHp(rev: number | undefined, hostHp: number, guestHp: number): void {
+    // A payload with no revision predates the column; apply it rather than
+    // freezing the bars (fail open, matching the realtime gate's original
+    // reasoning).
+    if (typeof rev === "number" && rev >= 0 && !shouldApplyRev(matchId, rev)) return;
+    setMyHp(amIHost ? hostHp : guestHp);
+    setOppHp(amIHost ? guestHp : hostHp);
+  }
+
   // Fold a server ability-effect result (stat stages / statuses / HP) back into
   // local state. Shared by the generic post_answer path and the Phase 1/2
   // bespoke handlers (Moltres discharge, Raging Bolt reactive).
@@ -713,8 +753,7 @@ export function LivePvpBattleScreen({
       });
     }
     if (typeof res.hostHp === "number") {
-      setMyHp(amIHost ? res.hostHp : res.guestHp!);
-      setOppHp(amIHost ? res.guestHp! : res.hostHp);
+      applyServerHp(res.rev, res.hostHp, res.guestHp!);
     }
   }
 
@@ -748,8 +787,7 @@ export function LivePvpBattleScreen({
       void sigM4Fx(matchId, questionIndex, dex, asBot).then((res) => {
         if (!res.ok || res.noop) return;
         if (typeof res.hostHp === "number" && typeof res.guestHp === "number") {
-          setMyHp(amIHost ? res.hostHp : res.guestHp);
-          setOppHp(amIHost ? res.guestHp : res.hostHp);
+          applyServerHp(res.rev, res.hostHp, res.guestHp);
         }
         if (res.instantKo) {
           const move = signatureMoveName(dex);
@@ -883,8 +921,7 @@ export function LivePvpBattleScreen({
       });
     }
     if (typeof res.hostHp === "number") {
-      setMyHp(amIHost ? res.hostHp : res.guestHp!);
-      setOppHp(amIHost ? res.guestHp! : res.hostHp);
+      applyServerHp(res.rev, res.hostHp, res.guestHp!);
     }
     // A Confusion cure (Hydration, Toxic) clears the ENGINE's tick counter
     // server-side; the statuses payload can't express that, so the local badge
@@ -1062,9 +1099,9 @@ export function LivePvpBattleScreen({
   // Keep local HP/items mirrors in sync with the authoritative row (updates
   // arrive via the parent route's postgres_changes subscription on `match`).
   useEffect(() => {
-    setMyHp(amIHost ? match.hostHp : match.guestHp);
-    setOppHp(amIHost ? match.guestHp : match.hostHp);
+    applyServerHp(match.rev, match.hostHp, match.guestHp);
     itemsUsedRef.current = amIHost ? match.hostItemsUsed : match.guestItemsUsed;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [match, amIHost]);
 
   useEffect(() => {
@@ -1333,7 +1370,20 @@ export function LivePvpBattleScreen({
   // the bot's answer increments the guest counter through the same path. A short
   // delay lets the answer-feedback highlight land first; the wall-clock effect
   // above stays the hard ceiling so a stalling opponent can't hang the match.
-  const bothAnsweredCount = Math.min(match.hostAnsweredLive, match.guestAnsweredLive);
+  //
+  // Counted from the authoritative row AND from what this tab already knows
+  // first-hand. The row alone is not enough: it only reaches us through the
+  // realtime channel, so any hiccup there left the match sitting on a finished
+  // question until the wall-clock timer expired (owner report 2026-07-26). In
+  // Training this tab submits BOTH sides, so it can always answer the question
+  // "have both of us answered?" without a round trip; in a real 2-player match
+  // the local half covers only our own answer and the row still supplies the
+  // opponent's, which is exactly as much as we can honestly know.
+  const localBothAnswered = Math.min(selfAnsweredIdx, oppAnsweredIdx) + 1;
+  const bothAnsweredCount = Math.max(
+    Math.min(match.hostAnsweredLive, match.guestAnsweredLive),
+    localBothAnswered,
+  );
   useEffect(() => {
     if (finishedRef.current || displayedIndex < 0) return;
     if (bothAnsweredCount <= displayedIndex) return; // both sides not done yet
@@ -1342,7 +1392,7 @@ export function LivePvpBattleScreen({
     const t = setTimeout(() => {
       if (finishedRef.current || nextIdx <= displayedIndexRef.current) return;
       enterQuestion(nextIdx);
-    }, 1000);
+    }, BOTH_ANSWERED_BEAT_MS);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bothAnsweredCount, displayedIndex]);
@@ -1697,8 +1747,8 @@ export function LivePvpBattleScreen({
       rainbowRebirthToastedRef.current = true;
       notify("success", "Ho-Oh revived you!");
     }
-    setMyHp(amIHost ? result.hostHp : result.guestHp);
-    setOppHp(amIHost ? result.guestHp : result.hostHp);
+    applyServerHp(result.rev, result.hostHp, result.guestHp);
+    setSelfAnsweredIdx((n) => Math.max(n, idxAtAnswer));
     if (result.resolved && !finishedRef.current) {
       finishedRef.current = true;
       const myFinalHp = amIHost ? result.hostHp : result.guestHp;
@@ -1770,7 +1820,16 @@ export function LivePvpBattleScreen({
     void resolveBotPvpTurn(matchId, idxAtAnswer).then((res) => {
       if (cancelled || finishedRef.current || !res.ok) return;
       const { result } = res;
-      const revealDelay = Math.min(result.timeMs, Math.max(0, personalTimerMs - 250));
+      // Show the bot's turn almost immediately (owner ruling 2026-07-26:
+      // "apply damage as soon as possible for both players"). This used to wait
+      // out the bot's SIMULATED answer time — up to the whole question timer —
+      // which did two bad things: it withheld damage the server had already
+      // written, and it left a stale HP snapshot in a `setTimeout` that could
+      // fire AFTER the player's own newer answer had repainted the bars, which
+      // is what made HP jump backwards and forwards. The delay was always
+      // cosmetic: `timeMs` feeds the damage maths server-side, so shortening the
+      // reveal changes pacing only, never the outcome.
+      const revealDelay = Math.min(result.timeMs, BOT_REVEAL_MS);
       revealTimer = setTimeout(() => {
         if (finishedRef.current) return;
 
@@ -1796,8 +1855,8 @@ export function LivePvpBattleScreen({
           const won = result.winnerId ? result.winnerId === myId : null;
           onFinish({ resolved: true, won, hp: result.hostHp, oppHp: result.guestHp });
         } else {
-          setMyHp(result.hostHp);
-          setOppHp(result.guestHp);
+          applyServerHp(result.rev, result.hostHp, result.guestHp);
+          setOppAnsweredIdx((n) => Math.max(n, idxAtAnswer));
         }
 
         // signature-rework M1 — run the engine tick for the bot's (guest) answer
@@ -1929,8 +1988,7 @@ export function LivePvpBattleScreen({
     usedItemIdsRef.current.add(itemId);
     const myHpAfter = amIHost ? res.hostHp : res.guestHp;
     const healedHp = Math.max(0, Math.round(myHpAfter - myHp));
-    setMyHp(myHpAfter);
-    setOppHp(amIHost ? res.guestHp : res.hostHp);
+    applyServerHp(res.rev, res.hostHp, res.guestHp);
     useGameStore.setState({
       myStages: amIHost ? res.hostStages : res.guestStages,
       oppStages: amIHost ? res.guestStages : res.hostStages,
@@ -1999,8 +2057,7 @@ export function LivePvpBattleScreen({
       });
     }
     if (typeof res.hostHp === "number") {
-      setMyHp(amIHost ? res.hostHp : res.guestHp!);
-      setOppHp(amIHost ? res.guestHp! : res.hostHp);
+      applyServerHp(res.rev, res.hostHp, res.guestHp!);
     }
     // Chien-Pao — Sword of Ruin (1002): the -2 opp Def landed server-side above;
     // arm the follow-up 2-charge client-side ignore-Defense window for the next

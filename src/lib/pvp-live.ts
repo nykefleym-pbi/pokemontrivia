@@ -68,26 +68,6 @@ export function forgetAppliedRev(matchId: string): void {
   appliedRev.delete(matchId);
 }
 
-/**
- * Read the row's current revision and mark it applied.
- *
- * Used after a write RPC returns: the RPCs report HP but not `rev` (they are
- * long, hand-tuned functions with dozens of return sites, and threading a field
- * through every one of them is far more risk than this single-row primary-key
- * read costs). Reading *after* the write can also pick up a concurrent later
- * revision — which is fine, and deliberately so: over-advancing only skips
- * payloads whose content the next one supersedes anyway, while under-advancing
- * is exactly the regression being fixed.
- */
-export async function syncAppliedRev(matchId: string): Promise<void> {
-  const { data, error } = await supabase
-    .from("pvp_live_matches")
-    .select("rev")
-    .eq("id", matchId)
-    .maybeSingle();
-  if (error || !data) return;
-  noteAppliedRev(matchId, (data as { rev: number }).rev ?? 0);
-}
 
 export interface LivePvpMatch {
   /**
@@ -472,9 +452,6 @@ export async function applyBotPvpSignatureEffect(
       _phase: phase,
       _scale_count: scaleCount,
     });
-    // Raise the revision mark before the caller applies this result — see
-    // syncAppliedRev. Awaited so no earlier realtime event can slip in first.
-    if (!error) await syncAppliedRev(matchId);
     return { ok: !error };
   } catch (e) {
     console.warn("[pvp-live] applyBotPvpSignatureEffect threw:", e);
@@ -542,9 +519,6 @@ export async function botSigEngineTick(
     }
     const r = data as (SigEngineTickResult & { error?: string }) | null;
     if (r && r.ok === true) {
-      // Raise the revision mark before the caller applies this result — see
-      // syncAppliedRev. Awaited so no earlier realtime event can slip in first.
-      await syncAppliedRev(matchId);
       return {
         ok: true,
         noop: r.noop,
@@ -574,9 +548,6 @@ export async function applyBotPvpLiveItem(
       _question_index: questionIndex,
       _item_id: itemId,
     });
-    // Raise the revision mark before the caller applies this result — see
-    // syncAppliedRev. Awaited so no earlier realtime event can slip in first.
-    if (!error) await syncAppliedRev(matchId);
     return { ok: !error };
   } catch (e) {
     console.warn("[pvp-live] useBotPvpLiveItem threw:", e);
@@ -745,6 +716,10 @@ export async function getLivePvpMatch(matchId: string): Promise<LivePvpMatch | n
  *  supabase/functions/pvp-live-resolve-turn/index.ts's `toastNotices` for
  *  where `sturdyFired`/`sandForceKeptStreak`/`typeAbilityModFired` come from. */
 export interface PvpLiveTurnResult {
+  /** Revision of the row this result describes. The caller gates on it so a
+   *  slow response can never repaint HP the client has already moved past —
+   *  see `shouldApplyRev`. */
+  rev: number;
   hostHp: number;
   guestHp: number;
   resolved: boolean;
@@ -776,6 +751,8 @@ const functionsClient = supabase as unknown as { functions: FunctionsInvoke };
 
 function fromTurnResponse(r: Record<string, unknown>): PvpLiveTurnResult {
   return {
+    // -1 (never fresh-blocking) if a server predating the rev column replies.
+    rev: (r.rev as number | undefined) ?? -1,
     hostHp: (r.hostHp as number | undefined) ?? 120,
     guestHp: (r.guestHp as number | undefined) ?? 120,
     resolved: !!r.resolved,
@@ -830,7 +807,6 @@ export async function resolvePvpLiveTurn(
       // bar immediately, so the mark has to be up before any realtime event for
       // an earlier write can be processed. Fire-and-forget would leave exactly
       // the window this is meant to close.
-      await syncAppliedRev(matchId);
       return { ok: true, result: fromTurnResponse(r.data) };
     }
     return { ok: false, error: r?.error?.msg || "network" };
@@ -860,9 +836,6 @@ export async function resolveBotPvpTurn(
     }
     const r = data as { ok?: boolean; data?: Record<string, unknown>; error?: { msg?: string } } | null;
     if (r && r.ok === true && r.data) {
-      // Raise the revision mark before the caller applies this result — see
-      // syncAppliedRev. Awaited so no earlier realtime event can slip in first.
-      await syncAppliedRev(matchId);
       return { ok: true, result: fromTurnResponse(r.data) };
     }
     return { ok: false, error: r?.error?.msg || "network" };
@@ -885,6 +858,7 @@ export async function applyPvpLiveItem(
 ): Promise<
   | {
       ok: true;
+      rev?: number;
       hostHp: number;
       guestHp: number;
       hostStages: PvpStatStages;
@@ -906,6 +880,7 @@ export async function applyPvpLiveItem(
     }
     const r = data as {
       ok?: boolean;
+      rev?: number;
       hostHp?: number;
       guestHp?: number;
       hostStages?: PvpStatStages;
@@ -915,11 +890,9 @@ export async function applyPvpLiveItem(
       error?: string;
     } | null;
     if (r && r.ok === true) {
-      // Raise the revision mark before the caller applies this result — see
-      // syncAppliedRev. Awaited so no earlier realtime event can slip in first.
-      await syncAppliedRev(matchId);
       return {
         ok: true,
+        rev: r.rev,
         hostHp: r.hostHp ?? 120,
         guestHp: r.guestHp ?? 120,
         hostStages: r.hostStages ?? { attack: 0, defense: 0, speed: 0, crit: 0 },
@@ -960,6 +933,7 @@ export async function applyPvpSignatureEffect(
       ok: true;
       noop?: boolean;
       reason?: string;
+      rev?: number;
       hostHp?: number;
       guestHp?: number;
       hostStages?: PvpStatStages;
@@ -989,6 +963,7 @@ export async function applyPvpSignatureEffect(
       ok?: boolean;
       noop?: boolean;
       reason?: string;
+      rev?: number;
       hostHp?: number;
       guestHp?: number;
       hostStages?: PvpStatStages;
@@ -1002,13 +977,11 @@ export async function applyPvpSignatureEffect(
       error?: string;
     } | null;
     if (r && r.ok === true) {
-      // Raise the revision mark before the caller applies this result — see
-      // syncAppliedRev. Awaited so no earlier realtime event can slip in first.
-      await syncAppliedRev(matchId);
       return {
         ok: true,
         noop: r.noop,
         reason: r.reason,
+        rev: r.rev,
         hostHp: r.hostHp,
         guestHp: r.guestHp,
         hostStages: r.hostStages,
@@ -1131,9 +1104,6 @@ export async function sigEngineTick(
     }
     const r = data as (SigEngineTickResult & { error?: string }) | null;
     if (r && r.ok === true) {
-      // Raise the revision mark before the caller applies this result — see
-      // syncAppliedRev. Awaited so no earlier realtime event can slip in first.
-      await syncAppliedRev(matchId);
       return {
         ok: true,
         noop: r.noop,
@@ -1208,6 +1178,7 @@ export async function sigM4Fx(
   ok: boolean;
   noop?: boolean;
   instantKo?: boolean;
+  rev?: number;
   hostHp?: number;
   guestHp?: number;
   resolved?: boolean;
@@ -1223,9 +1194,6 @@ export async function sigM4Fx(
       console.warn("[pvp-live] sigM4Fx failed:", error.message);
       return { ok: false };
     }
-    // Raise the revision mark before the caller applies this result — see
-    // syncAppliedRev. Awaited so no earlier realtime event can slip in first.
-    await syncAppliedRev(matchId);
     return (data as { ok: boolean } | null) ?? { ok: false };
   } catch (e) {
     console.warn("[pvp-live] sigM4Fx threw:", e);
@@ -1297,6 +1265,7 @@ export async function applyPvpTypeAbilityEffect(
   | {
       ok: true;
       noop?: boolean;
+      rev?: number;
       hostHp?: number;
       guestHp?: number;
       hostStages?: PvpStatStages;
@@ -1324,6 +1293,7 @@ export async function applyPvpTypeAbilityEffect(
     const r = data as {
       ok?: boolean;
       noop?: boolean;
+      rev?: number;
       hostHp?: number;
       guestHp?: number;
       hostStages?: PvpStatStages;
@@ -1334,12 +1304,10 @@ export async function applyPvpTypeAbilityEffect(
       error?: string;
     } | null;
     if (r && r.ok === true) {
-      // Raise the revision mark before the caller applies this result — see
-      // syncAppliedRev. Awaited so no earlier realtime event can slip in first.
-      await syncAppliedRev(matchId);
       return {
         ok: true,
         noop: r.noop,
+        rev: r.rev,
         hostHp: r.hostHp,
         guestHp: r.guestHp,
         hostStages: r.hostStages,
