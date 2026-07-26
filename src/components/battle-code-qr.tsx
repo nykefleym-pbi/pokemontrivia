@@ -33,7 +33,9 @@ export function BattleCodeQr() {
           <Loader2 className="h-8 w-8 animate-spin text-foreground/40" />
         </div>
       )}
-      <div className="text-2xl font-extrabold tracking-[0.15em] text-foreground">
+      {/* select-text: selection is off app-wide (see styles.css), and this code
+          is the one string with no Copy button beside it. */}
+      <div className="select-text text-2xl font-extrabold tracking-[0.15em] text-foreground">
         {friendCode ?? "------"}
       </div>
     </div>

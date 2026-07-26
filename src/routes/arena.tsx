@@ -88,8 +88,10 @@ function TrophyCard({ label, count, art }: { label: string; count: number; art: 
         }}
         onKeyUp={release}
         onBlur={release}
-        // Stops the long-press text/callout selection that otherwise fires on
-        // iOS when you hold an image.
+        // `select-none` alone was not enough to keep a long press out of the
+        // browser's hands: holding the badge opened Chrome's image menu ("Copy
+        // image", "Download image") instead of colourising. That is suppressed
+        // app-wide now — styles.css plus src/lib/native-gestures.ts.
         className="touch-none select-none rounded-full transition active:scale-95"
       >
         <AppIcon

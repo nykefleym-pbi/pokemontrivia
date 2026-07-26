@@ -314,6 +314,35 @@
     font-family: var(--font-display);
     -webkit-font-smoothing: antialiased;
   }
+
+  /* This is a game in a PWA shell, not a document: the native long-press
+     gestures are off app-wide. Without this, dragging across any panel selected
+     its text, and long-pressing a sprite opened the browser's "Copy image /
+     Download image" menu instead of running that button's own press-and-hold.
+     `-webkit-touch-callout` handles iOS Safari; Android Chrome ignores it and
+     needs the `contextmenu` guard in src/lib/native-gestures.ts. */
+  html {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  /* Anything the player types into — and anything tagged with Tailwind's
+     select-text / select-all, such as the Battle Code, which has no Copy button
+     beside it — opts back in. */
+  input,
+  textarea,
+  select,
+  [contenteditable="true"],
+  [contenteditable=""],
+  .select-text,
+  .select-all {
+    -webkit-user-select: text;
+    user-select: text;
+    -webkit-touch-callout: default;
+  }
+  img {
+    -webkit-user-drag: none;
+  }
 }
 
 /* Forces grayscale silhouette regardless of layered .sprite filters */
