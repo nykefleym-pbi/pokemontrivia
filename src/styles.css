@@ -460,6 +460,13 @@
   animation: pokeball-spin 2.5s ease-in-out infinite;
 }
 
+/* One revolution on demand, for the weekly streak tracker: a tapped day spins
+   once and stops. Separate from `.animate-pokeball` (which loops forever for
+   loading spinners) so the two cannot be confused at a call site. */
+.animate-pokeball-once {
+  animation: pokeball-spin 0.7s ease-in-out 1;
+}
+
 @keyframes appear {
   0% {
     transform: translateY(20px) scale(0.8);
@@ -709,6 +716,7 @@
   .status-anim-orbit,
   .status-anim-orbit-counter,
   .animate-pokeball,
+  .animate-pokeball-once,
   .mega-glow,
   .animate-pulse-ring,
   .shiny-glow,
@@ -730,6 +738,7 @@
 :root.reduce-motion .status-anim-orbit,
 :root.reduce-motion .status-anim-orbit-counter,
 :root.reduce-motion .animate-pokeball,
+:root.reduce-motion .animate-pokeball-once,
 :root.reduce-motion .mega-glow,
 :root.reduce-motion .animate-pulse-ring,
 :root.reduce-motion .shiny-glow,

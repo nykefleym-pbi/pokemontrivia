@@ -141,6 +141,9 @@ function ProfilePage() {
   }, [stats, flags, peakLevel, pokedex]);
 
   const [trophiesOpen, setTrophiesOpen] = useState(false);
+  // Date key of the weekly-streak ball currently mid-spin, or null. Cleared on
+  // animationend so the class comes off and a later tap can re-apply it.
+  const [spinDay, setSpinDay] = useState<string | null>(null);
   const friendCode = useGameStore((s) => s.friendCode);
   const pokedexCount = Object.keys(pokedex).length;
   const [cardOpen, setCardOpen] = useState(false);
@@ -598,16 +601,34 @@ function ProfilePage() {
             {heatmap.map((d) => {
               const played = d.count > 0;
               const isToday = d.date === todayKey;
+              // Only a day that was actually played spins — a greyed-out ball
+              // has nothing to celebrate, so it stays inert rather than
+              // rewarding a tap on an empty day (owner ruling 2026-07-26).
+              const canSpin = played;
+              const spinning = spinDay === d.date;
               return (
                 <div key={d.date} className="flex flex-1 flex-col items-center gap-1.5">
-                  <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-full ${isToday ? "ring-2 ring-primary ring-offset-1" : ""}`}
+                  <button
+                    type="button"
+                    disabled={!canSpin}
+                    // `key` on the icon below restarts the animation on a repeat
+                    // tap; without it a second tap on an already-finished spin
+                    // would do nothing, because the class never changed.
+                    onClick={() => canSpin && setSpinDay(d.date)}
+                    onAnimationEnd={() => setSpinDay((cur) => (cur === d.date ? null : cur))}
+                    className={`flex h-10 w-10 items-center justify-center rounded-full transition ${isToday ? "ring-2 ring-primary ring-offset-1" : ""} ${canSpin ? "active:scale-95" : "cursor-default"}`}
                     title={`${d.date}: ${d.count}`}
+                    aria-label={
+                      played
+                        ? `${d.date}: ${d.count} played — tap to spin`
+                        : `${d.date}: not played`
+                    }
                   >
                     <PokeballIcon
-                      className={`h-8 w-8 text-primary ${played ? "" : "opacity-30 grayscale"}`}
+                      key={spinning ? `${d.date}-spin` : d.date}
+                      className={`h-8 w-8 text-primary ${played ? "" : "opacity-30 grayscale"} ${spinning ? "animate-pokeball-once" : ""}`}
                     />
-                  </div>
+                  </button>
                   <div className="font-pixel-xs text-foreground/50 uppercase">
                     {new Date(d.date)
                       .toLocaleDateString(undefined, { weekday: "short" })

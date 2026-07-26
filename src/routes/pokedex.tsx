@@ -64,6 +64,14 @@ function PokedexPage() {
   const [detailId, setDetailId] = useState<number | null>(null);
   const [showShiny, setShowShiny] = useState(false);
 
+  // Play the cry the moment a Pokémon is opened (owner ruling 2026-07-26).
+  // Keyed on `detailId`, so it fires exactly once per selection — reopening the
+  // same Pokémon plays it again, staying on it does not, and any further replay
+  // is the "Play cry" button's job.
+  useEffect(() => {
+    if (detailId != null) playCry(detailId);
+  }, [detailId]);
+
   useEffect(() => {
     if (hydrated && !hasOnboarded) navigate({ to: "/" });
   }, [hydrated, hasOnboarded, navigate]);
