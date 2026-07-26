@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { AppIcon } from "@/components/app-icon";
-import { UI_ICON, loadingArtForMonth } from "@/lib/app-icons";
+import { loadingArtForMonth } from "@/lib/app-icons";
 import { buildProgressSteps } from "@/lib/loading-progress";
 import { randomTip } from "@/lib/loading-tips";
 import { setBootSilence } from "@/lib/audio";
@@ -107,28 +106,26 @@ export function BootSplash() {
   // The artwork is in the markup from the start (rather than preloaded into
   // state) so the browser begins fetching it as it parses the HTML.
   //
-  // Three visual states, and the distinction between the last two is what keeps
-  // the wordmark from flashing before the artwork arrives:
-  //   loading — gradient only. The <img> is present but transparent, because a
-  //             404 paints the browser's broken-image glyph before onError can
-  //             fire.
-  //   loaded  — artwork, full bleed.
-  //   failed  — wordmark, the fallback for a month with no uploaded file.
-  // Showing the wordmark during `loading` (as this once did) means every launch
-  // on a cold cache flashes the logo for as long as the download takes.
-  const [artState, setArtState] = useState<"loading" | "loaded" | "failed">("loading");
+  // It stays transparent until it has actually loaded, so the two failure modes
+  // both degrade to the gradient: a month with no uploaded file 404s, and the
+  // browser paints its broken-image glyph before any error handler could fire.
+  //
+  // There is deliberately no fallback image. A wordmark here reads as a second
+  // splash flashing past on the way to the artwork — briefly on a warm cache,
+  // for the whole download on a cold one — and the bar and tip already make a
+  // bare gradient look like a loading screen on its own.
+  const [artLoaded, setArtLoaded] = useState(false);
   const art = encodeURI(loadingArtForMonth(new Date()));
 
-  // onLoad/onError alone are not enough. The <img> is server-rendered, so it can
-  // finish loading before React hydrates and attaches the handlers — the event is
-  // already gone and neither fires, leaving the artwork stuck transparent forever
-  // (or, for a missing month, never falling back). Ask the element directly on
-  // mount instead. `complete` is true for a failed load too, so naturalWidth is
-  // what separates the two outcomes.
+  // onLoad alone is not enough. The <img> is server-rendered, so it can finish
+  // loading before React hydrates and attaches the handler — the event is already
+  // gone by then and the artwork would stay transparent forever. Ask the element
+  // directly on mount instead. `complete` is true for a failed load too, hence
+  // the naturalWidth check.
   const imgRef = useRef<HTMLImageElement>(null);
   useEffect(() => {
     const img = imgRef.current;
-    if (img?.complete) setArtState(img.naturalWidth > 0 ? "loaded" : "failed");
+    if (img?.complete && img.naturalWidth > 0) setArtLoaded(true);
   }, []);
 
   if (done) return null;
@@ -148,19 +145,6 @@ export function BootSplash() {
       aria-busy
       aria-label="Loading Pokémon Trivia Battle"
     >
-      {/* Only once the artwork is known to be missing — never while it is still
-          downloading, or the logo flashes on every cold-cache launch. */}
-      {artState === "failed" && (
-        <div className="absolute inset-0 flex items-center justify-center px-10">
-          <AppIcon
-            src={UI_ICON.appLogo}
-            alt="Pokémon Trivia Battle"
-            className="w-[min(52vw,260px)]"
-            eager
-          />
-        </div>
-      )}
-
       <img
         ref={imgRef}
         src={art}
@@ -170,10 +154,9 @@ export function BootSplash() {
         // Images are fetched at low priority by default and this one is the whole
         // screen, so it competes with the app's own bundle for no reason.
         fetchPriority="high"
-        onLoad={() => setArtState("loaded")}
-        onError={() => setArtState("failed")}
+        onLoad={() => setArtLoaded(true)}
         className={`absolute inset-0 h-full w-full select-none object-cover ${
-          artState === "loaded" ? "opacity-100" : "opacity-0"
+          artLoaded ? "opacity-100" : "opacity-0"
         }`}
       />
 
