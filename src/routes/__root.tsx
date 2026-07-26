@@ -6,7 +6,7 @@ import {
   Scripts,
   useRouterState,
 } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { MotionConfig } from "framer-motion";
 import { unlockAudio, playSfx, playBgm } from "@/lib/audio";
 import { BottomNav } from "@/components/bottom-nav";
@@ -168,16 +168,27 @@ function RootShell({ children }: { children: React.ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
-        {/* Runs synchronously before first paint, so both flags are decided
-            without a flash of the wrong thing. `dark` is the theme; `has-trainer`
-            gates the boot loading screen, which only applies to players who
-            already have a trainer (onboarding sets hasOnboarded, and so does
-            "Play as Guest" — one flag covers both). It has to be read here rather
-            than from the store: the store rehydrates after React mounts, by which
-            point a new player would already have seen the loading screen. */}
+        {/* Runs synchronously before first paint, so everything here is decided
+            without a flash of the wrong thing. It has to read localStorage
+            directly: the store rehydrates after React mounts, by which point a
+            new player would already have seen a loading screen meant for someone
+            with a trainer.
+              `dark`        — the theme.
+              `has-trainer` — gates the boot loading screen, which only applies to
+                              players who already have one. Onboarding sets
+                              hasOnboarded, and so does "Play as Guest", so the
+                              one flag covers both.
+              theme-color   — the OS status-bar tint, created here rather than
+                              rendered by React or declared in the route's head().
+                              Both of those have to commit to a value on the
+                              server, which cannot know whether this player has a
+                              trainer; the boot tint would then be wrong for one
+                              of the two cases until hydration corrected it.
+                              BootSplash flips it back to the app colour when the
+                              loading screen retires. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var s=JSON.parse(localStorage.getItem('poke-trivia-store')||'{}');var d=document.documentElement;if(s&&s.state&&s.state.darkMode)d.classList.add('dark');if(s&&s.state&&s.state.hasOnboarded)d.classList.add('has-trainer');}catch(e){}`,
+            __html: `try{var s=JSON.parse(localStorage.getItem('poke-trivia-store')||'{}');var d=document.documentElement;var b=!!(s&&s.state&&s.state.hasOnboarded);if(s&&s.state&&s.state.darkMode)d.classList.add('dark');if(b)d.classList.add('has-trainer');var m=document.createElement('meta');m.name='theme-color';m.content=b?'#000000':'#dc2626';document.head.appendChild(m);}catch(e){}`,
           }}
         />
       </head>
@@ -189,26 +200,8 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-/**
- * Status-bar tint, owned here rather than by the route's `head()` because it has
- * to change partway through a page load.
- *
- * In an installed PWA the OS tints the status bar from <meta name="theme-color">.
- * The app wants its red, but the boot loading screen sits under a black platform
- * splash and over full-bleed artwork, where a red strip across the top reads as a
- * stray band of chrome. `boot` matches the platform splash's `background_color`
- * (vite.config.ts) so the two run together.
- *
- * React hoists a <meta> rendered from a component into <head>, so this stays a
- * plain reactive value. Mutating the tag imperatively does not work: the router
- * re-applies head tags, and a returning player's "/" → /battle redirect fires
- * during the boot screen and would reset it.
- */
-const THEME_COLOR = { boot: "#000000", app: "#dc2626" } as const;
-
 function RootComponent() {
   useEnsureSocial();
-  const [bootDone, setBootDone] = useState(false);
 
   const darkMode = useGameStore((s) => s.darkMode);
   useEffect(() => {
@@ -257,7 +250,6 @@ function RootComponent() {
   }, [pathname]);
   return (
     <MotionConfig reducedMotion={reducedMotion ? "always" : "user"}>
-      <meta name="theme-color" content={bootDone ? THEME_COLOR.app : THEME_COLOR.boot} />
       <div className="h-[100dvh] w-full overflow-hidden bg-background">
         <div className="mx-auto flex h-[100dvh] w-full max-w-[480px] flex-col overflow-hidden bg-background">
           <Outlet />
@@ -278,7 +270,7 @@ function RootComponent() {
 
         {/* Last child, and fixed at z-[300]: the boot screen covers the whole
             app — including the overlays above — until it retires itself. */}
-        <BootSplash onDone={() => setBootDone(true)} />
+        <BootSplash />
       </div>
     </MotionConfig>
   );
