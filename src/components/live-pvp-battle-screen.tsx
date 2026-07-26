@@ -14,6 +14,7 @@ import {
   ItemIcon,
   StatusEffectOverlay,
 } from "@/components/game-ui";
+import { typeRowFontSize, COMBAT_PANEL_WIDTH } from "@/lib/type-row-fit";
 import { findPokemon, type PokeType } from "@/lib/pokemon-data";
 import { ITEMS, STATUS_META, type ItemId, type StatusKind, type PvpStat } from "@/lib/game-data";
 import { MAX_ITEMS_PER_BATTLE } from "@/lib/store/slices/itemsSlice";
@@ -180,13 +181,21 @@ function PvpCombatPanel({
   const hasChips = abilities.length > 0 || (Object.values(stages) as number[]).some((v) => v !== 0);
 
   return (
-    <div className="w-[clamp(8rem,38vw,10.5rem)] shrink-0 rounded-2xl bg-card px-3 py-2 backdrop-blur shadow-card">
+    <div
+      style={{ width: COMBAT_PANEL_WIDTH }}
+      className="shrink-0 rounded-2xl bg-card px-3 py-2 backdrop-blur shadow-card"
+    >
       <div className={`flex flex-col ${alignCls}`}>
         <div className="w-full truncate text-sm font-bold leading-tight">{name}</div>
         {types.length > 0 && (
-          <div className={`mt-1 flex w-full flex-wrap gap-1 ${justifyCls}`}>
+          <div className={`mt-1 flex w-full flex-nowrap gap-0.5 ${justifyCls}`}>
             {types.map((t) => (
-              <TypeBadge key={t} type={t} size="sm" />
+              <TypeBadge
+                key={t}
+                type={t}
+                size="sm"
+                fontSize={typeRowFontSize(types, COMBAT_PANEL_WIDTH)}
+              />
             ))}
           </div>
         )}
@@ -877,6 +886,13 @@ export function LivePvpBattleScreen({
       setMyHp(amIHost ? res.hostHp : res.guestHp!);
       setOppHp(amIHost ? res.guestHp! : res.hostHp);
     }
+    // A Confusion cure (Hydration, Toxic) clears the ENGINE's tick counter
+    // server-side; the statuses payload can't express that, so the local badge
+    // has to be dropped off this flag or it would linger with nothing behind it.
+    if (res.confusionCured && selfConfusedTicksRef.current > 0) {
+      selfConfusedTicksRef.current = 0;
+      setSelfConfused(false);
+    }
   }
 
   // Phase 2 — resolve Mew's Transform once the opponent's identity is known.
@@ -1483,7 +1499,13 @@ export function LivePvpBattleScreen({
     // `resolvePvpAnswer` deliberately does not cover (see
     // engine/pvp-live-answer.ts's module header).
     if (typeAbilityId && typeWiring) {
-      const hasConfused = myStatuses.some((s) => s.kind === "confused");
+      // Both representations count. PvP confusion normally lives in the
+      // engine's tick counter (mirrored locally by selfConfusedTicksRef) and
+      // never reaches the status row, so a cure keyed on the row alone would
+      // never fire against the common case — the Shield Dust bug, which
+      // Hydration and Toxic shared.
+      const hasConfused =
+        myStatuses.some((s) => s.kind === "confused") || selfConfusedTicksRef.current > 0;
       const hasPoisoned = myStatuses.some(
         (s) => s.kind === "poisoned" || s.kind === "badly-poisoned",
       );

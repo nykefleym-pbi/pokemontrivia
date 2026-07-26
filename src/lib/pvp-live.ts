@@ -1303,6 +1303,10 @@ export async function applyPvpTypeAbilityEffect(
       guestStages?: PvpStatStages;
       hostStatuses?: ActiveStatus[];
       guestStatuses?: ActiveStatus[];
+      /** The effect cured Confusion, so the caller must also drop its local
+       *  confusion badge: the server cleared the engine's tick counter, which
+       *  the statuses payload does not carry. */
+      confusionCured?: boolean;
     }
   | { ok: false; error: string }
 > {
@@ -1326,6 +1330,7 @@ export async function applyPvpTypeAbilityEffect(
       guestStages?: PvpStatStages;
       hostStatuses?: ActiveStatus[];
       guestStatuses?: ActiveStatus[];
+      confusionCured?: boolean;
       error?: string;
     } | null;
     if (r && r.ok === true) {
@@ -1341,6 +1346,7 @@ export async function applyPvpTypeAbilityEffect(
         guestStages: r.guestStages,
         hostStatuses: r.hostStatuses,
         guestStatuses: r.guestStatuses,
+        confusionCured: r.confusionCured,
       };
     }
     return { ok: false, error: (r && r.error) || "network" };

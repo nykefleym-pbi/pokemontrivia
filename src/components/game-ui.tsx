@@ -8,6 +8,7 @@ import { STATUS_META, ITEMS } from "@/lib/game-data";
 import { legendaryCategory, isMascotTier } from "@/lib/legendary-data";
 import type { Trivia } from "@/lib/trivia-core";
 import { TimerRing } from "@/components/timer-ring";
+import { typeRowFontSize, COMBAT_PANEL_WIDTH } from "@/lib/type-row-fit";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CATEGORIES, CATEGORY_OF, BAG_SHORT_DESC } from "@/lib/item-categories";
@@ -83,17 +84,25 @@ const typeColorMap: Record<PokeType, string> = {
 export const TypeBadge = React.memo(function TypeBadge({
   type,
   size = "md",
+  fontSize,
 }: {
   type: PokeType;
   size?: "sm" | "md";
+  /** CSS length overriding the badge's 9px type size — see `typeRowFontSize`.
+   *  Callers that must keep a multi-type row on ONE line pass a computed value;
+   *  everyone else leaves it undefined and gets the fixed size. */
+  fontSize?: string;
 }) {
   const sizeCls =
     size === "sm"
-      ? "px-1.5 py-[2px] text-[9px] tracking-tight"
-      : "px-2.5 py-0.5 text-[9px] tracking-wide";
+      ? `${fontSize ? "px-1" : "px-1.5"} py-[2px] tracking-tight`
+      : "px-2.5 py-0.5 tracking-wide";
   return (
     <span
-      className={`inline-flex items-center rounded-full font-pixel uppercase text-white shadow-sm ${sizeCls} ${typeColorMap[type]}`}
+      style={fontSize ? { fontSize } : undefined}
+      className={`inline-flex items-center whitespace-nowrap rounded-full font-pixel uppercase text-white shadow-sm ${
+        fontSize ? "" : "text-[9px]"
+      } ${sizeCls} ${typeColorMap[type]}`}
     >
       {type}
     </span>
@@ -540,16 +549,18 @@ export function CombatPanel({
   const justifyCls = align === "right" ? "justify-end" : "justify-start";
 
   return (
-    <div className="w-[clamp(8rem,38vw,10.5rem)] shrink-0 rounded-2xl bg-card px-3 py-2 backdrop-blur shadow-card">
+    <div
+      style={{ width: COMBAT_PANEL_WIDTH }}
+      className="shrink-0 rounded-2xl bg-card px-3 py-2 backdrop-blur shadow-card"
+    >
       <div className={`flex flex-col ${alignCls}`}>
         <div className="w-full truncate text-sm font-bold leading-tight">{pokemonName}</div>
 
-        {/* Wraps: the panel is a fixed clamp() width, and a long two-type pair
-            (ELECTRIC/DRAGON) is wider than it. Without this the badges spill
-            outside the card instead of stacking. */}
-        <div className={`mt-1 flex w-full flex-wrap gap-1 ${justifyCls}`}>
+        {/* One line, always: the badges shrink to fit rather than wrapping or
+            spilling out of the fixed-width card. See `typeRowFontSize`. */}
+        <div className={`mt-1 flex w-full flex-nowrap gap-0.5 ${justifyCls}`}>
           {types.map((t) => (
-            <TypeBadge key={t} type={t} size="sm" />
+            <TypeBadge key={t} type={t} size="sm" fontSize={typeRowFontSize(types, COMBAT_PANEL_WIDTH)} />
           ))}
         </div>
         <div className="mt-1.5 flex w-full items-center gap-2">
