@@ -123,6 +123,11 @@ const BOT_REVEAL_MS = 600;
  *  still the hard ceiling for a stalling opponent. */
 const BOTH_ANSWERED_BEAT_MS = 700;
 
+/** How long "Frozen solid! This question is skipped." stays up before the
+ *  battle moves on by itself. See the frozen-slot effect for why it cannot be
+ *  left to the shared wall clock. */
+const FROZEN_SKIP_MS = 1600;
+
 const CLIENT_ONLY_ITEMS: ItemId[] = ["scope", "xaccuracy"];
 /** Server-effect-backed items (see pvp_item_effects catalog): the healing
  * potion tier plus all berries. Everything else stays out of the Nearby
@@ -1397,6 +1402,36 @@ export function LivePvpBattleScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bothAnsweredCount, displayedIndex]);
 
+
+  // A frozen question skips itself.
+  //
+  // Freeze is the one slot the player cannot answer: `resolveQuestion` returns
+  // early on it and the personal-timeout effect skips it, so nothing ever marks
+  // it done. That used to be harmless because the shared wall clock advanced
+  // the slot — but the both-answered early-advance runs AHEAD of that clock
+  // whenever both sides answer briskly, so by mid-match `displayedIndex` can sit
+  // several slots in front of it. A frozen question there has no early-advance
+  // (we never answered) and no wall clock for another minute or more, which is
+  // the "Frozen solid, and the game never moves on" stall (owner report
+  // 2026-07-26, question 14/20 with the timer already at 0s).
+  //
+  // So the frozen slot advances on its own short timer, and counts itself as
+  // answered locally so the gate above stays consistent. No server round trip:
+  // a freeze deals no damage to either side, and `resolveQuestion` would refuse
+  // it anyway.
+  useEffect(() => {
+    if (!frozen || finishedRef.current || displayedIndex < 0) return;
+    const nextIdx = displayedIndex + 1;
+    const t = setTimeout(() => {
+      if (finishedRef.current) return;
+      setSelfAnsweredIdx((n) => Math.max(n, displayedIndex));
+      if (nextIdx >= PVP_QUESTIONS || nextIdx >= questions.length) return;
+      if (nextIdx <= displayedIndexRef.current) return;
+      enterQuestion(nextIdx);
+    }, FROZEN_SKIP_MS);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [frozen, displayedIndex]);
 
   // Apply a client-authoritative `confused` to a side after 2 consecutive wrong
   // answers (#1). Idempotent while already confused. Never touches the synced
