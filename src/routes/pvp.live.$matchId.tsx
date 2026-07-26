@@ -23,7 +23,6 @@ import {
   subscribeToLivePvpEffects,
   setLivePvpPartner,
   startTrainingMatch,
-  shouldApplyRev,
   noteAppliedRev,
   forgetAppliedRev,
   type LivePvpMatch,
@@ -213,8 +212,13 @@ function MatchPageContent({ matchId }: { matchId: string }) {
           // treating that as revision 0 would make every event after the first
           // look stale and silently freeze the battle; applying the row instead
           // is no worse than the behaviour before this guard existed.
+          // The row is ALWAYS folded into `match`, however old it is. Only HP
+          // is revision-ordered, and the battle screen owns that gate (it is
+          // the one channel that also receives HP straight from RPC responses).
+          // Dropping whole rows here is what previously stalled
+          // `hostAnsweredLive`/`guestAnsweredLive` and left the both-answered
+          // early-advance waiting out the full question timer.
           const rev = row.rev as number | undefined;
-          if (typeof rev === "number" && !shouldApplyRev(matchId, rev)) return;
           const updated: LivePvpMatch = {
             rev: rev ?? 0,
             id: row.id as string,
