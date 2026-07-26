@@ -876,7 +876,12 @@ function PvpResultScreen({
               size="lg"
               variant="outline"
               onClick={onChat}
-              className="h-14 flex-1 rounded-full border-2 border-white/30 font-bold text-white shadow-card"
+              // The outline variant carries `bg-background`, which is near-white
+              // in light mode — with `text-white` on top the label was invisible
+              // on this dark screen and the button read as blank (owner report
+              // 2026-07-26). The translucent fill is the same treatment Solo's
+              // defeat screen gives "Back home".
+              className="h-14 flex-1 rounded-full border-2 border-white/30 bg-white/[0.04] font-bold text-white shadow-card hover:bg-white/10 hover:text-white"
             >
               Chat
             </Button>

@@ -458,6 +458,45 @@ function BattlePage() {
     useGameStore.getState().abortBattle();
   }
 
+  /**
+   * "Next Battle" / "Rematch" from a result screen: fetch a fresh set of
+   * questions and drop straight back into a battle, rather than routing through
+   * the hub (owner request 2026-07-26 — the Training screen's Rematch already
+   * works this way).
+   *
+   * The one thing that cannot be skipped is a pending Elite Four challenger:
+   * `startBattle` refuses while one is waiting, and re-keying the screen without
+   * it changing phase would replay the battle just finished, question for
+   * question. Bounce to the hub so the takeover screen gets its turn.
+   *
+   * A pending level-up is deliberately NOT a reason to bail out. It stays queued
+   * in the store, so its screen simply waits until the player does step out —
+   * nothing is lost, and the loop keeps going.
+   */
+  function continueBattling() {
+    if (pendingElite) {
+      exitBattle();
+      return;
+    }
+    setBattleKey((k) => k + 1);
+    void startBattle();
+  }
+
+  /**
+   * The same, from an Elite Four result. A loss leaves that challenger pending,
+   * so this retries them; a win clears them and hands off to a regular battle
+   * (or, if the win crossed another threshold, to the next challenger's takeover
+   * screen via `continueBattling`).
+   */
+  function continueAfterElite() {
+    if (pendingElite) {
+      setBattleKey((k) => k + 1);
+      void startElite();
+      return;
+    }
+    continueBattling();
+  }
+
   useEffect(() => {
     if (!hasOnboarded) return;
     if (engageShownRef.current || engageShownThisSession) return;
@@ -1038,20 +1077,14 @@ function BattlePage() {
           key={battleKey}
           questions={questions}
           onExit={exitBattle}
-          onRematch={() => {
-            setBattleKey((k) => k + 1);
-            startBattle();
-          }}
+          onRematch={continueBattling}
         />
       ) : phase === "elite" && eliteOpponent ? (
         <BattleScreen
           key={battleKey}
           questions={questions}
           onExit={exitBattle}
-          onRematch={() => {
-            setBattleKey((k) => k + 1);
-            startElite();
-          }}
+          onRematch={continueAfterElite}
           mode="elite"
           eliteMember={eliteOpponent}
         />

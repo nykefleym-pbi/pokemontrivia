@@ -1,13 +1,14 @@
-import { useEffect, useRef, useState } from "react";
-import { loadingArtForMonth } from "@/lib/app-icons";
+import { useEffect, useState } from "react";
+import LOADING_ART from "virtual:loading-art";
+import { pickLoadingArt } from "@/lib/app-icons";
 import { buildProgressSteps } from "@/lib/loading-progress";
 import { randomTip } from "@/lib/loading-tips";
 import { setBootSilence } from "@/lib/audio";
 
 /**
- * Pokémon GO-style loading screen, mounted once by RootComponent: the month's
- * artwork, a progress bar and a tip of the day, held for LOADING_MS before the
- * app is revealed.
+ * Pokémon GO-style loading screen, mounted once by RootComponent: a piece of
+ * artwork drawn at random from public/loading, a progress bar and a tip of the
+ * day, held for LOADING_MS before the app is revealed.
  *
  * The platform splash (the black screen Android/iOS paints from the manifest's
  * `background_color` and icon) runs first and is left entirely alone — its
@@ -61,6 +62,32 @@ function releaseStatusBarTint() {
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", APP_THEME_COLOR);
 }
 
+/**
+ * The artwork the previous open used, so this one can avoid repeating it.
+ *
+ * Its own key rather than the game store: the store rehydrates after mount and
+ * carries save-synced player state, and which picture was on screen last time is
+ * neither. Any failure here is silently a miss — a repeated image is a
+ * cosmetic outcome, not worth a try/catch that reports.
+ */
+const LAST_ART_KEY = "poke-trivia-last-loading-art";
+
+function readLastArt(): string | null {
+  try {
+    return localStorage.getItem(LAST_ART_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function rememberLastArt(path: string): void {
+  try {
+    localStorage.setItem(LAST_ART_KEY, path);
+  } catch {
+    /* private mode / quota — the next open just re-rolls blind. */
+  }
+}
+
 export function BootSplash() {
   const [done, setDone] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -103,29 +130,35 @@ export function BootSplash() {
     };
   }, []);
 
-  // The artwork is in the markup from the start (rather than preloaded into
-  // state) so the browser begins fetching it as it parses the HTML.
+  // Which artwork this open gets is drawn at random from whatever is in
+  // public/loading, so the screen is different each time the app is launched.
   //
-  // It stays transparent until it has actually loaded, so the two failure modes
-  // both degrade to the gradient: a month with no uploaded file 404s, and the
-  // browser paints its broken-image glyph before any error handler could fire.
+  // The draw has to happen on the client, after mount: choosing during render
+  // would have the server commit to one file and the client to another, and the
+  // installed PWA serves a cached HTML shell anyway, so a server-side choice
+  // would freeze on whichever file was picked when that shell was cached. The
+  // cost is that the fetch starts at hydration instead of while the HTML is
+  // being parsed — a fraction of the five seconds this screen is held for.
+  //
+  // The <img> is rendered from the first frame regardless, with no src until the
+  // draw lands, so the server and client markup agree and hydration is clean.
+  //
+  // It stays transparent until the file has actually loaded, so both failure
+  // modes degrade to the gradient: art that 404s, and the browser painting its
+  // broken-image glyph before any error handler could fire.
   //
   // There is deliberately no fallback image. A wordmark here reads as a second
   // splash flashing past on the way to the artwork — briefly on a warm cache,
   // for the whole download on a cold one — and the bar and tip already make a
   // bare gradient look like a loading screen on its own.
   const [artLoaded, setArtLoaded] = useState(false);
-  const art = encodeURI(loadingArtForMonth(new Date()));
-
-  // onLoad alone is not enough. The <img> is server-rendered, so it can finish
-  // loading before React hydrates and attaches the handler — the event is already
-  // gone by then and the artwork would stay transparent forever. Ask the element
-  // directly on mount instead. `complete` is true for a failed load too, hence
-  // the naturalWidth check.
-  const imgRef = useRef<HTMLImageElement>(null);
+  const [art, setArt] = useState<string | null>(null);
   useEffect(() => {
-    const img = imgRef.current;
-    if (img?.complete && img.naturalWidth > 0) setArtLoaded(true);
+    const last = readLastArt();
+    const pick = pickLoadingArt(LOADING_ART, { last });
+    if (!pick) return;
+    rememberLastArt(pick);
+    setArt(encodeURI(pick));
   }, []);
 
   if (done) return null;
@@ -146,8 +179,9 @@ export function BootSplash() {
       aria-label="Loading Pokémon Trivia Battle"
     >
       <img
-        ref={imgRef}
-        src={art}
+        // src is left off entirely until the draw lands: an empty string would
+        // have the browser re-request the page itself.
+        src={art ?? undefined}
         alt=""
         aria-hidden
         draggable={false}
@@ -162,7 +196,7 @@ export function BootSplash() {
 
       {/* Scrim: the artwork is arbitrary owner-supplied art, so the bar and tip
           need their own guaranteed-legible backdrop rather than trusting
-          whatever happens to be behind them this month. */}
+          whatever happens to be behind them this time. */}
       <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-poke-dark via-poke-dark/85 to-transparent" />
 
       <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-4 px-8 pb-[calc(env(safe-area-inset-bottom)+2.5rem)]">

@@ -157,9 +157,15 @@ export function ResultScreen({
         </div>
 
         <div className="mx-auto mt-auto w-full max-w-sm space-y-2 pt-8">
+          {/* Next Battle starts the next one on the spot when the caller gives us
+              a way to (owner request 2026-07-26 — keep the player battling
+              instead of dropping them on the hub). Modes with nothing to start
+              again — the daily and the weekly league are one attempt each — pass
+              no onRematch and fall back to leaving the battle, which is what this
+              button has always done. */}
           <Button
             size="lg"
-            onClick={onRebattle}
+            onClick={() => (onRematch ? onRematch() : onRebattle())}
             className="h-14 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
           >
             Next Battle
@@ -177,6 +183,16 @@ export function ResultScreen({
               </span>
             </Button>
           )}
+          {/* The way out, now that the primary button no longer is one. Mirrors
+              the defeat screen's own "Back home". */}
+          <Button
+            size="lg"
+            variant="outline"
+            onClick={onBackHome}
+            className="h-14 w-full rounded-full border-2 border-foreground/15 bg-card font-bold text-foreground hover:bg-card/80"
+          >
+            Back home
+          </Button>
         </div>
       </motion.div>
     );

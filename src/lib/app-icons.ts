@@ -11,7 +11,7 @@
  *   public/rewards/  — Arena set-of-5 reward glyphs + the locked-slot padlock
  *   public/trophies/ — achievement trophies + the two Arena tier badges
  *   public/items/    — item category art
- *   public/loading/  — boot loading-screen artwork, one per calendar month
+ *   public/loading/  — boot loading-screen artwork, one picked at random per open
  */
 
 /** Profile buttons and one-off chrome. */
@@ -59,16 +59,27 @@ export const ITEM_CATEGORY_ICON = {
 } as const;
 
 /**
- * Boot loading-screen artwork for the month `date` falls in.
+ * Picks the boot loading-screen artwork for one app open.
  *
- * One file per calendar month, named by zero-padded month number
- * (public/loading/01.webp … 12.webp) so adding next month's art is a drop-in
- * upload with no code change. The date is a parameter rather than read from the
- * clock so this stays pure and testable.
+ * `paths` is every .webp in public/loading (see `virtual:loading-art`), so the
+ * art rotates on its own as files are added — no naming scheme, no calendar.
  *
- * Months with no uploaded file are expected, not an error: BootSplash preloads
- * the path and falls back to a plain gradient if it 404s.
+ * `last` is the path the previous open used. With two or more files it is
+ * excluded, because "random" that repeats itself half the time does not read as
+ * changing; with only one file there is nothing to rotate to and it is returned
+ * again. Returns null for an empty folder — the screen falls back to its brand
+ * gradient, which is also what a failed image load degrades to.
+ *
+ * Pure, with `rand` injectable, so the distribution is testable.
  */
-export function loadingArtForMonth(date: Date): string {
-  return `/loading/${String(date.getMonth() + 1).padStart(2, "0")}.webp`;
+export function pickLoadingArt(
+  paths: readonly string[],
+  { last, rand = Math.random }: { last?: string | null; rand?: () => number } = {},
+): string | null {
+  if (paths.length === 0) return null;
+  const pool = paths.length > 1 && last ? paths.filter((p) => p !== last) : paths;
+  const choices = pool.length > 0 ? pool : paths;
+  // Math.random() can never return 1, but an injected rand might; clamp rather
+  // than hand back undefined.
+  return choices[Math.min(choices.length - 1, Math.floor(rand() * choices.length))];
 }

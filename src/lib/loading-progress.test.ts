@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildProgressSteps } from "@/lib/loading-progress";
-import { loadingArtForMonth } from "@/lib/app-icons";
+import { pickLoadingArt } from "@/lib/app-icons";
 import { LOADING_TIPS, randomTip } from "@/lib/loading-tips";
 
 /** Deterministic stand-in for Math.random that cycles a fixed sequence. */
@@ -88,29 +88,55 @@ describe("buildProgressSteps", () => {
   });
 });
 
-describe("loadingArtForMonth", () => {
-  it.each([
-    [0, "/loading/01.webp"],
-    [6, "/loading/07.webp"],
-    [8, "/loading/09.webp"],
-    [9, "/loading/10.webp"],
-    [11, "/loading/12.webp"],
-  ])("maps month index %i to %s", (monthIndex, expected) => {
-    expect(loadingArtForMonth(new Date(2026, monthIndex, 15))).toBe(expected);
+// Owner request 2026-07-26: the loading screen used to resolve one file per
+// calendar month from the device clock, so it changed twelve times a year. It
+// now draws from whatever art is in the folder, every open.
+describe("pickLoadingArt", () => {
+  const ART = ["/loading/01.webp", "/loading/02.webp", "/loading/03.webp"];
+
+  it("returns null for an empty folder so the screen can fall back", () => {
+    expect(pickLoadingArt([])).toBeNull();
   });
 
-  it("zero-pads every single-digit month and never pads a double-digit one", () => {
-    for (let m = 0; m < 12; m++) {
-      const path = loadingArtForMonth(new Date(2026, m, 1));
-      expect(path).toMatch(/^\/loading\/(0[1-9]|1[0-2])\.webp$/);
+  it("always returns one of the given files", () => {
+    for (let i = 0; i < 200; i++) expect(ART).toContain(pickLoadingArt(ART));
+  });
+
+  it("reaches every file over enough draws", () => {
+    const seen = new Set<string>();
+    for (let i = 0; i < 500; i++) seen.add(pickLoadingArt(ART)!);
+    expect(seen.size).toBe(ART.length);
+  });
+
+  it("never repeats the previous open's art", () => {
+    for (const last of ART) {
+      for (let i = 0; i < 200; i++) expect(pickLoadingArt(ART, { last })).not.toBe(last);
     }
   });
 
-  it("covers all twelve months with distinct files", () => {
-    const paths = new Set(
-      Array.from({ length: 12 }, (_, m) => loadingArtForMonth(new Date(2026, m, 1))),
-    );
-    expect(paths.size).toBe(12);
+  it("shows the only file it has, even when that was last open's", () => {
+    const one = ["/loading/07.webp"];
+    expect(pickLoadingArt(one, { last: one[0] })).toBe(one[0]);
+  });
+
+  it("ignores a `last` that is no longer in the folder", () => {
+    const seen = new Set<string>();
+    for (let i = 0; i < 500; i++) seen.add(pickLoadingArt(ART, { last: "/loading/99.webp" })!);
+    expect(seen.size).toBe(ART.length);
+  });
+
+  it("indexes off the end for neither rand() === 0 nor a rand that returns 1", () => {
+    expect(pickLoadingArt(ART, { rand: () => 0 })).toBe(ART[0]);
+    expect(pickLoadingArt(ART, { rand: () => 1 })).toBe(ART[ART.length - 1]);
+  });
+
+  it("spreads the draws roughly evenly rather than favouring one file", () => {
+    const counts = new Map<string, number>();
+    for (let i = 0; i < 3000; i++) {
+      const pick = pickLoadingArt(ART)!;
+      counts.set(pick, (counts.get(pick) ?? 0) + 1);
+    }
+    for (const n of counts.values()) expect(n).toBeGreaterThan(3000 / ART.length / 2);
   });
 });
 
