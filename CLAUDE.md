@@ -69,3 +69,30 @@ They are NOT interchangeable. `gen-signature-sql` maps
 between them via `DB_PHASE`; never emit `phase: a.wiring`
 again, and never compare a trigger/wiring to `"manual"`.
 Neither mistake is caught by the compiler.
+
+## The engine is not the only implementation
+`apply_pvp_live_answer_v2` RECOMPUTES the human's streak,
+wrong-streak and confusion in PL/pgSQL and writes its own
+answer — it ignores `_next_state` for those columns. Its
+bot twin, `apply_bot_pvp_move_v2`, does the opposite and
+stores `_next_state->>'confusedTicksLive'` verbatim.
+
+So a rule added to `engine/pvp-live-answer.ts` takes effect
+for the BOT and silently does nothing for the PLAYER. That
+shipped once: Shield Dust's confusion immunity passed unit
+tests, tsc and a live Edge Function deploy while production
+kept arming `host_confused_ticks_live` on a shield-dust
+partner.
+
+Before believing any per-answer rule is live, check the SQL:
+
+    select (regexp_matches(pg_get_functiondef(p.oid),
+      '(v_confused_ticks :=[^;]{0,140};)', 'g'))[1]
+    from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+    where n.nspname='public'
+      and p.proname='apply_pvp_live_answer_v2';
+
+Then confirm against the ROW after a real battle
+(`host_confused_ticks_live`, `host_streak_live`), not
+against the test suite. Neither side of this duplication is
+visible to the compiler.

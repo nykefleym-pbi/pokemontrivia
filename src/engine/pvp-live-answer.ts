@@ -185,13 +185,18 @@ export function resolvePvpAnswer(input: PvpAnswerInput, state: PvpEngineState): 
   // Pre-answer confused state never changes mid-resolution (mirrors the real
   // component: `selfConfused`/`myStatuses` are React state, immutable within
   // one `resolveQuestion` call).
-  const isConfused = confusedTicks > 0 || input.hasConfusedStatus;
-  const selfAfflicted = input.hasAnyStatus || isConfused;
-
-  // Resolved once up here because the wrong-answer branch below needs it too
-  // (Shield Dust's confusion immunity), not just the type-ability layer.
+  // Resolved before the confusion checks because both the miss roll and the
+  // wrong-answer branch need it, not just the type-ability layer below.
   const resolvedTypeAbilityId = resolvePvpTypeAbilityId(input.myTypes, input.storedAbilityId);
   const confusionPrevented = typeAbilityPreventsConfusion(resolvedTypeAbilityId);
+
+  // Immunity covers BOTH representations. `confusedTicks` should never arm for
+  // an immune partner, but a `confused` entry can also arrive in the synced
+  // status row from an opponent's signature ability — and that one lands
+  // BEFORE any cure could run, so without this it would still eat an answer.
+  const isConfused =
+    !confusionPrevented && (confusedTicks > 0 || input.hasConfusedStatus);
+  const selfAfflicted = input.hasAnyStatus || isConfused;
 
   if (input.frozen) {
     streak = 0;

@@ -116,3 +116,26 @@ describe("Shield Dust", () => {
     expect(out.state.confusedTicks).toBe(0);
   });
 });
+
+describe("Shield Dust vs a status-row confusion", () => {
+  it("does not let an opponent-applied `confused` status eat an answer", () => {
+    // Confusion can also arrive as a `confused` entry in the synced status
+    // jsonb, written by an opponent's signature ability. That lands BEFORE any
+    // cure could run, so immunity has to be checked at the miss roll too — not
+    // only where the tick counter arms. rng() === 0 always triggers the 25%
+    // roll, so an unguarded path fails this deterministically.
+    const out = resolvePvpAnswer(
+      wrongAnswer({ ...CATERPIE, correct: true, hasConfusedStatus: true, rng: () => 0 }),
+      INITIAL_PVP_ENGINE_STATE,
+    );
+    expect(out.confusionMissed).toBe(false);
+  });
+
+  it("still lets it eat an answer for a partner without immunity", () => {
+    const out = resolvePvpAnswer(
+      wrongAnswer({ ...BUG_NO_IMMUNITY, correct: true, hasConfusedStatus: true, rng: () => 0 }),
+      INITIAL_PVP_ENGINE_STATE,
+    );
+    expect(out.confusionMissed).toBe(true);
+  });
+});
