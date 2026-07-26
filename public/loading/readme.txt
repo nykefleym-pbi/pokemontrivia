@@ -22,9 +22,22 @@ SIZING
     1284 x 2778 px   covers every device this app targets, including the
                      3x iPhone Pro Max class, with no upscaling.
 
-  Keep the file under ~400 KB — it is fetched during the 5-second logo phase,
-  and a heavier file risks not being painted before the phase changes. WebP at
-  quality 80-85 comfortably hits that at this resolution.
+  Keep the file under ~320 KB — it is fetched during the 5-second logo phase,
+  and a heavier file risks not being painted before the phase changes. The build
+  warns about any file over that, and about any file here that is not a .webp
+  (which the screen ignores entirely).
+
+  Upload at whatever size you have and re-encode before committing. Every file
+  currently in this folder came through:
+
+    sharp(src)
+      .flatten({ background: "#000000" })   // the screen is opaque; alpha is waste
+      .resize(1284, 2778, { fit: "cover", kernel: "lanczos3" })
+      .webp({ quality: 80, effort: 6, smartSubsample: true })
+
+  Quality 80 lands 150-250 KB and is indistinguishable from the source at 1:1;
+  step down to 76 if a busy image comes out over budget. 2000 px wide is roughly
+  three times the bytes for pixels no phone can show.
 
 COMPOSITION
   The bottom half carries a dark scrim for the progress bar and tip of the day.

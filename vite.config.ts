@@ -1,7 +1,7 @@
 // Self-contained Vite config (no Lovable build wrapper) for a TanStack Start
 // app deployed to Vercel. The Nitro Vite plugin compiles the server into a
 // Vercel Function (and auto-detects the host: vercel on Vercel, node locally).
-import { readdirSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { defineConfig, type Plugin } from "vite";
 import { nitro } from "nitro/vite";
@@ -10,6 +10,11 @@ import viteReact from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import tsConfigPaths from "vite-tsconfig-paths";
 import { VitePWA } from "vite-plugin-pwa";
+
+/** Bytes are the whole point here: this art is fetched during the boot screen's
+ *  five-second hold, so anything much heavier than this risks not being painted
+ *  before the screen hands off. Matches public/loading/readme.txt. */
+const LOADING_ART_BUDGET_KB = 320;
 
 /**
  * Exposes the boot loading-screen artwork in public/loading as
@@ -34,15 +39,36 @@ function loadingArtManifest(): Plugin {
     load(id) {
       if (id !== resolvedId) return null;
       const dir = fileURLToPath(new URL("public/loading/", import.meta.url));
-      let files: string[] = [];
+      let entries: string[] = [];
       try {
-        files = readdirSync(dir)
-          .filter((name) => name.toLowerCase().endsWith(".webp"))
-          .sort();
+        entries = readdirSync(dir).sort();
       } catch {
         // No folder at all is a valid state — the screen falls back to the
         // brand gradient, exactly as it does for a folder with no art in it.
       }
+      const files = entries.filter((name) => name.toLowerCase().endsWith(".webp"));
+
+      // Art is uploaded straight into the folder, so nothing else checks it.
+      // Both of these have happened once already: an 11 MB .png that the screen
+      // silently ignored, and 2000px-wide files carrying pixels no phone shows.
+      // Warn rather than fail — a heavy image still works, it is just slow.
+      for (const name of entries) {
+        if (name === "readme.txt" || files.includes(name)) continue;
+        this.warn(
+          `public/loading/${name} is not a .webp, so the loading screen ignores it. ` +
+            `Convert it (1284x2778, quality ~80) to put it in the rotation.`,
+        );
+      }
+      for (const name of files) {
+        const kb = statSync(`${dir}${name}`).size / 1024;
+        if (kb > LOADING_ART_BUDGET_KB) {
+          this.warn(
+            `public/loading/${name} is ${kb.toFixed(0)} KB — over the ${LOADING_ART_BUDGET_KB} KB ` +
+              `budget for art fetched inside the 5s boot phase. Re-encode it at 1284x2778, quality ~80.`,
+          );
+        }
+      }
+
       return `export default ${JSON.stringify(files.map((name) => `/loading/${name}`))};`;
     },
   };
