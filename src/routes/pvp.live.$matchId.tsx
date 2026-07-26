@@ -226,6 +226,12 @@ function MatchPageContent({ matchId }: { matchId: string }) {
             guestId: row.guest_id as string,
             questions: matchRef.current?.questions ?? [],
             status: row.status as LivePvpMatch["status"],
+            // Immutable for the life of a match, so a realtime payload that
+            // omits it must not blank out what we already knew.
+            matchSource:
+              ((row.match_source as LivePvpMatch["matchSource"] | undefined) ??
+                matchRef.current?.matchSource) ??
+              null,
             startedAt: row.started_at as string,
             hostCorrect: row.host_correct as number | null,
             hostTotal: row.host_total as number | null,
@@ -619,7 +625,14 @@ function MatchPageContent({ matchId }: { matchId: string }) {
       berryDrops={berryDrops}
       missed={missed}
       onBack={() => navigate({ to: "/arena" })}
-      onChat={() => navigate({ to: "/pvp/chat/$matchId", params: { matchId } })}
+      // No chat for strangers paired by matchmaking. The server refuses those
+      // messages outright (send_pvp_chat_message), so offering the button would
+      // only lead somewhere broken.
+      onChat={
+        match?.matchSource === "queue"
+          ? undefined
+          : () => navigate({ to: "/pvp/chat/$matchId", params: { matchId } })
+      }
       onRematch={() => void handleRematch()}
       rematchBusy={rematchBusy}
     />
