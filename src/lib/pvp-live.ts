@@ -18,7 +18,84 @@ export interface LiveOpponentPreview {
   level: number;
 }
 
+/**
+ * Highest `pvp_live_matches.rev` this tab has already acted on, per match.
+ *
+ * ## What this is for
+ *
+ * A turn writes the match row several times — the answer RPC, the bot's move,
+ * each signature effect — and the client learns about those writes through two
+ * channels that are not ordered with respect to each other: the HTTP response
+ * of the call it made, and the postgres_changes event the write emitted. An
+ * event describing an *earlier* write can therefore arrive after a later
+ * response has already been applied, and the older HP would win. The damage
+ * flash only fires when HP drops, so the player just sees their Pokémon
+ * spontaneously gain HP.
+ *
+ * Dropping anything at or below the mark is safe because every realtime payload
+ * carries the **whole row**: skipping a stale or intermediate revision loses
+ * nothing, since the next one that arrives is complete. Only going backwards is
+ * harmful. That asymmetry is the whole reason a single counter is enough, and
+ * it is also why over-advancing the mark (below) is the safe direction to err.
+ *
+ * Module-level rather than React state: the writers live in this module and the
+ * realtime subscription lives in the route, and a stale closure over a `useRef`
+ * would silently stop filtering.
+ */
+const appliedRev = new Map<string, number>();
+
+/**
+ * True if `rev` is newer than anything already applied for this match, and
+ * records it. Call this to decide whether to apply a realtime payload.
+ */
+export function shouldApplyRev(matchId: string, rev: number): boolean {
+  const seen = appliedRev.get(matchId) ?? -1;
+  if (rev <= seen) return false;
+  appliedRev.set(matchId, rev);
+  return true;
+}
+
+/**
+ * Raise the mark to `rev` without applying anything — for state a caller took
+ * from an HTTP response rather than from the realtime channel.
+ */
+export function noteAppliedRev(matchId: string, rev: number): void {
+  if (rev > (appliedRev.get(matchId) ?? -1)) appliedRev.set(matchId, rev);
+}
+
+/** Drop a finished match's mark so a rematch on the same id starts clean. */
+export function forgetAppliedRev(matchId: string): void {
+  appliedRev.delete(matchId);
+}
+
+/**
+ * Read the row's current revision and mark it applied.
+ *
+ * Used after a write RPC returns: the RPCs report HP but not `rev` (they are
+ * long, hand-tuned functions with dozens of return sites, and threading a field
+ * through every one of them is far more risk than this single-row primary-key
+ * read costs). Reading *after* the write can also pick up a concurrent later
+ * revision — which is fine, and deliberately so: over-advancing only skips
+ * payloads whose content the next one supersedes anyway, while under-advancing
+ * is exactly the regression being fixed.
+ */
+export async function syncAppliedRev(matchId: string): Promise<void> {
+  const { data, error } = await supabase
+    .from("pvp_live_matches")
+    .select("rev")
+    .eq("id", matchId)
+    .maybeSingle();
+  if (error || !data) return;
+  noteAppliedRev(matchId, (data as { rev: number }).rev ?? 0);
+}
+
 export interface LivePvpMatch {
+  /**
+   * Monotonic revision, bumped by a trigger on every write to the row
+   * (migration 20260726030000). Used to drop stale realtime payloads — see
+   * shouldApplyRev.
+   */
+  rev: number;
   id: string;
   hostId: string;
   guestId: string;
@@ -131,6 +208,7 @@ interface LivePvpMatchRow {
   winner_id: string | null;
   created_at: string;
   expires_at: string;
+  rev: number;
   host_hp: number;
   guest_hp: number;
   host_stages: PvpStatStages;
@@ -170,6 +248,7 @@ interface LivePvpMatchRow {
 
 function fromRow(r: LivePvpMatchRow): LivePvpMatch {
   return {
+    rev: r.rev ?? 0,
     id: r.id,
     hostId: r.host_id,
     guestId: r.guest_id,
@@ -393,6 +472,9 @@ export async function applyBotPvpSignatureEffect(
       _phase: phase,
       _scale_count: scaleCount,
     });
+    // Raise the revision mark before the caller applies this result — see
+    // syncAppliedRev. Awaited so no earlier realtime event can slip in first.
+    if (!error) await syncAppliedRev(matchId);
     return { ok: !error };
   } catch (e) {
     console.warn("[pvp-live] applyBotPvpSignatureEffect threw:", e);
@@ -460,6 +542,9 @@ export async function botSigEngineTick(
     }
     const r = data as (SigEngineTickResult & { error?: string }) | null;
     if (r && r.ok === true) {
+      // Raise the revision mark before the caller applies this result — see
+      // syncAppliedRev. Awaited so no earlier realtime event can slip in first.
+      await syncAppliedRev(matchId);
       return {
         ok: true,
         noop: r.noop,
@@ -489,6 +574,9 @@ export async function applyBotPvpLiveItem(
       _question_index: questionIndex,
       _item_id: itemId,
     });
+    // Raise the revision mark before the caller applies this result — see
+    // syncAppliedRev. Awaited so no earlier realtime event can slip in first.
+    if (!error) await syncAppliedRev(matchId);
     return { ok: !error };
   } catch (e) {
     console.warn("[pvp-live] useBotPvpLiveItem threw:", e);
@@ -738,6 +826,11 @@ export async function resolvePvpLiveTurn(
     }
     const r = data as { ok?: boolean; data?: Record<string, unknown>; error?: { msg?: string } } | null;
     if (r && r.ok === true && r.data) {
+      // Awaited, not fire-and-forget: the caller applies this result to the HP
+      // bar immediately, so the mark has to be up before any realtime event for
+      // an earlier write can be processed. Fire-and-forget would leave exactly
+      // the window this is meant to close.
+      await syncAppliedRev(matchId);
       return { ok: true, result: fromTurnResponse(r.data) };
     }
     return { ok: false, error: r?.error?.msg || "network" };
@@ -767,6 +860,9 @@ export async function resolveBotPvpTurn(
     }
     const r = data as { ok?: boolean; data?: Record<string, unknown>; error?: { msg?: string } } | null;
     if (r && r.ok === true && r.data) {
+      // Raise the revision mark before the caller applies this result — see
+      // syncAppliedRev. Awaited so no earlier realtime event can slip in first.
+      await syncAppliedRev(matchId);
       return { ok: true, result: fromTurnResponse(r.data) };
     }
     return { ok: false, error: r?.error?.msg || "network" };
@@ -819,6 +915,9 @@ export async function applyPvpLiveItem(
       error?: string;
     } | null;
     if (r && r.ok === true) {
+      // Raise the revision mark before the caller applies this result — see
+      // syncAppliedRev. Awaited so no earlier realtime event can slip in first.
+      await syncAppliedRev(matchId);
       return {
         ok: true,
         hostHp: r.hostHp ?? 120,
@@ -903,6 +1002,9 @@ export async function applyPvpSignatureEffect(
       error?: string;
     } | null;
     if (r && r.ok === true) {
+      // Raise the revision mark before the caller applies this result — see
+      // syncAppliedRev. Awaited so no earlier realtime event can slip in first.
+      await syncAppliedRev(matchId);
       return {
         ok: true,
         noop: r.noop,
@@ -1029,6 +1131,9 @@ export async function sigEngineTick(
     }
     const r = data as (SigEngineTickResult & { error?: string }) | null;
     if (r && r.ok === true) {
+      // Raise the revision mark before the caller applies this result — see
+      // syncAppliedRev. Awaited so no earlier realtime event can slip in first.
+      await syncAppliedRev(matchId);
       return {
         ok: true,
         noop: r.noop,
@@ -1118,6 +1223,9 @@ export async function sigM4Fx(
       console.warn("[pvp-live] sigM4Fx failed:", error.message);
       return { ok: false };
     }
+    // Raise the revision mark before the caller applies this result — see
+    // syncAppliedRev. Awaited so no earlier realtime event can slip in first.
+    await syncAppliedRev(matchId);
     return (data as { ok: boolean } | null) ?? { ok: false };
   } catch (e) {
     console.warn("[pvp-live] sigM4Fx threw:", e);
@@ -1221,6 +1329,9 @@ export async function applyPvpTypeAbilityEffect(
       error?: string;
     } | null;
     if (r && r.ok === true) {
+      // Raise the revision mark before the caller applies this result — see
+      // syncAppliedRev. Awaited so no earlier realtime event can slip in first.
+      await syncAppliedRev(matchId);
       return {
         ok: true,
         noop: r.noop,

@@ -176,6 +176,9 @@ function makeQuestions(n: number): Trivia[] {
 
 function baseMatch(overrides: Partial<LivePvpMatch> = {}): LivePvpMatch {
   return {
+    // Realtime staleness guard; irrelevant to these tests, which drive the
+    // component directly rather than through the postgres_changes channel.
+    rev: 0,
     id: MATCH_ID,
     hostId: MY_ID,
     guestId: OPP_ID,

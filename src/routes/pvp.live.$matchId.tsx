@@ -23,6 +23,9 @@ import {
   subscribeToLivePvpEffects,
   setLivePvpPartner,
   startTrainingMatch,
+  shouldApplyRev,
+  noteAppliedRev,
+  forgetAppliedRev,
   type LivePvpMatch,
   type LivePvpEffect,
 } from "@/lib/pvp-live";
@@ -129,6 +132,9 @@ function MatchPageContent({ matchId }: { matchId: string }) {
         return;
       }
       setMyId(uid);
+      // Seed the revision mark from the row we just read, so realtime events
+      // already superseded by this snapshot are dropped rather than replayed.
+      noteAppliedRev(matchId, m.rev);
       setMatch(m);
       const opponentId = uid === m.hostId ? m.guestId : m.hostId;
       void getProfileById(opponentId).then(setOpponentProfile);
@@ -202,7 +208,20 @@ function MatchPageContent({ matchId }: { matchId: string }) {
           const row = payload.new as Record<string, unknown>;
           const uid = myIdRef.current;
           if (!uid) return;
+          // Drop anything we have already moved past. A turn writes this row
+          // several times and we also apply state straight from each write's
+          // HTTP response, so an event for an earlier write can land after a
+          // later response — without this the older HP would win, which is what
+          // made a Pokémon appear to gain HP mid-battle. Skipping is safe: the
+          // payload is a whole row, so the next one that passes is complete.
+          // Fails open on purpose. If `rev` were ever absent from the payload,
+          // treating that as revision 0 would make every event after the first
+          // look stale and silently freeze the battle; applying the row instead
+          // is no worse than the behaviour before this guard existed.
+          const rev = row.rev as number | undefined;
+          if (typeof rev === "number" && !shouldApplyRev(matchId, rev)) return;
           const updated: LivePvpMatch = {
+            rev: rev ?? 0,
             id: row.id as string,
             hostId: row.host_id as string,
             guestId: row.guest_id as string,
@@ -330,6 +349,10 @@ function MatchPageContent({ matchId }: { matchId: string }) {
       } catch {
         /* noop */
       }
+      // Leaving the match retires its mark. Nothing reuses a match id today,
+      // but a stale high mark would silently swallow every event of a reused
+      // one, and the map would otherwise grow for the life of the tab.
+      forgetAppliedRev(matchId);
     };
   }, [matchId, hasOnboarded]);
 

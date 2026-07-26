@@ -887,6 +887,7 @@ export type Database = {
           is_bot_match: boolean
           live_resolved_at: string | null
           questions: Json
+          rev: number
           started_at: string
           status: string
           weather_owner: string | null
@@ -980,6 +981,7 @@ export type Database = {
           is_bot_match?: boolean
           live_resolved_at?: string | null
           questions: Json
+          rev?: number
           started_at: string
           status?: string
           weather_owner?: string | null
@@ -1073,6 +1075,7 @@ export type Database = {
           is_bot_match?: boolean
           live_resolved_at?: string | null
           questions?: Json
+          rev?: number
           started_at?: string
           status?: string
           weather_owner?: string | null
