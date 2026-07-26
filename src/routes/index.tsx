@@ -22,6 +22,7 @@ import { AppIcon } from "@/components/app-icon";
 import { UI_ICON } from "@/lib/app-icons";
 import { rollReferralReward } from "@/lib/referral-rewards";
 import { validateTrainerName, claimErrorMessage, TRAINER_NAME_MAX } from "@/lib/trainer-name";
+import { track } from "@/lib/analytics";
 
 export const Route = createFileRoute("/")({
   component: SplashPage,
@@ -320,6 +321,7 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
     if (!claimedName || !pick) return;
     setOnboarded(claimedName, pick, trainerSprite, previewAbilityId ?? undefined);
     useGameStore.getState().setNameReconciled(true);
+    track("onboard_complete", { starter: pick.name, referred: Boolean(refCode) });
     const rolled = getAbilityById(useGameStore.getState().abilityId);
     if (rolled) toast.success(`${pick.name} has the ${rolled.name} ability!`);
     void syncProfile().then(async () => {

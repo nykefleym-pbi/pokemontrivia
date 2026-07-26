@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { pickBattleCurated, recordCuratedServed } from "@/lib/curated-questions";
-import { FALLBACK_QUESTIONS } from "@/lib/game-data";
-
-type Difficulty = "easy" | "medium" | "hard" | "expert";
+import {
+  FALLBACK_QUESTIONS,
+  normalizeDifficultyBand,
+  type CuratedDifficulty,
+} from "@/lib/game-data";
 
 // Pure-curated: a regular battle is sourced entirely from the curated bank
 // (no AI generation). The bundled FALLBACK_QUESTIONS are only a defensive
@@ -11,16 +13,19 @@ export const Route = createFileRoute("/api/trivia-batch")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        let difficulty: Difficulty = "easy";
+        // `difficulties` is the current shape; `difficulty` is what a cached
+        // PWA shell from an older deploy still sends. Both go through the same
+        // normaliser so a stale client can't fall off the band it asked for.
+        let difficulties: CuratedDifficulty[] = ["easy"];
         let excludeIds: string[] = [];
         try {
           const body = (await request.json()) as {
-            difficulty?: string;
+            difficulties?: unknown;
+            difficulty?: unknown;
             excludeIds?: string[];
           };
-          if (body.difficulty && ["easy", "medium", "hard", "expert"].includes(body.difficulty)) {
-            difficulty = body.difficulty as Difficulty;
-          }
+          difficulties =
+            normalizeDifficultyBand(body.difficulties ?? body.difficulty) ?? difficulties;
           if (Array.isArray(body.excludeIds)) excludeIds = body.excludeIds.slice(-500);
         } catch {
           /* defaults */
@@ -28,7 +33,7 @@ export const Route = createFileRoute("/api/trivia-batch")({
 
         const TOTAL = 20;
 
-        const curatedResult = await pickBattleCurated({ difficulty, count: TOTAL, excludeIds });
+        const curatedResult = await pickBattleCurated({ difficulties, count: TOTAL, excludeIds });
 
         await recordCuratedServed(curatedResult.servedIds).catch(() => {
           console.warn("Failed to record curated served (non-fatal).");

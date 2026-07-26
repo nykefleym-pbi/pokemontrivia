@@ -38,7 +38,9 @@ async function buildQuestions(eventId: string): Promise<TriviaPayload[]> {
   const served: string[] = [];
   for (const [difficulty, count] of TIERS) {
     try {
-      const r = await pickBattleCurated({ difficulty, count, excludeIds: served });
+      // One tier at a time on purpose: a raid's 50 questions follow a fixed
+      // 15/22/13 curve, so each draw is deliberately narrow.
+      const r = await pickBattleCurated({ difficulties: [difficulty], count, excludeIds: served });
       pool = pool.concat(r.questions);
       served.push(...r.servedIds);
     } catch {

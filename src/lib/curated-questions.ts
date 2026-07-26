@@ -1,5 +1,6 @@
 import { curatedSupabase as supabase } from "./curated-client";
 import type { TriviaPayload } from "./trivia-core";
+import type { CuratedDifficulty } from "./game-data";
 
 interface CuratedRow {
   id: string;
@@ -11,8 +12,6 @@ interface CuratedRow {
   difficulty: "easy" | "medium" | "hard" | "expert";
   type_theme: string | null;
 }
-
-type CuratedDifficulty = "easy" | "medium" | "hard" | "expert";
 
 interface FetchCuratedOpts {
   difficulty: CuratedDifficulty | CuratedDifficulty[];
@@ -60,16 +59,22 @@ export async function fetchCuratedQuestions(opts: FetchCuratedOpts): Promise<{
   }
 }
 
+/**
+ * Battle question picker. Unlike `fetchCuratedQuestions`, the RPC behind this
+ * treats `excludeIds` as a preference (`order by seen asc`) rather than a
+ * filter, so a drained pool degrades into repeats instead of coming up short
+ * and falling through to the 30 bundled fallback questions.
+ */
 export async function pickBattleCurated(opts: {
-  difficulty: CuratedDifficulty;
+  difficulties: CuratedDifficulty[];
   count: number;
   excludeIds?: string[];
 }): Promise<{ questions: TriviaPayload[]; servedIds: string[] }> {
-  const { difficulty, count, excludeIds = [] } = opts;
-  if (count <= 0) return { questions: [], servedIds: [] };
+  const { difficulties, count, excludeIds = [] } = opts;
+  if (count <= 0 || difficulties.length === 0) return { questions: [], servedIds: [] };
   try {
     const { data, error } = await supabase.rpc("pick_battle_curated", {
-      p_difficulty: difficulty,
+      p_difficulties: difficulties,
       p_count: count,
       p_exclude: excludeIds,
     });

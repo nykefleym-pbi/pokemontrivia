@@ -23,6 +23,7 @@ import type { Trivia } from "@/lib/trivia-core";
 import { syncActivity } from "@/lib/social";
 import { useForfeitGuard } from "@/lib/use-forfeit-guard";
 import { submitDailyRun } from "@/services/client/daily-run";
+import { track } from "@/lib/analytics";
 
 export function DailyScreen({ questions, onExit }: { questions: Trivia[]; onExit: () => void }) {
   const recordDaily = useGameStore((s) => s.recordDaily);
@@ -132,6 +133,7 @@ export function DailyScreen({ questions, onExit }: { questions: Trivia[]; onExit
               const lvl = useGameStore.getState().level;
               reward = dailyReward({ correct: finalCorrect, total, level: lvl });
             }
+            track("daily_claimed", { correct: finalCorrect, total, rewarded: Boolean(reward?.xp) });
             if (reward && reward.xp > 0) {
               const prevLevel = useGameStore.getState().level;
               useGameStore.getState().addXp(reward.xp);
