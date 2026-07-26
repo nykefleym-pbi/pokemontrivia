@@ -1,7 +1,9 @@
 // Self-contained Vite config (no Lovable build wrapper) for a TanStack Start
 // app deployed to Vercel. The Nitro Vite plugin compiles the server into a
 // Vercel Function (and auto-detects the host: vercel on Vercel, node locally).
-import { defineConfig } from "vite";
+import { readdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { defineConfig, type Plugin } from "vite";
 import { nitro } from "nitro/vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
@@ -9,9 +11,47 @@ import tailwindcss from "@tailwindcss/vite";
 import tsConfigPaths from "vite-tsconfig-paths";
 import { VitePWA } from "vite-plugin-pwa";
 
+/**
+ * Exposes the boot loading-screen artwork in public/loading as
+ * `virtual:loading-art` — a plain array of URL paths.
+ *
+ * The screen picks one at random per app open, so it needs to know what is
+ * there. It cannot find out at runtime: static hosting serves no directory
+ * index, and files under public/ are copied verbatim rather than imported, so
+ * they never appear in the module graph. Listing them here is the one place
+ * that can see the folder, and it keeps the folder's promise that dropping in a
+ * new .webp needs no code change (a dev server restart, yes — the list is read
+ * once when the module is first requested).
+ */
+function loadingArtManifest(): Plugin {
+  const virtualId = "virtual:loading-art";
+  const resolvedId = `\0${virtualId}`;
+  return {
+    name: "loading-art-manifest",
+    resolveId(source) {
+      return source === virtualId ? resolvedId : null;
+    },
+    load(id) {
+      if (id !== resolvedId) return null;
+      const dir = fileURLToPath(new URL("public/loading/", import.meta.url));
+      let files: string[] = [];
+      try {
+        files = readdirSync(dir)
+          .filter((name) => name.toLowerCase().endsWith(".webp"))
+          .sort();
+      } catch {
+        // No folder at all is a valid state — the screen falls back to the
+        // brand gradient, exactly as it does for a folder with no art in it.
+      }
+      return `export default ${JSON.stringify(files.map((name) => `/loading/${name}`))};`;
+    },
+  };
+}
+
 export default defineConfig({
   resolve: { dedupe: ["react", "react-dom"] },
   plugins: [
+    loadingArtManifest(),
     nitro(),
     tsConfigPaths(),
     tailwindcss(),
