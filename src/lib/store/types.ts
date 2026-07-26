@@ -127,6 +127,8 @@ export interface GameState {
 
   dailyGiftLastClaim: string | null;
   dailyGiftStreak: number;
+  /** YYYY-MM-DD the one-per-week forgiven miss was last spent. */
+  dailyGiftFreezeUsedDate: string | null;
   /** YYYY-MM-DD of the last day the discounted featured shop item was bought
    * (the featured deal is limited to one purchase per day). */
   featuredDealLastPurchase: string | null;
@@ -268,7 +270,16 @@ export interface GameState {
   setWhosThatRound: (round: WhosThatRound, hourKey: number) => void;
   clearWhosThatRound: () => void;
 
-  claimDailyGift: () => { itemId: ItemId; qty: number; day: number; shiny: boolean } | null;
+  claimDailyGift: () => {
+    itemId: ItemId;
+    qty: number;
+    day: number;
+    shiny: boolean;
+    /** The streak survived a missed day because the weekly freeze absorbed it. */
+    usedFreeze: boolean;
+    /** Welcome-back coins granted alongside the gift; 0 for a regular claim. */
+    comebackCoins: number;
+  } | null;
   consumeGuaranteedShiny: () => void;
   grantPokeEgg: (n?: number) => void;
   claimMegaChampion: (eventId: string, name: string, pokeId: number) => boolean;

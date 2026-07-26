@@ -114,6 +114,7 @@ export function buildSavePayload(s: GameState) {
 
     dailyGiftLastClaim: s.dailyGiftLastClaim,
     dailyGiftStreak: s.dailyGiftStreak,
+    dailyGiftFreezeUsedDate: s.dailyGiftFreezeUsedDate,
     featuredDealLastPurchase: s.featuredDealLastPurchase,
     guaranteedShinyPending: s.guaranteedShinyPending,
     pokeEggs: s.pokeEggs,
