@@ -103,11 +103,11 @@ export const Route = createRootRoute({
         content:
           "A vibrant Pokémon trivia battler with AI-generated questions, type effectiveness, items and ranks.",
       },
-      // theme-color is deliberately NOT declared here. The OS tints the status
-      // bar from it, and the boot screen needs a different tint than the app, so
-      // RootComponent renders it as a reactive <meta> instead (see THEME_COLOR).
-      // Declaring it here too would have the router re-assert the app's red over
-      // that on every navigation.
+      // theme-color is deliberately NOT declared here. The boot screen needs a
+      // different status-bar tint than the app, and this list is fixed at build
+      // time — so the pre-paint script in RootShell creates the tag instead, and
+      // BootSplash releases it. Declaring it here as well would have the router
+      // re-assert the app's red over that on every navigation.
       { property: "og:title", content: "Pokémon Trivia Battle" },
       {
         property: "og:description",

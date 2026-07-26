@@ -38,8 +38,7 @@ import { setBootSilence } from "@/lib/audio";
  * reading it here would show the screen first and hide it a frame later. CSS
  * keeps the overlay hidden until that class proves otherwise (see .boot-splash
  * in styles.css), which covers the server-rendered frame, and the effect below
- * retires the component outright so its timers stop and the app is told the boot
- * sequence is over.
+ * retires the component outright so its timers never run.
  */
 
 const LOADING_MS = 5000;
