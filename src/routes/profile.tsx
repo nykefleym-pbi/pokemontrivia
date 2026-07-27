@@ -56,7 +56,7 @@ import {
   rankForLevel,
   TRAINER_SPRITES,
   trainerSpriteUrl,
-  difficultyBandForLevel,
+  adaptiveDifficultyBand,
 } from "@/lib/game-data";
 import { ALL_POKEMON, type PokeEntry } from "@/lib/pokemon-data";
 
@@ -140,6 +140,7 @@ function ProfilePage() {
   const seenHashes = useGameStore((s) => s.seenQuestionHashes);
   const seenQuestions = useGameStore((s) => s.seenQuestions);
   const seenCuratedIds = useGameStore((s) => s.seenCuratedIds);
+  const recentAnswers = useGameStore((s) => s.recentAnswers);
   const markQuestionsSeen = useGameStore((s) => s.markQuestionsSeen);
   const markCuratedSeen = useGameStore((s) => s.markCuratedSeen);
   const unlocked = useMemo(() => {
@@ -223,7 +224,7 @@ function ProfilePage() {
     setChallengingId(friend.id);
     try {
       const data = await fetchBattleQuestions({
-        difficulties: difficultyBandForLevel(level),
+        difficulties: adaptiveDifficultyBand(level, recentAnswers),
         seenHashes,
         seenSamples: seenQuestions.slice(-80),
         excludeIds: seenCuratedIds.slice(-500),

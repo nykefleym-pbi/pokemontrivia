@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useGameStore } from "@/lib/store";
 import { startLivePvpMatch } from "@/lib/pvp-live";
 import { fetchBattleQuestions } from "@/lib/api/trivia";
-import { difficultyBandForLevel } from "@/lib/game-data";
+import { adaptiveDifficultyBand } from "@/lib/game-data";
 
 /**
  * Camera scan-to-battle panel: point the in-app camera at a nearby trainer's
@@ -22,6 +22,7 @@ export function ScanPanel({ active, onClose }: { active: boolean; onClose: () =>
   const seenHashes = useGameStore((s) => s.seenQuestionHashes);
   const seenQuestions = useGameStore((s) => s.seenQuestions);
   const seenCuratedIds = useGameStore((s) => s.seenCuratedIds);
+  const recentAnswers = useGameStore((s) => s.recentAnswers);
   const markQuestionsSeen = useGameStore((s) => s.markQuestionsSeen);
   const markCuratedSeen = useGameStore((s) => s.markCuratedSeen);
 
@@ -56,7 +57,7 @@ export function ScanPanel({ active, onClose }: { active: boolean; onClose: () =>
       stopCamera();
       try {
         const data = await fetchBattleQuestions({
-          difficulties: difficultyBandForLevel(level),
+          difficulties: adaptiveDifficultyBand(level, recentAnswers),
           seenHashes,
           seenSamples: seenQuestions.slice(-80),
           excludeIds: seenCuratedIds.slice(-500),
@@ -92,6 +93,7 @@ export function ScanPanel({ active, onClose }: { active: boolean; onClose: () =>
     [
       friendCode,
       level,
+      recentAnswers,
       partnerId,
       seenHashes,
       seenQuestions,

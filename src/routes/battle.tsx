@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { useGameStore } from "@/lib/store";
 import { useStoreHydrated } from "@/lib/store-hydration";
 import { PokemonSprite } from "@/components/game-ui";
-import { difficultyBandForLevel } from "@/lib/game-data";
+import { adaptiveDifficultyBand } from "@/lib/game-data";
 import { BattleScreen, type Trivia } from "@/components/battle-screen";
 import { fetchBattleQuestions, fetchEliteQuestions, fetchDailyChallenge } from "@/lib/api/trivia";
 import { playBgm } from "@/lib/audio";
@@ -50,6 +50,7 @@ function BattlePage() {
   const seenHashes = useGameStore((s) => s.seenQuestionHashes);
   const seenQuestions = useGameStore((s) => s.seenQuestions);
   const seenCuratedIds = useGameStore((s) => s.seenCuratedIds);
+  const recentAnswers = useGameStore((s) => s.recentAnswers);
   const markQuestionsSeen = useGameStore((s) => s.markQuestionsSeen);
   const markCuratedSeen = useGameStore((s) => s.markCuratedSeen);
   const navigate = useNavigate();
@@ -270,7 +271,7 @@ function BattlePage() {
     setPhase("loading");
     try {
       const data = await fetchBattleQuestions({
-        difficulties: difficultyBandForLevel(level),
+        difficulties: adaptiveDifficultyBand(level, recentAnswers),
         seenHashes,
         seenSamples: seenQuestions.slice(-80),
         excludeIds: seenCuratedIds.slice(-500),

@@ -220,6 +220,12 @@ export interface GameState {
   seenQuestionHashes: string[];
   seenQuestions: string[];
   seenCuratedIds: string[];
+  /**
+   * The last ADAPTIVE_WINDOW answers as 1/0, oldest first. Feeds the adaptive
+   * difficulty shift — lifetime accuracy stops moving and cannot notice that
+   * someone has started struggling.
+   */
+  recentAnswers: number[];
 
   // achievements / progression flags
   flags: string[];

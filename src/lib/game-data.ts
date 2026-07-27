@@ -164,23 +164,79 @@ export type CuratedDifficulty = "easy" | "medium" | "hard" | "expert";
 const CURATED_DIFFICULTIES: readonly CuratedDifficulty[] = ["easy", "medium", "hard", "expert"];
 
 /**
- * The band of curated difficulties a trainer of this level draws from.
+ * The ladder of curated-difficulty bands, easiest rung first.
  *
  * Bands, not a single tier: the bank is lopsided (easy 792, medium 1872,
  * hard 944, expert 392 as of launch), and a single tier would hand a level-16
  * player a 392-question pool — about twenty battles before `pick_battle_curated`
- * starts recycling. Overlapping bands keep every level above ~900 questions.
+ * starts recycling. Overlapping bands keep every rung above ~900 questions.
  *
- * There is deliberately no band above 16: expert alone is too thin to stand on,
- * so a level-40 trainer draws the same hard+expert pool as a level-16 one.
- * Making the top end genuinely harder needs more expert questions written, not
- * another branch here.
+ * There is deliberately no rung above hard+expert: expert alone is too thin to
+ * stand on, so a level-40 trainer draws the same pool as a level-16 one. Making
+ * the top end genuinely harder needs more expert questions written, not another
+ * entry here.
  */
-export function difficultyBandForLevel(level: number): CuratedDifficulty[] {
-  if (level >= 16) return ["hard", "expert"];
-  if (level >= 6) return ["medium", "hard"];
-  if (level >= 2) return ["easy", "medium"];
-  return ["easy"];
+const DIFFICULTY_BANDS: readonly (readonly CuratedDifficulty[])[] = [
+  ["easy"],
+  ["easy", "medium"],
+  ["medium", "hard"],
+  ["hard", "expert"],
+];
+
+/** Which rung of DIFFICULTY_BANDS a trainer's level puts them on. */
+export function bandIndexForLevel(level: number): number {
+  if (level >= 16) return 3;
+  if (level >= 6) return 2;
+  if (level >= 2) return 1;
+  return 0;
+}
+
+/** How many recent answers the adaptive shift looks at. */
+export const ADAPTIVE_WINDOW = 40;
+/** Below this many answers on record, level alone decides. */
+export const ADAPTIVE_MIN_SAMPLE = 20;
+export const ADAPTIVE_UP_AT = 0.85;
+export const ADAPTIVE_DOWN_AT = 0.5;
+
+/**
+ * Rungs to move from the level's own band, from recent accuracy.
+ *
+ * Rolling, not lifetime: `stats.correct / stats.answered` is a number that stops
+ * moving after a few hundred answers, so it cannot notice that someone has
+ * started struggling — or stopped.
+ *
+ * A minimum sample is the point of the thing. Three lucky answers must not
+ * shove a new player onto expert questions, and the first wrong answer of a
+ * session must not drop a strong player two tiers.
+ */
+export function adaptiveBandShift(recent: readonly number[]): -1 | 0 | 1 {
+  if (recent.length < ADAPTIVE_MIN_SAMPLE) return 0;
+  const accuracy = recent.reduce((a, b) => a + (b ? 1 : 0), 0) / recent.length;
+  if (accuracy >= ADAPTIVE_UP_AT) return 1;
+  if (accuracy <= ADAPTIVE_DOWN_AT) return -1;
+  return 0;
+}
+
+/**
+ * The band to actually draw from: the level's rung, shifted by how the trainer
+ * has been doing lately, clamped to the ladder.
+ *
+ * Shifts the whole band rather than narrowing it to one tier. Narrowing would
+ * undo the reason bands exist — a single tier is as few as 392 questions, about
+ * twenty battles before `pick_battle_curated` starts recycling — so a shifted
+ * band still spans two tiers and ~900+ questions.
+ *
+ * The clamp at the top is the same admission as difficultyBandForLevel's: there
+ * is nothing above hard+expert until more expert questions are written, so a
+ * strong level-16 player and a strong level-40 player get the same pool.
+ */
+export function adaptiveDifficultyBand(
+  level: number,
+  recent: readonly number[] | undefined,
+): CuratedDifficulty[] {
+  const shifted = bandIndexForLevel(level) + adaptiveBandShift(recent ?? []);
+  const index = Math.min(DIFFICULTY_BANDS.length - 1, Math.max(0, shifted));
+  return [...DIFFICULTY_BANDS[index]];
 }
 
 /**
