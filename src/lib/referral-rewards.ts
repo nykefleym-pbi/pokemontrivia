@@ -38,3 +38,17 @@ export function rollReferralReward(): ReferralReward {
     items: picked.map((it) => ({ id: it.id, name: it.name, qty: 1 })),
   };
 }
+
+const APP_URL = "https://pokemontriviabattle.vercel.app";
+
+/**
+ * The invite link that actually pays both sides.
+ *
+ * The referral loop is closed and live — claimReferral grants the newcomer and
+ * queues the referrer's own reward — but it only fires when someone arrives via
+ * `/refer?code=`. Anywhere the app invites a person, it should be this URL, so
+ * it lives here instead of being spelled out at each call site.
+ */
+export function inviteUrl(friendCode: string | null | undefined): string {
+  return friendCode ? `${APP_URL}/refer?code=${friendCode}` : `${APP_URL}/`;
+}
