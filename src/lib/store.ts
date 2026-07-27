@@ -90,6 +90,7 @@ export function buildSavePayload(s: GameState) {
     seenQuestions: s.seenQuestions,
     seenCuratedIds: s.seenCuratedIds,
     flags: s.flags,
+    claimedAchievements: s.claimedAchievements,
     dailyResult: s.dailyResult,
     battleLog: s.battleLog,
     arenaStats: s.arenaStats,
@@ -220,6 +221,7 @@ export const useGameStore = create<GameState>()(
       seenCuratedIds: [],
 
       flags: [],
+      claimedAchievements: [],
       dailyResult: null,
       battleLog: [],
       arenaStats: defaultArenaStats,
@@ -379,6 +381,7 @@ export const useGameStore = create<GameState>()(
           seenQuestions: [],
           seenCuratedIds: [],
           flags: [],
+          claimedAchievements: [],
           dailyResult: null,
           battleLog: [],
           arenaStats: defaultArenaStats,
@@ -583,6 +586,12 @@ export const useGameStore = create<GameState>()(
         set({ flags: [...s.flags, name] });
       },
 
+      markAchievementClaimed: (id) =>
+        set((s) => {
+          const claimed = s.claimedAchievements ?? [];
+          return claimed.includes(id) ? s : { claimedAchievements: [...claimed, id] };
+        }),
+
       recordDaily: (r) => set({ dailyResult: r }),
 
       pushBattleLog: (e) => {
@@ -723,6 +732,7 @@ export const useGameStore = create<GameState>()(
           abilityId: p.abilityId ?? null,
           lastSeenWhatsNew: p.lastSeenWhatsNew ?? 0,
           flags: p.flags ?? [],
+          claimedAchievements: p.claimedAchievements ?? [],
           battleLog: p.battleLog ?? [],
           arenaStats: p.arenaStats ?? defaultArenaStats,
           dailyResult,

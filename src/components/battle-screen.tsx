@@ -1227,7 +1227,12 @@ function BattleMode({
         const a = ACHIEVEMENTS.find((x) => x.id === id);
         if (a) {
           unlocked.push({ name: a.name });
-          toast.success(a.name, { description: a.desc, duration: 4000 });
+          // The trophy is earned here but paid out in Profile > Trophies, so
+          // the toast has to say where the reward is waiting.
+          toast.success(a.name, {
+            description: `${a.desc} Claim your reward in Profile.`,
+            duration: 4000,
+          });
         }
       }
     }
