@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { Flame } from "lucide-react";
 import { useGameStore } from "@/lib/store";
-import { dailyReward } from "@/lib/rewards";
+import { dailyReward, dailyStreakMultiplier } from "@/lib/rewards";
 import { rollLevelUpRewards } from "@/lib/level-rewards";
 import { rankForLevel, trainerSpriteUrl } from "@/lib/game-data";
 import { PokemonSprite, PokeballPattern, QuestionCard, type DailyMark } from "@/components/game-ui";
@@ -49,6 +50,10 @@ export function DailyScreen({ questions, onExit }: { questions: Trivia[]; onExit
   const qStart = useRef(Date.now());
   const recordedRef = useRef(false);
   const dailyStreakRef = useRef(0);
+  // Consecutive DAYS completed, as counted by the server. Distinct from
+  // dailyStreakRef above, which is correct-answers-in-a-row inside this one
+  // run and drives the "Best Streak" tile.
+  const [dayStreak, setDayStreak] = useState<number | null>(null);
   // server-first-refactor Phase 3 — raw picks (null for a timeout), in
   // question order, submitted to daily-run once the whole set is answered.
   const picksRef = useRef<Array<number | null>>([]);
@@ -129,7 +134,10 @@ export function DailyScreen({ questions, onExit }: { questions: Trivia[]; onExit
             try {
               const res = await submitDailyRun(picksRef.current, timeMs);
               reward = res.reward;
+              setDayStreak(res.streakDays ?? null);
             } catch {
+              // Offline fallback pays the day-1 rate: the streak is a server
+              // fact, and guessing it here could over-pay.
               const lvl = useGameStore.getState().level;
               reward = dailyReward({ correct: finalCorrect, total, level: lvl });
             }
@@ -183,6 +191,7 @@ export function DailyScreen({ questions, onExit }: { questions: Trivia[]; onExit
           total={total}
           timeMs={timeMs}
           pattern={pattern}
+          dayStreak={dayStreak}
           onExit={onExit}
         />
       </>
@@ -289,12 +298,16 @@ function DailyResultScreen({
   total,
   timeMs,
   pattern,
+  dayStreak,
   onExit,
 }: {
   correct: number;
   total: number;
   timeMs: number;
   pattern: DailyMark[];
+  /** Consecutive days completed, server-counted. Null when the submit didn't
+   *  reach the server, or on a run that scored below the reward floor. */
+  dayStreak: number | null;
   onExit: () => void;
 }) {
   const date = new Date().toISOString().slice(0, 10);
@@ -394,6 +407,20 @@ function DailyResultScreen({
         <DailyTile label="Time" value={`${seconds}s`} />
         <DailyTile label="Best Streak" value={String(bestStreak)} />
       </div>
+
+      {/* Why today paid more than yesterday. Hidden on day 1, which has no
+          bonus to announce. */}
+      {dayStreak != null && dayStreak >= 2 && (
+        <div className="mt-3 flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2">
+          <Flame className="h-4 w-4 shrink-0 text-primary" />
+          <span className="text-sm font-bold text-foreground">
+            Day {dayStreak} streak
+          </span>
+          <span className="text-xs text-foreground/60">
+            +{Math.round((dailyStreakMultiplier(dayStreak) - 1) * 100)}% XP
+          </span>
+        </div>
+      )}
 
       <div className="mt-4 w-full max-w-xs rounded-2xl bg-card p-4 shadow-card">
         <div className="font-pixel-xs uppercase text-muted-foreground">Today's Pattern</div>
