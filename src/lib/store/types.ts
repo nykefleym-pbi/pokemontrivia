@@ -110,7 +110,6 @@ export interface GameState {
   trainerName: string;
   trainerSprite: string;
   friendCode: string | null;
-  lastEngagePromptDate: string | null;
   engageDismissCount: number;
   engageDismissDate: string | null;
   engageShownThisSession: boolean;
@@ -269,7 +268,6 @@ export interface GameState {
     abilityId?: AbilityId,
   ) => void;
   setFriendCode: (code: string) => void;
-  setLastEngagePromptDate: (date: string) => void;
   recordEngageDismiss: () => void;
   recordPushPrompt: (outcome: "soft-declined" | "asked") => void;
   setNameReconciled: (v: boolean) => void;

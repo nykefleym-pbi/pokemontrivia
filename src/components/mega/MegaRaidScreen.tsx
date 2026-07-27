@@ -26,7 +26,8 @@ import {
 } from "@/lib/mega/schedule";
 import { submitMegaRun, getMyMegaRank } from "@/lib/mega/runs";
 import { revealMegaAnswer } from "@/lib/mega/questions";
-import { playSfx, revealPokemon } from "@/lib/audio";
+import { playSfx, revealPokemon, playBattleResult } from "@/lib/audio";
+import { answerHaptic } from "@/lib/haptics";
 import { MegaResults, type MegaRewardItem } from "@/components/mega/MegaResults";
 import {
   startMegaAttempt,
@@ -238,6 +239,11 @@ export function MegaRaidScreen({
         timestamp: Date.now(),
         mode: "mega",
       });
+      // Parity with Regular/Weekly/Elite, which have both fired since launch.
+      // A Mega Raid — the longest fight in the game at 50 questions — used to
+      // simply go quiet at the end.
+      playSfx(won ? "victory" : "defeat");
+      playBattleResult("mega", won);
       setPhase("result");
     },
     [event, total],
@@ -301,6 +307,7 @@ export function MegaRaidScreen({
         return;
       }
       const isCorrect = idx !== null && typeof correctIdx === "number" && idx === correctIdx;
+      answerHaptic(isCorrect);
       playSfx(isCorrect ? "correct" : "wrong");
       let nextBoss = bossHp;
       let nextPlayer = playerHp;

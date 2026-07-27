@@ -6,6 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import type { Trivia, MissedAnswer } from "@/lib/trivia-core";
 import { shuffleTriviaOptionsWithOrder } from "@/lib/trivia-core";
 import { playSfx, playCry } from "@/lib/audio";
+import { answerHaptic } from "@/lib/haptics";
 import { useGameStore, type ActiveStatus, type PvpStatStages } from "@/lib/store";
 import {
   PokemonSprite,
@@ -1810,15 +1811,7 @@ export function LivePvpBattleScreen({
   function handleAnswer(choiceIndex: number) {
     if (selected !== null || displayedIndex < 0 || frozen) return;
     const q = questions[displayedIndex];
-    // Haptics parity with Regular battle: a short buzz on a correct answer, a
-    // triple-buzz on a wrong one (no-op where the Vibration API is unavailable).
-    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-      try {
-        navigator.vibrate(choiceIndex === q.correct ? 30 : [50, 30, 50]);
-      } catch {
-        /* ignore */
-      }
-    }
+    answerHaptic(choiceIndex === q.correct);
     setSelected(choiceIndex);
     selectedRef.current = choiceIndex;
     const elapsedMs = Date.now() - questionStartRef.current;

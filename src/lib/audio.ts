@@ -677,7 +677,14 @@ export function playBgm(context: BgmContext, opts?: { level?: number }) {
 }
 
 /** Battle result music: looped win clip (per mode) or the shared lose clip. */
-export function playBattleResult(mode: "daily" | "regular" | "weekly" | "elite", won: boolean) {
+export function playBattleResult(
+  mode: "daily" | "regular" | "weekly" | "elite" | "mega",
+  won: boolean,
+) {
+  // Mega has no win clip of its own, the same gap that makes it borrow the
+  // Elite Four BGM above. Reusing the Elite Four fanfare beats the silence a
+  // Mega Raid ended on until now; drop in a "Mega Raid Win.mp3" and add it to
+  // CLIP to give mega its own.
   const winClip =
     mode === "daily"
       ? CLIP.dailyWin
