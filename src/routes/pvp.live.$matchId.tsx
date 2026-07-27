@@ -44,7 +44,7 @@ import { ITEM_CATEGORY_ICON } from "@/lib/app-icons";
 import type { MissedAnswer } from "@/lib/trivia-core";
 import { ShareCardDialog } from "@/components/share-card-dialog";
 import { VersusScreen } from "@/components/versus-screen";
-import { VERSUS_BACKDROP } from "@/lib/app-icons";
+import { VERSUS_BACKDROP, TRAINING_BOT_AVATAR, TRAINING_BOT_BACKDROP } from "@/lib/app-icons";
 import type { BattleShareData } from "@/components/share-card-builder";
 
 export const Route = createFileRoute("/pvp/live/$matchId")({
@@ -588,11 +588,14 @@ function MatchPageContent({ matchId }: { matchId: string }) {
           name: trainerName || "You",
           spriteId: trainerSprite,
           level,
-          code: friendCode,
         }}
         opponent={{
           name: opponentProfile?.trainer_name || (match.isBotMatch ? "Training Bot" : "Opponent"),
           spriteId: opponentProfile?.trainer_sprite || "",
+          // The bot's own artwork, so the hand-off from the Arena face-off to
+          // this one shows the same opponent rather than swapping it out.
+          avatarUrl: match.isBotMatch ? TRAINING_BOT_AVATAR : null,
+          backdrop: match.isBotMatch ? TRAINING_BOT_BACKDROP : null,
           level: opponentProfile?.level ?? null,
         }}
         status="Battle starting…"

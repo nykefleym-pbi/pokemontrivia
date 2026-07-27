@@ -49,6 +49,16 @@ export const REWARD_ICON = {
  */
 export const VERSUS_BACKDROP: string | null = null;
 
+/**
+ * The Training Bot's face-off presence: its avatar and its own half of the
+ * backdrop. Both null until the artwork lands, which falls the screen back to
+ * the default trainer sprite and the themed gradient rather than a broken
+ * image. Dropping the files in and setting these two strings is the whole swap.
+ * Sizes and the recipe are in public/versus/readme.txt.
+ */
+export const TRAINING_BOT_AVATAR: string | null = null;
+export const TRAINING_BOT_BACKDROP: string | null = null;
+
 /** Padlock — locked Arena reward slots and locked achievement trophies. */
 export const LOCK_ICON = "/rewards/Lock.webp";
 

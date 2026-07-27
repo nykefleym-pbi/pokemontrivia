@@ -19,7 +19,7 @@ vi.mock("framer-motion", () => {
 
 const { VersusScreen } = await import("@/components/versus-screen");
 
-const me = { name: "Ash", spriteId: "ace-trainer-m", level: 12, rating: 1120, code: "ABC123" };
+const me = { name: "Ash", spriteId: "ace-trainer-m", level: 12, rating: 1120 };
 const rival = { name: "Gary", spriteId: "ace-trainer-f", level: 14, rating: 1210 };
 
 afterEach(cleanup);
@@ -38,16 +38,48 @@ describe("VersusScreen", () => {
     expect(screen.getByText("Gary")).toBeTruthy();
   });
 
-  it("shows a rating badge only for trainers who have one", () => {
+  it("shows a rating only for trainers who have one", () => {
     render(<VersusScreen me={me} opponent={{ ...rival, rating: null }} status="x" />);
-    expect(screen.getByText("1,120")).toBeTruthy();
-    expect(screen.queryByText("1,210")).toBeNull();
+    expect(screen.getByText("ELO 1,120")).toBeTruthy();
+    expect(screen.queryByText(/1,210/)).toBeNull();
   });
 
-  it("shows the player's own code but never the opponent's", () => {
-    render(<VersusScreen me={me} opponent={{ ...rival, code: "SECRET1" }} status="x" />);
-    expect(screen.getByText("ABC123")).toBeTruthy();
-    expect(screen.queryByText("SECRET1")).toBeNull();
+  it("labels a trainer name, then title, then rating", () => {
+    const { container } = render(<VersusScreen me={me} opponent={null} status="x" />);
+    const lines = [...container.querySelectorAll("div")]
+      .map((d) => (d.children.length === 0 ? d.textContent?.trim() : null))
+      .filter(Boolean);
+    const i = lines.indexOf("Ash");
+    expect(i).toBeGreaterThanOrEqual(0);
+    // Title between the name and the rating — the owner's stated hierarchy.
+    expect(lines[i + 1]).toBe("Great League Champ");
+    expect(lines[i + 2]).toBe("ELO 1,120");
+  });
+
+  it("gives each half its own backdrop, falling back to the shared one", () => {
+    const { container } = render(
+      <VersusScreen
+        me={{ ...me, backdrop: "/versus/mine.webp" }}
+        opponent={rival}
+        status="x"
+        backdrop="/versus/default.webp"
+      />,
+    );
+    const srcs = [...container.querySelectorAll("img")].map((i) => i.getAttribute("src"));
+    expect(srcs).toContain("/versus/mine.webp"); // the player's own
+    expect(srcs).toContain("/versus/default.webp"); // the opponent has none
+  });
+
+  it("lets an avatar image stand in for the trainer sprite", () => {
+    const { container } = render(
+      <VersusScreen
+        me={me}
+        opponent={{ ...rival, avatarUrl: "/versus/training-bot.gif" }}
+        status="x"
+      />,
+    );
+    const srcs = [...container.querySelectorAll("img")].map((i) => i.getAttribute("src"));
+    expect(srcs).toContain("/versus/training-bot.gif");
   });
 
   it("skips on tap when the caller allows it", () => {

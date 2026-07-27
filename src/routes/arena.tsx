@@ -6,7 +6,14 @@ import { useGameStore } from "@/lib/store";
 import { useStoreHydrated } from "@/lib/store-hydration";
 import { ItemIcon } from "@/components/game-ui";
 import { AppIcon } from "@/components/app-icon";
-import { REWARD_ICON, LOCK_ICON, ARENA_BADGE_ICON, VERSUS_BACKDROP } from "@/lib/app-icons";
+import {
+  REWARD_ICON,
+  LOCK_ICON,
+  ARENA_BADGE_ICON,
+  VERSUS_BACKDROP,
+  TRAINING_BOT_AVATAR,
+  TRAINING_BOT_BACKDROP,
+} from "@/lib/app-icons";
 import { Button } from "@/components/ui/button";
 import { BattleCodeQr } from "@/components/battle-code-qr";
 import { VersusScreen } from "@/components/versus-screen";
@@ -149,7 +156,6 @@ function ArenaPage() {
   const trainerSprite = useGameStore((s) => s.trainerSprite);
   const trainerName = useGameStore((s) => s.trainerName);
   const level = useGameStore((s) => s.level);
-  const friendCode = useGameStore((s) => s.friendCode);
   const arenaStats = useGameStore((s) => s.arenaStats);
   const claimArenaReward = useGameStore((s) => s.claimArenaReward);
 
@@ -244,6 +250,13 @@ function ArenaPage() {
   const queueTicketRef = useRef<QueueTicket | null>(null);
   const queueTimersRef = useRef<number[]>([]);
   const fallenBackRef = useRef(false);
+  /**
+   * True from the moment the search gives up until the Training battle is on
+   * screen. Without it the face-off unmounted the instant the queue stopped and
+   * the Arena flashed back up for the second or two `startTrainingMatch` takes,
+   * which read as "matchmaking failed" rather than "here comes your opponent".
+   */
+  const [fallingBack, setFallingBack] = useState(false);
   const searching = queueWaitS !== null;
 
   const stopQueue = useCallback((leave: boolean) => {
@@ -303,10 +316,13 @@ function ArenaPage() {
           // updater, which React may invoke more than once.
           if (next >= QUEUE_FALLBACK_S && !fallenBackRef.current) {
             fallenBackRef.current = true;
-            // Leave the line first — a row left behind would pair someone into
-            // a battle this player has already walked away from.
+            // Hand straight over to the Training Bot: raise the flag BEFORE
+            // stopping the queue so the face-off never unmounts between the two.
+            setFallingBack(true);
+            // Leave the line — a row left behind would pair someone into a
+            // battle this player has already walked away from.
             stopQueue(true);
-            void handleStartTraining();
+            void handleStartTraining().finally(() => setFallingBack(false));
           }
           return next;
         });
@@ -360,7 +376,7 @@ function ArenaPage() {
 
   if (!hydrated || !hasOnboarded) return null;
 
-  if (searching) {
+  if (searching || fallingBack) {
     return (
       <VersusScreen
         me={{
@@ -368,27 +384,33 @@ function ArenaPage() {
           spriteId: trainerSprite,
           level,
           rating: board.me?.rating ?? null,
-          code: friendCode,
         }}
-        opponent={null}
-        status="Finding an opponent…"
-        // Per the owner's ruling the wait never names the Training Bot: the
-        // player asked for a battle and gets one, and who they face is the
-        // battle screen's job to show.
-        detail={
-          (queueWaitS ?? 0) >= QUEUE_FALLBACK_S
-            ? "Setting up your battle…"
-            : `${queueWaitS}s · widening the search`
+        // The bot appears the moment the search gives up, so the handover looks
+        // like an opponent arriving rather than the search failing.
+        opponent={
+          fallingBack
+            ? {
+                name: "Training Bot",
+                spriteId: trainerSprite,
+                avatarUrl: TRAINING_BOT_AVATAR,
+                backdrop: TRAINING_BOT_BACKDROP,
+                level,
+              }
+            : null
         }
+        status={fallingBack ? "Battle starting…" : "Finding an opponent…"}
+        detail={fallingBack ? undefined : `${queueWaitS}s elapsed…`}
         backdrop={VERSUS_BACKDROP}
         actions={
-          <Button
-            variant="ghost"
-            onClick={() => stopQueue(true)}
-            className="h-11 w-full rounded-full font-bold text-white/70 hover:bg-white/10 hover:text-white"
-          >
-            Cancel
-          </Button>
+          searching ? (
+            <Button
+              variant="ghost"
+              onClick={() => stopQueue(true)}
+              className="h-11 w-full rounded-full font-bold text-white/70 hover:bg-white/10 hover:text-white"
+            >
+              Cancel
+            </Button>
+          ) : undefined
         }
       />
     );
