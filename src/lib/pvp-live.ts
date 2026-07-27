@@ -515,14 +515,24 @@ export async function attemptQueueMatch(ticket: QueueTicket): Promise<QueueAttem
       console.warn("[pvp-live] enqueue_pvp failed:", error.message);
       return { ok: false, error: "network" };
     }
-    const r = data as { ok?: boolean; matched?: boolean; matchId?: string; error?: string } | null;
+    const r = data as {
+      ok?: boolean;
+      matched?: boolean;
+      /** The match was created by the OTHER player and we are its guest — see
+       *  the `enqueue_pvp` migration. Our own ticket went unspent. */
+      pulledIn?: boolean;
+      matchId?: string;
+      error?: string;
+    } | null;
     if (!r || r.ok !== true) return { ok: false, error: r?.error ?? "network" };
     if (r.matched === true && r.matchId) {
-      // Only the pairing side marks the questions seen — the guest never used
-      // this ticket, and its own ticket is discarded unspent.
-      s.markQuestionsSeen(ticket.questions.map((q) => q.question));
-      s.markCuratedSeen(ticket.servedIds);
-      track("pvp_match_started", { opponent: "human", via: "queue" });
+      // Only the pairing side marks the questions seen and counts the match —
+      // the guest never used this ticket, and the host already counted.
+      if (r.pulledIn !== true) {
+        s.markQuestionsSeen(ticket.questions.map((q) => q.question));
+        s.markCuratedSeen(ticket.servedIds);
+        track("pvp_match_started", { opponent: "human", via: "queue" });
+      }
       return { ok: true, matched: true, matchId: r.matchId };
     }
     return { ok: true, matched: false };
@@ -802,6 +812,49 @@ export async function forfeitLivePvpMatch(
     console.warn("[pvp-live] forfeitLivePvpMatch threw:", e);
     return { ok: false, error: "network" };
   }
+}
+
+/** How recent a match has to be for the client to pull itself into it. A live
+ *  battle is face-to-face or queue-paired: if you did not arrive within this
+ *  window the other side has already given up, and dragging you into it later
+ *  is worse than letting it expire. */
+const PENDING_MATCH_WINDOW_MS = 90_000;
+
+/**
+ * The live match I have just been pulled into and have not started yet, or
+ * null. **This is the recovery path for the guest side of a Nearby Battle.**
+ *
+ * Being scanned normally reaches the guest as a realtime postgres_changes
+ * INSERT (`LivePvpWatcher`), which is instant when it works. But
+ * postgres_changes has no replay — a socket asleep behind a backgrounded tab,
+ * a reconnect, or a client still mid-`subscribe()` when the row lands misses
+ * that event permanently, and until now nothing ever asked the server
+ * afterwards. The host was left battling alone against a phantom.
+ *
+ * Deliberately scoped to matches where I am the GUEST: the host navigates
+ * itself from `startLivePvpMatch`, and only the guest is waiting to be told.
+ * RLS (`pvp_live_matches_select_own`) already limits the read to my own rows.
+ */
+export async function findPendingLiveMatch(uid: string): Promise<string | null> {
+  const since = new Date(Date.now() - PENDING_MATCH_WINDOW_MS).toISOString();
+  const { data, error } = await supabase
+    .from("pvp_live_matches")
+    .select("id")
+    .eq("guest_id", uid)
+    .eq("status", "active")
+    // A bot match stores the shared Training Bot uuid in guest_id, never a
+    // player's — but assert it rather than rely on that staying true.
+    .eq("is_bot_match", false)
+    .is("guest_completed_at", null)
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) {
+    console.warn("[pvp-live] findPendingLiveMatch failed:", error.message);
+    return null;
+  }
+  return (data as { id?: string } | null)?.id ?? null;
 }
 
 /** Fetch a single live match by id. */

@@ -531,9 +531,11 @@ function BattlePage() {
     if (lastSeenWhatsNew < WHATS_NEW.version) {
       cards.push({
         kind: "whatsnew",
-        title: WHATS_NEW.title,
+        // No title: the "WHAT'S NEW" pill this card renders above its bullets
+        // is the heading, and a second one underneath it read as a duplicate.
+        title: "",
         desc: WHATS_NEW.bullets.join("\n"),
-        chip: `UPDATE ${WHATS_NEW.version}`,
+        chip: WHATS_NEW.release,
         cta: "Got it!",
         onPlay: () => markWhatsNewSeen(WHATS_NEW.version),
       });
@@ -973,12 +975,14 @@ function BattlePage() {
                           {t.label}
                         </div>
                       )}
-                      <div
-                        className="text-[21px] font-black leading-tight tracking-tight"
-                        style={{ color: t.titleColor }}
-                      >
-                        {card.title}
-                      </div>
+                      {card.title && (
+                        <div
+                          className="text-[21px] font-black leading-tight tracking-tight"
+                          style={{ color: t.titleColor }}
+                        >
+                          {card.title}
+                        </div>
+                      )}
                       {card.kind === "whatsnew" ? (
                         <ul className="mt-2 space-y-1.5 text-[13.5px] leading-snug">
                           {card.desc.split("\n").map((line, i) => (
