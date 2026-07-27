@@ -74,6 +74,25 @@ describe("attemptQueueMatch", () => {
     expect(seen()).toEqual({ questions: ["q1", "q2"], curated: ["id-1", "id-2"] });
   });
 
+  // The waiting side of the queue is paired IN by somebody else's enqueue_pvp
+  // call: their row is deleted and a match is created with them as guest. The
+  // server now hands that match back on the next poll (`pulledIn`) instead of
+  // silently re-queueing them into a second battle — but it is the HOST's
+  // questions that match is playing, so our own ticket went unspent.
+  it("does not spend the ticket for a match somebody else created", async () => {
+    rpcCall.mockResolvedValue({
+      data: { ok: true, matched: true, pulledIn: true, matchId: "m-2" },
+      error: null,
+    });
+
+    const res = await attemptQueueMatch(ticket);
+
+    expect(res).toEqual({ ok: true, matched: true, matchId: "m-2" });
+    expect(seen()).toEqual({ questions: [], curated: [] });
+    // The host already counted this match; counting it again would double it.
+    expect(tracked).toHaveLength(0);
+  });
+
   it("records the match as a human one, tagged as coming from the queue", async () => {
     rpcCall.mockResolvedValue({ data: { ok: true, matched: true, matchId: "m-1" }, error: null });
     await attemptQueueMatch(ticket);
