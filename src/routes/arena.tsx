@@ -15,7 +15,6 @@ import { ScanPanel } from "@/components/NearbyBattleSheet";
 import { trainerSpriteUrl } from "@/lib/game-data";
 import { ITEM_BY_ID } from "@/content/items";
 import { ARENA_REWARD_SLOTS, trophyTier, type TrophyTier } from "@/lib/arena-rewards";
-import { relativeTime } from "@/lib/battle-log-format";
 import { stopBgm } from "@/lib/audio";
 import {
   startTrainingMatch,
@@ -25,7 +24,7 @@ import {
   type QueueTicket,
 } from "@/lib/pvp-live";
 import { fetchPvpLeaderboard, type LeaderboardRow } from "@/lib/pvp";
-import { ensureSession, getProfileById } from "@/lib/social";
+import { ensureSession } from "@/lib/social";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/arena")({
@@ -37,12 +36,6 @@ export const Route = createFileRoute("/arena")({
   validateSearch: (s: Record<string, unknown>): { nearby?: 1 } =>
     s.nearby ? { nearby: 1 } : {},
 });
-
-interface RecentNearbyMatch {
-  id: string;
-  opponentName: string;
-  createdAt: string;
-}
 
 /** Per-tier badge styling. There is deliberately no textual tier label: the
  * badge art is unframed and recoloured to the tier, so the colour IS the rank.
@@ -157,17 +150,24 @@ function ArenaPage() {
   const [scanOpen, setScanOpen] = useState(false);
   const [trainingBusy, setTrainingBusy] = useState(false);
 
-  const [recentMatches, setRecentMatches] = useState<RecentNearbyMatch[]>([]);
+  const [latestChatMatchId, setLatestChatMatchId] = useState<string | null>(null);
   const [board, setBoard] = useState<{ top: LeaderboardRow[]; me: LeaderboardRow | null }>({
     top: [],
     me: null,
   });
+  /** Which half of the Group 3 card is showing. The reward slots and the
+   *  rankings are the same size and the same kind of thing — a scoreboard —
+   *  so they share one panel instead of stacking two cards down the page. */
+  const [group3Tab, setGroup3Tab] = useState<"rewards" | "ranked">("rewards");
 
   // Rating only moves on human matches, so an all-bot player has no standing
   // and the card stays hidden rather than showing them a rank of nothing.
   useEffect(() => {
     let cancelled = false;
-    void fetchPvpLeaderboard(5).then((b) => {
+    // Three rows, not five: the board shares a fixed-height panel with the
+    // reward slots now, and a top 3 is what fits without the Battle button
+    // underneath moving when the player switches tabs.
+    void fetchPvpLeaderboard(3).then((b) => {
       if (!cancelled) setBoard(b);
     });
     return () => {
@@ -179,51 +179,36 @@ function ArenaPage() {
     if (hydrated && !hasOnboarded) navigate({ to: "/" });
   }, [hydrated, hasOnboarded, navigate]);
 
-  // Recent Nearby Battles strip — a lightweight entry point into match chat,
-  // not an inbox. RLS on pvp_live_matches already scopes rows to matches the
-  // caller is a participant of.
+  // What the header's chat button opens: the most recent Nearby Battle of the
+  // last 24 hours. This used to be a five-row "RECENT PVP BATTLES" strip, which
+  // repeated the Battle History list on Profile — same battles, second place to
+  // read them. Only the chat entry point was unique to it, so only that
+  // survives. RLS on pvp_live_matches already scopes rows to matches the caller
+  // took part in.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const uid = await ensureSession();
       if (!uid || cancelled) return;
       const cutoffIso = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-      // Queue matches are excluded: this strip exists only to reopen a chat,
-      // and strangers paired by matchmaking have no chat channel to reopen
-      // (send_pvp_chat_message refuses them server-side). Listing them would
-      // offer a button that is guaranteed to fail.
+      // Queue matches are excluded: strangers paired by matchmaking have no
+      // chat channel to reopen (send_pvp_chat_message refuses them
+      // server-side), so offering one is a button guaranteed to fail.
       const { data, error } = await supabase
         .from("pvp_live_matches")
-        .select("id, host_id, guest_id, created_at, status, match_source")
+        .select("id")
         .eq("is_bot_match", false)
         .or("match_source.is.null,match_source.neq.queue")
         .gt("created_at", cutoffIso)
         .order("created_at", { ascending: false })
-        .limit(5);
+        .limit(1)
+        .maybeSingle();
       if (error) {
-        console.warn("[arena] recent nearby battles fetch failed:", error.message);
+        console.warn("[arena] recent nearby battle fetch failed:", error.message);
         return;
       }
-      if (!data || cancelled) return;
-      const rows = data as Array<{
-        id: string;
-        host_id: string;
-        guest_id: string;
-        created_at: string;
-        status: string;
-      }>;
-      const withOpponents = await Promise.all(
-        rows.map(async (r) => {
-          const opponentId = r.host_id === uid ? r.guest_id : r.host_id;
-          const profile = await getProfileById(opponentId);
-          return {
-            id: r.id,
-            opponentName: profile?.trainer_name || "Trainer",
-            createdAt: r.created_at,
-          };
-        }),
-      );
-      if (!cancelled) setRecentMatches(withOpponents);
+      if (cancelled) return;
+      setLatestChatMatchId((data as { id?: string } | null)?.id ?? null);
     })();
     return () => {
       cancelled = true;
@@ -431,10 +416,32 @@ function ArenaPage() {
 
   return (
     <div className="bg-poke-cream h-full w-full overflow-y-auto pb-nav safe-x">
-      {/* Header */}
-      <div className="px-5 pt-[calc(env(safe-area-inset-top)+1.25rem)] pb-2">
-        <p className="font-pixel-xs text-primary">WELCOME TO</p>
-        <h1 className="font-display-lg text-foreground">Battle Arena</h1>
+      {/* Header. Chat lives here now, level with the title, because the list it
+          used to hang off is gone — see `latestChatMatchId`. */}
+      <div className="flex items-center justify-between gap-3 px-5 pt-[calc(env(safe-area-inset-top)+1.25rem)] pb-2">
+        <div className="min-w-0">
+          <p className="font-pixel-xs text-primary">WELCOME TO</p>
+          <h1 className="font-display-lg text-foreground">Battle Arena</h1>
+        </div>
+        {/* Rendered even with nothing to open, and it says so when tapped. A
+            button that pops into the header a second after the page settles
+            shifts the title under the player's thumb. */}
+        <button
+          type="button"
+          aria-label="Open match chat"
+          onClick={() => {
+            if (!latestChatMatchId) {
+              toast.error("No recent Nearby Battle to chat about yet.");
+              return;
+            }
+            void navigate({ to: "/pvp/chat/$matchId", params: { matchId: latestChatMatchId } });
+          }}
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-card shadow-card transition active:scale-95 ${
+            latestChatMatchId ? "text-primary" : "text-foreground/35"
+          }`}
+        >
+          <MessageCircle className="h-5 w-5" />
+        </button>
       </div>
 
       {/* ── Group 1 — trainer + record ─────────────────────────────────────── */}
@@ -491,46 +498,125 @@ function ArenaPage() {
       {/* ── Group 3 — rewards, and the one button that starts a battle ─────── */}
       <div className="px-5 pt-3">
         <div className="rounded-3xl bg-card p-4 shadow-card">
-          <SectionLabel>BATTLE REWARDS</SectionLabel>
-          <p className="mt-2 text-center text-xs text-foreground/60">
-            Battle other trainers to unlock all 5 rewards.
-          </p>
-          <div className="mt-3 grid grid-cols-5 gap-2">
-            {ARENA_REWARD_SLOTS.map(({ slot, kind }) => {
-              const unlocked = slot < arenaStats.set.wins;
-              const claimed = arenaStats.set.claimed[slot];
-              // The whole tile is the tap target when there's something to
-              // collect — the COLLECT pill alone is ~14px tall, small enough
-              // that a thumb regularly misses it and the tap reads as "nothing
-              // happened, tap again".
-              const tileCls = `flex min-h-[68px] w-full flex-col items-center justify-center gap-1 rounded-2xl p-2 text-center bg-muted/60 ${
-                claimed ? "opacity-60" : ""
-              }`;
-              if (!claimed && unlocked) {
-                return (
-                  <button
-                    key={slot}
-                    type="button"
-                    onClick={() => handleClaim(slot)}
-                    aria-label={`Collect reward ${slot + 1}`}
-                    className={`${tileCls} transition active:scale-95`}
-                  >
-                    <AppIcon src={REWARD_ICON[kind]} className="h-7 w-7" />
-                    <span className="rounded-full bg-primary px-2 py-0.5 font-pixel text-[8px] text-primary-foreground">
-                      COLLECT
-                    </span>
-                  </button>
-                );
-              }
-              return (
-                <div key={slot} className={tileCls}>
-                  <AppIcon
-                    src={claimed ? REWARD_ICON[kind] : LOCK_ICON}
-                    className={claimed ? "h-7 w-7" : "h-9 w-9 opacity-50"}
-                  />
+          {/* Two views of the same thing — what this battle earns you, and where
+              it puts you — sharing one panel. The rankings used to be a second
+              card further down; folded in here they cost no extra height. */}
+          <div className="flex gap-1 rounded-full bg-muted/60 p-1">
+            {(
+              [
+                ["rewards", "BATTLE REWARDS"],
+                ["ranked", "RANKED"],
+              ] as const
+            ).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setGroup3Tab(key)}
+                aria-pressed={group3Tab === key}
+                className={`flex-1 rounded-full py-2 font-pixel-xs tracking-[0.12em] transition ${
+                  group3Tab === key
+                    ? "bg-card text-primary shadow-card"
+                    : "text-foreground/45 active:scale-[0.98]"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* One fixed height for both panels, sized to the taller (the top 3),
+              so the Battle button underneath stays put when the player
+              switches. The shorter panel centres in the slack rather than
+              leaving a gap under itself. */}
+          <div className="flex min-h-[144px] flex-col justify-center">
+            {group3Tab === "rewards" ? (
+              <>
+                <p className="text-center text-xs text-foreground/60">
+                  Battle other trainers to unlock all 5 rewards.
+                </p>
+                <div className="mt-3 grid grid-cols-5 gap-2">
+                  {ARENA_REWARD_SLOTS.map(({ slot, kind }) => {
+                    const unlocked = slot < arenaStats.set.wins;
+                    const claimed = arenaStats.set.claimed[slot];
+                    // The whole tile is the tap target when there's something to
+                    // collect — the COLLECT pill alone is ~14px tall, small enough
+                    // that a thumb regularly misses it and the tap reads as "nothing
+                    // happened, tap again".
+                    const tileCls = `flex min-h-[68px] w-full flex-col items-center justify-center gap-1 rounded-2xl p-2 text-center bg-muted/60 ${
+                      claimed ? "opacity-60" : ""
+                    }`;
+                    if (!claimed && unlocked) {
+                      return (
+                        <button
+                          key={slot}
+                          type="button"
+                          onClick={() => handleClaim(slot)}
+                          aria-label={`Collect reward ${slot + 1}`}
+                          className={`${tileCls} transition active:scale-95`}
+                        >
+                          <AppIcon src={REWARD_ICON[kind]} className="h-7 w-7" />
+                          <span className="rounded-full bg-primary px-2 py-0.5 font-pixel text-[8px] text-primary-foreground">
+                            COLLECT
+                          </span>
+                        </button>
+                      );
+                    }
+                    return (
+                      <div key={slot} className={tileCls}>
+                        <AppIcon
+                          src={claimed ? REWARD_ICON[kind] : LOCK_ICON}
+                          className={claimed ? "h-7 w-7" : "h-9 w-9 opacity-50"}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
+              </>
+            ) : board.top.length === 0 ? (
+              // Rating only moves on human matches, so before anyone has played
+              // one there is no table to show — say why rather than draw an
+              // empty one.
+              <p className="px-2 text-center text-xs text-foreground/60">
+                Win a battle against another trainer to join the rankings.
+              </p>
+            ) : (
+              <>
+                {board.me && board.me.ratingMatches > 0 && (
+                  <div className="text-center text-xs text-foreground/60">
+                    You: <span className="font-bold text-foreground">{board.me.rating}</span> · #
+                    {board.me.position}
+                  </div>
+                )}
+                <div className="mt-2 space-y-1.5">
+                  {board.top.map((row) => (
+                    <div
+                      key={row.id}
+                      className={`flex items-center gap-2 rounded-xl px-2 py-1.5 ${
+                        board.me && row.id === board.me.id ? "bg-primary/10" : ""
+                      }`}
+                    >
+                      <span className="w-5 shrink-0 text-center font-pixel-xs text-foreground/50">
+                        {row.position}
+                      </span>
+                      <img
+                        src={trainerSpriteUrl(row.trainerSprite)}
+                        alt=""
+                        className="sprite h-6 w-6 shrink-0"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).style.opacity = "0";
+                        }}
+                      />
+                      <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
+                        {row.trainerName}
+                      </span>
+                      <span className="shrink-0 text-sm font-bold text-foreground">
+                        {row.rating}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
           {/* GO puts its BATTLE button directly under the reward row, so the
               rewards read as what this button is FOR. Same here — and it is now
@@ -560,114 +646,39 @@ function ArenaPage() {
         </div>
       </div>
 
-      <div className="space-y-3 px-5 pt-3">
-          {board.top.length > 0 && (
-            <div className="rounded-3xl bg-card p-4 shadow-card">
-              <SectionLabel>RANKED</SectionLabel>
-              {board.me && board.me.ratingMatches > 0 && (
-                <div className="mt-2 text-center text-xs text-foreground/60">
-                  You: <span className="font-bold text-foreground">{board.me.rating}</span> · #
-                  {board.me.position}
-                </div>
-              )}
-              <div className="mt-2 space-y-1.5">
-                {board.top.map((row) => (
-                  <div
-                    key={row.id}
-                    className={`flex items-center gap-2 rounded-xl px-2 py-1.5 ${
-                      board.me && row.id === board.me.id ? "bg-primary/10" : ""
-                    }`}
-                  >
-                    <span className="w-5 shrink-0 text-center font-pixel-xs text-foreground/50">
-                      {row.position}
-                    </span>
-                    <img
-                      src={trainerSpriteUrl(row.trainerSprite)}
-                      alt=""
-                      className="sprite h-6 w-6 shrink-0"
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).style.opacity = "0";
-                      }}
-                    />
-                    <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
-                      {row.trainerName}
-                    </span>
-                    <span className="shrink-0 text-sm font-bold text-foreground">{row.rating}</span>
-                  </div>
-                ))}
-              </div>
-              <p className="mt-2 text-center text-[11px] text-foreground/50">
-                Only battles against people count. Training never moves your rating.
-              </p>
-            </div>
-          )}
-
-          {/* ── Group 4 — Nearby Battle (QR + scanner) ────────────────────── */}
-          <div className="rounded-3xl bg-card p-4 shadow-card">
-            <SectionLabel>NEARBY BATTLE</SectionLabel>
-            {/* Scanner replaces the QR in place — same footprint, no layout jump. */}
-            <div className="mt-3 rounded-2xl bg-primary/5 p-3">
-              {scanOpen ? (
-                <ScanPanel active={scanOpen} onClose={() => setScanOpen(false)} />
-              ) : (
-                <BattleCodeQr />
-              )}
-              <p className="mt-2 text-center text-xs font-semibold text-foreground/70">
-                {scanOpen
-                  ? "Point your camera at a nearby trainer's Battle Code."
-                  : "Scan this Battle Code with another device to battle!"}
-              </p>
-              <Button
-                onClick={() => {
-                  if (rewardsBlockBattling) {
-                    toast.error(claimFirstMessage);
-                    return;
-                  }
-                  setScanOpen((v) => !v);
-                }}
-                disabled={rewardsBlockBattling && !scanOpen}
-                className="mt-3 h-12 w-full rounded-full font-bold shadow-pop transition active:scale-[0.98]"
-              >
-                <QrCode className="mr-1.5 h-4 w-4" />
-                {scanOpen ? "Show My Battle Code" : "Scan a Battle Code"}
-              </Button>
-            </div>
+      {/* ── Group 4 — Nearby Battle (QR + scanner) ─────────────────────────── */}
+      <div className="px-5 pt-3">
+        <div className="rounded-3xl bg-card p-4 shadow-card">
+          <SectionLabel>NEARBY BATTLE</SectionLabel>
+          {/* Scanner replaces the QR in place — same footprint, no layout jump. */}
+          <div className="mt-3 rounded-2xl bg-primary/5 p-3">
+            {scanOpen ? (
+              <ScanPanel active={scanOpen} onClose={() => setScanOpen(false)} />
+            ) : (
+              <BattleCodeQr />
+            )}
+            <p className="mt-2 text-center text-xs font-semibold text-foreground/70">
+              {scanOpen
+                ? "Point your camera at a nearby trainer's Battle Code."
+                : "Scan this Battle Code with another device to battle!"}
+            </p>
+            <Button
+              onClick={() => {
+                if (rewardsBlockBattling) {
+                  toast.error(claimFirstMessage);
+                  return;
+                }
+                setScanOpen((v) => !v);
+              }}
+              disabled={rewardsBlockBattling && !scanOpen}
+              className="mt-3 h-12 w-full rounded-full font-bold shadow-pop transition active:scale-[0.98]"
+            >
+              <QrCode className="mr-1.5 h-4 w-4" />
+              {scanOpen ? "Show My Battle Code" : "Scan a Battle Code"}
+            </Button>
           </div>
         </div>
-
-      {/* Recent Nearby Battles — lightweight chat entry point */}
-      {recentMatches.length > 0 && (
-        <div className="px-5 pt-4">
-          <div className="font-pixel-xs text-primary">RECENT PVP BATTLES</div>
-          <div className="mt-2 space-y-2">
-            {recentMatches.map((m) => (
-              <div
-                key={m.id}
-                className="flex items-center justify-between rounded-2xl bg-card p-3 shadow-card"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-semibold text-foreground">
-                    vs {m.opponentName}
-                  </div>
-                  <div className="text-[11px] text-foreground/55">
-                    {relativeTime(Date.parse(m.createdAt))}
-                  </div>
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() =>
-                    void navigate({ to: "/pvp/chat/$matchId", params: { matchId: m.id } })
-                  }
-                  className="ml-2 shrink-0 rounded-full"
-                >
-                  <MessageCircle className="mr-1 h-3.5 w-3.5" /> Chat
-                </Button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      </div>
 
       <div className="pb-8" />
     </div>
