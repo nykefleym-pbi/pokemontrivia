@@ -31,7 +31,7 @@
 // proven safe to bundle here — save-sync's own Edge Function already imports
 // `battleReward` from this same file.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
-import { dailyReward } from "../../../src/lib/rewards";
+import { countConsecutiveDays, dailyReward } from "../../../src/lib/rewards";
 import { corsHeaders } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
@@ -69,6 +69,28 @@ interface DailyQuestion {
   correct: number;
   explanation: string;
   category: string;
+}
+
+/**
+ * How many days in a row, ending today, this player has completed the Daily
+ * Quest. Reads back a bounded window of their own rows and hands the calendar
+ * walk to countConsecutiveDays, which is unit-tested in the app.
+ */
+async function countDailyStreak(
+  db: ReturnType<typeof createClient>,
+  userId: string,
+  today: string,
+): Promise<number> {
+  // 60 rows covers far more than the +50% cap (day 11); beyond that the exact
+  // number changes no reward.
+  const { data } = await db
+    .from("daily_runs")
+    .select("date")
+    .eq("user_id", userId)
+    .lte("date", today)
+    .order("date", { ascending: false })
+    .limit(60);
+  return countConsecutiveDays(((data ?? []) as { date: string }[]).map((r) => r.date), today);
 }
 
 Deno.serve(async (req) => {
@@ -149,6 +171,11 @@ Deno.serve(async (req) => {
     return json({ ok: true, data: { correct, total, reward: null, save: null } });
   }
 
+  // Consecutive-day streak, counted from the rows already on disk rather than
+  // from anything the client sends. today's row was just inserted above, so it
+  // is included. A gap ends the count.
+  const streakDays = await countDailyStreak(anon, userId, date);
+
   // Apply additively to saves.state, retrying a bounded number of times on a
   // concurrent write — same pattern as save-sync's `replay` op and
   // mega-reward-claim.
@@ -165,13 +192,13 @@ Deno.serve(async (req) => {
       // already recorded (irreversibly — see the insert above), the caller
       // must not read this as "no reward". Level defaults to 1 (the store's
       // own default for a fresh player).
-      const reward = dailyReward({ correct, total, level: 1 });
-      return json({ ok: true, data: { correct, total, reward, save: null } });
+      const reward = dailyReward({ correct, total, level: 1, streakDays });
+      return json({ ok: true, data: { correct, total, reward, streakDays, save: null } });
     }
 
     const state = existing.state as Record<string, unknown>;
     const level = (state.level as number | undefined) ?? 1;
-    const reward = dailyReward({ correct, total, level });
+    const reward = dailyReward({ correct, total, level, streakDays });
     const partnerId = (state.pokemon as { id?: number } | null)?.id;
     const currentTp = (state.trainingPoints as Record<string, number> | undefined) ?? {};
     const nextTp =
@@ -197,6 +224,7 @@ Deno.serve(async (req) => {
         data: {
           correct,
           total,
+          streakDays,
           reward,
           save: { version: updatedRows[0].version, state: updatedRows[0].state },
         },

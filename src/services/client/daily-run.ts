@@ -12,6 +12,10 @@ export interface DailyRunResult {
    *  (correct >= 6 — see lib/rewards' dailyReward). `null` below the floor,
    *  or when `alreadyGranted` is true. */
   reward: { xp: number; tp: number } | null;
+  /** Consecutive days completed, today included — the multiplier behind the
+   *  reward. Absent on the already-granted and below-the-floor paths, where
+   *  nothing was paid out. */
+  streakDays?: number;
   /** The patched save, or null if the run/reward was recorded but there was
    *  no server save yet to fold it into (see daily-run/index.ts's module
    *  doc — same precedent as rewards-grant/save-sync/mega-reward-claim). */

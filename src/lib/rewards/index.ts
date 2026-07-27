@@ -56,14 +56,70 @@ export interface DailyReward {
 }
 
 /**
+ * Consecutive days ending at `today`, given the set of dates on which the
+ * player completed a run (YYYY-MM-DD).
+ *
+ * Lives here, next to the curve it feeds, so the daily-run Edge Function can
+ * import it the same way it already imports `dailyReward` — the calendar walk
+ * is the part most likely to be wrong (month ends, year ends, gaps), and
+ * putting it in the Edge Function alone would leave it untested.
+ */
+export function countConsecutiveDays(completedDates: Iterable<string>, today: string): number {
+  const dates = completedDates instanceof Set ? completedDates : new Set(completedDates);
+  const cursor = new Date(`${today}T00:00:00Z`);
+  if (Number.isNaN(cursor.getTime())) return 1;
+  let streak = 0;
+  while (dates.has(cursor.toISOString().slice(0, 10))) {
+    streak++;
+    cursor.setUTCDate(cursor.getUTCDate() - 1);
+  }
+  // Today's row is inserted before this runs, so 0 means "no history at all";
+  // either way the player is on day 1.
+  return Math.max(1, streak);
+}
+
+/** Extra XP per consecutive day, and the ceiling it stops at. */
+export const DAILY_STREAK_STEP = 0.05;
+export const DAILY_STREAK_MAX = 0.5;
+
+/**
+ * How much a run of consecutive days is worth, as a multiplier on the day's XP.
+ *
+ * Day 1 is 1.0 and each further day adds 5%, capping at +50% (day 11 onward).
+ * Capped on purpose: an uncapped curve makes a long streak so valuable that
+ * breaking it is punishing rather than disappointing, which is the point at
+ * which a missed day stops a player coming back at all.
+ *
+ * Deliberately separate from the daily GIFT streak, which keeps its own 7-day
+ * shiny cycle. They measure different things — showing up versus playing — and
+ * the owner's ruling is that both stay.
+ */
+export function dailyStreakMultiplier(streakDays: number): number {
+  const days = Math.max(1, Math.floor(streakDays || 1));
+  return 1 + Math.min(DAILY_STREAK_MAX, (days - 1) * DAILY_STREAK_STEP);
+}
+
+/**
  * Daily Quest reward. Needs >= 6/10 to score. Perfect (10/10) doubles XP.
  * TP is 20% of XP. Mirrors dailyXpFor() + the 0.2*xp TP grant exactly.
+ *
+ * `streakDays` is how many consecutive days the player has completed, today
+ * included, and defaults to 1 so every existing caller keeps its old numbers.
+ * It is counted server-side from `daily_runs` rather than trusted from the
+ * client — the table already holds one row per player per day, so the streak
+ * is a fact on disk rather than a counter that can drift or be edited.
  */
-export function dailyReward(opts: { correct: number; total: number; level: number }): DailyReward {
+export function dailyReward(opts: {
+  correct: number;
+  total: number;
+  level: number;
+  streakDays?: number;
+}): DailyReward {
   if (opts.correct < 6) return { xp: 0, tp: 0 };
   const lvl = levelMultiplier(opts.level);
   const perfectMult = opts.correct === opts.total ? 2 : 1;
-  const xp = Math.round(50 * lvl * perfectMult);
+  const streakMult = dailyStreakMultiplier(opts.streakDays ?? 1);
+  const xp = Math.round(50 * lvl * perfectMult * streakMult);
   return { xp, tp: Math.round(0.2 * xp) };
 }
 
