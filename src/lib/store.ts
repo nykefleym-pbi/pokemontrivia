@@ -11,6 +11,7 @@ import {
   currentPlayStreakDays,
   streakProgressBonus,
   STATUS_META,
+  ADAPTIVE_WINDOW,
 } from "./game-data";
 import { clampStage } from "./pvp-combat";
 import { rollAbilityId } from "./abilities";
@@ -89,6 +90,7 @@ export function buildSavePayload(s: GameState) {
     seenQuestionHashes: s.seenQuestionHashes,
     seenQuestions: s.seenQuestions,
     seenCuratedIds: s.seenCuratedIds,
+    recentAnswers: s.recentAnswers,
     flags: s.flags,
     claimedAchievements: s.claimedAchievements,
     dailyResult: s.dailyResult,
@@ -219,6 +221,7 @@ export const useGameStore = create<GameState>()(
       seenQuestionHashes: [],
       seenQuestions: [],
       seenCuratedIds: [],
+      recentAnswers: [],
 
       flags: [],
       claimedAchievements: [],
@@ -380,6 +383,7 @@ export const useGameStore = create<GameState>()(
           seenQuestionHashes: [],
           seenQuestions: [],
           seenCuratedIds: [],
+          recentAnswers: [],
           flags: [],
           claimedAchievements: [],
           dailyResult: null,
@@ -508,6 +512,9 @@ export const useGameStore = create<GameState>()(
             totalAnswerTime: s.stats.totalAnswerTime + timeMs,
             bestStreak: Math.max(s.stats.bestStreak, streak),
           },
+          // The one choke point every graded answer goes through, so the
+          // rolling window cannot fall out of step with `stats`.
+          recentAnswers: [...(s.recentAnswers ?? []), correct ? 1 : 0].slice(-ADAPTIVE_WINDOW),
         })),
 
       completeSet: () => {
@@ -733,6 +740,7 @@ export const useGameStore = create<GameState>()(
           lastSeenWhatsNew: p.lastSeenWhatsNew ?? 0,
           flags: p.flags ?? [],
           claimedAchievements: p.claimedAchievements ?? [],
+          recentAnswers: p.recentAnswers ?? [],
           battleLog: p.battleLog ?? [],
           arenaStats: p.arenaStats ?? defaultArenaStats,
           dailyResult,

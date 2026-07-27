@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Trivia } from "@/lib/trivia-core";
 import { useGameStore } from "@/lib/store";
 import type { ActiveStatus, PvpStatStages } from "@/lib/store";
-import { difficultyBandForLevel } from "@/lib/game-data";
+import { adaptiveDifficultyBand } from "@/lib/game-data";
 import type { ItemId } from "@/lib/game-data";
 import { fetchBattleQuestions } from "@/lib/api/trivia";
 import { track } from "@/lib/analytics";
@@ -418,7 +418,7 @@ export async function startTrainingMatch(): Promise<
   try {
     const s = useGameStore.getState();
     const data = await fetchBattleQuestions({
-      difficulties: difficultyBandForLevel(s.level),
+      difficulties: adaptiveDifficultyBand(s.level, s.recentAnswers),
       seenHashes: s.seenQuestionHashes,
       seenSamples: s.seenQuestions.slice(-80),
       excludeIds: s.seenCuratedIds.slice(-500),
@@ -465,7 +465,7 @@ export async function prepareQueueTicket(): Promise<
   try {
     const s = useGameStore.getState();
     const data = await fetchBattleQuestions({
-      difficulties: difficultyBandForLevel(s.level),
+      difficulties: adaptiveDifficultyBand(s.level, s.recentAnswers),
       seenHashes: s.seenQuestionHashes,
       seenSamples: s.seenQuestions.slice(-80),
       excludeIds: s.seenCuratedIds.slice(-500),

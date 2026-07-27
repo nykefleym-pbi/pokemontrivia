@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { useGameStore } from "@/lib/store";
+import { ADAPTIVE_WINDOW } from "@/lib/game-data";
 import { findPokemon } from "@/lib/pokemon-data";
 import type { WhosThatRound as Round } from "@/lib/whos-that";
 
@@ -22,7 +23,32 @@ describe("store composition (slices)", () => {
     expect(s.inventory).toBeDefined();
     expect(typeof s.pokedex).toBe("object");
     expect(s.defeatedElites).toEqual([]);
+    expect(s.recentAnswers).toEqual([]);
     expect(s.darkMode).toBe(false);
+  });
+
+  it("recordAnswer keeps a rolling window in step with stats", () => {
+    const s = () => useGameStore.getState();
+    s().recordAnswer(true, 1000, 1);
+    s().recordAnswer(false, 1000, 0);
+    s().recordAnswer(true, 1000, 1);
+
+    expect(s().recentAnswers).toEqual([1, 0, 1]);
+    expect(s().stats.answered).toBe(3);
+    expect(s().stats.correct).toBe(2);
+  });
+
+  it("recordAnswer caps the window and drops the oldest answers", () => {
+    // Feed it more than a window's worth: only the tail may survive, otherwise
+    // the array grows without bound in every save payload.
+    for (let i = 0; i < ADAPTIVE_WINDOW + 10; i++) {
+      useGameStore.getState().recordAnswer(i >= 10, 1000, 0);
+    }
+    const recent = useGameStore.getState().recentAnswers;
+    expect(recent.length).toBe(ADAPTIVE_WINDOW);
+    // The ten wrong answers at the front are the ones that fell off.
+    expect(recent.every((v) => v === 1)).toBe(true);
+    expect(useGameStore.getState().stats.answered).toBe(ADAPTIVE_WINDOW + 10);
   });
 
   it("mega slice action: markMegaRewardClaimed is idempotent", () => {
