@@ -153,11 +153,15 @@ function ProfilePage() {
     [unlocked, claimedAchievements],
   );
 
-  /** Claimable first, then locked, then collected — the row you can act on is
-   *  always at the top of the sheet. */
+  /** Claimable, then unlocked, then locked.
+   *
+   *  The row you can act on comes first, and everything you have actually
+   *  earned sits above everything you have not. Collecting a trophy used to
+   *  send it to the very bottom, below trophies the player had never earned,
+   *  which read as a demotion for doing the right thing. */
   const trophySortRank = (id: string) => {
-    if (claimedAchievements.includes(id)) return 2;
-    return unlocked.has(id) ? 0 : 1;
+    if (!unlocked.has(id)) return 2;
+    return claimedAchievements.includes(id) ? 1 : 0;
   };
 
   const claimTrophy = (id: string, name: string) => {

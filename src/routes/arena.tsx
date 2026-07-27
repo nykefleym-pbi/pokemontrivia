@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import { Swords, QrCode, ChevronRight, Loader2, MessageCircle, Globe, Send } from "lucide-react";
+import { Swords, QrCode, Loader2, MessageCircle } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { useStoreHydrated } from "@/lib/store-hydration";
 import { ItemIcon } from "@/components/game-ui";
@@ -22,16 +22,16 @@ import {
   leaveQueue,
   type QueueTicket,
 } from "@/lib/pvp-live";
-import { challengeRandomTrainer, fetchPvpLeaderboard, type LeaderboardRow } from "@/lib/pvp";
+import { fetchPvpLeaderboard, type LeaderboardRow } from "@/lib/pvp";
 import { ensureSession, getProfileById } from "@/lib/social";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/arena")({
   component: ArenaPage,
-  // `nearby: 1` is a one-shot flag (PvP Rematch, docs/handoffs/.../03-frontend.md):
-  // landing here from a human-match result forces the Battle tab so a rematch
-  // is one tap away. Optional (like index.tsx's `ref`/refer.tsx's `code`) so
-  // every existing `navigate({ to: "/arena" })` call site stays valid.
+  // `nearby: 1` came from PvP Rematch and used to force the Battle tab. There
+  // are no tabs any more — Battle is the whole page — so nothing reads it, but
+  // pvp.live.$matchId.tsx still navigates with it, and dropping the validator
+  // would make that a search param the router rejects. Accepted and ignored.
   validateSearch: (s: Record<string, unknown>): { nearby?: 1 } =>
     s.nearby ? { nearby: 1 } : {},
 });
@@ -123,9 +123,21 @@ function TrophyCard({ label, count, art }: { label: string; count: number; art: 
 
 function StatRow({ label, value }: { label: string; value: number }) {
   return (
-    <div className="flex items-center justify-between text-sm">
-      <span className="text-foreground/55">{label}</span>
-      <span className="font-semibold text-foreground">{value}</span>
+    <div className="flex items-baseline justify-between gap-2 text-sm">
+      <span className="shrink-0 text-foreground/55">{label}</span>
+      {/* GO colours the number, not the label — the eye lands on the figure. */}
+      <span className="font-display-md tabular-nums text-primary">{value.toLocaleString()}</span>
+    </div>
+  );
+}
+
+/** GO's section heading: a centred caption with a hairline under it, which is
+ *  what separates its stacked cards without needing a heavier divider. */
+function SectionLabel({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex flex-col items-center">
+      <div className="font-pixel-xs tracking-[0.2em] text-primary">{children}</div>
+      <div className="mt-1.5 h-px w-16 rounded-full bg-primary/25" />
     </div>
   );
 }
@@ -134,7 +146,6 @@ function ArenaPage() {
   const hasOnboarded = useGameStore((s) => s.hasOnboarded);
   const hydrated = useStoreHydrated();
   const navigate = useNavigate();
-  const search = Route.useSearch();
   const trainerSprite = useGameStore((s) => s.trainerSprite);
   const trainerName = useGameStore((s) => s.trainerName);
   const level = useGameStore((s) => s.level);
@@ -142,10 +153,8 @@ function ArenaPage() {
   const arenaStats = useGameStore((s) => s.arenaStats);
   const claimArenaReward = useGameStore((s) => s.claimArenaReward);
 
-  const [tab, setTab] = useState<"battle" | "training">("battle");
   const [scanOpen, setScanOpen] = useState(false);
   const [trainingBusy, setTrainingBusy] = useState(false);
-  const forcedBattleTabRef = useRef(false);
 
   const [recentMatches, setRecentMatches] = useState<RecentNearbyMatch[]>([]);
   const [board, setBoard] = useState<{ top: LeaderboardRow[]; me: LeaderboardRow | null }>({
@@ -168,16 +177,6 @@ function ArenaPage() {
   useEffect(() => {
     if (hydrated && !hasOnboarded) navigate({ to: "/" });
   }, [hydrated, hasOnboarded, navigate]);
-
-  // `nearby: 1` (PvP Rematch one-shot flag): force the Battle tab. Battle is
-  // already the default, so this is close to a no-op — kept so the contract
-  // stays honest if the default tab ever changes.
-  useEffect(() => {
-    if (hasOnboarded && search.nearby === 1 && !forcedBattleTabRef.current) {
-      forcedBattleTabRef.current = true;
-      setTab("battle");
-    }
-  }, [hasOnboarded, search.nearby]);
 
   // Recent Nearby Battles strip — a lightweight entry point into match chat,
   // not an inbox. RLS on pvp_live_matches already scopes rows to matches the
@@ -236,10 +235,15 @@ function ArenaPage() {
   // line alive, so one call does both jobs. The waiting side needs no signal of
   // its own — LivePvpWatcher pulls it into the match the instant the row lands.
   const QUEUE_POLL_MS = 5000;
-  const QUEUE_BOT_OFFER_S = 30;
+  /** How long to hold out for a human before dropping into a Training battle.
+   *  The fallback is automatic rather than a button: the player asked to
+   *  battle, and with a small player base an empty queue is the normal case,
+   *  so making them acknowledge that is a dead end wearing a prompt. */
+  const QUEUE_FALLBACK_S = 30;
   const [queueWaitS, setQueueWaitS] = useState<number | null>(null);
   const queueTicketRef = useRef<QueueTicket | null>(null);
   const queueTimersRef = useRef<number[]>([]);
+  const fallenBackRef = useRef(false);
   const searching = queueWaitS !== null;
 
   const stopQueue = useCallback((leave: boolean) => {
@@ -270,6 +274,7 @@ function ArenaPage() {
       return;
     }
     queueTicketRef.current = prep.ticket;
+    fallenBackRef.current = false;
     setQueueWaitS(0);
 
     const attempt = async () => {
@@ -290,48 +295,23 @@ function ArenaPage() {
     void attempt();
     queueTimersRef.current.push(
       window.setInterval(() => void attempt(), QUEUE_POLL_MS),
-      window.setInterval(() => setQueueWaitS((s) => (s === null ? s : s + 1)), 1000),
+      window.setInterval(() => {
+        setQueueWaitS((s) => {
+          if (s === null) return s;
+          const next = s + 1;
+          // Guarded by a ref, not by the count: this runs inside a state
+          // updater, which React may invoke more than once.
+          if (next >= QUEUE_FALLBACK_S && !fallenBackRef.current) {
+            fallenBackRef.current = true;
+            // Leave the line first — a row left behind would pair someone into
+            // a battle this player has already walked away from.
+            stopQueue(true);
+            void handleStartTraining();
+          }
+          return next;
+        });
+      }, 1000),
     );
-  }
-
-  const [challengeBusy, setChallengeBusy] = useState(false);
-
-  // The asynchronous counterpart to the queue: no waiting, no both-online
-  // requirement. The opponent is picked server-side and push-notified.
-  async function handleChallengeStranger() {
-    if (challengeBusy) return;
-    if (rewardsBlockBattling) {
-      toast.error(claimFirstMessage);
-      return;
-    }
-    setChallengeBusy(true);
-    try {
-      const prep = await prepareQueueTicket();
-      if (!prep.ok) {
-        toast.error("Couldn't prepare the challenge. Try again.");
-        return;
-      }
-      const res = await challengeRandomTrainer(prep.ticket.questions);
-      if (!res.ok) {
-        toast.error(
-          res.error === "too_many_pending"
-            ? "You already have three challenges out. Wait for one to come back."
-            : res.error === "no_opponent"
-              ? "No trainers to challenge yet — try Battle Online."
-              : "Couldn't send the challenge. Try again.",
-        );
-        return;
-      }
-      // The questions were served, so they must not come round again.
-      const st = useGameStore.getState();
-      st.markQuestionsSeen(prep.ticket.questions.map((q) => q.question));
-      st.markCuratedSeen(prep.ticket.servedIds);
-      toast.success(`Challenge sent to ${res.opponentName}!`, {
-        description: "They'll get a notification. Your result waits in Profile.",
-      });
-    } finally {
-      setChallengeBusy(false);
-    }
   }
 
   async function handleStartTraining() {
@@ -392,30 +372,23 @@ function ArenaPage() {
         }}
         opponent={null}
         status="Finding an opponent…"
-        detail={`${queueWaitS}s · the level range widens the longer you wait`}
+        // Per the owner's ruling the wait never names the Training Bot: the
+        // player asked for a battle and gets one, and who they face is the
+        // battle screen's job to show.
+        detail={
+          (queueWaitS ?? 0) >= QUEUE_FALLBACK_S
+            ? "Setting up your battle…"
+            : `${queueWaitS}s · widening the search`
+        }
         backdrop={VERSUS_BACKDROP}
         actions={
-          <>
-            {(queueWaitS ?? 0) >= QUEUE_BOT_OFFER_S && (
-              <Button
-                onClick={() => {
-                  stopQueue(true);
-                  void handleStartTraining();
-                }}
-                className="h-12 w-full rounded-full font-bold"
-              >
-                <Swords className="mr-1.5 h-4 w-4" />
-                Battle the Training Bot instead
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              onClick={() => stopQueue(true)}
-              className="h-11 w-full rounded-full font-bold text-white/70 hover:bg-white/10 hover:text-white"
-            >
-              Cancel
-            </Button>
-          </>
+          <Button
+            variant="ghost"
+            onClick={() => stopQueue(true)}
+            className="h-11 w-full rounded-full font-bold text-white/70 hover:bg-white/10 hover:text-white"
+          >
+            Cancel
+          </Button>
         }
       />
     );
@@ -429,47 +402,23 @@ function ArenaPage() {
         <h1 className="font-display-lg text-foreground">Battle Arena</h1>
       </div>
 
-      {/* Tabs */}
-      <div className="mt-1 flex gap-6 border-b border-border/60 px-5">
-        <button
-          onClick={() => setTab("battle")}
-          className={`pb-2.5 font-pixel text-[10px] uppercase tracking-wide ${
-            tab === "battle"
-              ? "border-b-2 border-primary text-primary"
-              : "text-foreground/40"
-          }`}
-        >
-          PvP
-        </button>
-        <button
-          onClick={() => setTab("training")}
-          className={`pb-2.5 font-pixel text-[10px] uppercase tracking-wide ${
-            tab === "training"
-              ? "border-b-2 border-primary text-primary"
-              : "text-foreground/40"
-          }`}
-        >
-          Training
-        </button>
-      </div>
-
-      {/* Hero */}
-      <div className="px-5 pt-4">
-        <div className="flex items-center gap-4 rounded-3xl bg-card p-4 shadow-card">
+      {/* ── Group 1 — trainer + record ─────────────────────────────────────── */}
+      <div className="px-5 pt-3">
+        <div className="flex items-center gap-3 rounded-3xl bg-card p-4 shadow-card">
           <img
             src={trainerSpriteUrl(trainerSprite)}
             alt={trainerSprite}
-            className="sprite h-36 w-36 shrink-0 object-contain"
+            className="sprite h-32 w-32 shrink-0 object-contain"
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).style.opacity = "0.3";
             }}
           />
-          <div className="min-w-0 flex-1 space-y-1.5">
+          <div className="min-w-0 flex-1 space-y-1">
             <StatRow label="Wins" value={arenaStats.wins} />
             <StatRow label="Battles" value={arenaStats.battles} />
             <StatRow label="Longest Streak" value={arenaStats.longestWinStreak} />
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-foreground/55">Berries Earned</span>
+            <div className="flex items-baseline justify-between gap-2 text-sm">
+              <span className="shrink-0 text-foreground/55">Berries</span>
               <div className="flex gap-1">
                 {[0, 1, 2].map((i) => {
                   const id = arenaStats.lastBerries[i];
@@ -478,7 +427,7 @@ function ArenaPage() {
                   ) : (
                     <span
                       key={i}
-                      className="flex h-6 w-6 items-center justify-center text-foreground/30"
+                      className="flex h-6 w-6 items-center justify-center text-foreground/25"
                     >
                       —
                     </span>
@@ -490,7 +439,7 @@ function ArenaPage() {
         </div>
       </div>
 
-      {/* Trophies */}
+      {/* ── Group 2 — the two badges ───────────────────────────────────────── */}
       <div className="flex gap-3 px-5 pt-3">
         <TrophyCard
           label="PVP"
@@ -504,11 +453,13 @@ function ArenaPage() {
         />
       </div>
 
-      {/* Rewards card */}
+      {/* ── Group 3 — rewards, and the one button that starts a battle ─────── */}
       <div className="px-5 pt-3">
         <div className="rounded-3xl bg-card p-4 shadow-card">
-          <div className="font-pixel-xs text-primary">BATTLE REWARDS</div>
-          <p className="mt-0.5 text-xs text-foreground/55">Win battles to fill your set of 5</p>
+          <SectionLabel>BATTLE REWARDS</SectionLabel>
+          <p className="mt-2 text-center text-xs text-foreground/60">
+            Battle other trainers to unlock all 5 rewards.
+          </p>
           <div className="mt-3 grid grid-cols-5 gap-2">
             {ARENA_REWARD_SLOTS.map(({ slot, kind }) => {
               const unlocked = slot < arenaStats.set.wins;
@@ -546,11 +497,26 @@ function ArenaPage() {
               );
             })}
           </div>
+          {/* GO puts its BATTLE button directly under the reward row, so the
+              rewards read as what this button is FOR. Same here — and it is now
+              the only way in, since Online falls back to Training by itself. */}
+          <Button
+            onClick={() => void handleBattleOnline()}
+            disabled={rewardsBlockBattling || trainingBusy}
+            className="mt-4 h-14 w-full rounded-full bg-gradient-to-b from-primary to-primary/85 text-lg font-bold tracking-wide shadow-pop transition active:scale-[0.98] disabled:opacity-60"
+          >
+            {trainingBusy ? (
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            ) : (
+              <Swords className="mr-2 h-5 w-5" />
+            )}
+            {trainingBusy ? "Starting…" : "Battle"}
+          </Button>
           <div className="mt-3 text-center text-[11px] text-foreground/55">
             {arenaStats.set.battles}/5 battles played
           </div>
-          {/* Says WHY the battle buttons below are disabled — a dead button with
-              no explanation is the worse failure. */}
+          {/* Says WHY the Battle button is disabled — a dead button with no
+              explanation is the worse failure. */}
           {rewardsBlockBattling && (
             <p className="mt-2 text-center text-[11px] font-semibold text-primary">
               {claimFirstMessage}
@@ -559,58 +525,16 @@ function ArenaPage() {
         </div>
       </div>
 
-      {/* Tab-dependent */}
-      {tab === "battle" ? (
-        <div className="space-y-3 px-5 pt-3">
-          {/* Online first: it is the only entry point that works when there is
-              nobody in the room, which is almost always. */}
-          <div className="rounded-3xl bg-card p-4 shadow-card">
-            <div className="font-pixel-xs text-primary">ONLINE</div>
-            {searching ? (
-              <p className="mt-0.5 text-xs text-foreground/55">Searching…</p>
-            ) : (
-              <>
-                <p className="mt-0.5 text-xs text-foreground/55">
-                  Get matched with another trainer anywhere. No chat — just the battle.
-                </p>
-                <Button
-                  onClick={() => void handleBattleOnline()}
-                  disabled={rewardsBlockBattling}
-                  className="mt-3 h-12 w-full rounded-full text-base font-bold"
-                >
-                  <Globe className="mr-1.5 h-4 w-4" />
-                  Battle Online
-                </Button>
-                {/* The fallback that does not need anyone else online right
-                    now, which with a small player base is the usual case. */}
-                <Button
-                  variant="outline"
-                  onClick={() => void handleChallengeStranger()}
-                  disabled={rewardsBlockBattling || challengeBusy}
-                  className="mt-2 h-11 w-full rounded-full font-bold"
-                >
-                  {challengeBusy ? (
-                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Send className="mr-1.5 h-4 w-4" />
-                  )}
-                  Send a challenge instead
-                </Button>
-              </>
-            )}
-          </div>
-
+      <div className="space-y-3 px-5 pt-3">
           {board.top.length > 0 && (
             <div className="rounded-3xl bg-card p-4 shadow-card">
-              <div className="flex items-baseline justify-between">
-                <div className="font-pixel-xs text-primary">RANKED</div>
-                {board.me && board.me.ratingMatches > 0 && (
-                  <div className="text-xs text-foreground/60">
-                    You: <span className="font-bold text-foreground">{board.me.rating}</span> · #
-                    {board.me.position}
-                  </div>
-                )}
-              </div>
+              <SectionLabel>RANKED</SectionLabel>
+              {board.me && board.me.ratingMatches > 0 && (
+                <div className="mt-2 text-center text-xs text-foreground/60">
+                  You: <span className="font-bold text-foreground">{board.me.rating}</span> · #
+                  {board.me.position}
+                </div>
+              )}
               <div className="mt-2 space-y-1.5">
                 {board.top.map((row) => (
                   <div
@@ -637,72 +561,46 @@ function ArenaPage() {
                   </div>
                 ))}
               </div>
-              <p className="mt-2 text-[11px] text-foreground/50">
+              <p className="mt-2 text-center text-[11px] text-foreground/50">
                 Only battles against people count. Training never moves your rating.
               </p>
             </div>
           )}
 
+          {/* ── Group 4 — Nearby Battle (QR + scanner) ────────────────────── */}
           <div className="rounded-3xl bg-card p-4 shadow-card">
-            <div className="font-pixel-xs text-primary">NEARBY</div>
-            <p className="mt-0.5 text-xs text-foreground/55">
-              {scanOpen
-                ? "Point your camera at a nearby trainer's Battle Code to fight instantly."
-                : "Your friend code doubles as your Battle Code — have a nearby trainer scan it to fight instantly."}
-            </p>
+            <SectionLabel>NEARBY BATTLE</SectionLabel>
             {/* Scanner replaces the QR in place — same footprint, no layout jump. */}
-            <div className="mt-3">
+            <div className="mt-3 rounded-2xl bg-primary/5 p-3">
               {scanOpen ? (
                 <ScanPanel active={scanOpen} onClose={() => setScanOpen(false)} />
               ) : (
                 <BattleCodeQr />
               )}
+              <p className="mt-2 text-center text-xs font-semibold text-foreground/70">
+                {scanOpen
+                  ? "Point your camera at a nearby trainer's Battle Code."
+                  : "Scan this Battle Code with another device to battle!"}
+              </p>
+              <Button
+                onClick={() => {
+                  if (rewardsBlockBattling) {
+                    toast.error(claimFirstMessage);
+                    return;
+                  }
+                  setScanOpen((v) => !v);
+                }}
+                disabled={rewardsBlockBattling && !scanOpen}
+                className="mt-3 h-12 w-full rounded-full font-bold shadow-pop transition active:scale-[0.98]"
+              >
+                <QrCode className="mr-1.5 h-4 w-4" />
+                {scanOpen ? "Show My Battle Code" : "Scan a Battle Code"}
+              </Button>
             </div>
-            <Button
-              onClick={() => {
-                if (rewardsBlockBattling) {
-                  toast.error(claimFirstMessage);
-                  return;
-                }
-                setScanOpen((v) => !v);
-              }}
-              disabled={rewardsBlockBattling && !scanOpen}
-              className="mt-3 h-11 w-full rounded-full"
-            >
-              <QrCode className="mr-1.5 h-4 w-4" />
-              {scanOpen ? "Show My Battle Code" : "Scan a Battle Code"}
-            </Button>
           </div>
         </div>
-      ) : (
-        <div className="px-5 pt-3">
-          <button
-            onClick={() => void handleStartTraining()}
-            disabled={trainingBusy || rewardsBlockBattling}
-            className="flex w-full items-center gap-3 rounded-3xl bg-card p-4 text-left shadow-card transition active:scale-[0.99] disabled:opacity-70"
-          >
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
-              {trainingBusy ? (
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              ) : (
-                <Swords className="h-6 w-6 text-primary" />
-              )}
-            </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="font-display-md text-foreground">
-                {trainingBusy ? "Summoning..." : "Start Training"}
-              </h3>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Sharpen your skills against the Training Bot. Wins count toward your rewards
-                and your Training badge.
-              </p>
-            </div>
-            <ChevronRight className="h-5 w-5 shrink-0 text-foreground/40" />
-          </button>
-        </div>
-      )}
 
-      {/* Recent Nearby Battles — lightweight chat entry point, fixed on both tabs */}
+      {/* Recent Nearby Battles — lightweight chat entry point */}
       {recentMatches.length > 0 && (
         <div className="px-5 pt-4">
           <div className="font-pixel-xs text-primary">RECENT PVP BATTLES</div>
