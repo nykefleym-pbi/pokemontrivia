@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Swords, QrCode, ChevronRight, Loader2, MessageCircle, Globe } from "lucide-react";
+import { Swords, QrCode, ChevronRight, Loader2, MessageCircle, Globe, Send } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { useStoreHydrated } from "@/lib/store-hydration";
 import { ItemIcon } from "@/components/game-ui";
@@ -21,6 +21,7 @@ import {
   leaveQueue,
   type QueueTicket,
 } from "@/lib/pvp-live";
+import { challengeRandomTrainer } from "@/lib/pvp";
 import { ensureSession, getProfileById } from "@/lib/social";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -273,6 +274,46 @@ function ArenaPage() {
     );
   }
 
+  const [challengeBusy, setChallengeBusy] = useState(false);
+
+  // The asynchronous counterpart to the queue: no waiting, no both-online
+  // requirement. The opponent is picked server-side and push-notified.
+  async function handleChallengeStranger() {
+    if (challengeBusy) return;
+    if (rewardsBlockBattling) {
+      toast.error(claimFirstMessage);
+      return;
+    }
+    setChallengeBusy(true);
+    try {
+      const prep = await prepareQueueTicket();
+      if (!prep.ok) {
+        toast.error("Couldn't prepare the challenge. Try again.");
+        return;
+      }
+      const res = await challengeRandomTrainer(prep.ticket.questions);
+      if (!res.ok) {
+        toast.error(
+          res.error === "too_many_pending"
+            ? "You already have three challenges out. Wait for one to come back."
+            : res.error === "no_opponent"
+              ? "No trainers to challenge yet — try Battle Online."
+              : "Couldn't send the challenge. Try again.",
+        );
+        return;
+      }
+      // The questions were served, so they must not come round again.
+      const st = useGameStore.getState();
+      st.markQuestionsSeen(prep.ticket.questions.map((q) => q.question));
+      st.markCuratedSeen(prep.ticket.servedIds);
+      toast.success(`Challenge sent to ${res.opponentName}!`, {
+        description: "They'll get a notification. Your result waits in Profile.",
+      });
+    } finally {
+      setChallengeBusy(false);
+    }
+  }
+
   async function handleStartTraining() {
     if (trainingBusy) return;
     if (rewardsBlockBattling) {
@@ -508,6 +549,21 @@ function ArenaPage() {
                 >
                   <Globe className="mr-1.5 h-4 w-4" />
                   Battle Online
+                </Button>
+                {/* The fallback that does not need anyone else online right
+                    now, which with a small player base is the usual case. */}
+                <Button
+                  variant="outline"
+                  onClick={() => void handleChallengeStranger()}
+                  disabled={rewardsBlockBattling || challengeBusy}
+                  className="mt-2 h-11 w-full rounded-full font-bold"
+                >
+                  {challengeBusy ? (
+                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="mr-1.5 h-4 w-4" />
+                  )}
+                  Send a challenge instead
                 </Button>
               </>
             )}
