@@ -43,6 +43,8 @@ import { AppIcon } from "@/components/app-icon";
 import { ITEM_CATEGORY_ICON } from "@/lib/app-icons";
 import type { MissedAnswer } from "@/lib/trivia-core";
 import { ShareCardDialog } from "@/components/share-card-dialog";
+import { VersusScreen } from "@/components/versus-screen";
+import { VERSUS_BACKDROP } from "@/lib/app-icons";
 import type { BattleShareData } from "@/components/share-card-builder";
 
 export const Route = createFileRoute("/pvp/live/$matchId")({
@@ -104,6 +106,14 @@ function MatchPageContent({ matchId }: { matchId: string }) {
   const level = useGameStore((s) => s.level);
   const friendCode = useGameStore((s) => s.friendCode);
   const [shareOpen, setShareOpen] = useState(false);
+  const [introDone, setIntroDone] = useState(false);
+  // Drives the pre-battle countdown. Cheap: it only runs while the intro is up.
+  const [introNow, setIntroNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (introDone) return;
+    const t = setInterval(() => setIntroNow(Date.now()), 200);
+    return () => clearInterval(t);
+  }, [introDone]);
   // Opponent-side combat cues funnel through the same frozen `emit` path as the
   // battle screen's local cues, so wording/ordering/dedupe are identical.
   const { emit } = useBattleFxCues();
@@ -563,6 +573,33 @@ function MatchPageContent({ matchId }: { matchId: string }) {
         </div>
         <Button onClick={() => navigate({ to: "/arena" })}>Back to Arena</Button>
       </div>
+    );
+  }
+
+  // The three-second beat between "match exists" and question one. It used to
+  // be the battle screen sitting on a blank timer; now it is the face-off. Tap
+  // to skip so a rematch chain is never slowed by ceremony.
+  const msUntilStart = match ? new Date(match.startedAt).getTime() - introNow : 0;
+
+  if (phase === "battle" && match && myId && !introDone && msUntilStart > 0) {
+    return (
+      <VersusScreen
+        me={{
+          name: trainerName || "You",
+          spriteId: trainerSprite,
+          level,
+          code: friendCode,
+        }}
+        opponent={{
+          name: opponentProfile?.trainer_name || (match.isBotMatch ? "Training Bot" : "Opponent"),
+          spriteId: opponentProfile?.trainer_sprite || "",
+          level: opponentProfile?.level ?? null,
+        }}
+        status="Battle starting…"
+        detail={`${Math.ceil(msUntilStart / 1000)}…`}
+        backdrop={VERSUS_BACKDROP}
+        onSkip={() => setIntroDone(true)}
+      />
     );
   }
 

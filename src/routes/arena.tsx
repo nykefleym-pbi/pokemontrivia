@@ -6,9 +6,10 @@ import { useGameStore } from "@/lib/store";
 import { useStoreHydrated } from "@/lib/store-hydration";
 import { ItemIcon } from "@/components/game-ui";
 import { AppIcon } from "@/components/app-icon";
-import { REWARD_ICON, LOCK_ICON, ARENA_BADGE_ICON } from "@/lib/app-icons";
+import { REWARD_ICON, LOCK_ICON, ARENA_BADGE_ICON, VERSUS_BACKDROP } from "@/lib/app-icons";
 import { Button } from "@/components/ui/button";
 import { BattleCodeQr } from "@/components/battle-code-qr";
+import { VersusScreen } from "@/components/versus-screen";
 import { ScanPanel } from "@/components/NearbyBattleSheet";
 import { trainerSpriteUrl } from "@/lib/game-data";
 import { ITEM_BY_ID } from "@/content/items";
@@ -135,6 +136,9 @@ function ArenaPage() {
   const navigate = useNavigate();
   const search = Route.useSearch();
   const trainerSprite = useGameStore((s) => s.trainerSprite);
+  const trainerName = useGameStore((s) => s.trainerName);
+  const level = useGameStore((s) => s.level);
+  const friendCode = useGameStore((s) => s.friendCode);
   const arenaStats = useGameStore((s) => s.arenaStats);
   const claimArenaReward = useGameStore((s) => s.claimArenaReward);
 
@@ -376,6 +380,47 @@ function ArenaPage() {
 
   if (!hydrated || !hasOnboarded) return null;
 
+  if (searching) {
+    return (
+      <VersusScreen
+        me={{
+          name: trainerName || "You",
+          spriteId: trainerSprite,
+          level,
+          rating: board.me?.rating ?? null,
+          code: friendCode,
+        }}
+        opponent={null}
+        status="Finding an opponent…"
+        detail={`${queueWaitS}s · the level range widens the longer you wait`}
+        backdrop={VERSUS_BACKDROP}
+        actions={
+          <>
+            {(queueWaitS ?? 0) >= QUEUE_BOT_OFFER_S && (
+              <Button
+                onClick={() => {
+                  stopQueue(true);
+                  void handleStartTraining();
+                }}
+                className="h-12 w-full rounded-full font-bold"
+              >
+                <Swords className="mr-1.5 h-4 w-4" />
+                Battle the Training Bot instead
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              onClick={() => stopQueue(true)}
+              className="h-11 w-full rounded-full font-bold text-white/70 hover:bg-white/10 hover:text-white"
+            >
+              Cancel
+            </Button>
+          </>
+        }
+      />
+    );
+  }
+
   return (
     <div className="bg-poke-cream h-full w-full overflow-y-auto pb-nav safe-x">
       {/* Header */}
@@ -522,37 +567,7 @@ function ArenaPage() {
           <div className="rounded-3xl bg-card p-4 shadow-card">
             <div className="font-pixel-xs text-primary">ONLINE</div>
             {searching ? (
-              <>
-                <div className="mt-2 flex items-center gap-3">
-                  <Loader2 className="h-5 w-5 shrink-0 animate-spin text-primary" />
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-display-md text-foreground">Finding an opponent…</h3>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {queueWaitS}s · we&rsquo;ll widen the level range the longer you wait
-                    </p>
-                  </div>
-                </div>
-                {(queueWaitS ?? 0) >= QUEUE_BOT_OFFER_S && (
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      stopQueue(true);
-                      void handleStartTraining();
-                    }}
-                    className="mt-3 h-11 w-full rounded-full font-bold"
-                  >
-                    <Swords className="mr-1.5 h-4 w-4" />
-                    Battle the Training Bot instead
-                  </Button>
-                )}
-                <Button
-                  variant="ghost"
-                  onClick={() => stopQueue(true)}
-                  className="mt-2 h-10 w-full rounded-full font-bold text-foreground/60"
-                >
-                  Cancel
-                </Button>
-              </>
+              <p className="mt-0.5 text-xs text-foreground/55">Searching…</p>
             ) : (
               <>
                 <p className="mt-0.5 text-xs text-foreground/55">

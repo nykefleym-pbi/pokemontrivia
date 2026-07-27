@@ -36,6 +36,19 @@ export const REWARD_ICON = {
   premium: "/rewards/Premium Items.webp",
 } as const;
 
+/**
+ * Full-bleed backdrop behind the pre-battle VS screen.
+ *
+ * One portrait image; the VS screen fills both halves with it (top anchored to
+ * the top edge, bottom to the bottom) so the horizon reads as continuous across
+ * the divide — the same trick Pokémon GO uses.
+ *
+ * Null until the artwork lands, which makes the screen fall back to a themed
+ * gradient rather than a broken image. Dropping a file at
+ * `public/versus/backdrop.webp` and setting this string is the whole swap.
+ */
+export const VERSUS_BACKDROP: string | null = null;
+
 /** Padlock — locked Arena reward slots and locked achievement trophies. */
 export const LOCK_ICON = "/rewards/Lock.webp";
 
