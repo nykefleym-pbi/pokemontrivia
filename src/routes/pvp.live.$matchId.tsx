@@ -108,7 +108,13 @@ function MatchPageContent({ matchId }: { matchId: string }) {
   const level = useGameStore((s) => s.level);
   const friendCode = useGameStore((s) => s.friendCode);
   const [shareOpen, setShareOpen] = useState(false);
-  const [introDone, setIntroDone] = useState(false);
+  // The Arena already ran the face-off for a queue fallback — it showed the bot
+  // arriving and held it across the route change. Running the 3-second beat
+  // again here would be a SECOND countdown over the same two trainers, with the
+  // sprites re-mounting and re-animating in the middle of it. Skipped outright
+  // for that arrival; every other one (Nearby, a rematch, a deep link) still
+  // gets its beat, because for those this is the first face-off there has been.
+  const [introDone, setIntroDone] = useState(() => isFreshlyStartedBotMatch(matchId));
   // Drives the pre-battle countdown. Cheap: it only runs while the intro is up.
   const [introNow, setIntroNow] = useState(() => Date.now());
   useEffect(() => {
@@ -574,6 +580,8 @@ function MatchPageContent({ matchId }: { matchId: string }) {
           opponent={trainingBotSide(level)}
           status="Battle starting…"
           backdrop={VERSUS_BACKDROP}
+          // Continuing the Arena's face-off, not starting a new one.
+          entrance={false}
         />
       );
     }
