@@ -492,6 +492,8 @@ export type Database = {
           last_whos_that_played: string | null
           level: number
           pokedex_count: number
+          rating: number
+          rating_matches: number
           trainer_name: string | null
           trainer_sprite: string
           updated_at: string
@@ -510,6 +512,8 @@ export type Database = {
           last_whos_that_played?: string | null
           level?: number
           pokedex_count?: number
+          rating?: number
+          rating_matches?: number
           trainer_name?: string | null
           trainer_sprite?: string
           updated_at?: string
@@ -528,6 +532,8 @@ export type Database = {
           last_whos_that_played?: string | null
           level?: number
           pokedex_count?: number
+          rating?: number
+          rating_matches?: number
           trainer_name?: string | null
           trainer_sprite?: string
           updated_at?: string
@@ -1635,6 +1641,7 @@ export type Database = {
         }
         Returns: Json
       }
+      challenge_random_trainer: { Args: { _questions: Json }; Returns: Json }
       claim_pending_referral_rewards: { Args: never; Returns: Json }
       claim_referral: { Args: { _code: string }; Returns: Json }
       claim_trainer_name: { Args: { _name: string }; Returns: Json }
@@ -1683,6 +1690,7 @@ export type Database = {
       }
       get_mega_questions_public: { Args: { p_event_id: string }; Returns: Json }
       get_pvp_chat_state: { Args: { _match_id: string }; Returns: Json }
+      get_pvp_leaderboard: { Args: { _limit?: number }; Returns: Json }
       increment_curated_correct: {
         Args: { question_id: string }
         Returns: undefined
@@ -1790,6 +1798,8 @@ export type Database = {
           last_whos_that_played: string | null
           level: number
           pokedex_count: number
+          rating: number
+          rating_matches: number
           trainer_name: string | null
           trainer_sprite: string
           updated_at: string

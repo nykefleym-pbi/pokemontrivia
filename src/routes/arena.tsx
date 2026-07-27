@@ -21,7 +21,7 @@ import {
   leaveQueue,
   type QueueTicket,
 } from "@/lib/pvp-live";
-import { challengeRandomTrainer } from "@/lib/pvp";
+import { challengeRandomTrainer, fetchPvpLeaderboard, type LeaderboardRow } from "@/lib/pvp";
 import { ensureSession, getProfileById } from "@/lib/social";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -144,6 +144,22 @@ function ArenaPage() {
   const forcedBattleTabRef = useRef(false);
 
   const [recentMatches, setRecentMatches] = useState<RecentNearbyMatch[]>([]);
+  const [board, setBoard] = useState<{ top: LeaderboardRow[]; me: LeaderboardRow | null }>({
+    top: [],
+    me: null,
+  });
+
+  // Rating only moves on human matches, so an all-bot player has no standing
+  // and the card stays hidden rather than showing them a rank of nothing.
+  useEffect(() => {
+    let cancelled = false;
+    void fetchPvpLeaderboard(5).then((b) => {
+      if (!cancelled) setBoard(b);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (hydrated && !hasOnboarded) navigate({ to: "/" });
@@ -568,6 +584,49 @@ function ArenaPage() {
               </>
             )}
           </div>
+
+          {board.top.length > 0 && (
+            <div className="rounded-3xl bg-card p-4 shadow-card">
+              <div className="flex items-baseline justify-between">
+                <div className="font-pixel-xs text-primary">RANKED</div>
+                {board.me && board.me.ratingMatches > 0 && (
+                  <div className="text-xs text-foreground/60">
+                    You: <span className="font-bold text-foreground">{board.me.rating}</span> · #
+                    {board.me.position}
+                  </div>
+                )}
+              </div>
+              <div className="mt-2 space-y-1.5">
+                {board.top.map((row) => (
+                  <div
+                    key={row.id}
+                    className={`flex items-center gap-2 rounded-xl px-2 py-1.5 ${
+                      board.me && row.id === board.me.id ? "bg-primary/10" : ""
+                    }`}
+                  >
+                    <span className="w-5 shrink-0 text-center font-pixel-xs text-foreground/50">
+                      {row.position}
+                    </span>
+                    <img
+                      src={trainerSpriteUrl(row.trainerSprite)}
+                      alt=""
+                      className="sprite h-6 w-6 shrink-0"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).style.opacity = "0";
+                      }}
+                    />
+                    <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
+                      {row.trainerName}
+                    </span>
+                    <span className="shrink-0 text-sm font-bold text-foreground">{row.rating}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-2 text-[11px] text-foreground/50">
+                Only battles against people count. Training never moves your rating.
+              </p>
+            </div>
+          )}
 
           <div className="rounded-3xl bg-card p-4 shadow-card">
             <div className="font-pixel-xs text-primary">NEARBY</div>

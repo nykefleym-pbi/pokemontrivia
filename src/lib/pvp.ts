@@ -179,6 +179,64 @@ export async function challengeRandomTrainer(
   }
 }
 
+export interface LeaderboardRow {
+  id: string;
+  trainerName: string;
+  trainerSprite: string;
+  level: number;
+  rating: number;
+  ratingMatches: number;
+  position: number;
+}
+
+interface LeaderboardRowJson {
+  id: string;
+  trainer_name: string | null;
+  trainer_sprite: string | null;
+  level: number | null;
+  rating: number | null;
+  rating_matches: number | null;
+  position: number | string | null;
+}
+
+function toLeaderboardRow(r: LeaderboardRowJson): LeaderboardRow {
+  return {
+    id: r.id,
+    trainerName: r.trainer_name || "Trainer",
+    trainerSprite: r.trainer_sprite || "",
+    level: r.level ?? 1,
+    rating: r.rating ?? 1000,
+    ratingMatches: r.rating_matches ?? 0,
+    position: Number(r.position ?? 0),
+  };
+}
+
+/**
+ * The ranked board, plus where the caller stands whether or not they made it.
+ *
+ * Rating only moves on human matches (a rating farmable off the bot is not a
+ * rating), so a player with `ratingMatches === 0` has no standing yet.
+ */
+export async function fetchPvpLeaderboard(
+  limit = 10,
+): Promise<{ top: LeaderboardRow[]; me: LeaderboardRow | null }> {
+  try {
+    const { data, error } = await rpc.rpc("get_pvp_leaderboard", { _limit: limit });
+    if (error) {
+      console.warn("[pvp] fetchPvpLeaderboard failed:", error.message);
+      return { top: [], me: null };
+    }
+    const r = data as { top?: LeaderboardRowJson[]; me?: LeaderboardRowJson | null } | null;
+    return {
+      top: (r?.top ?? []).map(toLeaderboardRow),
+      me: r?.me ? toLeaderboardRow(r.me) : null,
+    };
+  } catch (e) {
+    console.warn("[pvp] fetchPvpLeaderboard threw:", e);
+    return { top: [], me: null };
+  }
+}
+
 /** Submit the caller's own side of a match. Returns the computed score. */
 export async function submitPvpResult(
   matchId: string,
