@@ -16,6 +16,7 @@ import { trainerSpriteUrl } from "@/lib/game-data";
 import { ITEM_BY_ID } from "@/content/items";
 import { ARENA_REWARD_SLOTS, trophyTier, type TrophyTier } from "@/lib/arena-rewards";
 import { relativeTime } from "@/lib/battle-log-format";
+import { stopBgm } from "@/lib/audio";
 import {
   startTrainingMatch,
   prepareQueueTicket,
@@ -252,11 +253,16 @@ function ArenaPage() {
    */
   const [fallingBack, setFallingBack] = useState(false);
   const searching = queueWaitS !== null;
+  // Mirrors queueWaitS for the async gap in handleBattleOnline: the ticket
+  // fetch can outlive a Cancel, and the state it closed over would be stale.
+  const queueWaitSRef = useRef<number | null>(null);
+  queueWaitSRef.current = queueWaitS;
 
   const stopQueue = useCallback((leave: boolean) => {
     for (const t of queueTimersRef.current) window.clearInterval(t);
     queueTimersRef.current = [];
     queueTicketRef.current = null;
+    queueWaitSRef.current = null;
     setQueueWaitS(null);
     if (leave) void leaveQueue();
   }, []);
@@ -271,8 +277,48 @@ function ArenaPage() {
       toast.error(claimFirstMessage);
       return;
     }
+    // The face-off goes up FIRST. Preparing the ticket fetches twenty questions
+    // over the network, and waiting for that before showing anything left the
+    // Battle button dead for a second or two — the tap looked like it missed.
+    // The search screen is honest during that window: it really is searching.
+    fallenBackRef.current = false;
+    setQueueWaitS(0);
+    // The Arena's music belongs to the Arena. Silence rather than a queue theme
+    // until that track exists — playBgm("arena") on a screen you have left is
+    // worse than nothing.
+    stopBgm();
+    const tick = window.setInterval(() => {
+      setQueueWaitS((s) => {
+        if (s === null) return s;
+        const next = s + 1;
+        // Guarded by a ref, not by the count: this runs inside a state updater,
+        // which React may invoke more than once.
+        if (next >= QUEUE_FALLBACK_S && !fallenBackRef.current) {
+          fallenBackRef.current = true;
+          // Raise the flag BEFORE stopping the queue so the face-off never
+          // unmounts between the two, and leave the line — a row left behind
+          // would pair someone into a battle they have walked away from.
+          setFallingBack(true);
+          stopQueue(true);
+          // On success the flag is deliberately LEFT raised: `navigate` only
+          // starts the transition and the router keeps this route mounted while
+          // the next one boots, so clearing it here showed the Arena again for
+          // a few hundred milliseconds. Only a failure needs the Arena back.
+          void handleStartTraining().then((navigated) => {
+            if (!navigated) setFallingBack(false);
+          });
+        }
+        return next;
+      });
+    }, 1000);
+    queueTimersRef.current.push(tick);
+
     const prep = await prepareQueueTicket();
+    // Cancelled, or already fell through to Training, while the questions were
+    // in flight — either way this ticket has nowhere to go.
+    if (queueWaitSRef.current === null || fallenBackRef.current) return;
     if (!prep.ok) {
+      stopQueue(true);
       toast.error(
         prep.error === "questions"
           ? "Couldn't prepare the battle. Try again."
@@ -281,8 +327,6 @@ function ArenaPage() {
       return;
     }
     queueTicketRef.current = prep.ticket;
-    fallenBackRef.current = false;
-    setQueueWaitS(0);
 
     const attempt = async () => {
       const ticket = queueTicketRef.current;
@@ -300,36 +344,7 @@ function ArenaPage() {
     };
 
     void attempt();
-    queueTimersRef.current.push(
-      window.setInterval(() => void attempt(), QUEUE_POLL_MS),
-      window.setInterval(() => {
-        setQueueWaitS((s) => {
-          if (s === null) return s;
-          const next = s + 1;
-          // Guarded by a ref, not by the count: this runs inside a state
-          // updater, which React may invoke more than once.
-          if (next >= QUEUE_FALLBACK_S && !fallenBackRef.current) {
-            fallenBackRef.current = true;
-            // Hand straight over to the Training Bot: raise the flag BEFORE
-            // stopping the queue so the face-off never unmounts between the two.
-            setFallingBack(true);
-            // Leave the line — a row left behind would pair someone into a
-            // battle this player has already walked away from.
-            stopQueue(true);
-            // On success the flag is deliberately LEFT raised. `navigate` only
-            // starts the transition, and the router keeps this route mounted
-            // while the next one boots — clearing it here dropped the face-off
-            // and showed the Arena again for a few hundred milliseconds, which
-            // is the flash. The whole page is about to unmount, so there is
-            // nothing to clean up; only a failure needs the Arena back.
-            void handleStartTraining().then((navigated) => {
-              if (!navigated) setFallingBack(false);
-            });
-          }
-          return next;
-        });
-      }, 1000),
-    );
+    queueTimersRef.current.push(window.setInterval(() => void attempt(), QUEUE_POLL_MS));
   }
 
   /** Resolves true once the match route has been navigated to. */
@@ -399,9 +414,10 @@ function ArenaPage() {
         actions={
           searching ? (
             <Button
-              variant="ghost"
               onClick={() => stopQueue(true)}
-              className="h-11 w-full rounded-full font-bold text-white/70 hover:bg-white/10 hover:text-white"
+              // A solid pill, not a text link: it is the only control on the
+              // screen and a thumb needs to find it without hunting.
+              className="h-12 w-full rounded-full border-2 border-white/70 bg-white/10 text-base font-bold text-white shadow-pop backdrop-blur-sm transition hover:bg-white/20 active:scale-[0.98]"
             >
               Cancel
             </Button>

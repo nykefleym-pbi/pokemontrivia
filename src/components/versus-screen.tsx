@@ -55,6 +55,13 @@ export interface VersusScreenProps {
    * artwork lands (see VERSUS_BACKDROP).
    */
   backdrop?: string | null;
+  /**
+   * Whether the trainers animate in. False when this face-off is CONTINUING
+   * one already on screen — across a route change, say — where replaying the
+   * fade-and-slide reads as the sprites refreshing rather than as the same
+   * picture holding still.
+   */
+  entrance?: boolean;
   /** Tapping anywhere skips ahead. Used by the pre-battle beat so a rematch
    *  chain is never slowed down by ceremony. */
   onSkip?: () => void;
@@ -64,15 +71,21 @@ function TrainerSide({
   trainer,
   half,
   dim,
+  entrance,
 }: {
   trainer: VersusTrainer | null;
   half: "top" | "bottom";
   dim: boolean;
+  entrance: boolean;
 }) {
   // An unknown sprite id resolves to "" — rendering that draws a broken image
   // whose onError then hides it, which is how a face-off ended up with an empty
   // half. Resolve first and render nothing rather than something broken.
   const src = trainer ? (trainer.avatarUrl ?? trainerSpriteUrl(trainer.spriteId) ?? "") : "";
+  // Mirrored halves: the opponent reads text-then-sprite, the player
+  // sprite-then-text, so the two sprites sit on opposite sides of the VS bar
+  // and neither label is ever behind the other half's artwork.
+  const textFirst = half === "top";
   return (
     <div className="relative flex-1 overflow-hidden">
       {/* Darkening scrim. The opponent's half stays heavy until they exist, so
@@ -82,24 +95,33 @@ function TrainerSide({
           dim ? "bg-black/65" : "bg-black/25"
         }`}
       />
-      {trainer && src !== "" && (
-        <motion.img
-          key={src}
-          initial={{ opacity: 0, y: half === "top" ? -16 : 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35 }}
-          src={src}
-          alt={trainer.name}
-          // Inset from the outer edges rather than filling the half: the name
-          // block and the action buttons live there, and an avatar behind a
-          // button reads as a layout bug.
-          className={`sprite absolute left-1/2 h-[62%] max-h-[210px] -translate-x-1/2 object-contain drop-shadow-2xl ${
-            half === "top" ? "top-[14%]" : "bottom-[20%]"
+      {trainer && (
+        <div
+          className={`absolute inset-x-0 flex items-center gap-3 px-6 ${
+            textFirst ? "top-[12%] flex-row" : "bottom-[16%] flex-row-reverse"
           }`}
-          onError={(e) => {
-            (e.currentTarget as HTMLImageElement).style.opacity = "0";
-          }}
-        />
+        >
+          <div className={`min-w-0 flex-1 ${textFirst ? "text-left" : "text-right"}`}>
+            <TrainerLabel trainer={trainer} align={textFirst ? "left" : "right"} />
+          </div>
+          {src !== "" && (
+            <motion.img
+              // `entrance={false}` for a face-off that is CONTINUING one already
+              // on screen — re-running the fade-and-slide there reads as the
+              // sprites refreshing rather than as the same picture holding.
+              key={src}
+              initial={entrance ? { opacity: 0, y: half === "top" ? -16 : 16 } : false}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: entrance ? 0.35 : 0 }}
+              src={src}
+              alt={trainer.name}
+              className="sprite h-[34vh] max-h-[210px] w-1/2 shrink-0 object-contain drop-shadow-2xl"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.opacity = "0";
+              }}
+            />
+          )}
+        </div>
       )}
     </div>
   );
@@ -132,6 +154,7 @@ export function VersusScreen({
   detail,
   actions,
   backdrop,
+  entrance = true,
   onSkip,
 }: VersusScreenProps) {
   // A trainer's own backdrop wins; the screen-level one is the shared fallback.
@@ -165,7 +188,12 @@ export function VersusScreen({
         />
       )}
 
-      <TrainerSide trainer={opponent} half="top" dim={opponent === null} />
+      <TrainerSide
+        trainer={opponent}
+        half="top"
+        dim={opponent === null}
+        entrance={entrance}
+      />
 
       {/* The divide */}
       <div className="relative z-10 h-0">
@@ -177,10 +205,10 @@ export function VersusScreen({
         </div>
       </div>
 
-      <TrainerSide trainer={me} half="bottom" dim={false} />
+      <TrainerSide trainer={me} half="bottom" dim={false} entrance={entrance} />
 
       {/* Status sits just above the bar, as in GO. */}
-      <div className="pointer-events-none absolute inset-x-0 top-1/2 z-20 -translate-y-[calc(100%+2.5rem)] px-6">
+      <div className="pointer-events-none absolute inset-x-0 top-1/2 z-20 -translate-y-[calc(100%+2.5rem)] px-6 text-center">
         <div className="font-display-md text-white drop-shadow">{status}</div>
         {detail && <div className="mt-1 text-xs text-white/70">{detail}</div>}
       </div>
@@ -190,22 +218,16 @@ export function VersusScreen({
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-32 bg-gradient-to-b from-black/70 to-transparent" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-56 bg-gradient-to-t from-black/85 via-black/55 to-transparent" />
 
-      {/* Opponent identity, upper area */}
-      {opponent && (
-        <div className="pointer-events-none absolute inset-x-0 top-[calc(env(safe-area-inset-top)+1rem)] z-20 px-6">
-          <TrainerLabel trainer={opponent} align="right" />
+      {/* Actions. The labels now live inside their own halves, so this is only
+          ever buttons — pinned above the safe area. */}
+      {actions && (
+        <div
+          className="absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+1rem)] z-20 flex flex-col gap-2 px-6"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {actions}
         </div>
       )}
-
-      {/* Own identity + actions, lower area */}
-      <div className="absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+1rem)] z-20 px-6">
-        <TrainerLabel trainer={me} align="left" />
-        {actions && (
-          <div className="mt-4 flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
-            {actions}
-          </div>
-        )}
-      </div>
     </div>
   );
 }
