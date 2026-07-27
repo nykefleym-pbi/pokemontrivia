@@ -415,9 +415,11 @@ function ArenaPage() {
           searching ? (
             <Button
               onClick={() => stopQueue(true)}
-              // A solid pill, not a text link: it is the only control on the
-              // screen and a thumb needs to find it without hunting.
-              className="h-12 w-full rounded-full border-2 border-white/70 bg-white/10 text-base font-bold text-white shadow-pop backdrop-blur-sm transition hover:bg-white/20 active:scale-[0.98]"
+              // Reads as a button — bordered pill, not a text link — but sized
+              // to its word rather than the screen. Cancel is the way OUT of
+              // the thing you just asked for; full width gave it the weight of
+              // a primary action.
+              className="mx-auto h-10 w-auto rounded-full border border-white/60 bg-white/10 px-8 text-sm font-bold text-white backdrop-blur-sm transition hover:bg-white/20 active:scale-[0.98]"
             >
               Cancel
             </Button>
