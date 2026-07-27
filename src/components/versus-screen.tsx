@@ -69,6 +69,10 @@ function TrainerSide({
   half: "top" | "bottom";
   dim: boolean;
 }) {
+  // An unknown sprite id resolves to "" — rendering that draws a broken image
+  // whose onError then hides it, which is how a face-off ended up with an empty
+  // half. Resolve first and render nothing rather than something broken.
+  const src = trainer ? (trainer.avatarUrl ?? trainerSpriteUrl(trainer.spriteId) ?? "") : "";
   return (
     <div className="relative flex-1 overflow-hidden">
       {/* Darkening scrim. The opponent's half stays heavy until they exist, so
@@ -78,13 +82,13 @@ function TrainerSide({
           dim ? "bg-black/65" : "bg-black/25"
         }`}
       />
-      {trainer && (
+      {trainer && src !== "" && (
         <motion.img
-          key={trainer.avatarUrl ?? trainer.spriteId}
+          key={src}
           initial={{ opacity: 0, y: half === "top" ? -16 : 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
-          src={trainer.avatarUrl ?? trainerSpriteUrl(trainer.spriteId)}
+          src={src}
           alt={trainer.name}
           // Inset from the outer edges rather than filling the half: the name
           // block and the action buttons live there, and an avatar behind a

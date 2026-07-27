@@ -6,17 +6,11 @@ import { useGameStore } from "@/lib/store";
 import { useStoreHydrated } from "@/lib/store-hydration";
 import { ItemIcon } from "@/components/game-ui";
 import { AppIcon } from "@/components/app-icon";
-import {
-  REWARD_ICON,
-  LOCK_ICON,
-  ARENA_BADGE_ICON,
-  VERSUS_BACKDROP,
-  TRAINING_BOT_AVATAR,
-  TRAINING_BOT_BACKDROP,
-} from "@/lib/app-icons";
+import { REWARD_ICON, LOCK_ICON, ARENA_BADGE_ICON, VERSUS_BACKDROP } from "@/lib/app-icons";
 import { Button } from "@/components/ui/button";
 import { BattleCodeQr } from "@/components/battle-code-qr";
 import { VersusScreen } from "@/components/versus-screen";
+import { trainingBotSide } from "@/lib/training-bot";
 import { ScanPanel } from "@/components/NearbyBattleSheet";
 import { trainerSpriteUrl } from "@/lib/game-data";
 import { ITEM_BY_ID } from "@/content/items";
@@ -322,7 +316,15 @@ function ArenaPage() {
             // Leave the line — a row left behind would pair someone into a
             // battle this player has already walked away from.
             stopQueue(true);
-            void handleStartTraining().finally(() => setFallingBack(false));
+            // On success the flag is deliberately LEFT raised. `navigate` only
+            // starts the transition, and the router keeps this route mounted
+            // while the next one boots — clearing it here dropped the face-off
+            // and showed the Arena again for a few hundred milliseconds, which
+            // is the flash. The whole page is about to unmount, so there is
+            // nothing to clean up; only a failure needs the Arena back.
+            void handleStartTraining().then((navigated) => {
+              if (!navigated) setFallingBack(false);
+            });
           }
           return next;
         });
@@ -330,11 +332,12 @@ function ArenaPage() {
     );
   }
 
-  async function handleStartTraining() {
-    if (trainingBusy) return;
+  /** Resolves true once the match route has been navigated to. */
+  async function handleStartTraining(): Promise<boolean> {
+    if (trainingBusy) return false;
     if (rewardsBlockBattling) {
       toast.error(claimFirstMessage);
-      return;
+      return false;
     }
     setTrainingBusy(true);
     try {
@@ -345,12 +348,14 @@ function ArenaPage() {
             ? "Couldn't prepare the battle. Try again."
             : "Couldn't start training. Try again.",
         );
-        return;
+        return false;
       }
       void navigate({ to: "/pvp/live/$matchId", params: { matchId: res.matchId } });
+      return true;
     } catch (e) {
       console.warn("[arena] startTraining failed:", e);
       toast.error("Couldn't start training. Try again.");
+      return false;
     } finally {
       setTrainingBusy(false);
     }
@@ -387,17 +392,7 @@ function ArenaPage() {
         }}
         // The bot appears the moment the search gives up, so the handover looks
         // like an opponent arriving rather than the search failing.
-        opponent={
-          fallingBack
-            ? {
-                name: "Training Bot",
-                spriteId: trainerSprite,
-                avatarUrl: TRAINING_BOT_AVATAR,
-                backdrop: TRAINING_BOT_BACKDROP,
-                level,
-              }
-            : null
-        }
+        opponent={fallingBack ? trainingBotSide(level) : null}
         status={fallingBack ? "Battle starting…" : "Finding an opponent…"}
         detail={fallingBack ? undefined : `${queueWaitS}s elapsed…`}
         backdrop={VERSUS_BACKDROP}
