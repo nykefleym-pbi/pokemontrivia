@@ -48,6 +48,7 @@ import {
 import type { ItemId } from "@/lib/game-data";
 import { ACHIEVEMENTS, unlockedAchievements } from "@/lib/achievements";
 import { playSfx, revealPokemon, playBattleResult, playItemCue } from "@/lib/audio";
+import { answerHaptic } from "@/lib/haptics";
 import { type EliteMember, regionCompleted } from "@/lib/elite-four";
 import type { GymLeader } from "@/lib/gym-leaders";
 import { ShareCardDialog } from "@/components/share-card-dialog";
@@ -639,13 +640,7 @@ function BattleMode({
   function handleAnswer(idx: number) {
     if (phase !== "question" || !trivia) return;
     if (tutorialStep !== null) return;
-    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-      try {
-        navigator.vibrate(idx === trivia.correct ? 30 : [50, 30, 50]);
-      } catch {
-        /* ignore */
-      }
-    }
+    answerHaptic(idx === trivia.correct);
     setChosen(idx);
     const correct = idx === trivia.correct;
     const elapsed = Date.now() - questionStart.current;

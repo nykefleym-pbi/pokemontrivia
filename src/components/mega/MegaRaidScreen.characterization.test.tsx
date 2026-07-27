@@ -66,6 +66,7 @@ vi.mock("framer-motion", () => {
 vi.mock("@/lib/audio", () => ({
   playSfx: vi.fn(),
   revealPokemon: vi.fn(),
+  playBattleResult: vi.fn(),
 }));
 
 vi.mock("sonner", () => {
@@ -106,6 +107,7 @@ const { startMegaAttempt, submitMegaAction, abandonMegaAttempt } = vi.hoisted(()
 vi.mock("@/services/client/mega-run", () => ({ startMegaAttempt, submitMegaAction, abandonMegaAttempt }));
 
 import { MegaRaidScreen } from "./MegaRaidScreen";
+import { playSfx, playBattleResult } from "@/lib/audio";
 import { useGameStore } from "@/lib/store";
 import { findPokemon } from "@/lib/pokemon-data";
 import type { MegaEvent } from "@/lib/mega/schedule";
@@ -301,6 +303,16 @@ describe("MegaRaidScreen characterization (regression baseline)", () => {
     expect(last.outcome).toBe("win");
     expect(last.correct).toBe("40");
     expect(last.accuracy).toBe("100");
+    // Juice parity with Regular/Weekly/Elite: a Mega Raid used to end in
+    // silence. The clip itself is Elite Four's — mega has none of its own.
+    expect(playSfx).toHaveBeenCalledWith("victory");
+    expect(playBattleResult).toHaveBeenCalledWith("mega", true);
+  });
+
+  it("plays the defeat sting when the raid is lost", async () => {
+    await runMegaRaid(Array(13).fill("wrong"), { totalQuestions: 40 });
+    expect(playSfx).toHaveBeenCalledWith("defeat");
+    expect(playBattleResult).toHaveBeenCalledWith("mega", false);
   });
 
   it("X Attack doubles boss damage on the next correct answer", async () => {

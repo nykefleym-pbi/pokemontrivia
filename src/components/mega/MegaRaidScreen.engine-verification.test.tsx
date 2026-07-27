@@ -50,6 +50,7 @@ vi.mock("framer-motion", () => {
 vi.mock("@/lib/audio", () => ({
   playSfx: vi.fn(),
   revealPokemon: vi.fn(),
+  playBattleResult: vi.fn(),
 }));
 
 vi.mock("sonner", () => {

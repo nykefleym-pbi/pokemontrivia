@@ -18,6 +18,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { playSfx, playBattleResult } from "@/lib/audio";
+import { answerHaptic } from "@/lib/haptics";
 import { ShareCardDialog } from "@/components/share-card-dialog";
 import type { ShareData } from "@/components/share-card-builder";
 import type { Trivia } from "@/lib/trivia-core";
@@ -91,13 +92,7 @@ export function DailyScreen({ questions, onExit }: { questions: Trivia[]; onExit
     setPattern(nextPattern);
     picksRef.current = [...picksRef.current, picked === -1 ? null : picked];
     if (correct) setCorrectCount((c) => c + 1);
-    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-      try {
-        navigator.vibrate(correct ? 30 : [50, 30, 50]);
-      } catch {
-        /* ignore */
-      }
-    }
+    answerHaptic(correct);
     playSfx(correct ? "correct" : "wrong");
     setPhase("feedback");
     setTimeout(() => {

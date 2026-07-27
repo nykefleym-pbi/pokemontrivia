@@ -38,7 +38,6 @@ export const createProfileSlice: StoreSlice<
     | "friendCode"
     | "nameReconciled"
     | "needsNameReclaim"
-    | "lastEngagePromptDate"
     | "engageDismissCount"
     | "engageDismissDate"
     | "engageShownThisSession"
@@ -54,7 +53,6 @@ export const createProfileSlice: StoreSlice<
     | "setFriendCode"
     | "setNameReconciled"
     | "setNeedsNameReclaim"
-    | "setLastEngagePromptDate"
     | "setEngageShownThisSession"
     | "recordEngageDismiss"
     | "pushPromptState"
@@ -71,7 +69,6 @@ export const createProfileSlice: StoreSlice<
   trainerName: "",
   trainerSprite: TRAINER_SPRITES[0]?.id ?? "",
   friendCode: null,
-  lastEngagePromptDate: null,
   engageDismissCount: 0,
   engageDismissDate: null,
   engageShownThisSession: false,
@@ -113,7 +110,6 @@ export const createProfileSlice: StoreSlice<
     }),
 
   setFriendCode: (code) => set({ friendCode: code }),
-  setLastEngagePromptDate: (date) => set({ lastEngagePromptDate: date }),
   setNameReconciled: (v) => set({ nameReconciled: v }),
   setNeedsNameReclaim: (v) => set({ needsNameReclaim: v }),
   setEngageShownThisSession: (v) => set({ engageShownThisSession: v }),

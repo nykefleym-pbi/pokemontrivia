@@ -6,6 +6,7 @@ import type { ItemId } from "@/lib/game-data";
 import { rollLevelUpRewards } from "@/lib/level-rewards";
 import { PokeballSpinner, PokemonSprite } from "@/components/game-ui";
 import { playCry, playSfx, stopBgm, revealPokemon, playWhosThatShout } from "@/lib/audio";
+import { answerHaptic } from "@/lib/haptics";
 import { pokeApiUrls } from "@/lib/api/pokeapi";
 import { syncActivity } from "@/lib/social";
 import { AppIcon } from "@/components/app-icon";
@@ -167,6 +168,7 @@ export function WhosThatPokemon() {
   useEffect(() => {
     if ((phase === "correct" || phase === "incorrect") && !burnedRef.current) {
       burnedRef.current = true;
+      answerHaptic(phase === "correct");
       playSfx(phase === "correct" ? "correct" : "wrong");
       if (round) revealPokemon(round.monId);
       consumeWhosThat();
