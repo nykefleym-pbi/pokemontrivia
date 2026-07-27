@@ -132,6 +132,53 @@ export async function createPvpChallenge(
   }
 }
 
+/**
+ * Challenge a trainer picked by the server — someone the caller has never met.
+ *
+ * Separate from `createPvpChallenge` on purpose: that one keeps its friends-only
+ * guarantee, and the opponent here is chosen server-side so the candidate list
+ * never reaches the client. The caller finds out who they drew only after the
+ * challenge exists.
+ *
+ * This is the mode that works when the live queue is empty, which — with a
+ * handful of players who are rarely online together — is nearly always.
+ */
+export async function challengeRandomTrainer(
+  questions: Trivia[],
+): Promise<
+  { ok: true; matchId: string; opponentName: string } | { ok: false; error: string }
+> {
+  try {
+    const { data, error } = await rpc.rpc("challenge_random_trainer", {
+      _questions: questions,
+    });
+    if (error) {
+      console.warn("[pvp] challengeRandomTrainer failed:", error.message);
+      return { ok: false, error: "network" };
+    }
+    const r = data as {
+      ok?: boolean;
+      matchId?: string;
+      opponent?: { id: string; trainer_name: string | null };
+      error?: string;
+    } | null;
+    if (r && r.ok === true && r.matchId && r.opponent) {
+      const myName = useGameStore.getState().trainerName || "A trainer";
+      void notifyPush(
+        "pvp_challenge",
+        r.opponent.id,
+        "New PvP challenge!",
+        `${myName} challenged you to a trivia match!`,
+      );
+      return { ok: true, matchId: r.matchId, opponentName: r.opponent.trainer_name || "Trainer" };
+    }
+    return { ok: false, error: (r && r.error) || "network" };
+  } catch (e) {
+    console.warn("[pvp] challengeRandomTrainer threw:", e);
+    return { ok: false, error: "network" };
+  }
+}
+
 /** Submit the caller's own side of a match. Returns the computed score. */
 export async function submitPvpResult(
   matchId: string,
