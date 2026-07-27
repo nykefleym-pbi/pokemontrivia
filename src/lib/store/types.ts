@@ -223,6 +223,8 @@ export interface GameState {
 
   // achievements / progression flags
   flags: string[];
+  /** Achievement ids whose reward has been collected (see achievement-rewards.ts). */
+  claimedAchievements: string[];
 
   // daily challenge
   dailyResult: DailyResult | null;
@@ -343,6 +345,7 @@ export interface GameState {
   addXp: (amount: number) => void;
   addCoins: (n: number) => void;
   raiseFlag: (name: string) => void;
+  markAchievementClaimed: (id: string) => void;
   recordDaily: (r: DailyResult) => void;
   pushBattleLog: (e: BattleLogEntry) => void;
   /** Records one Arena battle's outcome into `arenaStats` (mode counters, win

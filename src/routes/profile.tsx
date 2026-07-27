@@ -88,6 +88,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ACHIEVEMENTS, unlockedAchievements } from "@/lib/achievements";
+import {
+  achievementReward,
+  achievementRewardLabel,
+  claimAchievementReward,
+} from "@/lib/achievement-rewards";
 import { AppIcon } from "@/components/app-icon";
 import { UI_ICON, LOCK_ICON } from "@/lib/app-icons";
 import { GYM_LEADERS } from "@/lib/gym-leaders";
@@ -141,6 +146,25 @@ function ProfilePage() {
     const ctx = { stats, flags, peakLevel, pokedex } as Parameters<typeof unlockedAchievements>[0];
     return new Set(unlockedAchievements(ctx));
   }, [stats, flags, peakLevel, pokedex]);
+  const claimedAchievements = useGameStore((s) => s.claimedAchievements);
+  const claimableCount = useMemo(
+    () => [...unlocked].filter((id) => !claimedAchievements.includes(id)).length,
+    [unlocked, claimedAchievements],
+  );
+
+  /** Claimable first, then locked, then collected — the row you can act on is
+   *  always at the top of the sheet. */
+  const trophySortRank = (id: string) => {
+    if (claimedAchievements.includes(id)) return 2;
+    return unlocked.has(id) ? 0 : 1;
+  };
+
+  const claimTrophy = (id: string, name: string) => {
+    const res = claimAchievementReward(id, useGameStore.getState());
+    if (!res) return;
+    playSfx("claim_reward");
+    toast.success(`${name} claimed`, { description: res.text, duration: 4000 });
+  };
 
   const [trophiesOpen, setTrophiesOpen] = useState(false);
   // Date key of the weekly-streak ball currently mid-spin, or null. Cleared on
@@ -649,13 +673,18 @@ function ProfilePage() {
         <div className="mt-3 grid grid-cols-2 gap-3">
           <button
             onClick={() => setTrophiesOpen(true)}
-            className="flex flex-col items-center gap-1 rounded-3xl bg-card p-4 shadow-card transition active:scale-95"
+            className="relative flex flex-col items-center gap-1 rounded-3xl bg-card p-4 shadow-card transition active:scale-95"
           >
             <AppIcon src={UI_ICON.trophies} className="h-12 w-12" />
             <span className="font-display-md text-foreground">Trophies</span>
             <span className="font-pixel-xs text-foreground/50">
               {unlocked.size}/{ACHIEVEMENTS.length}
             </span>
+            {claimableCount > 0 && (
+              <span className="absolute right-3 top-3 flex h-6 min-w-6 items-center justify-center rounded-full bg-primary px-1.5 font-pixel-xs text-primary-foreground shadow-pop">
+                {claimableCount}
+              </span>
+            )}
           </button>
           <button
             onClick={() => setBadgesOpen(true)}
@@ -901,25 +930,30 @@ function ProfilePage() {
           <SheetHeader>
             <div className="font-pixel-xs text-primary">
               {unlocked.size} OF {ACHIEVEMENTS.length} EARNED
+              {claimableCount > 0 ? ` · ${claimableCount} TO CLAIM` : ""}
             </div>
             <SheetTitle className="font-display-xl text-foreground">Trophies</SheetTitle>
           </SheetHeader>
           <div className="mt-3 space-y-2.5">
+            {/* Unclaimed-but-earned first: the trophy you can act on should never
+                be below the fold behind ones you have already collected. */}
             {[...ACHIEVEMENTS]
-              .sort((a, b) => Number(unlocked.has(b.id)) - Number(unlocked.has(a.id)))
+              .sort((a, b) => trophySortRank(a.id) - trophySortRank(b.id))
               .map((a) => {
                 const got = unlocked.has(a.id);
+                const claimed = claimedAchievements.includes(a.id);
+                const reward = achievementReward(a.id);
                 return (
                   <div
                     key={a.id}
                     className={`flex items-center gap-3 rounded-3xl p-4 shadow-card ${got ? "bg-card" : "bg-card/60"}`}
                   >
                     <div
-                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${got ? "bg-poke-yellow/25" : "bg-muted"}`}
+                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${claimed ? "bg-poke-yellow/25" : "bg-muted"}`}
                     >
                       <AppIcon
-                        src={got ? a.art : LOCK_ICON}
-                        className={`h-9 w-9 ${got ? "" : "opacity-50"}`}
+                        src={claimed ? a.art : LOCK_ICON}
+                        className={`h-9 w-9 ${claimed ? "" : "opacity-50"}`}
                       />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -929,8 +963,27 @@ function ProfilePage() {
                         {a.name}
                       </div>
                       <div className="text-xs text-foreground/55">{a.desc}</div>
+                      {reward && !claimed && (
+                        // Shown on locked rows too — knowing the payout is half
+                        // the reason to chase a trophy — but muted there so the
+                        // rows you can actually claim still read first.
+                        <div
+                          className={`mt-0.5 text-xs font-semibold ${got ? "text-primary" : "text-foreground/40"}`}
+                        >
+                          {achievementRewardLabel(reward)}
+                        </div>
+                      )}
                     </div>
-                    {got && <Check className="h-5 w-5 shrink-0 text-hp-good" />}
+                    {claimed ? (
+                      <Check className="h-5 w-5 shrink-0 text-hp-good" />
+                    ) : got ? (
+                      <Button
+                        onClick={() => claimTrophy(a.id, a.name)}
+                        className="h-9 shrink-0 rounded-full bg-primary px-4 font-bold text-primary-foreground shadow-pop"
+                      >
+                        Claim
+                      </Button>
+                    ) : null}
                   </div>
                 );
               })}
