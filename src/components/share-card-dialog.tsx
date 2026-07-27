@@ -5,14 +5,22 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { PokeballSpinner } from "@/components/game-ui";
 import { buildShareCard, type ShareData } from "./share-card-builder";
+import { inviteUrl } from "@/lib/referral-rewards";
 
 interface Props {
   open: boolean;
   onClose: () => void;
   data: ShareData;
+  /**
+   * The sharer's friend code. When given, the shared text carries their
+   * `/refer?code=` link, so a card that gets passed around can actually bring
+   * someone in — the referral loop pays both sides but only fires through that
+   * URL. Omit it and the share stays exactly as it was.
+   */
+  inviteCode?: string | null;
 }
 
-export function ShareCardDialog({ open, onClose, data }: Props) {
+export function ShareCardDialog({ open, onClose, data, inviteCode }: Props) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -44,7 +52,10 @@ export function ShareCardDialog({ open, onClose, data }: Props) {
         share?: (d: { files?: File[]; title?: string; text?: string }) => Promise<void>;
       };
       if (nav.canShare && nav.share && nav.canShare({ files: [file] })) {
-        await nav.share({ files: [file], title: "Pokémon Trivia Battle", text: "Beat my score!" });
+        const text = inviteCode
+          ? `Beat my score! ${inviteUrl(inviteCode)}`
+          : "Beat my score!";
+        await nav.share({ files: [file], title: "Pokémon Trivia Battle", text });
       } else {
         handleSave();
         toast.info("Sharing not supported here — image saved instead.");

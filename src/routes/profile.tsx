@@ -51,6 +51,7 @@ import {
 import { createPvpChallenge, listPvpMatches, type PvpMatch } from "@/lib/pvp";
 import { fetchBattleQuestions } from "@/lib/api/trivia";
 import { validateTrainerName, claimErrorMessage, TRAINER_NAME_MAX } from "@/lib/trainer-name";
+import { inviteUrl } from "@/lib/referral-rewards";
 import {
   rankForLevel,
   TRAINER_SPRITES,
@@ -735,9 +736,7 @@ function ProfilePage() {
                 <Button
                   size="sm"
                   onClick={() => {
-                    const link = friendCode
-                      ? `https://pokemontriviabattle.vercel.app/refer?code=${friendCode}`
-                      : "https://pokemontriviabattle.vercel.app/";
+                    const link = inviteUrl(friendCode);
                     const text = `Add me on Pokémon Trivia Battle! Friend code: ${friendCode}\n${link}`;
                     if (navigator.share) navigator.share({ text }).catch(() => {});
                     else {

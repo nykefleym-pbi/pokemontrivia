@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Share2 } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { useStoreHydrated } from "@/lib/store-hydration";
 import { PokeballSpinner, PokemonSprite } from "@/components/game-ui";
@@ -33,8 +33,8 @@ import { LivePvpBattleScreen, type LivePvpBattleResult } from "@/components/live
 import { getProfileById, ensureSession, type TrainerProfile } from "@/lib/social";
 import { supabase } from "@/integrations/supabase/client";
 import { playBgm, playBattleResult } from "@/lib/audio";
-import { ITEMS, rollBerryDrops, STARTER_PVP_BERRY } from "@/lib/game-data";
-import { PVP_QUESTIONS } from "@/lib/pvp-combat";
+import { ITEMS, rollBerryDrops, STARTER_PVP_BERRY, rankForLevel, trainerSpriteUrl } from "@/lib/game-data";
+import { PVP_QUESTIONS, PVP_MAX_HP } from "@/lib/pvp-combat";
 import { useForfeitGuard } from "@/lib/use-forfeit-guard";
 import { resolvePvpTypeAbilityId } from "@/lib/pvp-type-abilities";
 import { useBattleFxCues } from "@/hooks/useBattleFxCues";
@@ -42,6 +42,8 @@ import { MissedReview } from "@/components/MissedReview";
 import { AppIcon } from "@/components/app-icon";
 import { ITEM_CATEGORY_ICON } from "@/lib/app-icons";
 import type { MissedAnswer } from "@/lib/trivia-core";
+import { ShareCardDialog } from "@/components/share-card-dialog";
+import type { BattleShareData } from "@/components/share-card-builder";
 
 export const Route = createFileRoute("/pvp/live/$matchId")({
   component: LivePvpMatchPage,
@@ -97,6 +99,11 @@ function MatchPageContent({ matchId }: { matchId: string }) {
   // loss resolved by the OPPONENT's answer triggers.
   const [missed, setMissed] = useState<MissedAnswer[]>([]);
   const partner = useGameStore((s) => s.pokemon);
+  const trainerName = useGameStore((s) => s.trainerName);
+  const trainerSprite = useGameStore((s) => s.trainerSprite);
+  const level = useGameStore((s) => s.level);
+  const friendCode = useGameStore((s) => s.friendCode);
+  const [shareOpen, setShareOpen] = useState(false);
   // Opponent-side combat cues funnel through the same frozen `emit` path as the
   // battle screen's local cues, so wording/ordering/dedupe are identical.
   const { emit } = useBattleFxCues();
@@ -610,7 +617,41 @@ function MatchPageContent({ matchId }: { matchId: string }) {
     phase === "forfeit_won" || (phase === "result" && match?.winnerId === myId);
   const tied = phase === "result" && match?.winnerId === null && match.status === "completed";
 
+  const shareData: BattleShareData | null =
+    partner && won
+      ? {
+          type: "battle",
+          trainerName,
+          trainerSpriteUrl: trainerSpriteUrl(trainerSprite),
+          partnerName: partner.name,
+          partnerPokemonId: partner.id,
+          partnerShiny: false,
+          opponentName: opponentProfile?.trainer_name || "Opponent",
+          opponentTitle: "Trainer",
+          opponentSpriteUrl: null,
+          signaturePokemonId: null,
+          finalPlayerHp: myFinalHp ?? 0,
+          maxPlayerHp: PVP_MAX_HP,
+          topStreak: match ? (iAmHost ? match.hostStreakLive : match.guestStreakLive) : 0,
+          topDamage: 0,
+          correctCount: myCorrect ?? 0,
+          totalQuestions: PVP_QUESTIONS,
+          level,
+          rank: rankForLevel(level),
+          dateISO: new Date().toISOString().slice(0, 10),
+        }
+      : null;
+
   return (
+    <>
+    {shareData && (
+      <ShareCardDialog
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        data={shareData}
+        inviteCode={friendCode}
+      />
+    )}
     <PvpResultScreen
       won={won}
       tied={tied}
@@ -625,6 +666,10 @@ function MatchPageContent({ matchId }: { matchId: string }) {
       berryDrops={berryDrops}
       missed={missed}
       onBack={() => navigate({ to: "/arena" })}
+      // Only on a win, and only once there is a partner to draw. Beating
+      // another trainer is the app's most brag-worthy moment and was the one
+      // that produced nothing to show for it.
+      onShare={won && partner ? () => setShareOpen(true) : undefined}
       // No chat for strangers paired by matchmaking. The server refuses those
       // messages outright (send_pvp_chat_message), so offering the button would
       // only lead somewhere broken.
@@ -636,6 +681,7 @@ function MatchPageContent({ matchId }: { matchId: string }) {
       onRematch={() => void handleRematch()}
       rematchBusy={rematchBusy}
     />
+    </>
   );
 }
 
@@ -660,6 +706,7 @@ function PvpResultScreen({
   berryDrops,
   missed,
   onBack,
+  onShare,
   onChat,
   onRematch,
   rematchBusy,
@@ -677,6 +724,10 @@ function PvpResultScreen({
   berryDrops: number | null;
   missed: MissedAnswer[];
   onBack: () => void;
+  /** Renders a "Share" button on the victory screen. A PvP win was the only
+   * win in the app with nothing to show for it — solo, evolution and daily
+   * perfect all build a share card. Victory only; nobody shares a loss. */
+  onShare?: () => void;
   /** Opens this match's full-screen chat route (docs/handoffs/global-chat).
    * Renders a "Chat" button beside "Back to Profile" when provided. */
   onChat?: () => void;
@@ -788,6 +839,17 @@ function PvpResultScreen({
               className="h-14 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop disabled:opacity-70"
             >
               {rematchBusy ? <Loader2 className="h-5 w-5 animate-spin" /> : "Rematch"}
+            </Button>
+          )}
+          {onShare && (
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={onShare}
+              className="h-14 w-full rounded-full border-2 font-bold shadow-card"
+            >
+              <Share2 className="mr-2 h-4 w-4" />
+              Share result
             </Button>
           )}
           <div className="flex gap-2">
