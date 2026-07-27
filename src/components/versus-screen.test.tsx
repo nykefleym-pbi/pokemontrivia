@@ -18,6 +18,7 @@ vi.mock("framer-motion", () => {
 });
 
 const { VersusScreen } = await import("@/components/versus-screen");
+const { trainingBotSide } = await import("@/lib/training-bot");
 
 const me = { name: "Ash", spriteId: "ace-trainer-m", level: 12, rating: 1120 };
 const rival = { name: "Gary", spriteId: "ace-trainer-f", level: 14, rating: 1210 };
@@ -80,6 +81,34 @@ describe("VersusScreen", () => {
     );
     const srcs = [...container.querySelectorAll("img")].map((i) => i.getAttribute("src"));
     expect(srcs).toContain("/versus/training-bot.gif");
+  });
+
+  it("gives the Training Bot its own face, not the player's and not a blank", () => {
+    // Both bugs the owner hit, as one test. The Arena handed the bot the
+    // player's sprite; the live match handed it "" and drew nothing.
+    const bot = trainingBotSide(12);
+    expect(bot.name).toBe("Training Bot");
+    expect(bot.spriteId).not.toBe(me.spriteId);
+    expect(bot.spriteId).not.toBe("");
+
+    const { container } = render(<VersusScreen me={me} opponent={bot} status="x" />);
+    const srcs = [...container.querySelectorAll("img")]
+      .map((i) => i.getAttribute("src"))
+      .filter((s): s is string => !!s);
+    // Two distinct avatars on screen, and neither of them empty.
+    expect(srcs.length).toBe(2);
+    expect(new Set(srcs).size).toBe(2);
+    expect(srcs.every((s) => s !== "")).toBe(true);
+  });
+
+  it("renders no avatar at all rather than a broken one for an unknown sprite", () => {
+    const { container } = render(
+      <VersusScreen me={me} opponent={{ name: "Ghost", spriteId: "no-such-trainer" }} status="x" />,
+    );
+    const srcs = [...container.querySelectorAll("img")].map((i) => i.getAttribute("src"));
+    // Only the player's. The unresolvable one is absent, not present-and-empty.
+    expect(srcs.length).toBe(1);
+    expect(srcs[0]).toBeTruthy();
   });
 
   it("skips on tap when the caller allows it", () => {

@@ -23,6 +23,7 @@ import {
   subscribeToLivePvpEffects,
   setLivePvpPartner,
   startTrainingMatch,
+  isFreshlyStartedBotMatch,
   noteAppliedRev,
   forgetAppliedRev,
   type LivePvpMatch,
@@ -44,7 +45,8 @@ import { ITEM_CATEGORY_ICON } from "@/lib/app-icons";
 import type { MissedAnswer } from "@/lib/trivia-core";
 import { ShareCardDialog } from "@/components/share-card-dialog";
 import { VersusScreen } from "@/components/versus-screen";
-import { VERSUS_BACKDROP, TRAINING_BOT_AVATAR, TRAINING_BOT_BACKDROP } from "@/lib/app-icons";
+import { trainingBotSide } from "@/lib/training-bot";
+import { VERSUS_BACKDROP } from "@/lib/app-icons";
 import type { BattleShareData } from "@/components/share-card-builder";
 
 export const Route = createFileRoute("/pvp/live/$matchId")({
@@ -558,6 +560,23 @@ function MatchPageContent({ matchId }: { matchId: string }) {
   if (!hydrated || !hasOnboarded) return null;
 
   if (phase === "loading") {
+    // Arriving straight from the Arena's queue fallback, the face-off is
+    // already on screen there — so hold the same picture instead of dropping a
+    // bright cream spinner between two dark face-offs. That spinner is what
+    // made one hand-off to the Training Bot look like two separate bot screens.
+    // Only for a match THIS client just started as a bot match; every other
+    // arrival (a deep link, the guest side of a queue pairing) still spins,
+    // because there is genuinely nothing known to show yet.
+    if (isFreshlyStartedBotMatch(matchId)) {
+      return (
+        <VersusScreen
+          me={{ name: trainerName || "You", spriteId: trainerSprite, level }}
+          opponent={trainingBotSide(level)}
+          status="Battle starting…"
+          backdrop={VERSUS_BACKDROP}
+        />
+      );
+    }
     return (
       <div className="flex h-full w-full items-center justify-center bg-poke-cream">
         <PokeballSpinner spinning />
@@ -589,15 +608,19 @@ function MatchPageContent({ matchId }: { matchId: string }) {
           spriteId: trainerSprite,
           level,
         }}
-        opponent={{
-          name: opponentProfile?.trainer_name || (match.isBotMatch ? "Training Bot" : "Opponent"),
-          spriteId: opponentProfile?.trainer_sprite || "",
-          // The bot's own artwork, so the hand-off from the Arena face-off to
-          // this one shows the same opponent rather than swapping it out.
-          avatarUrl: match.isBotMatch ? TRAINING_BOT_AVATAR : null,
-          backdrop: match.isBotMatch ? TRAINING_BOT_BACKDROP : null,
-          level: opponentProfile?.level ?? null,
-        }}
+        // A bot match has no profile row to read a name or sprite from, so it
+        // gets the shared definition — the same picture the Arena's fallback
+        // just showed, which is what makes the route change between them
+        // invisible instead of a second, different "Training Bot".
+        opponent={
+          match.isBotMatch
+            ? trainingBotSide(level)
+            : {
+                name: opponentProfile?.trainer_name || "Opponent",
+                spriteId: opponentProfile?.trainer_sprite || "",
+                level: opponentProfile?.level ?? null,
+              }
+        }
         status="Battle starting…"
         detail={`${Math.ceil(msUntilStart / 1000)}…`}
         backdrop={VERSUS_BACKDROP}

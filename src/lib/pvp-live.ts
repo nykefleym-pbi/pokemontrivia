@@ -412,6 +412,25 @@ export async function startBotPvpMatch(
  * (`"network"` or whatever it returned) so call sites can keep their existing,
  * differently-worded toasts.
  */
+/**
+ * The match id this client just created as a bot match, if any.
+ *
+ * A one-entry handoff so `/pvp/live/$matchId` can draw the right face-off on
+ * its very first render, BEFORE it has read the row back and learned
+ * `is_bot_match`. Without it that route spends its loading phase on a cream
+ * pokéball spinner — which lands between the Arena's face-off and the route's
+ * own face-off, so a single hand-off to the Training Bot looked like two
+ * separate bot screens with a bright flash in between.
+ *
+ * Deliberately not persisted and never cleared: it is one string, only ever
+ * read by the route it was written for, and a stale id simply never matches.
+ */
+let lastStartedBotMatchId: string | null = null;
+
+export function isFreshlyStartedBotMatch(matchId: string): boolean {
+  return lastStartedBotMatchId === matchId;
+}
+
 export async function startTrainingMatch(): Promise<
   { ok: true; matchId: string } | { ok: false; error: "questions" | string }
 > {
@@ -433,6 +452,7 @@ export async function startTrainingMatch(): Promise<
     }
     s.markQuestionsSeen(data.questions.map((q) => q.question));
     s.markCuratedSeen(data.servedIds ?? []);
+    lastStartedBotMatchId = res.matchId;
     return { ok: true, matchId: res.matchId };
   } catch (e) {
     console.warn("[pvp-live] startTrainingMatch threw:", e);
