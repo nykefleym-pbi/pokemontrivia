@@ -102,6 +102,10 @@ function MatchPageContent({ matchId }: { matchId: string }) {
   // (not in the battle screen) so it survives the battle→result unmount that a
   // loss resolved by the OPPONENT's answer triggers.
   const [missed, setMissed] = useState<MissedAnswer[]>([]);
+  // Best streak and answer pace, accumulated here rather than in the battle
+  // screen for the same reason as `missed`: a loss decided by the opponent's
+  // answer unmounts that screen without its own finish handler running.
+  const [tally, setTally] = useState({ bestStreak: 0, totalMs: 0, answered: 0 });
   const partner = useGameStore((s) => s.pokemon);
   const trainerName = useGameStore((s) => s.trainerName);
   const trainerSprite = useGameStore((s) => s.trainerSprite);
@@ -650,6 +654,13 @@ function MatchPageContent({ matchId }: { matchId: string }) {
           opponentName={opponentProfile?.trainer_name || "Opponent"}
           onFinish={handleFinish}
           onMissed={(m) => setMissed((prev) => [...prev, m])}
+          onAnswered={({ streakAfter, elapsedMs }) =>
+            setTally((t) => ({
+              bestStreak: Math.max(t.bestStreak, streakAfter),
+              totalMs: t.totalMs + elapsedMs,
+              answered: t.answered + 1,
+            }))
+          }
         />
         <AlertDialog open={forfeitConfirmOpen} onOpenChange={setForfeitConfirmOpen}>
           <AlertDialogContent className="max-w-xs rounded-3xl">
@@ -703,10 +714,15 @@ function MatchPageContent({ matchId }: { matchId: string }) {
           signaturePokemonId: null,
           finalPlayerHp: myFinalHp ?? 0,
           maxPlayerHp: PVP_MAX_HP,
-          topStreak: match ? (iAmHost ? match.hostStreakLive : match.guestStreakLive) : 0,
+          // The BEST streak of the battle, not the live one. hostStreakLive is
+          // whatever the streak happened to be at the final answer — zero if
+          // that answer was wrong — so the card reported 0 for most wins.
+          topStreak: tally.bestStreak,
           topDamage: 0,
           correctCount: myCorrect ?? 0,
           totalQuestions: PVP_QUESTIONS,
+          // Never passed at all before, so the card always printed "—s".
+          avgTimeMs: tally.answered > 0 ? tally.totalMs / tally.answered : undefined,
           level,
           rank: rankForLevel(level),
           dateISO: new Date().toISOString().slice(0, 10),

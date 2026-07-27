@@ -428,6 +428,7 @@ async function runScenario({
   );
 
   const onFinish = vi.fn();
+  const answered: Array<{ streakAfter: number; elapsedMs: number }> = [];
   render(
     <LivePvpBattleScreen
       matchId={MATCH_ID}
@@ -438,6 +439,7 @@ async function runScenario({
       match={match}
       opponentName="Rival"
       onFinish={onFinish}
+      onAnswered={(a) => answered.push(a)}
     />,
   );
   void opponent; // resolved purely to seed matchOverrides.guestPartnerId in fixtures above
@@ -487,7 +489,7 @@ async function runScenario({
     elapsed = nextSlotStart;
   }
 
-  return { trace, onFinish };
+  return { trace, onFinish, answered };
 }
 
 async function runBattle(script: Action[]) {
@@ -498,6 +500,35 @@ describe("live-pvp-battle-screen characterization (regression baseline)", () => 
   it("plain partner (no signature ability) — correct/wrong script", async () => {
     const { trace } = await runBattle(SCRIPT);
     expect(trace).toMatchSnapshot();
+  });
+});
+
+// The share card's STREAK and AVG TIME come from here, and both were wrong for
+// every live PvP battle: avgTimeMs was never passed at all (the card printed
+// "—s"), and topStreak read the LIVE streak at match end — zero whenever the
+// last answer was wrong, which is most losses. This reports each answer as it
+// resolves so the route can keep the best streak and the running pace, and it
+// has to fire from the battle screen because a loss decided by the OPPONENT's
+// answer unmounts it without its own finish handler running.
+describe("live-pvp-battle-screen onAnswered (share-card metrics)", () => {
+  it("reports every answer, right or wrong, with the streak after it", async () => {
+    const { answered } = await runBattle(["correct", "correct", "wrong", "correct"]);
+
+    expect(answered.map((a) => a.streakAfter)).toEqual([1, 2, 0, 1]);
+    // The best of those — 2 — is what the card should show, not the final 1.
+    expect(Math.max(...answered.map((a) => a.streakAfter))).toBe(2);
+  });
+
+  it("reports how long each answer took, so the card can average them", async () => {
+    // The harness clicks 3000ms into each slot but lands the previous advance
+    // 100ms PAST the slot boundary, so every question after the first is timed
+    // from 100ms in — hence 2900. What matters is that the number is the
+    // player's own thinking time on that question, not a running total.
+    const { answered } = await runBattle(["correct", "wrong", "correct"]);
+
+    expect(answered.map((a) => a.elapsedMs)).toEqual([3000, 2900, 2900]);
+    const avg = answered.reduce((n, a) => n + a.elapsedMs, 0) / answered.length;
+    expect(Math.round(avg)).toBe(2933);
   });
 });
 

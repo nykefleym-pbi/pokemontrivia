@@ -111,6 +111,17 @@ interface Props {
    * answer), so the route can retain the missed list above the battle→result
    * unmount for the defeat review. Never fires for a correct/confusion-miss. */
   onMissed?: (m: MissedAnswer) => void;
+  /**
+   * Called as each of MY questions resolves, right or wrong, with the
+   * server-authoritative streak after it and how long the answer took.
+   *
+   * Lifted to the route for the same reason as `onMissed`: a loss decided by
+   * the OPPONENT's answer unmounts this screen without `onFinish` ever running
+   * here, so anything accumulated in a local ref would be gone by the time the
+   * result screen wants it. Feeds the share card's STREAK and AVG TIME, which
+   * read 0 and "—s" for every live PvP battle until now.
+   */
+  onAnswered?: (a: { streakAfter: number; elapsedMs: number }) => void;
 }
 
 /** Non-battle items usable in Nearby Battle without a server round-trip
@@ -468,6 +479,7 @@ export function LivePvpBattleScreen({
   opponentName,
   onFinish,
   onMissed,
+  onAnswered,
 }: Props) {
   // Shared question set, per-client option order. `orders[i][displayIndex]`
   // recovers the ORIGINAL (server-canonical) option index for question i's
@@ -1537,6 +1549,7 @@ export function LivePvpBattleScreen({
     const landedHit = result.correct && !result.confusionMissed;
 
     setStreak(result.streak);
+    onAnswered?.({ streakAfter: result.streak, elapsedMs });
 
     if (result.correct) {
       // A landed correct answer breaks any building wrong-streak (#1). A
