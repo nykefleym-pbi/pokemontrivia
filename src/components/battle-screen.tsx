@@ -687,7 +687,9 @@ function BattleMode({
       // balanced; scaling here would trivialize them at high rank.
       let baseDmg = isElite || isWeekly ? 10 : baseDamageForLevel(level);
       if (playerAbility.id === "dragon-dance") baseDmg += Math.floor(questionIdx / 5);
-      let dmg = Math.round(baseDmg * (metronomeActiveRef.current ? 3.0 : streakMultiplier(newStreak)));
+      let dmg = Math.round(
+        baseDmg * (metronomeActiveRef.current ? 3.0 : streakMultiplier(newStreak)),
+      );
       // TP damage boost
       const tpNow = useGameStore.getState().trainingPoints[player.id] ?? 0;
       const tpMult = getTpMultiplier(tpNow);
@@ -1351,6 +1353,9 @@ function BattleMode({
           onRebattle={() => onExit()}
           onBackHome={() => onExit()}
           onRematch={onRematch}
+          // Weekly League is one attempt a week — there is no next battle to
+          // start, and the button was only ever leaving the screen.
+          hideRematch={isWeekly}
           canShare={!!shareData}
           onShare={() => setShareOpen(true)}
         />
@@ -1548,19 +1553,19 @@ function BattleMode({
               lastElapsedMs={lastElapsedMs}
               onAnswer={handleAnswer}
             >
-                <ItemBagSheet
-                  bagOpen={bagOpen}
-                  onBagOpenChange={setBagOpen}
-                  inventory={inventory}
-                  usedThisBattle={usedThisBattle}
-                  itemsUsedThisBattleCount={itemsUsedThisBattleCount}
-                  maxItemsPerBattle={MAX_ITEMS_PER_BATTLE}
-                  itemCapReached={itemCapReached}
-                  choiceSpecsActive={choiceSpecsActive}
-                  anyItemUsedThisBattle={anyItemUsedThisBattle}
-                  escapeDisabled={isWeekly || isElite}
-                  onUseItem={tryUseItem}
-                />
+              <ItemBagSheet
+                bagOpen={bagOpen}
+                onBagOpenChange={setBagOpen}
+                inventory={inventory}
+                usedThisBattle={usedThisBattle}
+                itemsUsedThisBattleCount={itemsUsedThisBattleCount}
+                maxItemsPerBattle={MAX_ITEMS_PER_BATTLE}
+                itemCapReached={itemCapReached}
+                choiceSpecsActive={choiceSpecsActive}
+                anyItemUsedThisBattle={anyItemUsedThisBattle}
+                escapeDisabled={isWeekly || isElite}
+                onUseItem={tryUseItem}
+              />
             </QuestionCard>
           )}
         </AnimatePresence>

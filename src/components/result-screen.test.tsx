@@ -16,13 +16,8 @@ vi.mock("framer-motion", () => {
     exit?: unknown;
     transition?: unknown;
   }
-  const strip = ({
-    initial: _i,
-    animate: _a,
-    exit: _e,
-    transition: _t,
-    ...rest
-  }: MotionDivProps) => rest;
+  const strip = ({ initial: _i, animate: _a, exit: _e, transition: _t, ...rest }: MotionDivProps) =>
+    rest;
   const Div = (props: MotionDivProps) => <div {...strip(props)} />;
   return { motion: new Proxy({} as Record<string, typeof Div>, { get: () => Div }) };
 });
@@ -115,5 +110,24 @@ describe("ResultScreen — defeat", () => {
     const { onRebattle } = setup({ won: false, onRematch: undefined });
     fireEvent.click(screen.getByRole("button", { name: "Rematch" }));
     expect(onRebattle).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("ResultScreen — one-attempt modes (hideRematch)", () => {
+  it("victory: no rematch button, but Back home still gets you out", () => {
+    setup({ won: true, hideRematch: true });
+    expect(screen.queryByRole("button", { name: /next battle/i })).toBeNull();
+    expect(screen.getByRole("button", { name: /back home/i })).toBeTruthy();
+  });
+
+  it("defeat: no rematch button, but Back home still gets you out", () => {
+    setup({ won: false, hideRematch: true });
+    expect(screen.queryByRole("button", { name: /^rematch$/i })).toBeNull();
+    expect(screen.getByRole("button", { name: /back home/i })).toBeTruthy();
+  });
+
+  it("without the flag the button is still there (regular battles unchanged)", () => {
+    setup({ won: true });
+    expect(screen.getByRole("button", { name: /next battle/i })).toBeTruthy();
   });
 });

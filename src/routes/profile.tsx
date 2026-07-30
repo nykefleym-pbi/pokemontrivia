@@ -24,6 +24,7 @@ import {
   BellOff,
   Swords,
   ZapOff,
+  Facebook,
 } from "lucide-react";
 import { ShareCardDialog } from "@/components/share-card-dialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -1311,6 +1312,66 @@ function ProfilePage() {
                       <div className="text-sm font-semibold text-foreground">Report a bug</div>
                       <div className="text-xs text-foreground/55">
                         Something broken? Tell us about it
+                      </div>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-foreground/40" />
+                </button>
+              </div>
+            </section>
+
+            <section>
+              <div className="mb-2 font-pixel-xs uppercase text-foreground/45">Community</div>
+              <div className="overflow-hidden rounded-3xl bg-card shadow-card divide-y divide-border">
+                {/* An <a>, not a router Link: this leaves the app. rel=noreferrer
+                    as well as noopener so the Facebook tab gets no referrer. */}
+                <a
+                  href="https://www.facebook.com/share/1Lb8asVCtm/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex w-full items-center justify-between p-4 text-left transition active:scale-[0.98]"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
+                      <Facebook className="h-5 w-5 text-foreground" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-foreground">
+                        Poke Trivia Battle on Facebook
+                      </div>
+                      <div className="text-xs text-foreground/55">
+                        News, events and new questions
+                      </div>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-foreground/40" />
+                </a>
+                <button
+                  onClick={() => {
+                    const url = "https://www.facebook.com/share/1Lb8asVCtm/";
+                    // Native share sheet where there is one (this is a PWA on a
+                    // phone most of the time); clipboard is the desktop fallback.
+                    if (typeof navigator !== "undefined" && navigator.share) {
+                      void navigator
+                        .share({ title: "Poke Trivia Battle", url })
+                        .catch(() => undefined);
+                      return;
+                    }
+                    void navigator.clipboard
+                      ?.writeText(url)
+                      .then(() => toast.success("Facebook page link copied"))
+                      .catch(() => toast.error("Could not copy the link"));
+                  }}
+                  className="flex w-full items-center justify-between p-4 text-left transition active:scale-[0.98]"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
+                      <Share2 className="h-5 w-5 text-foreground" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-foreground">Share the page</div>
+                      <div className="text-xs text-foreground/55">
+                        Invite a friend to follow along
                       </div>
                     </div>
                   </div>
