@@ -53,6 +53,7 @@ type Kind =
   | "referral"
   | "pvp_challenge"
   | "pvp_result"
+  | "pvp_chat"
   | "daily_promo"
   | "mode_reminder"
   | "broadcast";
@@ -153,6 +154,22 @@ async function authorize(req: Request, payload: Body): Promise<string | null> {
     if (!data || data.length === 0) return "no matching pvp match";
   }
 
+  // Chat lives on pvp_live_matches (host/guest), NOT pvp_matches — the Nearby
+  // Battle chat is attached to the live match the two of them played. Both
+  // directions are allowed because either side can message the other, but only
+  // within a match they are actually both in: this is what stops the kind from
+  // becoming a way to push arbitrary text at any user id.
+  if (payload.kind === "pvp_chat") {
+    const { data } = await admin
+      .from("pvp_live_matches")
+      .select("id")
+      .or(
+        `and(host_id.eq.${callerId},guest_id.eq.${payload.toUserId}),and(guest_id.eq.${callerId},host_id.eq.${payload.toUserId})`,
+      )
+      .limit(1);
+    if (!data || data.length === 0) return "no matching pvp chat match";
+  }
+
   return null;
 }
 
@@ -186,6 +203,7 @@ Deno.serve(async (req) => {
     payload.kind === "referral" ||
     payload.kind === "pvp_challenge" ||
     payload.kind === "pvp_result" ||
+    payload.kind === "pvp_chat" ||
     payload.kind === "mode_reminder"
   ) {
     query = query.eq("user_id", payload.toUserId!);

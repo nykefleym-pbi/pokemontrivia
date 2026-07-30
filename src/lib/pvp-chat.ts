@@ -11,6 +11,52 @@ import type {
 
 const BACKFILL_LIMIT = 100;
 
+/** The Training Bot's profile id. It sits in pvp_live_matches like any guest but
+ *  has no push subscription and nobody to read a message. */
+const TRAINING_BOT_ID = "b07b07b0-7b07-4b07-8b07-b07b07b07b07";
+
+/**
+ * Push the other side of a match a "you have a message" notification.
+ *
+ * Best-effort and never surfaced: a message that stored fine must not look
+ * unsent because a notification failed. The recipient is derived from the match
+ * row rather than passed in, so a caller cannot aim it at someone else, and
+ * send-push independently re-checks that both users are in this match.
+ */
+async function notifyChatPush(
+  matchId: string,
+  senderId: string | null,
+  body: string,
+  senderName: string,
+): Promise<void> {
+  try {
+    if (!senderId) return;
+    const { data, error } = await supabase
+      .from("pvp_live_matches")
+      .select("host_id, guest_id")
+      .eq("id", matchId)
+      .maybeSingle();
+    if (error || !data) return;
+    const row = data as { host_id: string | null; guest_id: string | null };
+    const to = row.host_id === senderId ? row.guest_id : row.host_id;
+    if (!to || to === senderId || to === TRAINING_BOT_ID) return;
+    const { error: pushErr } = await supabase.functions.invoke("send-push", {
+      body: {
+        kind: "pvp_chat",
+        toUserId: to,
+        title: `${senderName} sent you a message`,
+        // Truncated: the notification is a nudge to open the chat, not the place
+        // to read a long message.
+        body: body.length > 120 ? `${body.slice(0, 117)}...` : body,
+        url: `/pvp/chat/${matchId}`,
+      },
+    });
+    if (pushErr) console.warn("[pvp-chat] notifyChatPush failed:", pushErr.message);
+  } catch (e) {
+    console.warn("[pvp-chat] notifyChatPush threw:", e);
+  }
+}
+
 interface ChatMessageRow {
   id: string;
   match_id: string;
@@ -56,6 +102,13 @@ export async function sendChatMessage(matchId: string, body: string): Promise<Se
     if (r && r.ok === true && r.id) {
       const uid = await ensureSession();
       const s = useGameStore.getState();
+      // Tell the other trainer. Without this a message only ever arrives if they
+      // happen to be looking at the chat: the realtime INSERT has no replay, so a
+      // backgrounded tab misses it permanently and the sender is talking to
+      // nobody. Fire-and-forget, after the message is safely stored — a failed
+      // push must not make a sent message look unsent. The Edge Function
+      // re-checks that both of them are in this match before sending anything.
+      void notifyChatPush(matchId, uid, trimmed, s.trainerName || "Trainer");
       return {
         ok: true,
         message: {
@@ -146,7 +199,12 @@ export function subscribeToMatchChat(
     .channel(`pvp_chat_messages_${matchId}`)
     .on(
       "postgres_changes",
-      { event: "INSERT", schema: "public", table: "pvp_chat_messages", filter: `match_id=eq.${matchId}` },
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "pvp_chat_messages",
+        filter: `match_id=eq.${matchId}`,
+      },
       (payload) => {
         onMessage(fromRow(payload.new as ChatMessageRow));
       },
