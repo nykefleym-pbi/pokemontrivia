@@ -13,6 +13,8 @@ import { CATEGORIES, CATEGORY_OF, BAG_SHORT_DESC, type ItemCategory } from "@/li
 import { AppIcon } from "@/components/app-icon";
 import { UI_ICON, COIN_ICON } from "@/lib/app-icons";
 import { ItemIcon } from "@/components/game-ui";
+import { BagCapacityBar, BagOverflowPanel, DiscardItemButton } from "@/components/bag-overflow";
+import { bagCapacity, bagUnitsUsed, isBagExempt } from "@/lib/store/slices/itemsSlice";
 import { syncActivity } from "@/lib/social";
 import { Button } from "@/components/ui/button";
 import {
@@ -162,15 +164,24 @@ function ShopPage() {
       if (!ok) break;
       bought++;
     }
+    // buyItem refuses for two different reasons now, and saying "Coins" when the
+    // bag was the problem sends the player to the wrong screen.
+    const st = useGameStore.getState();
+    const outOfSpace =
+      !isBagExempt(item.id) && bagUnitsUsed(st.inventory) >= bagCapacity(st.bagUpgrades);
     if (bought === 0) {
       playSfx("error");
-      toast.error(`Need ${cost * buyQty} Coins to buy ${buyQty}× ${item.name}.`);
+      toast.error(
+        outOfSpace
+          ? `Your bag is full. Discard something or buy more bag space.`
+          : `Need ${cost * buyQty} Coins to buy ${buyQty}× ${item.name}.`,
+      );
     } else {
       playSfx("purchase");
       if (isFeatured) markFeaturedDealPurchased();
       toast.success(
         bought < buyQty
-          ? `Bought ${bought}× ${item.name} (ran out of Coins).`
+          ? `Bought ${bought}× ${item.name} (${outOfSpace ? "bag is full" : "ran out of Coins"}).`
           : `Bought ${buyQty}× ${item.name}!`,
       );
     }
@@ -309,42 +320,42 @@ function ShopPage() {
             Daily deal claimed — a new deal lands tomorrow
           </div>
         ) : (
-        <button
-          onClick={() =>
-            setConfirmState({
-              item: featured.item,
-              cost: featured.discountedCost,
-              featured: {
-                originalCost: featured.originalCost,
-                discountPct: featured.discountPct,
-              },
-            })
-          }
-          className="relative mb-5 flex w-full items-center gap-5 overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-[#b5341f] p-6 pt-9 text-left shadow-card disabled:opacity-60"
-        >
-          <span className="absolute left-1/2 top-3 -translate-x-1/2 whitespace-nowrap rounded-full bg-poke-yellow px-3 py-0.5 font-pixel-xs uppercase text-foreground shadow-sm">
-            {`Discounted ${featured.discountPct}% off`}
-          </span>
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -right-6 top-1/2 h-40 w-40 -translate-y-1/2 rounded-full bg-white/10"
-          />
-          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-white/15">
-            <ItemIcon item={featured.item} className="h-14 w-14" />
-          </div>
-          <div className="min-w-0 flex-1 pt-2">
-            <div className="font-display-lg text-white">{featured.item.name}</div>
-            <div className="mt-1.5 text-sm leading-snug text-white/85">{featured.item.desc}</div>
-          </div>
-          <div className="flex shrink-0 flex-col items-end gap-1.5">
-            <span className="rounded-full bg-white px-3.5 py-1.5 text-sm font-extrabold text-primary">
-              {featured.discountedCost} Coins
+          <button
+            onClick={() =>
+              setConfirmState({
+                item: featured.item,
+                cost: featured.discountedCost,
+                featured: {
+                  originalCost: featured.originalCost,
+                  discountPct: featured.discountPct,
+                },
+              })
+            }
+            className="relative mb-5 flex w-full items-center gap-5 overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-[#b5341f] p-6 pt-9 text-left shadow-card disabled:opacity-60"
+          >
+            <span className="absolute left-1/2 top-3 -translate-x-1/2 whitespace-nowrap rounded-full bg-poke-yellow px-3 py-0.5 font-pixel-xs uppercase text-foreground shadow-sm">
+              {`Discounted ${featured.discountPct}% off`}
             </span>
-            <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-bold text-white/60 line-through">
-              {featured.originalCost} Coins
-            </span>
-          </div>
-        </button>
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -right-6 top-1/2 h-40 w-40 -translate-y-1/2 rounded-full bg-white/10"
+            />
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-white/15">
+              <ItemIcon item={featured.item} className="h-14 w-14" />
+            </div>
+            <div className="min-w-0 flex-1 pt-2">
+              <div className="font-display-lg text-white">{featured.item.name}</div>
+              <div className="mt-1.5 text-sm leading-snug text-white/85">{featured.item.desc}</div>
+            </div>
+            <div className="flex shrink-0 flex-col items-end gap-1.5">
+              <span className="rounded-full bg-white px-3.5 py-1.5 text-sm font-extrabold text-primary">
+                {featured.discountedCost} Coins
+              </span>
+              <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-bold text-white/60 line-through">
+                {featured.originalCost} Coins
+              </span>
+            </div>
+          </button>
         )}
 
         {/* Category tabs */}
@@ -445,35 +456,35 @@ function ShopPage() {
               {/* Quantity stepper — hidden for the featured deal (one per day) */}
               {!confirmState.featured &&
                 (() => {
-                const unitCost = confirmState.cost;
-                const maxQty = unitCost > 0 ? Math.max(1, Math.floor(coins / unitCost)) : 1;
-                return (
-                  <div className="mt-4 flex items-center justify-between rounded-2xl bg-poke-blue/10 px-4 py-3">
-                    <span className="font-bold text-foreground">Quantity</span>
-                    <div className="flex items-center gap-4">
-                      <button
-                        onClick={() => setQty((q) => Math.max(1, q - 1))}
-                        disabled={qty <= 1}
-                        className="flex h-9 w-9 items-center justify-center rounded-full bg-card text-foreground shadow-card disabled:opacity-40"
-                        aria-label="Decrease quantity"
-                      >
-                        <Minus className="h-4 w-4" />
-                      </button>
-                      <span className="w-6 text-center text-lg font-extrabold tabular-nums text-foreground">
-                        {qty}
-                      </span>
-                      <button
-                        onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
-                        disabled={qty >= maxQty}
-                        className="flex h-9 w-9 items-center justify-center rounded-full bg-poke-dark text-white shadow-card disabled:opacity-40"
-                        aria-label="Increase quantity"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </button>
+                  const unitCost = confirmState.cost;
+                  const maxQty = unitCost > 0 ? Math.max(1, Math.floor(coins / unitCost)) : 1;
+                  return (
+                    <div className="mt-4 flex items-center justify-between rounded-2xl bg-poke-blue/10 px-4 py-3">
+                      <span className="font-bold text-foreground">Quantity</span>
+                      <div className="flex items-center gap-4">
+                        <button
+                          onClick={() => setQty((q) => Math.max(1, q - 1))}
+                          disabled={qty <= 1}
+                          className="flex h-9 w-9 items-center justify-center rounded-full bg-card text-foreground shadow-card disabled:opacity-40"
+                          aria-label="Decrease quantity"
+                        >
+                          <Minus className="h-4 w-4" />
+                        </button>
+                        <span className="w-6 text-center text-lg font-extrabold tabular-nums text-foreground">
+                          {qty}
+                        </span>
+                        <button
+                          onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
+                          disabled={qty >= maxQty}
+                          className="flex h-9 w-9 items-center justify-center rounded-full bg-poke-dark text-white shadow-card disabled:opacity-40"
+                          aria-label="Increase quantity"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                );
-              })()}
+                  );
+                })()}
 
               {/* Cost breakdown rows */}
               {(() => {
@@ -560,14 +571,14 @@ function ShopPage() {
             })).filter((g) => g.items.length > 0);
             // Berries are Nearby-Battle-only, excluded from the shop categories;
             // surface them here read-only so players can see what they're holding.
-            const ownedBerries = ITEMS.filter(
-              (it) => it.isBerry && (inventory[it.id] ?? 0) > 0,
-            );
+            const ownedBerries = ITEMS.filter((it) => it.isBerry && (inventory[it.id] ?? 0) > 0);
             return (
-              <div className="my-4 max-h-[65vh] overflow-y-auto">
+              <div className="my-4 max-h-[65vh] space-y-3 overflow-y-auto">
+                <BagCapacityBar />
+                <BagOverflowPanel />
                 {ownedInBag.length === 0 ? (
                   <div className="rounded-3xl bg-poke-yellow/15 p-6 text-center">
-                                        <div className="font-display-md text-foreground">Your bag is empty</div>
+                    <div className="font-display-md text-foreground">Your bag is empty</div>
                     <p className="mt-1 text-xs text-foreground/60">Buy items below to stock up.</p>
                   </div>
                 ) : (
@@ -631,6 +642,7 @@ function ShopPage() {
                                       {autoOn ? "Auto: On" : "Auto: Off"}
                                     </button>
                                   )}
+                                  <DiscardItemButton id={it.id} />
                                 </div>
                               </div>
                             );
@@ -653,20 +665,24 @@ function ShopPage() {
                                 <ItemIcon item={it} className="h-9 w-9" />
                               </div>
                               <div className="min-w-0 flex-1">
-                                <div className="font-bold leading-tight text-foreground">{it.name}</div>
+                                <div className="font-bold leading-tight text-foreground">
+                                  {it.name}
+                                </div>
                                 <div className="mt-0.5 text-xs leading-snug text-foreground/55">
                                   {it.desc}
                                 </div>
                               </div>
-                              <span className="shrink-0 font-pixel-xs text-foreground">×{inventory[it.id] ?? 0}</span>
+                              <span className="shrink-0 font-pixel-xs text-foreground">
+                                ×{inventory[it.id] ?? 0}
+                              </span>
                             </div>
                           ))}
                         </div>
                       </div>
                     )}
                     <div className="rounded-2xl bg-poke-blue/10 px-4 py-3 text-xs leading-snug text-foreground/70">
-                      Battle items appear in your item dock during a match. Berries are used only
-                      in PvP.
+                      Battle items appear in your item dock during a match. Berries are used only in
+                      PvP.
                     </div>
                   </div>
                 )}
