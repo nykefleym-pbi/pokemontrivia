@@ -150,7 +150,7 @@ database with no `create function` for them anywhere in `supabase/migrations/`:
 
 | Function                          | Called from                                                    | Status                                                       |
 | --------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------ |
-| `get_mega_leaderboard`            | `src/lib/mega/runs.ts`, `supabase/functions/mega-reward-claim` | fixed — `20260730040000_mega_rpcs_backfill_and_lockdown.sql` |
+| `get_mega_leaderboard`            | `src/lib/mega/runs.ts`, `supabase/functions/mega-reward-claim` | fixed — `20260730035753_mega_rpcs_backfill_and_lockdown.sql` |
 | `insert_mega_questions_if_absent` | `src/routes/api.mega-questions.ts`                             | fixed — same migration, plus an anon-execute revoke          |
 | `_pvp_index_shield_zero`          | engine-internal                                                | still undeclared; helper, not client-facing                  |
 | `rls_auto_enable`                 | —                                                              | still undeclared; platform/setup helper                      |
