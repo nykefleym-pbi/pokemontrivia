@@ -145,23 +145,30 @@ boundary holds: nothing in `src/` can reach them.
 `forfeit_live_pvp_match` and `pick_battle_curated` each exist twice in the database
 (overloads, as expected from `20260726140000_pick_battle_curated_accepts_a_band.sql`).
 
-**Migration drift, both directions.** Four functions live in the database with no
-`create function` for them anywhere in `supabase/migrations/`:
+**Migration drift, both directions.** This map originally found four functions living in the
+database with no `create function` for them anywhere in `supabase/migrations/`:
 
-| Function                          | Called from                                                    | Note                                  |
-| --------------------------------- | -------------------------------------------------------------- | ------------------------------------- |
-| `get_mega_leaderboard`            | `src/lib/mega/runs.ts`, `supabase/functions/mega-reward-claim` | **live, client-facing, no migration** |
-| `insert_mega_questions_if_absent` | `src/routes/api.mega-questions.ts`                             | **live, client-facing, no migration** |
-| `_pvp_index_shield_zero`          | engine-internal                                                | helper                                |
-| `rls_auto_enable`                 | —                                                              | platform/setup helper                 |
+| Function                          | Called from                                                    | Status                                                       |
+| --------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------ |
+| `get_mega_leaderboard`            | `src/lib/mega/runs.ts`, `supabase/functions/mega-reward-claim` | fixed — `20260730040000_mega_rpcs_backfill_and_lockdown.sql` |
+| `insert_mega_questions_if_absent` | `src/routes/api.mega-questions.ts`                             | fixed — same migration, plus an anon-execute revoke          |
+| `_pvp_index_shield_zero`          | engine-internal                                                | still undeclared; helper, not client-facing                  |
+| `rls_auto_enable`                 | —                                                              | still undeclared; platform/setup helper                      |
 
-Four functions are defined in migrations but no longer exist in the database, which is the
-expected residue of deliberate drops: `check_curated_answer`, `gen_friend_code`,
+The two client-facing ones are now declared, transcribed verbatim from
+`pg_get_functiondef()` so the backfill is a no-op replace against production and a faithful
+create on a fresh project. Backfilling the first one also surfaced a live privilege bug:
+`insert_mega_questions_if_absent` is SECURITY DEFINER, writes into the deny-all
+`mega_event_questions`, and carried the default PUBLIC execute grant, so any holder of the
+anon key could call it — and since the insert is `on conflict (event_id) do nothing`, the
+first writer for an `event_id` wins, letting an anonymous caller pre-seed a future raid's
+50 questions and silently discard the server's set. Its only caller is
+`api.mega-questions.ts` through `supabaseAdmin`, so execute is now service-role only.
+
+Four functions run the other way — defined in migrations but no longer in the database,
+which is the expected residue of deliberate drops: `check_curated_answer`, `gen_friend_code`,
 `submit_bot_pvp_move`, `submit_pvp_live_answer` (the last two dropped by
 `20260719000000_pvp_live_answer_drop_old_rpcs.sql`).
-
-The first two rows are the actionable ones: a clean-room rebuild of this database from
-`supabase/migrations/` would come up without them, and both are on a user-facing path.
 
 **13 Edge Functions** in the repo (12 plus `_shared`), and exactly 12 deployed and
 `ACTIVE` — a clean 1:1. Eight are invoked from code (`battle-solo`, `daily-run`,
