@@ -38,8 +38,13 @@ SAFE AREAS — where the art WILL be covered
 
 THE RECIPE
   Same as public/loading — see that readme for the sharp/cwebp pipeline. In
-  short: trim, flatten, resize to 1284x1389 lanczos3, WebP quality 80 (drop to
-  76 if it lands over budget), then eyeball it at 1:1.
+  short: flatten, resize to 1284x1389 lanczos3, WebP quality 80, then step down
+  76 -> 72 -> 68 only as far as the file needs to reach budget, and eyeball it
+  at 1:1.
+
+  The 18 backdrops here came through exactly that, 3.88 MB -> 2.05 MB. Most
+  landed at q80; the four busiest needed 76 and Ultraworm Hole 72, which is
+  still indistinguishable from its source in a 1:1 crop.
 
 
 TRAINING BOT
@@ -55,20 +60,31 @@ TRAINING BOT
              shown whenever you face it.
 
 
-WIRING IT UP
-  Drop the files in this folder, then set the matching constants in
-  src/lib/app-icons.ts:
+ADDING A BACKDROP
+  Drop the .webp in this folder, then add one row to VERSUS_BACKDROPS in
+  src/lib/versus-backdrops.ts:
 
-    VERSUS_BACKDROP        the shared default, used by any half whose trainer
-                           has no backdrop of their own
+    { id: "under-the-sea", label: "Under the Sea", file: "Under the Sea.webp" }
+
+  `id` is what a saved preference points at — pick a slug and never reuse it
+  for different art. `label` is what the player reads in the picker. `file` is
+  the filename exactly as it sits here, spaces and apostrophes included; the
+  app encodes it.
+
+  A test (src/lib/versus-backdrops.test.ts) fails if the two ever drift: a row
+  naming a file that is not here, or a file here that no row lists. Both are
+  silent at runtime, which is why they are a test.
+
+  Players choose theirs in Settings -> Trainer -> Battle background. It draws
+  on THEIR half only; the opponent's pick is not synced, so their half — and
+  yours before you have chosen — gets the catalogue default, Forest.
+
+TRAINING BOT WIRING
+  Its two files are separate constants in src/lib/app-icons.ts:
+
     TRAINING_BOT_AVATAR    e.g. "/versus/training-bot.gif"
     TRAINING_BOT_BACKDROP  e.g. "/versus/training-bot-bg.webp"
 
-  All three are null today, which is a valid state: a missing backdrop falls
-  back to the app's gradient and a missing avatar falls back to a trainer
-  sprite. Nothing breaks and nothing needs disabling.
-
-  Per-player backdrops are plumbed through (VersusTrainer.backdrop) but nothing
-  chooses one yet — every half currently gets VERSUS_BACKDROP. Letting a player
-  pick their own is the next step and needs a persisted store field plus a
-  picker; the screen itself is already ready for it.
+  Both null today, which is a valid state: a missing avatar falls back to a
+  trainer sprite and a missing backdrop to the shared default. Nothing breaks
+  and nothing needs disabling.
