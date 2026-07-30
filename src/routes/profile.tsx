@@ -59,10 +59,12 @@ import {
   trainerSpriteUrl,
   adaptiveDifficultyBand,
 } from "@/lib/game-data";
-import { ALL_POKEMON, type PokeEntry } from "@/lib/pokemon-data";
+import { ALL_POKEMON, type PokeEntry, type PokeType } from "@/lib/pokemon-data";
+import { PartnerTypeFilter } from "@/components/partner-type-filter";
+import { matchesPartnerFilters, partnerTypeOptions } from "@/lib/partner-filter";
 
 import { EvolutionScreen } from "@/components/evolution-screen";
-import { PokemonSprite } from "@/components/game-ui";
+import { PokemonSprite, TypeBadge } from "@/components/game-ui";
 import { BattleLogList } from "@/components/battle-log-list";
 import {
   PartnerCard,
@@ -387,6 +389,7 @@ function ProfilePage() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [trainerPickerOpen, setTrainerPickerOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState<PokeType | null>(null);
   const [trainerQuery, setTrainerQuery] = useState("");
   const [resetOpen, setResetOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
@@ -421,13 +424,16 @@ function ProfilePage() {
 
   // Re-picking is limited to Pokémon captured in the Pokédex (the current
   // partner always stays available). Onboarding still uses STARTING_PARTNERS.
-  const results = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return ALL_POKEMON.filter(
-      (p) =>
-        (pokedex[p.id] || p.id === pokemon?.id) && (q ? p.name.toLowerCase().startsWith(q) : true),
-    ).slice(0, 9);
-  }, [query, pokedex, pokemon?.id]);
+  const partnerPool = useMemo(
+    () => ALL_POKEMON.filter((p) => pokedex[p.id] || p.id === pokemon?.id),
+    [pokedex, pokemon?.id],
+  );
+  // Chips come from the pool, so they only ever offer types the player owns.
+  const typeOptions = useMemo(() => partnerTypeOptions(partnerPool), [partnerPool]);
+  const results = useMemo(
+    () => partnerPool.filter((p) => matchesPartnerFilters(p, query, typeFilter)).slice(0, 9),
+    [partnerPool, query, typeFilter],
+  );
   const trainerResults = useMemo(() => {
     const q = trainerQuery.trim().toLowerCase();
     const pool = TRAINER_SPRITES.filter((t) => !brokenTrainerIds.has(t.id));
@@ -1602,10 +1608,11 @@ function ProfilePage() {
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search..."
+              placeholder="Search by name or type..."
               className="pl-10"
             />
           </div>
+          <PartnerTypeFilter options={typeOptions} value={typeFilter} onChange={setTypeFilter} />
           <div className="grid grid-cols-3 gap-2">
             {results.map((p) => (
               <button
@@ -1619,11 +1626,22 @@ function ProfilePage() {
               >
                 <PokemonSprite id={p.id} alt={p.name} className="sprite h-14 w-14" />
                 <div className="text-[11px] font-semibold">{p.name}</div>
+                {/* Type is what grants the ability, and it's what the chips
+                    filter on — showing it here makes the filter legible. */}
+                <div className="mt-0.5">
+                  <TypeBadge type={p.types[0]} size="sm" />
+                </div>
               </button>
             ))}
             {results.length === 0 && (
               <div className="col-span-3 rounded-2xl bg-muted/40 p-5 text-center text-xs text-muted-foreground">
-                Capture Pokémon in battle to unlock them as partners!
+                {/* An empty POOL and an empty FILTER need different advice —
+                    telling someone with 200 captures to go capture more is
+                    nonsense when they have simply filtered to a type they
+                    haven't caught yet. */}
+                {partnerPool.length === 0
+                  ? "Capture Pokémon in battle to unlock them as partners!"
+                  : "None of your Pokémon match that search."}
               </div>
             )}
           </div>
