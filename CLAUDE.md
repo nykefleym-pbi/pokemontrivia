@@ -1,25 +1,44 @@
 ## Delegation
+
 The higher your tier, the more you delegate. Push the
 work down, keep your own context for judgment.
 Brief every child: the context, the why, what done
 looks like. It starts blank and inherits nothing.
 
-| Model    | Best for               | Delegate?          | Effort |
-|----------|-------------------------|---------------------|--------|
-| Haiku    | bulk mechanical          | never               | low    |
-| Sonnet   | scoped research          | when it helps       | medium |
-| Opus 4.8 | multi-step reasoning     | on clear benefit    | xhigh  |
-| Fable 5  | judgment, taste          | by default          | medium |
+| Model    | Best for             | Delegate?        | Effort |
+| -------- | -------------------- | ---------------- | ------ |
+| Haiku    | bulk mechanical      | never            | low    |
+| Sonnet   | scoped research      | when it helps    | medium |
+| Opus 4.8 | multi-step reasoning | on clear benefit | xhigh  |
+| Fable 5  | judgment, taste      | by default       | medium |
 
 Fable goes xhigh only for the hardest calls. Skip high.
 
 ## Escalation
+
 The parent doesn't have to be the top model. An Opus
 parent spawns a Fable child for the one hard call.
 The child answers and returns.
 Work above your tier? Return it, don't burn tokens on it.
 
+## Shipping: merge to main
+
+Owner's standing instruction (2026-07-30): always merge
+to main. Once a PR is green, squash-merge it without
+asking — don't leave it parked as a draft waiting for a
+go-ahead that has already been given.
+
+Squash, not merge commits: `main` is linear and every
+commit carries a `(#NNN)` suffix. Squashing collapses the
+branch's messages into one, so write the squash body to
+carry the findings forward — the commit messages are the
+record of WHY, and a squash is where that gets lost.
+
+This is authorization to merge, not to skip the checks.
+Green still means tsc, the full suite, and CI.
+
 ## Signature abilities: never infer liveness. Compute it.
+
 In this codebase a function can be exported, imported,
 called from the live battle screen, AND backed by rows
 in production — and still be stone dead, because of one
@@ -34,11 +53,12 @@ and concluding "it's live" has produced four wrong
 findings, one of which nearly deleted 20 abilities.
 
 Names lie in BOTH directions:
-  - `evaluateBattleStart` looked live. It was dead.
-  - `hasServerManualEffect` looks legacy. It is LIVE.
-  - `manual` no longer means player-fired. The Fire
-    button is gone; manual-phase rows are the payload a
-    row's ENGINE trigger auto-delivers (`fireManualAuto`).
+
+- `evaluateBattleStart` looked live. It was dead.
+- `hasServerManualEffect` looks legacy. It is LIVE.
+- `manual` no longer means player-fired. The Fire
+  button is gone; manual-phase rows are the payload a
+  row's ENGINE trigger auto-delivers (`fireManualAuto`).
 
 BEFORE claiming any path is dead/live, or deleting
 anything in the signature system, run:
@@ -62,6 +82,7 @@ compiles fine and silently un-wires abilities. That is a
 real bug caught this way (103/104 rows moved on a rename).
 
 ## Two vocabularies, one word: `manual`
+
 TypeScript says `capped_payload`. The DATABASE phase token
 is still the string `'manual'` — a wire protocol the client
 sends, live RPCs filter on, and 20 production rows carry.
@@ -71,6 +92,7 @@ again, and never compare a trigger/wiring to `"manual"`.
 Neither mistake is caught by the compiler.
 
 ## The engine is not the only implementation
+
 `apply_pvp_live_answer_v2` RECOMPUTES the human's streak,
 wrong-streak and confusion in PL/pgSQL and writes its own
 answer — it ignores `_next_state` for those columns. Its
