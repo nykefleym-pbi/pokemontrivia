@@ -41,6 +41,7 @@ export const createProfileSlice: StoreSlice<
     | "engageDismissCount"
     | "engageDismissDate"
     | "engageShownThisSession"
+    | "facebookPromoDate"
     | "dailyGiftLastClaim"
     | "dailyGiftStreak"
     | "dailyGiftFreezeUsedDate"
@@ -55,6 +56,7 @@ export const createProfileSlice: StoreSlice<
     | "setNeedsNameReclaim"
     | "setEngageShownThisSession"
     | "recordEngageDismiss"
+    | "markFacebookPromoSeen"
     | "pushPromptState"
     | "pushPromptLastDate"
     | "recordPushPrompt"
@@ -72,6 +74,7 @@ export const createProfileSlice: StoreSlice<
   engageDismissCount: 0,
   engageDismissDate: null,
   engageShownThisSession: false,
+  facebookPromoDate: null,
   nameReconciled: false,
   needsNameReclaim: false,
   pushPromptState: "unasked",
@@ -113,6 +116,8 @@ export const createProfileSlice: StoreSlice<
   setNameReconciled: (v) => set({ nameReconciled: v }),
   setNeedsNameReclaim: (v) => set({ needsNameReclaim: v }),
   setEngageShownThisSession: (v) => set({ engageShownThisSession: v }),
+
+  markFacebookPromoSeen: () => set({ facebookPromoDate: new Date().toISOString().slice(0, 10) }),
 
   recordEngageDismiss: () => {
     const today = new Date().toISOString().slice(0, 10);

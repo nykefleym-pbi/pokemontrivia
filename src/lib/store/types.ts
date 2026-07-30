@@ -112,6 +112,11 @@ export interface GameState {
   engageDismissCount: number;
   engageDismissDate: string | null;
   engageShownThisSession: boolean;
+  /** ISO date (YYYY-MM-DD) the Facebook promo card was last put in front of the
+   *  player. The card is offered at most once per calendar day, so this is the
+   *  whole gate — there is no separate "dismissed" flag, because dismissing it
+   *  and ignoring it should both cost the same: the rest of today. */
+  facebookPromoDate: string | null;
   nameReconciled: boolean;
   needsNameReclaim: boolean;
 
@@ -274,6 +279,7 @@ export interface GameState {
   ) => void;
   setFriendCode: (code: string) => void;
   recordEngageDismiss: () => void;
+  markFacebookPromoSeen: () => void;
   recordPushPrompt: (outcome: "soft-declined" | "asked") => void;
   setNameReconciled: (v: boolean) => void;
   setNeedsNameReclaim: (v: boolean) => void;

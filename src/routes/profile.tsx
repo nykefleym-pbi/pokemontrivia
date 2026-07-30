@@ -65,6 +65,7 @@ import { matchesPartnerFilters, partnerTypeOptions } from "@/lib/partner-filter"
 
 import { EvolutionScreen } from "@/components/evolution-screen";
 import { PokemonSprite, TypeBadge } from "@/components/game-ui";
+import { FACEBOOK_PAGE_NAME, FACEBOOK_PAGE_URL } from "@/lib/social-links";
 import { BattleLogList } from "@/components/battle-log-list";
 import {
   PartnerCard,
@@ -1332,7 +1333,7 @@ function ProfilePage() {
                 {/* An <a>, not a router Link: this leaves the app. rel=noreferrer
                     as well as noopener so the Facebook tab gets no referrer. */}
                 <a
-                  href="https://www.facebook.com/share/1Lb8asVCtm/"
+                  href={FACEBOOK_PAGE_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex w-full items-center justify-between p-4 text-left transition active:scale-[0.98]"
@@ -1343,7 +1344,7 @@ function ProfilePage() {
                     </div>
                     <div>
                       <div className="text-sm font-semibold text-foreground">
-                        Poke Trivia Battle on Facebook
+                        {FACEBOOK_PAGE_NAME} on Facebook
                       </div>
                       <div className="text-xs text-foreground/55">
                         News, events and new questions
@@ -1354,12 +1355,12 @@ function ProfilePage() {
                 </a>
                 <button
                   onClick={() => {
-                    const url = "https://www.facebook.com/share/1Lb8asVCtm/";
+                    const url = FACEBOOK_PAGE_URL;
                     // Native share sheet where there is one (this is a PWA on a
                     // phone most of the time); clipboard is the desktop fallback.
                     if (typeof navigator !== "undefined" && navigator.share) {
                       void navigator
-                        .share({ title: "Poke Trivia Battle", url })
+                        .share({ title: FACEBOOK_PAGE_NAME, url })
                         .catch(() => undefined);
                       return;
                     }

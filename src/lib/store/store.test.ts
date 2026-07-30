@@ -445,3 +445,32 @@ describe("bag capacity", () => {
     expect(useGameStore.getState().pendingBagOverflow).toEqual([{ id: "potion", qty: 5 }]);
   });
 });
+
+describe("Facebook promo gate", () => {
+  const today = () => new Date().toISOString().slice(0, 10);
+
+  it("starts unshown so a fresh player is offered it", () => {
+    expect(useGameStore.getState().facebookPromoDate).toBeNull();
+  });
+
+  it("markFacebookPromoSeen stamps today, which is what closes the gate", () => {
+    useGameStore.getState().markFacebookPromoSeen();
+    expect(useGameStore.getState().facebookPromoDate).toBe(today());
+  });
+
+  it("reset() clears it", () => {
+    // reset() enumerates state explicitly rather than rebuilding from the slice
+    // defaults, so a new field it forgets leaks across saves and across tests --
+    // that exact omission caused 8 failures when the bag fields landed.
+    useGameStore.getState().markFacebookPromoSeen();
+    useGameStore.getState().reset();
+    expect(useGameStore.getState().facebookPromoDate).toBeNull();
+  });
+
+  it("a stale date does not close the gate", () => {
+    // The card is gated on `facebookPromoDate !== today`, so yesterday's stamp
+    // has to read as "offer it again" rather than as "already shown".
+    useGameStore.setState({ facebookPromoDate: "2020-01-01" });
+    expect(useGameStore.getState().facebookPromoDate).not.toBe(today());
+  });
+});

@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { Facebook } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { useStoreHydrated } from "@/lib/store-hydration";
 import { PokemonSprite } from "@/components/game-ui";
@@ -23,6 +24,7 @@ import {
 } from "@/lib/mega/schedule";
 import { ensureMegaQuestions } from "@/lib/mega/questions";
 import { WHATS_NEW } from "@/lib/whats-new";
+import { FACEBOOK_PAGE_NAME, FACEBOOK_PAGE_URL } from "@/lib/social-links";
 import { fetchMegaLeaderboard, getMyMegaRun, getMegaAttempts } from "@/lib/mega/runs";
 import { nextPendingElite, type EliteMember } from "@/lib/elite-four";
 import { findGymLeader, type GymLeader } from "@/lib/gym-leaders";
@@ -82,12 +84,14 @@ function BattlePage() {
   const engageDismissCount = useGameStore((s) => s.engageDismissCount);
   const lastSeenWhatsNew = useGameStore((s) => s.lastSeenWhatsNew);
   const markWhatsNewSeen = useGameStore((s) => s.markWhatsNewSeen);
+  const facebookPromoDate = useGameStore((s) => s.facebookPromoDate);
+  const markFacebookPromoSeen = useGameStore((s) => s.markFacebookPromoSeen);
   const engageDismissDate = useGameStore((s) => s.engageDismissDate);
   const recordEngageDismiss = useGameStore((s) => s.recordEngageDismiss);
   const engageShownThisSession = useGameStore((s) => s.engageShownThisSession);
   const setEngageShownThisSession = useGameStore((s) => s.setEngageShownThisSession);
   const [engageCards, setEngageCards] = useState<Array<{
-    kind: "whatsnew" | "daily" | "weekly" | "whosthat" | "mega" | "megaleaderboard";
+    kind: "whatsnew" | "daily" | "weekly" | "whosthat" | "mega" | "megaleaderboard" | "facebook";
     title: string;
     desc: string;
     chip: string;
@@ -450,6 +454,19 @@ function BattlePage() {
     setPhase("megaLeaderboard");
   }
 
+  /**
+   * Leaves the app for the Facebook page. `noopener,noreferrer` so the opened tab
+   * gets neither a handle back to this window nor a referrer — same treatment as
+   * Profile's Community link.
+   *
+   * Kept as a callback rather than an <a> because the carousel's CTA is one
+   * shared button for every card kind; this still runs inside the real click, so
+   * it is not treated as an unrequested popup.
+   */
+  const openFacebookPage = useCallback(() => {
+    window.open(FACEBOOK_PAGE_URL, "_blank", "noopener,noreferrer");
+  }, []);
+
   function exitBattle() {
     setPhase("home");
     setQuestions([]);
@@ -518,7 +535,7 @@ function BattlePage() {
     const weeklyStatus = weeklyLeague?.status;
     const leader = weeklyLeague ? findGymLeader(weeklyLeague.gymLeaderId) : null;
     const cards: Array<{
-      kind: "whatsnew" | "daily" | "weekly" | "whosthat" | "mega" | "megaleaderboard";
+      kind: "whatsnew" | "daily" | "weekly" | "whosthat" | "mega" | "megaleaderboard" | "facebook";
       title: string;
       desc: string;
       chip: string;
@@ -613,7 +630,27 @@ function BattlePage() {
         onPlay: openMegaLeaderboard,
       });
     }
+    // Facebook promo, at most once a calendar day. Deliberately LAST: the
+    // carousel is headed "Ready to play?" and counts "activities available", so
+    // a promo in front of an unplayed Daily Quest would be advertising over the
+    // thing the player opened the app for.
+    const facebookIncluded = facebookPromoDate !== today;
+    if (facebookIncluded) {
+      cards.push({
+        kind: "facebook",
+        title: `Follow ${FACEBOOK_PAGE_NAME}`,
+        desc: "News, events and new questions — see what's coming next.",
+        chip: "COMMUNITY",
+        cta: "Open Facebook",
+        onPlay: openFacebookPage,
+      });
+    }
     if (cards.length > 0) {
+      // Marked on DISPLAY, not on tap. Once per day has to mean once the player
+      // has had the chance to see it: crediting only a tap would bring the card
+      // back every session until they engaged, which is the nagging this gate
+      // exists to prevent.
+      if (facebookIncluded) markFacebookPromoSeen();
       engageShownRef.current = true;
       setEngageShownThisSession(true);
       setEngageActive(0);
@@ -641,6 +678,9 @@ function BattlePage() {
     hasOnboarded,
     lastSeenWhatsNew,
     markWhatsNewSeen,
+    facebookPromoDate,
+    markFacebookPromoSeen,
+    openFacebookPage,
   ]);
 
   const ENGAGE_THEME: Record<
@@ -748,6 +788,26 @@ function BattlePage() {
       titleColor: "var(--brand-ink)",
       descColor: "var(--brand-slate)",
     },
+    // Facebook blue, but kept inside the same card grammar as every other kind
+    // (cream body, pixel label, chip, stacked CTA) so it reads as one of the
+    // hub's cards rather than an ad pasted into the carousel.
+    facebook: {
+      cardBg: "var(--brand-cream)",
+      hero: "radial-gradient(circle at 50% 40%, #4C8BF5 0%, #1877F2 55%, #0B5FCC 100%)",
+      ray: "rgba(255,255,255,0.16)",
+      glow: "rgba(255,255,255,0.55)",
+      labelBg: "rgba(0,0,0,0.24)",
+      labelColor: "#fff",
+      label: "COMMUNITY",
+      chipBg: "#DCE8FB",
+      chipColor: "#1155B8",
+      chipStroke: "#1877F2",
+      ctaBg: "#1877F2",
+      ctaColor: "#fff",
+      ctaShadow: "#0B4FA8",
+      titleColor: "var(--brand-ink)",
+      descColor: "var(--brand-slate)",
+    },
     megaleaderboard: {
       cardBg: "var(--brand-cream)",
       hero: "radial-gradient(circle at 50% 34%, #2E3A5C 0%, var(--brand-ink) 66%)",
@@ -778,10 +838,19 @@ function BattlePage() {
           <div className="relative w-[360px] max-w-[94vw]">
             <div className="px-10 text-center">
               <div className="text-[26px] font-black tracking-tight text-white">Ready to play?</div>
-              <div className="mt-1.5 font-pixel text-[9px] tracking-widest text-[var(--brand-gold)]">
-                {engageCards.length} {engageCards.length === 1 ? "ACTIVITY" : "ACTIVITIES"}{" "}
-                AVAILABLE
-              </div>
+              {/* Counts things there are to PLAY. The Facebook promo is a card in
+                  the same carousel but not an activity, so including it made the
+                  line over-promise ("4 ACTIVITIES" for three playable modes plus
+                  an ad). Hidden entirely when the promo is all that is left. */}
+              {(() => {
+                const activities = engageCards.filter((c) => c.kind !== "facebook").length;
+                if (activities === 0) return null;
+                return (
+                  <div className="mt-1.5 font-pixel text-[9px] tracking-widest text-[var(--brand-gold)]">
+                    {activities} {activities === 1 ? "ACTIVITY" : "ACTIVITIES"} AVAILABLE
+                  </div>
+                );
+              })()}
             </div>
             <div
               className="mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-10 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -804,6 +873,20 @@ function BattlePage() {
                       <div
                         className="relative flex h-[200px] items-center justify-center overflow-hidden"
                         style={{ background: t.hero }}
+                        // The promo's artwork is a second way through to the page,
+                        // as asked. Only this kind gets it: making a Daily Quest
+                        // hero tappable would fire a battle from a swipe.
+                        {...(card.kind === "facebook"
+                          ? {
+                              role: "link" as const,
+                              tabIndex: 0,
+                              "aria-label": `Open ${FACEBOOK_PAGE_NAME} on Facebook`,
+                              onClick: () => {
+                                setEngageCards(null);
+                                openFacebookPage();
+                              },
+                            }
+                          : {})}
                       >
                         <div
                           className="absolute inset-0"
@@ -828,6 +911,13 @@ function BattlePage() {
                             }}
                           />
                         )}
+                        {card.kind === "facebook" && (
+                          <Facebook
+                            className="relative h-[104px] w-[104px] text-white"
+                            strokeWidth={1.5}
+                            aria-hidden
+                          />
+                        )}
                         {card.kind === "daily" && (
                           <PokemonSprite
                             id={479}
@@ -843,7 +933,10 @@ function BattlePage() {
                               className="relative h-[150px] w-[150px] object-contain [filter:brightness(0)] [image-rendering:pixelated]"
                             />
                           ) : (
-                            <AppIcon src={UI_ICON.trophies} className="relative h-[110px] w-[110px]" />
+                            <AppIcon
+                              src={UI_ICON.trophies}
+                              className="relative h-[110px] w-[110px]"
+                            />
                           ))}
                         {card.kind === "whosthat" && (
                           <div
@@ -964,6 +1057,27 @@ function BattlePage() {
                         >
                           {t.label}
                         </div>
+                        {/* Dismissing the promo drops just this card and leaves any
+                            real activity in place -- "Maybe later" would have shut
+                            the whole carousel, so an unplayed Daily Quest would be
+                            collateral. Already marked seen on display, so it is
+                            gone for the rest of the day either way. */}
+                        {card.kind === "facebook" && (
+                          <button
+                            aria-label="Dismiss Facebook promo"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEngageCards((prev) => {
+                                const next = (prev ?? []).filter((c) => c.kind !== "facebook");
+                                return next.length > 0 ? next : null;
+                              });
+                              setEngageActive(0);
+                            }}
+                            className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/25 text-[15px] font-bold leading-none text-white transition active:scale-95"
+                          >
+                            ×
+                          </button>
+                        )}
                       </div>
                     )}
                     <div className="flex flex-1 flex-col px-5 pb-6 pt-4">
