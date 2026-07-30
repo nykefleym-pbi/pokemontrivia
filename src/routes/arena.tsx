@@ -23,7 +23,7 @@ import {
   leaveQueue,
   type QueueTicket,
 } from "@/lib/pvp-live";
-import { fetchPvpLeaderboard, type LeaderboardRow } from "@/lib/pvp";
+import { fetchPvpRatingWindow, type LeaderboardRow } from "@/lib/pvp";
 import { ensureSession } from "@/lib/social";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -33,8 +33,7 @@ export const Route = createFileRoute("/arena")({
   // are no tabs any more — Battle is the whole page — so nothing reads it, but
   // pvp.live.$matchId.tsx still navigates with it, and dropping the validator
   // would make that a search param the router rejects. Accepted and ignored.
-  validateSearch: (s: Record<string, unknown>): { nearby?: 1 } =>
-    s.nearby ? { nearby: 1 } : {},
+  validateSearch: (s: Record<string, unknown>): { nearby?: 1 } => (s.nearby ? { nearby: 1 } : {}),
 });
 
 /** Per-tier badge styling. There is deliberately no textual tier label: the
@@ -151,8 +150,15 @@ function ArenaPage() {
   const [trainingBusy, setTrainingBusy] = useState(false);
 
   const [latestChatMatchId, setLatestChatMatchId] = useState<string | null>(null);
-  const [board, setBoard] = useState<{ top: LeaderboardRow[]; me: LeaderboardRow | null }>({
-    top: [],
+  const [board, setBoard] = useState<{
+    rows: LeaderboardRow[];
+    me: LeaderboardRow | null;
+    ranked: boolean;
+    total: number;
+  }>({
+    rows: [],
+    ranked: false,
+    total: 0,
     me: null,
   });
   /** Which half of the Group 3 card is showing. The reward slots and the
@@ -165,9 +171,14 @@ function ArenaPage() {
   useEffect(() => {
     let cancelled = false;
     // Three rows, not five: the board shares a fixed-height panel with the
-    // reward slots now, and a top 3 is what fits without the Battle button
+    // reward slots now, and three is what fits without the Battle button
     // underneath moving when the player switches tabs.
-    void fetchPvpLeaderboard(3).then((b) => {
+    //
+    // A WINDOW, not a top 3 — owner request. The player is always one of the
+    // three, with the trainer above and the trainer below them on rating; at
+    // either end of the table the window slides so three still show. Computed in
+    // the database, since a player at #40 has neighbours no top-N fetch holds.
+    void fetchPvpRatingWindow(3).then((b) => {
       if (!cancelled) setBoard(b);
     });
     return () => {
@@ -483,11 +494,7 @@ function ArenaPage() {
 
       {/* ── Group 2 — the two badges ───────────────────────────────────────── */}
       <div className="flex gap-3 px-5 pt-3">
-        <TrophyCard
-          label="PVP"
-          count={arenaStats.nearbyBattles}
-          art={ARENA_BADGE_ICON.nearby}
-        />
+        <TrophyCard label="PVP" count={arenaStats.nearbyBattles} art={ARENA_BADGE_ICON.nearby} />
         <TrophyCard
           label="TRAINING"
           count={arenaStats.trainingBattles}
@@ -572,7 +579,7 @@ function ArenaPage() {
                   })}
                 </div>
               </>
-            ) : board.top.length === 0 ? (
+            ) : board.rows.length === 0 ? (
               // Rating only moves on human matches, so before anyone has played
               // one there is no table to show — say why rather than draw an
               // empty one.
@@ -581,14 +588,21 @@ function ArenaPage() {
               </p>
             ) : (
               <>
-                {board.me && board.me.ratingMatches > 0 && (
+                {board.ranked && board.me ? (
                   <div className="text-center text-xs text-foreground/60">
                     You: <span className="font-bold text-foreground">{board.me.rating}</span> · #
-                    {board.me.position}
+                    {board.me.position} of {board.total}
+                  </div>
+                ) : (
+                  // Not on the board yet, so the three rows are the top three
+                  // instead of a window — say so rather than let it look like the
+                  // player is ranked among them.
+                  <div className="text-center text-xs text-foreground/60">
+                    Top {board.rows.length} — win a ranked battle to take your place
                   </div>
                 )}
                 <div className="mt-2 space-y-1.5">
-                  {board.top.map((row) => (
+                  {board.rows.map((row) => (
                     <div
                       key={row.id}
                       className={`flex items-center gap-2 rounded-xl px-2 py-1.5 ${

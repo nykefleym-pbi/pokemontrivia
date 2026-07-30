@@ -145,9 +145,7 @@ export async function createPvpChallenge(
  */
 export async function challengeRandomTrainer(
   questions: Trivia[],
-): Promise<
-  { ok: true; matchId: string; opponentName: string } | { ok: false; error: string }
-> {
+): Promise<{ ok: true; matchId: string; opponentName: string } | { ok: false; error: string }> {
   try {
     const { data, error } = await rpc.rpc("challenge_random_trainer", {
       _questions: questions,
@@ -237,6 +235,47 @@ export async function fetchPvpLeaderboard(
   }
 }
 
+/**
+ * The ranked board as a window CENTRED ON THE CALLER — one above, one below,
+ * clamped at either end so a full `size` rows still come back for the top and
+ * bottom players.
+ *
+ * Deliberately a different RPC from fetchPvpLeaderboard rather than a flag on it:
+ * the window has to be computed in the database, because a player at #40 has
+ * neighbours no top-N fetch would contain.
+ *
+ * `ranked` is false when the caller has no standing yet (rating only moves on
+ * human matches, so a bot-only player has none). The rows are then just the top
+ * `size`, and the caller is not among them.
+ */
+export async function fetchPvpRatingWindow(
+  size = 3,
+): Promise<{ rows: LeaderboardRow[]; me: LeaderboardRow | null; ranked: boolean; total: number }> {
+  const empty = { rows: [], me: null, ranked: false, total: 0 };
+  try {
+    const { data, error } = await rpc.rpc("get_pvp_rating_window", { _size: size });
+    if (error) {
+      console.warn("[pvp] fetchPvpRatingWindow failed:", error.message);
+      return empty;
+    }
+    const r = data as {
+      rows?: LeaderboardRowJson[];
+      me?: LeaderboardRowJson | null;
+      ranked?: boolean;
+      total?: number;
+    } | null;
+    return {
+      rows: (r?.rows ?? []).map(toLeaderboardRow),
+      me: r?.me ? toLeaderboardRow(r.me) : null,
+      ranked: !!r?.ranked,
+      total: Number(r?.total ?? 0),
+    };
+  } catch (e) {
+    console.warn("[pvp] fetchPvpRatingWindow threw:", e);
+    return empty;
+  }
+}
+
 /** Submit the caller's own side of a match. Returns the computed score. */
 export async function submitPvpResult(
   matchId: string,
@@ -308,11 +347,7 @@ export async function listPvpMatches(): Promise<PvpMatch[]> {
 
 /** Fetch a single match by id (used when landing on the /pvp play route). */
 export async function getPvpMatch(matchId: string): Promise<PvpMatch | null> {
-  const { data, error } = await supabase
-    .from("pvp_matches")
-    .select("*")
-    .eq("id", matchId)
-    .single();
+  const { data, error } = await supabase.from("pvp_matches").select("*").eq("id", matchId).single();
   if (error) {
     console.warn("[pvp] getPvpMatch failed:", error.message);
     return null;
