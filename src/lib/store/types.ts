@@ -115,6 +115,14 @@ export interface GameState {
    * opponent's pick is not synced, so their half takes the shared default.
    */
   versusBackdropId: string | null;
+  /** Backdrops bought. The default is free and never listed here. */
+  ownedBackdropIds: string[];
+  /**
+   * Arena battles played since the last backdrop purchase — NOT since ever.
+   * Buying resets it to zero, which is what stops one long session from
+   * unlocking the whole catalogue for a player with coins to spare.
+   */
+  versusBackdropBattles: number;
   friendCode: string | null;
   engageDismissCount: number;
   engageDismissDate: string | null;
@@ -317,7 +325,13 @@ export interface GameState {
   setName: (name: string) => void;
   setPokemon: (p: PokeEntry) => void;
   setTrainerSprite: (id: string) => void;
+  /** Equip an owned backdrop. Silently ignores one that is not owned. */
   setVersusBackdropId: (id: string) => void;
+  /** Spend coins + banked battles on a backdrop, and equip it. Returns why
+   *  it failed rather than throwing, so the caller can say which half is short. */
+  buyVersusBackdrop: (
+    id: string,
+  ) => { ok: true } | { ok: false; reason: "owned" | "coins" | "battles" | "unknown" };
   markQuestionsSeen: (texts: string[]) => void;
   markCuratedSeen: (ids: string[]) => void;
 

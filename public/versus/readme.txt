@@ -52,12 +52,18 @@ TRAINING BOT
 
   Avatar     Any size up to about 900 x 900 px. Drawn at 62% of its half's
              height, max 210 px tall, so more than ~600 px is wasted bytes.
-             An animated GIF is fine and is the intended format — it replaces
-             the trainer sprite outright rather than sitting behind it.
-             Transparent background. Budget 500 KB; a GIF this size gets heavy
-             fast, so prefer few frames over many.
-  Backdrop   A normal backdrop to the spec above. This is the bot's own half,
-             shown whenever you face it.
+             An animated GIF or APNG is the intended format — it replaces the
+             trainer sprite outright rather than sitting behind it. Transparent
+             background, feet at the bottom edge of the canvas: the sprite is
+             anchored to the seam so the trainer stands on the ground, and
+             padding under the feet lifts it back into the air.
+
+             Budget 500 KB. Clembot.png is 920 KB (640x640, 6 frames) — over
+             it, and three times the pixels the 210 px draw can show. It is
+             cached after the first face-off, and the Arena preloads it, so the
+             cost lands once; halving the canvas would still be worth doing.
+  Backdrop   None. The bot draws a random one from the catalogue — see
+             TRAINING BOT WIRING below.
 
 
 ADDING A BACKDROP
@@ -80,11 +86,15 @@ ADDING A BACKDROP
   yours before you have chosen — gets the catalogue default, Forest.
 
 TRAINING BOT WIRING
-  Its two files are separate constants in src/lib/app-icons.ts:
+  One constant, in src/lib/app-icons.ts:
 
-    TRAINING_BOT_AVATAR    e.g. "/versus/training-bot.gif"
-    TRAINING_BOT_BACKDROP  e.g. "/versus/training-bot-bg.webp"
+    TRAINING_BOT_AVATAR    "/trainers/avatar/Clembot.png"
 
-  Both null today, which is a valid state: a missing avatar falls back to a
-  trainer sprite and a missing backdrop to the shared default. Nothing breaks
-  and nothing needs disabling.
+  Set to null to fall back to a trainer sprite — a valid state, nothing breaks.
+
+  It has no backdrop of its own. The bot draws a RANDOM one from the catalogue
+  per match (rollTrainingBotBackdrop, lib/training-bot.ts), so a run of Training
+  battles does not look like the same fight repeated. The roll is taken once,
+  when the Arena's fallback begins, and held for the whole handover — three
+  screens show the bot in a row across a route change, and re-rolling between
+  them would swap the world out mid-face-off.

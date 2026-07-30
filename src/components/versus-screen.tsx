@@ -96,32 +96,56 @@ function TrainerSide({
         }`}
       />
       {trainer && (
-        <div
-          className={`absolute inset-x-0 flex items-center gap-3 px-6 ${
-            textFirst ? "top-[12%] flex-row" : "bottom-[16%] flex-row-reverse"
-          }`}
-        >
-          <div className={`min-w-0 flex-1 ${textFirst ? "text-left" : "text-right"}`}>
-            <TrainerLabel trainer={trainer} align={textFirst ? "left" : "right"} />
-          </div>
-          {src !== "" && (
+        <>
+          {/* The opponent's sprite is positioned on its own rather than in a row
+              with the label: sharing a row pinned it to the label's height,
+              which on a backdrop whose ground is at the BOTTOM of the half left
+              the trainer hanging in the sky. It stands on the seam now, centred,
+              where every backdrop has land. The player's half already reads that
+              way — its row sits low — so only the top needed splitting. */}
+          {textFirst && src !== "" && (
             <motion.img
-              // `entrance={false}` for a face-off that is CONTINUING one already
-              // on screen — re-running the fade-and-slide there reads as the
-              // sprites refreshing rather than as the same picture holding.
               key={src}
-              initial={entrance ? { opacity: 0, y: half === "top" ? -16 : 16 } : false}
+              initial={entrance ? { opacity: 0, y: -16 } : false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: entrance ? 0.35 : 0 }}
               src={src}
               alt={trainer.name}
-              className="sprite h-[34vh] max-h-[210px] w-1/2 shrink-0 object-contain drop-shadow-2xl"
+              // `bottom-0`: feet on the divide. object-bottom keeps them there
+              // when the art is shorter than its box.
+              className="sprite absolute bottom-0 left-1/2 h-[34vh] max-h-[210px] w-1/2 -translate-x-1/2 object-contain object-bottom drop-shadow-2xl"
               onError={(e) => {
                 (e.currentTarget as HTMLImageElement).style.opacity = "0";
               }}
             />
           )}
-        </div>
+          <div
+            className={`absolute inset-x-0 flex items-center gap-3 px-6 ${
+              textFirst ? "top-[12%] flex-row" : "bottom-[16%] flex-row-reverse"
+            }`}
+          >
+            <div className={`min-w-0 flex-1 ${textFirst ? "text-left" : "text-right"}`}>
+              <TrainerLabel trainer={trainer} align={textFirst ? "left" : "right"} />
+            </div>
+            {!textFirst && src !== "" && (
+              <motion.img
+                // `entrance={false}` for a face-off that is CONTINUING one already
+                // on screen — re-running the fade-and-slide there reads as the
+                // sprites refreshing rather than as the same picture holding.
+                key={src}
+                initial={entrance ? { opacity: 0, y: 16 } : false}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: entrance ? 0.35 : 0 }}
+                src={src}
+                alt={trainer.name}
+                className="sprite h-[34vh] max-h-[210px] w-1/2 shrink-0 object-contain drop-shadow-2xl"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.opacity = "0";
+                }}
+              />
+            )}
+          </div>
+        </>
       )}
     </div>
   );

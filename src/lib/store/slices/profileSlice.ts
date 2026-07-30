@@ -5,6 +5,12 @@ import { TRAINER_SPRITES } from "@/lib/game-data";
 import { rollAbilityId } from "@/lib/abilities";
 import { planDailyGift } from "@/lib/daily-gift";
 import { WHATS_NEW } from "@/lib/whats-new";
+import {
+  BACKDROP_BATTLE_COST,
+  BACKDROP_COIN_COST,
+  ownsBackdrop,
+  versusBackdropExists,
+} from "@/lib/versus-backdrops";
 
 /** Item pools shared by the daily gift and the Arena's set-of-5 win rewards
  * (slots 3/5 draw from these — one source, no duplicated lists). */
@@ -36,6 +42,8 @@ export const createProfileSlice: StoreSlice<
     | "trainerName"
     | "trainerSprite"
     | "versusBackdropId"
+    | "ownedBackdropIds"
+    | "versusBackdropBattles"
     | "friendCode"
     | "nameReconciled"
     | "needsNameReclaim"
@@ -52,6 +60,7 @@ export const createProfileSlice: StoreSlice<
     | "setName"
     | "setTrainerSprite"
     | "setVersusBackdropId"
+    | "buyVersusBackdrop"
     | "setOnboarded"
     | "setFriendCode"
     | "setNameReconciled"
@@ -75,6 +84,8 @@ export const createProfileSlice: StoreSlice<
   // Null, not the default id: "never chose" and "chose Forest" are the same
   // picture but not the same fact, and only the resolver needs to know.
   versusBackdropId: null,
+  ownedBackdropIds: [],
+  versusBackdropBattles: 0,
   friendCode: null,
   engageDismissCount: 0,
   engageDismissDate: null,
@@ -173,5 +184,23 @@ export const createProfileSlice: StoreSlice<
 
   setName: (name) => set({ trainerName: name }),
   setTrainerSprite: (id) => set({ trainerSprite: id }),
-  setVersusBackdropId: (id) => set({ versusBackdropId: id }),
+  setVersusBackdropId: (id) =>
+    set((s) => (ownsBackdrop(id, s.ownedBackdropIds) ? { versusBackdropId: id } : {})),
+
+  buyVersusBackdrop: (id) => {
+    const s = get();
+    if (!versusBackdropExists(id)) return { ok: false, reason: "unknown" };
+    if (ownsBackdrop(id, s.ownedBackdropIds)) return { ok: false, reason: "owned" };
+    if (s.coins < BACKDROP_COIN_COST) return { ok: false, reason: "coins" };
+    if (s.versusBackdropBattles < BACKDROP_BATTLE_COST) return { ok: false, reason: "battles" };
+    set({
+      coins: s.coins - BACKDROP_COIN_COST,
+      // Reset rather than subtract: the next backdrop wants five FRESH battles,
+      // so leftovers from an over-long grind must not roll forward.
+      versusBackdropBattles: 0,
+      ownedBackdropIds: [...s.ownedBackdropIds, id],
+      versusBackdropId: id,
+    });
+    return { ok: true };
+  },
 });
