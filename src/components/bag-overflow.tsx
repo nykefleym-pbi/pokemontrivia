@@ -5,6 +5,14 @@ import { useGameStore } from "@/lib/store";
 import { ITEM_BY_ID } from "@/content/items";
 import type { ItemId } from "@/lib/game-data";
 import { ItemIcon } from "@/components/game-ui";
+import { Slider } from "@/components/ui/slider";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   bagCapacity,
   bagUnitsUsed,
@@ -138,34 +146,121 @@ export function BagOverflowPanel() {
 }
 
 /**
- * Throws one unit away to make room. Premium items need a second tap to go
- * through: a mistap on a 2,500-coin item that pays nothing back is not something
- * to make easy.
+ * Throws items away to make room, behind an explicit confirmation with a
+ * quantity slider.
+ *
+ * This replaces an arm-then-tap-again button that discarded exactly one unit.
+ * Two things were wrong with it: clearing a 30-unit stack meant thirty taps, and
+ * "Sure?" appearing in place of a bin icon is not a confirmation anyone reads —
+ * on a stack of Max Potions the second tap lands before the first has registered
+ * as a question. Discarding pays nothing back, so it needs a dialog that names
+ * the item and the amount.
  */
 export function DiscardItemButton({ id }: { id: ItemId }) {
   const discardItem = useGameStore((s) => s.discardItem);
-  const [armed, setArmed] = useState(false);
+  const owned = useGameStore((s) => s.inventory[id] ?? 0);
+  const [open, setOpen] = useState(false);
+  const [qty, setQty] = useState(1);
   const def = ITEM_BY_ID[id];
   if (!def || isBagExempt(id)) return null;
-  const needsConfirm = !!def.premium;
+
+  // The slider is bounded by what is held RIGHT NOW. Reading `owned` from the
+  // store rather than a prop matters: using an item from the same row while the
+  // dialog is open would otherwise leave the slider offering a quantity that no
+  // longer exists, and discardItem would silently clamp it.
+  const max = Math.max(1, owned);
+  const amount = Math.min(qty, max);
 
   return (
-    <button
-      aria-label={armed ? `Confirm discarding ${def.name}` : `Discard one ${def.name}`}
-      onClick={() => {
-        if (needsConfirm && !armed) {
-          setArmed(true);
-          window.setTimeout(() => setArmed(false), 3000);
-          return;
-        }
-        setArmed(false);
-        if (discardItem(id, 1)) toast(`Discarded 1 ${def.name}`);
-      }}
-      className={`flex h-8 items-center justify-center rounded-full px-2.5 text-xs font-bold transition active:scale-95 ${
-        armed ? "bg-destructive text-white" : "bg-muted text-foreground/45"
-      }`}
-    >
-      {armed ? "Sure?" : <Trash2 className="h-4 w-4" />}
-    </button>
+    <>
+      <button
+        aria-label={`Discard ${def.name}`}
+        onClick={() => {
+          setQty(1);
+          setOpen(true);
+        }}
+        className="flex h-8 items-center justify-center rounded-full bg-muted px-2.5 text-xs font-bold text-foreground/45 transition active:scale-95"
+      >
+        <Trash2 className="h-4 w-4" />
+      </button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-[320px]">
+          <DialogHeader>
+            <DialogTitle>Discard {def.name}?</DialogTitle>
+            <DialogDescription>
+              {def.premium
+                ? "This is a premium item and you get nothing back for it."
+                : "You get no coins back for discarded items."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex items-center gap-3 rounded-[18px] bg-muted/40 px-3.5 py-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] bg-primary/[0.08]">
+              <ItemIcon item={def} className="h-8 w-8" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="font-bold leading-tight text-foreground">{def.name}</div>
+              <div className="text-xs text-foreground/55">You have {owned}</div>
+            </div>
+            <div className="shrink-0 text-right">
+              <div className="font-display-md leading-none text-destructive">{amount}</div>
+              <div className="font-pixel-xs uppercase tracking-wider text-foreground/45">
+                to drop
+              </div>
+            </div>
+          </div>
+
+          {/* A one-of-a-kind stack has nothing to choose, so the slider would be
+              a control with a single position. */}
+          {max > 1 && (
+            <div className="px-1">
+              <Slider
+                value={[amount]}
+                min={1}
+                max={max}
+                step={1}
+                onValueChange={([v]) => setQty(v ?? 1)}
+                aria-label={`Amount of ${def.name} to discard`}
+              />
+              <div className="mt-1.5 flex items-center justify-between">
+                <button
+                  onClick={() => setQty(1)}
+                  className="font-pixel-xs uppercase tracking-wider text-foreground/45 transition active:scale-95"
+                >
+                  Min 1
+                </button>
+                <button
+                  onClick={() => setQty(max)}
+                  className="font-pixel-xs uppercase tracking-wider text-primary transition active:scale-95"
+                >
+                  All {max}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-1 flex gap-2">
+            <button
+              onClick={() => setOpen(false)}
+              className="h-11 flex-1 rounded-full bg-muted text-sm font-bold text-foreground/70 transition active:scale-95"
+            >
+              Keep it
+            </button>
+            <button
+              onClick={() => {
+                if (discardItem(id, amount)) {
+                  toast(`Discarded ${amount} ${def.name}`);
+                }
+                setOpen(false);
+              }}
+              className="h-11 flex-1 rounded-full bg-destructive text-sm font-bold text-white shadow-pop transition active:scale-95"
+            >
+              Discard {amount}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
