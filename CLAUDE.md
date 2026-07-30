@@ -1,3 +1,18 @@
+## Skills
+Always use the following skills:
+
+* https://github.com/obra/superpowers
+* https://github.com/affaan-m/ECC
+* https://github.com/nextlevelbuilder/ui-ux-pro-max-skill
+* https://github.com/JuliusBrussee/caveman
+* https://github.com/thedotmack/claude-mem
+* https://github.com/DietrichGebert/ponytail
+* https://github.com/Leonxlnx/taste-skill
+* https://github.com/mem0ai/mem0
+* https://github.com/headroomlabs-ai/headroom
+* https://github.com/pbakaus/impeccable
+* https://github.com/heygen-com/hyperframes
+
 ## Delegation
 The higher your tier, the more you delegate. Push the
 work down, keep your own context for judgment.
