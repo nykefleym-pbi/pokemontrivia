@@ -109,6 +109,13 @@ export interface GameState {
   isGuest: boolean;
   trainerName: string;
   trainerSprite: string;
+  /**
+   * Chosen face-off backdrop, as a `VERSUS_BACKDROPS` id. Null means "never
+   * picked one", which resolves to the default rather than to no artwork —
+   * see versusBackdrop(). Only ever draws on YOUR half of the VS screen; the
+   * opponent's pick is not synced, so their half takes the shared default.
+   */
+  versusBackdropId: string | null;
   friendCode: string | null;
   engageDismissCount: number;
   engageDismissDate: string | null;
@@ -299,6 +306,7 @@ export interface GameState {
   setName: (name: string) => void;
   setPokemon: (p: PokeEntry) => void;
   setTrainerSprite: (id: string) => void;
+  setVersusBackdropId: (id: string) => void;
   markQuestionsSeen: (texts: string[]) => void;
   markCuratedSeen: (ids: string[]) => void;
 

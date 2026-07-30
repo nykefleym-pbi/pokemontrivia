@@ -35,6 +35,7 @@ export const createProfileSlice: StoreSlice<
     | "isGuest"
     | "trainerName"
     | "trainerSprite"
+    | "versusBackdropId"
     | "friendCode"
     | "nameReconciled"
     | "needsNameReclaim"
@@ -49,6 +50,7 @@ export const createProfileSlice: StoreSlice<
     | "reducedMotion"
     | "setName"
     | "setTrainerSprite"
+    | "setVersusBackdropId"
     | "setOnboarded"
     | "setFriendCode"
     | "setNameReconciled"
@@ -68,6 +70,9 @@ export const createProfileSlice: StoreSlice<
   isGuest: false,
   trainerName: "",
   trainerSprite: TRAINER_SPRITES[0]?.id ?? "",
+  // Null, not the default id: "never chose" and "chose Forest" are the same
+  // picture but not the same fact, and only the resolver needs to know.
+  versusBackdropId: null,
   friendCode: null,
   engageDismissCount: 0,
   engageDismissDate: null,
@@ -163,4 +168,5 @@ export const createProfileSlice: StoreSlice<
 
   setName: (name) => set({ trainerName: name }),
   setTrainerSprite: (id) => set({ trainerSprite: id }),
+  setVersusBackdropId: (id) => set({ versusBackdropId: id }),
 });

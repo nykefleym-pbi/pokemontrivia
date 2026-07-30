@@ -46,6 +46,7 @@ import type { MissedAnswer } from "@/lib/trivia-core";
 import { ShareCardDialog } from "@/components/share-card-dialog";
 import { VersusScreen } from "@/components/versus-screen";
 import { trainingBotSide } from "@/lib/training-bot";
+import { versusBackdropSrc } from "@/lib/versus-backdrops";
 import { VERSUS_BACKDROP } from "@/lib/app-icons";
 import type { BattleShareData } from "@/components/share-card-builder";
 
@@ -109,6 +110,7 @@ function MatchPageContent({ matchId }: { matchId: string }) {
   const partner = useGameStore((s) => s.pokemon);
   const trainerName = useGameStore((s) => s.trainerName);
   const trainerSprite = useGameStore((s) => s.trainerSprite);
+  const versusBackdropId = useGameStore((s) => s.versusBackdropId);
   const level = useGameStore((s) => s.level);
   const friendCode = useGameStore((s) => s.friendCode);
   const [shareOpen, setShareOpen] = useState(false);
@@ -580,7 +582,12 @@ function MatchPageContent({ matchId }: { matchId: string }) {
     if (isFreshlyStartedBotMatch(matchId)) {
       return (
         <VersusScreen
-          me={{ name: trainerName || "You", spriteId: trainerSprite, level }}
+          me={{
+            name: trainerName || "You",
+            spriteId: trainerSprite,
+            level,
+            backdrop: versusBackdropSrc(versusBackdropId),
+          }}
           opponent={trainingBotSide(level)}
           status="Battle starting…"
           backdrop={VERSUS_BACKDROP}
@@ -619,6 +626,7 @@ function MatchPageContent({ matchId }: { matchId: string }) {
           name: trainerName || "You",
           spriteId: trainerSprite,
           level,
+          backdrop: versusBackdropSrc(versusBackdropId),
         }}
         // A bot match has no profile row to read a name or sprite from, so it
         // gets the shared definition — the same picture the Arena's fallback

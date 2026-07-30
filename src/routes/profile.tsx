@@ -95,6 +95,11 @@ import {
 } from "@/lib/achievement-rewards";
 import { AppIcon } from "@/components/app-icon";
 import { UI_ICON, LOCK_ICON } from "@/lib/app-icons";
+import {
+  VERSUS_BACKDROPS,
+  versusBackdrop,
+  versusBackdropSrc,
+} from "@/lib/versus-backdrops";
 import { GYM_LEADERS } from "@/lib/gym-leaders";
 import {
   isMusicOn,
@@ -128,6 +133,8 @@ function ProfilePage() {
   const setName = useGameStore((s) => s.setName);
   const setPokemon = useGameStore((s) => s.setPokemon);
   const setTrainerSprite = useGameStore((s) => s.setTrainerSprite);
+  const versusBackdropId = useGameStore((s) => s.versusBackdropId);
+  const setVersusBackdropId = useGameStore((s) => s.setVersusBackdropId);
   const reset = useGameStore((s) => s.reset);
   const battleLog = useGameStore((s) => s.battleLog);
   const flags = useGameStore((s) => s.flags);
@@ -385,6 +392,7 @@ function ProfilePage() {
   const [nameDraft, setNameDraft] = useState(trainerName);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [trainerPickerOpen, setTrainerPickerOpen] = useState(false);
+  const [backdropPickerOpen, setBackdropPickerOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [trainerQuery, setTrainerQuery] = useState("");
   const [resetOpen, setResetOpen] = useState(false);
@@ -1379,6 +1387,29 @@ function ProfilePage() {
                   </div>
                   <ChevronRight className="h-5 w-5 text-foreground/40" />
                 </button>
+                <button
+                  onClick={() => {
+                    setBackdropPickerOpen(true);
+                  }}
+                  className="flex w-full items-center justify-between p-4 text-left transition active:scale-[0.98]"
+                >
+                  <div className="flex items-center gap-3">
+                    {/* The thumbnail IS the setting — a name alone tells a
+                        player nothing about art they have not seen. */}
+                    <img
+                      src={versusBackdropSrc(versusBackdropId)}
+                      alt=""
+                      className="h-10 w-10 shrink-0 rounded-2xl object-cover"
+                    />
+                    <div>
+                      <div className="text-sm font-semibold text-foreground">Battle background</div>
+                      <div className="text-xs text-foreground/55 truncate">
+                        Currently: {versusBackdrop(versusBackdropId).label}
+                      </div>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-foreground/40" />
+                </button>
               </div>
             </section>
 
@@ -1551,6 +1582,7 @@ function ProfilePage() {
                 key={p.id}
                 onClick={() => {
                   setPokemon(p);
+                  suppressSettingsClose();
                   setPickerOpen(false);
                   toast.success(`${p.name} chosen!`);
                 }}
@@ -1565,6 +1597,65 @@ function ProfilePage() {
                 Capture Pokémon in battle to unlock them as partners!
               </div>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Battle background picker. Portrait thumbnails at the shape they are
+          actually drawn in — a square crop of a 12:13 backdrop hides most of
+          what the player is choosing between. Lazy so opening Settings does
+          not pull 2 MB of artwork nobody asked to see. */}
+      <Dialog
+        open={backdropPickerOpen}
+        onOpenChange={(open) => {
+          if (!open) suppressSettingsClose();
+          setBackdropPickerOpen(open);
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Battle background</DialogTitle>
+          </DialogHeader>
+          <p className="-mt-2 text-xs text-foreground/55">
+            Yours shows on your half of the face-off screen.
+          </p>
+          {/* auto-rows-min: without it the grid stretches its rows to fill the
+              60vh box, squashing each tile to 78px and clipping the label off
+              the bottom of its own button. */}
+          <div className="grid max-h-[60vh] auto-rows-min grid-cols-3 gap-2 overflow-y-auto">
+            {VERSUS_BACKDROPS.map((b) => {
+              const active = versusBackdrop(versusBackdropId).id === b.id;
+              return (
+                <button
+                  key={b.id}
+                  onClick={() => {
+                    setVersusBackdropId(b.id);
+                    // Closing programmatically skips this dialog's own
+                    // onOpenChange, so the guard has to be raised by hand —
+                    // otherwise Radix reads the same click as an outside
+                    // click on the Settings sheet and closes that too.
+                    suppressSettingsClose();
+                    setBackdropPickerOpen(false);
+                    playSfx("tap");
+                    toast.success(`Background set to ${b.label}!`);
+                  }}
+                  aria-pressed={active}
+                  className={`overflow-hidden rounded-2xl border-2 text-left transition active:scale-95 ${
+                    active ? "border-primary" : "border-transparent hover:border-primary/40"
+                  }`}
+                >
+                  <img
+                    src={versusBackdropSrc(b.id)}
+                    alt=""
+                    loading="lazy"
+                    className="aspect-[12/13] w-full object-cover"
+                  />
+                  <div className="truncate px-1.5 py-1 text-[11px] font-semibold text-foreground">
+                    {b.label}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </DialogContent>
       </Dialog>
@@ -1596,6 +1687,10 @@ function ProfilePage() {
                 key={t.id}
                 onClick={() => {
                   setTrainerSprite(t.id);
+                  // See the background picker: a programmatic close skips this
+                  // dialog's onOpenChange, so the Settings sheet behind it
+                  // needs the guard raised by hand or it closes too.
+                  suppressSettingsClose();
                   setTrainerPickerOpen(false);
                   toast.success("Trainer updated!");
                 }}
