@@ -74,6 +74,8 @@ export function buildSavePayload(s: GameState) {
     coins: s.coins,
     stats: s.stats,
     inventory: s.inventory,
+    bagUpgrades: s.bagUpgrades,
+    pendingBagOverflow: s.pendingBagOverflow,
     itemCooldowns: s.itemCooldowns,
     luckyEggExpiresAt: s.luckyEggExpiresAt,
     bigNuggetExpiresAt: s.bigNuggetExpiresAt,
@@ -127,7 +129,6 @@ export function buildSavePayload(s: GameState) {
     hasEnteredNearbyBattle: s.hasEnteredNearbyBattle,
   };
 }
-
 
 const defaultStats: PlayerStats = {
   battles: 0,
@@ -341,6 +342,8 @@ export const useGameStore = create<GameState>()(
           coins: 0,
           stats: defaultStats,
           inventory: { ...defaultInventory },
+          bagUpgrades: 0,
+          pendingBagOverflow: [],
           itemCooldowns: {},
           inBattle: false,
           setsThisBattle: 0,
@@ -752,6 +755,12 @@ export const useGameStore = create<GameState>()(
           weeklyLeagueHistory: p.weeklyLeagueHistory ?? [],
           starterPvpBerryGranted: p.starterPvpBerryGranted ?? false,
           hasEnteredNearbyBattle: p.hasEnteredNearbyBattle ?? false,
+          // Saves written before the bag cap existed have neither field. A save
+          // already over the new capacity is left alone rather than trimmed —
+          // nothing is confiscated retroactively; the cap simply blocks further
+          // gain until the player is back under it.
+          bagUpgrades: p.bagUpgrades ?? 0,
+          pendingBagOverflow: p.pendingBagOverflow ?? [],
         };
       },
     },

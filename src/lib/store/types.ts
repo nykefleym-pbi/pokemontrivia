@@ -38,7 +38,6 @@ export interface PvpStatStages {
   crit: number;
 }
 
-
 export interface BattleLogItem {
   setsCompleted: number;
 }
@@ -154,6 +153,12 @@ export interface GameState {
   coins: number;
   stats: PlayerStats;
   inventory: Record<ItemId, number>;
+  /** Bag expansions bought so far. Capacity is derived (bagCapacity()), not
+   *  stored, so the base/step numbers stay in one place. */
+  bagUpgrades: number;
+  /** Rewards that did not fit in the bag, HELD until the player resolves each
+   *  one (move to bag / 50% refund / forfeit). Berries never appear here. */
+  pendingBagOverflow: Array<{ id: ItemId; qty: number }>;
   itemCooldowns: Partial<Record<ItemId, number>>; // sets-remaining cooldown
 
   // battle ephemeral state
@@ -317,7 +322,20 @@ export interface GameState {
   tryAutoLeftovers: () => boolean;
   tryAutoMetronome: () => boolean;
   toggleAutoItem: (id: ItemId) => void;
+  /** Adds items. A NEGATIVE qty spends them instead (Mega Raid consumes through
+   *  this action), and only a positive delta is subject to bag capacity. */
   grantItem: (id: ItemId, qty?: number) => void;
+  /** Throws items away to make room. No coin refund by design. */
+  discardItem: (id: ItemId, qty?: number) => boolean;
+  /** Moves a held overflow entry into the bag, as far as space allows. */
+  claimOverflow: (id: ItemId) => boolean;
+  /** Abandons a held entry for half its shop price. Returns coins paid. */
+  refundOverflow: (id: ItemId) => number;
+  /** Abandons a held entry for nothing. */
+  forfeitOverflow: (id: ItemId) => boolean;
+  /** Buys the next bag expansion at bagUpgradePrice(), then pulls in whatever
+   *  the new room can hold. */
+  purchaseBagUpgrade: () => boolean;
   consumeWhosThat: () => void;
 
   startBattle: () => void;
