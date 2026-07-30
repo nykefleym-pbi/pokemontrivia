@@ -3,7 +3,9 @@ import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, ChevronLeft, Check } from "lucide-react";
 import { useGameStore } from "@/lib/store";
-import { STARTING_PARTNERS, type PokeEntry } from "@/lib/pokemon-data";
+import { STARTING_PARTNERS, type PokeEntry, type PokeType } from "@/lib/pokemon-data";
+import { PartnerTypeFilter } from "@/components/partner-type-filter";
+import { matchesPartnerFilters, partnerTypeOptions } from "@/lib/partner-filter";
 import { toast } from "sonner";
 import { getAbilityById, rollAbilityId } from "@/lib/abilities";
 import { TypeBadge, PokemonSprite } from "@/components/game-ui";
@@ -194,6 +196,7 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
   const [name, setName] = useState("");
   const [trainerSprite, setTrainerSprite] = useState<string>("red");
   const [query, setQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState<PokeType | null>(null);
   const [trainerQuery, setTrainerQuery] = useState("");
   const [pick, setPick] = useState<PokeEntry | null>(null);
   // Rolled once per selection (not re-rolled on every render) so the ability
@@ -254,13 +257,11 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
     return () => window.clearTimeout(t);
   }, [name, claimedName]);
 
-  const results = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return STARTING_PARTNERS.filter((p) => (q ? p.name.toLowerCase().startsWith(q) : true)).slice(
-      0,
-      24,
-    );
-  }, [query]);
+  const typeOptions = useMemo(() => partnerTypeOptions(STARTING_PARTNERS), []);
+  const results = useMemo(
+    () => STARTING_PARTNERS.filter((p) => matchesPartnerFilters(p, query, typeFilter)).slice(0, 24),
+    [query, typeFilter],
+  );
 
   const trainerResults = useMemo(() => {
     const all = TRAINER_SPRITES.filter((t) => !brokenTrainerIds.has(t.id))
@@ -547,13 +548,23 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search..."
+                placeholder="Search by name or type..."
                 className="h-12 rounded-full border-0 bg-card pl-11 text-sm shadow-pop"
               />
             </div>
 
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              {results.slice(0, 6).map((p) => {
+            <div className="mt-2.5">
+              <PartnerTypeFilter
+                options={typeOptions}
+                value={typeFilter}
+                onChange={setTypeFilter}
+              />
+            </div>
+
+            {/* 9 rather than the old 6: with a type chosen, two rows made a
+                well-stocked type look nearly empty. */}
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {results.slice(0, 9).map((p) => {
                 const selected = pick?.id === p.id;
                 return (
                   <button
@@ -578,6 +589,11 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
                   </button>
                 );
               })}
+              {results.length === 0 && (
+                <div className="col-span-3 py-4 text-center text-sm text-foreground/60">
+                  No partners match that search.
+                </div>
+              )}
             </div>
 
             {pick &&

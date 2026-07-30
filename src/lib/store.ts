@@ -111,6 +111,7 @@ export function buildSavePayload(s: GameState) {
     friendCode: s.friendCode,
     engageDismissCount: s.engageDismissCount,
     engageDismissDate: s.engageDismissDate,
+    facebookPromoDate: s.facebookPromoDate,
     nameReconciled: s.nameReconciled,
     needsNameReclaim: s.needsNameReclaim,
     pushPromptState: s.pushPromptState,
@@ -379,6 +380,7 @@ export const useGameStore = create<GameState>()(
           engageShownThisSession: false,
           engageDismissCount: 0,
           engageDismissDate: null,
+          facebookPromoDate: null,
           pushPromptState: "unasked",
           pushPromptLastDate: null,
           seenQuestionHashes: [],
@@ -755,6 +757,7 @@ export const useGameStore = create<GameState>()(
           weeklyLeagueHistory: p.weeklyLeagueHistory ?? [],
           starterPvpBerryGranted: p.starterPvpBerryGranted ?? false,
           hasEnteredNearbyBattle: p.hasEnteredNearbyBattle ?? false,
+          facebookPromoDate: p.facebookPromoDate ?? null,
           // Saves written before the bag cap existed have neither field. A save
           // already over the new capacity is left alone rather than trimmed —
           // nothing is confiscated retroactively; the cap simply blocks further

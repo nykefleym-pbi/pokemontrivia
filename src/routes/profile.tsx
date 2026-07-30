@@ -59,10 +59,13 @@ import {
   trainerSpriteUrl,
   adaptiveDifficultyBand,
 } from "@/lib/game-data";
-import { ALL_POKEMON, type PokeEntry } from "@/lib/pokemon-data";
+import { ALL_POKEMON, type PokeEntry, type PokeType } from "@/lib/pokemon-data";
+import { PartnerTypeFilter } from "@/components/partner-type-filter";
+import { matchesPartnerFilters, partnerTypeOptions } from "@/lib/partner-filter";
 
 import { EvolutionScreen } from "@/components/evolution-screen";
-import { PokemonSprite } from "@/components/game-ui";
+import { PokemonSprite, TypeBadge } from "@/components/game-ui";
+import { FACEBOOK_PAGE_NAME, FACEBOOK_PAGE_URL } from "@/lib/social-links";
 import { BattleLogList } from "@/components/battle-log-list";
 import {
   PartnerCard,
@@ -387,6 +390,7 @@ function ProfilePage() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [trainerPickerOpen, setTrainerPickerOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState<PokeType | null>(null);
   const [trainerQuery, setTrainerQuery] = useState("");
   const [resetOpen, setResetOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
@@ -421,13 +425,16 @@ function ProfilePage() {
 
   // Re-picking is limited to Pokémon captured in the Pokédex (the current
   // partner always stays available). Onboarding still uses STARTING_PARTNERS.
-  const results = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return ALL_POKEMON.filter(
-      (p) =>
-        (pokedex[p.id] || p.id === pokemon?.id) && (q ? p.name.toLowerCase().startsWith(q) : true),
-    ).slice(0, 9);
-  }, [query, pokedex, pokemon?.id]);
+  const partnerPool = useMemo(
+    () => ALL_POKEMON.filter((p) => pokedex[p.id] || p.id === pokemon?.id),
+    [pokedex, pokemon?.id],
+  );
+  // Chips come from the pool, so they only ever offer types the player owns.
+  const typeOptions = useMemo(() => partnerTypeOptions(partnerPool), [partnerPool]);
+  const results = useMemo(
+    () => partnerPool.filter((p) => matchesPartnerFilters(p, query, typeFilter)).slice(0, 9),
+    [partnerPool, query, typeFilter],
+  );
   const trainerResults = useMemo(() => {
     const q = trainerQuery.trim().toLowerCase();
     const pool = TRAINER_SPRITES.filter((t) => !brokenTrainerIds.has(t.id));
@@ -1326,7 +1333,7 @@ function ProfilePage() {
                 {/* An <a>, not a router Link: this leaves the app. rel=noreferrer
                     as well as noopener so the Facebook tab gets no referrer. */}
                 <a
-                  href="https://www.facebook.com/share/1Lb8asVCtm/"
+                  href={FACEBOOK_PAGE_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex w-full items-center justify-between p-4 text-left transition active:scale-[0.98]"
@@ -1337,7 +1344,7 @@ function ProfilePage() {
                     </div>
                     <div>
                       <div className="text-sm font-semibold text-foreground">
-                        Poke Trivia Battle on Facebook
+                        {FACEBOOK_PAGE_NAME} on Facebook
                       </div>
                       <div className="text-xs text-foreground/55">
                         News, events and new questions
@@ -1348,12 +1355,12 @@ function ProfilePage() {
                 </a>
                 <button
                   onClick={() => {
-                    const url = "https://www.facebook.com/share/1Lb8asVCtm/";
+                    const url = FACEBOOK_PAGE_URL;
                     // Native share sheet where there is one (this is a PWA on a
                     // phone most of the time); clipboard is the desktop fallback.
                     if (typeof navigator !== "undefined" && navigator.share) {
                       void navigator
-                        .share({ title: "Poke Trivia Battle", url })
+                        .share({ title: FACEBOOK_PAGE_NAME, url })
                         .catch(() => undefined);
                       return;
                     }
@@ -1602,10 +1609,11 @@ function ProfilePage() {
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search..."
+              placeholder="Search by name or type..."
               className="pl-10"
             />
           </div>
+          <PartnerTypeFilter options={typeOptions} value={typeFilter} onChange={setTypeFilter} />
           <div className="grid grid-cols-3 gap-2">
             {results.map((p) => (
               <button
@@ -1619,11 +1627,22 @@ function ProfilePage() {
               >
                 <PokemonSprite id={p.id} alt={p.name} className="sprite h-14 w-14" />
                 <div className="text-[11px] font-semibold">{p.name}</div>
+                {/* Type is what grants the ability, and it's what the chips
+                    filter on — showing it here makes the filter legible. */}
+                <div className="mt-0.5">
+                  <TypeBadge type={p.types[0]} size="sm" />
+                </div>
               </button>
             ))}
             {results.length === 0 && (
               <div className="col-span-3 rounded-2xl bg-muted/40 p-5 text-center text-xs text-muted-foreground">
-                Capture Pokémon in battle to unlock them as partners!
+                {/* An empty POOL and an empty FILTER need different advice —
+                    telling someone with 200 captures to go capture more is
+                    nonsense when they have simply filtered to a type they
+                    haven't caught yet. */}
+                {partnerPool.length === 0
+                  ? "Capture Pokémon in battle to unlock them as partners!"
+                  : "None of your Pokémon match that search."}
               </div>
             )}
           </div>
