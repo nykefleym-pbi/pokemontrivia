@@ -24,6 +24,7 @@ export function ResultScreen({
   onRebattle,
   onBackHome,
   onRematch,
+  hideRematch,
   canShare,
   onShare,
 }: {
@@ -48,6 +49,10 @@ export function ResultScreen({
   onRebattle: () => void;
   onBackHome: () => void;
   onRematch?: () => void;
+  /** Drop the rematch button entirely, for modes that are one attempt and have
+   *  nothing to start again (Weekly League, Daily Quest). Both screens already
+   *  carry a "Back home", so removing it strands nobody. */
+  hideRematch?: boolean;
   canShare?: boolean;
   onShare?: () => void;
 }) {
@@ -160,16 +165,18 @@ export function ResultScreen({
           {/* Next Battle starts the next one on the spot when the caller gives us
               a way to (owner request 2026-07-26 — keep the player battling
               instead of dropping them on the hub). Modes with nothing to start
-              again — the daily and the weekly league are one attempt each — pass
-              no onRematch and fall back to leaving the battle, which is what this
-              button has always done. */}
-          <Button
-            size="lg"
-            onClick={() => (onRematch ? onRematch() : onRebattle())}
-            className="h-14 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
-          >
-            Next Battle
-          </Button>
+              again — the daily and the weekly league are one attempt each — set
+              hideRematch, because falling back to onRebattle() left a button
+              labelled "Next Battle" that quietly just left the battle. */}
+          {!hideRematch && (
+            <Button
+              size="lg"
+              onClick={() => (onRematch ? onRematch() : onRebattle())}
+              className="h-14 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
+            >
+              Next Battle
+            </Button>
+          )}
           {canShare && onShare && (
             <Button
               size="lg"
@@ -245,13 +252,15 @@ export function ResultScreen({
       />
 
       <div className="mx-auto mt-auto w-full max-w-sm space-y-2 pt-8">
-        <Button
-          size="lg"
-          onClick={() => (onRematch ? onRematch() : onRebattle())}
-          className="h-14 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
-        >
-          Rematch
-        </Button>
+        {!hideRematch && (
+          <Button
+            size="lg"
+            onClick={() => (onRematch ? onRematch() : onRebattle())}
+            className="h-14 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
+          >
+            Rematch
+          </Button>
+        )}
         <Button
           size="lg"
           variant="outline"

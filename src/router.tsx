@@ -60,7 +60,30 @@ export const getRouter = () => {
   const router = createRouter({
     routeTree,
     context: {},
-    scrollRestoration: true,
+    // scrollRestoration is deliberately OFF, and turning it on carries one tab's
+    // scroll position into the next one.
+    //
+    // Nothing in this app scrolls the window: __root pins the shell to h-[100dvh]
+    // overflow-hidden and every screen owns an inner overflow-y-auto pane. The
+    // router's restoration listens on document in the CAPTURE phase, so it tracks
+    // those panes too, and keys them by a STRUCTURAL selector -- and since every
+    // tab renders the same shape (body > div > div > pane), all five tabs share
+    // one selector. On navigation it copies the previous location's entries
+    // forward (`toElementEntries[sel] ??= fromElementEntries[sel]`), exempting the
+    // window from that copy but not the panes, then applies them.
+    //
+    // Measured with the real app before this was removed: Profile scrolled to 127
+    // -> Dex opened at 127; Dex scrolled to 450 -> Shop opened at 450. The exact
+    // offset transfers, which is what gave away the shared-selector copy.
+    //
+    // Nothing is lost by having it off. Panes remount at 0 on every navigation,
+    // and no detail view is a route -- the Dex entry, the Profile sheets and the
+    // shop confirmations are all overlays over a pane that never unmounts -- so
+    // there is no position a Back press needs restored. Adding
+    // scrollToTopSelectors instead would leave the same end state, because the
+    // reset branch scrolls those elements to 0 whenever the window did not
+    // restore, which here is always.
+    scrollRestoration: false,
     defaultPreloadStaleTime: 0,
     defaultErrorComponent: DefaultErrorComponent,
   });

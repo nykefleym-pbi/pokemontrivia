@@ -2,11 +2,95 @@ import type { GameState } from "@/lib/store/types";
 import type { StoreSlice } from "@/lib/store/slice";
 import type { ItemId } from "@/lib/game-data";
 import { getWeekRangeUtc, EGG_HATCH_REQUIRED } from "@/lib/game-data";
+import { ITEM_BY_ID } from "@/content/items";
 import { canEvolve } from "@/lib/pokemon-data";
 
 export const BIG_NUGGET_DURATION_DAYS = 3;
 /** Total items (manual + auto-triggered combined) allowed per battle. */
 export const MAX_ITEMS_PER_BATTLE = 3;
+
+/* ---------------------------------------------------------------------------
+ * Bag capacity
+ *
+ * The bag counts UNITS, not slots, because `inventory` is a quantity map
+ * (Record<ItemId, number>) rather than a list — so a cap on total units needs
+ * no migration and no new shape. `BAG_CAPACITY_BASE` is deliberately above the
+ * high-water mark of any real save at the time it shipped (45 units): a cap that
+ * binds on day one reads as a bug rather than as a design.
+ *
+ * Berries are exempt. They are `pvpOnly` drop-only rewards handed out DURING a
+ * Nearby Battle, where there is no shop and no sheet to resolve an overflow, and
+ * their `cost` is 0 so a 50% refund would be worth nothing anyway. They neither
+ * consume capacity nor ever land in the overflow queue.
+ *
+ * These names are kept clear of MAX_ITEMS_PER_BATTLE above, which is a different
+ * cap (items per battle) that already has a duplicate declaration in
+ * engine/turn.ts.
+ * ------------------------------------------------------------------------- */
+export const BAG_CAPACITY_BASE = 60;
+export const BAG_UPGRADE_STEP = 10;
+export const BAG_UPGRADE_MAX = 6;
+export const BAG_UPGRADE_BASE_PRICE = 500;
+/** Distinct item ids the overflow queue will hold. Bounded so a player cannot
+ *  treat "pending" as a second, unlimited bag. */
+export const PENDING_OVERFLOW_MAX_ENTRIES = 20;
+
+/** Berries bypass the cap entirely — see the block comment above. */
+export function isBagExempt(id: ItemId): boolean {
+  const def = ITEM_BY_ID[id];
+  return !!def && (!!def.isBerry || !!def.pvpOnly);
+}
+
+/** Units currently held against the cap (exempt items excluded). */
+export function bagUnitsUsed(inventory: Record<ItemId, number>): number {
+  let n = 0;
+  for (const [id, qty] of Object.entries(inventory) as [ItemId, number][]) {
+    if (!qty || qty <= 0) continue;
+    if (isBagExempt(id)) continue;
+    n += qty;
+  }
+  return n;
+}
+
+export function bagCapacity(bagUpgrades: number): number {
+  const steps = Math.max(0, Math.min(bagUpgrades, BAG_UPGRADE_MAX));
+  return BAG_CAPACITY_BASE + steps * BAG_UPGRADE_STEP;
+}
+
+/** Escalating price, so expanding stays a real decision rather than a reflex.
+ *  Returns null once the ceiling is reached. */
+export function bagUpgradePrice(bagUpgrades: number): number | null {
+  if (bagUpgrades >= BAG_UPGRADE_MAX) return null;
+  return BAG_UPGRADE_BASE_PRICE * (bagUpgrades + 1);
+}
+
+/** Coins handed back for abandoning an overflowing reward: half the shop price,
+ *  rounded down, per unit. */
+export function overflowRefundValue(id: ItemId, qty: number): number {
+  const cost = ITEM_BY_ID[id]?.cost ?? 0;
+  return Math.floor(cost / 2) * Math.max(0, qty);
+}
+
+function spaceLeft(s: Pick<GameState, "inventory" | "bagUpgrades">): number {
+  return Math.max(0, bagCapacity(s.bagUpgrades) - bagUnitsUsed(s.inventory));
+}
+
+/** Merge into an existing entry for the same id rather than appending, so the
+ *  queue stays short and the resolution sheet has one row per item. */
+function queueOverflow(
+  queue: GameState["pendingBagOverflow"],
+  id: ItemId,
+  qty: number,
+): GameState["pendingBagOverflow"] {
+  const at = queue.findIndex((e) => e.id === id);
+  if (at >= 0) {
+    const next = queue.slice();
+    next[at] = { id, qty: next[at].qty + qty };
+    return next;
+  }
+  if (queue.length >= PENDING_OVERFLOW_MAX_ENTRIES) return queue;
+  return [...queue, { id, qty }];
+}
 
 export const defaultInventory: Record<ItemId, number> = {
   potion: 2,
@@ -56,6 +140,13 @@ export const createItemsSlice: StoreSlice<
   Pick<
     GameState,
     | "inventory"
+    | "bagUpgrades"
+    | "pendingBagOverflow"
+    | "discardItem"
+    | "claimOverflow"
+    | "refundOverflow"
+    | "forfeitOverflow"
+    | "purchaseBagUpgrade"
     | "itemCooldowns"
     | "autoItems"
     | "luckyEggExpiresAt"
@@ -87,6 +178,8 @@ export const createItemsSlice: StoreSlice<
   >
 > = (set, get) => ({
   inventory: { ...defaultInventory },
+  bagUpgrades: 0,
+  pendingBagOverflow: [],
   featuredDealLastPurchase: null,
   itemCooldowns: {},
   autoItems: {},
@@ -257,16 +350,116 @@ export const createItemsSlice: StoreSlice<
 
   grantItem: (id, qty = 1) => {
     const s = get();
-    set({ inventory: { ...s.inventory, [id]: (s.inventory[id] ?? 0) + qty } });
+
+    // A NEGATIVE qty is how items get SPENT through this same action — Mega Raid
+    // calls grantItem(id, -1) to consume a potion/revive/escape. Gating on bag
+    // space here would make a full bag unable to spend anything, so the cap only
+    // ever applies to a positive delta. Zero is a no-op either way.
+    if (qty <= 0) {
+      if (qty === 0) return;
+      set({ inventory: { ...s.inventory, [id]: (s.inventory[id] ?? 0) + qty } });
+      return;
+    }
+
+    // Berries never count and never queue.
+    if (isBagExempt(id)) {
+      set({ inventory: { ...s.inventory, [id]: (s.inventory[id] ?? 0) + qty } });
+      return;
+    }
+
+    const fits = Math.min(qty, spaceLeft(s));
+    const overflow = qty - fits;
+    set({
+      inventory: fits > 0 ? { ...s.inventory, [id]: (s.inventory[id] ?? 0) + fits } : s.inventory,
+      // What did not fit is HELD rather than dropped. The player resolves it
+      // (move to bag / 50% refund / forfeit) and keeps being offered that choice
+      // for as long as there is no room — a reward is never silently lost.
+      pendingBagOverflow:
+        overflow > 0 ? queueOverflow(s.pendingBagOverflow, id, overflow) : s.pendingBagOverflow,
+    });
   },
 
   buyItem: (id, cost) => {
     const s = get();
     if (s.coins < cost) return false;
+    // Space is checked BEFORE the coins move. The other order charges for an item
+    // the bag cannot hold.
+    if (!isBagExempt(id) && spaceLeft(s) < 1) return false;
     set({
       coins: s.coins - cost,
       inventory: { ...s.inventory, [id]: (s.inventory[id] ?? 0) + 1 },
     });
+    return true;
+  },
+
+  discardItem: (id, qty = 1) => {
+    const s = get();
+    const have = s.inventory[id] ?? 0;
+    if (have <= 0 || qty <= 0) return false;
+    // No coins back. Discarding is how you make room, not a way to sell — a
+    // refund here would let a player buy at full price and cash out at half.
+    set({ inventory: { ...s.inventory, [id]: Math.max(0, have - qty) } });
+    return true;
+  },
+
+  claimOverflow: (id) => {
+    const s = get();
+    const entry = s.pendingBagOverflow.find((e) => e.id === id);
+    if (!entry) return false;
+    const fits = Math.min(entry.qty, spaceLeft(s));
+    if (fits <= 0) return false;
+    const left = entry.qty - fits;
+    set({
+      inventory: { ...s.inventory, [id]: (s.inventory[id] ?? 0) + fits },
+      pendingBagOverflow:
+        left > 0
+          ? s.pendingBagOverflow.map((e) => (e.id === id ? { id, qty: left } : e))
+          : s.pendingBagOverflow.filter((e) => e.id !== id),
+    });
+    return true;
+  },
+
+  refundOverflow: (id) => {
+    const s = get();
+    const entry = s.pendingBagOverflow.find((e) => e.id === id);
+    if (!entry) return 0;
+    const coins = overflowRefundValue(id, entry.qty);
+    set({
+      coins: s.coins + coins,
+      pendingBagOverflow: s.pendingBagOverflow.filter((e) => e.id !== id),
+    });
+    return coins;
+  },
+
+  forfeitOverflow: (id) => {
+    const s = get();
+    if (!s.pendingBagOverflow.some((e) => e.id === id)) return false;
+    set({ pendingBagOverflow: s.pendingBagOverflow.filter((e) => e.id !== id) });
+    return true;
+  },
+
+  purchaseBagUpgrade: () => {
+    const s = get();
+    const price = bagUpgradePrice(s.bagUpgrades);
+    if (price === null || s.coins < price) return false;
+    const bagUpgrades = s.bagUpgrades + 1;
+
+    // Draw whatever the new room can hold straight out of the queue: the player
+    // just paid for space in order to keep these, so making them tap again per
+    // row would be pure ceremony.
+    let inventory = { ...s.inventory };
+    let room = Math.max(0, bagCapacity(bagUpgrades) - bagUnitsUsed(inventory));
+    const pending: GameState["pendingBagOverflow"] = [];
+    for (const e of s.pendingBagOverflow) {
+      const fits = Math.min(e.qty, room);
+      if (fits > 0) {
+        inventory = { ...inventory, [e.id]: (inventory[e.id] ?? 0) + fits };
+        room -= fits;
+      }
+      if (e.qty - fits > 0) pending.push({ id: e.id, qty: e.qty - fits });
+    }
+
+    set({ coins: s.coins - price, bagUpgrades, inventory, pendingBagOverflow: pending });
     return true;
   },
 

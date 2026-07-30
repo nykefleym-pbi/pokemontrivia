@@ -34,11 +34,18 @@ import { LivePvpBattleScreen, type LivePvpBattleResult } from "@/components/live
 import { getProfileById, ensureSession, type TrainerProfile } from "@/lib/social";
 import { supabase } from "@/integrations/supabase/client";
 import { playBgm, playBattleResult } from "@/lib/audio";
-import { ITEMS, rollBerryDrops, STARTER_PVP_BERRY, rankForLevel, trainerSpriteUrl } from "@/lib/game-data";
+import {
+  ITEMS,
+  rollBerryDrops,
+  STARTER_PVP_BERRY,
+  rankForLevel,
+  trainerSpriteUrl,
+} from "@/lib/game-data";
 import { PVP_QUESTIONS, PVP_MAX_HP } from "@/lib/pvp-combat";
 import { useForfeitGuard } from "@/lib/use-forfeit-guard";
 import { resolvePvpTypeAbilityId } from "@/lib/pvp-type-abilities";
 import { useBattleFxCues } from "@/hooks/useBattleFxCues";
+import { AddFriendPrompt } from "@/components/add-friend-prompt";
 import { MissedReview } from "@/components/MissedReview";
 import { AppIcon } from "@/components/app-icon";
 import { ITEM_CATEGORY_ICON } from "@/lib/app-icons";
@@ -55,13 +62,7 @@ export const Route = createFileRoute("/pvp/live/$matchId")({
 
 const FORFEIT_GRACE_MS = 30_000;
 
-type Phase =
-  | "loading"
-  | "not_found"
-  | "battle"
-  | "result"
-  | "forfeit_won"
-  | "forfeit_lost";
+type Phase = "loading" | "not_found" | "battle" | "result" | "forfeit_won" | "forfeit_lost";
 
 function phaseFor(m: LivePvpMatch): Phase {
   if (m.status === "forfeited") return "forfeit_lost"; // resolved below via winnerId check
@@ -226,7 +227,12 @@ function MatchPageContent({ matchId }: { matchId: string }) {
       .channel(`pvp_live_row_${matchId}`)
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "pvp_live_matches", filter: `id=eq.${matchId}` },
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "pvp_live_matches",
+          filter: `id=eq.${matchId}`,
+        },
         (payload) => {
           const row = payload.new as Record<string, unknown>;
           const uid = myIdRef.current;
@@ -258,8 +264,8 @@ function MatchPageContent({ matchId }: { matchId: string }) {
             // Immutable for the life of a match, so a realtime payload that
             // omits it must not blank out what we already knew.
             matchSource:
-              ((row.match_source as LivePvpMatch["matchSource"] | undefined) ??
-                matchRef.current?.matchSource) ??
+              (row.match_source as LivePvpMatch["matchSource"] | undefined) ??
+              matchRef.current?.matchSource ??
               null,
             startedAt: row.started_at as string,
             hostCorrect: row.host_correct as number | null,
@@ -313,7 +319,9 @@ function MatchPageContent({ matchId }: { matchId: string }) {
             hostSuppressedUntil: (row.host_suppressed_until as number) ?? 0,
             guestSuppressedUntil: (row.guest_suppressed_until as number) ?? 0,
             weatherOwner:
-              (row.weather_owner as "host" | "guest" | null) ?? matchRef.current?.weatherOwner ?? null,
+              (row.weather_owner as "host" | "guest" | null) ??
+              matchRef.current?.weatherOwner ??
+              null,
             hostSigState:
               (row.host_sig_state as Record<string, number> | null) ??
               matchRef.current?.hostSigState ??
@@ -333,7 +341,8 @@ function MatchPageContent({ matchId }: { matchId: string }) {
               (row.guest_sig_runtime as SigRuntimeMap | null) ??
               matchRef.current?.guestSigRuntime ??
               {},
-            hostRevived: (row.host_revived as boolean | null) ?? matchRef.current?.hostRevived ?? false,
+            hostRevived:
+              (row.host_revived as boolean | null) ?? matchRef.current?.hostRevived ?? false,
             guestRevived:
               (row.guest_revived as boolean | null) ?? matchRef.current?.guestRevived ?? false,
             isBotMatch:
@@ -496,9 +505,7 @@ function MatchPageContent({ matchId }: { matchId: string }) {
     if (rewardsGrantedRef.current) return;
     if (phase !== "result" && phase !== "forfeit_won" && phase !== "forfeit_lost") return;
     rewardsGrantedRef.current = true;
-    const won =
-      phase === "forfeit_won" ||
-      (phase === "result" && match?.winnerId === myId);
+    const won = phase === "forfeit_won" || (phase === "result" && match?.winnerId === myId);
     // Celebratory / defeat result music, mirroring Solo's result screen. Nearby
     // Battle rides the "regular" battle track, so reuse its win/lose clips.
     playBattleResult("regular", won);
@@ -695,8 +702,7 @@ function MatchPageContent({ matchId }: { matchId: string }) {
   const myFinalHp = match ? (iAmHost ? match.hostHp : match.guestHp) : null;
   const oppFinalHp = match ? (iAmHost ? match.guestHp : match.hostHp) : null;
   const myCorrect = match ? (iAmHost ? match.hostCorrectLive : match.guestCorrectLive) : null;
-  const won =
-    phase === "forfeit_won" || (phase === "result" && match?.winnerId === myId);
+  const won = phase === "forfeit_won" || (phase === "result" && match?.winnerId === myId);
   const tied = phase === "result" && match?.winnerId === null && match.status === "completed";
 
   const shareData: BattleShareData | null =
@@ -731,43 +737,52 @@ function MatchPageContent({ matchId }: { matchId: string }) {
 
   return (
     <>
-    {shareData && (
-      <ShareCardDialog
-        open={shareOpen}
-        onClose={() => setShareOpen(false)}
-        data={shareData}
-        inviteCode={friendCode}
+      {shareData && (
+        <ShareCardDialog
+          open={shareOpen}
+          onClose={() => setShareOpen(false)}
+          data={shareData}
+          inviteCode={friendCode}
+        />
+      )}
+      <PvpResultScreen
+        won={won}
+        tied={tied}
+        forfeitWon={phase === "forfeit_won"}
+        forfeitLost={phase === "forfeit_lost"}
+        opponentName={opponentProfile?.trainer_name || "Opponent"}
+        myHp={myFinalHp}
+        oppHp={oppFinalHp}
+        correctCount={myCorrect}
+        partnerId={partner?.id ?? null}
+        partnerName={partner?.name ?? "Your partner"}
+        berryDrops={berryDrops}
+        missed={missed}
+        onBack={() => navigate({ to: "/arena" })}
+        // Only on a win, and only once there is a partner to draw. Beating
+        // another trainer is the app's most brag-worthy moment and was the one
+        // that produced nothing to show for it.
+        onShare={won && partner ? () => setShareOpen(true) : undefined}
+        // No chat for strangers paired by matchmaking. The server refuses those
+        // messages outright (send_pvp_chat_message), so offering the button would
+        // only lead somewhere broken.
+        onChat={
+          match?.matchSource === "queue"
+            ? undefined
+            : () => navigate({ to: "/pvp/chat/$matchId", params: { matchId } })
+        }
+        onRematch={() => void handleRematch()}
+        rematchBusy={rematchBusy}
+        // Offered after a battle against a real trainer. The component decides for
+        // itself whether there is anything to offer (bot match, already friends, or
+        // a request already pending -> renders nothing).
+        friendPrompt={
+          <AddFriendPrompt
+            opponentId={opponentProfile?.id}
+            opponentName={opponentProfile?.trainer_name || "Opponent"}
+          />
+        }
       />
-    )}
-    <PvpResultScreen
-      won={won}
-      tied={tied}
-      forfeitWon={phase === "forfeit_won"}
-      forfeitLost={phase === "forfeit_lost"}
-      opponentName={opponentProfile?.trainer_name || "Opponent"}
-      myHp={myFinalHp}
-      oppHp={oppFinalHp}
-      correctCount={myCorrect}
-      partnerId={partner?.id ?? null}
-      partnerName={partner?.name ?? "Your partner"}
-      berryDrops={berryDrops}
-      missed={missed}
-      onBack={() => navigate({ to: "/arena" })}
-      // Only on a win, and only once there is a partner to draw. Beating
-      // another trainer is the app's most brag-worthy moment and was the one
-      // that produced nothing to show for it.
-      onShare={won && partner ? () => setShareOpen(true) : undefined}
-      // No chat for strangers paired by matchmaking. The server refuses those
-      // messages outright (send_pvp_chat_message), so offering the button would
-      // only lead somewhere broken.
-      onChat={
-        match?.matchSource === "queue"
-          ? undefined
-          : () => navigate({ to: "/pvp/chat/$matchId", params: { matchId } })
-      }
-      onRematch={() => void handleRematch()}
-      rematchBusy={rematchBusy}
-    />
     </>
   );
 }
@@ -797,6 +812,7 @@ function PvpResultScreen({
   onChat,
   onRematch,
   rematchBusy,
+  friendPrompt,
 }: {
   won: boolean;
   tied: boolean;
@@ -828,6 +844,8 @@ function PvpResultScreen({
    * fetch/RPC round-trip is in flight (bot path only — the human path
    * navigates instantly). */
   rematchBusy?: boolean;
+  /** Slot above the action buttons; empty for bot matches and existing friends. */
+  friendPrompt?: React.ReactNode;
 }) {
   const hpLine = (
     <>
@@ -874,7 +892,9 @@ function PvpResultScreen({
         ))}
 
         <div className="flex flex-col items-center text-center">
-          <div className="font-pixel-xs uppercase tracking-[0.25em] text-primary">★ Battle Won ★</div>
+          <div className="font-pixel-xs uppercase tracking-[0.25em] text-primary">
+            ★ Battle Won ★
+          </div>
           <h1 className="mt-2 font-display-xl text-foreground">Victory!</h1>
           <p className="mt-1 text-sm text-foreground/70">
             {forfeitWon
@@ -911,11 +931,13 @@ function PvpResultScreen({
           <div className="font-pixel-xs text-foreground/70">{hpLine}</div>
           {berryDrops != null && berryDrops > 0 && (
             <div className="mt-2 flex items-center justify-center gap-1.5 font-display-md text-hp-good">
-              <AppIcon src={ITEM_CATEGORY_ICON.berries} className="h-5 w-5" />
-              +{berryDrops} berr{berryDrops === 1 ? "y" : "ies"}
+              <AppIcon src={ITEM_CATEGORY_ICON.berries} className="h-5 w-5" />+{berryDrops} berr
+              {berryDrops === 1 ? "y" : "ies"}
             </div>
           )}
         </div>
+
+        {friendPrompt}
 
         <div className="mx-auto mt-auto flex w-full max-w-sm flex-col gap-2 pt-8">
           {onRematch && (
@@ -1013,6 +1035,8 @@ function PvpResultScreen({
       {/* Missed-answer review at parity with Solo's defeat screen (feedback #1).
           Renders nothing when the loss had no wrong answers (HP/forfeit). */}
       <MissedReview missed={missed} />
+
+      {friendPrompt}
 
       <div className="mx-auto mt-auto flex w-full max-w-sm flex-col gap-2 pt-8">
         {onRematch && (

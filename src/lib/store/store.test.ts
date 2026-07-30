@@ -3,6 +3,15 @@ import { useGameStore } from "@/lib/store";
 import { ADAPTIVE_WINDOW } from "@/lib/game-data";
 import { findPokemon } from "@/lib/pokemon-data";
 import type { WhosThatRound as Round } from "@/lib/whos-that";
+import type { ItemId } from "@/lib/game-data";
+import {
+  BAG_CAPACITY_BASE,
+  BAG_UPGRADE_MAX,
+  bagCapacity,
+  bagUnitsUsed,
+  bagUpgradePrice,
+  defaultInventory,
+} from "@/lib/store/slices/itemsSlice";
 
 beforeEach(() => {
   useGameStore.getState().reset();
@@ -246,7 +255,9 @@ describe("store composition (slices)", () => {
   });
 
   it("status: applyBattleStatus / tickBattleStatusCure round-trip and clear", () => {
-    useGameStore.getState().applyBattleStatus({ kind: "poisoned", curesRemaining: 3, appliedAt: 0 });
+    useGameStore
+      .getState()
+      .applyBattleStatus({ kind: "poisoned", curesRemaining: 3, appliedAt: 0 });
     expect(useGameStore.getState().battleStatuses.map((s) => s.kind)).toContain("poisoned");
     // Two ticks don't clear a 3-cure status; the third does.
     expect(useGameStore.getState().tickBattleStatusCure("poisoned")).toBe(false);
@@ -256,16 +267,25 @@ describe("store composition (slices)", () => {
   });
 
   it("status: one major at a time, but Confusion (volatile) coexists", () => {
-    useGameStore.getState().applyBattleStatus({ kind: "confused", curesRemaining: 2, appliedAt: 0 });
-    useGameStore.getState().applyBattleStatus({ kind: "poisoned", curesRemaining: 3, appliedAt: 0 });
+    useGameStore
+      .getState()
+      .applyBattleStatus({ kind: "confused", curesRemaining: 2, appliedAt: 0 });
+    useGameStore
+      .getState()
+      .applyBattleStatus({ kind: "poisoned", curesRemaining: 3, appliedAt: 0 });
     // A new major evicts the old major but keeps the volatile confusion.
     useGameStore.getState().applyBattleStatus({ kind: "burn", curesRemaining: 3, appliedAt: 0 });
-    const kinds = useGameStore.getState().battleStatuses.map((s) => s.kind).sort();
+    const kinds = useGameStore
+      .getState()
+      .battleStatuses.map((s) => s.kind)
+      .sort();
     expect(kinds).toEqual(["burn", "confused"]);
   });
 
   it("status: opponent statuses are tracked separately from self", () => {
-    useGameStore.getState().applyBattleStatus({ kind: "burn", curesRemaining: 3, appliedAt: 0 }, "opponent");
+    useGameStore
+      .getState()
+      .applyBattleStatus({ kind: "burn", curesRemaining: 3, appliedAt: 0 }, "opponent");
     expect(useGameStore.getState().opponentStatuses.map((s) => s.kind)).toEqual(["burn"]);
     expect(useGameStore.getState().battleStatuses.length).toBe(0);
   });
@@ -301,5 +321,127 @@ describe("store composition (slices)", () => {
     }));
     expect(useGameStore.getState().hatchPokeEgg(eggId)).toBe(true);
     expect(useGameStore.getState().pokeEggs.length).toBe(0);
+  });
+});
+
+describe("bag capacity", () => {
+  // One id, one big stack — capacity counts UNITS, so the shape does not matter.
+  // Zeroed rather than spread over defaultInventory, which already carries 4
+  // units besides potion and would put the total 4 over whatever was asked for.
+  const fill = (units: number) => {
+    const zero = Object.fromEntries(Object.keys(defaultInventory).map((k) => [k, 0])) as Record<
+      ItemId,
+      number
+    >;
+    useGameStore.setState({ inventory: { ...zero, potion: units } });
+  };
+  const held = (id: ItemId) =>
+    useGameStore.getState().pendingBagOverflow.find((e) => e.id === id)?.qty ?? 0;
+
+  it("starts above every real save's high-water mark, and default inventory is nowhere near it", () => {
+    expect(bagCapacity(0)).toBe(60);
+    expect(bagUnitsUsed(defaultInventory)).toBe(6);
+  });
+
+  it("berries are exempt: they neither consume capacity nor ever overflow", () => {
+    fill(BAG_CAPACITY_BASE);
+    useGameStore.getState().grantItem("lumberry", 5);
+    expect(useGameStore.getState().inventory.lumberry).toBe(5);
+    expect(useGameStore.getState().pendingBagOverflow).toEqual([]);
+    // ...and holding them does not push the bag over.
+    expect(bagUnitsUsed(useGameStore.getState().inventory)).toBe(BAG_CAPACITY_BASE);
+  });
+
+  it("a grant that does not fit is partially filled and the rest is HELD, not dropped", () => {
+    fill(BAG_CAPACITY_BASE - 2);
+    useGameStore.getState().grantItem("revive", 5);
+    expect(useGameStore.getState().inventory.revive).toBe(2);
+    expect(held("revive")).toBe(3);
+  });
+
+  it("a NEGATIVE qty still spends items when the bag is full (Mega Raid's consume path)", () => {
+    fill(BAG_CAPACITY_BASE);
+    useGameStore.getState().grantItem("potion", -1);
+    expect(useGameStore.getState().inventory.potion).toBe(BAG_CAPACITY_BASE - 1);
+    expect(useGameStore.getState().pendingBagOverflow).toEqual([]);
+  });
+
+  it("buyItem refuses a full bag WITHOUT taking the coins", () => {
+    fill(BAG_CAPACITY_BASE);
+    useGameStore.setState({ coins: 1000 });
+    expect(useGameStore.getState().buyItem("potion", 100)).toBe(false);
+    expect(useGameStore.getState().coins).toBe(1000);
+  });
+
+  it("discardItem frees room and pays nothing", () => {
+    fill(BAG_CAPACITY_BASE);
+    useGameStore.setState({ coins: 0 });
+    expect(useGameStore.getState().discardItem("potion", 3)).toBe(true);
+    expect(useGameStore.getState().coins).toBe(0);
+    expect(bagUnitsUsed(useGameStore.getState().inventory)).toBe(BAG_CAPACITY_BASE - 3);
+  });
+
+  it("a held entry can be refunded for half the shop price, per unit", () => {
+    fill(BAG_CAPACITY_BASE);
+    useGameStore.setState({ coins: 0 });
+    useGameStore.getState().grantItem("maxpotion", 2); // costs 1000 -> 500 each
+    expect(held("maxpotion")).toBe(2);
+    expect(useGameStore.getState().refundOverflow("maxpotion")).toBe(1000);
+    expect(useGameStore.getState().coins).toBe(1000);
+    expect(held("maxpotion")).toBe(0);
+  });
+
+  it("forfeiting a held entry drops it and pays nothing", () => {
+    fill(BAG_CAPACITY_BASE);
+    useGameStore.setState({ coins: 0 });
+    useGameStore.getState().grantItem("potion", 1);
+    expect(useGameStore.getState().forfeitOverflow("potion")).toBe(true);
+    expect(useGameStore.getState().coins).toBe(0);
+    expect(useGameStore.getState().pendingBagOverflow).toEqual([]);
+  });
+
+  it("claimOverflow only moves what fits, and keeps the remainder held", () => {
+    fill(BAG_CAPACITY_BASE);
+    useGameStore.getState().grantItem("revive", 4);
+    expect(held("revive")).toBe(4);
+    useGameStore.getState().discardItem("potion", 1); // one unit of room
+    expect(useGameStore.getState().claimOverflow("revive")).toBe(true);
+    expect(useGameStore.getState().inventory.revive).toBe(1);
+    expect(held("revive")).toBe(3);
+  });
+
+  it("the upgrade escalates in price, stops at the ceiling, and pulls held items in", () => {
+    expect(bagUpgradePrice(0)).toBe(500);
+    expect(bagUpgradePrice(1)).toBe(1000);
+    expect(bagUpgradePrice(BAG_UPGRADE_MAX)).toBeNull();
+
+    fill(BAG_CAPACITY_BASE);
+    useGameStore.setState({ coins: 500 });
+    useGameStore.getState().grantItem("revive", 4);
+    expect(held("revive")).toBe(4);
+
+    expect(useGameStore.getState().purchaseBagUpgrade()).toBe(true);
+    expect(useGameStore.getState().coins).toBe(0);
+    expect(bagCapacity(useGameStore.getState().bagUpgrades)).toBe(70);
+    // 10 new units of room, 4 held -> all of it comes in.
+    expect(useGameStore.getState().inventory.revive).toBe(4);
+    expect(useGameStore.getState().pendingBagOverflow).toEqual([]);
+  });
+
+  it("the upgrade is refused without the coins, and the ceiling holds", () => {
+    useGameStore.setState({ coins: 100 });
+    expect(useGameStore.getState().purchaseBagUpgrade()).toBe(false);
+    expect(useGameStore.getState().bagUpgrades).toBe(0);
+
+    useGameStore.setState({ coins: 999_999, bagUpgrades: BAG_UPGRADE_MAX });
+    expect(useGameStore.getState().purchaseBagUpgrade()).toBe(false);
+    expect(bagCapacity(useGameStore.getState().bagUpgrades)).toBe(120);
+  });
+
+  it("repeated overflow of one item merges into a single held row", () => {
+    fill(BAG_CAPACITY_BASE);
+    useGameStore.getState().grantItem("potion", 2);
+    useGameStore.getState().grantItem("potion", 3);
+    expect(useGameStore.getState().pendingBagOverflow).toEqual([{ id: "potion", qty: 5 }]);
   });
 });
