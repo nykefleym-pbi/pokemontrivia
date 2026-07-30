@@ -100,7 +100,10 @@ import {
 import { AppIcon } from "@/components/app-icon";
 import { UI_ICON, LOCK_ICON } from "@/lib/app-icons";
 import {
+  BACKDROP_BATTLE_COST,
+  BACKDROP_COIN_COST,
   VERSUS_BACKDROPS,
+  ownsBackdrop,
   versusBackdrop,
   versusBackdropSrc,
 } from "@/lib/versus-backdrops";
@@ -139,6 +142,10 @@ function ProfilePage() {
   const setTrainerSprite = useGameStore((s) => s.setTrainerSprite);
   const versusBackdropId = useGameStore((s) => s.versusBackdropId);
   const setVersusBackdropId = useGameStore((s) => s.setVersusBackdropId);
+  const coins = useGameStore((s) => s.coins);
+  const ownedBackdropIds = useGameStore((s) => s.ownedBackdropIds);
+  const versusBackdropBattles = useGameStore((s) => s.versusBackdropBattles);
+  const buyVersusBackdrop = useGameStore((s) => s.buyVersusBackdrop);
   const reset = useGameStore((s) => s.reset);
   const battleLog = useGameStore((s) => s.battleLog);
   const flags = useGameStore((s) => s.flags);
@@ -397,6 +404,8 @@ function ProfilePage() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [trainerPickerOpen, setTrainerPickerOpen] = useState(false);
   const [backdropPickerOpen, setBackdropPickerOpen] = useState(false);
+  /** Which locked backdrop the confirm sheet is asking about, or null. */
+  const [backdropToBuy, setBackdropToBuy] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<PokeType | null>(null);
   const [trainerQuery, setTrainerQuery] = useState("");
@@ -1697,18 +1706,45 @@ function ProfilePage() {
             <DialogTitle>Battle background</DialogTitle>
           </DialogHeader>
           <p className="-mt-2 text-xs text-foreground/55">
-            Yours shows on your half of the face-off screen.
+            Select your preferred background for Battle Arena
           </p>
+          {/* What a locked one costs, and how close the player is to affording
+              it. Shown once above the grid rather than on every tile — the
+              price is the same for all of them, and 18 copies of it is noise. */}
+          {VERSUS_BACKDROPS.some((b) => !ownsBackdrop(b.id, ownedBackdropIds)) && (
+            <div className="-mt-1 flex items-center justify-between rounded-2xl bg-muted/60 px-3 py-2 text-[11px]">
+              <span className="text-foreground/60">Locked backgrounds</span>
+              <span className="font-semibold text-foreground">
+                <span className={coins >= BACKDROP_COIN_COST ? "" : "text-destructive"}>
+                  {BACKDROP_COIN_COST.toLocaleString()} coins
+                </span>
+                {" + "}
+                <span
+                  className={
+                    versusBackdropBattles >= BACKDROP_BATTLE_COST ? "" : "text-destructive"
+                  }
+                >
+                  {Math.min(versusBackdropBattles, BACKDROP_BATTLE_COST)}/{BACKDROP_BATTLE_COST}{" "}
+                  battles
+                </span>
+              </span>
+            </div>
+          )}
           {/* auto-rows-min: without it the grid stretches its rows to fill the
               60vh box, squashing each tile to 78px and clipping the label off
               the bottom of its own button. */}
           <div className="grid max-h-[60vh] auto-rows-min grid-cols-3 gap-2 overflow-y-auto">
             {VERSUS_BACKDROPS.map((b) => {
               const active = versusBackdrop(versusBackdropId).id === b.id;
+              const owned = ownsBackdrop(b.id, ownedBackdropIds);
               return (
                 <button
                   key={b.id}
                   onClick={() => {
+                    if (!owned) {
+                      setBackdropToBuy(b.id);
+                      return;
+                    }
                     setVersusBackdropId(b.id);
                     // Closing programmatically skips this dialog's own
                     // onOpenChange, so the guard has to be raised by hand —
@@ -1720,17 +1756,33 @@ function ProfilePage() {
                     toast.success(`Background set to ${b.label}!`);
                   }}
                   aria-pressed={active}
-                  className={`overflow-hidden rounded-2xl border-2 text-left transition active:scale-95 ${
-                    active ? "border-primary" : "border-transparent hover:border-primary/40"
-                  }`}
+                  className="overflow-hidden rounded-2xl text-left transition active:scale-95"
                 >
-                  <img
-                    src={versusBackdropSrc(b.id)}
-                    alt=""
-                    loading="lazy"
-                    className="aspect-[12/13] w-full object-cover"
-                  />
-                  <div className="truncate px-1.5 py-1 text-[11px] font-semibold text-foreground">
+                  {/* Colour marks the choice, not a frame: the equipped one is
+                      the only tile in full colour, everything else desaturates.
+                      Locked tiles go further and carry a padlock, so "not mine
+                      yet" reads differently from "mine, just not equipped". */}
+                  <div className="relative">
+                    <img
+                      src={versusBackdropSrc(b.id)}
+                      alt=""
+                      loading="lazy"
+                      className="aspect-[12/13] w-full object-cover transition-[filter] duration-200"
+                      style={{
+                        filter: active ? "none" : owned ? "grayscale(1)" : "grayscale(1) brightness(0.6)",
+                      }}
+                    />
+                    {!owned && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <AppIcon src={LOCK_ICON} className="h-8 w-8 drop-shadow" />
+                      </div>
+                    )}
+                  </div>
+                  <div
+                    className={`truncate px-1.5 py-1 text-[11px] font-semibold ${
+                      active ? "text-foreground" : "text-foreground/50"
+                    }`}
+                  >
                     {b.label}
                   </div>
                 </button>
@@ -1739,6 +1791,59 @@ function ProfilePage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Buy confirmation. A separate dialog rather than a tap-to-buy tile:
+          2,000 coins is most of a session's earnings, and a mis-tap in a grid
+          of eighteen thumbnails should not spend it. */}
+      <AlertDialog
+        open={backdropToBuy !== null}
+        onOpenChange={(open) => {
+          if (!open) setBackdropToBuy(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Unlock {backdropToBuy ? versusBackdrop(backdropToBuy).label : "this background"}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {BACKDROP_COIN_COST.toLocaleString()} coins and {BACKDROP_BATTLE_COST} Battle Arena
+              battles. You have {coins.toLocaleString()} coins and{" "}
+              {Math.min(versusBackdropBattles, BACKDROP_BATTLE_COST)} of {BACKDROP_BATTLE_COST}{" "}
+              battles banked — the battle count starts again after each unlock.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Not yet</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                const id = backdropToBuy;
+                setBackdropToBuy(null);
+                if (!id) return;
+                const res = buyVersusBackdrop(id);
+                if (res.ok) {
+                  playSfx("tap");
+                  toast.success(`${versusBackdrop(id).label} unlocked and equipped!`);
+                  return;
+                }
+                // Say which half is short — "can't afford it" leaves the player
+                // guessing which of the two prices they have not met.
+                toast.error(
+                  res.reason === "coins"
+                    ? `You need ${BACKDROP_COIN_COST.toLocaleString()} coins.`
+                    : res.reason === "battles"
+                      ? `Play ${BACKDROP_BATTLE_COST - versusBackdropBattles} more Arena battle${
+                          BACKDROP_BATTLE_COST - versusBackdropBattles === 1 ? "" : "s"
+                        } first.`
+                      : "That background is not available.",
+                );
+              }}
+            >
+              Unlock
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Trainer picker */}
       <Dialog

@@ -6,11 +6,21 @@ import { useGameStore } from "@/lib/store";
 import { useStoreHydrated } from "@/lib/store-hydration";
 import { ItemIcon } from "@/components/game-ui";
 import { AppIcon } from "@/components/app-icon";
-import { REWARD_ICON, LOCK_ICON, ARENA_BADGE_ICON, VERSUS_BACKDROP } from "@/lib/app-icons";
+import {
+  REWARD_ICON,
+  LOCK_ICON,
+  ARENA_BADGE_ICON,
+  VERSUS_BACKDROP,
+  TRAINING_BOT_AVATAR,
+} from "@/lib/app-icons";
 import { Button } from "@/components/ui/button";
 import { BattleCodeQr } from "@/components/battle-code-qr";
 import { VersusScreen } from "@/components/versus-screen";
-import { trainingBotSide } from "@/lib/training-bot";
+import {
+  rollTrainingBotBackdrop,
+  trainingBotBackdropSrc,
+  trainingBotSide,
+} from "@/lib/training-bot";
 import { ScanPanel } from "@/components/NearbyBattleSheet";
 import { trainerSpriteUrl } from "@/lib/game-data";
 import { versusBackdropSrc } from "@/lib/versus-backdrops";
@@ -193,7 +203,15 @@ function ArenaPage() {
   // a few hundred milliseconds on a bare gradient waiting for artwork; fetched
   // here, it is in cache before the Battle button is pressed.
   useEffect(() => {
-    for (const src of new Set([versusBackdropSrc(versusBackdropId), VERSUS_BACKDROP])) {
+    for (const src of new Set([
+      versusBackdropSrc(versusBackdropId),
+      VERSUS_BACKDROP,
+      // The bot's own half and its animated avatar. Which backdrop it lands on
+      // is not rolled yet, so this warms the one from last time — a hit more
+      // often than not, and free when it misses.
+      trainingBotBackdropSrc(),
+      ...(TRAINING_BOT_AVATAR ? [TRAINING_BOT_AVATAR] : []),
+    ])) {
       const img = new Image();
       img.src = src;
     }
@@ -304,6 +322,10 @@ function ArenaPage() {
         // which React may invoke more than once.
         if (next >= QUEUE_FALLBACK_S && !fallenBackRef.current) {
           fallenBackRef.current = true;
+          // Roll the bot's world BEFORE the face-off goes up, so the Arena and
+          // the match route it hands over to draw the same one. Rolling per
+          // render would change the backdrop mid-handover.
+          rollTrainingBotBackdrop();
           // Raise the flag BEFORE stopping the queue so the face-off never
           // unmounts between the two, and leave the line — a row left behind
           // would pair someone into a battle they have walked away from.

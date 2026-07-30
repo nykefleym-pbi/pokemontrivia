@@ -66,6 +66,8 @@ export function buildSavePayload(s: GameState) {
     trainerName: s.trainerName,
     trainerSprite: s.trainerSprite,
     versusBackdropId: s.versusBackdropId,
+    ownedBackdropIds: s.ownedBackdropIds,
+    versusBackdropBattles: s.versusBackdropBattles,
     pokemon: s.pokemon,
     abilityId: s.abilityId,
     lastSeenWhatsNew: s.lastSeenWhatsNew,
@@ -337,6 +339,8 @@ export const useGameStore = create<GameState>()(
           trainerName: "",
           trainerSprite: "red",
           versusBackdropId: null,
+          ownedBackdropIds: [],
+          versusBackdropBattles: 0,
           pokemon: null,
           abilityId: null,
           level: 1,
@@ -663,6 +667,9 @@ export const useGameStore = create<GameState>()(
         }
 
         set({
+          // Banked towards the next backdrop. Every Arena battle counts,
+          // Training included — this is a play-time toll, not a PvP one.
+          versusBackdropBattles: s.versusBackdropBattles + 1,
           arenaStats: {
             nearbyBattles: cur.nearbyBattles + (isBot ? 0 : 1),
             trainingBattles: cur.trainingBattles + (isBot ? 1 : 0),
@@ -745,6 +752,10 @@ export const useGameStore = create<GameState>()(
           lastSeenWhatsNew: p.lastSeenWhatsNew ?? 0,
           flags: p.flags ?? [],
           claimedAchievements: p.claimedAchievements ?? [],
+          // A save from before backdrops were purchasable has neither field,
+          // and `...p` would spread `undefined` over the initial values.
+          ownedBackdropIds: p.ownedBackdropIds ?? [],
+          versusBackdropBattles: p.versusBackdropBattles ?? 0,
           recentAnswers: p.recentAnswers ?? [],
           battleLog: p.battleLog ?? [],
           arenaStats: p.arenaStats ?? defaultArenaStats,

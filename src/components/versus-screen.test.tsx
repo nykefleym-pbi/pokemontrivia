@@ -18,7 +18,8 @@ vi.mock("framer-motion", () => {
 });
 
 const { VersusScreen } = await import("@/components/versus-screen");
-const { trainingBotSide } = await import("@/lib/training-bot");
+const { rollTrainingBotBackdrop, trainingBotSide } = await import("@/lib/training-bot");
+const { VERSUS_BACKDROPS } = await import("@/lib/versus-backdrops");
 
 const me = { name: "Ash", spriteId: "ace-trainer-m", level: 12, rating: 1120 };
 const rival = { name: "Gary", spriteId: "ace-trainer-f", level: 14, rating: 1210 };
@@ -92,13 +93,43 @@ describe("VersusScreen", () => {
     expect(bot.spriteId).not.toBe("");
 
     const { container } = render(<VersusScreen me={me} opponent={bot} status="x" />);
-    const srcs = [...container.querySelectorAll("img")]
+    // `img.sprite`, not every img: the halves carry backdrop images too, and
+    // counting those made this assert "two pictures" rather than "two faces".
+    const srcs = [...container.querySelectorAll("img.sprite")]
       .map((i) => i.getAttribute("src"))
       .filter((s): s is string => !!s);
     // Two distinct avatars on screen, and neither of them empty.
     expect(srcs.length).toBe(2);
     expect(new Set(srcs).size).toBe(2);
     expect(srcs.every((s) => s !== "")).toBe(true);
+  });
+
+  it("stands the bot on a backdrop from the shared catalogue", () => {
+    // It has no artwork of its own: a random one per match is what stops a run
+    // of Training battles looking like the same fight over and over.
+    const file = decodeURIComponent(trainingBotSide(12).backdrop ?? "");
+    expect(file.startsWith("/versus/")).toBe(true);
+    expect(VERSUS_BACKDROPS.some((b) => `/versus/${b.file}` === file)).toBe(true);
+  });
+
+  it("holds that backdrop still until the next match is rolled", () => {
+    // Three screens show the bot in a row across a route change. Re-rolling
+    // between them would swap the world out mid-handover — the flash the
+    // shared definition exists to prevent.
+    const before = trainingBotSide(12).backdrop;
+    expect(trainingBotSide(12).backdrop).toBe(before);
+    expect(trainingBotSide(30).backdrop).toBe(before);
+  });
+
+  it("eventually rolls a different one", () => {
+    // Not asserting any single roll — just that repeated rolls are not pinned
+    // to one backdrop, which is what a broken randomiser looks like.
+    const seen = new Set<string | null | undefined>();
+    for (let i = 0; i < 200; i++) {
+      rollTrainingBotBackdrop();
+      seen.add(trainingBotSide(12).backdrop);
+    }
+    expect(seen.size).toBeGreaterThan(1);
   });
 
   it("renders no avatar at all rather than a broken one for an unknown sprite", () => {
