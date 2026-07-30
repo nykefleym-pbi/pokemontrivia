@@ -38,8 +38,14 @@ Supporting facts:
   whole period during which every one of these players arrived.
 - **Only 1 profile has ever played Who's That Pokémon**, and **1** has ever
   attempted Weekly League.
-- **Nearby Battle is the one thing that works**: 74 matches, 46 completed. But
-  **26 (35%) were forfeited** and 2 have been stuck `active` since Jul 9 and Jul 18.
+- **Nearby Battle has been used by two humans exactly once.** Of 74 live matches,
+  **73 are against the Training Bot** and 1 is human-vs-human. The human one
+  completed; **all 26 forfeits are bot matches**, which is the owner testing and
+  backing out, not a player signal. (Corrected 2026-07-30: the first version of
+  this document read the 74 as real multiplayer usage and recommended work on the
+  forfeit rate. It was a misread — see P1.3.)
+- 2 bot matches have been stuck `active` since Jul 9 and Jul 18, so the state
+  machine has no timeout.
 - **5 of 8 players opted into push** — a good rate — and **not one has ever
   received a notification.** `last_reminder_sent` is null for all eight.
 
@@ -76,6 +82,17 @@ This is not theoretical, and it explains the whole reminder story:
 redeploy needed for a secret change, but re-invoke `send-push` once to confirm a 200. This is the single highest-leverage action available: it turns 5 already-opted-in
 players from unreachable into reachable, and it is a dashboard edit.
 
+**Mitigated in code 2026-07-30 — but still fix the secret.** `send-push` no longer
+lets a malformed subject take push down. A bad SUBJECT is not a cryptographic
+failure (it is a contact hint for the push service), so `ensureVapid` now tries the
+configured value, then a tidied version of it, then the `mailto:` default, and only
+503s if all three are refused — at which point the _keys_ really are broken, and
+those cannot be substituted for. It logs loudly whenever it falls back, so "push
+works" never hides "the secret is still wrong". Bad keys stay fatal.
+
+This means push works without touching the dashboard, but the stored secret is
+still malformed and should be corrected.
+
 **Second P0, nearly as cheap:** schedule a new Mega event. The mode has never been
 run once, the card is a primary comeback hook, and the reason is simply that no
 event row is current. `readyModes` also gates the reminder copy on
@@ -98,11 +115,20 @@ so the work is at the _end of session one_, not deeper in the game.
    current placement against the funnel once analytics is on (below). An opt-in
    asked before the player has felt a win converts worse — and with P0 fixed, the
    opt-in is now the difference between a player we can reach and one we cannot.
-3. **Cut the 35% Nearby Battle forfeit rate.** 26 of 74 is high enough that it is
-   probably structural, not fickleness — most likely one side waiting on the other.
-   Instrument _when_ in the match the forfeit happens before designing a fix; the
-   two matches stuck `active` since Jul 9 suggest there is also a state machine
-   with no timeout.
+3. ~~**Cut the 35% Nearby Battle forfeit rate.**~~ **Retracted 2026-07-30.** All 26
+   forfeits are Training Bot matches — owner testing — and the single
+   human-vs-human match completed. There is no player-facing forfeit signal to act
+   on, and building against this number would have been building against the
+   owner's own dev sessions. The instrumentation to make a real signal possible
+   (`forfeited_at`, `forfeited_by`) has shipped; revisit when human matches exist.
+
+   What the 73-to-1 split _does_ say is more useful: **Nearby Battle's problem is
+   not completion, it is that two humans almost never reach it.** That is the same
+   day-two/invitation problem as everything else here, not a separate one.
+
+   The 2 matches stuck `active` since Jul 9 remain worth a timeout, independent of
+   any of this.
+
 4. **Ask for the referral at the win, not on a settings page.** `referrals` is 0
    and the reward logic (`rollReferralReward`) already exists and is unused. The
    `/refer` route is reachable only if you go looking for it. With six players,
@@ -136,13 +162,34 @@ These matter because without them the plan above cannot be evaluated.
    toggle and immediately gives a real funnel (`onboard_complete` →
    `first_battle_complete` → `return_after_days`). **Everything in P1 is guesswork
    until this is on.**
-2. **`pvp_live_matches.match_source` is NULL on all 74 rows.** The column exists
-   and is never written, so queue-matchmaking and Battle-Code scans are
-   indistinguishable in the data. Since the Arena's Battle button and the scanner
-   are two different products with two different funnels, this is worth a one-line
-   write at insert.
-3. **No forfeit reason or timestamp.** `status` records _that_ a match was
-   forfeited, not when or by whom, which is exactly what P1.3 needs.
+2. ~~**`pvp_live_matches.match_source` is NULL on all 74 rows.**~~ **FIXED
+   2026-07-30** (`20260730104214_match_source_and_forfeit_timing`). The column and
+   its CHECK existed and `enqueue_pvp` did write it, but `start_live_pvp_match` and
+   `start_bot_pvp_match` — which created all 74 rows — did not. Both now label
+   their own path (`'qr'`, `'bot'`).
+
+   The existing rows were backfilled rather than left as a permanent NULL gap,
+   which is sound because `enqueue_pvp` has always written the column: no
+   queue-created row can be NULL, so every NULL came from one of the two fixed
+   functions, and `is_bot_match` separates those two (73 true / 1 false, agreeing
+   exactly with a guest-id test against the Training Bot). Result: `bot=73, qr=1`,
+   zero NULLs.
+
+3. ~~**No forfeit reason or timestamp.**~~ **FIXED 2026-07-30**, same migration.
+   `forfeited_at` and `forfeited_by` are now recorded. `forfeited_by` is the
+   _actor_, not the loser — the presence watchdog claims a win by forfeit — so the
+   pair distinguishes a rage-quit from an opponent who vanished. The 26 existing
+   forfeits are deliberately **not** backfilled: `created_at` is the match start,
+   not the forfeit, and inventing that number would quietly corrupt the first 26
+   rows of any duration analysis.
+
+   The same migration dropped a dead `forfeit_live_pvp_match(uuid)` overload. The
+   client always sends `_concede`, so PostgREST resolved to the 2-arg version and
+   the 1-arg one was unreachable — but it predates the concede split and always
+   credits the win to the _caller_, so the first caller to omit `_concede` would
+   have silently turned "I give up" into "I claim the win", with no compile or
+   runtime error.
+
 4. **`rewards-grant` is deployed, ACTIVE, and has no caller anywhere in the repo**
    (carried over from `docs/REPO_MAP.md`). Either it is dead and should go, or
    something is meant to call it and does not.
