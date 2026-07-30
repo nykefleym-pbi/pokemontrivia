@@ -33,6 +33,35 @@ function tidySubject(raw: string): string {
     .trim();
 }
 
+/**
+ * Name a key that is the wrong shape, rather than leaving a length for a human
+ * to decode.
+ *
+ * VAPID keys are P-256: the public key is an uncompressed point, 65 bytes / 87
+ * base64url chars; the private key is a scalar, 32 bytes / 43 chars. Because
+ * both secrets are opaque 80-odd-character blobs in a dashboard field, pasting
+ * the public key into BOTH is an easy mistake and an invisible one — and it is
+ * exactly what production had: publicLen=87, privateLen=87. web-push's own
+ * message ("private key should be 32 bytes long when decoded") never mentions
+ * that 87 is a public key's length, so say so here.
+ */
+function describeKeyShapes(): string {
+  const notes: string[] = [];
+  if (VAPID_PUBLIC_KEY.length !== 87) {
+    notes.push(`VAPID_PUBLIC_KEY is ${VAPID_PUBLIC_KEY.length} chars, expected 87 (65 bytes)`);
+  }
+  if (VAPID_PRIVATE_KEY.length !== 43) {
+    notes.push(
+      `VAPID_PRIVATE_KEY is ${VAPID_PRIVATE_KEY.length} chars, expected 43 (32 bytes)` +
+        (VAPID_PRIVATE_KEY.length === 87 ? " — 87 is a PUBLIC key's length, check for a copy-paste mix-up" : ""),
+    );
+  }
+  if (VAPID_PUBLIC_KEY === VAPID_PRIVATE_KEY) {
+    notes.push("VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY are identical");
+  }
+  return notes.join("; ");
+}
+
 // VAPID init must NOT run at module scope: setVapidDetails throws on a missing
 // or malformed key, which would crash EVERY request at cold boot with a blind
 // 500 (this is exactly what silently killed all push — reminders and friend
@@ -80,7 +109,11 @@ function ensureVapid(): string | null {
 
   // Every subject refused means the KEYS are the problem, and those cannot be
   // substituted for.
-  vapidError = `push not configured: invalid VAPID keys (${lastMessage}); publicLen=${VAPID_PUBLIC_KEY.length}, privateLen=${VAPID_PRIVATE_KEY.length}`;
+  const shapes = describeKeyShapes();
+  vapidError =
+    `push not configured: invalid VAPID keys (${lastMessage}); ` +
+    `publicLen=${VAPID_PUBLIC_KEY.length}, privateLen=${VAPID_PRIVATE_KEY.length}` +
+    (shapes ? ` — ${shapes}` : "");
   console.error(vapidError);
   return vapidError;
 }

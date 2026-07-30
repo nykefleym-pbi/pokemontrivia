@@ -46,12 +46,20 @@ Supporting facts:
   forfeit rate. It was a misread — see P1.3.)
 - 2 bot matches have been stuck `active` since Jul 9 and Jul 18, so the state
   machine has no timeout.
-- **5 of 8 players opted into push** — a good rate — and **not one has ever
-  received a notification.** `last_reminder_sent` is null for all eight.
+- **Nobody has ever received a notification.** `last_reminder_sent` is null for
+  all eight profiles. (Corrected 2026-07-30: the first version of this document
+  said "5 of 8 players opted into push — a good rate". Wrong on both counts.
+  `push_subscriptions` holds 6 rows across 5 distinct user ids, but **only one of
+  those ids has a profile at all** — the owner's, with 2 devices. The other four
+  are anonymous auth users with no profile, created Jul 1–8, i.e. before every
+  invited player arrived on Jul 27–29. They granted notification permission and
+  never finished onboarding. So the real opt-in figure among the six invited
+  players is **0 of 6**, and it is another face of the day-two problem, not a
+  bright spot.)
 
 ---
 
-## P0 — the live bug (fix first, it is one line of config)
+## P0 — the live bug (two broken secrets, and only you can fix them)
 
 `send-push` is returning **503 to everything**. From `net._http_response`, today:
 
@@ -65,6 +73,49 @@ The `VAPID_SUBJECT` edge-function secret is `https://pokemontriviabattle.vercel.
 — it has a **trailing space and backslash**. `web-push` rejects it,
 `setVapidDetails` throws, and the lazy-init guard turns every single push request
 into a 503.
+
+> **Amended 2026-07-30 — the subject was hiding a second, worse fault.** Once the
+> code stopped letting a bad subject be fatal (see below) and was redeployed,
+> the same request came back with a **different** 503:
+>
+> ```
+> 503  {"error":"push not configured: invalid VAPID keys
+>       (Vapid private key should be 32 bytes long when decoded.);
+>       publicLen=87, privateLen=87"}
+> ```
+>
+> **`VAPID_PRIVATE_KEY` is also wrong.** A VAPID keypair is P-256: the public key
+> is an uncompressed point, 65 bytes / **87** base64url chars; the private key is
+> a scalar, 32 bytes / **43** chars. The stored private key is **87 chars** — the
+> length of a *public* key. Almost certainly a public key was pasted into both
+> fields; both secrets are opaque blobs in a dashboard that never echoes them
+> back, so nothing would have caught it.
+>
+> This means **push cannot be fixed from code at all**, and the original diagnosis
+> ("one line of config", "it is a dashboard edit") was too optimistic — it fixed
+> the error that was on screen, not the one underneath it.
+>
+> To actually fix it, in order:
+>
+> 1. **If you still have the original keypair**, set `VAPID_PRIVATE_KEY` to the
+>    43-char private half that matches public key `BNpowSgl…E1w` (the value
+>    hardcoded in `src/lib/push.ts:7`, which every existing subscription is bound
+>    to). Nothing else changes and the 6 existing subscriptions keep working.
+> 2. **If the private key is lost, the keypair must be rotated** — there is no way
+>    to recover it from the public half. Generate a new pair
+>    (`npx web-push generate-vapid-keys`), then set **all three**:
+>    `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` as edge-function secrets, and the
+>    hardcoded `VAPID_PUBLIC_KEY` in `src/lib/push.ts` (a code change and a
+>    deploy, not just a dashboard edit — the client and server halves must match
+>    or every send fails).
+>
+>    Rotation invalidates all 6 existing subscriptions. Note that the pruning
+>    logic in `send-push` only deletes on **404/410**; a key mismatch returns
+>    **403**, which is counted as `failed` and left in the table. After a rotation
+>    those rows need clearing manually so users are re-prompted, or they will sit
+>    there failing forever.
+> 3. Also fix `VAPID_SUBJECT` regardless. Push now survives it, but on a
+>    substitute, and the code logs loudly about that on purpose.
 
 This is not theoretical, and it explains the whole reminder story:
 
@@ -190,7 +241,23 @@ These matter because without them the plan above cannot be evaluated.
    have silently turned "I give up" into "I claim the win", with no compile or
    runtime error.
 
-4. **`rewards-grant` is deployed, ACTIVE, and has no caller anywhere in the repo**
+4. ~~**The push cron jobs had no HTTP timeout.**~~ **FIXED 2026-07-30**
+   (`push_cron_http_timeout`). Both `daily-promo-push` and
+   `mode-availability-reminders` called `net.http_post` without
+   `timeout_milliseconds`, inheriting pg_net's **5000 ms** default. This was
+   invisible for as long as `send-push` was returning 503 on the malformed
+   subject, because a fail-fast error arrives well inside 5s. The first run
+   after the subject was made non-fatal timed out at **5001 ms**
+   (`timed_out=true`, `status_code` NULL) — so the cron path could never have
+   observed a 2xx even with correct keys. Now 30000 ms; re-firing the reminder
+   job returns a real **200 `{"scanned":8,"notified":0}`**.
+
+   Worth remembering as a shape: `cron.job_run_details.status='succeeded'` only
+   means `net.http_post` was *queued*. Every real outcome — status code,
+   timeout, error — is in `net._http_response`, and a timeout there looks like
+   nothing at all rather than like a failure.
+
+5. **`rewards-grant` is deployed, ACTIVE, and has no caller anywhere in the repo**
    (carried over from `docs/REPO_MAP.md`). Either it is dead and should go, or
    something is meant to call it and does not.
 
@@ -198,8 +265,10 @@ These matter because without them the plan above cannot be evaluated.
 
 ## Order of work
 
-1. Fix `VAPID_SUBJECT`; confirm a 200 from `send-push` and a real notification on a
-   device. _(config, minutes)_
+1. **Fix `VAPID_PRIVATE_KEY`** (and `VAPID_SUBJECT`), then confirm a 200 from
+   `send-push` and a real notification on a device. _(config — but see the P0
+   amendment: if the private key is lost this becomes a keypair rotation, which
+   is a code change plus a subscription cleanup, not minutes)_
 2. Enable Web Analytics if it is off. _(toggle, minutes)_
 3. Schedule a Mega event. _(data, minutes)_
 4. Write `match_source`; add forfeit timing. _(small)_
