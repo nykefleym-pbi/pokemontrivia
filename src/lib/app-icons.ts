@@ -12,7 +12,9 @@
  *   public/trophies/ — achievement trophies + the two Arena tier badges
  *   public/items/    — item category art
  *   public/loading/  — boot loading-screen artwork, one picked at random per open
+ *   public/versus/   — face-off backdrops; catalogued in lib/versus-backdrops.ts
  */
+import { DEFAULT_VERSUS_BACKDROP_ID, versusBackdropSrc } from "@/lib/versus-backdrops";
 
 /** Profile buttons and one-off chrome. */
 export const UI_ICON = {
@@ -37,17 +39,14 @@ export const REWARD_ICON = {
 } as const;
 
 /**
- * Full-bleed backdrop behind the pre-battle VS screen.
+ * Backdrop for any VS-screen half whose trainer has none of their own — the
+ * opponent's side (their pick is not synced) and yours before you have chosen.
  *
- * One portrait image; the VS screen fills both halves with it (top anchored to
- * the top edge, bottom to the bottom) so the horizon reads as continuous across
- * the divide — the same trick Pokémon GO uses.
- *
- * Null until the artwork lands, which makes the screen fall back to a themed
- * gradient rather than a broken image. Dropping a file at
- * `public/versus/backdrop.webp` and setting this string is the whole swap.
+ * This is Forest, the default of the `VERSUS_BACKDROPS` catalogue rather than a
+ * separate file, so "the shared fallback" and "what a new player sees" cannot
+ * drift apart. Your own half comes from `versusBackdropSrc(versusBackdropId)`.
  */
-export const VERSUS_BACKDROP: string | null = null;
+export const VERSUS_BACKDROP: string = versusBackdropSrc(DEFAULT_VERSUS_BACKDROP_ID);
 
 /**
  * The Training Bot's face-off presence: its avatar and its own half of the

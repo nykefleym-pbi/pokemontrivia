@@ -13,6 +13,7 @@ import { VersusScreen } from "@/components/versus-screen";
 import { trainingBotSide } from "@/lib/training-bot";
 import { ScanPanel } from "@/components/NearbyBattleSheet";
 import { trainerSpriteUrl } from "@/lib/game-data";
+import { versusBackdropSrc } from "@/lib/versus-backdrops";
 import { ITEM_BY_ID } from "@/content/items";
 import { ARENA_REWARD_SLOTS, trophyTier, type TrophyTier } from "@/lib/arena-rewards";
 import { stopBgm } from "@/lib/audio";
@@ -144,6 +145,7 @@ function ArenaPage() {
   const trainerName = useGameStore((s) => s.trainerName);
   const level = useGameStore((s) => s.level);
   const arenaStats = useGameStore((s) => s.arenaStats);
+  const versusBackdropId = useGameStore((s) => s.versusBackdropId);
   const claimArenaReward = useGameStore((s) => s.claimArenaReward);
 
   const [scanOpen, setScanOpen] = useState(false);
@@ -185,6 +187,17 @@ function ArenaPage() {
       cancelled = true;
     };
   }, []);
+
+  // Warm the two backdrops the face-off is about to need. The whole point of
+  // putting that screen up within 83ms of the tap is undone if it then spends
+  // a few hundred milliseconds on a bare gradient waiting for artwork; fetched
+  // here, it is in cache before the Battle button is pressed.
+  useEffect(() => {
+    for (const src of new Set([versusBackdropSrc(versusBackdropId), VERSUS_BACKDROP])) {
+      const img = new Image();
+      img.src = src;
+    }
+  }, [versusBackdropId]);
 
   useEffect(() => {
     if (hydrated && !hasOnboarded) navigate({ to: "/" });
@@ -400,6 +413,7 @@ function ArenaPage() {
           spriteId: trainerSprite,
           level,
           rating: board.me?.rating ?? null,
+          backdrop: versusBackdropSrc(versusBackdropId),
         }}
         // The bot appears the moment the search gives up, so the handover looks
         // like an opponent arriving rather than the search failing.
