@@ -39,31 +39,32 @@ export const Route = createFileRoute("/shop")({
 type Category = ItemCategory;
 
 /**
- * A true corner ribbon: a rotated banner anchored past the card's corner so its
- * ends run off the edge, rather than a tab tucked inside it.
+ * A horizontal ribbon tag, pinned to the card's top-right and running off the
+ * edge.
  *
- * The first version was a rounded tab in the corner, which read as a chip that
- * had drifted out of place. A ribbon has to overhang to look like a ribbon, so
- * this deliberately sits outside the card bounds and relies on the card's
- * `overflow-hidden` to clip it.
+ * This was a 45° corner banner. A diagonal band across the top-right corner
+ * cuts straight through the one column that has to stay readable — the price —
+ * and no amount of padding fixes that without pushing the price off-centre.
+ * Horizontal keeps the ribbon read (it still overhangs, and the card's
+ * `overflow-hidden` still clips it) while confining it to a 22px strip the
+ * price simply starts below.
  *
- * The offsets are load-bearing and were measured, not guessed: a 160px band at
- * top 18 / right -46 puts the band's CENTRE on the corner's diagonal, which is
- * what keeps the label whole. An earlier 128px band at right -36 pushed the
- * centre past the corner and the card clipped "WEEKLY SPECIAL" down to
- * "EKLY SPECIAL". The label is also `font-extrabold` rather than the pixel
- * face, because the pixel face has no small size that stays legible at the
- * angle.
+ * The left end is notched into a pennant by `clip-path` rather than rounded,
+ * which is what separates "ribbon" from "chip that drifted into the corner".
+ * The label is `font-extrabold`, not the pixel face — the pixel face has no
+ * small size that stays legible.
  */
-function CornerRibbon({ label, bg }: { label: string; bg: string }) {
+function RibbonTag({ label, bg }: { label: string; bg: string }) {
   return (
-    <div
-      aria-hidden={false}
-      className="pointer-events-none absolute -right-[46px] top-[18px] z-20 w-[160px] rotate-45 py-1 text-center text-[9px] font-extrabold uppercase tracking-wider text-white shadow-md"
-      style={{ background: bg }}
+    <span
+      className="pointer-events-none absolute -right-1 top-3 z-20 py-[5px] pl-4 pr-4 text-[9px] font-extrabold uppercase tracking-wider text-white shadow-md"
+      style={{
+        background: bg,
+        clipPath: "polygon(10px 0, 100% 0, 100% 100%, 10px 100%, 0 50%)",
+      }}
     >
       {label}
-    </div>
+    </span>
   );
 }
 
@@ -428,24 +429,23 @@ function ShopPage() {
             }
             className="relative mb-3 flex w-full items-center gap-3 overflow-hidden rounded-3xl border-2 border-white bg-gradient-to-br from-primary to-[#b5341f] p-3 pl-2 text-left shadow-card transition-transform duration-100 active:scale-[0.98] disabled:opacity-60"
           >
-            <CornerRibbon label="Weekly Special" bg="#5B3F95" />
+            <RibbonTag label="Weekly Special" bg="#5B3F95" />
             <span className="absolute left-3 top-3 z-20 rounded-full bg-poke-yellow px-2.5 py-1 font-pixel-xs uppercase leading-none text-foreground shadow-sm">
               {featured.discountPct}% Off
             </span>
-            {/* The sprite leads, on a lit circular stage. It was 56px inside an
-                80px chip beside a display-lg title, so the title won a card
-                whose whole job is to sell a piece of art. */}
+            {/* The sprite leads. It was 56px inside an 80px chip beside a
+                display-lg title, so the title won a card whose whole job is to
+                sell a piece of art.
+
+                It stood on a white-rimmed disc for a while. The disc drew a
+                hard edge right where the burst is meant to fade out, so the two
+                fought and the sprite ended up sitting in a bubble. The burst
+                and the ground shadow do the staging on their own. */}
             <div className="relative flex h-28 w-28 shrink-0 items-center justify-center">
               <SpriteBurst tint="rgba(255,214,120,0.55)" />
-              {/* The stage: a disc the item stands on, so it reads as a product
-                  on display rather than a sticker floating on a gradient. */}
               <div
                 aria-hidden
                 className="absolute bottom-2 h-6 w-20 rounded-[50%] bg-black/25 blur-[3px]"
-              />
-              <div
-                aria-hidden
-                className="absolute h-[86px] w-[86px] rounded-full border-2 border-white/40 bg-white/15"
               />
               <ItemIcon item={featured.item} className="relative h-20 w-20 drop-shadow-lg" />
             </div>
@@ -455,7 +455,7 @@ function ShopPage() {
                 {featured.item.desc}
               </div>
             </div>
-            <div className="flex shrink-0 flex-col items-end gap-1 pt-8">
+            <div className="flex shrink-0 flex-col items-end gap-1 pt-7">
               <span className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-sm font-extrabold text-primary">
                 <AppIcon src={COIN_ICON} alt="" className="h-4 w-4" />
                 {featured.discountedCost.toLocaleString()}
@@ -477,7 +477,7 @@ function ShopPage() {
             onClick={() => setBundleConfirm(bundle)}
             className="relative mb-5 flex w-full items-center gap-3 overflow-hidden rounded-3xl border-2 border-white bg-gradient-to-br from-[#6B4FA0] to-[#3F2A6E] p-3 text-left shadow-card transition-transform duration-100 active:scale-[0.98]"
           >
-            <CornerRibbon label={bundle.ribbon} bg="var(--brand-red, #E3350D)" />
+            <RibbonTag label={bundle.ribbon} bg="var(--brand-red, #E3350D)" />
             {/* Bare overlapping sprites on one shared burst. Each used to sit in
                 its own bordered disc, which read as three separate buttons
                 rather than as one pile of loot. */}
@@ -511,7 +511,7 @@ function ShopPage() {
                 })}
               </div>
             </div>
-            <div className="flex shrink-0 flex-col items-end gap-1 pt-8">
+            <div className="flex shrink-0 flex-col items-end gap-1 pt-7">
               <span className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-sm font-extrabold text-[#3F2A6E]">
                 <AppIcon src={COIN_ICON} alt="" className="h-4 w-4" />
                 {bundle.cost.toLocaleString()}

@@ -1,14 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, ChevronLeft, Check } from "lucide-react";
+import { Search, ChevronLeft } from "lucide-react";
 import { useGameStore } from "@/lib/store";
-import { STARTING_PARTNERS, type PokeEntry, type PokeType } from "@/lib/pokemon-data";
-import { PartnerTypeFilter } from "@/components/partner-type-filter";
-import { matchesPartnerFilters, partnerTypeOptions } from "@/lib/partner-filter";
+import { STARTING_PARTNERS, type PokeEntry } from "@/lib/pokemon-data";
+import { matchesPartnerSearch } from "@/lib/partner-filter";
 import { toast } from "sonner";
 import { getAbilityById, rollAbilityId } from "@/lib/abilities";
-import { TypeBadge, PokemonSprite } from "@/components/game-ui";
+import { TypeBadge, PokeballSpinner, PokemonSprite } from "@/components/game-ui";
 import { TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
 import { trainerQuote } from "@/lib/trainer-quotes";
 import { Button } from "@/components/ui/button";
@@ -65,10 +64,20 @@ function SplashPage() {
                 "radial-gradient(circle at 15% 12%, oklch(0.9 0.13 95 / 0.55) 0%, transparent 42%), radial-gradient(circle at 88% 90%, oklch(0.62 0.22 25 / 0.16) 0%, transparent 48%), linear-gradient(168deg, oklch(0.975 0.025 95) 0%, oklch(0.93 0.05 230) 100%)",
             }}
           >
-            {/* decorative ring outlines */}
-            <div className="pointer-events-none absolute -right-[120px] -top-20 h-80 w-80 rounded-full border-[26px] border-poke-dark/5" />
-            <div className="pointer-events-none absolute right-3 top-[54px] h-[52px] w-[52px] rounded-full border-[12px] border-poke-dark/5" />
-            <div className="pointer-events-none absolute -left-[90px] bottom-[90px] h-60 w-60 rounded-full border-[22px] border-poke-dark/5" />
+            {/* Backdrop Pokéballs. These were plain ring outlines, which read as
+                generic circles on a screen whose whole job is to say what game
+                this is. Same component and the same low opacity that Home's
+                "Up for a battle?" card already uses for its backdrop ball, so
+                the two screens share one decorative language. */}
+            <div className="pointer-events-none absolute -right-[120px] -top-20 opacity-[0.07]">
+              <PokeballSpinner size={320} />
+            </div>
+            <div className="pointer-events-none absolute right-3 top-[54px] opacity-[0.07]">
+              <PokeballSpinner size={52} />
+            </div>
+            <div className="pointer-events-none absolute -left-[90px] bottom-[90px] opacity-[0.07]">
+              <PokeballSpinner size={240} />
+            </div>
 
             {/* hero block */}
             <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-7 pt-[calc(env(safe-area-inset-top)+2rem)] text-center">
@@ -170,33 +179,26 @@ function SpriteFloatRow() {
 type Step = "name" | "trainer" | "pokemon";
 const STEPS: Step[] = ["name", "trainer", "pokemon"];
 
-const TYPE_BG: Record<string, string> = {
-  fire: "bg-orange-500",
-  water: "bg-blue-500",
-  grass: "bg-green-500",
-  electric: "bg-yellow-400",
-  normal: "bg-stone-400",
-  ghost: "bg-purple-600",
-  poison: "bg-fuchsia-600",
-  psychic: "bg-pink-500",
-  bug: "bg-lime-500",
-  rock: "bg-yellow-700",
-  ground: "bg-amber-600",
-  fairy: "bg-pink-400",
-  fighting: "bg-red-700",
-  flying: "bg-sky-400",
-  ice: "bg-cyan-400",
-  dragon: "bg-indigo-600",
-  dark: "bg-zinc-700",
-  steel: "bg-slate-400",
-};
+/**
+ * The primary CTA on all three onboarding steps.
+ *
+ * `shadow-pop` is a red drop glow (`--shadow-pop` is oklch red at 45% alpha).
+ * On a red button it reads as a halo bleeding outwards rather than as
+ * elevation, and every surface in this flow was wearing it — the avatar tiles
+ * and the search fields too — which is what made all three screens look washed
+ * pink. A white rim gives the same raised read against the cream gradient
+ * without tinting what is behind it, and matches the rim Home's Start Battle
+ * already uses.
+ */
+const ONBOARD_CTA =
+  "h-[58px] w-full rounded-full border-2 border-white bg-primary text-[17px] font-bold " +
+  "shadow-card active:scale-95 disabled:opacity-50";
 
 function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: string }) {
   const [substep, setSubstep] = useState<Step>("name");
   const [name, setName] = useState("");
   const [trainerSprite, setTrainerSprite] = useState<string>("red");
   const [query, setQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState<PokeType | null>(null);
   const [trainerQuery, setTrainerQuery] = useState("");
   const [pick, setPick] = useState<PokeEntry | null>(null);
   // Rolled once per selection (not re-rolled on every render) so the ability
@@ -257,10 +259,9 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
     return () => window.clearTimeout(t);
   }, [name, claimedName]);
 
-  const typeOptions = useMemo(() => partnerTypeOptions(STARTING_PARTNERS), []);
   const results = useMemo(
-    () => STARTING_PARTNERS.filter((p) => matchesPartnerFilters(p, query, typeFilter)).slice(0, 24),
-    [query, typeFilter],
+    () => STARTING_PARTNERS.filter((p) => matchesPartnerSearch(p, query)).slice(0, 24),
+    [query],
   );
 
   const trainerResults = useMemo(() => {
@@ -355,7 +356,7 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
         <button
           onClick={goBack}
           aria-label="Back"
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-card shadow-pop active:scale-95"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-card shadow-card active:scale-95"
         >
           <ChevronLeft className="h-5 w-5 text-foreground" />
         </button>
@@ -410,7 +411,11 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Ash"
                 maxLength={TRAINER_NAME_MAX}
-                className="h-[54px] rounded-full border-[2.5px] border-primary bg-card px-5 text-[17px] font-bold"
+                // 3px, not 2.5px. A fractional border width on a `rounded-full`
+                // box makes the browser round each side independently, and the
+                // seam shows up as a notch chipped out of the pill's left cap
+                // where the two arc halves meet. Whole pixels, no chip.
+                className="h-[54px] rounded-full border-[3px] border-primary bg-card px-5 text-[17px] font-bold"
                 autoFocus
               />
               <p
@@ -437,7 +442,7 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
                   !name.trim()
                 }
                 onClick={() => void handleNameNext()}
-                className="h-[58px] w-full rounded-full bg-primary text-[17px] font-bold shadow-pop active:scale-95 disabled:opacity-50"
+                className={ONBOARD_CTA}
               >
                 {claiming ? "Reserving…" : "Next: Choose Avatar"}
               </Button>
@@ -458,7 +463,7 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
                 value={trainerQuery}
                 onChange={(e) => setTrainerQuery(e.target.value)}
                 placeholder="Search trainers..."
-                className="h-12 rounded-full border-0 bg-card pl-11 text-sm shadow-pop"
+                className="h-12 rounded-full border-0 bg-card pl-11 text-sm shadow-card"
               />
             </div>
 
@@ -469,15 +474,10 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
                   <button
                     key={t.id}
                     onClick={() => setTrainerSprite(t.id)}
-                    className={`relative flex flex-col items-center gap-1 rounded-[20px] bg-card px-1.5 py-2.5 shadow-pop transition ${
-                      selected ? "border-[2.5px] border-primary" : "border-2 border-transparent"
+                    className={`relative flex flex-col items-center gap-1 rounded-[20px] border-[3px] bg-card px-1.5 py-2.5 shadow-card transition ${
+                      selected ? "border-primary" : "border-transparent"
                     }`}
                   >
-                    {selected && (
-                      <span className="absolute right-1 top-1 flex h-[22px] w-[22px] items-center justify-center rounded-full bg-primary text-white shadow">
-                        <Check className="h-3 w-3" strokeWidth={3} />
-                      </span>
-                    )}
                     <img
                       src={trainerSpriteUrl(t.id)}
                       alt={t.name}
@@ -505,7 +505,7 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
             </div>
 
             {selectedTrainer && (
-              <div className="mt-3.5 flex items-center gap-3.5 rounded-[20px] border-[1.5px] border-primary/25 bg-primary/[0.07] p-3.5">
+              <div className="mt-3.5 flex items-center gap-3.5 rounded-[20px] border-2 border-primary/25 bg-primary/[0.07] p-3.5">
                 <img
                   src={trainerSpriteUrl(selectedTrainer.id)}
                   alt={selectedTrainer.name}
@@ -526,7 +526,7 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
               <Button
                 size="lg"
                 onClick={() => setSubstep("pokemon")}
-                className="h-[58px] w-full rounded-full bg-primary text-[17px] font-bold shadow-pop active:scale-95"
+                className={ONBOARD_CTA}
               >
                 Next: Choose Pokémon
               </Button>
@@ -549,20 +549,24 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search by name or type..."
-                className="h-12 rounded-full border-0 bg-card pl-11 text-sm shadow-pop"
+                className="h-12 rounded-full border-0 bg-card pl-11 text-sm shadow-card"
               />
             </div>
 
-            <div className="mt-2.5">
-              <PartnerTypeFilter
-                options={typeOptions}
-                value={typeFilter}
-                onChange={setTypeFilter}
-              />
-            </div>
+            {/* No type-chip row. Typing a type into the box above already
+                filters by it (`matchesPartnerSearch` matches names AND types),
+                so the chips were a second control for something the search box
+                does — and they cost the row of height that was pushing Start
+                Adventure below the fold. Profile's partner picker keeps them;
+                it has the room. */}
 
-            {/* 9 rather than the old 6: with a type chosen, two rows made a
-                well-stocked type look nearly empty. */}
+            {/* 9 rather than the old 6: with a type searched, two rows made a
+                well-stocked type look nearly empty.
+
+                Cards are deliberately short. At a 76px sprite plus a name plus
+                a type badge, three rows plus the ability panel ran past the
+                bottom of a 390×844 screen and buried the only button that
+                finishes onboarding. */}
             <div className="mt-3 grid grid-cols-3 gap-2">
               {results.slice(0, 9).map((p) => {
                 const selected = pick?.id === p.id;
@@ -570,20 +574,15 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
                   <button
                     key={p.id}
                     onClick={() => setPick(p)}
-                    className={`relative flex flex-col items-center rounded-2xl border-2 bg-card p-3 shadow-card transition ${
+                    className={`relative flex flex-col items-center rounded-2xl border-2 bg-card px-2 py-1.5 shadow-card transition ${
                       selected ? "border-primary" : "border-transparent"
                     }`}
                   >
-                    {selected && (
-                      <span className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white shadow">
-                        <Check className="h-3.5 w-3.5" strokeWidth={3} />
-                      </span>
-                    )}
-                    <PokemonSprite id={p.id} alt={p.name} className="sprite h-[76px] w-[76px]" />
-                    <span className="mt-1 truncate text-xs font-bold text-foreground">
+                    <PokemonSprite id={p.id} alt={p.name} className="sprite h-[54px] w-[54px]" />
+                    <span className="max-w-full truncate text-[11px] font-bold text-foreground">
                       {p.name}
                     </span>
-                    <div className="mt-1">
+                    <div className="mt-0.5">
                       <TypeBadge type={p.types[0]} size="sm" />
                     </div>
                   </button>
@@ -596,36 +595,12 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
               )}
             </div>
 
-            {pick &&
-              (() => {
-                const ability = getAbilityById(previewAbilityId);
-                if (!ability) return null;
-                return (
-                  <div className="mt-5 rounded-2xl bg-primary/10 p-3">
-                    <div className="font-pixel-xs uppercase text-foreground/60">Its ability</div>
-                    <div className="mt-2 flex items-center gap-3">
-                      <div
-                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white shadow ${TYPE_BG[ability.type] ?? "bg-primary"}`}
-                      >
-                        <span className="text-sm">●</span>
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-sm font-bold text-foreground">{ability.name}</div>
-                        <p className="text-xs leading-snug text-foreground/70">
-                          {ability.description}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
-
-            <div className="mt-auto pt-6">
+            <div className="mt-auto pt-5">
               <Button
                 size="lg"
                 disabled={!pick}
                 onClick={start}
-                className="h-14 w-full rounded-full bg-primary text-base font-semibold shadow-pop active:scale-95 disabled:opacity-50"
+                className={ONBOARD_CTA}
               >
                 Start Adventure
               </Button>
