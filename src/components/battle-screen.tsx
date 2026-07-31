@@ -1501,9 +1501,13 @@ function BattleMode({
         }
       />
       {/* The stage is absolutely positioned, so this spacer is what pushes the
-          question card to the bottom — and it is also the fade, so the gradient
-          can never run on past the card or stop short of it. */}
-      <div className="battle-fade" aria-hidden />
+          question card to the bottom of the screen. It used to carry a
+          fade-to-white gradient as well; that is gone — as a flex child its
+          height moved whenever the card's content changed (a feedback line
+          appearing, an item row), so the gradient jumped around mid-battle and
+          washed parts of the field on and off. The artwork fades out on its own
+          at the bottom, which is what the fade was imitating. */}
+      <div className="min-h-0 flex-1" />
 
       {/* intro banner overlay */}
       <AnimatePresence>

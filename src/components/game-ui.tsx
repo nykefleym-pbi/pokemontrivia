@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Backpack, Info } from "lucide-react";
 import { spriteFallbacks, type PokeType } from "@/lib/pokemon-data";
@@ -245,20 +245,100 @@ export const XpBar = React.memo(function XpBar({ xp, need }: { xp: number; need:
   );
 });
 
+/**
+ * The four ball tiers, in catch-rate order — which is also the order they read
+ * as an upgrade, so it is the order `BallCycler` runs them in.
+ *
+ * Colours are taken from the official designs rather than invented: Great Ball
+ * blue with red flank stripes, Ultra Ball black with the yellow "H", Master Ball
+ * purple with the pink M between two white bulbs. Each is built from the same
+ * half/half/band/button skeleton as the Poké Ball so the flip between any two
+ * of them lands on identical geometry — only the top half's livery changes.
+ */
+export type BallVariant = "poke" | "great" | "ultra" | "master";
+
+const BALL_ORDER: readonly BallVariant[] = ["poke", "great", "ultra", "master"];
+
+const BALL_TOP: Record<BallVariant, string> = {
+  poke: "#EE4B3C",
+  great: "#2E6FD9",
+  ultra: "#2B2F36",
+  master: "#6A3FA0",
+};
+
+/** The livery painted over the top half. The Poké Ball has none — that is what
+ *  makes it the plain one. */
+function BallLivery({ variant, size }: { variant: BallVariant; size: number }) {
+  if (variant === "great") {
+    // Two red flank stripes sweeping up from the band, white-edged, as on the
+    // real thing. Rotated outward so they follow the curve rather than sitting
+    // flat on it.
+    return (
+      <>
+        <div
+          className="absolute left-[3%] top-[2%] h-[46%] w-[17%] -rotate-[20deg] rounded-b-full bg-[#E23B2E] ring-[1.5px] ring-white/80"
+          aria-hidden
+        />
+        <div
+          className="absolute right-[3%] top-[2%] h-[46%] w-[17%] rotate-[20deg] rounded-b-full bg-[#E23B2E] ring-[1.5px] ring-white/80"
+          aria-hidden
+        />
+      </>
+    );
+  }
+  if (variant === "ultra") {
+    // The yellow "H": two uprights joined by a crossbar.
+    return (
+      <>
+        <div className="absolute left-[13%] top-[6%] h-[42%] w-[14%] bg-[#F5C93B]" aria-hidden />
+        <div className="absolute right-[13%] top-[6%] h-[42%] w-[14%] bg-[#F5C93B]" aria-hidden />
+        <div className="absolute left-[13%] top-[26%] h-[13%] w-[74%] bg-[#F5C93B]" aria-hidden />
+      </>
+    );
+  }
+  if (variant === "master") {
+    return (
+      <>
+        <div
+          className="absolute left-[9%] top-[13%] rounded-full bg-white"
+          style={{ width: size * 0.21, height: size * 0.21 }}
+          aria-hidden
+        />
+        <div
+          className="absolute right-[9%] top-[13%] rounded-full bg-white"
+          style={{ width: size * 0.21, height: size * 0.21 }}
+          aria-hidden
+        />
+        <span
+          className="absolute left-1/2 top-[7%] -translate-x-1/2 font-black leading-none text-[#E85FA8]"
+          style={{ fontSize: size * 0.34 }}
+          aria-hidden
+        >
+          M
+        </span>
+      </>
+    );
+  }
+  return null;
+}
+
 export const PokeballSpinner = React.memo(function PokeballSpinner({
   size = 64,
   spinning = false,
+  variant = "poke",
 }: {
   size?: number;
   spinning?: boolean;
+  variant?: BallVariant;
 }) {
   return (
     <div
       className={`relative overflow-hidden rounded-full border-[3px] border-poke-dark ${spinning ? "animate-pokeball" : ""}`}
       style={{ width: size, height: size }}
     >
-      {/* Top half — red */}
-      <div className="absolute inset-x-0 top-0 h-1/2 bg-poke-red" />
+      {/* Top half — the tier's colour */}
+      <div className="absolute inset-x-0 top-0 h-1/2" style={{ background: BALL_TOP[variant] }} />
+      <BallLivery variant={variant} size={size} />
       {/* Bottom half — white */}
       <div className="absolute inset-x-0 bottom-0 h-1/2 bg-white" />
       {/* Black band */}
@@ -276,6 +356,50 @@ export const PokeballSpinner = React.memo(function PokeballSpinner({
     </div>
   );
 });
+
+/**
+ * A ball that flips itself over to the next tier every few seconds.
+ *
+ * The swap happens at the animation's halfway point, when the disc is edge-on
+ * and nothing of either face is visible — that is what sells it as one object
+ * turning over rather than two images cross-fading. `HALF_MS` therefore has to
+ * stay exactly half of the `ball-flip` duration in styles.css; they are a pair.
+ *
+ * The timer is re-armed from inside the effect rather than run as an interval,
+ * so a tab that was backgrounded mid-flip resumes cleanly instead of firing a
+ * queued burst of swaps.
+ *
+ * Reduced motion is handled in CSS: the keyframes are stilled along with every
+ * other decorative loop, and the ball simply cuts to the next tier.
+ */
+const FLIP_EVERY_MS = 3200;
+const FLIP_MS = 700;
+const HALF_MS = FLIP_MS / 2;
+
+export function BallCycler({ size = 56 }: { size?: number }) {
+  const [index, setIndex] = useState(0);
+  const [flipping, setFlipping] = useState(false);
+
+  useEffect(() => {
+    const start = setTimeout(() => {
+      setFlipping(true);
+      const swap = setTimeout(() => setIndex((i) => (i + 1) % BALL_ORDER.length), HALF_MS);
+      const end = setTimeout(() => setFlipping(false), FLIP_MS);
+      timers.push(swap, end);
+    }, FLIP_EVERY_MS);
+    const timers: ReturnType<typeof setTimeout>[] = [start];
+    return () => timers.forEach(clearTimeout);
+    // Re-runs on every settle, which is what re-arms the next flip.
+  }, [index]);
+
+  return (
+    <div data-testid="ball-cycler" style={{ perspective: size * 6 }}>
+      <div className={flipping ? "animate-ball-flip" : undefined}>
+        <PokeballSpinner size={size} variant={BALL_ORDER[index]} />
+      </div>
+    </div>
+  );
+}
 
 function BurnEffect() {
   return (
@@ -529,23 +653,21 @@ export function PokeballPattern({ marks }: { marks: DailyMark[] }) {
  * cover` on the screen container would re-crop on every one of those and slide
  * the sprites off the platforms they are standing on.
  *
- * The two sprite slots sit ON the painted platforms; `PLATFORM_SINK` is how far
- * a sprite's feet drop below the pad's centre line so it reads as standing on
- * the face rather than hovering over the back lip. The two panel slots go in the
- * empty ground the composition leaves either side of the diagonal: the enemy's
- * above and left of its pad, yours across from yours.
+ * The two sprite slots sit ON the painted platforms; each pad's own `sink` (see
+ * lib/battle-field.ts) absorbs the transparent padding underneath a PokeAPI
+ * sprite, which is what otherwise leaves the creature hovering above its pad
+ * rather than standing on it. The two panel slots go in the empty ground the
+ * composition leaves either side of the diagonal: the enemy's above and left of
+ * its pad, yours across from yours.
  *
  * The player panel's `top-[30%]` is chosen so the card is level with the pad it
  * belongs to (pad centre 34.8%, card ~10% tall), not merely below it — at 40%
  * the two read as unrelated and the card drifted into the question card's
- * shoulder. It still clears the enemy sprite, which bottoms out at 24.7%.
+ * shoulder.
  *
- * The `z-10` on every slot is load-bearing. `.battle-fade` sits at `z-5`, so
- * without it the fade would wash over the player's sprite and panel as well as
- * the ground behind them.
+ * Every slot carries `z-10` so it sits above the artwork layer rather than
+ * being painted into it.
  */
-const PLATFORM_SINK = 1.6; // % of stage height, feet below pad centre
-
 export function BattleStage({
   enemySprite,
   playerSprite,
@@ -557,9 +679,9 @@ export function BattleStage({
   enemyPanel: React.ReactNode;
   playerPanel: React.ReactNode;
 }) {
-  const pad = (p: { cx: number; cy: number }) => ({
+  const pad = (p: { cx: number; cy: number; sink: number }) => ({
     left: `${p.cx}%`,
-    top: `${p.cy + PLATFORM_SINK}%`,
+    top: `${p.cy + p.sink}%`,
     transform: "translate(-50%, -100%)",
   });
   return (

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Flame, Sparkles } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
-import { PokeballSpinner, PokemonSprite, type DailyMark } from "@/components/game-ui";
+import { BallCycler, PokeballSpinner, PokemonSprite, type DailyMark } from "@/components/game-ui";
 import {
   rankForLevel,
   xpProgressInLevel,
@@ -349,7 +349,12 @@ export function BattleHome({
             <PokeballSpinner size={180} />
           </div>
           <div className="relative flex items-center gap-4">
-            <PokeballSpinner size={56} spinning={loading} />
+            {/* Cycles Poke -> Great -> Ultra -> Master, flipping over between
+                tiers. While a battle is being fetched it reverts to the plain
+                spinning Poke Ball: two different animations on one object at
+                once reads as a glitch, and the spin is load-bearing (it is the
+                only "working on it" cue this card has). */}
+            {loading ? <PokeballSpinner size={56} spinning /> : <BallCycler size={56} />}
             <div className="min-w-0 flex-1">
               <h3 className="font-display-md text-foreground">
                 {loading ? "Summoning..." : "Up for a battle?"}
