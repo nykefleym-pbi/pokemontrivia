@@ -100,7 +100,7 @@ function SplashPage() {
             <div className="relative z-10 flex w-full flex-col gap-3 px-7 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-7">
               <Button
                 size="lg"
-                className="h-[58px] w-full rounded-full border-2 border-white bg-primary text-[17px] font-bold text-primary-foreground shadow-card active:scale-95"
+                className="h-[58px] w-full rounded-full border-2 border-white bg-primary text-[17px] font-bold text-primary-foreground shadow-card press"
                 onClick={() => setStep("create")}
               >
                 New Trainer
@@ -108,7 +108,7 @@ function SplashPage() {
               <Button
                 size="lg"
                 variant="outline"
-                className="h-[58px] w-full rounded-full border-2 border-white bg-card text-[17px] font-bold text-foreground shadow-card active:scale-95"
+                className="h-[58px] w-full rounded-full border-2 border-white bg-card text-[17px] font-bold text-foreground shadow-card press"
                 onClick={() => {
                   useGameStore.getState().startGuestSession();
                   navigate({ to: "/battle", search: { autostart: 1 } as never });
@@ -192,7 +192,7 @@ const STEPS: Step[] = ["name", "trainer", "pokemon"];
  */
 const ONBOARD_CTA =
   "h-[58px] w-full rounded-full border-2 border-white bg-primary text-[17px] font-bold " +
-  "shadow-card active:scale-95 disabled:opacity-50";
+  "shadow-card press disabled:opacity-50";
 
 function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: string }) {
   const [substep, setSubstep] = useState<Step>("name");
@@ -356,7 +356,7 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
         <button
           onClick={goBack}
           aria-label="Back"
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-card shadow-card active:scale-95"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-card shadow-card press"
         >
           <ChevronLeft className="h-5 w-5 text-foreground" />
         </button>
@@ -474,7 +474,7 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
                   <button
                     key={t.id}
                     onClick={() => setTrainerSprite(t.id)}
-                    className={`relative flex flex-col items-center gap-1 rounded-[20px] border-[3px] bg-card px-1.5 py-2.5 shadow-card transition ${
+                    className={`press relative flex flex-col items-center gap-1 rounded-[20px] border-[3px] bg-card px-1.5 py-2.5 shadow-card ${
                       selected ? "border-primary" : "border-transparent"
                     }`}
                   >
@@ -570,7 +570,7 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
                   <button
                     key={p.id}
                     onClick={() => setPick(p)}
-                    className={`relative flex flex-col items-center rounded-2xl border-2 bg-card px-2 py-1.5 shadow-card transition ${
+                    className={`press relative flex flex-col items-center rounded-2xl border-2 bg-card px-2 py-1.5 shadow-card ${
                       selected ? "border-primary" : "border-transparent"
                     }`}
                   >

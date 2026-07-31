@@ -52,7 +52,7 @@ function NavCell({
     <Link
       to={to}
       aria-label={label}
-      className="relative flex h-full flex-col items-center justify-center transition active:scale-95"
+      className="relative flex h-full flex-col items-center justify-center transition press"
     >
       {active ? (
         <motion.span

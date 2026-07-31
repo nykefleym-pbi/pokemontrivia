@@ -1125,7 +1125,7 @@ function BattlePage() {
                               });
                               setEngageActive(0);
                             }}
-                            className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/25 text-[15px] font-bold leading-none text-white transition active:scale-95"
+                            className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/25 text-[15px] font-bold leading-none text-white transition press"
                           >
                             ×
                           </button>
@@ -1201,7 +1201,7 @@ function BattlePage() {
                             setEngageCards(null);
                             p();
                           }}
-                          className="mt-4 flex h-[50px] w-full items-center justify-center rounded-full text-[16px] font-extrabold active:translate-y-0.5"
+                          className="mt-4 flex h-[50px] w-full items-center justify-center rounded-full text-[16px] font-extrabold press-push"
                           style={{
                             background: t.ctaBg,
                             color: t.ctaColor,
@@ -1236,7 +1236,7 @@ function BattlePage() {
                 recordEngageDismiss();
                 setEngageCards(null);
               }}
-              className="mx-auto mt-4 block text-[15px] font-semibold text-white/55"
+              className="mx-auto mt-4 block text-[15px] font-semibold text-white/55 press"
             >
               Maybe later
             </button>

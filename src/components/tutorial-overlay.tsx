@@ -83,7 +83,7 @@ export function TutorialOverlay({ step, onDismiss, onSkip }: Props) {
               <div className="mt-6 flex items-center justify-between gap-3">
                 <button
                   onClick={onSkip}
-                  className="text-xs font-medium text-muted-foreground underline-offset-2 hover:underline"
+                  className="text-xs font-medium text-muted-foreground underline-offset-2 hover:underline press"
                 >
                   Skip tutorial
                 </button>

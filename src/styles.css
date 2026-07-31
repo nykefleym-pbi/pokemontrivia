@@ -395,8 +395,29 @@
 .bg-elite-victory {
   background: linear-gradient(180deg, oklch(0.85 0.18 90) 0%, oklch(0.55 0.2 30) 100%);
 }
+/* The arena backdrop, shared by every battle mode.
+ *
+ * The art is the FIRST of several background layers, with the original two
+ * gradients still underneath it. That ordering is the fallback: a browser that
+ * cannot fetch `--battle-field-art` (missing file, offline first paint, a
+ * decode error) simply paints the gradients it always did, so a battle never
+ * comes up on bare white. Drop the file in and it takes over; delete it and the
+ * app is back to where it started. No code change either way.
+ *
+ * The art sits behind a wash rather than being shown raw: the combat panels are
+ * translucent cards and the question text sits directly on this, so a
+ * full-contrast image underneath would eat the type. `--battle-field-veil` is
+ * that wash, and it is what the dark theme and Mega Raid re-point instead of
+ * swapping the artwork for a second file.
+ */
+:root {
+  --battle-field-art: url("/ui/Battle%20Field.webp");
+  --battle-field-veil: oklch(1 0 0 / 0.34);
+}
 .bg-battle-field {
   background:
+    linear-gradient(var(--battle-field-veil), var(--battle-field-veil)),
+    var(--battle-field-art) center / cover no-repeat,
     radial-gradient(ellipse at top, oklch(0.85 0.1 220) 0%, transparent 60%),
     linear-gradient(
       180deg,
@@ -404,6 +425,12 @@
       oklch(0.92 0.1 130) 60%,
       oklch(0.85 0.14 130) 100%
     );
+}
+/* Mega Raid runs gold-on-ink and cannot take a daylight field behind it. Same
+ * artwork, heavier veil — one background for every mode without making Mega's
+ * own palette illegible. */
+.bg-battle-field-ink {
+  --battle-field-veil: oklch(0.16 0.04 265 / 0.82);
 }
 
 .dark .bg-poke-cream {
@@ -416,8 +443,15 @@
     radial-gradient(ellipse at top, oklch(0.3 0.08 265) 0%, transparent 55%),
     linear-gradient(160deg, oklch(0.22 0.05 270) 0%, oklch(0.18 0.06 280) 100%);
 }
+/* Dark theme keeps the same artwork and only darkens the veil. The variable is
+ * overridden alongside the layer stack rather than instead of it, because
+ * `background` is a shorthand and this rule has to restate all four layers
+ * anyway to change the two gradients. */
 .dark .bg-battle-field {
+  --battle-field-veil: oklch(0.18 0.05 265 / 0.74);
   background:
+    linear-gradient(var(--battle-field-veil), var(--battle-field-veil)),
+    var(--battle-field-art) center / cover no-repeat,
     radial-gradient(ellipse at top, oklch(0.28 0.06 250) 0%, transparent 60%),
     linear-gradient(
       180deg,
@@ -425,6 +459,95 @@
       oklch(0.18 0.05 265) 60%,
       oklch(0.2 0.06 150) 100%
     );
+}
+
+/* The press response, for every tappable control in the app.
+ *
+ * This exists because the app had drifted into six different press depths
+ * (0.90, 0.95, 0.96, 0.97, 0.98, 0.99) spread over 126 buttons, 39 of which had
+ * no press at all, and 23 of which set a scale WITHOUT a transition — those
+ * snapped to the pressed size in a single frame instead of easing, which is why
+ * some buttons felt alive and others felt dead even though both "had" the
+ * effect. One class, one curve, no per-site tuning.
+ *
+ * Two depths, not one, and the reason is geometry rather than taste: press
+ * feedback is read as how far the EDGE travels, not as the scale factor. At
+ * 0.96 a 40px icon button moves under a millimetre while a 350px card lurches
+ * 7px on each side. Matching the factor everywhere would make the small
+ * controls feel dead and the big ones feel loose, so `.press` covers ordinary
+ * controls and `.press-lg` covers full-width cards and list rows, both on the
+ * same 110ms curve so they still read as one system.
+ *
+ * `:disabled` is excluded explicitly. Most call sites pair this with
+ * `disabled:pointer-events-none`, which already blocks `:active` — but not all
+ * do, and a disabled button that still dips reads as accepting the tap.
+ *
+ * The colour properties ride along deliberately. `.press` is unlayered, so its
+ * `transition` beats Tailwind's layered `transition`/`transition-all` utility
+ * on the same element — declaring transform alone here would silently kill the
+ * hover/selected colour easing on every call site that had one. Listing both
+ * means the class is complete on its own and the `transition` utility next to
+ * it is redundant rather than load-bearing.
+ */
+.press,
+.press-lg,
+.press-push {
+  transition:
+    transform 110ms cubic-bezier(0.2, 0, 0.2, 1),
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease,
+    box-shadow 150ms ease,
+    opacity 150ms ease;
+}
+.press:active:not(:disabled):not([aria-disabled="true"]) {
+  transform: scale(0.96);
+}
+.press-lg:active:not(:disabled):not([aria-disabled="true"]) {
+  transform: scale(0.985);
+}
+/* The other press language, for the two buttons drawn with a solid lip below
+ * them (`box-shadow: 0 4px 0` on Home's engage CTA, `border-b-4` on Who's That's
+ * cry button). Those want the face to travel DOWN into the lip; scaling them
+ * would shrink the face while the lip stayed put, which reads as a rendering
+ * bug rather than a press. Same curve as `.press`, so the two languages still
+ * feel like one app. Do not add a third. */
+.press-push:active:not(:disabled):not([aria-disabled="true"]) {
+  transform: translateY(2px);
+}
+/* Reduced motion: a scale IS motion, so drop the movement and leave the tap to
+ * the control's own colour feedback. Mirrors the `animation: none` blocks
+ * further down — both the OS preference and the in-app Settings toggle
+ * (`:root.reduce-motion`, set by RootComponent).
+ *
+ * The `:not()` chain is repeated here and it has to be. A plain `.press:active`
+ * is specificity (0,2,0) and loses to the (0,4,0) rule above, so the first
+ * version of this block set `transition: none` and then let the scale happen
+ * anyway — reduced motion made the press SNAP to 0.96 rather than removing it,
+ * which is worse than leaving it alone. Caught by forcing `:active` through CDP
+ * under `reducedMotion: "reduce"` and reading the computed transform; it is
+ * invisible to tsc, to eslint, and to a screenshot. */
+@media (prefers-reduced-motion: reduce) {
+  .press,
+  .press-lg,
+  .press-push {
+    transition: none;
+  }
+  .press:active:not(:disabled):not([aria-disabled="true"]),
+  .press-lg:active:not(:disabled):not([aria-disabled="true"]),
+  .press-push:active:not(:disabled):not([aria-disabled="true"]) {
+    transform: none;
+  }
+}
+:root.reduce-motion .press,
+:root.reduce-motion .press-lg,
+:root.reduce-motion .press-push {
+  transition: none;
+}
+:root.reduce-motion .press:active:not(:disabled):not([aria-disabled="true"]),
+:root.reduce-motion .press-lg:active:not(:disabled):not([aria-disabled="true"]),
+:root.reduce-motion .press-push:active:not(:disabled):not([aria-disabled="true"]) {
+  transform: none;
 }
 
 /* Sprite styling */

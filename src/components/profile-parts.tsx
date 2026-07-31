@@ -102,7 +102,7 @@ export function PartnerCard({
                   setEvoOpen(false);
                   onEvolve(t);
                 }}
-                className="flex flex-col items-center rounded-2xl border-2 p-3 transition hover:border-primary active:scale-95"
+                className="flex flex-col items-center rounded-2xl border-2 p-3 transition hover:border-primary press"
               >
                 <PokemonSprite id={t.id} alt={t.name} className="sprite h-16 w-16" />
                 <div className="mt-1 text-xs font-semibold">{t.name}</div>
@@ -157,14 +157,14 @@ export function FriendRow({
           onClick={onChallenge}
           disabled={challengeBusy}
           aria-label="Challenge to PvP"
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary transition active:scale-95 disabled:opacity-50"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary transition press disabled:opacity-50"
         >
           <Swords className="h-4 w-4" />
         </button>
       )}
       <button
         onClick={onRemove}
-        className="flex h-9 w-9 items-center justify-center rounded-full bg-destructive/10 text-destructive transition active:scale-95"
+        className="flex h-9 w-9 items-center justify-center rounded-full bg-destructive/10 text-destructive transition press"
       >
         <X className="h-4 w-4" />
       </button>

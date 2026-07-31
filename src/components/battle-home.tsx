@@ -22,13 +22,12 @@ import { COIN_ICON, STREAK_ICON, TP_ICON } from "@/lib/app-icons";
  * the chrome — a white rim, and a press that bounces. Keeping it as a class
  * string lets each card stay a plain button and compose its own colours.
  *
- * `active:scale-[0.97]` is the press. It needs `transition-transform` on the
- * same element and NOT `transition-all`, which would also animate the gradient
- * and make the press feel laggy on a mid-range phone.
+ * `press-lg` carries its own transition (see styles.css), so there is no
+ * `transition-*` utility here — one used to be needed and is now the thing that
+ * would fight it.
  */
 const MODE_CARD =
-  "relative overflow-hidden rounded-[18px] border-2 border-white/70 shadow-card " +
-  "transition-transform duration-100 active:scale-[0.97] disabled:active:scale-100";
+  "relative overflow-hidden rounded-[18px] border-2 border-white/70 shadow-card " + "press-lg";
 
 /**
  * The mode card's hero sprite.
@@ -388,7 +387,7 @@ export function BattleHome({
             size="lg"
             onClick={onStart}
             disabled={loading}
-            className="relative mt-4 h-14 w-full rounded-full border-2 border-white bg-primary text-base font-bold shadow-pop transition-transform duration-100 active:scale-[0.97]"
+            className="relative mt-4 h-14 w-full rounded-full border-2 border-white bg-primary text-base font-bold shadow-pop press-lg"
           >
             <Sparkles className="mr-2 h-4 w-4" />
             {loading ? "Summoning..." : "Start Battle"}

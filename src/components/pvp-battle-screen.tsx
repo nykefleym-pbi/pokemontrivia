@@ -91,7 +91,9 @@ export function PvpBattleScreen({ questions: rawQuestions, onFinish }: Props) {
   const pct = (msLeft / QUESTION_TIME_MS) * 100;
 
   return (
-    <div className="flex h-full w-full flex-col bg-poke-cream px-5 pb-8 pt-6">
+    // `bg-battle-field`, not `bg-poke-cream`: this is a battle, and it was the
+    // one mode whose questions were answered on the same paper as the Shop.
+    <div className="bg-battle-field flex h-full w-full flex-col px-5 pb-8 pt-6">
       <div className="mb-4 flex items-center justify-between">
         <div className="font-pixel-xs text-foreground/60">
           Question {index + 1} / {questions.length}
@@ -120,7 +122,7 @@ export function PvpBattleScreen({ questions: rawQuestions, onFinish }: Props) {
               key={i}
               disabled={selected !== null}
               onClick={() => handleAnswer(i)}
-              className={`rounded-2xl border-2 px-4 py-3 text-left font-display text-base transition-colors ${
+              className={`press-lg rounded-2xl border-2 px-4 py-3 text-left font-display text-base ${
                 showState && isCorrectOpt
                   ? "border-hp-good bg-hp-good/15 text-hp-good"
                   : showState && isSelected && !isCorrectOpt

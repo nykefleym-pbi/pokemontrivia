@@ -50,7 +50,7 @@ export function EggHatch() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-card shadow-card active:scale-95"
+        className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-card shadow-card press"
         aria-label="Poké Eggs"
       >
         <AppIcon src={UI_ICON.pokeEgg} className="h-7 w-7" />
@@ -74,7 +74,7 @@ export function EggHatch() {
             <button
               onClick={close}
               aria-label="Close"
-              className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-muted"
+              className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-muted press"
             >
               <svg width="12" height="12" viewBox="0 0 13 13" fill="none">
                 <path
@@ -115,7 +115,7 @@ export function EggHatch() {
                 </div>
                 <button
                   onClick={() => setResult(null)}
-                  className="mt-5 flex h-12 w-full items-center justify-center rounded-full text-[15px] font-extrabold"
+                  className="mt-5 flex h-12 w-full items-center justify-center rounded-full text-[15px] font-extrabold press-lg"
                   style={{
                     background: "linear-gradient(95deg, var(--brand-gold), var(--brand-amber))",
                     color: "var(--brand-ink)",
@@ -171,7 +171,7 @@ export function EggHatch() {
                       <button
                         onClick={() => hatch(egg.id)}
                         disabled={!ready || hatchingId !== null}
-                        className="mt-3 flex h-10 w-full items-center justify-center rounded-full text-[13px] font-extrabold disabled:opacity-50"
+                        className="mt-3 flex h-10 w-full items-center justify-center rounded-full text-[13px] font-extrabold disabled:opacity-50 press-lg"
                         style={{
                           background: ready
                             ? "linear-gradient(95deg, var(--brand-gold), var(--brand-amber))"

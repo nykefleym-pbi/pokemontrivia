@@ -59,6 +59,21 @@ export const VERSUS_BACKDROP: string = versusBackdropSrc(DEFAULT_VERSUS_BACKDROP
  */
 export const TRAINING_BOT_AVATAR: string | null = "/trainers/avatar/Clembot.png";
 
+/**
+ * The arena backdrop shared by every battle mode.
+ *
+ * Unlike every other entry here this one is NOT consumed by a component — the
+ * path lives in `--battle-field-art` in styles.css, because it is painted by
+ * the `.bg-battle-field` class rather than an <img>. It is recorded here so the
+ * asset inventory stays complete and so anyone renaming the file finds both
+ * references from one grep. Keep the two in sync.
+ *
+ * A missing file is a supported state: `.bg-battle-field` lists the art above
+ * the gradients it always had, so a 404 paints the old look rather than
+ * nothing.
+ */
+export const BATTLE_FIELD_BG = "/ui/Battle Field.webp";
+
 /** Padlock — locked Arena reward slots and locked achievement trophies. */
 export const LOCK_ICON = "/rewards/Lock.webp";
 
