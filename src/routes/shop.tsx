@@ -12,6 +12,13 @@ import { getAbility } from "@/lib/abilities";
 import { CATEGORIES, CATEGORY_OF, BAG_SHORT_DESC, type ItemCategory } from "@/lib/item-categories";
 import { AppIcon } from "@/components/app-icon";
 import { UI_ICON, COIN_ICON } from "@/lib/app-icons";
+import {
+  SHOP_BUNDLES,
+  bundleFaceValue,
+  bundleSavingPct,
+  itemTileTint,
+  type ShopBundle,
+} from "@/lib/shop-bundles";
 import { ItemIcon } from "@/components/game-ui";
 import { BagCapacityBar, BagOverflowPanel, DiscardItemButton } from "@/components/bag-overflow";
 import { bagCapacity, bagUnitsUsed, isBagExempt } from "@/lib/store/slices/itemsSlice";
@@ -50,6 +57,7 @@ function ShopPage() {
   const priceOf = (cost: number) => (metalworks ? Math.max(1, Math.round(cost * 0.9)) : cost);
   const inventory = useGameStore((s) => s.inventory);
   const buyItem = useGameStore((s) => s.buyItem);
+  const buyBundle = useGameStore((s) => s.buyBundle);
   const featuredDealLastPurchase = useGameStore((s) => s.featuredDealLastPurchase);
   const markFeaturedDealPurchased = useGameStore((s) => s.markFeaturedDealPurchased);
   const applyItem = useGameStore((s) => s.useItem);
@@ -111,6 +119,7 @@ function ShopPage() {
 
   const [tab, setTab] = useState<Category>("HEALING");
   const [confirmState, setConfirmState] = useState<ConfirmState>(null);
+  const [bundleConfirm, setBundleConfirm] = useState<ShopBundle | null>(null);
   const [bagOpen, setBagOpen] = useState(false);
   const [qty, setQty] = useState(1);
 
@@ -145,6 +154,32 @@ function ShopPage() {
   // The discounted featured item is limited to one purchase per day.
   const todayISO = new Date().toISOString().slice(0, 10);
   const featuredUsedToday = featuredDealLastPurchase === todayISO;
+
+  function confirmBundle() {
+    if (!bundleConfirm) return;
+    const b = bundleConfirm;
+    const ok = buyBundle(b.id);
+    if (!ok) {
+      playSfx("error");
+      const st = useGameStore.getState();
+      // Same two-reason split as confirmPurchase: saying "Coins" when the bag
+      // was the problem sends the player to the wrong screen.
+      toast.error(
+        st.coins < b.cost
+          ? `Need ${b.cost.toLocaleString()} Coins for the ${b.name}.`
+          : "Your bag can't hold the whole bundle. Make room and try again.",
+      );
+      setBundleConfirm(null);
+      return;
+    }
+    playSfx("purchase");
+    toast.success(`${b.name} unlocked!`, {
+      description: b.contents
+        .map((c) => `${c.qty}× ${ITEMS.find((i) => i.id === c.id)?.name ?? c.id}`)
+        .join(", "),
+    });
+    setBundleConfirm(null);
+  }
 
   function confirmPurchase() {
     if (!confirmState) return;
@@ -331,32 +366,103 @@ function ShopPage() {
                 },
               })
             }
-            className="relative mb-5 flex w-full items-center gap-5 overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-[#b5341f] p-6 pt-9 text-left shadow-card disabled:opacity-60"
+            className="relative mb-3 flex w-full items-center gap-3 overflow-hidden rounded-3xl border-2 border-white bg-gradient-to-br from-primary to-[#b5341f] p-3 pl-2 text-left shadow-card transition-transform duration-100 active:scale-[0.98] disabled:opacity-60"
           >
-            <span className="absolute left-1/2 top-3 -translate-x-1/2 whitespace-nowrap rounded-full bg-poke-yellow px-3 py-0.5 font-pixel-xs uppercase text-foreground shadow-sm">
-              {`Discounted ${featured.discountPct}% off`}
+            {/* Corner ribbon, not a centred pill: the pill needed its own band
+                of padding above the content, which is what made this card tall
+                enough to push the catalog off-screen. */}
+            <span className="absolute right-0 top-0 rounded-bl-xl bg-[#5B3F95] px-2.5 py-1 font-pixel-xs uppercase text-white shadow-sm">
+              Weekly Special
             </span>
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -right-6 top-1/2 h-40 w-40 -translate-y-1/2 rounded-full bg-white/10"
-            />
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-white/15">
-              <ItemIcon item={featured.item} className="h-14 w-14" />
+            <span className="absolute left-2 top-2 z-10 rounded-full bg-poke-yellow px-2 py-0.5 font-pixel-xs uppercase text-foreground shadow-sm">
+              {featured.discountPct}% Off
+            </span>
+            {/* The sprite leads. It was 56px inside an 80px chip beside a
+                display-lg title, so the title won a card whose whole job is to
+                sell a piece of art. */}
+            <div className="relative flex h-24 w-24 shrink-0 items-center justify-center">
+              <div
+                aria-hidden
+                className="absolute h-20 w-20 rounded-full bg-poke-yellow/25 blur-md"
+              />
+              <ItemIcon item={featured.item} className="relative h-20 w-20" />
             </div>
-            <div className="min-w-0 flex-1 pt-2">
-              <div className="font-display-lg text-white">{featured.item.name}</div>
-              <div className="mt-1.5 text-sm leading-snug text-white/85">{featured.item.desc}</div>
+            <div className="min-w-0 flex-1 pt-4">
+              <div className="font-display-md text-white">{featured.item.name}</div>
+              <div className="mt-1 line-clamp-3 text-[11px] leading-snug text-white/85">
+                {featured.item.desc}
+              </div>
             </div>
-            <div className="flex shrink-0 flex-col items-end gap-1.5">
-              <span className="rounded-full bg-white px-3.5 py-1.5 text-sm font-extrabold text-primary">
-                {featured.discountedCost} Coins
+            <div className="flex shrink-0 flex-col items-end gap-1 pt-4">
+              <span className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-sm font-extrabold text-primary">
+                <AppIcon src={COIN_ICON} alt="" className="h-4 w-4" />
+                {featured.discountedCost.toLocaleString()}
               </span>
-              <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-bold text-white/60 line-through">
-                {featured.originalCost} Coins
+              <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-bold text-white/60 line-through">
+                {featured.originalCost.toLocaleString()}
               </span>
             </div>
           </button>
         )}
+
+        {/* Bundle — one purchase, several items, priced under their combined
+            shelf value. The catalog sells one thing at a time, which makes a
+            new trainer's first visit a series of small decisions with no
+            obvious starting point. See lib/shop-bundles.ts for the pricing. */}
+        {SHOP_BUNDLES.map((bundle) => (
+          <button
+            key={bundle.id}
+            onClick={() => setBundleConfirm(bundle)}
+            className="relative mb-5 flex w-full items-center gap-3 overflow-hidden rounded-3xl border-2 border-white bg-gradient-to-br from-[#6B4FA0] to-[#3F2A6E] p-3 text-left shadow-card transition-transform duration-100 active:scale-[0.98]"
+          >
+            <span className="absolute right-0 top-0 rounded-bl-xl bg-primary px-2.5 py-1 font-pixel-xs uppercase text-white shadow-sm">
+              {bundle.ribbon}
+            </span>
+            {/* Contents fanned rather than listed: three overlapping sprites
+                say "several things" in the width one name would take. */}
+            <div className="flex shrink-0 items-center -space-x-3">
+              {bundle.contents.slice(0, 2).map((c) => {
+                const def = ITEMS.find((i) => i.id === c.id);
+                return def ? (
+                  <div
+                    key={c.id}
+                    className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-white/70 bg-white/15"
+                  >
+                    <ItemIcon item={def} className="h-8 w-8" />
+                  </div>
+                ) : null;
+              })}
+            </div>
+            <div className="min-w-0 flex-1 pt-3">
+              <div className="text-[15px] font-extrabold leading-tight text-white">{bundle.name}</div>
+              <div className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-white/80">
+                {bundle.tagline}
+              </div>
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                {bundle.contents.map((c) => {
+                  const def = ITEMS.find((i) => i.id === c.id);
+                  return def ? (
+                    <span
+                      key={c.id}
+                      className="flex items-center gap-0.5 text-[10px] font-bold text-white/90"
+                    >
+                      <ItemIcon item={def} className="h-3.5 w-3.5" />×{c.qty}
+                    </span>
+                  ) : null;
+                })}
+              </div>
+            </div>
+            <div className="flex shrink-0 flex-col items-end gap-1 pt-3">
+              <span className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-sm font-extrabold text-[#3F2A6E]">
+                <AppIcon src={COIN_ICON} alt="" className="h-4 w-4" />
+                {bundle.cost.toLocaleString()}
+              </span>
+              <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-bold text-white/60 line-through">
+                {bundleFaceValue(bundle).toLocaleString()}
+              </span>
+            </div>
+          </button>
+        ))}
 
         {/* Category tabs */}
         <div className="mb-4 grid grid-cols-4 gap-1 rounded-full bg-poke-dark/10 p-1">
@@ -378,7 +484,17 @@ function ShopPage() {
             Stocked trainer! Nothing else here.
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
+          /* Four to a row, scrolling vertically. The old one-per-row list spent
+             a full 96px band per item on a 16px sprite and a description most
+             players already know — at four across the sprite is the row, which
+             is what a shop shelf should be. Descriptions truncate to two lines
+             here; the full text is on the buy sheet, one tap away.
+
+             Rarity groupings are deliberately absent: the catalog has no rarity
+             concept, and inventing one would be a game-design claim dressed as
+             a colour. The tints are per-item and mean nothing beyond telling
+             four tiles apart. */
+          <div className="grid grid-cols-4 gap-2">
             {items.map((item, i) => {
               const owned = inventory[item.id] ?? 0;
               const canAfford = coins >= priceOf(item.cost);
@@ -387,39 +503,36 @@ function ShopPage() {
                   key={item.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.04 }}
+                  transition={{ delay: Math.min(i, 12) * 0.03 }}
                   onClick={() => setConfirmState({ item, cost: priceOf(item.cost) })}
-                  className="relative flex w-full items-center gap-4 rounded-3xl bg-card p-5 text-left shadow-card"
+                  className="relative flex flex-col items-center rounded-2xl border-2 border-white p-1.5 pt-2 text-center shadow-card transition-transform duration-100 active:scale-[0.96]"
+                  style={{ background: itemTileTint(item.id) }}
                 >
-                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-poke-yellow/20">
-                    <ItemIcon item={item} className="h-12 w-12" />
+                  {item.premium && (
+                    <Star
+                      className="absolute right-1 top-1 h-3 w-3 text-poke-yellow"
+                      fill="currentColor"
+                    />
+                  )}
+                  <ItemIcon item={item} className="h-12 w-12" />
+                  <div className="mt-1 line-clamp-2 text-[10px] font-extrabold leading-tight text-foreground">
+                    {item.name}
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <div className="font-display-md leading-tight text-foreground">
-                        {item.name}
-                      </div>
-                      {item.premium && (
-                        <Star className="h-3.5 w-3.5 text-poke-yellow" fill="currentColor" />
-                      )}
-                    </div>
-                    {owned > 0 && (
-                      <span className="mt-1 inline-flex w-fit rounded-full bg-poke-dark/10 px-2 py-0.5 font-pixel-xs text-foreground/70">
-                        OWNED ×{owned}
-                      </span>
-                    )}
-                    <div className="mt-1.5 text-xs leading-snug text-muted-foreground">
-                      {item.desc}
-                    </div>
+                  <div className="mt-0.5 line-clamp-2 text-[9px] leading-tight text-foreground/60">
+                    {item.desc}
                   </div>
+                  {owned > 0 && (
+                    <span className="mt-1 rounded-full bg-black/10 px-1.5 py-px font-pixel-xs text-[8px] text-foreground/70">
+                      ×{owned}
+                    </span>
+                  )}
                   <span
-                    className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-extrabold ${
-                      canAfford
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground"
+                    className={`mt-auto flex w-full items-center justify-center gap-1 rounded-full px-1 py-1 text-[11px] font-extrabold ${
+                      canAfford ? "bg-white text-foreground" : "bg-black/10 text-foreground/40"
                     }`}
                   >
-                    {priceOf(item.cost).toLocaleString()} Coins
+                    <AppIcon src={COIN_ICON} alt="" className="h-3.5 w-3.5" />
+                    {priceOf(item.cost).toLocaleString()}
                   </span>
                 </motion.button>
               );
@@ -427,6 +540,60 @@ function ShopPage() {
           </div>
         )}
       </div>
+
+      {/* Bundle confirmation. Its own sheet rather than a mode of the item
+          sheet: there is no quantity stepper (a bundle is bought whole) and
+          the body is a contents manifest, not one item's description. */}
+      <Sheet open={!!bundleConfirm} onOpenChange={(o) => !o && setBundleConfirm(null)}>
+        <SheetContent side="bottom" className="rounded-t-3xl">
+          {bundleConfirm && (
+            <>
+              <SheetHeader>
+                <SheetTitle>{bundleConfirm.name}</SheetTitle>
+                <SheetDescription>{bundleConfirm.tagline}</SheetDescription>
+              </SheetHeader>
+              <div className="mt-3 flex flex-col gap-2">
+                {bundleConfirm.contents.map((c) => {
+                  const def = ITEMS.find((i) => i.id === c.id);
+                  if (!def) return null;
+                  return (
+                    <div
+                      key={c.id}
+                      className="flex items-center gap-3 rounded-2xl bg-poke-dark/5 p-2.5"
+                    >
+                      <ItemIcon item={def} className="h-9 w-9 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-bold text-foreground">{def.name}</div>
+                        <div className="truncate text-xs text-muted-foreground">{def.desc}</div>
+                      </div>
+                      <span className="shrink-0 font-pixel-xs text-foreground/70">×{c.qty}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-3 flex items-center justify-between rounded-2xl bg-poke-yellow/15 px-3 py-2">
+                <span className="text-xs font-bold text-foreground/70">
+                  Worth {bundleFaceValue(bundleConfirm).toLocaleString()} separately
+                </span>
+                <span className="font-pixel-xs text-primary">
+                  SAVE {bundleSavingPct(bundleConfirm)}%
+                </span>
+              </div>
+              <Button
+                size="lg"
+                onClick={confirmBundle}
+                disabled={coins < bundleConfirm.cost}
+                className="mt-4 h-12 w-full rounded-full text-base font-bold"
+              >
+                <AppIcon src={COIN_ICON} alt="" className="mr-2 h-5 w-5" />
+                {coins < bundleConfirm.cost
+                  ? "Not enough Coins"
+                  : `Buy for ${bundleConfirm.cost.toLocaleString()}`}
+              </Button>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
 
       {/* Purchase confirmation */}
       <Sheet open={!!confirmState} onOpenChange={(o) => !o && setConfirmState(null)}>

@@ -336,6 +336,9 @@ export interface GameState {
   markCuratedSeen: (ids: string[]) => void;
 
   buyItem: (id: ItemId, cost: number) => boolean;
+  /** One purchase, several items. False if unknown, unaffordable, or the whole
+   *  bundle will not fit — a bundle never delivers partially. */
+  buyBundle: (bundleId: string) => boolean;
   /** Record that today's discounted featured shop item was purchased (caps it
    * at one purchase per day). */
   markFeaturedDealPurchased: () => void;
