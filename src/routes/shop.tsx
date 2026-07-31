@@ -493,7 +493,9 @@ function ShopPage() {
               </div>
             </div>
             <div className="min-w-0 flex-1 pt-3">
-              <div className="text-[15px] font-extrabold leading-tight text-white">{bundle.name}</div>
+              <div className="text-[15px] font-extrabold leading-tight text-white">
+                {bundle.name}
+              </div>
               <div className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-white/80">
                 {bundle.tagline}
               </div>
@@ -561,19 +563,20 @@ function ShopPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: Math.min(i, 12) * 0.03 }}
                   onClick={() => setConfirmState({ item, cost: priceOf(item.cost) })}
-                  className="relative flex flex-col items-center rounded-2xl border-2 border-white p-2 pt-2.5 text-center shadow-card transition-transform duration-100 active:scale-[0.96]"
+                  className={`relative flex flex-col items-center rounded-2xl border-2 p-2 pt-2.5 text-center shadow-card transition-transform duration-100 active:scale-[0.96] ${
+                    item.premium ? "border-poke-yellow" : "border-white"
+                  }`}
                   style={{
                     // Tint at the top fading to white, so the sprite sits on
                     // colour and the text below sits on paper.
                     background: `linear-gradient(180deg, ${itemTileTint(item.id)} 0%, #fff 78%)`,
                   }}
                 >
-                  {item.premium && (
-                    <Star
-                      className="absolute right-1.5 top-1.5 h-3.5 w-3.5 text-poke-yellow drop-shadow-sm"
-                      fill="currentColor"
-                    />
-                  )}
+                  {/* Premium is the gold rim, not a badge. The star sat in the
+                      top-right corner over the tile's own tint, which is where
+                      the eye goes first — so a decoration outranked the item
+                      art. Recolouring the border the tile already has says the
+                      same thing using none of the tile's space. */}
                   <ItemIcon item={item} className="h-16 w-16 drop-shadow-sm" />
                   <div className="mt-1.5 line-clamp-2 text-[11px] font-extrabold leading-tight text-foreground">
                     {item.name}
@@ -589,7 +592,9 @@ function ShopPage() {
                   </span>
                   <span
                     className={`mt-auto flex w-full items-center justify-center gap-1 rounded-full px-1 py-1.5 text-[11px] font-extrabold ${
-                      canAfford ? "bg-white text-foreground shadow-sm" : "bg-black/10 text-foreground/40"
+                      canAfford
+                        ? "bg-white text-foreground shadow-sm"
+                        : "bg-black/10 text-foreground/40"
                     }`}
                   >
                     <AppIcon src={COIN_ICON} alt="" className="h-3.5 w-3.5" />
