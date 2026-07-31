@@ -54,7 +54,17 @@ describe("shop bundles", () => {
     expect(bundleUnitCount(STARTER_BUNDLE)).toBe(
       STARTER_BUNDLE.contents.reduce((n, c) => n + c.qty, 0),
     );
-    expect(bundleUnitCount(STARTER_BUNDLE)).toBe(8);
+    expect(bundleUnitCount(STARTER_BUNDLE)).toBe(9);
+  });
+
+  it("retires a bundle from the shop once it has been bought", () => {
+    // The card is filtered on purchasedBundleIds, so the store recording the
+    // id IS the "never show it again" behaviour. Anything that stops writing
+    // it puts a spent one-time offer back on the shelf.
+    const shown = (purchased: string[]) =>
+      SHOP_BUNDLES.filter((b) => !purchased.includes(b.id)).map((b) => b.id);
+    expect(shown([])).toContain(STARTER_BUNDLE.id);
+    expect(shown([STARTER_BUNDLE.id])).not.toContain(STARTER_BUNDLE.id);
   });
 
   it("gives an item the same tile tint every time", () => {

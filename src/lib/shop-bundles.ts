@@ -30,13 +30,18 @@ export interface ShopBundle {
 /**
  * The opening bundle.
  *
- * Priced at 1,400 against a 2,100 face value — a third off. That ratio is the
+ * Priced at 1,750 against a 2,600 face value — a third off. That ratio is the
  * point of the number: deep enough to read as a deal at a glance, shallow
  * enough that it does not undercut buying potions normally, which is the loop
  * the shop actually runs on. At roughly 150 coins a battle it is about nine
  * battles of saving, so it is a goal for a new trainer rather than an
  * impulse — and it is deliberately all consumables, so it accelerates the
  * early game without handing out anything permanent.
+ *
+ * The Escape Rope was added after the first pass. Holding the price at 1,400
+ * would have taken the discount from 33% to 46% by accident, which is a real
+ * economy change dressed as a content tweak — so the price moved with it to
+ * keep the ratio where it was chosen to be.
  *
  * Owner: this is a STARTING value, meant to be tuned once there is real
  * purchase data. The two levers are `cost` (the discount depth) and the
@@ -51,9 +56,10 @@ export const STARTER_BUNDLE: ShopBundle = {
     { id: "potion", qty: 5 },
     { id: "superpotion", qty: 2 },
     { id: "revive", qty: 1 },
+    { id: "escape", qty: 1 },
   ],
   coins: 0,
-  cost: 1400,
+  cost: 1750,
 };
 
 export const SHOP_BUNDLES: readonly ShopBundle[] = [STARTER_BUNDLE];

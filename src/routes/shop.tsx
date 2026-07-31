@@ -38,6 +38,65 @@ export const Route = createFileRoute("/shop")({
 
 type Category = ItemCategory;
 
+/**
+ * A true corner ribbon: a rotated banner anchored past the card's corner so its
+ * ends run off the edge, rather than a tab tucked inside it.
+ *
+ * The first version was a rounded tab in the corner, which read as a chip that
+ * had drifted out of place. A ribbon has to overhang to look like a ribbon, so
+ * this deliberately sits outside the card bounds and relies on the card's
+ * `overflow-hidden` to clip it.
+ *
+ * The offsets are load-bearing and were measured, not guessed: a 160px band at
+ * top 18 / right -46 puts the band's CENTRE on the corner's diagonal, which is
+ * what keeps the label whole. An earlier 128px band at right -36 pushed the
+ * centre past the corner and the card clipped "WEEKLY SPECIAL" down to
+ * "EKLY SPECIAL". The label is also `font-extrabold` rather than the pixel
+ * face, because the pixel face has no small size that stays legible at the
+ * angle.
+ */
+function CornerRibbon({ label, bg }: { label: string; bg: string }) {
+  return (
+    <div
+      aria-hidden={false}
+      className="pointer-events-none absolute -right-[46px] top-[18px] z-20 w-[160px] rotate-45 py-1 text-center text-[9px] font-extrabold uppercase tracking-wider text-white shadow-md"
+      style={{ background: bg }}
+    >
+      {label}
+    </div>
+  );
+}
+
+/**
+ * Radiating light behind a product sprite.
+ *
+ * Two layers on purpose: a conic ray fan for the "burst", and a soft radial
+ * glow to keep the rays from cutting hard edges across the artwork. Both are
+ * pure CSS so they cost no image weight and inherit no colour of their own —
+ * the caller supplies the tint, so the same burst works on a red card and a
+ * purple one.
+ */
+function SpriteBurst({ tint = "rgba(255,255,255,0.5)" }: { tint?: string }) {
+  return (
+    <>
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 animate-[spin_18s_linear_infinite] rounded-full"
+        style={{
+          background: `repeating-conic-gradient(from 0deg, ${tint} 0deg 6deg, transparent 6deg 16deg)`,
+          maskImage: "radial-gradient(circle, #000 30%, transparent 72%)",
+          WebkitMaskImage: "radial-gradient(circle, #000 30%, transparent 72%)",
+        }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-[18%] rounded-full blur-md"
+        style={{ background: tint }}
+      />
+    </>
+  );
+}
+
 type ConfirmState = {
   item: ItemDef;
   cost: number;
@@ -58,6 +117,7 @@ function ShopPage() {
   const inventory = useGameStore((s) => s.inventory);
   const buyItem = useGameStore((s) => s.buyItem);
   const buyBundle = useGameStore((s) => s.buyBundle);
+  const purchasedBundleIds = useGameStore((s) => s.purchasedBundleIds);
   const featuredDealLastPurchase = useGameStore((s) => s.featuredDealLastPurchase);
   const markFeaturedDealPurchased = useGameStore((s) => s.markFeaturedDealPurchased);
   const applyItem = useGameStore((s) => s.useItem);
@@ -368,24 +428,26 @@ function ShopPage() {
             }
             className="relative mb-3 flex w-full items-center gap-3 overflow-hidden rounded-3xl border-2 border-white bg-gradient-to-br from-primary to-[#b5341f] p-3 pl-2 text-left shadow-card transition-transform duration-100 active:scale-[0.98] disabled:opacity-60"
           >
-            {/* Corner ribbon, not a centred pill: the pill needed its own band
-                of padding above the content, which is what made this card tall
-                enough to push the catalog off-screen. */}
-            <span className="absolute right-0 top-0 rounded-bl-xl bg-[#5B3F95] px-2.5 py-1 font-pixel-xs uppercase text-white shadow-sm">
-              Weekly Special
-            </span>
-            <span className="absolute left-2 top-2 z-10 rounded-full bg-poke-yellow px-2 py-0.5 font-pixel-xs uppercase text-foreground shadow-sm">
+            <CornerRibbon label="Weekly Special" bg="#5B3F95" />
+            <span className="absolute left-3 top-3 z-20 rounded-full bg-poke-yellow px-2.5 py-1 font-pixel-xs uppercase leading-none text-foreground shadow-sm">
               {featured.discountPct}% Off
             </span>
-            {/* The sprite leads. It was 56px inside an 80px chip beside a
-                display-lg title, so the title won a card whose whole job is to
-                sell a piece of art. */}
-            <div className="relative flex h-24 w-24 shrink-0 items-center justify-center">
+            {/* The sprite leads, on a lit circular stage. It was 56px inside an
+                80px chip beside a display-lg title, so the title won a card
+                whose whole job is to sell a piece of art. */}
+            <div className="relative flex h-28 w-28 shrink-0 items-center justify-center">
+              <SpriteBurst tint="rgba(255,214,120,0.55)" />
+              {/* The stage: a disc the item stands on, so it reads as a product
+                  on display rather than a sticker floating on a gradient. */}
               <div
                 aria-hidden
-                className="absolute h-20 w-20 rounded-full bg-poke-yellow/25 blur-md"
+                className="absolute bottom-2 h-6 w-20 rounded-[50%] bg-black/25 blur-[3px]"
               />
-              <ItemIcon item={featured.item} className="relative h-20 w-20" />
+              <div
+                aria-hidden
+                className="absolute h-[86px] w-[86px] rounded-full border-2 border-white/40 bg-white/15"
+              />
+              <ItemIcon item={featured.item} className="relative h-20 w-20 drop-shadow-lg" />
             </div>
             <div className="min-w-0 flex-1 pt-4">
               <div className="font-display-md text-white">{featured.item.name}</div>
@@ -393,7 +455,7 @@ function ShopPage() {
                 {featured.item.desc}
               </div>
             </div>
-            <div className="flex shrink-0 flex-col items-end gap-1 pt-4">
+            <div className="flex shrink-0 flex-col items-end gap-1 pt-8">
               <span className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-sm font-extrabold text-primary">
                 <AppIcon src={COIN_ICON} alt="" className="h-4 w-4" />
                 {featured.discountedCost.toLocaleString()}
@@ -409,29 +471,26 @@ function ShopPage() {
             shelf value. The catalog sells one thing at a time, which makes a
             new trainer's first visit a series of small decisions with no
             obvious starting point. See lib/shop-bundles.ts for the pricing. */}
-        {SHOP_BUNDLES.map((bundle) => (
+        {SHOP_BUNDLES.filter((b) => !purchasedBundleIds.includes(b.id)).map((bundle) => (
           <button
             key={bundle.id}
             onClick={() => setBundleConfirm(bundle)}
             className="relative mb-5 flex w-full items-center gap-3 overflow-hidden rounded-3xl border-2 border-white bg-gradient-to-br from-[#6B4FA0] to-[#3F2A6E] p-3 text-left shadow-card transition-transform duration-100 active:scale-[0.98]"
           >
-            <span className="absolute right-0 top-0 rounded-bl-xl bg-primary px-2.5 py-1 font-pixel-xs uppercase text-white shadow-sm">
-              {bundle.ribbon}
-            </span>
-            {/* Contents fanned rather than listed: three overlapping sprites
-                say "several things" in the width one name would take. */}
-            <div className="flex shrink-0 items-center -space-x-3">
-              {bundle.contents.slice(0, 2).map((c) => {
-                const def = ITEMS.find((i) => i.id === c.id);
-                return def ? (
-                  <div
-                    key={c.id}
-                    className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-white/70 bg-white/15"
-                  >
-                    <ItemIcon item={def} className="h-8 w-8" />
-                  </div>
-                ) : null;
-              })}
+            <CornerRibbon label={bundle.ribbon} bg="var(--brand-red, #E3350D)" />
+            {/* Bare overlapping sprites on one shared burst. Each used to sit in
+                its own bordered disc, which read as three separate buttons
+                rather than as one pile of loot. */}
+            <div className="relative flex h-24 w-[92px] shrink-0 items-center justify-center">
+              <SpriteBurst tint="rgba(214,180,255,0.5)" />
+              <div className="relative flex items-center -space-x-4">
+                {bundle.contents.slice(0, 3).map((c) => {
+                  const def = ITEMS.find((i) => i.id === c.id);
+                  return def ? (
+                    <ItemIcon key={c.id} item={def} className="h-11 w-11 drop-shadow-lg" />
+                  ) : null;
+                })}
+              </div>
             </div>
             <div className="min-w-0 flex-1 pt-3">
               <div className="text-[15px] font-extrabold leading-tight text-white">{bundle.name}</div>
@@ -452,13 +511,10 @@ function ShopPage() {
                 })}
               </div>
             </div>
-            <div className="flex shrink-0 flex-col items-end gap-1 pt-3">
+            <div className="flex shrink-0 flex-col items-end gap-1 pt-8">
               <span className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-sm font-extrabold text-[#3F2A6E]">
                 <AppIcon src={COIN_ICON} alt="" className="h-4 w-4" />
                 {bundle.cost.toLocaleString()}
-              </span>
-              <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-bold text-white/60 line-through">
-                {bundleFaceValue(bundle).toLocaleString()}
               </span>
             </div>
           </button>
@@ -494,7 +550,7 @@ function ShopPage() {
              concept, and inventing one would be a game-design claim dressed as
              a colour. The tints are per-item and mean nothing beyond telling
              four tiles apart. */
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-3 gap-2.5">
             {items.map((item, i) => {
               const owned = inventory[item.id] ?? 0;
               const canAfford = coins >= priceOf(item.cost);
@@ -505,30 +561,35 @@ function ShopPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: Math.min(i, 12) * 0.03 }}
                   onClick={() => setConfirmState({ item, cost: priceOf(item.cost) })}
-                  className="relative flex flex-col items-center rounded-2xl border-2 border-white p-1.5 pt-2 text-center shadow-card transition-transform duration-100 active:scale-[0.96]"
-                  style={{ background: itemTileTint(item.id) }}
+                  className="relative flex flex-col items-center rounded-2xl border-2 border-white p-2 pt-2.5 text-center shadow-card transition-transform duration-100 active:scale-[0.96]"
+                  style={{
+                    // Tint at the top fading to white, so the sprite sits on
+                    // colour and the text below sits on paper.
+                    background: `linear-gradient(180deg, ${itemTileTint(item.id)} 0%, #fff 78%)`,
+                  }}
                 >
                   {item.premium && (
                     <Star
-                      className="absolute right-1 top-1 h-3 w-3 text-poke-yellow"
+                      className="absolute right-1.5 top-1.5 h-3.5 w-3.5 text-poke-yellow drop-shadow-sm"
                       fill="currentColor"
                     />
                   )}
-                  <ItemIcon item={item} className="h-12 w-12" />
-                  <div className="mt-1 line-clamp-2 text-[10px] font-extrabold leading-tight text-foreground">
+                  <ItemIcon item={item} className="h-16 w-16 drop-shadow-sm" />
+                  <div className="mt-1.5 line-clamp-2 text-[11px] font-extrabold leading-tight text-foreground">
                     {item.name}
                   </div>
-                  <div className="mt-0.5 line-clamp-2 text-[9px] leading-tight text-foreground/60">
+                  <div className="mt-0.5 line-clamp-2 text-[9px] leading-tight text-foreground/55">
                     {item.desc}
                   </div>
-                  {owned > 0 && (
-                    <span className="mt-1 rounded-full bg-black/10 px-1.5 py-px font-pixel-xs text-[8px] text-foreground/70">
-                      ×{owned}
-                    </span>
-                  )}
+                  {/* Owned always renders, even at zero. It used to appear only
+                      when held, which moved the price up and down between tiles
+                      in the same row and left the two colliding. */}
+                  <span className="mb-1.5 mt-2 rounded-full bg-black/[0.07] px-2 py-0.5 font-pixel-xs text-[8px] leading-none text-foreground/60">
+                    OWNED ×{owned}
+                  </span>
                   <span
-                    className={`mt-auto flex w-full items-center justify-center gap-1 rounded-full px-1 py-1 text-[11px] font-extrabold ${
-                      canAfford ? "bg-white text-foreground" : "bg-black/10 text-foreground/40"
+                    className={`mt-auto flex w-full items-center justify-center gap-1 rounded-full px-1 py-1.5 text-[11px] font-extrabold ${
+                      canAfford ? "bg-white text-foreground shadow-sm" : "bg-black/10 text-foreground/40"
                     }`}
                   >
                     <AppIcon src={COIN_ICON} alt="" className="h-3.5 w-3.5" />

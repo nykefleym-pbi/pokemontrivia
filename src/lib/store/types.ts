@@ -150,6 +150,9 @@ export interface GameState {
   /** YYYY-MM-DD of the last day the discounted featured shop item was bought
    * (the featured deal is limited to one purchase per day). */
   featuredDealLastPurchase: string | null;
+  /** Bundle ids already bought. A bundle is a one-time starter offer, so it is
+   *  retired from the shop once purchased rather than resold. */
+  purchasedBundleIds: string[];
   guaranteedShinyPending: boolean;
   pokeEggs: PokeEgg[];
   megaTrophies: { eventId: string; name: string; pokeId: number; claimedAt: string }[];

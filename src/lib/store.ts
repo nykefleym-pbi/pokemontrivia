@@ -124,6 +124,7 @@ export function buildSavePayload(s: GameState) {
     dailyGiftStreak: s.dailyGiftStreak,
     dailyGiftFreezeUsedDate: s.dailyGiftFreezeUsedDate,
     featuredDealLastPurchase: s.featuredDealLastPurchase,
+    purchasedBundleIds: s.purchasedBundleIds,
     guaranteedShinyPending: s.guaranteedShinyPending,
     pokeEggs: s.pokeEggs,
     megaTrophies: s.megaTrophies,
@@ -341,6 +342,7 @@ export const useGameStore = create<GameState>()(
           versusBackdropId: null,
           ownedBackdropIds: [],
           versusBackdropBattles: 0,
+          purchasedBundleIds: [],
           pokemon: null,
           abilityId: null,
           level: 1,
@@ -751,6 +753,9 @@ export const useGameStore = create<GameState>()(
           abilityId: p.abilityId ?? null,
           lastSeenWhatsNew: p.lastSeenWhatsNew ?? 0,
           flags: p.flags ?? [],
+          purchasedBundleIds: Array.isArray(p.purchasedBundleIds)
+            ? p.purchasedBundleIds
+            : [],
           claimedAchievements: p.claimedAchievements ?? [],
           // A save from before backdrops were purchasable has neither field,
           // and `...p` would spread `undefined` over the initial values.
