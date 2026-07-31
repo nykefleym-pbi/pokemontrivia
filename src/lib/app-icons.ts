@@ -65,6 +65,19 @@ export const LOCK_ICON = "/rewards/Lock.webp";
 /** Coin currency (shop balance pill, level-up coin reward). */
 export const COIN_ICON = "/rewards/Coin.webp";
 
+/** Training Points — the partner's damage multiplier currency. */
+export const TP_ICON = "/rewards/Training Points.webp";
+
+/**
+ * Daily-streak flame, on Home's stat strip.
+ *
+ * This one is OPTIONAL and may 404: the artwork is owner-supplied and the
+ * strip shipped before it landed. Every consumer renders a lucide `Flame`
+ * underneath and only reveals the image once it has loaded, so a missing file
+ * degrades to the icon rather than to a broken-image glyph.
+ */
+export const STREAK_ICON = "/rewards/Streak.webp";
+
 /** The two Arena battle-count tier badges. */
 export const ARENA_BADGE_ICON = {
   nearby: "/trophies/Nearby Battle Badge.webp",
