@@ -350,7 +350,10 @@ function ShopPage() {
             <span className="absolute right-3 top-3 rounded-full bg-primary px-2.5 py-1 font-pixel-xs uppercase text-white shadow-sm">
               Free
             </span>
-            <div className="shrink-0 drop-shadow">
+            {/* Wiggles only in this branch — the claimed card below renders the
+                same box with no animation, so the movement means "there is
+                something here for you" rather than being decoration. */}
+            <div className="animate-wiggle shrink-0 drop-shadow">
               <AppIcon src={UI_ICON.dailyGift} className="h-12 w-12" />
             </div>
             <div className="min-w-0 flex-1">

@@ -31,6 +31,7 @@ import { TutorialOverlay } from "@/components/tutorial-overlay";
 import {
   PokemonSprite,
   StatusEffectOverlay,
+  BattleStage,
   CombatPanel,
   QuestionCard,
   ItemBagSheet,
@@ -1397,7 +1398,7 @@ function BattleMode({
         )}
       </AnimatePresence>
       {/* top bar */}
-      <div className="flex shrink-0 items-center justify-between gap-2 pt-[calc(env(safe-area-inset-top)+1rem)] pb-1 px-[max(1.25rem,env(safe-area-inset-left))]">
+      <div className="relative z-10 flex shrink-0 items-center justify-between gap-2 pt-[calc(env(safe-area-inset-top)+1rem)] pb-1 px-[max(1.25rem,env(safe-area-inset-left))]">
         <div className="flex items-center gap-2">
           <div
             className={`flex items-center gap-1 rounded-full px-2.5 py-1 font-pixel text-[9px] shadow-card backdrop-blur ${isElite ? "bg-poke-dark text-poke-yellow" : "bg-card/90 text-foreground"}`}
@@ -1417,10 +1418,13 @@ function BattleMode({
         </div>
       </div>
 
-      {/* COMBAT ARENA — FRLG diagonal layout */}
-      <div className="relative min-h-0 flex-1 py-2 px-[max(1.5rem,env(safe-area-inset-left))]">
-        {/* ENEMY ZONE: panel top-left, sprite top-right */}
-        <div className="flex items-start justify-between">
+      {/* COMBAT ARENA — both combatants stand on the platforms painted into
+          the field artwork. BattleStage owns that registration; the old
+          hand-drawn green ground-shadow ellipses are gone with it, because the
+          painting has real ones and two shadows under one sprite read as a
+          rendering fault. */}
+      <BattleStage
+        enemyPanel={
           <CombatPanel
             align="left"
             pokemonName={enemy.pokemon.name}
@@ -1434,75 +1438,53 @@ function BattleMode({
             disadvantaged={false}
             testId="enemy"
           />
-          <div className="relative mt-2 shrink-0">
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute bottom-3 left-1/2 h-7 w-28 -translate-x-1/2 rounded-[50%]"
-              style={{
-                background:
-                  "radial-gradient(ellipse at 50% 35%, oklch(0.88 0.16 145) 0%, oklch(0.72 0.18 145) 55%, oklch(0.55 0.16 150) 100%)",
-                boxShadow:
-                  "0 8px 14px -6px oklch(0.3 0.1 150 / 0.35), inset 0 1px 0 oklch(1 0 0 / 0.35)",
-              }}
+        }
+        enemySprite={
+          <motion.div
+            className={`relative ${shakeWho === "enemy" ? "animate-shake" : ""}`}
+            initial={{ x: 60, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+          >
+            <PokemonSprite
+              id={enemy.pokemon.id}
+              shiny={enemy.isShiny}
+              alt={enemy.pokemon.name}
+              className={`sprite relative z-10 h-36 w-36 ${enemy.isShiny ? "shiny-glow" : ""}`}
             />
-            <motion.div
-              className={`relative ${shakeWho === "enemy" ? "animate-shake" : ""}`}
-              initial={{ x: 60, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-            >
-              <PokemonSprite
-                id={enemy.pokemon.id}
-                shiny={enemy.isShiny}
-                alt={enemy.pokemon.name}
-                className={`sprite relative z-10 h-36 w-36 ${enemy.isShiny ? "shiny-glow" : ""}`}
-              />
-              {enemy.isShiny && (
-                <Sparkles className="pointer-events-none absolute right-2 top-2 z-20 h-4 w-4 animate-pulse text-yellow-300 drop-shadow" />
-              )}
-              <StatusEffectOverlay statuses={[]} />
-              {floatDmg?.who === "enemy" && (
-                <div className="animate-float-up pointer-events-none absolute top-4 left-1/2 z-20 -translate-x-1/2 font-pixel text-base text-destructive">
-                  -{floatDmg.n}
-                  {floatDmg.super && " SUPER"}
-                  {floatDmg.speedy && " FAST"}
-                </div>
-              )}
-            </motion.div>
-          </div>
-        </div>
-
-        {/* PLAYER ZONE: sprite lower-left, panel mid-right */}
-        <div className="-mt-4 flex items-end justify-between">
-          <div className="relative shrink-0">
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute bottom-3 left-1/2 h-9 w-32 -translate-x-1/2 rounded-[50%]"
-              style={{
-                background:
-                  "radial-gradient(ellipse at 50% 35%, oklch(0.88 0.16 145) 0%, oklch(0.72 0.18 145) 55%, oklch(0.55 0.16 150) 100%)",
-                boxShadow:
-                  "0 8px 14px -6px oklch(0.3 0.1 150 / 0.35), inset 0 1px 0 oklch(1 0 0 / 0.35)",
-              }}
+            {enemy.isShiny && (
+              <Sparkles className="pointer-events-none absolute right-2 top-2 z-20 h-4 w-4 animate-pulse text-yellow-300 drop-shadow" />
+            )}
+            <StatusEffectOverlay statuses={[]} />
+            {floatDmg?.who === "enemy" && (
+              <div className="animate-float-up pointer-events-none absolute left-1/2 top-4 z-20 -translate-x-1/2 font-pixel text-base text-destructive">
+                -{floatDmg.n}
+                {floatDmg.super && " SUPER"}
+                {floatDmg.speedy && " FAST"}
+              </div>
+            )}
+          </motion.div>
+        }
+        playerSprite={
+          <motion.div
+            className={`relative ${shakeWho === "player" ? "animate-shake" : ""}`}
+            initial={{ x: -60, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+          >
+            <PokemonSprite
+              id={player.id}
+              back
+              alt={player.name}
+              className={`sprite relative z-10 h-40 w-40 ${streak >= 5 ? "mega-glow" : ""}`}
             />
-            <motion.div
-              className={`relative ${shakeWho === "player" ? "animate-shake" : ""}`}
-              initial={{ x: -60, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-            >
-              <PokemonSprite
-                id={player.id}
-                back
-                alt={player.name}
-                className={`sprite relative z-10 h-40 w-40 ${streak >= 5 ? "mega-glow" : ""}`}
-              />
-              <StatusEffectOverlay statuses={statuses} />
-              {floatDmg?.who === "player" && (
-                <div className="animate-float-up pointer-events-none absolute top-4 left-1/2 z-20 -translate-x-1/2 font-pixel text-base text-destructive">
-                  -{floatDmg.n}
-                </div>
-              )}
-            </motion.div>
-          </div>
+            <StatusEffectOverlay statuses={statuses} />
+            {floatDmg?.who === "player" && (
+              <div className="animate-float-up pointer-events-none absolute left-1/2 top-4 z-20 -translate-x-1/2 font-pixel text-base text-destructive">
+                -{floatDmg.n}
+              </div>
+            )}
+          </motion.div>
+        }
+        playerPanel={
           <CombatPanel
             align="right"
             pokemonName={player.name}
@@ -1516,8 +1498,12 @@ function BattleMode({
             disadvantaged={disadvantaged}
             testId="player"
           />
-        </div>
-      </div>
+        }
+      />
+      {/* The stage is absolutely positioned, so this spacer is what pushes the
+          question card to the bottom — and it is also the fade, so the gradient
+          can never run on past the card or stop short of it. */}
+      <div className="battle-fade" aria-hidden />
 
       {/* intro banner overlay */}
       <AnimatePresence>
@@ -1537,38 +1523,45 @@ function BattleMode({
       </AnimatePresence>
 
       {/* QUESTION CARD — thumb zone, pinned bottom */}
-      <div className="relative shrink-0 rounded-t-[28px] bg-card pt-14 px-[max(1rem,env(safe-area-inset-left))] pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-[0_-8px_30px_-12px_oklch(0.3_0.05_260/0.25)]">
-        <AnimatePresence mode="wait">
-          {phase !== "intro" && trivia && (
-            <QuestionCard
-              key={questionIdx}
-              trivia={trivia}
-              phase={phase as "question" | "feedback"}
-              chosen={chosen}
-              revealedWrong={revealedWrong}
-              revealedWrong2={revealedWrong2}
-              revealedCorrect={revealedCorrect}
-              timer={timer}
-              maxTime={TIMER_BASE + bonusTime}
-              lastElapsedMs={lastElapsedMs}
-              onAnswer={handleAnswer}
-            >
-              <ItemBagSheet
-                bagOpen={bagOpen}
-                onBagOpenChange={setBagOpen}
-                inventory={inventory}
-                usedThisBattle={usedThisBattle}
-                itemsUsedThisBattleCount={itemsUsedThisBattleCount}
-                maxItemsPerBattle={MAX_ITEMS_PER_BATTLE}
-                itemCapReached={itemCapReached}
-                choiceSpecsActive={choiceSpecsActive}
-                anyItemUsedThisBattle={anyItemUsedThisBattle}
-                escapeDisabled={isWeekly || isElite}
-                onUseItem={tryUseItem}
-              />
-            </QuestionCard>
-          )}
-        </AnimatePresence>
+      {/* The card sits on a full-width band of the fade colour. Its own top
+          corners are rounded, and without this the artwork behind them showed
+          through as two green notches either side of the question card — the
+          stage runs the full height of the screen, so "below the fade" is still
+          painted field. */}
+      <div className="relative z-10 shrink-0 bg-[var(--battle-fade-to)]">
+        <div className="relative rounded-t-[28px] bg-card pt-14 px-[max(1rem,env(safe-area-inset-left))] pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-[0_-8px_30px_-12px_oklch(0.3_0.05_260/0.25)]">
+          <AnimatePresence mode="wait">
+            {phase !== "intro" && trivia && (
+              <QuestionCard
+                key={questionIdx}
+                trivia={trivia}
+                phase={phase as "question" | "feedback"}
+                chosen={chosen}
+                revealedWrong={revealedWrong}
+                revealedWrong2={revealedWrong2}
+                revealedCorrect={revealedCorrect}
+                timer={timer}
+                maxTime={TIMER_BASE + bonusTime}
+                lastElapsedMs={lastElapsedMs}
+                onAnswer={handleAnswer}
+              >
+                <ItemBagSheet
+                  bagOpen={bagOpen}
+                  onBagOpenChange={setBagOpen}
+                  inventory={inventory}
+                  usedThisBattle={usedThisBattle}
+                  itemsUsedThisBattleCount={itemsUsedThisBattleCount}
+                  maxItemsPerBattle={MAX_ITEMS_PER_BATTLE}
+                  itemCapReached={itemCapReached}
+                  choiceSpecsActive={choiceSpecsActive}
+                  anyItemUsedThisBattle={anyItemUsedThisBattle}
+                  escapeDisabled={isWeekly || isElite}
+                  onUseItem={tryUseItem}
+                />
+              </QuestionCard>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       <AlertDialog open={confirmExit} onOpenChange={setConfirmExit}>

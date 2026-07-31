@@ -93,8 +93,11 @@ export function PvpBattleScreen({ questions: rawQuestions, onFinish }: Props) {
   return (
     // `bg-battle-field`, not `bg-poke-cream`: this is a battle, and it was the
     // one mode whose questions were answered on the same paper as the Shop.
-    <div className="bg-battle-field flex h-full w-full flex-col px-5 pb-8 pt-6">
-      <div className="mb-4 flex items-center justify-between">
+    // No BattleStage here — async PvP has no sprites to stand on the platforms,
+    // so it takes the artwork as scenery and the same fade underneath.
+    <div className="bg-battle-field relative flex h-full w-full flex-col overflow-hidden px-5 pb-8 pt-6">
+      <div className="battle-stage" aria-hidden />
+      <div className="relative z-10 mb-4 flex items-center justify-between">
         <div className="font-pixel-xs text-foreground/60">
           Question {index + 1} / {questions.length}
         </div>
@@ -102,17 +105,17 @@ export function PvpBattleScreen({ questions: rawQuestions, onFinish }: Props) {
           Streak {streak} · Best {maxStreak}
         </div>
       </div>
-      <div className="mb-5 h-2 w-full overflow-hidden rounded-full bg-black/10">
+      <div className="relative z-10 mb-5 h-2 w-full overflow-hidden rounded-full bg-black/10">
         <div
           className="h-full rounded-full bg-poke-red transition-[width] duration-100"
           style={{ width: `${pct}%` }}
         />
       </div>
-      <div className="mb-6 rounded-3xl bg-card p-5 shadow-card">
+      <div className="relative z-10 mb-6 rounded-3xl bg-card p-5 shadow-card">
         <div className="font-pixel-xs mb-2 text-foreground/50">{q.category}</div>
         <div className="font-display text-lg leading-snug text-foreground">{q.question}</div>
       </div>
-      <div className="flex flex-1 flex-col gap-3">
+      <div className="relative z-10 flex flex-1 flex-col gap-3">
         {q.options.map((opt, i) => {
           const isCorrectOpt = i === q.correct;
           const isSelected = selected === i;

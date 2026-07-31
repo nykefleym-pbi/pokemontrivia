@@ -9,6 +9,7 @@ import { playSfx, playCry } from "@/lib/audio";
 import { answerHaptic } from "@/lib/haptics";
 import { useGameStore, type ActiveStatus, type PvpStatStages } from "@/lib/store";
 import {
+  BattleStage,
   PokemonSprite,
   TypeBadge,
   PokeballSpinner,
@@ -62,11 +63,7 @@ import {
   typeAbilityPreventsConfusion,
   type TypeAbilityCtx,
 } from "@/lib/pvp-type-abilities";
-import {
-  rollBotProfile,
-  botShouldUseItem,
-  type BotProfile,
-} from "@/lib/pvp-bot";
+import { rollBotProfile, botShouldUseItem, type BotProfile } from "@/lib/pvp-bot";
 import {
   signatureAbilityFor,
   signatureMoveName,
@@ -79,11 +76,7 @@ import {
   type SignatureEngineSpec,
   type DisableSpec,
 } from "@/lib/signature-abilities";
-import {
-  nextWrathStacks,
-  thunderclapFires,
-  THUNDERCLAP_COOLDOWN,
-} from "@/lib/signature-bespoke";
+import { nextWrathStacks, thunderclapFires, THUNDERCLAP_COOLDOWN } from "@/lib/signature-bespoke";
 import { isWeatherStatSource, isMyWeatherActive } from "@/lib/pvp-weather";
 import { TimerRing } from "@/components/timer-ring";
 import { AppIcon } from "@/components/app-icon";
@@ -252,7 +245,10 @@ function PvpCombatPanel({
                     <Info className="mt-[1px] h-2.5 w-2.5 shrink-0 opacity-70" />
                   </button>
                 </PopoverTrigger>
-                <PopoverContent align={align === "right" ? "end" : "start"} className="w-56 text-xs">
+                <PopoverContent
+                  align={align === "right" ? "end" : "start"}
+                  className="w-56 text-xs"
+                >
                   <div className="font-bold text-primary">{a.name}</div>
                   {a.desc && <p className="mt-1 leading-snug text-muted-foreground">{a.desc}</p>}
                 </PopoverContent>
@@ -523,7 +519,8 @@ export function LivePvpBattleScreen({
   const [transformTargetId, setTransformTargetId] = useState<number | null>(null);
 
   // The dex id Mew actually runs as (itself until Transform resolves).
-  const partnerId = rawPartnerId === MEW_ID && transformTargetId != null ? transformTargetId : rawPartnerId;
+  const partnerId =
+    rawPartnerId === MEW_ID && transformTargetId != null ? transformTargetId : rawPartnerId;
   const ability = useMemo(() => signatureAbilityFor(partnerId), [partnerId]);
 
   // Every partner runs its TYPE ability (feedback 29fd5d73); a Legendary/Mythical
@@ -553,7 +550,10 @@ export function LivePvpBattleScreen({
     if (typeAbilityId) {
       const name = getAbilityById(typeAbilityId)?.name ?? null;
       if (name) {
-        chips.push({ name, desc: typeWiring?.note ?? getAbilityById(typeAbilityId)?.description ?? null });
+        chips.push({
+          name,
+          desc: typeWiring?.note ?? getAbilityById(typeAbilityId)?.description ?? null,
+        });
       }
     }
     return chips;
@@ -561,13 +561,15 @@ export function LivePvpBattleScreen({
   const oppAbilities = useMemo<AbilityChip[]>(() => {
     const chips: AbilityChip[] = [];
     const oppSigMove = signatureMoveName(opponentPartnerId);
-    if (oppSigMove) chips.push({ name: oppSigMove, desc: describeSignatureFull(opponentPartnerId) });
+    if (oppSigMove)
+      chips.push({ name: oppSigMove, desc: describeSignatureFull(opponentPartnerId) });
     if (oppAbilityId) {
       const name = getAbilityById(oppAbilityId)?.name ?? null;
       if (name) {
         chips.push({
           name,
-          desc: typeAbilityPvp(oppAbilityId)?.note ?? getAbilityById(oppAbilityId)?.description ?? null,
+          desc:
+            typeAbilityPvp(oppAbilityId)?.note ?? getAbilityById(oppAbilityId)?.description ?? null,
         });
       }
     }
@@ -880,10 +882,16 @@ export function LivePvpBattleScreen({
         if (!res.ok || res.noop) return;
         const move = signatureMoveName(dex);
         if (engine.shield && side === "self") {
-          notify("success", `${move ?? "Signature"} — no damage for ${engine.shield.questions} questions`);
+          notify(
+            "success",
+            `${move ?? "Signature"} — no damage for ${engine.shield.questions} questions`,
+          );
         }
         if (engine.opponentTimer && side === "self") {
-          notify("success", `${move ?? "Signature"} — their clock is down to ${engine.opponentTimer.ms / 1000}s`);
+          notify(
+            "success",
+            `${move ?? "Signature"} — their clock is down to ${engine.opponentTimer.ms / 1000}s`,
+          );
         }
       });
     }
@@ -928,7 +936,9 @@ export function LivePvpBattleScreen({
 
   // Fold a server type-ability effect result (heal / stat / status / cure /
   // chip) back into local state — same shape as applyAbilityResult.
-  function applyTypeAbilityResult(res: Awaited<ReturnType<typeof applyPvpTypeAbilityEffect>>): void {
+  function applyTypeAbilityResult(
+    res: Awaited<ReturnType<typeof applyPvpTypeAbilityEffect>>,
+  ): void {
     if (!res.ok || res.noop) return;
     if (res.hostStages) {
       useGameStore.setState({
@@ -1008,7 +1018,10 @@ export function LivePvpBattleScreen({
     setEliminatedChoices(culled);
     if (culled.length > 0) {
       const move = signatureMoveName(partnerId);
-      notify("success", `${move ?? "Future Sight"} cleared ${culled.length} wrong answer${culled.length === 1 ? "" : "s"}!`);
+      notify(
+        "success",
+        `${move ?? "Future Sight"} cleared ${culled.length} wrong answer${culled.length === 1 ? "" : "s"}!`,
+      );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayedIndex]);
@@ -1415,7 +1428,6 @@ export function LivePvpBattleScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bothAnsweredCount, displayedIndex]);
 
-
   // A frozen question waits for the OPPONENT, then moves on.
   //
   // Freeze is the one slot the player cannot answer: `resolveQuestion` returns
@@ -1731,8 +1743,7 @@ export function LivePvpBattleScreen({
           tickEngine,
           { selfHp: myHp, oppHp },
           {
-            oppType:
-              opponentPartnerId != null ? (findPokemon(opponentPartnerId)?.types ?? []) : [],
+            oppType: opponentPartnerId != null ? (findPokemon(opponentPartnerId)?.types ?? []) : [],
             oppSpecies: opponentPartnerId ?? -1,
           },
         ),
@@ -1829,7 +1840,12 @@ export function LivePvpBattleScreen({
     selectedRef.current = choiceIndex;
     const elapsedMs = Date.now() - questionStartRef.current;
     const selectedOriginalIndex = orders[displayedIndex]?.[choiceIndex] ?? null;
-    void resolveQuestion(displayedIndex, choiceIndex === q.correct, elapsedMs, selectedOriginalIndex);
+    void resolveQuestion(
+      displayedIndex,
+      choiceIndex === q.correct,
+      elapsedMs,
+      selectedOriginalIndex,
+    );
   }
 
   // Auto-timeout: if the personal timer expires with nothing selected, count
@@ -2174,7 +2190,7 @@ export function LivePvpBattleScreen({
   return (
     <div className="relative flex h-full w-full flex-col overflow-hidden bg-battle-field">
       {/* TOP BAR — round pill (Solo-style), signature-fire (timer floats above the card) */}
-      <div className="flex shrink-0 items-center justify-between gap-2 pt-[calc(env(safe-area-inset-top)+1rem)] pb-1 px-[max(1.25rem,env(safe-area-inset-left))]">
+      <div className="relative z-10 flex shrink-0 items-center justify-between gap-2 pt-[calc(env(safe-area-inset-top)+1rem)] pb-1 px-[max(1.25rem,env(safe-area-inset-left))]">
         <div className="flex items-center gap-1 rounded-full bg-card/90 px-2.5 py-1 font-pixel text-[9px] text-foreground shadow-card backdrop-blur">
           QUESTION {displayedIndex + 1}/{PVP_QUESTIONS}
         </div>
@@ -2206,10 +2222,10 @@ export function LivePvpBattleScreen({
         </div>
       </div>
 
-      {/* COMBAT ARENA — FRLG diagonal layout, mirroring Solo */}
-      <div className="relative min-h-0 flex-1 px-[max(1.25rem,env(safe-area-inset-left))] py-2">
-        {/* OPPONENT ZONE: panel top-left, sprite top-right */}
-        <div className="flex items-start justify-between">
+      {/* COMBAT ARENA — both partners stand on the platforms painted into the
+          field artwork, same registration as Solo. */}
+      <BattleStage
+        enemyPanel={
           <PvpCombatPanel
             align="left"
             name={oppEntry?.name ?? opponentName}
@@ -2218,20 +2234,18 @@ export function LivePvpBattleScreen({
             stages={oppStages}
             abilities={oppAbilities}
           />
-          <div className="mt-2">
-            <ArenaSprite
-              id={opponentPartnerId}
-              back={false}
-              shake={shakeWho === "opponent"}
-              floatN={floatDmg?.who === "opponent" ? floatDmg.n : null}
-              statuses={oppStatusesDisplay}
-              confused={oppConfused}
-            />
-          </div>
-        </div>
-
-        {/* PLAYER ZONE: sprite lower-left, panel mid-right */}
-        <div className="-mt-2 flex items-end justify-between">
+        }
+        enemySprite={
+          <ArenaSprite
+            id={opponentPartnerId}
+            back={false}
+            shake={shakeWho === "opponent"}
+            floatN={floatDmg?.who === "opponent" ? floatDmg.n : null}
+            statuses={oppStatusesDisplay}
+            confused={oppConfused}
+          />
+        }
+        playerSprite={
           <ArenaSprite
             id={mySpriteId}
             back
@@ -2240,6 +2254,8 @@ export function LivePvpBattleScreen({
             statuses={myStatusesDisplay}
             confused={selfConfused}
           />
+        }
+        playerPanel={
           <PvpCombatPanel
             align="right"
             name={myPokemon?.name ?? findPokemon(partnerId ?? -1)?.name ?? "You"}
@@ -2248,107 +2264,121 @@ export function LivePvpBattleScreen({
             stages={myStages}
             abilities={myAbilities}
           />
-        </div>
-      </div>
+        }
+      />
+      {/* The stage is absolutely positioned, so this spacer is what pushes the
+          question card to the bottom — and it is also the fade, so the gradient
+          can never run on past the card or stop short of it. */}
+      <div className="battle-fade" aria-hidden />
 
       {/* QUESTION CARD — thumb zone, pinned bottom, floating timer pill above */}
-      <div className="relative shrink-0 rounded-t-[28px] bg-card px-[max(1rem,env(safe-area-inset-left))] pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-14 shadow-[0_-8px_30px_-12px_oklch(0.3_0.05_260/0.25)]">
-        <div className="relative">
-          <div className="pointer-events-none absolute left-1/2 -top-12 z-10 flex -translate-x-1/2 flex-col items-center">
-            <TimerRing timer={Math.ceil(msLeft / 1000)} maxTime={Math.ceil(personalTimerMs / 1000)} />
-            {!frozen && <p className="mt-1.5 font-pixel-xs text-foreground/70">{q.category}</p>}
-          </div>
+      {/* The card sits on a full-width band of the fade colour. Its own top
+          corners are rounded, and without this the artwork behind them showed
+          through as two green notches either side of the question card — the
+          stage runs the full height of the screen, so "below the fade" is still
+          painted field. */}
+      <div className="relative z-10 shrink-0 bg-[var(--battle-fade-to)]">
+        <div className="relative rounded-t-[28px] bg-card px-[max(1rem,env(safe-area-inset-left))] pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-14 shadow-[0_-8px_30px_-12px_oklch(0.3_0.05_260/0.25)]">
+          <div className="relative">
+            <div className="pointer-events-none absolute left-1/2 -top-12 z-10 flex -translate-x-1/2 flex-col items-center">
+              <TimerRing
+                timer={Math.ceil(msLeft / 1000)}
+                maxTime={Math.ceil(personalTimerMs / 1000)}
+              />
+              {!frozen && <p className="mt-1.5 font-pixel-xs text-foreground/70">{q.category}</p>}
+            </div>
 
-          {frozen ? (
-            <div className="flex flex-col items-center justify-center gap-2 py-6 text-center">
-              <div className="text-4xl">❄️</div>
-              <div className="font-display text-lg text-foreground">Frozen solid!</div>
-              <div className="text-xs text-foreground/60">This question is skipped.</div>
-            </div>
-          ) : stillSleepLocked ? (
-            <div className="flex flex-col items-center justify-center gap-2 py-6 text-center">
-              <div className="text-4xl">😴</div>
-              <div className="text-xs text-foreground/60">Waking up…</div>
-            </div>
-          ) : (
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={displayedIndex}
-                initial={{ y: 40, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: -10, opacity: 0 }}
-              >
-              <p className="text-center font-display text-[clamp(0.95rem,4vw,1.125rem)] font-bold leading-snug text-foreground">
-                {q.question}
-              </p>
-              <div className="mt-3 grid grid-cols-1 gap-2">
-                {q.options.map((opt, i) => {
-                  const isCorrectOpt = i === q.correct;
-                  const isSelected = selected === i;
-                  const showState = selected !== null;
-                  // Battle aids (feedback b9d53ba1) — only while unanswered. Azelf's
-                  // Future Sight culls a rolled set of wrong options and reuses the
-                  // same dimmed/disabled treatment, so the two aids read identically.
-                  const isDimmed =
-                    selected === null && (revealedWrong === i || eliminatedChoices.includes(i));
-                  const isHinted = selected === null && revealedCorrect === i;
-                  return (
-                    <button
-                      key={i}
-                      data-testid={`option-${i}`}
-                      disabled={selected !== null || isDimmed}
-                      onClick={() => handleAnswer(i)}
-                      className={`min-h-[48px] rounded-2xl border-2 px-4 py-3 text-left font-display text-base transition press-lg ${
-                        showState && isCorrectOpt
-                          ? "border-hp-good bg-hp-good/15 text-hp-good"
-                          : showState && isSelected && !isCorrectOpt
-                            ? "border-destructive bg-destructive/10 text-destructive"
-                            : isDimmed
-                              ? "border-border/60 line-through opacity-50"
-                              : isHinted
-                                ? "border-hp-good bg-hp-good/10 text-hp-good"
-                                : "border-border bg-card text-foreground"
-                      }`}
-                    >
-                      {opt}
-                    </button>
-                  );
-                })}
+            {frozen ? (
+              <div className="flex flex-col items-center justify-center gap-2 py-6 text-center">
+                <div className="text-4xl">❄️</div>
+                <div className="font-display text-lg text-foreground">Frozen solid!</div>
+                <div className="text-xs text-foreground/60">This question is skipped.</div>
               </div>
-              {selected !== null && (
-                <div className="mt-3 text-center font-pixel-xs text-foreground/50">
-                  Locked in — next question soon
-                </div>
-              )}
-
-              {/* Item shortcuts row — matches Solo's bag placement inside the question card */}
-              <div className="mt-3 flex items-center justify-center gap-3">
-                <button
-                  onClick={() => setBagOpen(true)}
-                  className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition press"
+            ) : stillSleepLocked ? (
+              <div className="flex flex-col items-center justify-center gap-2 py-6 text-center">
+                <div className="text-4xl">😴</div>
+                <div className="text-xs text-foreground/60">Waking up…</div>
+              </div>
+            ) : (
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={displayedIndex}
+                  initial={{ y: 40, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -10, opacity: 0 }}
                 >
-                  <Backpack className="h-6 w-6 text-muted-foreground" />
-                  <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-poke-dark px-1 font-pixel text-[9px] text-white">
-                    {itemsUsedRef.current}/{MAX_ITEMS_PER_BATTLE}
-                  </span>
-                </button>
-                {bagItems.slice(0, 3).map((it) => (
-                  <button
-                    key={it.id}
-                    disabled={
-                      itemsUsedRef.current >= MAX_ITEMS_PER_BATTLE ||
-                      usedItemIdsRef.current.has(it.id)
-                    }
-                    onClick={() => void handleUseItem(it.id)}
-                    className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition press disabled:opacity-40"
-                  >
-                    <ItemIcon item={it} className="h-8 w-8" />
-                  </button>
-                ))}
-              </div>
-            </motion.div>
-          </AnimatePresence>
-          )}
+                  <p className="text-center font-display text-[clamp(0.95rem,4vw,1.125rem)] font-bold leading-snug text-foreground">
+                    {q.question}
+                  </p>
+                  <div className="mt-3 grid grid-cols-1 gap-2">
+                    {q.options.map((opt, i) => {
+                      const isCorrectOpt = i === q.correct;
+                      const isSelected = selected === i;
+                      const showState = selected !== null;
+                      // Battle aids (feedback b9d53ba1) — only while unanswered. Azelf's
+                      // Future Sight culls a rolled set of wrong options and reuses the
+                      // same dimmed/disabled treatment, so the two aids read identically.
+                      const isDimmed =
+                        selected === null && (revealedWrong === i || eliminatedChoices.includes(i));
+                      const isHinted = selected === null && revealedCorrect === i;
+                      return (
+                        <button
+                          key={i}
+                          data-testid={`option-${i}`}
+                          disabled={selected !== null || isDimmed}
+                          onClick={() => handleAnswer(i)}
+                          className={`min-h-[48px] rounded-2xl border-2 px-4 py-3 text-left font-display text-base transition press-lg ${
+                            showState && isCorrectOpt
+                              ? "border-hp-good bg-hp-good/15 text-hp-good"
+                              : showState && isSelected && !isCorrectOpt
+                                ? "border-destructive bg-destructive/10 text-destructive"
+                                : isDimmed
+                                  ? "border-border/60 line-through opacity-50"
+                                  : isHinted
+                                    ? "border-hp-good bg-hp-good/10 text-hp-good"
+                                    : "border-border bg-card text-foreground"
+                          }`}
+                        >
+                          {opt}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {selected !== null && (
+                    <div className="mt-3 text-center font-pixel-xs text-foreground/50">
+                      Locked in — next question soon
+                    </div>
+                  )}
+
+                  {/* Item shortcuts row — matches Solo's bag placement inside the question card */}
+                  <div className="mt-3 flex items-center justify-center gap-3">
+                    <button
+                      onClick={() => setBagOpen(true)}
+                      className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition press"
+                    >
+                      <Backpack className="h-6 w-6 text-muted-foreground" />
+                      <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-poke-dark px-1 font-pixel text-[9px] text-white">
+                        {itemsUsedRef.current}/{MAX_ITEMS_PER_BATTLE}
+                      </span>
+                    </button>
+                    {bagItems.slice(0, 3).map((it) => (
+                      <button
+                        key={it.id}
+                        disabled={
+                          itemsUsedRef.current >= MAX_ITEMS_PER_BATTLE ||
+                          usedItemIdsRef.current.has(it.id)
+                        }
+                        onClick={() => void handleUseItem(it.id)}
+                        className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition press disabled:opacity-40"
+                      >
+                        <ItemIcon item={it} className="h-8 w-8" />
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+            )}
+          </div>
         </div>
       </div>
 

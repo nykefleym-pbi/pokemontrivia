@@ -7,6 +7,7 @@ import {
   useRouterState,
 } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { battleFieldCssUrl } from "@/lib/battle-field";
 import { MotionConfig } from "framer-motion";
 import { unlockAudio, playSfx, playBgm } from "@/lib/audio";
 import { installNativeGestureGuards } from "@/lib/native-gestures";
@@ -37,7 +38,12 @@ const APPLE_SPLASH: ReadonlyArray<{ base: string; w: number; h: number; r: numbe
   { base: "iPhone_8_Plus__iPhone_7_Plus__iPhone_6s_Plus__iPhone_6_Plus", w: 414, h: 736, r: 3 },
   { base: "iPhone_11__iPhone_XR", w: 414, h: 896, r: 2 },
   { base: "iPhone_11_Pro_Max__iPhone_XS_Max", w: 414, h: 896, r: 3 },
-  { base: "iPhone_13_mini__iPhone_12_mini__iPhone_11_Pro__iPhone_XS__iPhone_X", w: 375, h: 812, r: 3 },
+  {
+    base: "iPhone_13_mini__iPhone_12_mini__iPhone_11_Pro__iPhone_XS__iPhone_X",
+    w: 375,
+    h: 812,
+    r: 3,
+  },
   {
     base: "iPhone_17e__iPhone_16e__iPhone_14__iPhone_13_Pro__iPhone_13__iPhone_12_Pro__iPhone_12",
     w: 390,
@@ -46,7 +52,12 @@ const APPLE_SPLASH: ReadonlyArray<{ base: string; w: number; h: number; r: numbe
   },
   { base: "iPhone_14_Plus__iPhone_13_Pro_Max__iPhone_12_Pro_Max", w: 428, h: 926, r: 3 },
   { base: "iPhone_16__iPhone_15_Pro__iPhone_15__iPhone_14_Pro", w: 393, h: 852, r: 3 },
-  { base: "iPhone_16_Plus__iPhone_15_Pro_Max__iPhone_15_Plus__iPhone_14_Pro_Max", w: 430, h: 932, r: 3 },
+  {
+    base: "iPhone_16_Plus__iPhone_15_Pro_Max__iPhone_15_Plus__iPhone_14_Pro_Max",
+    w: 430,
+    h: 932,
+    r: 3,
+  },
   { base: "iPhone_17_Pro__iPhone_17__iPhone_16_Pro", w: 402, h: 874, r: 3 },
   { base: "iPhone_17_Pro_Max__iPhone_16_Pro_Max", w: 440, h: 956, r: 3 },
   { base: "iPhone_Air", w: 420, h: 912, r: 3 },
@@ -220,6 +231,19 @@ function RootComponent() {
     if (reducedMotion) root.classList.add("reduce-motion");
     else root.classList.remove("reduce-motion");
   }, [reducedMotion]);
+
+  // Which arena artwork battles are fought on, from the local clock. Re-checked
+  // hourly rather than once on mount, because this app is a PWA people leave
+  // open — without the interval a session started at 5pm would still be showing
+  // the morning field at midnight. Set as a custom property on the root so
+  // `.battle-stage` picks it up wherever it is mounted, with no prop threading.
+  useEffect(() => {
+    const apply = () =>
+      document.documentElement.style.setProperty("--battle-field-art", battleFieldCssUrl());
+    apply();
+    const id = setInterval(apply, 60 * 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
 
   // Long-press must reach the app's own handlers (the Arena badges' hold-to-
   // colourise) rather than the browser's image / selection menu. The CSS half of

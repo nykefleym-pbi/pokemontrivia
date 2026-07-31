@@ -22,12 +22,16 @@ import { COIN_ICON, STREAK_ICON, TP_ICON } from "@/lib/app-icons";
  * the chrome — a white rim, and a press that bounces. Keeping it as a class
  * string lets each card stay a plain button and compose its own colours.
  *
- * `press-lg` carries its own transition (see styles.css), so there is no
- * `transition-*` utility here — one used to be needed and is now the thing that
- * would fight it.
+ * `press-card`, not `press-lg`: these four keep their press even when the mode
+ * is unavailable, which a `disabled` button cannot do — a disabled control is
+ * inert and never matches `:active`. They carry `aria-disabled` and guard their
+ * own onClick instead. See the class note in styles.css.
+ *
+ * The class carries its own transition, so there is no `transition-*` utility
+ * here — one used to be needed and is now the thing that would fight it.
  */
 const MODE_CARD =
-  "relative overflow-hidden rounded-[18px] border-2 border-white/70 shadow-card " + "press-lg";
+  "relative overflow-hidden rounded-[18px] border-2 border-white/70 shadow-card press-card";
 
 /**
  * The mode card's hero sprite.
@@ -42,7 +46,7 @@ const MODE_CARD =
  * The footer row that shares this space carries `z-10` and wins.
  */
 const MODE_SPRITE =
-  "sprite pointer-events-none absolute bottom-2 right-2 h-[80px] w-[80px] drop-shadow-md";
+  "sprite animate-wiggle pointer-events-none absolute bottom-2 right-2 h-[80px] w-[80px] drop-shadow-md";
 
 /**
  * The diagonal light streak that crosses each mode card.
@@ -105,44 +109,33 @@ function ModeEyebrow({ children, className }: { children: React.ReactNode; class
 }
 
 /**
- * One cell of the merged stat strip: art on top of a lucide fallback, a big
- * value, and a quiet sub-line.
+ * One cell of the merged stat strip: the art, a big value, and a quiet sub-line.
  *
- * The image starts hidden and is revealed by its own `onLoad`. That ordering
- * matters — `STREAK_ICON` is owner-supplied art that may not exist yet, and
- * revealing on load (rather than hiding on error) means a 404 never flashes a
- * broken-image glyph before the fallback takes over.
+ * Streak and TP used to render a lucide glyph underneath and reveal the image on
+ * `onLoad`, because the Streak artwork had not been supplied yet and the
+ * fallback stopped a 404 flashing a broken-image icon. Both files exist now, so
+ * all three cells load the same way Coin always did — a plain <img>, no
+ * placeholder, no load state. The fallback was scaffolding for a missing asset,
+ * not a feature.
  */
 function StatCell({
   icon,
-  fallback,
   label,
   value,
   sub,
   valueClass = "text-foreground",
 }: {
   icon: string;
-  fallback: React.ReactNode;
   label: string;
   value: string;
   sub?: string;
   valueClass?: string;
 }) {
-  const [loaded, setLoaded] = useState(false);
   return (
     <div className="flex min-w-0 flex-1 flex-col items-center px-1 py-2">
       <div className="font-pixel-xs leading-none text-foreground/55">{label}</div>
       <div className="mt-1.5 flex items-center gap-1.5">
-        <span className="relative flex h-5 w-5 shrink-0 items-center justify-center">
-          {!loaded && fallback}
-          <img
-            src={icon}
-            alt=""
-            aria-hidden
-            onLoad={() => setLoaded(true)}
-            className={`absolute inset-0 h-5 w-5 object-contain ${loaded ? "" : "opacity-0"}`}
-          />
-        </span>
+        <img src={icon} alt="" aria-hidden className="h-5 w-5 shrink-0 object-contain" />
         <span className={`text-lg font-extrabold leading-none ${valueClass}`}>{value}</span>
       </div>
       <div className="mt-1 h-3 text-[10px] leading-none text-foreground/50">{sub ?? ""}</div>
@@ -333,21 +326,14 @@ export function BattleHome({
         <div className="mt-4 flex items-stretch divide-x divide-foreground/10 rounded-2xl border-2 border-white bg-card shadow-card">
           <StatCell
             icon={STREAK_ICON}
-            fallback={<Flame className="h-5 w-5 text-primary" />}
             label="STREAK"
             value={String(winStreak)}
             sub={bestStreak > 0 ? `Best: ${bestStreak}` : undefined}
             valueClass="text-primary"
           />
-          <StatCell
-            icon={COIN_ICON}
-            fallback={<span className="text-sm">◎</span>}
-            label="COINS"
-            value={coins.toLocaleString()}
-          />
+          <StatCell icon={COIN_ICON} label="COINS" value={coins.toLocaleString()} />
           <StatCell
             icon={TP_ICON}
-            fallback={<Sparkles className="h-5 w-5 text-poke-blue" />}
             label="TP"
             value={String(partnerTp)}
             sub={`×${tpMult.toFixed(2)}`}
@@ -405,9 +391,9 @@ export function BattleHome({
           reflow the other two every time the event ends. */}
       <div className="grid grid-cols-3 gap-2 px-5 pt-3">
         <button
-          onClick={onStartDaily}
-          disabled={dailyDone || loading}
-          className={`${MODE_CARD} flex h-[124px] flex-col bg-gradient-to-b from-[oklch(0.96_0.09_98)] to-[oklch(0.74_0.18_66)] p-2 text-left disabled:opacity-80 ${
+          onClick={() => !dailyDone && !loading && onStartDaily()}
+          aria-disabled={dailyDone || loading}
+          className={`${MODE_CARD} flex h-[124px] flex-col bg-gradient-to-b from-[oklch(0.96_0.09_98)] to-[oklch(0.74_0.18_66)] p-2 text-left aria-disabled:opacity-80 ${
             dailyDone ? "grayscale" : ""
           }`}
         >
@@ -416,7 +402,7 @@ export function BattleHome({
           <h3 className="relative mt-1 text-[13px] font-extrabold leading-tight text-[oklch(0.22_0.05_80)]">
             {dailyDone ? "Done" : "Beat Rotom"}
           </h3>
-          <PokemonSprite id={479} alt="Rotom" className={MODE_SPRITE} />
+          <PokemonSprite id={479} alt="Rotom" className={`${MODE_SPRITE} [animation-delay:0s]`} />
           <div className="relative z-10 mt-auto flex items-center gap-1.5">
             {dailyDone ? (
               <span className="text-[10px] font-semibold text-[oklch(0.35_0.06_80/0.85)]">
@@ -433,9 +419,9 @@ export function BattleHome({
         </button>
 
         <button
-          onClick={onStartWeekly}
-          disabled={loading || weeklyFinished}
-          className={`${MODE_CARD} flex h-[124px] flex-col bg-gradient-to-b from-[oklch(0.76_0.14_243)] to-[oklch(0.38_0.18_275)] p-2 text-left text-white disabled:opacity-80 ${
+          onClick={() => !loading && !weeklyFinished && onStartWeekly()}
+          aria-disabled={loading || weeklyFinished}
+          className={`${MODE_CARD} flex h-[124px] flex-col bg-gradient-to-b from-[oklch(0.76_0.14_243)] to-[oklch(0.38_0.18_275)] p-2 text-left text-white aria-disabled:opacity-80 ${
             weeklyFinished ? "grayscale" : ""
           }`}
         >
@@ -448,7 +434,7 @@ export function BattleHome({
             <PokemonSprite
               id={weeklyLeader.signaturePokemonId}
               alt={weeklyLeader.name}
-              className={MODE_SPRITE}
+              className={`${MODE_SPRITE} [animation-delay:1.7s]`}
             />
           )}
           <div className="relative z-10 mt-auto">
@@ -472,9 +458,9 @@ export function BattleHome({
 
         {mega !== null && mega !== "none" ? (
           <button
-            onClick={onStartMega}
-            disabled={mega.disabled}
-            className={`${MODE_CARD} flex h-[124px] flex-col bg-gradient-to-b from-[oklch(0.7_0.17_310)] to-[oklch(0.3_0.15_298)] p-2 text-left text-white disabled:opacity-80 ${
+            onClick={() => !mega.disabled && onStartMega()}
+            aria-disabled={mega.disabled}
+            className={`${MODE_CARD} flex h-[124px] flex-col bg-gradient-to-b from-[oklch(0.7_0.17_310)] to-[oklch(0.3_0.15_298)] p-2 text-left text-white aria-disabled:opacity-80 ${
               mega.disabled ? "grayscale" : ""
             }`}
           >
@@ -483,7 +469,11 @@ export function BattleHome({
             <h3 className="relative mt-1 truncate text-[13px] font-extrabold leading-tight">
               {mega.name}
             </h3>
-            <PokemonSprite id={mega.megaId} alt={mega.name} className={MODE_SPRITE} />
+            <PokemonSprite
+              id={mega.megaId}
+              alt={mega.name}
+              className={`${MODE_SPRITE} [animation-delay:3.4s]`}
+            />
             <div className="relative z-10 mt-auto text-[10px] font-bold leading-tight">
               {mega.reason === "cleared"
                 ? "Cleared!"
@@ -510,9 +500,9 @@ export function BattleHome({
 
       <div className="px-5 pt-2.5">
         <button
-          onClick={() => navigate({ to: "/whos-that-pokemon" })}
-          disabled={whosThatOnCooldown}
-          className={`${MODE_CARD} flex w-full items-center gap-3 bg-gradient-to-b from-[oklch(0.64_0.2_25)] to-[oklch(0.45_0.19_25)] py-2.5 pl-3 pr-3 text-left text-white disabled:opacity-80 ${whosThatOnCooldown ? "grayscale" : ""}`}
+          onClick={() => !whosThatOnCooldown && navigate({ to: "/whos-that-pokemon" })}
+          aria-disabled={whosThatOnCooldown}
+          className={`${MODE_CARD} flex w-full items-center gap-3 bg-gradient-to-b from-[oklch(0.64_0.2_25)] to-[oklch(0.45_0.19_25)] py-2.5 pl-3 pr-3 text-left text-white aria-disabled:opacity-80 ${whosThatOnCooldown ? "grayscale" : ""}`}
         >
           {/* Gold rayburst, kept from the old card — it is what makes this one
               read as the odd one out, which is the point. */}
@@ -535,7 +525,7 @@ export function BattleHome({
             <PokemonSprite
               id={25}
               alt=""
-              className="relative h-[68px] w-[68px] [filter:brightness(0)] [image-rendering:pixelated]"
+              className="animate-wiggle relative h-[68px] w-[68px] [filter:brightness(0)] [image-rendering:pixelated] [animation-delay:2.6s]"
             />
           </div>
           {/* Pixel face, matching the eyebrow the other three mode cards use.
