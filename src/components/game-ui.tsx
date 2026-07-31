@@ -365,9 +365,19 @@ export const PokeballSpinner = React.memo(function PokeballSpinner({
  * turning over rather than two images cross-fading. `HALF_MS` therefore has to
  * stay exactly half of the `ball-flip` duration in styles.css; they are a pair.
  *
- * The timer is re-armed from inside the effect rather than run as an interval,
- * so a tab that was backgrounded mid-flip resumes cleanly instead of firing a
- * queued burst of swaps.
+ * The chain lives in ONE effect with empty deps, and that is the fix for a real
+ * bug rather than a style preference. The first version keyed the effect on
+ * `index`, so the moment the tier swapped — halfway through the flip — React
+ * tore that effect down and its cleanup cancelled the still-pending timer that
+ * resets `flipping`. The class was therefore never removed, and since
+ * re-applying a class that is already present does not restart a CSS animation,
+ * every flip after the first was invisible: the ball changed tier silently and
+ * only a remount (switching back to the Home tab) ever animated again.
+ *
+ * `alive` guards each step so a component unmounted mid-chain cannot call
+ * setState afterwards, and re-arming from the tail rather than running an
+ * interval means a backgrounded tab resumes cleanly instead of firing a queued
+ * burst of swaps.
  *
  * Reduced motion is handled in CSS: the keyframes are stilled along with every
  * other decorative loop, and the ball simply cuts to the next tier.
@@ -381,16 +391,32 @@ export function BallCycler({ size = 56 }: { size?: number }) {
   const [flipping, setFlipping] = useState(false);
 
   useEffect(() => {
-    const start = setTimeout(() => {
-      setFlipping(true);
-      const swap = setTimeout(() => setIndex((i) => (i + 1) % BALL_ORDER.length), HALF_MS);
-      const end = setTimeout(() => setFlipping(false), FLIP_MS);
-      timers.push(swap, end);
-    }, FLIP_EVERY_MS);
-    const timers: ReturnType<typeof setTimeout>[] = [start];
-    return () => timers.forEach(clearTimeout);
-    // Re-runs on every settle, which is what re-arms the next flip.
-  }, [index]);
+    let alive = true;
+    let timer: ReturnType<typeof setTimeout>;
+    const after = (ms: number, fn: () => void) => {
+      timer = setTimeout(() => {
+        if (alive) fn();
+      }, ms);
+    };
+    const cycle = () => {
+      after(FLIP_EVERY_MS, () => {
+        setFlipping(true);
+        // Swap at the halfway point, edge-on, where neither face is visible.
+        after(HALF_MS, () => {
+          setIndex((i) => (i + 1) % BALL_ORDER.length);
+          after(HALF_MS, () => {
+            setFlipping(false);
+            cycle();
+          });
+        });
+      });
+    };
+    cycle();
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+    };
+  }, []);
 
   return (
     <div data-testid="ball-cycler" style={{ perspective: size * 6 }}>
@@ -663,7 +689,9 @@ export function PokeballPattern({ marks }: { marks: DailyMark[] }) {
  * The player panel's `top-[30%]` is chosen so the card is level with the pad it
  * belongs to (pad centre 34.8%, card ~10% tall), not merely below it — at 40%
  * the two read as unrelated and the card drifted into the question card's
- * shoulder.
+ * shoulder. The enemy panel's `top-[13%]` brings its lower edge down to meet the
+ * VS mark painted at ~24-29%, which is what ties the two halves of the diagonal
+ * together; at 7% it floated alone against the treeline.
  *
  * Every slot carries `z-10` so it sits above the artwork layer rather than
  * being painted into it.
@@ -686,7 +714,7 @@ export function BattleStage({
   });
   return (
     <div className="battle-stage" aria-hidden={false}>
-      <div className="absolute left-[4%] right-[48%] top-[7%] z-10 flex justify-start">
+      <div className="absolute left-[4%] right-[48%] top-[13%] z-10 flex justify-start">
         {enemyPanel}
       </div>
       <div className="absolute z-10" style={pad(BATTLE_PLATFORM.enemy)}>

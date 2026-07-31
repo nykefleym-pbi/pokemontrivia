@@ -49,18 +49,26 @@ export function battleFieldCssUrl(id: BattleFieldId = battleFieldIdFor()): strin
  * third of the frame above it. That is the float the owner reported, and the
  * sink is that transparent band.
  *
- * Measured off a real device screenshot: the two combatants sat 5.6% and 6.8%
- * of the stage too high, and the gap between those two figures tracks their
- * different box sizes (h-36 vs h-40) — which is the tell that this is frame
- * padding rather than a positioning error.
+ * Measured off real device screenshots rather than guessed. The first pass
+ * (Cascoon / Bulbasaur) sat 5.6% and 6.8% of the stage too HIGH; the correction
+ * for it then put the second pass (Floette / Bulbasaur) 4.4% and 1.8% too LOW.
+ * These figures are the average of the two.
  *
- * It cannot be exact for every species, because the padding varies with how
- * tall the creature is drawn. Tuned so the common case stands ON the pad and
- * outliers sink a few pixels into it, which reads far better than floating.
+ * That spread is the honest limit of this approach, and it is worth being blunt
+ * about: the padding is a property of each species' artwork, not of the layout.
+ * Cascoon is a small cocoon adrift in its frame and wants ~7%; Floette is drawn
+ * nearly frame-height and wants ~3%. No single number satisfies both, so these
+ * are tuned to the middle, biased slightly high — a creature hovering a couple
+ * of pixels reads better than one with its feet buried in the pad.
+ *
+ * The exact fix, if this is ever worth the code: read each sprite into a canvas
+ * on load and find its lowest opaque row, then offset by that. PokeAPI serves
+ * CORS headers and the images are already loaded with `crossOrigin`, so it is
+ * available — it is just more machinery than a constant.
  */
 export const BATTLE_PLATFORM = {
   /** Upper right — the opponent. */
-  enemy: { cx: 74, cy: 23.1, w: 41, sink: 7.2 },
+  enemy: { cx: 74, cy: 23.1, w: 41, sink: 3.8 },
   /** Lower left — your partner. */
-  player: { cx: 26.5, cy: 34.8, w: 44.6, sink: 8.4 },
+  player: { cx: 26.5, cy: 34.8, w: 44.6, sink: 6.8 },
 } as const;
