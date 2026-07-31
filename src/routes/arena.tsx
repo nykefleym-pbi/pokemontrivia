@@ -16,11 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { BattleCodeQr } from "@/components/battle-code-qr";
 import { VersusScreen } from "@/components/versus-screen";
-import {
-  rollTrainingBotBackdrop,
-  trainingBotBackdropSrc,
-  trainingBotSide,
-} from "@/lib/training-bot";
+import { trainingBotSide } from "@/lib/training-bot";
 import { ScanPanel } from "@/components/NearbyBattleSheet";
 import { trainerSpriteUrl } from "@/lib/game-data";
 import { versusBackdropSrc } from "@/lib/versus-backdrops";
@@ -206,10 +202,7 @@ function ArenaPage() {
     for (const src of new Set([
       versusBackdropSrc(versusBackdropId),
       VERSUS_BACKDROP,
-      // The bot's own half and its animated avatar. Which backdrop it lands on
-      // is not rolled yet, so this warms the one from last time — a hit more
-      // often than not, and free when it misses.
-      trainingBotBackdropSrc(),
+      // The bot's animated avatar. Its half is Forest, already in this set.
       ...(TRAINING_BOT_AVATAR ? [TRAINING_BOT_AVATAR] : []),
     ])) {
       const img = new Image();
@@ -322,10 +315,6 @@ function ArenaPage() {
         // which React may invoke more than once.
         if (next >= QUEUE_FALLBACK_S && !fallenBackRef.current) {
           fallenBackRef.current = true;
-          // Roll the bot's world BEFORE the face-off goes up, so the Arena and
-          // the match route it hands over to draw the same one. Rolling per
-          // render would change the backdrop mid-handover.
-          rollTrainingBotBackdrop();
           // Raise the flag BEFORE stopping the queue so the face-off never
           // unmounts between the two, and leave the line — a row left behind
           // would pair someone into a battle they have walked away from.

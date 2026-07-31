@@ -18,8 +18,8 @@ vi.mock("framer-motion", () => {
 });
 
 const { VersusScreen } = await import("@/components/versus-screen");
-const { rollTrainingBotBackdrop, trainingBotSide } = await import("@/lib/training-bot");
-const { VERSUS_BACKDROPS } = await import("@/lib/versus-backdrops");
+const { trainingBotSide } = await import("@/lib/training-bot");
+const { VERSUS_BACKDROPS, DEFAULT_VERSUS_BACKDROP_ID } = await import("@/lib/versus-backdrops");
 
 const me = { name: "Ash", spriteId: "ace-trainer-m", level: 12, rating: 1120 };
 const rival = { name: "Gary", spriteId: "ace-trainer-f", level: 14, rating: 1210 };
@@ -104,32 +104,20 @@ describe("VersusScreen", () => {
     expect(srcs.every((s) => s !== "")).toBe(true);
   });
 
-  it("stands the bot on a backdrop from the shared catalogue", () => {
-    // It has no artwork of its own: a random one per match is what stops a run
-    // of Training battles looking like the same fight over and over.
+  it("stands the bot on the shared default backdrop", () => {
+    // It briefly rolled a random one per match. That needed module state to
+    // hold steady across the Arena -> match-route handover; a fixed world is
+    // simpler and is what the owner asked for.
     const file = decodeURIComponent(trainingBotSide(12).backdrop ?? "");
-    expect(file.startsWith("/versus/")).toBe(true);
-    expect(VERSUS_BACKDROPS.some((b) => `/versus/${b.file}` === file)).toBe(true);
+    expect(file).toBe(`/versus/${VERSUS_BACKDROPS[0].file}`);
+    expect(VERSUS_BACKDROPS[0].id).toBe(DEFAULT_VERSUS_BACKDROP_ID);
   });
 
-  it("holds that backdrop still until the next match is rolled", () => {
-    // Three screens show the bot in a row across a route change. Re-rolling
-    // between them would swap the world out mid-handover — the flash the
-    // shared definition exists to prevent.
-    const before = trainingBotSide(12).backdrop;
-    expect(trainingBotSide(12).backdrop).toBe(before);
-    expect(trainingBotSide(30).backdrop).toBe(before);
-  });
-
-  it("eventually rolls a different one", () => {
-    // Not asserting any single roll — just that repeated rolls are not pinned
-    // to one backdrop, which is what a broken randomiser looks like.
-    const seen = new Set<string | null | undefined>();
-    for (let i = 0; i < 200; i++) {
-      rollTrainingBotBackdrop();
-      seen.add(trainingBotSide(12).backdrop);
-    }
-    expect(seen.size).toBeGreaterThan(1);
+  it("shows the same backdrop every time, so a handover cannot change it", () => {
+    // Three screens draw the bot in a row across a route change. Anything that
+    // varied per call would swap the world out mid-face-off.
+    const first = trainingBotSide(12).backdrop;
+    for (let i = 0; i < 50; i++) expect(trainingBotSide(i).backdrop).toBe(first);
   });
 
   it("renders no avatar at all rather than a broken one for an unknown sprite", () => {
