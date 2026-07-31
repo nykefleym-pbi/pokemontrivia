@@ -3,6 +3,7 @@ import type { StoreSlice } from "@/lib/store/slice";
 import type { ItemId } from "@/lib/game-data";
 import { getWeekRangeUtc, EGG_HATCH_REQUIRED } from "@/lib/game-data";
 import { ITEM_BY_ID } from "@/content/items";
+import { SHOP_BUNDLES } from "@/lib/shop-bundles";
 import { canEvolve } from "@/lib/pokemon-data";
 
 export const BIG_NUGGET_DURATION_DAYS = 3;
@@ -160,6 +161,7 @@ export const createItemsSlice: StoreSlice<
     | "pokeEggs"
     | "grantItem"
     | "buyItem"
+    | "buyBundle"
     | "featuredDealLastPurchase"
     | "markFeaturedDealPurchased"
     | "useItem"
@@ -389,6 +391,25 @@ export const createItemsSlice: StoreSlice<
       coins: s.coins - cost,
       inventory: { ...s.inventory, [id]: (s.inventory[id] ?? 0) + 1 },
     });
+    return true;
+  },
+
+  buyBundle: (bundleId) => {
+    const s = get();
+    const bundle = SHOP_BUNDLES.find((b) => b.id === bundleId);
+    if (!bundle) return false;
+    if (s.coins < bundle.cost) return false;
+    // Space for the WHOLE bundle, checked before the coins move — same order
+    // as buyItem, for the same reason. A bundle that half-fits must not
+    // charge; partial delivery would be worse than a clean refusal, since the
+    // player cannot tell which lines they were shorted.
+    const needed = bundle.contents
+      .filter((c) => !isBagExempt(c.id))
+      .reduce((sum, c) => sum + c.qty, 0);
+    if (spaceLeft(s) < needed) return false;
+    const inventory = { ...s.inventory };
+    for (const c of bundle.contents) inventory[c.id] = (inventory[c.id] ?? 0) + c.qty;
+    set({ coins: s.coins - bundle.cost + bundle.coins, inventory });
     return true;
   },
 
