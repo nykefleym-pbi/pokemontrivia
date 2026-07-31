@@ -9,6 +9,7 @@ export const createCollectionsSlice: StoreSlice<
     | "defeatedEliteRegions"
     | "abilityCodex"
     | "recordPokedexCapture"
+    | "recordPokedexSeen"
     | "markEliteDefeated"
     | "registerAbilityTriggered"
   >
@@ -29,6 +30,28 @@ export const createCollectionsSlice: StoreSlice<
           firstSeenAt: existing?.firstSeenAt ?? Date.now(),
           shinyUnlocked: (existing?.shinyUnlocked ?? false) || isShiny,
           defeatCount: (existing?.defeatCount ?? 0) + 1,
+          caught: true,
+        },
+      },
+    });
+  },
+
+  recordPokedexSeen: (pokemonId) => {
+    const s = get();
+    const existing = s.pokedex[pokemonId];
+    // Any existing entry wins: a caught one must never be downgraded, and
+    // re-seeing a seen one must not churn the store (this fires on every battle
+    // intro) or move `firstSeenAt`. Either way there is nothing to write.
+    if (existing) return;
+    set({
+      pokedex: {
+        ...s.pokedex,
+        [pokemonId]: {
+          pokemonId,
+          firstSeenAt: Date.now(),
+          shinyUnlocked: false,
+          defeatCount: 0,
+          caught: false,
         },
       },
     });
