@@ -586,7 +586,7 @@ export function CombatPanel({
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    className="flex max-w-full items-center gap-0.5 rounded-xl bg-primary/10 px-1.5 py-[1px] font-pixel-xs text-primary active:scale-95"
+                    className="flex max-w-full items-center gap-0.5 rounded-xl bg-primary/10 px-1.5 py-[1px] font-pixel-xs text-primary press"
                   >
                     <span className="min-w-0 truncate text-left">{abilityName}</span>
                     <Info className="mt-[1px] h-2.5 w-2.5 shrink-0 opacity-70" />
@@ -692,7 +692,7 @@ export function QuestionCard({
                 data-testid={`option-${i}`}
                 disabled={phase !== "question" || isRevealed}
                 onClick={() => onAnswer(i)}
-                className={`flex min-h-[48px] items-center justify-between rounded-2xl border-2 bg-card px-4 py-2.5 text-left text-[clamp(0.875rem,3.6vw,0.95rem)] font-semibold transition active:scale-[0.98] ${
+                className={`flex min-h-[48px] items-center justify-between rounded-2xl border-2 bg-card px-4 py-2.5 text-left text-[clamp(0.875rem,3.6vw,0.95rem)] font-semibold transition press-lg ${
                   isCorrect
                     ? "border-hp-good bg-hp-good/5 text-hp-good"
                     : isWrong
@@ -777,7 +777,7 @@ export function ItemBagSheet({
     <div className="mt-3 flex items-center justify-center gap-3">
       <Sheet open={bagOpen} onOpenChange={onBagOpenChange}>
         <SheetTrigger asChild>
-          <button className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition active:scale-95">
+          <button className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition press">
             <Backpack className="h-6 w-6 text-muted-foreground" />
           </button>
         </SheetTrigger>
@@ -834,7 +834,7 @@ export function ItemBagSheet({
                                 key={it.id}
                                 disabled={disabled}
                                 onClick={() => onUseItem(it.id)}
-                                className="flex items-center gap-3.5 rounded-[20px] bg-card px-4 py-3 text-left shadow-card transition active:scale-[0.99] disabled:opacity-40"
+                                className="flex items-center gap-3.5 rounded-[20px] bg-card px-4 py-3 text-left shadow-card transition press-lg disabled:opacity-40"
                               >
                                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-primary/[0.08]">
                                   <ItemIcon item={it} className="h-9 w-9" />
@@ -888,7 +888,7 @@ export function ItemBagSheet({
               data-testid={`item-${it.id}`}
               disabled={disabled}
               onClick={() => onUseItem(it.id)}
-              className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition active:scale-95 disabled:opacity-40"
+              className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition press disabled:opacity-40"
             >
               <ItemIcon item={it} className="h-8 w-8" />
               <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-poke-dark px-1 font-pixel text-[9px] text-white">

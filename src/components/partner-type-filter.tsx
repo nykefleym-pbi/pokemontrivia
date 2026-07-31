@@ -27,7 +27,7 @@ export function PartnerTypeFilter({
       <button
         onClick={() => onChange(null)}
         aria-pressed={value === null}
-        className={`shrink-0 rounded-full px-3 py-1 font-pixel text-[9px] uppercase tracking-wide transition active:scale-95 ${
+        className={`shrink-0 rounded-full px-3 py-1 font-pixel text-[9px] uppercase tracking-wide transition press ${
           value === null ? "bg-foreground text-background shadow-sm" : "bg-muted text-foreground/50"
         }`}
       >
@@ -41,7 +41,7 @@ export function PartnerTypeFilter({
           aria-label={`${t} type`}
           // Tapping the active chip clears it, so the filter can be undone
           // without hunting for "All" at the far left of a scrolled row.
-          className={`shrink-0 rounded-full transition active:scale-95 ${
+          className={`shrink-0 rounded-full transition press ${
             value === t
               ? "ring-2 ring-foreground ring-offset-1 ring-offset-background"
               : "opacity-45"

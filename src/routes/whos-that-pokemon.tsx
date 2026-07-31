@@ -350,7 +350,7 @@ export function WhosThatPokemon() {
         </div>
         <button
           onClick={goHome}
-          className="rounded-full border-2 border-poke-dark/15 bg-white py-3.5 font-pixel text-sm tracking-wide text-poke-dark shadow-card active:scale-[0.98]"
+          className="rounded-full border-2 border-poke-dark/15 bg-white py-3.5 font-pixel text-sm tracking-wide text-poke-dark shadow-card press-lg"
         >
           CLOSE
         </button>
@@ -366,7 +366,7 @@ export function WhosThatPokemon() {
         </div>
         <button
           onClick={goHome}
-          className="rounded-full border-2 border-poke-dark/15 bg-white px-5 py-2.5 font-pixel text-[10px] text-poke-dark shadow-card active:scale-95"
+          className="rounded-full border-2 border-poke-dark/15 bg-white px-5 py-2.5 font-pixel text-[10px] text-poke-dark shadow-card press"
         >
           CLOSE
         </button>
@@ -440,7 +440,7 @@ export function WhosThatPokemon() {
         <div className="flex-1" />
         <button
           onClick={goHome}
-          className="rounded-full bg-primary py-4 font-pixel text-base tracking-wide text-primary-foreground shadow-card active:scale-[0.98]"
+          className="rounded-full bg-primary py-4 font-pixel text-base tracking-wide text-primary-foreground shadow-card press-lg"
         >
           COLLECT
         </button>
@@ -473,7 +473,7 @@ export function WhosThatPokemon() {
         <div className="flex-1" />
         <button
           onClick={goHome}
-          className="w-full rounded-full border-2 border-poke-dark/15 bg-white py-3.5 font-pixel text-sm tracking-wide text-poke-dark shadow-card active:scale-[0.98]"
+          className="w-full rounded-full border-2 border-poke-dark/15 bg-white py-3.5 font-pixel text-sm tracking-wide text-poke-dark shadow-card press-lg"
         >
           CLOSE
         </button>
@@ -517,7 +517,7 @@ export function WhosThatPokemon() {
       <button
         onClick={submit}
         disabled={!canSubmit}
-        className="mt-3 w-full rounded-full bg-primary py-4 font-pixel text-base tracking-wide text-primary-foreground shadow-card disabled:opacity-50 active:scale-[0.98]"
+        className="mt-3 w-full rounded-full bg-primary py-4 font-pixel text-base tracking-wide text-primary-foreground shadow-card disabled:opacity-50 press-lg"
       >
         SUBMIT
       </button>
@@ -530,7 +530,7 @@ export function WhosThatPokemon() {
         <button
           onClick={goHome}
           aria-label="Back"
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-xl text-poke-dark shadow-card active:scale-95"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-xl text-poke-dark shadow-card press"
         >
           ‹
         </button>
@@ -566,7 +566,7 @@ export function WhosThatPokemon() {
             <button
               onClick={playCryNow}
               disabled={playsLeft <= 0}
-              className="flex items-center gap-2 rounded-full border-b-4 border-primary/60 bg-white px-7 py-3.5 font-pixel text-base text-primary shadow-card disabled:opacity-40 active:translate-y-0.5 active:border-b-0"
+              className="flex items-center gap-2 rounded-full border-b-4 border-primary/60 bg-white px-7 py-3.5 font-pixel text-base text-primary shadow-card disabled:opacity-40 press-push active:border-b-0"
             >
               PLAY CRY
             </button>
@@ -581,7 +581,7 @@ export function WhosThatPokemon() {
                 <button
                   key={c}
                   onClick={() => setSelChoice(c)}
-                  className={`rounded-2xl px-3 py-5 text-base font-extrabold shadow-card transition active:scale-95 ${on ? "bg-[oklch(0.62_0.16_250)] text-white" : "bg-white text-poke-dark"}`}
+                  className={`rounded-2xl px-3 py-5 text-base font-extrabold shadow-card transition press ${on ? "bg-[oklch(0.62_0.16_250)] text-white" : "bg-white text-poke-dark"}`}
                 >
                   {c}
                 </button>
@@ -592,7 +592,7 @@ export function WhosThatPokemon() {
             <button
               onClick={submit}
               disabled={!canSubmit}
-              className="w-full rounded-full bg-primary py-4 font-pixel text-base tracking-wide text-primary-foreground shadow-card disabled:opacity-50 active:scale-[0.98]"
+              className="w-full rounded-full bg-primary py-4 font-pixel text-base tracking-wide text-primary-foreground shadow-card disabled:opacity-50 press-lg"
             >
               SUBMIT
             </button>
@@ -635,7 +635,7 @@ export function WhosThatPokemon() {
               </div>
               <button
                 onClick={() => setDexNonce((n) => n + 1)}
-                className="mt-3 rounded-full bg-primary px-5 py-2 font-pixel text-[10px] text-primary-foreground active:scale-95"
+                className="mt-3 rounded-full bg-primary px-5 py-2 font-pixel text-[10px] text-primary-foreground press"
               >
                 RETRY
               </button>
@@ -687,7 +687,7 @@ export function WhosThatPokemon() {
                 <button
                   key={t}
                   onClick={() => toggleType(t)}
-                  className={`rounded-full border-2 py-2.5 font-pixel text-[9px] uppercase tracking-wide transition active:scale-95 ${on ? `${TYPE_BG[t]} border-transparent text-white` : `border-current bg-transparent ${TYPE_TEXT[t]}`}`}
+                  className={`rounded-full border-2 py-2.5 font-pixel text-[9px] uppercase tracking-wide transition press ${on ? `${TYPE_BG[t]} border-transparent text-white` : `border-current bg-transparent ${TYPE_TEXT[t]}`}`}
                 >
                   {on ? "✓ " : ""}
                   {t}
@@ -698,7 +698,7 @@ export function WhosThatPokemon() {
           <button
             onClick={submit}
             disabled={!canSubmit}
-            className="mt-5 w-full rounded-full bg-primary py-4 font-pixel text-base tracking-wide text-primary-foreground shadow-card disabled:opacity-50 active:scale-[0.98]"
+            className="mt-5 w-full rounded-full bg-primary py-4 font-pixel text-base tracking-wide text-primary-foreground shadow-card disabled:opacity-50 press-lg"
           >
             SUBMIT
           </button>

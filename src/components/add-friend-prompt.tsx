@@ -79,14 +79,14 @@ export function AddFriendPrompt({
                 );
               }}
               disabled={busy}
-              className="h-8 rounded-full bg-white px-3 text-xs font-bold text-foreground transition active:scale-95 disabled:opacity-50"
+              className="h-8 rounded-full bg-white px-3 text-xs font-bold text-foreground transition press disabled:opacity-50"
             >
               Add
             </button>
             <button
               aria-label="Not now"
               onClick={() => setDismissed(true)}
-              className="h-8 rounded-full px-2 text-xs font-bold text-white/50 transition active:scale-95"
+              className="h-8 rounded-full px-2 text-xs font-bold text-white/50 transition press"
             >
               Not now
             </button>

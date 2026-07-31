@@ -147,7 +147,7 @@ function PokedexPage() {
           <Popover>
             <PopoverTrigger asChild>
               <button
-                className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold capitalize shadow-card transition ${
+                className={`press shrink-0 rounded-full px-3 py-1.5 text-xs font-bold capitalize shadow-card ${
                   type === "all"
                     ? "bg-card text-foreground/70"
                     : "bg-primary text-primary-foreground"
@@ -160,7 +160,7 @@ function PokedexPage() {
               <div className="flex flex-wrap gap-1">
                 <button
                   onClick={() => setType("all")}
-                  className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                  className={`press rounded-full px-2.5 py-1 text-[11px] font-bold ${
                     type === "all"
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted text-foreground/70"
@@ -172,7 +172,7 @@ function PokedexPage() {
                   <button
                     key={t}
                     onClick={() => setType(t)}
-                    className="rounded-full px-2.5 py-1 text-[11px] font-bold capitalize text-white"
+                    className="rounded-full px-2.5 py-1 text-[11px] font-bold capitalize text-white press"
                     style={{ background: `var(--type-${t})`, opacity: type === t ? 1 : 0.7 }}
                   >
                     {t}
@@ -195,7 +195,7 @@ function PokedexPage() {
                 setCapturedOnly(false);
                 setShinyOnly(false);
               }}
-              className="ml-auto flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-[11px] font-bold text-muted-foreground"
+              className="ml-auto flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-[11px] font-bold text-muted-foreground press"
             >
               <X className="h-3 w-3" /> Clear
             </button>
@@ -221,7 +221,7 @@ function PokedexPage() {
               <button
                 key={g.gen}
                 onClick={() => setGen(g.gen)}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold transition ${
+                className={`press shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${
                   active
                     ? "bg-primary text-primary-foreground shadow-card"
                     : "bg-card text-foreground/70 shadow-card"
@@ -266,7 +266,7 @@ function PokedexPage() {
                         : {}),
                   } as React.CSSProperties
                 }
-                className={`relative flex flex-col items-center rounded-2xl p-2 transition active:scale-95 ${
+                className={`relative flex flex-col items-center rounded-2xl p-2 transition press ${
                   shiny
                     ? "border-2 border-poke-yellow shadow-card"
                     : got
@@ -322,7 +322,7 @@ function PokedexPage() {
                 <div className="flex items-center justify-between">
                   <button
                     onClick={() => setDetailId(null)}
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-white/25 text-white backdrop-blur active:scale-95"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-white/25 text-white backdrop-blur press"
                     aria-label="Back"
                   >
                     <ChevronLeft className="h-5 w-5" />
@@ -365,7 +365,7 @@ function PokedexPage() {
                   )}
                   <button
                     onClick={() => playCry(p.id)}
-                    className="mt-4 inline-flex items-center gap-2 rounded-full border border-primary/30 px-4 py-2 text-sm font-bold text-primary active:scale-95"
+                    className="mt-4 inline-flex items-center gap-2 rounded-full border border-primary/30 px-4 py-2 text-sm font-bold text-primary press"
                   >
                     <Volume2 className="h-4 w-4" /> Play cry
                   </button>
@@ -377,7 +377,7 @@ function PokedexPage() {
                           return !v;
                         })
                       }
-                      className="ml-2 mt-4 inline-flex items-center gap-2 rounded-full border border-poke-yellow/50 px-4 py-2 text-sm font-bold text-foreground active:scale-95"
+                      className="ml-2 mt-4 inline-flex items-center gap-2 rounded-full border border-poke-yellow/50 px-4 py-2 text-sm font-bold text-foreground press"
                     >
                       <Sparkles className="h-4 w-4 text-poke-yellow" /> {showS ? "Normal" : "Shiny"}
                     </button>
@@ -412,7 +412,7 @@ function PokedexPage() {
                                     setDetailId(stage.id);
                                     setShowShiny(false);
                                   }}
-                                  className="flex w-[72px] shrink-0 flex-col items-center rounded-2xl p-1.5 transition active:bg-muted/50"
+                                  className="press flex w-[72px] shrink-0 flex-col items-center rounded-2xl p-1.5 active:bg-muted/50"
                                 >
                                   <PokemonSprite
                                     id={stage.id}
@@ -452,7 +452,7 @@ function ToggleChip({
     <button
       aria-pressed={active}
       onClick={onToggle}
-      className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold shadow-card transition ${
+      className={`press shrink-0 rounded-full px-3 py-1.5 text-xs font-bold shadow-card ${
         active ? "bg-primary text-primary-foreground" : "bg-card text-foreground/70"
       }`}
     >

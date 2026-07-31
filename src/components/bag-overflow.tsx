@@ -58,7 +58,7 @@ export function BagCapacityBar() {
             else toast.error(`Need ${price.toLocaleString()} coins`);
           }}
           disabled={coins < price}
-          className="mt-2.5 inline-flex h-9 w-full items-center justify-center rounded-full bg-primary px-4 text-xs font-bold text-primary-foreground shadow-pop transition active:scale-95 disabled:opacity-40"
+          className="mt-2.5 inline-flex h-9 w-full items-center justify-center rounded-full bg-primary px-4 text-xs font-bold text-primary-foreground shadow-pop transition press disabled:opacity-40"
         >
           +10 space · {price.toLocaleString()} coins
         </button>
@@ -115,7 +115,7 @@ export function BagOverflowPanel() {
                     if (claimOverflow(entry.id)) toast.success(`${def.name} moved to your bag`);
                   }}
                   disabled={room < 1}
-                  className="h-8 rounded-full bg-hp-good px-3 text-xs font-bold text-white shadow-sm transition active:scale-95 disabled:opacity-40"
+                  className="h-8 rounded-full bg-hp-good px-3 text-xs font-bold text-white shadow-sm transition press disabled:opacity-40"
                 >
                   {room < 1 ? "No room" : `Move ${Math.min(entry.qty, room)} to bag`}
                 </button>
@@ -124,7 +124,7 @@ export function BagOverflowPanel() {
                     const paid = refundOverflow(entry.id);
                     toast.success(`Traded for ${paid.toLocaleString()} coins`);
                   }}
-                  className="h-8 rounded-full bg-poke-yellow px-3 text-xs font-bold text-foreground shadow-sm transition active:scale-95"
+                  className="h-8 rounded-full bg-poke-yellow px-3 text-xs font-bold text-foreground shadow-sm transition press"
                 >
                   Refund {refund.toLocaleString()}
                 </button>
@@ -132,7 +132,7 @@ export function BagOverflowPanel() {
                   onClick={() => {
                     if (forfeitOverflow(entry.id)) toast(`${def.name} given up`);
                   }}
-                  className="h-8 rounded-full bg-muted px-3 text-xs font-bold text-foreground/60 transition active:scale-95"
+                  className="h-8 rounded-full bg-muted px-3 text-xs font-bold text-foreground/60 transition press"
                 >
                   Give up
                 </button>
@@ -201,7 +201,7 @@ export function DiscardItemButton({ id }: { id: ItemId }) {
           setQty(1);
           setOpen(true);
         }}
-        className="flex h-8 items-center justify-center rounded-full bg-muted px-2.5 text-xs font-bold text-foreground/45 transition active:scale-95"
+        className="flex h-8 items-center justify-center rounded-full bg-muted px-2.5 text-xs font-bold text-foreground/45 transition press"
       >
         <Trash2 className="h-4 w-4" />
       </button>
@@ -299,7 +299,7 @@ export function DiscardItemButton({ id }: { id: ItemId }) {
                     aria-label="One fewer"
                     onClick={() => step(-1)}
                     disabled={amount <= 1}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-foreground transition active:scale-90 disabled:opacity-30"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-foreground transition press disabled:opacity-30"
                   >
                     <Minus className="h-4 w-4" />
                   </button>
@@ -316,7 +316,7 @@ export function DiscardItemButton({ id }: { id: ItemId }) {
                     aria-label="One more"
                     onClick={() => step(1)}
                     disabled={amount >= max}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-foreground transition active:scale-90 disabled:opacity-30"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-foreground transition press disabled:opacity-30"
                   >
                     <Plus className="h-4 w-4" />
                   </button>
@@ -324,13 +324,13 @@ export function DiscardItemButton({ id }: { id: ItemId }) {
                 <div className="mt-2 flex items-center justify-between">
                   <button
                     onClick={() => setQty(1)}
-                    className="rounded-full bg-muted/60 px-2.5 py-1 font-pixel-xs uppercase tracking-wider text-foreground/50 transition active:scale-95"
+                    className="rounded-full bg-muted/60 px-2.5 py-1 font-pixel-xs uppercase tracking-wider text-foreground/50 transition press"
                   >
                     Just 1
                   </button>
                   <button
                     onClick={() => setQty(max)}
-                    className="rounded-full bg-destructive/10 px-2.5 py-1 font-pixel-xs uppercase tracking-wider text-destructive transition active:scale-95"
+                    className="rounded-full bg-destructive/10 px-2.5 py-1 font-pixel-xs uppercase tracking-wider text-destructive transition press"
                   >
                     All {max}
                   </button>
@@ -363,7 +363,7 @@ export function DiscardItemButton({ id }: { id: ItemId }) {
             <div className="mt-4 flex gap-2">
               <button
                 onClick={() => setOpen(false)}
-                className="h-12 flex-1 rounded-full bg-muted text-sm font-bold text-foreground/70 transition active:scale-95"
+                className="h-12 flex-1 rounded-full bg-muted text-sm font-bold text-foreground/70 transition press"
               >
                 Keep it
               </button>
@@ -374,7 +374,7 @@ export function DiscardItemButton({ id }: { id: ItemId }) {
                   }
                   setOpen(false);
                 }}
-                className="h-12 flex-1 rounded-full bg-destructive text-sm font-bold text-white shadow-pop transition active:scale-95"
+                className="h-12 flex-1 rounded-full bg-destructive text-sm font-bold text-white shadow-pop transition press"
               >
                 Discard {amount}
               </button>

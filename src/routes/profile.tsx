@@ -585,7 +585,7 @@ function ProfilePage() {
         >
           <button
             onClick={handleOpenCard}
-            className="relative shrink-0 rounded-full bg-card p-1 ring-4 ring-primary shadow-pop transition active:scale-95"
+            className="relative shrink-0 rounded-full bg-card p-1 ring-4 ring-primary shadow-pop transition press"
           >
             <img
               src={trainerSpriteUrl(trainerSprite)}
@@ -597,7 +597,7 @@ function ProfilePage() {
             <p className="font-pixel-xs text-primary uppercase truncate">
               {rank} · LV {level}
             </p>
-            <button onClick={handleOpenCard} className="text-left">
+            <button onClick={handleOpenCard} className="press text-left">
               <h2 className="font-display-lg text-2xl font-extrabold text-foreground truncate">
                 {trainerName}
               </h2>
@@ -618,7 +618,7 @@ function ProfilePage() {
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => setStatsOpen(true)}
-            className="rounded-3xl bg-card p-4 text-left shadow-card transition active:scale-95"
+            className="rounded-3xl bg-card p-4 text-left shadow-card transition press"
           >
             <div className="font-pixel-xs text-foreground/55">BATTLES WON</div>
             <div className="mt-1 text-3xl font-extrabold text-foreground">{stats.wins}</div>
@@ -626,7 +626,7 @@ function ProfilePage() {
           </button>
           <button
             onClick={() => setFriendsOpen(true)}
-            className="rounded-3xl bg-card p-4 text-left shadow-card transition active:scale-95"
+            className="rounded-3xl bg-card p-4 text-left shadow-card transition press"
           >
             <div className="font-pixel-xs text-foreground/55">FRIENDS</div>
             <div className="mt-1 text-3xl font-extrabold text-primary">{friends.length}</div>
@@ -675,7 +675,7 @@ function ProfilePage() {
                     // would do nothing, because the class never changed.
                     onClick={() => canSpin && setSpinDay(d.date)}
                     onAnimationEnd={() => setSpinDay((cur) => (cur === d.date ? null : cur))}
-                    className={`flex h-10 w-10 items-center justify-center rounded-full transition ${isToday ? "ring-2 ring-primary ring-offset-1" : ""} ${canSpin ? "active:scale-95" : "cursor-default"}`}
+                    className={`flex h-10 w-10 items-center justify-center rounded-full transition ${isToday ? "ring-2 ring-primary ring-offset-1" : ""} ${canSpin ? "press" : "cursor-default"}`}
                     title={`${d.date}: ${d.count}`}
                     aria-label={
                       played
@@ -703,7 +703,7 @@ function ProfilePage() {
         <div className="mt-3 grid grid-cols-2 gap-3">
           <button
             onClick={() => setTrophiesOpen(true)}
-            className="relative flex flex-col items-center gap-1 rounded-3xl bg-card p-4 shadow-card transition active:scale-95"
+            className="relative flex flex-col items-center gap-1 rounded-3xl bg-card p-4 shadow-card transition press"
           >
             <AppIcon src={UI_ICON.trophies} className="h-12 w-12" />
             <span className="font-display-md text-foreground">Trophies</span>
@@ -718,7 +718,7 @@ function ProfilePage() {
           </button>
           <button
             onClick={() => setBadgesOpen(true)}
-            className="flex flex-col items-center gap-1 rounded-3xl bg-card p-4 shadow-card transition active:scale-95"
+            className="flex flex-col items-center gap-1 rounded-3xl bg-card p-4 shadow-card transition press"
           >
             <AppIcon src={UI_ICON.badges} className="h-12 w-12" />
             <span className="font-display-md text-foreground">Badges</span>
@@ -728,7 +728,7 @@ function ProfilePage() {
           </button>
           <button
             onClick={() => setPvpHistoryOpen(true)}
-            className="flex flex-col items-center gap-1 rounded-3xl bg-card p-4 shadow-card transition active:scale-95"
+            className="flex flex-col items-center gap-1 rounded-3xl bg-card p-4 shadow-card transition press"
           >
             <AppIcon src={UI_ICON.battleHistory} className="h-12 w-12" />
             <span className="font-display-md text-foreground">Battle History</span>
@@ -736,7 +736,7 @@ function ProfilePage() {
           </button>
           <button
             onClick={() => setSettingsOpen(true)}
-            className="flex flex-col items-center gap-1 rounded-3xl bg-card p-4 shadow-card transition active:scale-95"
+            className="flex flex-col items-center gap-1 rounded-3xl bg-card p-4 shadow-card transition press"
           >
             <AppIcon src={UI_ICON.settings} className="h-12 w-12" />
             <span className="font-display-md text-foreground">Settings</span>
@@ -1125,7 +1125,7 @@ function ProfilePage() {
                 return resumable ? (
                   <button
                     key={m.id}
-                    className="block w-full text-left transition active:scale-[0.98]"
+                    className="block w-full text-left transition press-lg"
                     onClick={() => {
                       setPvpHistoryOpen(false);
                       void navigate({ to: "/pvp/$matchId", params: { matchId: m.id } });
@@ -1307,7 +1307,7 @@ function ProfilePage() {
               <div className="overflow-hidden rounded-3xl bg-card shadow-card divide-y divide-border">
                 <button
                   onClick={() => setFeedbackOpen("suggestion")}
-                  className="flex w-full items-center justify-between p-4 text-left transition active:scale-[0.98]"
+                  className="flex w-full items-center justify-between p-4 text-left transition press-lg"
                 >
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
@@ -1326,7 +1326,7 @@ function ProfilePage() {
                 </button>
                 <button
                   onClick={() => setFeedbackOpen("bug")}
-                  className="flex w-full items-center justify-between p-4 text-left transition active:scale-[0.98]"
+                  className="flex w-full items-center justify-between p-4 text-left transition press-lg"
                 >
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
@@ -1353,7 +1353,7 @@ function ProfilePage() {
                   href={FACEBOOK_PAGE_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex w-full items-center justify-between p-4 text-left transition active:scale-[0.98]"
+                  className="flex w-full items-center justify-between p-4 text-left transition press-lg"
                 >
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
@@ -1386,7 +1386,7 @@ function ProfilePage() {
                       .then(() => toast.success("Facebook page link copied"))
                       .catch(() => toast.error("Could not copy the link"));
                   }}
-                  className="flex w-full items-center justify-between p-4 text-left transition active:scale-[0.98]"
+                  className="flex w-full items-center justify-between p-4 text-left transition press-lg"
                 >
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
@@ -1412,7 +1412,7 @@ function ProfilePage() {
                     setNameDraft(trainerName);
                     setRenameOpen(true);
                   }}
-                  className="flex w-full items-center justify-between p-4 text-left transition active:scale-[0.98]"
+                  className="flex w-full items-center justify-between p-4 text-left transition press-lg"
                 >
                   <div>
                     <div className="text-sm font-semibold text-foreground">Rename trainer</div>
@@ -1426,7 +1426,7 @@ function ProfilePage() {
                   onClick={() => {
                     setTrainerPickerOpen(true);
                   }}
-                  className="flex w-full items-center justify-between p-4 text-left transition active:scale-[0.98]"
+                  className="flex w-full items-center justify-between p-4 text-left transition press-lg"
                 >
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted">
@@ -1449,7 +1449,7 @@ function ProfilePage() {
                   onClick={() => {
                     setPickerOpen(true);
                   }}
-                  className="flex w-full items-center justify-between p-4 text-left transition active:scale-[0.98]"
+                  className="flex w-full items-center justify-between p-4 text-left transition press-lg"
                 >
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted">
@@ -1468,7 +1468,7 @@ function ProfilePage() {
                   onClick={() => {
                     setBackdropPickerOpen(true);
                   }}
-                  className="flex w-full items-center justify-between p-4 text-left transition active:scale-[0.98]"
+                  className="flex w-full items-center justify-between p-4 text-left transition press-lg"
                 >
                   <div className="flex items-center gap-3">
                     {/* The thumbnail IS the setting — a name alone tells a
@@ -1497,7 +1497,7 @@ function ProfilePage() {
                   playSfx("warning");
                   setResetOpen(true);
                 }}
-                className="flex w-full items-center gap-3 rounded-3xl bg-card p-4 shadow-card transition active:scale-95"
+                className="flex w-full items-center gap-3 rounded-3xl bg-card p-4 shadow-card transition press"
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-destructive/10">
                   <RotateCcw className="h-5 w-5 text-destructive" />
@@ -1664,7 +1664,7 @@ function ProfilePage() {
                   setPickerOpen(false);
                   toast.success(`${p.name} chosen!`);
                 }}
-                className="flex flex-col items-center rounded-2xl border-2 p-2 transition active:scale-95 hover:border-primary"
+                className="flex flex-col items-center rounded-2xl border-2 p-2 transition press hover:border-primary"
               >
                 <PokemonSprite id={p.id} alt={p.name} className="sprite h-14 w-14" />
                 <div className="text-[11px] font-semibold">{p.name}</div>
@@ -1756,7 +1756,7 @@ function ProfilePage() {
                     toast.success(`Background set to ${b.label}!`);
                   }}
                   aria-pressed={active}
-                  className="overflow-hidden rounded-2xl text-left transition active:scale-95"
+                  className="overflow-hidden rounded-2xl text-left transition press"
                 >
                   {/* Colour marks the choice, not a frame: the equipped one is
                       the only tile in full colour, everything else desaturates.
@@ -1879,7 +1879,7 @@ function ProfilePage() {
                   setTrainerPickerOpen(false);
                   toast.success("Trainer updated!");
                 }}
-                className="flex flex-col items-center rounded-2xl border-2 p-2 transition active:scale-95 hover:border-primary"
+                className="flex flex-col items-center rounded-2xl border-2 p-2 transition press hover:border-primary"
               >
                 <img
                   src={trainerSpriteUrl(t.id)}

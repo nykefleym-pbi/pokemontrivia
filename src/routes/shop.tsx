@@ -320,7 +320,7 @@ function ShopPage() {
                 playSfx("bag_open");
                 setBagOpen(true);
               }}
-              className="relative flex h-11 w-11 items-center justify-center rounded-full bg-card shadow-card"
+              className="relative flex h-11 w-11 items-center justify-center rounded-full bg-card shadow-card press"
               aria-label="Open bag"
             >
               <ShoppingBag className="h-5 w-5 text-foreground" />
@@ -345,7 +345,7 @@ function ShopPage() {
         {giftClaimable ? (
           <button
             onClick={handleClaimGift}
-            className="relative mb-5 flex w-full items-center gap-4 overflow-hidden rounded-3xl bg-gradient-to-br from-[#F2D64E] to-[#E8A93C] p-5 text-left shadow-card active:scale-[0.99]"
+            className="relative mb-5 flex w-full items-center gap-4 overflow-hidden rounded-3xl bg-gradient-to-br from-[#F2D64E] to-[#E8A93C] p-5 text-left shadow-card press-lg"
           >
             <span className="absolute right-3 top-3 rounded-full bg-primary px-2.5 py-1 font-pixel-xs uppercase text-white shadow-sm">
               Free
@@ -427,7 +427,7 @@ function ShopPage() {
                 },
               })
             }
-            className="relative mb-3 flex w-full items-center gap-3 overflow-hidden rounded-3xl border-2 border-white bg-gradient-to-br from-primary to-[#b5341f] p-3 pl-2 text-left shadow-card transition-transform duration-100 active:scale-[0.98] disabled:opacity-60"
+            className="relative mb-3 flex w-full items-center gap-3 overflow-hidden rounded-3xl border-2 border-white bg-gradient-to-br from-primary to-[#b5341f] p-3 pl-2 text-left shadow-card press-lg disabled:opacity-60"
           >
             <RibbonTag label="Weekly Special" bg="#5B3F95" />
             <span className="absolute left-3 top-3 z-20 rounded-full bg-poke-yellow px-2.5 py-1 font-pixel-xs uppercase leading-none text-foreground shadow-sm">
@@ -475,7 +475,7 @@ function ShopPage() {
           <button
             key={bundle.id}
             onClick={() => setBundleConfirm(bundle)}
-            className="relative mb-5 flex w-full items-center gap-3 overflow-hidden rounded-3xl border-2 border-white bg-gradient-to-br from-[#6B4FA0] to-[#3F2A6E] p-3 text-left shadow-card transition-transform duration-100 active:scale-[0.98]"
+            className="relative mb-5 flex w-full items-center gap-3 overflow-hidden rounded-3xl border-2 border-white bg-gradient-to-br from-[#6B4FA0] to-[#3F2A6E] p-3 text-left shadow-card press-lg"
           >
             <RibbonTag label={bundle.ribbon} bg="var(--brand-red, #E3350D)" />
             {/* Bare overlapping sprites on one shared burst. Each used to sit in
@@ -528,7 +528,7 @@ function ShopPage() {
             <button
               key={c.id}
               onClick={() => setTab(c.id)}
-              className={`h-9 rounded-full text-xs font-bold transition ${
+              className={`press h-9 rounded-full text-xs font-bold ${
                 tab === c.id ? "bg-poke-dark text-white shadow-card" : "text-foreground/60"
               }`}
             >
@@ -563,7 +563,7 @@ function ShopPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: Math.min(i, 12) * 0.03 }}
                   onClick={() => setConfirmState({ item, cost: priceOf(item.cost) })}
-                  className={`relative flex flex-col items-center rounded-2xl border-2 p-2 pt-2.5 text-center shadow-card transition-transform duration-100 active:scale-[0.96] ${
+                  className={`relative flex flex-col items-center rounded-2xl border-2 p-2 pt-2.5 text-center shadow-card press ${
                     item.premium ? "border-poke-yellow" : "border-white"
                   }`}
                   style={{
@@ -698,7 +698,7 @@ function ShopPage() {
                         <button
                           onClick={() => setQty((q) => Math.max(1, q - 1))}
                           disabled={qty <= 1}
-                          className="flex h-9 w-9 items-center justify-center rounded-full bg-card text-foreground shadow-card disabled:opacity-40"
+                          className="flex h-9 w-9 items-center justify-center rounded-full bg-card text-foreground shadow-card disabled:opacity-40 press"
                           aria-label="Decrease quantity"
                         >
                           <Minus className="h-4 w-4" />
@@ -709,7 +709,7 @@ function ShopPage() {
                         <button
                           onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
                           disabled={qty >= maxQty}
-                          className="flex h-9 w-9 items-center justify-center rounded-full bg-poke-dark text-white shadow-card disabled:opacity-40"
+                          className="flex h-9 w-9 items-center justify-center rounded-full bg-poke-dark text-white shadow-card disabled:opacity-40 press"
                           aria-label="Increase quantity"
                         >
                           <Plus className="h-4 w-4" />
@@ -770,7 +770,7 @@ function ShopPage() {
                     </Button>
                     <button
                       onClick={() => setConfirmState(null)}
-                      className="w-full py-2 text-center text-sm font-bold text-muted-foreground"
+                      className="w-full py-2 text-center text-sm font-bold text-muted-foreground press"
                     >
                       Cancel
                     </button>
@@ -858,7 +858,7 @@ function ShopPage() {
                                   {isUsable && (
                                     <button
                                       onClick={() => handleUseFromBag(it)}
-                                      className="rounded-full bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-sm transition active:scale-95"
+                                      className="rounded-full bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-sm transition press"
                                     >
                                       Use
                                     </button>
@@ -866,7 +866,7 @@ function ShopPage() {
                                   {isAuto && (
                                     <button
                                       onClick={() => toggleAutoItem(it.id)}
-                                      className={`rounded-full px-3 py-1.5 text-xs font-bold shadow-sm transition active:scale-95 ${
+                                      className={`rounded-full px-3 py-1.5 text-xs font-bold shadow-sm transition press ${
                                         autoOn
                                           ? "bg-hp-good text-white"
                                           : "bg-muted text-foreground/50"

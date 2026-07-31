@@ -133,7 +133,7 @@ export function MegaResults({
         <StatCard label="ACCURACY" value={`${accuracy}%`} big highlight={win} />
         <button
           onClick={onViewLeaderboard}
-          className="flex flex-col justify-center rounded-2xl px-4 py-3.5 text-left active:scale-[0.98]"
+          className="flex flex-col justify-center rounded-2xl px-4 py-3.5 text-left press-lg"
           style={
             win
               ? {
@@ -190,7 +190,7 @@ export function MegaResults({
           <>
             <button
               onClick={onViewLeaderboard}
-              className="flex h-14 items-center justify-center rounded-full text-base font-extrabold active:scale-[0.99]"
+              className="flex h-14 items-center justify-center rounded-full text-base font-extrabold press-lg"
               style={{
                 background: "linear-gradient(95deg, var(--brand-gold), var(--brand-amber))",
                 color: "var(--brand-ink)",
@@ -201,7 +201,7 @@ export function MegaResults({
             </button>
             <button
               onClick={onHome}
-              className="flex h-14 items-center justify-center rounded-full text-base font-bold text-white"
+              className="press flex h-14 items-center justify-center rounded-full text-base font-bold text-white"
               style={{
                 background: "rgba(255,255,255,0.08)",
                 border: "1.5px solid rgba(255,255,255,0.18)",
@@ -215,7 +215,7 @@ export function MegaResults({
             {canRematch && (
               <button
                 onClick={onRematch}
-                className="flex h-14 items-center justify-center rounded-full text-base font-bold text-white active:scale-[0.99]"
+                className="flex h-14 items-center justify-center rounded-full text-base font-bold text-white press-lg"
                 style={{
                   background: "var(--brand-red)",
                   boxShadow: "0 14px 30px -8px rgba(226,59,46,0.55)",
@@ -226,7 +226,7 @@ export function MegaResults({
             )}
             <button
               onClick={onViewLeaderboard}
-              className="flex h-14 items-center justify-center rounded-full text-base font-bold text-white"
+              className="press flex h-14 items-center justify-center rounded-full text-base font-bold text-white"
               style={{
                 background: "rgba(255,255,255,0.08)",
                 border: "1.5px solid rgba(255,255,255,0.18)",
@@ -236,7 +236,7 @@ export function MegaResults({
             </button>
             <button
               onClick={onHome}
-              className="flex h-14 items-center justify-center rounded-full text-base font-bold text-white"
+              className="press flex h-14 items-center justify-center rounded-full text-base font-bold text-white"
               style={{
                 background: "rgba(255,255,255,0.04)",
                 border: "1.5px solid rgba(255,255,255,0.12)",

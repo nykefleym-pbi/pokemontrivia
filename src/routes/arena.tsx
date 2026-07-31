@@ -101,7 +101,7 @@ function TrophyCard({ label, count, art }: { label: string; count: number; art: 
         // browser's hands: holding the badge opened Chrome's image menu ("Copy
         // image", "Download image") instead of colourising. That is suppressed
         // app-wide now — styles.css plus src/lib/native-gestures.ts.
-        className="touch-none select-none rounded-full transition active:scale-95"
+        className="touch-none select-none rounded-full transition press"
       >
         <AppIcon
           src={art}
@@ -440,7 +440,7 @@ function ArenaPage() {
               // to its word rather than the screen. Cancel is the way OUT of
               // the thing you just asked for; full width gave it the weight of
               // a primary action.
-              className="mx-auto h-10 w-auto rounded-full border border-white/60 bg-white/10 px-8 text-sm font-bold text-white backdrop-blur-sm transition hover:bg-white/20 active:scale-[0.98]"
+              className="mx-auto h-10 w-auto rounded-full border border-white/60 bg-white/10 px-8 text-sm font-bold text-white backdrop-blur-sm transition hover:bg-white/20 press-lg"
             >
               Cancel
             </Button>
@@ -472,7 +472,7 @@ function ArenaPage() {
             }
             void navigate({ to: "/pvp/chat/$matchId", params: { matchId: latestChatMatchId } });
           }}
-          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-card shadow-card transition active:scale-95 ${
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-card shadow-card transition press ${
             latestChatMatchId ? "text-primary" : "text-foreground/35"
           }`}
         >
@@ -548,7 +548,7 @@ function ArenaPage() {
                 className={`flex-1 rounded-full py-2 font-pixel-xs tracking-[0.12em] transition ${
                   group3Tab === key
                     ? "bg-card text-primary shadow-card"
-                    : "text-foreground/45 active:scale-[0.98]"
+                    : "text-foreground/45 press-lg"
                 }`}
               >
                 {label}
@@ -584,7 +584,7 @@ function ArenaPage() {
                           type="button"
                           onClick={() => handleClaim(slot)}
                           aria-label={`Collect reward ${slot + 1}`}
-                          className={`${tileCls} transition active:scale-95`}
+                          className={`${tileCls} transition press`}
                         >
                           <AppIcon src={REWARD_ICON[kind]} className="h-7 w-7" />
                           <span className="rounded-full bg-primary px-2 py-0.5 font-pixel text-[8px] text-primary-foreground">
@@ -663,7 +663,7 @@ function ArenaPage() {
           <Button
             onClick={() => void handleBattleOnline()}
             disabled={rewardsBlockBattling || trainingBusy}
-            className="mt-4 h-14 w-full rounded-full bg-gradient-to-b from-primary to-primary/85 text-lg font-bold tracking-wide shadow-pop transition active:scale-[0.98] disabled:opacity-60"
+            className="mt-4 h-14 w-full rounded-full bg-gradient-to-b from-primary to-primary/85 text-lg font-bold tracking-wide shadow-pop transition press-lg disabled:opacity-60"
           >
             {trainingBusy ? (
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -710,7 +710,7 @@ function ArenaPage() {
                 setScanOpen((v) => !v);
               }}
               disabled={rewardsBlockBattling && !scanOpen}
-              className="mt-3 h-12 w-full rounded-full font-bold shadow-pop transition active:scale-[0.98]"
+              className="mt-3 h-12 w-full rounded-full font-bold shadow-pop transition press-lg"
             >
               <QrCode className="mr-1.5 h-4 w-4" />
               {scanOpen ? "Show My Battle Code" : "Scan a Battle Code"}

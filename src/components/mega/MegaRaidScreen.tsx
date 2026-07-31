@@ -489,8 +489,13 @@ export function MegaRaidScreen({
 
   return (
     <div
-      className="relative flex h-full w-full flex-col overflow-hidden"
-      style={{ background: "var(--brand-ink-deep)", fontFamily: "Outfit, sans-serif" }}
+      // Same arena artwork as every other mode, behind Mega's own heavier veil
+      // (`bg-battle-field-ink`). The flat `--brand-ink-deep` fill it used before
+      // is roughly what that veil resolves to when the art is missing, so
+      // nothing here depends on the file existing. The boss banner below still
+      // paints its own ink gradient on top; this shows through around it.
+      className="bg-battle-field bg-battle-field-ink relative flex h-full w-full flex-col overflow-hidden"
+      style={{ fontFamily: "Outfit, sans-serif" }}
     >
       {/* ARENA — boss + partner HP. Shrinks to fit so the question card always pins to the bottom.
           Deliberately NOT built on game-ui.tsx's shared `CombatPanel`: that
@@ -644,7 +649,7 @@ export function MegaRaidScreen({
             </span>
             <button
               onClick={() => setBagOpen(true)}
-              className="font-pixel"
+              className="press font-pixel"
               style={{
                 fontSize: 7,
                 color: "#fff",
@@ -677,7 +682,7 @@ export function MegaRaidScreen({
               <button
                 data-testid="bag-button"
                 onClick={() => setBagOpen(true)}
-                className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition active:scale-95"
+                className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition press"
               >
                 <Backpack className="h-6 w-6 text-muted-foreground" />
               </button>
@@ -691,7 +696,7 @@ export function MegaRaidScreen({
                     data-testid={`item-${id}`}
                     disabled={disabled}
                     onClick={() => applyPotion(id)}
-                    className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition active:scale-95 disabled:opacity-40"
+                    className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition press disabled:opacity-40"
                   >
                     <img
                       src={def?.iconUrl}
@@ -796,7 +801,7 @@ export function MegaRaidScreen({
             <button
               data-testid="escape-button"
               onClick={escape}
-              className="mt-4 flex h-12 w-full items-center justify-center rounded-full text-sm font-bold text-white"
+              className="mt-4 flex h-12 w-full items-center justify-center rounded-full text-sm font-bold text-white press-lg"
               style={{ background: "rgba(28,35,51,0.9)" }}
             >
               Flee with Escape Rope (doesn't count)
@@ -889,7 +894,7 @@ function BagRow({
         data-testid={`bag-item-${id}`}
         onClick={onUse}
         disabled={disabled}
-        className="font-pixel"
+        className="press font-pixel"
         style={{
           fontSize: 6.5,
           color: used ? "var(--brand-slate)" : "#fff",

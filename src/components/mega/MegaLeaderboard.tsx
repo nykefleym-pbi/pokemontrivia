@@ -52,7 +52,7 @@ function FriendChip({ state, onAdd }: { state: "add" | "pending" | "friend"; onA
     <button
       onClick={onAdd}
       aria-label="Add friend"
-      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[16px] font-black leading-none transition active:scale-90"
+      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[16px] font-black leading-none transition press"
       style={{ background: "var(--brand-gold)", color: "var(--brand-ink)" }}
     >
       +
@@ -301,7 +301,7 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
         />
         <button
           onClick={onBack}
-          className="relative flex h-9 w-9 items-center justify-center rounded-full text-lg text-white"
+          className="relative flex h-9 w-9 items-center justify-center rounded-full text-lg text-white press"
           style={{ background: "rgba(255,255,255,0.1)" }}
         >
           ‹
@@ -359,7 +359,7 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
           {!ended && (
             <button
               onClick={onBattle}
-              className="mt-6 flex h-[54px] w-full items-center justify-center rounded-full font-pixel text-white"
+              className="mt-6 flex h-[54px] w-full items-center justify-center rounded-full font-pixel text-white press-lg"
               style={{
                 fontSize: 11,
                 letterSpacing: 1,
@@ -436,7 +436,7 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
                         <button
                           onClick={() => void claimReward()}
                           disabled={claiming}
-                          className="mt-3.5 flex h-[54px] w-full items-center justify-center rounded-full font-pixel active:scale-[0.99] disabled:opacity-60"
+                          className="mt-3.5 flex h-[54px] w-full items-center justify-center rounded-full font-pixel press-lg disabled:opacity-60"
                           style={{
                             fontSize: 11,
                             letterSpacing: 1,
@@ -493,7 +493,7 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
                     <button
                       onClick={() => void claimReward()}
                       disabled={claiming}
-                      className="mt-3 flex h-12 w-full items-center justify-center rounded-full font-pixel active:scale-[0.99] disabled:opacity-60"
+                      className="mt-3 flex h-12 w-full items-center justify-center rounded-full font-pixel press-lg disabled:opacity-60"
                       style={{
                         fontSize: 10,
                         letterSpacing: 1,

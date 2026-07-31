@@ -40,13 +40,13 @@ function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => vo
               router.invalidate();
               reset();
             }}
-            className="inline-flex h-12 flex-1 items-center justify-center rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground shadow-pop transition active:scale-95"
+            className="inline-flex h-12 flex-1 items-center justify-center rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground shadow-pop transition press"
           >
             Try again
           </button>
           <a
             href="/"
-            className="inline-flex h-12 flex-1 items-center justify-center rounded-full border-2 bg-card px-5 text-sm font-bold text-foreground transition active:scale-95"
+            className="inline-flex h-12 flex-1 items-center justify-center rounded-full border-2 bg-card px-5 text-sm font-bold text-foreground transition press"
           >
             Go home
           </a>

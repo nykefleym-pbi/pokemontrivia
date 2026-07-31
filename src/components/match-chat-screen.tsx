@@ -143,7 +143,7 @@ export function MatchChatScreen({
             type="button"
             onClick={onBack}
             aria-label="Back"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted active:scale-95"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted press"
           >
             <ChevronLeft className="h-5 w-5 text-foreground" />
           </button>
@@ -189,7 +189,7 @@ export function MatchChatScreen({
                           <button
                             type="button"
                             aria-label="Message actions"
-                            className="ml-1 shrink-0 rounded-full p-0.5 text-foreground/40 transition hover:text-foreground/70"
+                            className="ml-1 shrink-0 rounded-full p-0.5 text-foreground/40 transition hover:text-foreground/70 press"
                           >
                             <MoreHorizontal className="h-3.5 w-3.5" />
                           </button>
@@ -227,7 +227,7 @@ export function MatchChatScreen({
                 type="button"
                 disabled={sending}
                 onClick={() => void send(q, false)}
-                className="shrink-0 rounded-full bg-muted px-3.5 py-2 text-xs font-semibold text-foreground shadow-sm transition active:scale-95 disabled:opacity-40"
+                className="shrink-0 rounded-full bg-muted px-3.5 py-2 text-xs font-semibold text-foreground shadow-sm transition press disabled:opacity-40"
               >
                 {q}
               </button>
