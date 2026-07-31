@@ -111,9 +111,13 @@ function TrainerSide({
               transition={{ duration: entrance ? 0.35 : 0 }}
               src={src}
               alt={trainer.name}
-              // `bottom-0`: feet on the divide. object-bottom keeps them there
-              // when the art is shorter than its box.
-              className="sprite absolute bottom-0 left-1/2 h-[34vh] max-h-[210px] w-1/2 -translate-x-1/2 object-contain object-bottom drop-shadow-2xl"
+              // Standing back from the edge, not on it. `bottom-0` put the
+              // feet on the divide, which the status line — pinned 2.5rem
+              // above the seam and about 1.8rem tall — cut straight across.
+              // 5rem clears the top of that text by roughly 10px, and both
+              // are absolute units, so the gap does not close on a short
+              // screen the way a percentage would.
+              className="sprite absolute bottom-20 left-1/2 h-[34vh] max-h-[210px] w-1/2 -translate-x-1/2 object-contain object-bottom drop-shadow-2xl"
               onError={(e) => {
                 (e.currentTarget as HTMLImageElement).style.opacity = "0";
               }}
