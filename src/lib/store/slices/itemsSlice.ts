@@ -163,6 +163,7 @@ export const createItemsSlice: StoreSlice<
     | "buyItem"
     | "buyBundle"
     | "featuredDealLastPurchase"
+    | "purchasedBundleIds"
     | "markFeaturedDealPurchased"
     | "useItem"
     | "toggleAutoItem"
@@ -183,6 +184,7 @@ export const createItemsSlice: StoreSlice<
   bagUpgrades: 0,
   pendingBagOverflow: [],
   featuredDealLastPurchase: null,
+  purchasedBundleIds: [],
   itemCooldowns: {},
   autoItems: {},
   luckyEggExpiresAt: 0,
@@ -409,7 +411,13 @@ export const createItemsSlice: StoreSlice<
     if (spaceLeft(s) < needed) return false;
     const inventory = { ...s.inventory };
     for (const c of bundle.contents) inventory[c.id] = (inventory[c.id] ?? 0) + c.qty;
-    set({ coins: s.coins - bundle.cost + bundle.coins, inventory });
+    set({
+      coins: s.coins - bundle.cost + bundle.coins,
+      inventory,
+      // Retire the offer in the SAME set() that charges for it. Two writes
+      // would leave a window where a double tap buys it twice.
+      purchasedBundleIds: [...s.purchasedBundleIds, bundle.id],
+    });
     return true;
   },
 

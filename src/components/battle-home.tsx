@@ -313,7 +313,7 @@ export function BattleHome({
 
       {/* Battle card */}
       <div className="px-5 pt-3">
-        <div className="relative overflow-hidden rounded-3xl bg-card p-5 shadow-card">
+        <div className="relative overflow-hidden rounded-3xl border-2 border-white bg-card p-5 shadow-card">
           <div className="pointer-events-none absolute -right-8 -bottom-8 opacity-[0.06]">
             <PokeballSpinner size={180} />
           </div>
@@ -376,9 +376,9 @@ export function BattleHome({
           <PokemonSprite
             id={479}
             alt="Rotom"
-            className="sprite pointer-events-none absolute bottom-7 right-1 h-[46px] w-[46px]"
+            className="sprite pointer-events-none absolute bottom-5 left-1/2 h-[62px] w-[62px] -translate-x-1/2 drop-shadow-md"
           />
-          <div className="relative mt-auto flex items-center gap-1.5">
+          <div className="relative z-10 mt-auto flex items-center gap-1.5">
             {dailyDone ? (
               <span className="text-[10px] font-semibold text-[oklch(0.35_0.06_80/0.85)]">
                 Next in {dailyClock}
@@ -411,10 +411,10 @@ export function BattleHome({
             <PokemonSprite
               id={weeklyLeader.signaturePokemonId}
               alt={weeklyLeader.name}
-              className="sprite pointer-events-none absolute bottom-7 right-1 h-[46px] w-[46px]"
+              className="sprite pointer-events-none absolute bottom-5 left-1/2 h-[62px] w-[62px] -translate-x-1/2 drop-shadow-md"
             />
           )}
-          <div className="relative mt-auto">
+          <div className="relative z-10 mt-auto">
             <div className="text-[10px] font-bold leading-none">
               {weeklyFinished
                 ? `Next in ${weeklyTimeLeft}`
@@ -451,9 +451,9 @@ export function BattleHome({
             <PokemonSprite
               id={mega.megaId}
               alt={mega.name}
-              className="sprite pointer-events-none absolute bottom-7 right-1 h-[46px] w-[46px]"
+              className="sprite pointer-events-none absolute bottom-5 left-1/2 h-[62px] w-[62px] -translate-x-1/2 drop-shadow-md"
             />
-            <div className="relative mt-auto text-[10px] font-bold leading-tight">
+            <div className="relative z-10 mt-auto text-[10px] font-bold leading-tight">
               {mega.reason === "cleared"
                 ? "Cleared!"
                 : mega.reason === "exhausted"
@@ -497,12 +497,12 @@ export function BattleHome({
           {/* The silhouette is the hook, so it is drawn at card height rather
               than as a 24px icon in a chip. Pure black + the card's own gold
               behind it is the "who's that" read; the `?` rides its shoulder. */}
-          <div className="relative flex h-12 w-12 shrink-0 items-center justify-center">
-            <div className="absolute h-11 w-11 rounded-full bg-poke-yellow/25 blur-[6px]" />
+          <div className="relative flex h-[68px] w-[68px] shrink-0 items-center justify-center">
+            <div className="absolute h-16 w-16 rounded-full bg-poke-yellow/30 blur-[8px]" />
             <PokemonSprite
               id={25}
               alt=""
-              className="relative h-12 w-12 [filter:brightness(0)] [image-rendering:pixelated]"
+              className="relative h-[68px] w-[68px] [filter:brightness(0)] [image-rendering:pixelated]"
             />
             <span className="absolute -right-0.5 -top-0.5 font-pixel text-xs text-poke-yellow drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
               ?
@@ -516,9 +516,11 @@ export function BattleHome({
             <h3 className="text-[13px] font-extrabold leading-[1.15]">
               Who&apos;s That Pokémon?
             </h3>
-            <p className="mt-0.5 truncate text-[10px] font-semibold leading-tight text-white/85">
-              {whosThatLabel}
-            </p>
+            {whosThatOnCooldown && (
+              <p className="mt-0.5 truncate text-[10px] font-semibold leading-tight text-white/85">
+                {whosThatLabel}
+              </p>
+            )}
           </div>
           {/* A button-shaped affordance, not a chevron. The chevron read as
               "list row"; this reads as "the thing to tap". */}
