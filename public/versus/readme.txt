@@ -58,12 +58,19 @@ TRAINING BOT
              anchored to the seam so the trainer stands on the ground, and
              padding under the feet lifts it back into the air.
 
-             Budget 500 KB. Clembot.png is 920 KB (640x640, 6 frames) — over
-             it, and three times the pixels the 210 px draw can show. It is
-             cached after the first face-off, and the Arena preloads it, so the
-             cost lands once; halving the canvas would still be worth doing.
-  Backdrop   None. The bot draws a random one from the catalogue — see
-             TRAINING BOT WIRING below.
+             Budget 500 KB. Clembot.png is 640x640 / 6 frames / 338 KB.
+
+             640 is the RIGHT canvas, not an oversized one: the sprite draws
+             about 195 CSS px wide, which is ~585 device px on a 3x phone.
+             (An earlier note here called it three times too big — that
+             compared CSS pixels to source pixels and forgot DPR. Shrinking
+             would soften it on any good screen.)
+
+             It arrived at 920 KB and was re-encoded to 338 KB with the frames
+             pixel-identical and the 200 ms delays intact. sharp's libvips
+             cannot read APNG frames, so the re-encode inflates and unfilters
+             them by hand; the recipe is in the commit that did it.
+  Backdrop   None of its own — it stands on the shared default, Forest.
 
 
 ADDING A BACKDROP
@@ -92,9 +99,8 @@ TRAINING BOT WIRING
 
   Set to null to fall back to a trainer sprite — a valid state, nothing breaks.
 
-  It has no backdrop of its own. The bot draws a RANDOM one from the catalogue
-  per match (rollTrainingBotBackdrop, lib/training-bot.ts), so a run of Training
-  battles does not look like the same fight repeated. The roll is taken once,
-  when the Arena's fallback begins, and held for the whole handover — three
-  screens show the bot in a row across a route change, and re-rolling between
-  them would swap the world out mid-face-off.
+  It has no backdrop of its own: lib/training-bot.ts hands it VERSUS_BACKDROP,
+  the catalogue default. A random-per-match roll was tried and dropped — it
+  needed module state to stay steady across the Arena -> match-route handover,
+  since three screens draw the bot in a row and re-rolling between them would
+  swap the world out mid-face-off.
