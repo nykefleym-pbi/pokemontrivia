@@ -100,7 +100,7 @@ function SplashPage() {
             <div className="relative z-10 flex w-full flex-col gap-3 px-7 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-7">
               <Button
                 size="lg"
-                className="h-[58px] w-full rounded-full bg-primary text-[17px] font-bold text-primary-foreground shadow-pop active:scale-95"
+                className="h-[58px] w-full rounded-full border-2 border-white bg-primary text-[17px] font-bold text-primary-foreground shadow-card active:scale-95"
                 onClick={() => setStep("create")}
               >
                 New Trainer
@@ -108,7 +108,7 @@ function SplashPage() {
               <Button
                 size="lg"
                 variant="outline"
-                className="h-[58px] w-full rounded-full border-2 border-poke-dark/10 bg-card text-[17px] font-bold text-foreground active:scale-95"
+                className="h-[58px] w-full rounded-full border-2 border-white bg-card text-[17px] font-bold text-foreground shadow-card active:scale-95"
                 onClick={() => {
                   useGameStore.getState().startGuestSession();
                   navigate({ to: "/battle", search: { autostart: 1 } as never });
@@ -523,11 +523,7 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
             )}
 
             <div className="mt-auto px-1 pb-2 pt-6">
-              <Button
-                size="lg"
-                onClick={() => setSubstep("pokemon")}
-                className={ONBOARD_CTA}
-              >
+              <Button size="lg" onClick={() => setSubstep("pokemon")} className={ONBOARD_CTA}>
                 Next: Choose Pokémon
               </Button>
             </div>
@@ -595,13 +591,31 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
               )}
             </div>
 
+            {/* The ability the pick would roll. Only the "Its ability" caption
+                is gone — the panel itself is the payoff for choosing this
+                partner over another, and it fills the gap that shortening the
+                cards opened above the button. The badge replaces a plain
+                coloured dot so the type is named, and takes its colour from
+                game-ui's shared map instead of a second copy of it. */}
+            {pick &&
+              (() => {
+                const ability = getAbilityById(previewAbilityId);
+                if (!ability) return null;
+                return (
+                  <div className="mt-4 flex items-center gap-3 rounded-2xl bg-primary/10 p-3">
+                    <TypeBadge type={ability.type} size="sm" />
+                    <div className="min-w-0">
+                      <div className="text-sm font-bold text-foreground">{ability.name}</div>
+                      <p className="text-xs leading-snug text-foreground/70">
+                        {ability.description}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
+
             <div className="mt-auto pt-5">
-              <Button
-                size="lg"
-                disabled={!pick}
-                onClick={start}
-                className={ONBOARD_CTA}
-              >
+              <Button size="lg" disabled={!pick} onClick={start} className={ONBOARD_CTA}>
                 Start Adventure
               </Button>
             </div>

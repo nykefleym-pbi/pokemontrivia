@@ -42,8 +42,19 @@ const ENGAGE_DELAY_MS = 10000; // safety cap: show carousel by now even if mega 
  * but doesn't navigate reads as a tap that missed — the usual response is to
  * tap it again. Naming the mode also means the wait is legible: you can see
  * which card you actually hit.
+ *
+ * It claims `battleScreenActive` for the same reason the battle and daily
+ * screens do: this is a full-screen takeover, and the floating nav docking over
+ * the bottom of it both breaks the takeover and offers a tab to escape to
+ * mid-fetch. Clearing on unmount covers the error path too — if the fetch
+ * fails and we fall back to the hub, the nav comes back with it.
  */
 function ModePrep({ label }: { label: string }) {
+  const setBattleScreenActive = useGameStore((s) => s.setBattleScreenActive);
+  useEffect(() => {
+    setBattleScreenActive(true);
+    return () => setBattleScreenActive(false);
+  }, [setBattleScreenActive]);
   return (
     <div className="bg-poke-cream flex h-full w-full flex-col items-center justify-center gap-5 safe-x">
       <PokeballSpinner size={72} spinning />

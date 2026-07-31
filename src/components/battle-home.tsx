@@ -31,6 +31,21 @@ const MODE_CARD =
   "transition-transform duration-100 active:scale-[0.97] disabled:active:scale-100";
 
 /**
+ * The mode card's hero sprite.
+ *
+ * Anchored below the title on the right rather than inline with it, so it can
+ * be drawn at 80px in a 111px-wide cell instead of shrinking to fit beside
+ * text. It used to sit at `-bottom-1 -right-1`, which bled it past two edges
+ * and let `overflow-hidden` shave the feet and flank off every sprite — it read
+ * as sunk into the corner. Equal 8px insets keep the whole sprite on the card
+ * and give the artwork a margin to breathe against the rim.
+ *
+ * The footer row that shares this space carries `z-10` and wins.
+ */
+const MODE_SPRITE =
+  "sprite pointer-events-none absolute bottom-2 right-2 h-[80px] w-[80px] drop-shadow-md";
+
+/**
  * The diagonal light streak that crosses each mode card.
  *
  * Decorative and non-interactive. It is a skewed translucent bar rather than a
@@ -44,12 +59,18 @@ const MODE_CARD =
  * only the band's dim outer half. It now starts inside the card so the peak
  * lands over artwork, and `white/45` rather than `white/25` survives being
  * drawn over a saturated gradient instead of disappearing into it.
+ *
+ * The blur is what makes it read as light rather than as a painted stripe. The
+ * gradient alone still has two locatable edges; softening them leaves only the
+ * bright core. It costs nothing to clip — the band is already inset well past
+ * the card on both ends, so the blur has bleed to work with instead of fading
+ * into a visible seam at the card's rim.
  */
 function CardSheen({ className = "" }: { className?: string }) {
   return (
     <div
       aria-hidden
-      className={`pointer-events-none absolute -inset-y-10 left-[8%] w-[42%] -rotate-[20deg] bg-gradient-to-r from-transparent via-white/45 to-transparent ${className}`}
+      className={`pointer-events-none absolute -inset-y-10 left-[8%] w-[42%] -rotate-[20deg] bg-gradient-to-r from-transparent via-white/45 to-transparent blur-[6px] ${className}`}
     />
   );
 }
@@ -396,11 +417,7 @@ export function BattleHome({
           <h3 className="relative mt-1 text-[13px] font-extrabold leading-tight text-[oklch(0.22_0.05_80)]">
             {dailyDone ? "Done" : "Beat Rotom"}
           </h3>
-          <PokemonSprite
-            id={479}
-            alt="Rotom"
-            className="sprite pointer-events-none absolute -bottom-1 -right-1 h-[80px] w-[80px] drop-shadow-md"
-          />
+          <PokemonSprite id={479} alt="Rotom" className={MODE_SPRITE} />
           <div className="relative z-10 mt-auto flex items-center gap-1.5">
             {dailyDone ? (
               <span className="text-[10px] font-semibold text-[oklch(0.35_0.06_80/0.85)]">
@@ -432,7 +449,7 @@ export function BattleHome({
             <PokemonSprite
               id={weeklyLeader.signaturePokemonId}
               alt={weeklyLeader.name}
-              className="sprite pointer-events-none absolute -bottom-1 -right-1 h-[80px] w-[80px] drop-shadow-md"
+              className={MODE_SPRITE}
             />
           )}
           <div className="relative z-10 mt-auto">
@@ -467,11 +484,7 @@ export function BattleHome({
             <h3 className="relative mt-1 truncate text-[13px] font-extrabold leading-tight">
               {mega.name}
             </h3>
-            <PokemonSprite
-              id={mega.megaId}
-              alt={mega.name}
-              className="sprite pointer-events-none absolute -bottom-1 -right-1 h-[80px] w-[80px] drop-shadow-md"
-            />
+            <PokemonSprite id={mega.megaId} alt={mega.name} className={MODE_SPRITE} />
             <div className="relative z-10 mt-auto text-[10px] font-bold leading-tight">
               {mega.reason === "cleared"
                 ? "Cleared!"
@@ -515,7 +528,9 @@ export function BattleHome({
           <CardSheen />
           {/* The silhouette is the hook, so it is drawn at card height rather
               than as a 24px icon in a chip. Pure black + the card's own gold
-              behind it is the "who's that" read; the `?` rides its shoulder. */}
+              behind it is the whole "who's that" read — it carried a small `?`
+              on its shoulder as well, which only repeated the question mark
+              already ending the title two inches to the right. */}
           <div className="relative flex h-[68px] w-[68px] shrink-0 items-center justify-center">
             <div className="absolute h-16 w-16 rounded-full bg-poke-yellow/30 blur-[8px]" />
             <PokemonSprite
@@ -523,9 +538,6 @@ export function BattleHome({
               alt=""
               className="relative h-[68px] w-[68px] [filter:brightness(0)] [image-rendering:pixelated]"
             />
-            <span className="absolute -right-0.5 -top-0.5 font-pixel text-xs text-poke-yellow drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
-              ?
-            </span>
           </div>
           {/* Pixel face, matching the eyebrow the other three mode cards use.
               This was the only mode whose name was set in the display font,
