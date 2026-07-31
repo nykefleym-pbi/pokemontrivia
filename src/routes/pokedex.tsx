@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Sparkles, X, ArrowRight, Volume2, ChevronLeft } from "lucide-react";
+import { Search, Sparkles, X, ArrowRight, Volume2, ChevronLeft, Star, Eye } from "lucide-react";
 import { Fragment } from "react";
 import { playCry, playSfx } from "@/lib/audio";
 import { useGameStore } from "@/lib/store";
@@ -9,7 +9,8 @@ import { useStoreHydrated } from "@/lib/store-hydration";
 import { EggHatch } from "@/components/mega/EggHatch";
 import { ALL_POKEMON, type PokeType } from "@/lib/pokemon-data";
 import { Input } from "@/components/ui/input";
-import { PokemonSprite } from "@/components/game-ui";
+import { PokemonSprite, TypeBadge } from "@/components/game-ui";
+import { dexStatus, isCaught } from "@/lib/pokedex";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { pokeApiUrls } from "@/lib/api/pokeapi";
 
@@ -50,10 +51,24 @@ const GEN_RANGES: Array<{ gen: number; from: number; to: number }> = [
   { gen: 9, from: 906, to: 1025 },
 ];
 
+/** The caught marker: a 14px Pokeball. `PokeballSpinner`'s 3px border swamps
+ *  the shape below ~24px, so this is drawn at size rather than scaled down. */
+function MiniPokeball() {
+  return (
+    <svg viewBox="0 0 32 32" className="h-3.5 w-3.5 shrink-0" aria-hidden>
+      <circle cx="16" cy="16" r="14" fill="#fff" stroke="#1b1d2b" strokeWidth="3" />
+      <path d="M2 16 a14 14 0 0 1 28 0 Z" fill="#ee4b3c" stroke="#1b1d2b" strokeWidth="3" />
+      <rect x="2" y="14" width="28" height="4" fill="#1b1d2b" />
+      <circle cx="16" cy="16" r="4.5" fill="#fff" stroke="#1b1d2b" strokeWidth="3" />
+    </svg>
+  );
+}
+
 function PokedexPage() {
   const hasOnboarded = useGameStore((s) => s.hasOnboarded);
   const hydrated = useStoreHydrated();
   const pokedex = useGameStore((s) => s.pokedex);
+  const partnerId = useGameStore((s) => s.pokemon?.id ?? null);
   const trainerName = useGameStore((s) => s.trainerName);
   const navigate = useNavigate();
   const [gen, setGen] = useState(1);
@@ -78,8 +93,10 @@ function PokedexPage() {
 
   const range = GEN_RANGES.find((g) => g.gen === gen)!;
   const regionTotal = range.to - range.from + 1;
+  // The ring counts CAUGHT, not registered: a seen-only entry is progress
+  // toward the number, not the number itself.
   const regionCaught = ALL_POKEMON.filter(
-    (p) => p.id >= range.from && p.id <= range.to && pokedex[p.id],
+    (p) => p.id >= range.from && p.id <= range.to && isCaught(pokedex[p.id]),
   ).length;
   const regionPct = regionTotal > 0 ? regionCaught / regionTotal : 0;
 
@@ -89,7 +106,9 @@ function PokedexPage() {
       if (p.id < range.from || p.id > range.to) return false;
       if (q && !p.name.toLowerCase().startsWith(q)) return false;
       if (type !== "all" && !p.types.includes(type)) return false;
-      if (capturedOnly && !pokedex[p.id]) return false;
+      // `isCaught`, not merely "has an entry" — seen-only entries exist now and
+      // must not satisfy a Caught filter.
+      if (capturedOnly && !isCaught(pokedex[p.id])) return false;
       if (shinyOnly && !pokedex[p.id]?.shinyUnlocked) return false;
       return true;
     });
@@ -234,14 +253,20 @@ function PokedexPage() {
         </div>
       </div>
 
-      {/* Grid */}
+      {/* Grid — three per row.
+          Four columns left the sprite at 64px, small enough that a Pokedex
+          entry read as a list item rather than as a card of a creature. Three
+          buys ~40% more width per cell, which is what pays for the 88px sprite,
+          both type chips and a status line. */}
       <div className="px-3 pb-8 pt-3">
-        <div className="grid grid-cols-3 gap-2.5 min-[400px]:grid-cols-4">
+        <div className="grid grid-cols-3 gap-2.5">
           {filtered.map((p) => {
             const e = pokedex[p.id];
-            const got = !!e;
+            const status = dexStatus(e);
+            const got = status !== null;
+            const caught = status === "caught";
             const shiny = !!e?.shinyUnlocked;
-            const primaryType = p.types[0];
+            const isPartner = partnerId === p.id;
             return (
               <button
                 key={p.id}
@@ -253,47 +278,90 @@ function PokedexPage() {
                 style={
                   {
                     contentVisibility: "auto",
-                    containIntrinsicSize: "112px 112px",
+                    containIntrinsicSize: "150px 150px",
                     ...(shiny
                       ? {
                           backgroundImage:
                             "linear-gradient(135deg, color-mix(in oklab, var(--color-poke-yellow) 35%, var(--color-card)), var(--color-card))",
                         }
-                      : got
+                      : caught
                         ? {
-                            backgroundImage: `linear-gradient(135deg, color-mix(in oklab, var(--type-${primaryType}) 18%, transparent), var(--color-card))`,
+                            backgroundImage: `linear-gradient(135deg, color-mix(in oklab, var(--type-${p.types[0]}) 18%, transparent), var(--color-card))`,
                           }
                         : {}),
                   } as React.CSSProperties
                 }
-                className={`relative flex flex-col items-center rounded-2xl p-2 transition press ${
+                className={`press relative flex flex-col items-center rounded-2xl border-2 px-1.5 pb-2 pt-1.5 shadow-card ${
                   shiny
-                    ? "border-2 border-poke-yellow shadow-card"
-                    : got
-                      ? "shadow-card"
-                      : "bg-muted/40"
+                    ? "border-poke-yellow"
+                    : caught
+                      ? "border-white"
+                      : got
+                        ? "border-white bg-card"
+                        : "border-white/70 bg-muted/40"
                 }`}
               >
+                {/* Dex number and the partner star share the top row rather than
+                    being absolutely positioned, so neither can crowd the other
+                    or ride the card's rounded corner. */}
+                <div className="flex w-full items-center justify-between gap-1 px-0.5">
+                  <span className="text-[10px] font-bold tabular-nums text-foreground/45">
+                    #{String(p.id).padStart(3, "0")}
+                  </span>
+                  <Star
+                    className={`h-3.5 w-3.5 shrink-0 ${
+                      isPartner ? "fill-poke-yellow text-poke-yellow" : "text-foreground/20"
+                    }`}
+                    aria-label={isPartner ? "Your partner" : undefined}
+                  />
+                </div>
+
                 <PokemonSprite
                   id={p.id}
                   shiny={shiny}
                   alt={got ? p.name : "???"}
-                  className={`sprite h-16 w-16 ${got ? "" : "sprite-silhouette"}`}
+                  className={`sprite h-[88px] w-[88px] ${got ? "" : "sprite-silhouette"}`}
                 />
-                <div className="mt-1 w-full truncate text-center text-[11px] font-bold text-foreground">
+
+                <div className="mt-0.5 w-full truncate text-center text-[12px] font-bold leading-tight text-foreground">
                   {got ? p.name : "???"}
                 </div>
-                {got && <div className="font-pixel-xs text-foreground/60">{primaryType}</div>}
-                {got && e.defeatCount > 1 && (
-                  <div className="absolute right-1 top-1 rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-bold text-primary-foreground shadow-sm">
-                    ×{e.defeatCount}
-                  </div>
-                )}
+
+                {/* Both types, not just the primary. They wrap on a narrow phone
+                    rather than overflowing the card. */}
+                <div className="mt-1 flex flex-wrap items-center justify-center gap-1">
+                  {got ? (
+                    p.types.map((t) => <TypeBadge key={t} type={t} size="sm" />)
+                  ) : (
+                    <span className="font-pixel-xs text-foreground/35">???</span>
+                  )}
+                </div>
+
+                <div className="mt-1.5 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide">
+                  {caught ? (
+                    <>
+                      <MiniPokeball />
+                      <span className="text-hp-good">Caught</span>
+                      {/* Inline rather than a corner badge: floated bottom-right
+                          it sat directly on top of this label. */}
+                      {e && e.defeatCount > 1 && (
+                        <span className="tabular-nums text-foreground/45">×{e.defeatCount}</span>
+                      )}
+                    </>
+                  ) : got ? (
+                    <>
+                      <Eye className="h-3 w-3 text-foreground/40" />
+                      <span className="text-foreground/45">Seen</span>
+                    </>
+                  ) : (
+                    <span className="text-foreground/30">Unknown</span>
+                  )}
+                </div>
               </button>
             );
           })}
           {filtered.length === 0 && (
-            <div className="col-span-3 py-10 text-center text-xs text-muted-foreground min-[400px]:col-span-4">
+            <div className="col-span-3 py-10 text-center text-xs text-muted-foreground">
               No matches.
             </div>
           )}

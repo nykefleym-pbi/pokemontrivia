@@ -164,6 +164,7 @@ function BattleMode({
   const raiseFlag = useGameStore((s) => s.raiseFlag);
   const pushBattleLog = useGameStore((s) => s.pushBattleLog);
   const recordPokedexCapture = useGameStore((s) => s.recordPokedexCapture);
+  const recordPokedexSeen = useGameStore((s) => s.recordPokedexSeen);
   const markEliteDefeated = useGameStore((s) => s.markEliteDefeated);
   const defeatedElites = useGameStore((s) => s.defeatedElites);
 
@@ -233,6 +234,14 @@ function BattleMode({
     [enemy.pokemon.types],
   );
   const [playerHp, setPlayerHp] = useState(playerMaxHp);
+  // Meeting a Pokémon registers it as SEEN; beating it upgrades that to CAUGHT
+  // further down. Without this the Pokédex's seen state would have no writer
+  // and the status would be dead UI. Seen never overwrites caught, so a rematch
+  // against something you already own changes nothing.
+  useEffect(() => {
+    recordPokedexSeen(enemy.pokemon.id);
+  }, [enemy.pokemon.id, recordPokedexSeen]);
+
   const [enemyHp, setEnemyHp] = useState(enemyMaxHp);
   const [phase, setPhase] = useState<Phase>("intro");
   const [trivia, setTrivia] = useState<Trivia | null>(null);

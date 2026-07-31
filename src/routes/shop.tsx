@@ -189,8 +189,15 @@ function ShopPage() {
     [inventory],
   );
 
+  // Keyed on the day, not on mount. `useMemo(..., [])` meant the deal was fixed
+  // for the life of the mount: this is an installed PWA that people leave open,
+  // so a session opened before the rollover kept showing yesterday's item
+  // indefinitely — which is what "the discounted item is not changing" was.
+  // `giftNow` already ticks once a second for the gift countdown, so this rides
+  // it rather than adding a second timer.
+  const featuredDay = Math.floor(giftNow / 86_400_000);
   const featured = useMemo(() => {
-    const day = Math.floor(Date.now() / 86_400_000);
+    const day = featuredDay;
     // Berries are Nearby-Battle-only drops; never feature them in the Solo shop.
     const shoppable = ITEMS.filter((it) => !it.pvpOnly);
     const item = shoppable[day % shoppable.length];
@@ -198,7 +205,7 @@ function ShopPage() {
     const discountPct = steps[day % steps.length];
     const discountedCost = Math.max(1, Math.round((item.cost * (100 - discountPct)) / 100));
     return { item, originalCost: item.cost, discountedCost, discountPct };
-  }, []);
+  }, [featuredDay]);
 
   useEffect(() => {
     if (hydrated && !hasOnboarded) navigate({ to: "/" });

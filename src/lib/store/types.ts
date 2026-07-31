@@ -68,6 +68,17 @@ export interface PokedexEntry {
   firstSeenAt: number;
   shinyUnlocked: boolean;
   defeatCount: number;
+  /**
+   * Whether this one is CAUGHT rather than merely SEEN.
+   *
+   * Optional, and that is a migration guarantee rather than laziness: every
+   * entry written before this field existed was created by a capture, so a
+   * persisted entry with no `caught` key has to read as caught. `undefined`
+   * therefore means caught and only an explicit `false` means seen-only — see
+   * `isCaught` in lib/pokedex.ts, which every consumer must go through instead
+   * of testing the field directly.
+   */
+  caught?: boolean;
 }
 
 export interface WeeklyLeagueState {
@@ -413,6 +424,9 @@ export interface GameState {
    * claimed/out of range. */
   claimArenaReward: (slot: number) => { text: string } | null;
   recordPokedexCapture: (pokemonId: number, isShiny: boolean) => void;
+  /** Register an encounter without a capture: creates a seen-only entry, and
+   *  never downgrades one that is already caught. */
+  recordPokedexSeen: (pokemonId: number) => void;
   markEliteDefeated: (memberId: string, region: string, regionDone: boolean) => void;
   registerAbilityTriggered: (abilityId: string) => void;
 
