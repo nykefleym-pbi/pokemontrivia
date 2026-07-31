@@ -80,7 +80,6 @@ interface Props {
   onRematch: () => void;
 }
 
-
 export function MegaRaidScreen({
   event,
   questions: rawQuestions,
@@ -497,6 +496,7 @@ export function MegaRaidScreen({
       className="bg-battle-field bg-battle-field-ink relative flex h-full w-full flex-col overflow-hidden"
       style={{ fontFamily: "Outfit, sans-serif" }}
     >
+      <div className="battle-stage battle-stage-ink" aria-hidden />
       {/* ARENA — boss + partner HP. Shrinks to fit so the question card always pins to the bottom.
           Deliberately NOT built on game-ui.tsx's shared `CombatPanel`: that
           component is a small side-by-side card (both combatants same size,
@@ -507,7 +507,7 @@ export function MegaRaidScreen({
           abilities/status/type-matchup concepts to show. Forcing CombatPanel
           here would be a real visual regression, not a genuine dedup — see
           the plan's Phase 2 UI note and this session's investigation. */}
-      <div className="relative flex min-h-0 flex-1 flex-col">
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col">
         <div
           className="relative px-4 pb-2 pt-[calc(env(safe-area-inset-top)+1.25rem)]"
           style={{
@@ -671,7 +671,9 @@ export function MegaRaidScreen({
             chosen={picked}
             revealedWrong={removedWrong}
             revealedWrong2={null}
-            revealedCorrect={revealCorrect && typeof currentCorrect === "number" ? currentCorrect : null}
+            revealedCorrect={
+              revealCorrect && typeof currentCorrect === "number" ? currentCorrect : null
+            }
             timer={timer}
             maxTime={TIMER}
             lastElapsedMs={lastElapsedMs}
@@ -815,8 +817,8 @@ export function MegaRaidScreen({
           <AlertDialogHeader>
             <AlertDialogTitle>Leave the raid?</AlertDialogTitle>
             <AlertDialogDescription>
-              Leaving now ends the raid as a loss and uses up one of your
-              attempts (feedback f63c4dc3 — you can't bail to save an attempt).
+              Leaving now ends the raid as a loss and uses up one of your attempts (feedback
+              f63c4dc3 — you can't bail to save an attempt).
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -828,7 +830,9 @@ export function MegaRaidScreen({
                 // Record the abandoned run as a loss so it consumes an attempt,
                 // rather than a free exit — mirror the forfeit first so
                 // finish() can use mega-run's authoritative submit result.
-                void queueMirror({ type: "forfeit" }).then((mirror) => finish(false, correctCount, mirror));
+                void queueMirror({ type: "forfeit" }).then((mirror) =>
+                  finish(false, correctCount, mirror),
+                );
               }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >

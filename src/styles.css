@@ -395,29 +395,95 @@
 .bg-elite-victory {
   background: linear-gradient(180deg, oklch(0.85 0.18 90) 0%, oklch(0.55 0.2 30) 100%);
 }
-/* The arena backdrop, shared by every battle mode.
+/* THE ARENA
  *
- * The art is the FIRST of several background layers, with the original two
- * gradients still underneath it. That ordering is the fallback: a browser that
- * cannot fetch `--battle-field-art` (missing file, offline first paint, a
- * decode error) simply paints the gradients it always did, so a battle never
- * comes up on bare white. Drop the file in and it takes over; delete it and the
- * app is back to where it started. No code change either way.
+ * `.bg-battle-field` is now only the base colour a battle sits on. The artwork
+ * moved to `.battle-stage`, a separate layer, because a `background-size: cover`
+ * on the screen container cannot be registered against: the art has two painted
+ * platforms the sprites must stand on, and `cover` re-crops the moment the
+ * viewport aspect moves — which on mobile it does every time the URL bar shows
+ * or hides. A layer with the art's own `aspect-ratio` and `100% 100%` sizing
+ * makes a percentage position mean the same thing in the art and in the DOM, at
+ * any viewport, so the sprites land on the platforms and stay there.
  *
- * The art sits behind a wash rather than being shown raw: the combat panels are
- * translucent cards and the question text sits directly on this, so a
- * full-contrast image underneath would eat the type. `--battle-field-veil` is
- * that wash, and it is what the dark theme and Mega Raid re-point instead of
- * swapping the artwork for a second file.
+ * `--battle-field-art` is set at runtime from the local clock (see
+ * lib/battle-field.ts). It is declared here as well so a battle rendered before
+ * that effect runs — SSR, the first paint — is never empty.
  */
 :root {
-  --battle-field-art: url("/ui/Battle%20Field.webp");
-  --battle-field-veil: oklch(1 0 0 / 0.34);
+  --battle-field-art: url("/field/Battle%20Field%20Morning.webp");
+  /* What the field fades down into behind the question card. Light theme wants
+   * the white the artwork itself fades to; dark theme has to fade into its own
+   * surface or the bottom third of every battle turns into a lightbox. */
+  --battle-fade-to: oklch(1 0 0);
+}
+.dark {
+  --battle-fade-to: oklch(0.19 0.05 275);
 }
 .bg-battle-field {
+  background: var(--battle-fade-to);
+}
+
+/* The artwork layer. Anchored to the top of the screen at the art's own aspect,
+ * so its two platforms sit at fixed percentages of THIS box no matter how tall
+ * the viewport is. Anything positioned inside it in `%` is registered to the
+ * painting. */
+.battle-stage {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  aspect-ratio: 1440 / 3120;
+  background: var(--battle-field-art) center top / 100% 100% no-repeat;
+}
+
+/* The fade from the field into the question card.
+ *
+ * This element IS the gap between the top bar and the card — it is the flex
+ * spacer, not an overlay. The first version was absolutely positioned from 50%
+ * of the screen to the bottom, and on a real battle that put ~90% of the
+ * gradient behind the card: the fade you could actually see was a 40px sliver,
+ * and the field still met the card as a hard edge.
+ *
+ * As the spacer it always ends exactly where the card begins, whatever the card
+ * is holding — four options or two, a bag row or none — with no viewport or
+ * card-height constants to keep in sync.
+ *
+ * The gradient stays fully clear for its top 70%. At 55% it began above the
+ * player's platform and washed the pad the partner is standing on, which read as
+ * the field being too short rather than as depth. 70% puts the first hint of
+ * white just under the pad's front edge.
+ *
+ * `z-index: 5` puts it above the artwork and below everything at `z-10` — the
+ * sprites, the combat panels, the top bar and the question card. It veils the
+ * background and nothing else, which is the requirement.
+ */
+.battle-fade {
+  position: relative;
+  z-index: 5;
+  min-height: 0;
+  flex: 1 1 0%;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent 70%, var(--battle-fade-to) 100%);
+}
+
+/* Mega Raid runs gold-on-ink and cannot take a daylight field behind it. Same
+ * artwork under a heavy ink wash — one background for every mode without making
+ * Mega's own palette illegible. */
+.battle-stage-ink::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: oklch(0.16 0.04 265 / 0.82);
+}
+.bg-battle-field-ink {
+  --battle-fade-to: oklch(0.11 0.03 265);
+}
+
+/* The gradient field, kept for the modes that do NOT take the artwork — Daily
+ * Quest, by owner ruling. This is the exact background `.bg-battle-field` was
+ * before the art landed, so Daily is unchanged rather than newly styled. */
+.bg-battle-gradient {
   background:
-    linear-gradient(var(--battle-field-veil), var(--battle-field-veil)),
-    var(--battle-field-art) center / cover no-repeat,
     radial-gradient(ellipse at top, oklch(0.85 0.1 220) 0%, transparent 60%),
     linear-gradient(
       180deg,
@@ -426,11 +492,15 @@
       oklch(0.85 0.14 130) 100%
     );
 }
-/* Mega Raid runs gold-on-ink and cannot take a daylight field behind it. Same
- * artwork, heavier veil — one background for every mode without making Mega's
- * own palette illegible. */
-.bg-battle-field-ink {
-  --battle-field-veil: oklch(0.16 0.04 265 / 0.82);
+.dark .bg-battle-gradient {
+  background:
+    radial-gradient(ellipse at top, oklch(0.28 0.06 250) 0%, transparent 60%),
+    linear-gradient(
+      180deg,
+      oklch(0.22 0.05 260) 0%,
+      oklch(0.18 0.05 265) 60%,
+      oklch(0.2 0.06 150) 100%
+    );
 }
 
 .dark .bg-poke-cream {
@@ -442,23 +512,6 @@
   background:
     radial-gradient(ellipse at top, oklch(0.3 0.08 265) 0%, transparent 55%),
     linear-gradient(160deg, oklch(0.22 0.05 270) 0%, oklch(0.18 0.06 280) 100%);
-}
-/* Dark theme keeps the same artwork and only darkens the veil. The variable is
- * overridden alongside the layer stack rather than instead of it, because
- * `background` is a shorthand and this rule has to restate all four layers
- * anyway to change the two gradients. */
-.dark .bg-battle-field {
-  --battle-field-veil: oklch(0.18 0.05 265 / 0.74);
-  background:
-    linear-gradient(var(--battle-field-veil), var(--battle-field-veil)),
-    var(--battle-field-art) center / cover no-repeat,
-    radial-gradient(ellipse at top, oklch(0.28 0.06 250) 0%, transparent 60%),
-    linear-gradient(
-      180deg,
-      oklch(0.22 0.05 260) 0%,
-      oklch(0.18 0.05 265) 60%,
-      oklch(0.2 0.06 150) 100%
-    );
 }
 
 /* The press response, for every tappable control in the app.
@@ -491,7 +544,8 @@
  */
 .press,
 .press-lg,
-.press-push {
+.press-push,
+.press-card {
   transition:
     transform 110ms cubic-bezier(0.2, 0, 0.2, 1),
     background-color 150ms ease,
@@ -506,6 +560,23 @@
 .press-lg:active:not(:disabled):not([aria-disabled="true"]) {
   transform: scale(0.985);
 }
+/* Home's mode cards, which keep their press even when the mode is unavailable —
+ * a finished Daily Quest or a Who's That on cooldown still answers the tap.
+ *
+ * This needs its own class because it cannot be done with `disabled`. A disabled
+ * form control is inert: `:active` never matches it, in any engine, so no CSS
+ * can make it dip. The cards therefore carry `aria-disabled` and guard their own
+ * onClick instead — which is also the more accurate markup, since the card is
+ * still a live control that simply has nothing to open right now.
+ *
+ * Consequently there is no `:not()` chain here, and that is deliberate rather
+ * than an oversight: excluding `[aria-disabled]` would take the press straight
+ * back off the cards this exists for.
+ */
+.press-card:active {
+  transform: scale(0.985);
+}
+
 /* The other press language, for the two buttons drawn with a solid lip below
  * them (`box-shadow: 0 4px 0` on Home's engage CTA, `border-b-4` on Who's That's
  * cry button). Those want the face to travel DOWN into the lip; scaling them
@@ -530,24 +601,77 @@
 @media (prefers-reduced-motion: reduce) {
   .press,
   .press-lg,
-  .press-push {
+  .press-push,
+  .press-card {
     transition: none;
   }
   .press:active:not(:disabled):not([aria-disabled="true"]),
   .press-lg:active:not(:disabled):not([aria-disabled="true"]),
-  .press-push:active:not(:disabled):not([aria-disabled="true"]) {
+  .press-push:active:not(:disabled):not([aria-disabled="true"]),
+  .press-card:active {
     transform: none;
   }
 }
 :root.reduce-motion .press,
 :root.reduce-motion .press-lg,
-:root.reduce-motion .press-push {
+:root.reduce-motion .press-push,
+:root.reduce-motion .press-card {
   transition: none;
 }
 :root.reduce-motion .press:active:not(:disabled):not([aria-disabled="true"]),
 :root.reduce-motion .press-lg:active:not(:disabled):not([aria-disabled="true"]),
-:root.reduce-motion .press-push:active:not(:disabled):not([aria-disabled="true"]) {
+:root.reduce-motion .press-push:active:not(:disabled):not([aria-disabled="true"]),
+:root.reduce-motion .press-card:active {
   transform: none;
+}
+
+/* An occasional wiggle, for the sprites that sit still on a menu.
+ *
+ * The whole animation is 5.5s but the movement only occupies the last ~18% of
+ * it, so what you see is a sprite standing still and then shaking itself every
+ * few seconds — "from time to time" with no JS, no timers, and nothing to keep
+ * in sync across cards. Callers stagger `animation-delay` so the three mode
+ * cards do not all twitch on the same beat, which would read as a page glitch
+ * rather than as three characters.
+ *
+ * The pivot is the feet (`transform-origin: 50% 92%`), not the centre — rotating
+ * about the middle makes a sprite look like it is being spun rather than
+ * rocking. Amplitude is deliberately small: the mode-card sprites live inside an
+ * `overflow-hidden` card with an 8px inset, and anything past ~5deg clips a
+ * corner off on the upswing.
+ */
+@keyframes sprite-wiggle {
+  0%,
+  82%,
+  100% {
+    transform: rotate(0deg) translateY(0);
+  }
+  85% {
+    transform: rotate(-5deg) translateY(-2px);
+  }
+  89% {
+    transform: rotate(4deg) translateY(-1px);
+  }
+  93% {
+    transform: rotate(-3deg) translateY(0);
+  }
+  96% {
+    transform: rotate(2deg) translateY(0);
+  }
+}
+.animate-wiggle {
+  /* Longhands, not the `animation` shorthand. This class is unlayered, so it
+   * beats Tailwind's layered utilities — and the shorthand resets every
+   * sub-property it omits, which meant it was silently stamping
+   * `animation-delay: 0s` over each caller's `[animation-delay:1.7s]`. All four
+   * sprites wiggled in perfect unison, which reads as the page glitching rather
+   * than as four characters. The delay is the one property callers set, so it
+   * is the one this must not touch. */
+  animation-name: sprite-wiggle;
+  animation-duration: 5.5s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  transform-origin: 50% 92%;
 }
 
 /* Sprite styling */
@@ -875,7 +999,8 @@
   .animate-pulse,
   .animate-spin,
   .animate-bounce,
-  .animate-ping {
+  .animate-ping,
+  .animate-wiggle {
     animation: none;
   }
 }
@@ -897,6 +1022,7 @@
 :root.reduce-motion .animate-pulse,
 :root.reduce-motion .animate-spin,
 :root.reduce-motion .animate-bounce,
-:root.reduce-motion .animate-ping {
+:root.reduce-motion .animate-ping,
+:root.reduce-motion .animate-wiggle {
   animation: none;
 }

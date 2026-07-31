@@ -175,12 +175,7 @@ export function DailyScreen({ questions, onExit }: { questions: Trivia[]; onExit
     return (
       <>
         {/* Test-observability hook only — not read by any production code. */}
-        <div
-          data-testid="daily-result"
-          data-correct={correctCount}
-          data-total={total}
-          hidden
-        />
+        <div data-testid="daily-result" data-correct={correctCount} data-total={total} hidden />
         <DailyResultScreen
           correct={correctCount}
           total={total}
@@ -206,7 +201,10 @@ export function DailyScreen({ questions, onExit }: { questions: Trivia[]; onExit
   const progressPct = (idx / total) * 100;
 
   return (
-    <div className="bg-battle-field relative flex h-full w-full flex-col overflow-hidden">
+    // `bg-battle-gradient`, not `bg-battle-field`: Daily Quest is the one battle
+    // mode kept off the field artwork by owner ruling, so it holds the gradient
+    // every mode used before the art landed.
+    <div className="bg-battle-gradient relative flex h-full w-full flex-col overflow-hidden">
       <div className="absolute left-0 right-0 top-0 z-40 h-1 bg-poke-dark/20">
         <motion.div
           className="h-full bg-poke-yellow"
@@ -408,9 +406,7 @@ function DailyResultScreen({
       {dayStreak != null && dayStreak >= 2 && (
         <div className="mt-3 flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2">
           <Flame className="h-4 w-4 shrink-0 text-primary" />
-          <span className="text-sm font-bold text-foreground">
-            Day {dayStreak} streak
-          </span>
+          <span className="text-sm font-bold text-foreground">Day {dayStreak} streak</span>
           <span className="text-xs text-foreground/60">
             +{Math.round((dailyStreakMultiplier(dayStreak) - 1) * 100)}% XP
           </span>

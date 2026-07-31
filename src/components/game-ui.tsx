@@ -13,6 +13,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CATEGORIES, CATEGORY_OF, BAG_SHORT_DESC } from "@/lib/item-categories";
 import { ITEM_CATEGORY_ICON } from "@/lib/app-icons";
+import { BATTLE_PLATFORM } from "@/lib/battle-field";
 
 /** Owner-supplied category art, used when an item's own sprite fails to load:
  * every berry shares one image, the three potions another. Items outside these
@@ -53,9 +54,7 @@ export function ItemIcon({ item, className }: { item: ItemDef; className: string
       // image-rendering: pixelated.
       className={`${stage === 0 ? "sprite" : ""} object-contain ${className}`}
       style={isDreamWorld ? { padding: "16.5%", boxSizing: "border-box" } : undefined}
-      onError={() =>
-        setFailure({ id: item.id, stage: stage === 0 && categoryArt ? 1 : 2 })
-      }
+      onError={() => setFailure({ id: item.id, stage: stage === 0 && categoryArt ? 1 : 2 })}
     />
   );
 }
@@ -147,10 +146,7 @@ export function LegendaryFrame({
       }}
     >
       <div className="rounded-[25px]">{children}</div>
-      <span
-        className="absolute -left-1 -top-1 text-sm leading-none"
-        style={{ color: cornerColor }}
-      >
+      <span className="absolute -left-1 -top-1 text-sm leading-none" style={{ color: cornerColor }}>
         {corner}
       </span>
       <span
@@ -308,7 +304,11 @@ function ParalysisEffect() {
         <span
           key={i}
           className="status-anim-spark absolute text-base"
-          style={{ left: `${18 + i * 26}%`, top: `${8 + (i % 2) * 18}%`, animationDelay: `${i * 0.23}s` }}
+          style={{
+            left: `${18 + i * 26}%`,
+            top: `${8 + (i % 2) * 18}%`,
+            animationDelay: `${i * 0.23}s`,
+          }}
         >
           ⚡
         </span>
@@ -333,7 +333,11 @@ function PoisonEffect({ badly = false }: { badly?: boolean }) {
           <span
             key={`spark-${i}`}
             className="status-anim-toxic-spark absolute text-sm text-fuchsia-400"
-            style={{ right: `${8 + i * 22}%`, top: `${12 + i * 14}%`, animationDelay: `${i * 0.3}s` }}
+            style={{
+              right: `${8 + i * 22}%`,
+              top: `${12 + i * 14}%`,
+              animationDelay: `${i * 0.3}s`,
+            }}
           >
             ✦
           </span>
@@ -352,7 +356,11 @@ function ConfusionEffect() {
   return (
     <div className="pointer-events-none absolute left-1/2 -top-2 h-16 w-16 -translate-x-1/2">
       {[0, 1].map((i) => (
-        <div key={i} className="status-anim-orbit absolute inset-0" style={{ animationDelay: `${i * -1}s` }}>
+        <div
+          key={i}
+          className="status-anim-orbit absolute inset-0"
+          style={{ animationDelay: `${i * -1}s` }}
+        >
           <span
             className="status-anim-orbit-counter absolute left-1/2 top-0 -translate-x-1/2 text-base"
             style={{ animationDelay: `${i * -1}s` }}
@@ -510,6 +518,68 @@ export function PokeballPattern({ marks }: { marks: DailyMark[] }) {
   );
 }
 
+/**
+ * The arena: the field artwork, the fade into the question card, and the four
+ * things that have to be registered against the painting.
+ *
+ * Everything here is positioned in percentages of `.battle-stage`, which carries
+ * the artwork's own aspect ratio (see styles.css). That is what makes the
+ * numbers below mean the same thing on a 390x844 phone, a 430x932 one, and a
+ * viewport that just lost 90px to the browser's URL bar — a `background-size:
+ * cover` on the screen container would re-crop on every one of those and slide
+ * the sprites off the platforms they are standing on.
+ *
+ * The two sprite slots sit ON the painted platforms; `PLATFORM_SINK` is how far
+ * a sprite's feet drop below the pad's centre line so it reads as standing on
+ * the face rather than hovering over the back lip. The two panel slots go in the
+ * empty ground the composition leaves either side of the diagonal: the enemy's
+ * above and left of its pad, yours across from yours.
+ *
+ * The player panel's `top-[30%]` is chosen so the card is level with the pad it
+ * belongs to (pad centre 34.8%, card ~10% tall), not merely below it — at 40%
+ * the two read as unrelated and the card drifted into the question card's
+ * shoulder. It still clears the enemy sprite, which bottoms out at 24.7%.
+ *
+ * The `z-10` on every slot is load-bearing. `.battle-fade` sits at `z-5`, so
+ * without it the fade would wash over the player's sprite and panel as well as
+ * the ground behind them.
+ */
+const PLATFORM_SINK = 1.6; // % of stage height, feet below pad centre
+
+export function BattleStage({
+  enemySprite,
+  playerSprite,
+  enemyPanel,
+  playerPanel,
+}: {
+  enemySprite: React.ReactNode;
+  playerSprite: React.ReactNode;
+  enemyPanel: React.ReactNode;
+  playerPanel: React.ReactNode;
+}) {
+  const pad = (p: { cx: number; cy: number }) => ({
+    left: `${p.cx}%`,
+    top: `${p.cy + PLATFORM_SINK}%`,
+    transform: "translate(-50%, -100%)",
+  });
+  return (
+    <div className="battle-stage" aria-hidden={false}>
+      <div className="absolute left-[4%] right-[48%] top-[7%] z-10 flex justify-start">
+        {enemyPanel}
+      </div>
+      <div className="absolute z-10" style={pad(BATTLE_PLATFORM.enemy)}>
+        {enemySprite}
+      </div>
+      <div className="absolute z-10" style={pad(BATTLE_PLATFORM.player)}>
+        {playerSprite}
+      </div>
+      <div className="absolute left-[46%] right-[4%] top-[30%] z-10 flex justify-end">
+        {playerPanel}
+      </div>
+    </div>
+  );
+}
+
 /** A combatant's HP bar/type badges/status icons card. Shared by every mode
  *  with an HP-based combat loop (originally battle-screen.tsx's solo battles;
  *  Mega Raid adopts it too) — a `live-pvp-battle-screen.tsx` variant
@@ -560,7 +630,12 @@ export function CombatPanel({
             spilling out of the fixed-width card. See `typeRowFontSize`. */}
         <div className={`mt-1 flex w-full flex-nowrap gap-0.5 ${justifyCls}`}>
           {types.map((t) => (
-            <TypeBadge key={t} type={t} size="sm" fontSize={typeRowFontSize(types, COMBAT_PANEL_WIDTH)} />
+            <TypeBadge
+              key={t}
+              type={t}
+              size="sm"
+              fontSize={typeRowFontSize(types, COMBAT_PANEL_WIDTH)}
+            />
           ))}
         </div>
         <div className="mt-1.5 flex w-full items-center gap-2">
@@ -592,7 +667,10 @@ export function CombatPanel({
                     <Info className="mt-[1px] h-2.5 w-2.5 shrink-0 opacity-70" />
                   </button>
                 </PopoverTrigger>
-                <PopoverContent align={align === "right" ? "end" : "start"} className="w-56 text-xs">
+                <PopoverContent
+                  align={align === "right" ? "end" : "start"}
+                  className="w-56 text-xs"
+                >
                   <div className="font-bold text-primary">{abilityName}</div>
                   {abilityDescription && (
                     <p className="mt-1 leading-snug text-muted-foreground">{abilityDescription}</p>
@@ -802,7 +880,7 @@ export function ItemBagSheet({
               <div className="my-4 max-h-[65vh] overflow-y-auto">
                 {bagGroups.length === 0 ? (
                   <div className="rounded-3xl bg-poke-yellow/15 p-6 text-center">
-                                        <div className="font-display-md text-foreground">Your bag is empty</div>
+                    <div className="font-display-md text-foreground">Your bag is empty</div>
                     <p className="mt-1 text-xs text-foreground/60">
                       Visit the Shop to stock up on items.
                     </p>
