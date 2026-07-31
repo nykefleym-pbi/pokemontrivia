@@ -37,13 +37,50 @@ const MODE_CARD =
  * `linear-gradient` background so it can sit ABOVE the card's own gradient
  * without the two blending into mud, and so a card that already paints a
  * rayburst (Who's That) can keep both.
+ *
+ * Both numbers here were wrong the first time and the streak was effectively
+ * invisible. `-left-1/4 w-1/2` puts the band's BRIGHTEST point — the gradient's
+ * midpoint — exactly on the card's left edge, so a 111px-wide mode card showed
+ * only the band's dim outer half. It now starts inside the card so the peak
+ * lands over artwork, and `white/45` rather than `white/25` survives being
+ * drawn over a saturated gradient instead of disappearing into it.
  */
 function CardSheen({ className = "" }: { className?: string }) {
   return (
     <div
       aria-hidden
-      className={`pointer-events-none absolute -inset-y-8 -left-1/4 w-1/2 -rotate-[24deg] bg-gradient-to-r from-transparent via-white/25 to-transparent ${className}`}
+      className={`pointer-events-none absolute -inset-y-10 left-[8%] w-[42%] -rotate-[20deg] bg-gradient-to-r from-transparent via-white/45 to-transparent ${className}`}
     />
+  );
+}
+
+/**
+ * The pixel eyebrow on a mode card ("DAILY QUEST", "WEEKLY LEAGUE"…).
+ *
+ * The size is a `clamp` rather than a Tailwind step because "WEEKLY LEAGUE" has
+ * to stay on ONE line in a cell that is a third of the viewport, and at a fixed
+ * 8px it does not: Press Start 2P's advance is ~0.975em nominal but quantizes as
+ * high as ~1.09em/char at fractional sizes (see the calibration note in
+ * `lib/type-row-fit.ts`, which swept this against the real webfont), so 13
+ * characters cost up to ~104px inside a ~95px cell. Hence the wrap.
+ *
+ * 1.65vw is the largest ratio that clears that worst case down to a 360px
+ * phone. Deliberately NOT `whitespace-nowrap`: the cards are `overflow-hidden`,
+ * so below ~355px — where one legible line is simply not possible — nowrap
+ * would silently chop the final letter, and wrapping is the better failure.
+ *
+ * Note for whoever re-measures: a sandboxed browser with Google Fonts blocked
+ * substitutes a narrower monospace and reports ~0.6em/char. That number is not
+ * this font.
+ */
+function ModeEyebrow({ children, className }: { children: React.ReactNode; className: string }) {
+  return (
+    <div
+      className={`relative font-pixel leading-none ${className}`}
+      style={{ fontSize: "clamp(6px, 1.65vw, 8px)" }}
+    >
+      {children}
+    </div>
   );
 }
 
@@ -145,18 +182,6 @@ export function BattleHome({
     date: string;
   } | null;
 }) {
-  const [pending, setPending] = useState<null | "daily" | "weekly">(null);
-  useEffect(() => {
-    if (!loading) setPending(null);
-  }, [loading]);
-  const handleDaily = () => {
-    setPending("daily");
-    onStartDaily();
-  };
-  const handleWeekly = () => {
-    setPending("weekly");
-    onStartWeekly();
-  };
   const navigate = useNavigate();
   const whosThatHourKey = useGameStore((s) => s.whosThatHourKey);
 
@@ -318,10 +343,10 @@ export function BattleHome({
             <PokeballSpinner size={180} />
           </div>
           <div className="relative flex items-center gap-4">
-            <PokeballSpinner size={56} spinning={loading && pending === null} />
+            <PokeballSpinner size={56} spinning={loading} />
             <div className="min-w-0 flex-1">
               <h3 className="font-display-md text-foreground">
-                {loading && pending === null ? "Summoning..." : "Up for a battle?"}
+                {loading ? "Summoning..." : "Up for a battle?"}
               </h3>
               <p className="mt-1 text-xs text-muted-foreground">
                 Answer 20 questions to earn XP, coins and Training Points for your partner.
@@ -341,11 +366,11 @@ export function BattleHome({
           <Button
             size="lg"
             onClick={onStart}
-            disabled={loading && pending === null}
+            disabled={loading}
             className="relative mt-4 h-14 w-full rounded-full border-2 border-white bg-primary text-base font-bold shadow-pop transition-transform duration-100 active:scale-[0.97]"
           >
             <Sparkles className="mr-2 h-4 w-4" />
-            {loading && pending === null ? "Summoning..." : "Start Battle"}
+            {loading ? "Summoning..." : "Start Battle"}
           </Button>
         </div>
       </div>
@@ -360,23 +385,21 @@ export function BattleHome({
           reflow the other two every time the event ends. */}
       <div className="grid grid-cols-3 gap-2 px-5 pt-3">
         <button
-          onClick={handleDaily}
+          onClick={onStartDaily}
           disabled={dailyDone || loading}
-          className={`${MODE_CARD} flex h-[124px] flex-col bg-gradient-to-b from-[oklch(0.93_0.12_95)] to-[oklch(0.8_0.17_72)] p-2.5 text-left disabled:opacity-80 ${
+          className={`${MODE_CARD} flex h-[124px] flex-col bg-gradient-to-b from-[oklch(0.96_0.09_98)] to-[oklch(0.74_0.18_66)] p-2 text-left disabled:opacity-80 ${
             dailyDone ? "grayscale" : ""
-          } ${pending === "daily" ? "animate-pulse ring-2 ring-[oklch(0.35_0.06_80)]/40" : ""}`}
+          }`}
         >
           <CardSheen />
-          <div className="relative font-pixel text-[8px] leading-none text-[oklch(0.35_0.06_80)]">
-            DAILY QUEST
-          </div>
+          <ModeEyebrow className="text-[oklch(0.35_0.06_80)]">DAILY QUEST</ModeEyebrow>
           <h3 className="relative mt-1 text-[13px] font-extrabold leading-tight text-[oklch(0.22_0.05_80)]">
             {dailyDone ? "Done" : "Beat Rotom"}
           </h3>
           <PokemonSprite
             id={479}
             alt="Rotom"
-            className="sprite pointer-events-none absolute bottom-5 left-1/2 h-[62px] w-[62px] -translate-x-1/2 drop-shadow-md"
+            className="sprite pointer-events-none absolute -bottom-1 -right-1 h-[80px] w-[80px] drop-shadow-md"
           />
           <div className="relative z-10 mt-auto flex items-center gap-1.5">
             {dailyDone ? (
@@ -394,16 +417,14 @@ export function BattleHome({
         </button>
 
         <button
-          onClick={handleWeekly}
+          onClick={onStartWeekly}
           disabled={loading || weeklyFinished}
-          className={`${MODE_CARD} flex h-[124px] flex-col bg-gradient-to-b from-[oklch(0.68_0.16_248)] to-[oklch(0.44_0.18_272)] p-2.5 text-left text-white disabled:opacity-80 ${
+          className={`${MODE_CARD} flex h-[124px] flex-col bg-gradient-to-b from-[oklch(0.76_0.14_243)] to-[oklch(0.38_0.18_275)] p-2 text-left text-white disabled:opacity-80 ${
             weeklyFinished ? "grayscale" : ""
-          } ${pending === "weekly" ? "animate-pulse ring-2 ring-white/60" : ""}`}
+          }`}
         >
           <CardSheen />
-          <div className="relative font-pixel text-[8px] leading-none text-white/85">
-            WEEKLY LEAGUE
-          </div>
+          <ModeEyebrow className="text-white/85">WEEKLY LEAGUE</ModeEyebrow>
           <h3 className="relative mt-1 truncate text-[13px] font-extrabold leading-tight">
             {weeklyLeader ? weeklyLeader.name : "Loading..."}
           </h3>
@@ -411,7 +432,7 @@ export function BattleHome({
             <PokemonSprite
               id={weeklyLeader.signaturePokemonId}
               alt={weeklyLeader.name}
-              className="sprite pointer-events-none absolute bottom-5 left-1/2 h-[62px] w-[62px] -translate-x-1/2 drop-shadow-md"
+              className="sprite pointer-events-none absolute -bottom-1 -right-1 h-[80px] w-[80px] drop-shadow-md"
             />
           )}
           <div className="relative z-10 mt-auto">
@@ -437,21 +458,19 @@ export function BattleHome({
           <button
             onClick={onStartMega}
             disabled={mega.disabled}
-            className={`${MODE_CARD} flex h-[124px] flex-col bg-gradient-to-b from-[oklch(0.6_0.19_305)] to-[oklch(0.36_0.16_300)] p-2.5 text-left text-white disabled:opacity-80 ${
+            className={`${MODE_CARD} flex h-[124px] flex-col bg-gradient-to-b from-[oklch(0.7_0.17_310)] to-[oklch(0.3_0.15_298)] p-2 text-left text-white disabled:opacity-80 ${
               mega.disabled ? "grayscale" : ""
             }`}
           >
             <CardSheen />
-            <div className="relative font-pixel text-[8px] leading-none text-white/85">
-              MEGA RAID
-            </div>
+            <ModeEyebrow className="text-white/85">MEGA RAID</ModeEyebrow>
             <h3 className="relative mt-1 truncate text-[13px] font-extrabold leading-tight">
               {mega.name}
             </h3>
             <PokemonSprite
               id={mega.megaId}
               alt={mega.name}
-              className="sprite pointer-events-none absolute bottom-5 left-1/2 h-[62px] w-[62px] -translate-x-1/2 drop-shadow-md"
+              className="sprite pointer-events-none absolute -bottom-1 -right-1 h-[80px] w-[80px] drop-shadow-md"
             />
             <div className="relative z-10 mt-auto text-[10px] font-bold leading-tight">
               {mega.reason === "cleared"
@@ -464,9 +483,9 @@ export function BattleHome({
           </button>
         ) : (
           <div
-            className={`${MODE_CARD} flex h-[124px] flex-col bg-gradient-to-b from-[oklch(0.6_0.19_305)] to-[oklch(0.36_0.16_300)] p-2.5 text-left text-white opacity-70 grayscale`}
+            className={`${MODE_CARD} flex h-[124px] flex-col bg-gradient-to-b from-[oklch(0.7_0.17_310)] to-[oklch(0.3_0.15_298)] p-2 text-left text-white opacity-70 grayscale`}
           >
-            <div className="font-pixel text-[8px] leading-none text-white/85">MEGA RAID</div>
+            <ModeEyebrow className="text-white/85">MEGA RAID</ModeEyebrow>
             <h3 className="mt-1 text-[13px] font-extrabold leading-tight">
               {mega === null ? "Checking..." : "No Raid"}
             </h3>
@@ -508,12 +527,15 @@ export function BattleHome({
               ?
             </span>
           </div>
-          {/* The title wraps rather than truncates. At 390px the one-line
-              version lost its last word to an ellipsis once the CTA claimed
-              its width, and "Who's That Pokém…" is a worse read than two
-              short lines. */}
+          {/* Pixel face, matching the eyebrow the other three mode cards use.
+              This was the only mode whose name was set in the display font,
+              which made the row read as three modes plus one banner ad.
+
+              It wraps rather than truncates. At 390px the one-line version lost
+              its last word to an ellipsis once the CTA claimed its width, and
+              "Who's That Pokém…" is a worse read than two short lines. */}
           <div className="relative min-w-0 flex-1">
-            <h3 className="text-[13px] font-extrabold leading-[1.15]">
+            <h3 className="font-pixel text-[10px] uppercase leading-[1.5]">
               Who&apos;s That Pokémon?
             </h3>
             {whosThatOnCooldown && (

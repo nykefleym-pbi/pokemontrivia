@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { Facebook } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { useStoreHydrated } from "@/lib/store-hydration";
-import { PokemonSprite } from "@/components/game-ui";
+import { PokeballSpinner, PokemonSprite } from "@/components/game-ui";
 import { adaptiveDifficultyBand } from "@/lib/game-data";
 import { BattleScreen, type Trivia } from "@/components/battle-screen";
 import { fetchBattleQuestions, fetchEliteQuestions, fetchDailyChallenge } from "@/lib/api/trivia";
@@ -34,6 +34,29 @@ import { UI_ICON } from "@/lib/app-icons";
 
 const ENGAGE_DELAY_MS = 10000; // safety cap: show carousel by now even if mega data never resolves
 
+/**
+ * The screen a mode card hands you to while its questions are fetched.
+ *
+ * It exists so the press has somewhere to go. Without it the player stays on
+ * the hub for the length of a network round trip, and a card that highlights
+ * but doesn't navigate reads as a tap that missed — the usual response is to
+ * tap it again. Naming the mode also means the wait is legible: you can see
+ * which card you actually hit.
+ */
+function ModePrep({ label }: { label: string }) {
+  return (
+    <div className="bg-poke-cream flex h-full w-full flex-col items-center justify-center gap-5 safe-x">
+      <PokeballSpinner size={72} spinning />
+      <div className="text-center">
+        <p className="font-pixel text-[10px] uppercase tracking-wider text-foreground/55">
+          Preparing
+        </p>
+        <p className="mt-2 font-display-md text-foreground">{label}</p>
+      </div>
+    </div>
+  );
+}
+
 export const Route = createFileRoute("/battle")({
   component: BattlePage,
   validateSearch: (s: Record<string, unknown>) => ({
@@ -60,6 +83,14 @@ function BattlePage() {
   const [phase, setPhase] = useState<
     "home" | "loading" | "fighting" | "daily" | "elite" | "weekly" | "mega" | "megaLeaderboard"
   >("home");
+  // Which mode card was pressed, or null for a plain Start Battle.
+  //
+  // Pressing Daily Quest used to leave the player on Home watching the card
+  // pulse while the questions were fetched, which reads as a tap that didn't
+  // register rather than as a screen that is on its way. This drives a
+  // full-screen prep view so the press moves you off Home immediately and the
+  // loading happens after the transition, not in front of it.
+  const [prepping, setPrepping] = useState<string | null>(null);
   const [questions, setQuestions] = useState<Trivia[]>([]);
   const [eliteOpponent, setEliteOpponent] = useState<EliteMember | null>(null);
   const [weeklyOpponent, setWeeklyOpponent] = useState<GymLeader | null>(null);
@@ -191,6 +222,13 @@ function BattlePage() {
   useEffect(() => {
     initWeeklyLeague();
   }, [initWeeklyLeague]);
+
+  // The prep view only exists for the duration of a load. Clearing it from the
+  // phase itself rather than from each start function means no error path can
+  // leave a "Preparing Daily Quest" banner stranded over the hub.
+  useEffect(() => {
+    if (phase !== "loading") setPrepping(null);
+  }, [phase]);
 
   const loadMegaStats = useCallback(async () => {
     const ev = await fetchActiveMegaEvent();
@@ -349,6 +387,7 @@ function BattlePage() {
 
   async function startDaily() {
     if (dailyDone) return;
+    setPrepping("Daily Quest");
     setPhase("loading");
     try {
       const data = await fetchDailyChallenge();
@@ -372,6 +411,7 @@ function BattlePage() {
     if (weeklyLeague.status === "won" || weeklyLeague.status === "lost") return;
     const leader = findGymLeader(weeklyLeague.gymLeaderId);
     if (!leader) return;
+    setPrepping("Weekly League");
     setPhase("loading");
     try {
       const data = await fetchEliteQuestions({
@@ -413,6 +453,7 @@ function BattlePage() {
   }
 
   async function startMega() {
+    setPrepping("Mega Raid");
     setPhase("loading");
     try {
       const ev = await fetchActiveMegaEvent();
@@ -1236,6 +1277,8 @@ function BattlePage() {
           onStart={startElite}
           loading={phase === "loading"}
         />
+      ) : phase === "loading" && prepping ? (
+        <ModePrep label={prepping} />
       ) : (
         <BattleHome
           onStart={startBattle}
