@@ -436,36 +436,6 @@
   background: var(--battle-field-art) center top / 100% 100% no-repeat;
 }
 
-/* The fade from the field into the question card.
- *
- * This element IS the gap between the top bar and the card — it is the flex
- * spacer, not an overlay. The first version was absolutely positioned from 50%
- * of the screen to the bottom, and on a real battle that put ~90% of the
- * gradient behind the card: the fade you could actually see was a 40px sliver,
- * and the field still met the card as a hard edge.
- *
- * As the spacer it always ends exactly where the card begins, whatever the card
- * is holding — four options or two, a bag row or none — with no viewport or
- * card-height constants to keep in sync.
- *
- * The gradient stays fully clear for its top 70%. At 55% it began above the
- * player's platform and washed the pad the partner is standing on, which read as
- * the field being too short rather than as depth. 70% puts the first hint of
- * white just under the pad's front edge.
- *
- * `z-index: 5` puts it above the artwork and below everything at `z-10` — the
- * sprites, the combat panels, the top bar and the question card. It veils the
- * background and nothing else, which is the requirement.
- */
-.battle-fade {
-  position: relative;
-  z-index: 5;
-  min-height: 0;
-  flex: 1 1 0%;
-  pointer-events: none;
-  background: linear-gradient(to bottom, transparent 70%, var(--battle-fade-to) 100%);
-}
-
 /* Mega Raid runs gold-on-ink and cannot take a daylight field behind it. Same
  * artwork under a heavy ink wash — one background for every mode without making
  * Mega's own palette illegible. */
@@ -623,6 +593,33 @@
 :root.reduce-motion .press-push:active:not(:disabled):not([aria-disabled="true"]),
 :root.reduce-motion .press-card:active {
   transform: none;
+}
+
+/* The ball on Home turning itself over to the next tier.
+ *
+ * A full 360deg rather than 180deg, because a half-turn would leave the ball
+ * mirrored — the Ultra Ball's H survives that but the Master Ball's M does not.
+ * The React side swaps the tier at the halfway point, when the disc is edge-on
+ * and neither face is visible; `ball-flip`'s duration and that swap timer are a
+ * pair (FLIP_MS / HALF_MS in game-ui.tsx). Change one and change the other.
+ *
+ * `backface-visibility` is irrelevant here — there is only ever one face
+ * rendered — but `transform-style: preserve-3d` is not: without it the browser
+ * flattens the rotation and the ball squashes horizontally instead of turning.
+ */
+@keyframes ball-flip {
+  from {
+    transform: rotateY(0deg);
+  }
+  to {
+    transform: rotateY(360deg);
+  }
+}
+.animate-ball-flip {
+  animation-name: ball-flip;
+  animation-duration: 700ms;
+  animation-timing-function: ease-in-out;
+  transform-style: preserve-3d;
 }
 
 /* An occasional wiggle, for the sprites that sit still on a menu.
@@ -1000,7 +997,8 @@
   .animate-spin,
   .animate-bounce,
   .animate-ping,
-  .animate-wiggle {
+  .animate-wiggle,
+  .animate-ball-flip {
     animation: none;
   }
 }
@@ -1023,6 +1021,7 @@
 :root.reduce-motion .animate-spin,
 :root.reduce-motion .animate-bounce,
 :root.reduce-motion .animate-ping,
-:root.reduce-motion .animate-wiggle {
+:root.reduce-motion .animate-wiggle,
+:root.reduce-motion .animate-ball-flip {
   animation: none;
 }

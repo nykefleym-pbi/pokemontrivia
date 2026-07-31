@@ -39,13 +39,28 @@ export function battleFieldCssUrl(id: BattleFieldId = battleFieldIdFor()): strin
  * directly. Both fields are the same composition, so one set of numbers covers
  * morning and evening.
  *
- * `cx`/`cy` is the centre of the pad. A sprite stands with its FEET there, so
- * callers anchor the sprite's bottom edge slightly below `cy` — far enough for
- * the feet to sit on the pad's face rather than float over its back lip.
+ * `cx`/`cy` is the centre of the pad. `sink` is how far BELOW it the sprite
+ * <img>'s bottom edge is anchored, in the same percentage-of-stage units.
+ *
+ * `sink` is large — 7-8%, where the pad itself is only ~5% tall — and that is
+ * not a fudge. PokeAPI sprites are a fixed square canvas with the creature
+ * drawn inside it and a wide band of transparent pixels underneath, so
+ * anchoring the IMG's bottom edge on the pad puts the visible feet roughly a
+ * third of the frame above it. That is the float the owner reported, and the
+ * sink is that transparent band.
+ *
+ * Measured off a real device screenshot: the two combatants sat 5.6% and 6.8%
+ * of the stage too high, and the gap between those two figures tracks their
+ * different box sizes (h-36 vs h-40) — which is the tell that this is frame
+ * padding rather than a positioning error.
+ *
+ * It cannot be exact for every species, because the padding varies with how
+ * tall the creature is drawn. Tuned so the common case stands ON the pad and
+ * outliers sink a few pixels into it, which reads far better than floating.
  */
 export const BATTLE_PLATFORM = {
   /** Upper right — the opponent. */
-  enemy: { cx: 74, cy: 23.1, w: 41 },
+  enemy: { cx: 74, cy: 23.1, w: 41, sink: 7.2 },
   /** Lower left — your partner. */
-  player: { cx: 26.5, cy: 34.8, w: 44.6 },
+  player: { cx: 26.5, cy: 34.8, w: 44.6, sink: 8.4 },
 } as const;
