@@ -1,9 +1,9 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { motion, type TargetAndTransition } from "framer-motion";
 import { Share2 } from "lucide-react";
 import { AppIcon } from "@/components/app-icon";
 import { PokemonSprite, SpriteBurst } from "@/components/game-ui";
-import { MissedReview } from "@/components/MissedReview";
+import { MISSED_REVIEW_MAX, MissedReview } from "@/components/MissedReview";
 import { Button } from "@/components/ui/button";
 import { COIN_ICON, RESULT_ICON, REWARD_ICON, TP_ICON } from "@/lib/app-icons";
 import { useSpriteFootPad } from "@/lib/sprite-foot";
@@ -243,6 +243,50 @@ const GLOOM = [
   { cls: "h-1 w-1 rounded-full bg-poke-blue/35", l: 3 },
 ] as const;
 
+/**
+ * Trims the missed-answers list until the buttons under it fit on screen.
+ *
+ * Owner ruling 2026-08-01: the buttons win. A long review pushed "Back home"
+ * against the bottom edge, and a way off the screen matters more than the fifth
+ * thing you got wrong — the rows dropped are still counted in "and N more".
+ *
+ * Shrink-only, one row per pass, floored at zero, so it converges in at most
+ * MISSED_REVIEW_MAX renders and can never oscillate between two counts that
+ * both "fit". The reset is keyed on the things that change how much room there
+ * is — a new set of answers, and a resize or rotation — rather than running
+ * continuously, so it settles and then stays settled.
+ *
+ * `useLayoutEffect` so the trimming happens before paint; on the server there
+ * is no layout to measure and it degrades to the full list.
+ */
+const useIsoLayoutEffect = typeof document === "undefined" ? useEffect : useLayoutEffect;
+
+function useFitMissedCount(missedCount: number) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [maxItems, setMaxItems] = useState(MISSED_REVIEW_MAX);
+
+  const reset = useCallback(() => setMaxItems(MISSED_REVIEW_MAX), []);
+  useIsoLayoutEffect(reset, [missedCount, reset]);
+  useEffect(() => {
+    window.addEventListener("resize", reset);
+    window.addEventListener("orientationchange", reset);
+    return () => {
+      window.removeEventListener("resize", reset);
+      window.removeEventListener("orientationchange", reset);
+    };
+  }, [reset]);
+
+  useIsoLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || maxItems <= 0) return;
+    // +1 absorbs sub-pixel rounding, which would otherwise read as a permanent
+    // overflow and strip the list to nothing on a screen it already fits.
+    if (el.scrollHeight > el.clientHeight + 1) setMaxItems((n) => n - 1);
+  });
+
+  return { ref, maxItems };
+}
+
 function FallingBits({ won }: { won: boolean }) {
   const bits = won ? CONFETTI : GLOOM;
   return (
@@ -338,6 +382,10 @@ export function ResultScreen({
     setBattleScreenActive(true);
     return () => setBattleScreenActive(prev);
   }, [setBattleScreenActive]);
+
+  // Hooks cannot live inside the defeat branch below, so this runs for both
+  // outcomes; on a win nothing is attached to the ref and it does nothing.
+  const fit = useFitMissedCount(missed.length);
 
   if (won) {
     return (
@@ -477,6 +525,7 @@ export function ResultScreen({
   // DEFEAT
   return (
     <motion.div
+      ref={fit.ref}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className="relative flex h-full w-full flex-col overflow-y-auto bg-defeat px-6 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
@@ -514,6 +563,7 @@ export function ResultScreen({
       <div className="relative z-10">
         <MissedReview
           missed={missed}
+          maxItems={fit.maxItems}
           footer={
             <p className="text-xs text-white/70">
               Consolation: <span className="font-bold text-poke-yellow">+{xpEarned} XP</span>
