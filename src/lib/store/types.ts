@@ -198,6 +198,9 @@ export interface GameState {
   // battle ephemeral state
   inBattle: boolean;
   battleScreenActive: boolean;
+  /** How many full-screen surfaces currently want the bottom nav gone. Read
+   *  `battleScreenActive` instead; this is the bookkeeping behind it. */
+  fullScreenClaims: number;
   setsThisBattle: number;
   usedThisBattle: Partial<Record<ItemId, boolean>>;
   xAttackActive: boolean;

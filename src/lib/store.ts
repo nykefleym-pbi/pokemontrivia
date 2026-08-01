@@ -182,7 +182,25 @@ export const useGameStore = create<GameState>()(
 
       inBattle: false,
       battleScreenActive: false,
-      setBattleScreenActive: (v) => set({ battleScreenActive: v }),
+      fullScreenClaims: 0,
+      // A CLAIM COUNT behind a boolean, not a plain boolean.
+      //
+      // Several full-screen surfaces nest — the result screen renders inside
+      // the battle screen, and both want the nav gone — and each is written as
+      // `set(true)` on mount, `set(false)` on unmount. With a plain boolean the
+      // outcome depends on which cleanup React happens to run last: the inner
+      // one releasing after the outer left the nav hidden on every screen that
+      // followed, which is how the Elite Four intro lost its nav. Counting the
+      // claims makes the pairs compose whatever the order.
+      //
+      // Every caller must stay balanced (one release per claim); `Math.max(0)`
+      // keeps an extra release from driving the count negative and wedging the
+      // nav off.
+      setBattleScreenActive: (v) =>
+        set((s) => {
+          const n = Math.max(0, (s.fullScreenClaims ?? 0) + (v ? 1 : -1));
+          return { fullScreenClaims: n, battleScreenActive: n > 0 };
+        }),
       pendingLevelUp: null,
       mergePendingLevelUp: (rewards) =>
         set((s) => {

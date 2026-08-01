@@ -669,7 +669,12 @@ export const PokemonSprite = React.memo(function PokemonSprite({
     <img
       src={src}
       alt={alt ?? `Pokemon ${id}`}
-      className={className}
+      // `object-contain` FIRST so a caller's own class can still override it.
+      // Every caller sizes this with a square box (h-36 w-36, h-full w-full),
+      // which silently stretches any source that is not square — and the
+      // fallback ladder ends at official-artwork, a different canvas from the
+      // 96x96 game sprite. Owner report 2026-08-01: a squeezed battle sprite.
+      className={`object-contain ${className ?? ""}`}
       loading="lazy"
       crossOrigin="anonymous"
       onError={() => {
