@@ -11,6 +11,7 @@ import { ALL_POKEMON, type PokeType } from "@/lib/pokemon-data";
 import { Input } from "@/components/ui/input";
 import { PokemonSprite, TypeBadge } from "@/components/game-ui";
 import { dexStatus, isCaught } from "@/lib/pokedex";
+import { typeRowFontSize, DEX_CARD_WIDTH, DEX_CARD_PAD_PX } from "@/lib/type-row-fit";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { pokeApiUrls } from "@/lib/api/pokeapi";
 
@@ -233,23 +234,35 @@ function PokedexPage() {
             className="h-11 rounded-full border-0 bg-card pl-11 text-sm shadow-card"
           />
         </div>
-        <div className="mt-3 -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
-          {GEN_RANGES.map((g) => {
-            const active = g.gen === gen;
-            return (
-              <button
-                key={g.gen}
-                onClick={() => setGen(g.gen)}
-                className={`press shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${
-                  active
-                    ? "bg-primary text-primary-foreground shadow-card"
-                    : "bg-card text-foreground/70 shadow-card"
-                }`}
-              >
-                Gen {g.gen}
+        {/* Generation is a popover chip now, matching "+ Type". As a horizontal
+            scroll strip it was a nine-item row that had to be swiped to reach
+            Gen 7-9, and it read as a second navigation bar under the search
+            field rather than as one more filter. */}
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="press shrink-0 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow-card">
+                Gen {gen}
               </button>
-            );
-          })}
+            </PopoverTrigger>
+            <PopoverContent className="w-64 rounded-2xl bg-card p-2" align="start">
+              <div className="flex flex-wrap gap-1">
+                {GEN_RANGES.map((g) => (
+                  <button
+                    key={g.gen}
+                    onClick={() => setGen(g.gen)}
+                    className={`press rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                      g.gen === gen
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-foreground/70"
+                    }`}
+                  >
+                    Gen {g.gen}
+                  </button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
@@ -291,7 +304,7 @@ function PokedexPage() {
                         : {}),
                   } as React.CSSProperties
                 }
-                className={`press relative flex flex-col items-center rounded-2xl border-2 px-1.5 pb-2 pt-1.5 shadow-card ${
+                className={`press relative flex flex-col items-center rounded-2xl border-2 px-2 pb-2.5 pt-2 shadow-card ${
                   shiny
                     ? "border-poke-yellow"
                     : caught
@@ -303,8 +316,14 @@ function PokedexPage() {
               >
                 {/* Dex number and the partner star share the top row rather than
                     being absolutely positioned, so neither can crowd the other
-                    or ride the card's rounded corner. */}
-                <div className="flex w-full items-center justify-between gap-1 px-0.5">
+                    or ride the card's rounded corner.
+                    
+                    `px-1` on top of the card's own `px-2` is the safe inset. A
+                    16px radius means the corner has already curved away by the
+                    time you are 4-5px in, so anything sitting flush against the
+                    padding box visually collides with the arc even though the
+                    boxes do not overlap. */}
+                <div className="flex w-full items-center justify-between gap-1 px-1">
                   <span className="text-[10px] font-bold tabular-nums text-foreground/45">
                     #{String(p.id).padStart(3, "0")}
                   </span>
@@ -323,15 +342,25 @@ function PokedexPage() {
                   className={`sprite h-[88px] w-[88px] ${got ? "" : "sprite-silhouette"}`}
                 />
 
-                <div className="mt-0.5 w-full truncate text-center text-[12px] font-bold leading-tight text-foreground">
+                <div className="mt-0.5 w-full truncate text-center text-[14px] font-extrabold leading-tight text-foreground">
                   {got ? p.name : "???"}
                 </div>
 
-                {/* Both types, not just the primary. They wrap on a narrow phone
-                    rather than overflowing the card. */}
-                <div className="mt-1 flex flex-wrap items-center justify-center gap-1">
+                {/* Both types on ONE line, always. `flex-wrap` put a dual-type
+                    Pokemon's second badge on its own row, which made those cards
+                    a line taller than the rest and broke the grid's rhythm. The
+                    badges shrink to fit instead, the same trick the combat panel
+                    uses — see `typeRowFontSize`. */}
+                <div className="mt-1 flex w-full flex-nowrap items-center justify-center gap-1">
                   {got ? (
-                    p.types.map((t) => <TypeBadge key={t} type={t} size="sm" />)
+                    p.types.map((t) => (
+                      <TypeBadge
+                        key={t}
+                        type={t}
+                        size="sm"
+                        fontSize={typeRowFontSize(p.types, DEX_CARD_WIDTH, DEX_CARD_PAD_PX)}
+                      />
+                    ))
                   ) : (
                     <span className="font-pixel-xs text-foreground/35">???</span>
                   )}
@@ -342,11 +371,6 @@ function PokedexPage() {
                     <>
                       <MiniPokeball />
                       <span className="text-hp-good">Caught</span>
-                      {/* Inline rather than a corner badge: floated bottom-right
-                          it sat directly on top of this label. */}
-                      {e && e.defeatCount > 1 && (
-                        <span className="tabular-nums text-foreground/45">×{e.defeatCount}</span>
-                      )}
                     </>
                   ) : got ? (
                     <>

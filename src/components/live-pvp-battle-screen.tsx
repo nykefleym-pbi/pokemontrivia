@@ -206,7 +206,9 @@ function PvpCombatPanel({
       className="shrink-0 rounded-2xl bg-card px-3 py-2 backdrop-blur shadow-card"
     >
       <div className={`flex flex-col ${alignCls}`}>
-        <div className="w-full truncate text-sm font-bold leading-tight">{name}</div>
+        {/* Same hierarchy as Solo's CombatPanel: the name leads, the chips
+            support. */}
+        <div className="w-full truncate text-[17px] font-extrabold leading-tight">{name}</div>
         {types.length > 0 && (
           <div className={`mt-1 flex w-full flex-nowrap gap-0.5 ${justifyCls}`}>
             {types.map((t) => (
@@ -239,10 +241,10 @@ function PvpCombatPanel({
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    className="flex max-w-full items-center gap-0.5 rounded-xl bg-primary/10 px-1.5 py-[2px] text-[9px] font-bold uppercase tracking-wide text-primary press"
+                    className="press flex max-w-full items-center gap-0.5 rounded-xl bg-primary/10 px-1.5 py-[1px] font-pixel text-[7px] uppercase leading-none tracking-wide text-primary"
                   >
                     <span className="min-w-0 truncate text-left">{a.name}</span>
-                    <Info className="mt-[1px] h-2.5 w-2.5 shrink-0 opacity-70" />
+                    <Info className="h-2 w-2 shrink-0 opacity-70" />
                   </button>
                 </PopoverTrigger>
                 <PopoverContent
