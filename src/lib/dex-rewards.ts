@@ -1,6 +1,6 @@
-import { ITEMS, type ItemId } from "@/lib/game-data";
 import { ALL_POKEMON } from "@/lib/pokemon-data";
 import { isCaught } from "@/lib/pokedex";
+import { DAILY_COMMON_POOL } from "@/lib/store/slices/profileSlice";
 import type { GameState, PokedexEntry } from "@/lib/store/types";
 
 /**
@@ -73,32 +73,37 @@ export function dexStats(pokedex: Record<number, PokedexEntry>, gen: number): De
 export const DEX_MILESTONES = [25, 50, 75, 100] as const;
 export type DexMilestone = (typeof DEX_MILESTONES)[number];
 
-/** Which glyph a milestone shows. Drawn, not imported — see the card. */
-export type DexRewardIcon = "poke" | "coins" | "premium" | "master";
+/** Which currency art a milestone shows — one glyph per rung. */
+export type DexRewardIcon = "coins" | "xp" | "tp" | "chest";
 
 export interface DexReward {
-  coins: number;
-  xp: number;
-  item?: ItemId;
-  /** Poke Eggs — the 100% rung only; eggs are the sole route to a Legendary. */
-  eggs?: number;
   icon: DexRewardIcon;
+  coins?: number;
+  xp?: number;
+  /** Training Points, granted to the current partner. */
+  tp?: number;
+  /** How many items to roll from the common pool. */
+  items?: number;
+  /** Poké Eggs — the 100% rung only; eggs are the sole route to a Legendary. */
+  eggs?: number;
 }
 
 /**
- * What each rung pays.
+ * What each rung pays (owner-set, 2026-08-01).
  *
- * Deliberately above the achievement ladder (bronze 250 coins, platinum 4,000):
- * filling a generation is the longest grind in the game and the only one
- * measured in months, so 100% pays more than any single trophy. The lower rungs
- * stay modest so the first one lands early and reads as encouragement rather
- * than as the point of playing.
+ * One currency per rung rather than a bundle at every step, so the ladder reads
+ * as four different rewards rather than four sizes of the same one, and the
+ * 100% chest is the only rung that pays several things at once.
+ *
+ * 1,000 TP at 75% is a large single grant against a curve that tops out at
+ * 1,500 (see TP_DAMAGE_TIERS) — it jumps a partner straight to the 1.15x band.
+ * That is intended: three quarters of a generation is months of play.
  */
 export const DEX_MILESTONE_REWARDS: Record<DexMilestone, DexReward> = {
-  25: { coins: 500, xp: 200, icon: "poke" },
-  50: { coins: 1500, xp: 600, item: "luckyegg", icon: "coins" },
-  75: { coins: 3000, xp: 1200, item: "candy", icon: "premium" },
-  100: { coins: 8000, xp: 4000, item: "candy", eggs: 1, icon: "master" },
+  25: { icon: "coins", coins: 1000 },
+  50: { icon: "xp", xp: 1000 },
+  75: { icon: "tp", tp: 1000 },
+  100: { icon: "chest", coins: 1000, items: 5, eggs: 1 },
 };
 
 /**
@@ -111,13 +116,12 @@ export function dexRewardKey(gen: number, milestone: DexMilestone): string {
   return `${gen}:${milestone}`;
 }
 
-function itemName(id: ItemId): string {
-  return ITEMS.find((i) => i.id === id)?.name ?? id;
-}
-
 export function dexRewardLabel(r: DexReward): string {
-  const parts = [`+${r.coins.toLocaleString()} coins`, `+${r.xp.toLocaleString()} XP`];
-  if (r.item) parts.push(itemName(r.item));
+  const parts: string[] = [];
+  if (r.coins) parts.push(`+${r.coins.toLocaleString()} coins`);
+  if (r.xp) parts.push(`+${r.xp.toLocaleString()} XP`);
+  if (r.tp) parts.push(`+${r.tp.toLocaleString()} TP`);
+  if (r.items) parts.push(r.items === 1 ? "1 random item" : `${r.items} random items`);
   if (r.eggs) parts.push(r.eggs === 1 ? "Poké Egg" : `${r.eggs} Poké Eggs`);
   return parts.join(" · ");
 }
@@ -170,9 +174,18 @@ export function claimDexReward(
   const stats = dexStats(store.pokedex, gen);
   if (dexMilestoneState(milestone, stats, gen, claimed) !== "claimable") return null;
 
-  store.addCoins(reward.coins);
-  store.addXp(reward.xp);
-  if (reward.item) store.grantItem(reward.item, 1);
+  if (reward.coins) store.addCoins(reward.coins);
+  if (reward.xp) store.addXp(reward.xp);
+  if (reward.tp) {
+    // No-partner is unreachable after onboarding, but degrade to XP rather
+    // than silently swallowing the rung — the same call the Arena set-of-5
+    // reward makes for its TP slot.
+    if (store.pokemon) store.addTrainingPoints(store.pokemon.id, reward.tp);
+    else store.addXp(reward.tp);
+  }
+  for (let i = 0; i < (reward.items ?? 0); i++) {
+    store.grantItem(DAILY_COMMON_POOL[Math.floor(Math.random() * DAILY_COMMON_POOL.length)], 1);
+  }
   if (reward.eggs) store.grantPokeEgg(reward.eggs);
   store.markDexRewardClaimed(dexRewardKey(gen, milestone));
   return { text: dexRewardLabel(reward) };

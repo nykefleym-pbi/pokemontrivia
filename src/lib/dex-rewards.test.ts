@@ -91,24 +91,34 @@ describe("milestone table", () => {
     for (const m of DEX_MILESTONES) {
       const r = DEX_MILESTONE_REWARDS[m];
       expect(r, String(m)).toBeTruthy();
-      expect(r.coins + r.xp, String(m)).toBeGreaterThan(0);
+      const total = (r.coins ?? 0) + (r.xp ?? 0) + (r.tp ?? 0) + (r.items ?? 0) + (r.eggs ?? 0);
+      expect(total, String(m)).toBeGreaterThan(0);
     }
   });
 
-  it("pays strictly more the further up the ladder", () => {
-    for (let i = 1; i < DEX_MILESTONES.length; i++) {
-      const lo = DEX_MILESTONE_REWARDS[DEX_MILESTONES[i - 1]];
-      const hi = DEX_MILESTONE_REWARDS[DEX_MILESTONES[i]];
-      expect(hi.coins).toBeGreaterThan(lo.coins);
-      expect(hi.xp).toBeGreaterThan(lo.xp);
-    }
+  it("gives every rung its own currency art", () => {
+    const icons = DEX_MILESTONES.map((m) => DEX_MILESTONE_REWARDS[m].icon);
+    expect(new Set(icons).size).toBe(icons.length);
   });
 
-  it("labels every component of a payout", () => {
-    expect(dexRewardLabel(DEX_MILESTONE_REWARDS[25])).toBe("+500 coins · +200 XP");
-    const top = dexRewardLabel(DEX_MILESTONE_REWARDS[100]);
-    expect(top).toContain("Rare Candy");
-    expect(top).toContain("Poké Egg");
+  it("pays the owner-set amounts", () => {
+    expect(DEX_MILESTONE_REWARDS[25]).toMatchObject({ icon: "coins", coins: 1000 });
+    expect(DEX_MILESTONE_REWARDS[50]).toMatchObject({ icon: "xp", xp: 1000 });
+    expect(DEX_MILESTONE_REWARDS[75]).toMatchObject({ icon: "tp", tp: 1000 });
+    expect(DEX_MILESTONE_REWARDS[100]).toMatchObject({
+      icon: "chest",
+      coins: 1000,
+      items: 5,
+      eggs: 1,
+    });
+  });
+
+  it("labels every component of a payout, and nothing a rung does not pay", () => {
+    expect(dexRewardLabel(DEX_MILESTONE_REWARDS[25])).toBe("+1,000 coins");
+    expect(dexRewardLabel(DEX_MILESTONE_REWARDS[75])).toBe("+1,000 TP");
+    expect(dexRewardLabel(DEX_MILESTONE_REWARDS[100])).toBe(
+      "+1,000 coins · 5 random items · Poké Egg",
+    );
   });
 });
 
@@ -161,14 +171,41 @@ describe("claimDexReward", () => {
     expect(useGameStore.getState().claimedDexRewards).toEqual([]);
   });
 
-  it("grants coins and XP, then marks the rung claimed", () => {
+  it("grants coins, then marks the rung claimed", () => {
     useGameStore.setState({ pokedex: fill(1, 40, "caught") });
     const coins = useGameStore.getState().coins;
     const res = claimDexReward(1, 25, useGameStore.getState());
     expect(res).not.toBeNull();
-    expect(res!.text).toContain("+500 coins");
-    expect(useGameStore.getState().coins).toBe(coins + 500);
+    expect(res!.text).toContain("+1,000 coins");
+    expect(useGameStore.getState().coins).toBe(coins + 1000);
     expect(useGameStore.getState().claimedDexRewards).toEqual([dexRewardKey(1, 25)]);
+  });
+
+  it("grants TP to the current partner at the 75% rung", () => {
+    useGameStore.setState({
+      pokedex: fill(1, 120, "caught"),
+      pokemon: ALL_POKEMON.find((p) => p.id === 25)!,
+    });
+    claimDexReward(1, 75, useGameStore.getState());
+    expect(useGameStore.getState().trainingPoints[25]).toBe(1000);
+  });
+
+  it("pays the TP rung as XP when there is no partner to train", () => {
+    // Unreachable after onboarding, but the rung must not be swallowed — the
+    // same degradation the Arena set-of-5 TP slot makes.
+    useGameStore.setState({ pokedex: fill(1, 120, "caught"), pokemon: null });
+    const xp = useGameStore.getState().xp;
+    claimDexReward(1, 75, useGameStore.getState());
+    expect(useGameStore.getState().trainingPoints).toEqual({});
+    expect(useGameStore.getState().xp).toBeGreaterThan(xp);
+  });
+
+  it("rolls five items into the bag at the 100% rung", () => {
+    useGameStore.setState({ pokedex: fill(1, 151, "caught") });
+    const count = (inv: Record<string, number>) => Object.values(inv).reduce((n, q) => n + q, 0);
+    const before = count(useGameStore.getState().inventory);
+    claimDexReward(1, 100, useGameStore.getState());
+    expect(count(useGameStore.getState().inventory)).toBe(before + 5);
   });
 
   it("refuses a second claim of the same rung", () => {
@@ -188,6 +225,8 @@ describe("claimDexReward", () => {
   it("grants the egg only at the top rung", () => {
     useGameStore.setState({ pokedex: fill(1, 151, "caught") });
     const eggs = useGameStore.getState().pokeEggs.length;
+    claimDexReward(1, 25, useGameStore.getState());
+    claimDexReward(1, 50, useGameStore.getState());
     claimDexReward(1, 75, useGameStore.getState());
     expect(useGameStore.getState().pokeEggs.length).toBe(eggs);
     claimDexReward(1, 100, useGameStore.getState());

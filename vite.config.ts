@@ -74,10 +74,71 @@ function loadingArtManifest(): Plugin {
   };
 }
 
+/** A Pokédex detail backdrop is painted behind a 56-unit sprite disc and read
+ *  at full-bleed, so it is heavier than an icon but still fetched on a tap. */
+const DEX_BACKDROP_BUDGET_KB = 220;
+
+/**
+ * Exposes the Pokédex detail-page backdrops as `virtual:dex-backdrops`.
+ *
+ * Same reasoning as `loadingArtManifest` above: files under public/ never enter
+ * the module graph and static hosting serves no directory index, so the only
+ * way the app can know which backdrops exist is to read the folder at build
+ * time. Knowing rather than guessing matters more here than for the loading
+ * screen — the alternative is requesting `/dex/type/fire.webp` on the chance it
+ * is there and showing a broken layer for a beat when it is not.
+ *
+ *   public/dex/type/<type>.webp       one per type, the fallback for a species
+ *   public/dex/pokemon/<id>.webp      overrides for Legendaries and Mythicals,
+ *                                     keyed by NATIONAL DEX ID rather than name
+ *                                     so a rename cannot silently unwire one
+ */
+function dexBackdropManifest(): Plugin {
+  const virtualId = "virtual:dex-backdrops";
+  const resolvedId = `\0${virtualId}`;
+  return {
+    name: "dex-backdrop-manifest",
+    resolveId(source) {
+      return source === virtualId ? resolvedId : null;
+    },
+    load(id) {
+      if (id !== resolvedId) return null;
+      const read = (sub: string) => {
+        const dir = fileURLToPath(new URL(`public/dex/${sub}/`, import.meta.url));
+        let entries: string[] = [];
+        try {
+          entries = readdirSync(dir).sort();
+        } catch {
+          // No folder is a valid state: the detail page keeps the plain type
+          // gradient it had before any art existed.
+          return [];
+        }
+        const files = entries.filter((n) => n.toLowerCase().endsWith(".webp"));
+        for (const name of files) {
+          const kb = statSync(`${dir}${name}`).size / 1024;
+          if (kb > DEX_BACKDROP_BUDGET_KB) {
+            this.warn(
+              `public/dex/${sub}/${name} is ${kb.toFixed(0)} KB — over the ` +
+                `${DEX_BACKDROP_BUDGET_KB} KB budget. Re-encode at 1170x1320, quality ~80.`,
+            );
+          }
+        }
+        return files.map((n) => n.replace(/\.webp$/i, ""));
+      };
+      const types = read("type");
+      const pokemon = read("pokemon")
+        .map((n) => Number(n))
+        .filter((n) => Number.isInteger(n) && n > 0);
+      return `export default ${JSON.stringify({ types, pokemon })};`;
+    },
+  };
+}
+
 export default defineConfig({
   resolve: { dedupe: ["react", "react-dom"] },
   plugins: [
     loadingArtManifest(),
+    dexBackdropManifest(),
     nitro(),
     tsConfigPaths(),
     tailwindcss(),
