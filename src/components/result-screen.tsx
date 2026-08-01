@@ -1,9 +1,100 @@
 import { type ReactNode } from "react";
-import { motion } from "framer-motion";
+import { motion, type TargetAndTransition } from "framer-motion";
 import { Share2 } from "lucide-react";
+import { AppIcon } from "@/components/app-icon";
 import { PokemonSprite } from "@/components/game-ui";
 import { MissedReview } from "@/components/MissedReview";
 import { Button } from "@/components/ui/button";
+import { COIN_ICON, RESULT_ICON, REWARD_ICON, TP_ICON } from "@/lib/app-icons";
+import {
+  PLATFORM_SURFACE,
+  RESULT_ART,
+  SPRITE_FOOT_PAD,
+  trimmedArtStyles,
+  type ArtPadding,
+} from "@/lib/result-art";
+
+/** A square outcome wordmark shown at the height of its lettering. */
+function OutcomeWordmark({ src, alt, pad }: { src: string; alt: string; pad: ArtPadding }) {
+  const s = trimmedArtStyles(pad);
+  return (
+    <div className="relative w-full max-w-[300px]" style={s.wrapper}>
+      <img
+        src={encodeURI(src)}
+        alt={alt}
+        draggable={false}
+        className="absolute left-0 top-0 w-full select-none"
+        style={s.image}
+      />
+    </div>
+  );
+}
+
+/**
+ * The partner standing on its platform — the screen's focal point.
+ *
+ * Both layers are absolutely placed inside a box whose height is only the
+ * platform's VISIBLE height, so the square art's transparent padding does not
+ * push the rewards card down the screen. The sprite is anchored by where its
+ * feet should land rather than by its own bottom edge; see SPRITE_FOOT_PAD.
+ */
+function PartnerStage({
+  partnerId,
+  partnerName,
+  won,
+  animate,
+}: {
+  partnerId: number;
+  partnerName: string;
+  won: boolean;
+  animate: TargetAndTransition;
+}) {
+  const art = won ? RESULT_ART.platformWin : RESULT_ART.platformLose;
+  const surface = won ? PLATFORM_SURFACE.win : PLATFORM_SURFACE.lose;
+  const src = won ? RESULT_ICON.platformWin : RESULT_ICON.platformLose;
+
+  // Everything is derived from one width so the two layers cannot drift apart.
+  const platformW = PLATFORM_W;
+  const spriteW = SPRITE_W;
+  const visibleH = platformW * (1 - art.top - art.bottom);
+  // Distance from the box's bottom edge up to the surface line.
+  const surfaceFromBottom = platformW * (1 - art.bottom - surface);
+  // The sprite's own bottom edge sits below the surface by its empty band, so
+  // the visible feet land ON the line rather than above it.
+  const spriteBottom = surfaceFromBottom - spriteW * SPRITE_FOOT_PAD;
+
+  return (
+    <div
+      className="relative mx-auto"
+      style={{ width: platformW, height: Math.max(visibleH, spriteW * 0.72 + visibleH * 0.5) }}
+    >
+      <img
+        src={encodeURI(src)}
+        alt=""
+        aria-hidden
+        draggable={false}
+        className="pointer-events-none absolute left-0 w-full select-none"
+        style={{ bottom: -platformW * art.bottom }}
+      />
+      <motion.div
+        animate={animate}
+        transition={{ duration: won ? 1.4 : 2, repeat: Infinity }}
+        className="absolute left-1/2 -translate-x-1/2"
+        style={{ bottom: spriteBottom, width: spriteW, height: spriteW }}
+      >
+        <PokemonSprite
+          id={partnerId}
+          alt={partnerName}
+          className={`sprite h-full w-full ${won ? "" : "opacity-80 grayscale"}`}
+        />
+      </motion.div>
+    </div>
+  );
+}
+
+/** The partner is the highlight of this screen, so both are large. */
+const PLATFORM_W = 248;
+const SPRITE_W = 176;
 
 export function ResultScreen({
   won,
@@ -97,43 +188,51 @@ export function ResultScreen({
         ))}
 
         <div className="flex flex-col items-center text-center">
-          <div className="font-pixel-xs uppercase tracking-[0.25em] text-primary">
-            ★ Battle Won ★
-          </div>
-          <h1 className="mt-2 font-display-xl text-foreground">Victory!</h1>
-          <p className="mt-1 text-sm text-foreground/70">
+          {/* The artwork carries "BATTLE WON" and "VICTORY!" itself, so it
+              replaces the eyebrow AND the heading rather than sitting above
+              them. The alt text is what a screen reader gets instead. */}
+          <OutcomeWordmark
+            src={RESULT_ICON.victory}
+            alt="Battle won — Victory!"
+            pad={RESULT_ART.victory}
+          />
+          <p className="mt-2 text-sm text-foreground/70">
             {opponentName} defeated · {correctCount}/{totalQuestions} correct
           </p>
 
-          <div className="relative mt-6 flex h-36 w-44 items-end justify-center">
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute bottom-2 left-1/2 h-10 w-32 -translate-x-1/2 rounded-[50%]"
-              style={{
-                background:
-                  "radial-gradient(ellipse at 50% 35%, oklch(0.88 0.16 145) 0%, oklch(0.72 0.18 145) 55%, oklch(0.55 0.16 150) 100%)",
-                boxShadow:
-                  "0 8px 14px -6px oklch(0.3 0.1 150 / 0.35), inset 0 1px 0 oklch(1 0 0 / 0.35)",
-              }}
-            />
-            <motion.div
+          <div className="mt-1">
+            <PartnerStage
+              partnerId={partnerId}
+              partnerName={partnerName}
+              won
               animate={{ y: [0, -8, 0] }}
-              transition={{ duration: 1.4, repeat: Infinity }}
-              className="relative z-10"
-            >
-              <PokemonSprite id={partnerId} alt={partnerName} className="sprite h-28 w-28" />
-            </motion.div>
+            />
           </div>
         </div>
 
-        <div className="mx-auto mt-6 w-full max-w-sm rounded-2xl bg-card p-4 shadow-card">
+        <div className="mx-auto mt-6 w-full max-w-sm rounded-2xl border-2 border-white bg-card p-4 shadow-card">
           {xpEarned > 0 && (
-            <Row label="XP earned" value={`+${xpEarned}`} valueClass="text-primary" />
+            <Row
+              icon={REWARD_ICON.xp}
+              label="XP earned"
+              value={`+${xpEarned}`}
+              valueClass="text-primary"
+            />
           )}
           {coinsEarned > 0 && (
-            <Row label="Coins earned" value={`+${coinsEarned}`} valueClass="text-poke-yellow" />
+            <Row
+              icon={COIN_ICON}
+              label="Coins earned"
+              value={`+${coinsEarned}`}
+              valueClass="text-poke-yellow"
+            />
           )}
-          <Row label={`${partnerName} TP`} value={`+${tpEarned}`} valueClass="text-poke-blue" />
+          <Row
+            icon={TP_ICON}
+            label={`${partnerName} TP`}
+            value={`+${tpEarned}`}
+            valueClass="text-poke-blue"
+          />
           {speedBonus > 0 && (
             <Row
               label={
@@ -213,30 +312,24 @@ export function ResultScreen({
       className="relative flex h-full w-full flex-col overflow-y-auto bg-defeat px-6 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
     >
       <div className="flex flex-col items-center text-center">
-        <div className="font-pixel-xs uppercase tracking-[0.25em] text-poke-blue/80">
-          Battle Lost
-        </div>
-        <h1 className="mt-2 font-display-xl text-white">So close!</h1>
-        <p className="mt-1 text-sm text-white/60">
+        {/* Carries "BATTLE LOST" and "SO CLOSE!" itself — see the victory
+            header for why this replaces both lines rather than joining them. */}
+        <OutcomeWordmark
+          src={RESULT_ICON.defeat}
+          alt="Battle lost — So close!"
+          pad={RESULT_ART.defeat}
+        />
+        <p className="mt-2 text-sm text-white/60">
           {opponentName} wins · {correctCount}/{totalQuestions} correct
         </p>
 
-        <div className="relative mt-6 flex h-32 w-40 items-end justify-center">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute bottom-2 left-1/2 h-8 w-28 -translate-x-1/2 rounded-[50%] bg-black/40 blur-[2px]"
-          />
-          <motion.div
+        <div className="mt-1">
+          <PartnerStage
+            partnerId={partnerId}
+            partnerName={partnerName}
+            won={false}
             animate={{ rotate: [0, -3, 3, 0] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="relative z-10"
-          >
-            <PokemonSprite
-              id={partnerId}
-              alt={partnerName}
-              className="sprite h-24 w-24 opacity-80 grayscale"
-            />
-          </motion.div>
+          />
         </div>
       </div>
 
@@ -275,17 +368,25 @@ export function ResultScreen({
 }
 
 function Row({
+  icon,
   label,
   value,
   valueClass,
 }: {
+  /** Currency art for this reward. Speed bonus has none, so its gutter stays
+   *  empty rather than borrowing another reward's glyph — the labels still
+   *  line up down the column. */
+  icon?: string;
   label: ReactNode;
   value: ReactNode;
   valueClass?: string;
 }) {
   return (
-    <div className="flex items-center justify-between py-1.5 text-sm">
-      <div className="font-semibold text-foreground">{label}</div>
+    <div className="flex items-center gap-2.5 py-1.5 text-sm">
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center">
+        {icon && <AppIcon src={icon} className="h-full w-full" />}
+      </div>
+      <div className="min-w-0 flex-1 font-semibold text-foreground">{label}</div>
       <div className={`font-display-md ${valueClass ?? "text-foreground"}`}>{value}</div>
     </div>
   );
