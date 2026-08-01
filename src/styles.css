@@ -622,6 +622,43 @@
   transform-style: preserve-3d;
 }
 
+/* The Pokédex completion card turning over between its rewards face and its
+ * caught/seen/shiny/total face.
+ *
+ * A 180deg half-turn, unlike `ball-flip` above: this card HAS two faces, so it
+ * is a real card being turned rather than one object spinning. That makes
+ * `backface-visibility: hidden` load-bearing here — without it both faces paint
+ * at once and you read the back one mirrored through the front.
+ *
+ * Both faces are absolutely positioned and the wrapper carries the height, so
+ * the card cannot change size as it turns (the two faces do not have the same
+ * natural height, and animating between them would make the page jump).
+ *
+ * Reduced motion is handled below: the transition is dropped and the card cuts
+ * between faces instead of turning.
+ */
+.flip-card {
+  perspective: 1200px;
+}
+.flip-card-inner {
+  position: relative;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 700ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.flip-card-inner[data-flipped="true"] {
+  transform: rotateY(180deg);
+}
+.flip-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.flip-face-back {
+  transform: rotateY(180deg);
+}
+
 /* An occasional wiggle, for the sprites that sit still on a menu.
  *
  * The whole animation is 5.5s but the movement only occupies the last ~18% of
@@ -1001,6 +1038,15 @@
   .animate-ball-flip {
     animation: none;
   }
+  /* Not an animation but a transition, so it needs its own rule — the card
+     still swaps faces, it just cuts instead of turning. */
+  .flip-card-inner {
+    transition: none;
+  }
+}
+
+:root.reduce-motion .flip-card-inner {
+  transition: none;
 }
 
 :root.reduce-motion .status-anim-burn,

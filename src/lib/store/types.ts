@@ -269,6 +269,10 @@ export interface GameState {
   flags: string[];
   /** Achievement ids whose reward has been collected (see achievement-rewards.ts). */
   claimedAchievements: string[];
+  /** Pokédex completion milestones already collected, as `"<gen>:<pct>"` keys
+   *  (see dex-rewards.ts). Generation-scoped, so filling Johto pays its own
+   *  ladder rather than arriving pre-claimed off Kanto. */
+  claimedDexRewards: string[];
 
   // daily challenge
   dailyResult: DailyResult | null;
@@ -413,6 +417,9 @@ export interface GameState {
   addCoins: (n: number) => void;
   raiseFlag: (name: string) => void;
   markAchievementClaimed: (id: string) => void;
+  /** Records a Pokédex completion milestone as collected. Key from
+   *  `dexRewardKey` — grant through `claimDexReward`, not this directly. */
+  markDexRewardClaimed: (key: string) => void;
   recordDaily: (r: DailyResult) => void;
   pushBattleLog: (e: BattleLogEntry) => void;
   /** Records one Arena battle's outcome into `arenaStats` (mode counters, win
