@@ -8,6 +8,7 @@ import type { ComponentPropsWithoutRef } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { ResultScreen } from "@/components/result-screen";
+import { useGameStore } from "@/lib/store";
 
 vi.mock("framer-motion", () => {
   interface MotionDivProps extends ComponentPropsWithoutRef<"div"> {
@@ -39,36 +40,36 @@ vi.mock("@/components/MissedReview", () => ({
 
 afterEach(cleanup);
 
+const RESULT_PROPS = {
+  won: true,
+  opponentName: "Regieleki",
+  correctCount: 9,
+  totalQuestions: 12,
+  xpEarned: 40,
+  tpEarned: 12,
+  coinsEarned: 30,
+  speedBonus: 0,
+  partnerName: "Caterpie",
+  partnerId: 10,
+  streak: 3,
+  streakKept: true,
+  currentLevel: 7,
+  xpIntoLevel: 20,
+  xpForThisLevel: 100,
+  levelProgressPct: 20,
+  newTrophies: [],
+  missed: [],
+  onRebattle: () => {},
+  onBackHome: () => {},
+} satisfies Parameters<typeof ResultScreen>[0];
+
 function setup(overrides: Partial<Parameters<typeof ResultScreen>[0]> = {}) {
   const handlers = {
     onRebattle: vi.fn(),
     onBackHome: vi.fn(),
     onRematch: vi.fn(),
   };
-  render(
-    <ResultScreen
-      won
-      opponentName="Regieleki"
-      correctCount={9}
-      totalQuestions={12}
-      xpEarned={40}
-      tpEarned={12}
-      coinsEarned={30}
-      speedBonus={0}
-      partnerName="Caterpie"
-      partnerId={10}
-      streak={3}
-      streakKept
-      currentLevel={7}
-      xpIntoLevel={20}
-      xpForThisLevel={100}
-      levelProgressPct={20}
-      newTrophies={[]}
-      missed={[]}
-      {...handlers}
-      {...overrides}
-    />,
-  );
+  render(<ResultScreen {...RESULT_PROPS} {...handlers} {...overrides} />);
   return handlers;
 }
 
@@ -136,5 +137,34 @@ describe("ResultScreen — one-attempt modes (hideRematch)", () => {
   it("without the flag the button is still there (regular battles unchanged)", () => {
     setup({ won: true });
     expect(screen.getByRole("button", { name: /next battle/i })).toBeTruthy();
+  });
+});
+
+describe("ResultScreen — the bottom nav claim", () => {
+  // Owner report 2026-08-01: after a defeat, going home left the bottom nav
+  // gone for the rest of the session.
+  //
+  // `setBattleScreenActive` is a CLAIM COUNTER (see lib/store.ts) — the
+  // argument means "claim" or "release", it is not a value to restore. This
+  // screen's cleanup used to hand back the value it captured on mount, which is
+  // `true`, so unmounting CLAIMED the nav a second time instead of releasing
+  // it and the count never came back to zero. The store's own unit tests can't
+  // see that: they only exercise well-formed claim/release pairs.
+  //
+  // The outer claim below is what makes this a regression test rather than a
+  // tautology: the battle screen already holds the nav when this screen mounts,
+  // which is exactly the state in which "restore what I saw" and "release"
+  // differ. Start from zero and the two are indistinguishable.
+  it("releases its claim on unmount so the nav comes back", () => {
+    // The battle screen we render inside already holds the nav.
+    useGameStore.setState({ battleScreenActive: true, fullScreenClaims: 1 });
+    const { unmount } = render(<ResultScreen {...RESULT_PROPS} />);
+    expect(useGameStore.getState().fullScreenClaims).toBe(2);
+    unmount();
+    expect(useGameStore.getState().fullScreenClaims, "gave back exactly what it took").toBe(1);
+
+    // ...and once the battle screen lets go too, the nav is back.
+    useGameStore.getState().setBattleScreenActive(false);
+    expect(useGameStore.getState().battleScreenActive).toBe(false);
   });
 });

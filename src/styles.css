@@ -906,29 +906,26 @@
   filter: drop-shadow(0 0 4px oklch(0.9 0.2 95));
 }
 
-@keyframes status-poison-glow {
-  0%,
-  100% {
-    box-shadow: 0 0 10px 2px oklch(0.55 0.2 310 / 0.35);
-  }
-  50% {
-    box-shadow: 0 0 18px 6px oklch(0.55 0.2 310 / 0.55);
-  }
-}
-.status-anim-poison-glow {
-  animation: status-poison-glow 2s ease-in-out infinite;
-}
-
+/* Poison: bubbles drifting up off the sprite.
+ *
+ * Rise distance and peak opacity are custom properties rather than fixed
+ * numbers so one keyframe serves both severities — badly-poisoned passes
+ * bigger, more opaque, further-travelling bubbles. Every other parameter
+ * (size, x-offset, delay, duration) is an inline style on each bubble, which
+ * is what keeps them from moving as one shoal. */
 @keyframes status-bubble-rise {
   0% {
-    transform: translateY(0) scale(0.6);
+    transform: translateY(0) scale(0.5);
     opacity: 0;
   }
-  20% {
-    opacity: 0.9;
+  18% {
+    opacity: var(--bubble-peak, 0.75);
+  }
+  72% {
+    opacity: var(--bubble-peak, 0.75);
   }
   100% {
-    transform: translateY(-46px) scale(1.1);
+    transform: translateY(calc(var(--bubble-rise, 46px) * -1)) scale(1.15);
     opacity: 0;
   }
 }
@@ -1019,7 +1016,6 @@
   .status-anim-burn,
   .status-anim-freeze,
   .status-anim-spark,
-  .status-anim-poison-glow,
   .status-anim-bubble,
   .status-anim-toxic-spark,
   .status-anim-sleep,
@@ -1052,7 +1048,6 @@
 :root.reduce-motion .status-anim-burn,
 :root.reduce-motion .status-anim-freeze,
 :root.reduce-motion .status-anim-spark,
-:root.reduce-motion .status-anim-poison-glow,
 :root.reduce-motion .status-anim-bubble,
 :root.reduce-motion .status-anim-toxic-spark,
 :root.reduce-motion .status-anim-sleep,

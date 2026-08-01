@@ -486,15 +486,56 @@ function ParalysisEffect() {
   );
 }
 
+/**
+ * Poison: purple bubbles drifting up off the sprite.
+ *
+ * The circular "force field" glow this used to sit inside is gone (owner
+ * ruling 2026-08-01) — the bubbles ARE the effect now.
+ *
+ * The sizes, offsets, delays and travel distances are an authored table rather
+ * than `Math.random()`, and that is deliberate twice over: random values
+ * regenerate on every render, so bubbles would jump to new positions whenever
+ * anything else on the battle screen changed state, and a table is something a
+ * reviewer can actually look at. They are varied enough to read as random and
+ * never line up into a shoal.
+ *
+ * Badly poisoned gets the same bubbles bigger, more opaque and travelling
+ * further, so the two severities are one visual language rather than two.
+ */
+const POISON_BUBBLES = [
+  { size: 5, left: 14, delay: 0, dur: 2.4, rise: 44 },
+  { size: 9, left: 30, delay: 0.65, dur: 2.9, rise: 56 },
+  { size: 4, left: 45, delay: 1.3, dur: 2.1, rise: 38 },
+  { size: 7, left: 58, delay: 0.3, dur: 2.6, rise: 50 },
+  { size: 11, left: 72, delay: 1.0, dur: 3.2, rise: 62 },
+  { size: 5, left: 86, delay: 1.7, dur: 2.3, rise: 42 },
+  { size: 8, left: 22, delay: 2.1, dur: 2.8, rise: 54 },
+  { size: 6, left: 64, delay: 1.55, dur: 2.5, rise: 46 },
+] as const;
+
 function PoisonEffect({ badly = false }: { badly?: boolean }) {
+  // One multiplier per severity rather than a second table.
+  const scale = badly ? 1.5 : 1;
+  const peak = badly ? 0.95 : 0.7;
   return (
     <>
-      <div className="status-anim-poison-glow absolute inset-2 rounded-full" />
-      {[0, 1, 2, 3].map((i) => (
+      {POISON_BUBBLES.map((b, i) => (
         <span
           key={i}
-          className="status-anim-bubble absolute bottom-2 block h-2 w-2 rounded-full bg-purple-400/70"
-          style={{ left: `${12 + i * 22}%`, animationDelay: `${i * 0.5}s` }}
+          className="status-anim-bubble pointer-events-none absolute bottom-1 block rounded-full"
+          style={
+            {
+              left: `${b.left}%`,
+              width: b.size * scale,
+              height: b.size * scale,
+              animationDelay: `${b.delay}s`,
+              animationDuration: `${b.dur}s`,
+              background: badly ? "oklch(0.55 0.22 320)" : "oklch(0.62 0.18 320)",
+              boxShadow: badly ? "0 0 6px oklch(0.55 0.22 320 / 0.7)" : undefined,
+              "--bubble-rise": `${b.rise * scale}px`,
+              "--bubble-peak": String(peak),
+            } as React.CSSProperties
+          }
         />
       ))}
       {badly &&
