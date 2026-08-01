@@ -11,6 +11,7 @@ import { ALL_POKEMON, type PokeType } from "@/lib/pokemon-data";
 import { Input } from "@/components/ui/input";
 import { MiniPokeball, PokemonSprite, TypeBadge } from "@/components/game-ui";
 import { DexCompletionCard } from "@/components/dex-completion-card";
+import { dexBackdropSrc } from "@/lib/dex-backdrop";
 import { GENERATIONS, generation } from "@/lib/dex-rewards";
 import { dexStatus, isCaught } from "@/lib/pokedex";
 import { typeRowFontSize, DEX_CARD_WIDTH, DEX_CARD_PAD_PX } from "@/lib/type-row-fit";
@@ -406,17 +407,42 @@ function PokedexPage() {
           const showS = showShiny && entry?.shinyUnlocked;
           const displayName = got ? p.name : "???";
           const primaryType = p.types[0];
+          const backdrop = dexBackdropSrc(p.id, primaryType);
           const columns = buildEvolutionTree(p);
           const hasEvolution = !(columns.length <= 1 && (columns[0]?.length ?? 0) <= 1);
           return (
             <div className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-poke-cream">
               <div
-                className="relative shrink-0 px-5 pb-10 pt-[calc(env(safe-area-inset-top)+1rem)]"
+                className="relative shrink-0 overflow-hidden px-5 pb-10 pt-[calc(env(safe-area-inset-top)+1rem)]"
                 style={{
                   background: `linear-gradient(160deg, var(--type-${primaryType}) 0%, color-mix(in oklab, var(--type-${primaryType}) 62%, #000) 100%)`,
                 }}
               >
-                <div className="flex items-center justify-between">
+                {/* Habitat artwork, over the type gradient rather than instead
+                    of it: a species with no art of its own — or a build with an
+                    empty public/dex — paints the gradient exactly as before.
+                    See lib/dex-backdrop.ts for the two-tier lookup. */}
+                {backdrop && (
+                  <>
+                    <img
+                      src={backdrop}
+                      alt=""
+                      aria-hidden
+                      className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover"
+                    />
+                    {/* The name, the dex number and the type chips are white on
+                        whatever the artwork happens to be. This scrim is what
+                        keeps them legible over a bright sky. */}
+                    <div
+                      className="pointer-events-none absolute inset-0"
+                      style={{
+                        background:
+                          "linear-gradient(180deg, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0.12) 38%, rgba(0,0,0,0) 62%)",
+                      }}
+                    />
+                  </>
+                )}
+                <div className="relative flex items-center justify-between">
                   <button
                     onClick={() => setDetailId(null)}
                     className="flex h-10 w-10 items-center justify-center rounded-full bg-white/25 text-white backdrop-blur press"
@@ -428,8 +454,10 @@ function PokedexPage() {
                     #{String(p.id).padStart(4, "0")}
                   </span>
                 </div>
-                <h2 className="mt-4 font-display-xl text-white drop-shadow-sm">{displayName}</h2>
-                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                <h2 className="relative mt-4 font-display-xl text-white drop-shadow-sm">
+                  {displayName}
+                </h2>
+                <div className="relative mt-2 flex flex-wrap items-center gap-1.5">
                   {p.types.map((t) => (
                     <span
                       key={t}
@@ -439,8 +467,15 @@ function PokedexPage() {
                     </span>
                   ))}
                 </div>
-                <div className="mt-4 flex items-center justify-center">
-                  <div className="flex h-56 w-56 items-center justify-center rounded-full bg-white/10">
+                <div className="relative mt-4 flex items-center justify-center">
+                  <div
+                    className={`flex h-56 w-56 items-center justify-center rounded-full ${
+                      // Over artwork the disc becomes a soft vignette that lifts
+                      // the sprite off a busy scene; over the plain gradient it
+                      // stays the faint highlight it always was.
+                      backdrop ? "bg-black/15 backdrop-blur-[2px]" : "bg-white/10"
+                    }`}
+                  >
                     <PokemonSprite
                       id={p.id}
                       shiny={!!showS}
