@@ -54,6 +54,25 @@ export const RESULT_ICON = {
   platformLose: "/ui/Platform Lose.webp",
 } as const;
 
+/**
+ * The level-up screen's before/after plaques and the arrows between them.
+ *
+ * Supplied as opaque PNGs — the shields on a dark checkerboard, the arrows on
+ * flat black, both of which are pictures OF transparency rather than the real
+ * thing. They were keyed to true alpha and re-encoded as webp
+ * (scripts/key-level-art.mjs); the glow around each shield is part of the art
+ * and is kept, so these overlap their neighbours by design and must not be
+ * given a background, border or `overflow-hidden` box.
+ *
+ * See LEVEL_PLAQUE in lib/result-art.ts for where the shield's FACE sits inside
+ * each file — the number goes on the face, not in the middle of the glow.
+ */
+export const LEVEL_PLAQUE_ICON = {
+  from: "/ui/Level Up from.webp",
+  to: "/ui/Level Up to.webp",
+  arrow: "/ui/Level Up arrow.webp",
+} as const;
+
 /** Arena set-of-5 reward slots, keyed by ArenaRewardKind. */
 export const REWARD_ICON = {
   tp: "/rewards/Training Points.webp",

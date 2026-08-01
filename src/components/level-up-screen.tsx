@@ -6,8 +6,8 @@ import { ITEMS, trainerSpriteUrl, rankForLevel } from "@/lib/game-data";
 import { ItemIcon, SpriteBurst } from "@/components/game-ui";
 import { FallingBits } from "@/components/falling-bits";
 import { AppIcon } from "@/components/app-icon";
-import { UI_ICON, COIN_ICON, RESULT_ICON } from "@/lib/app-icons";
-import { RESULT_ART, trimmedArtStyles } from "@/lib/result-art";
+import { UI_ICON, COIN_ICON, RESULT_ICON, LEVEL_PLAQUE_ICON } from "@/lib/app-icons";
+import { RESULT_ART, LEVEL_PLAQUE, plaqueWidth, trimmedArtStyles } from "@/lib/result-art";
 import { useGameStore } from "@/lib/store";
 import type { LevelUpRewards } from "@/lib/level-rewards";
 
@@ -65,7 +65,7 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-[110] flex flex-col items-center justify-center overflow-y-auto px-6 py-10"
+      className="fixed inset-0 z-[110] flex flex-col items-center justify-center overflow-y-auto px-6 py-6"
       style={{
         background:
           "radial-gradient(circle at 50% 34%, oklch(0.42 0.09 265) 0%, oklch(0.24 0.06 265) 52%, oklch(0.16 0.04 265) 100%)",
@@ -86,30 +86,34 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
             {/* The burst is a positioned sibling of the sprite, so it needs an
                 explicit negative z to sit BEHIND it — positioned elements paint
                 above non-positioned in-flow content otherwise. */}
-            <div className="relative mt-4 flex h-36 w-36 items-center justify-center">
+            <div className="relative mt-3 flex h-48 w-48 items-center justify-center">
               <div className="absolute inset-0 -z-10">
                 <SpriteBurst tint="rgba(255,206,94,0.5)" />
               </div>
               <img
                 src={trainerSpriteUrl(trainerSprite)}
                 alt={trainerName}
-                className="sprite relative h-28 w-28 object-contain drop-shadow-2xl"
+                className="sprite relative h-40 w-40 object-contain drop-shadow-2xl"
               />
             </div>
 
-            <div className="mt-2 font-display-lg text-white">{trainerName}</div>
+            <div className="mt-1 font-display-lg text-white">{trainerName}</div>
 
-            <div className="mt-3 flex items-center justify-center gap-3">
-              <LevelShield level={rewards.fromLevel} />
-              <motion.span
+            {/* Negative gaps, deliberately: each plaque carries its own glow out
+                to the edge of its box, so touching boxes read as a comfortable
+                gap and a real gap reads as a chasm. */}
+            <div className="mt-1 flex items-center justify-center">
+              <LevelPlaque kind="from" level={rewards.fromLevel} />
+              <motion.img
                 aria-hidden
+                src={encodeURI(LEVEL_PLAQUE_ICON.arrow)}
+                alt=""
+                draggable={false}
                 animate={{ x: [0, 5, 0] }}
                 transition={{ duration: 1.2, repeat: Infinity }}
-                className="-mb-2 text-4xl font-black leading-none tracking-tighter text-poke-yellow drop-shadow-[0_2px_0_rgba(0,0,0,0.35)]"
-              >
-                ›››
-              </motion.span>
-              <LevelShield level={rewards.toLevel} highlight />
+                className="relative z-10 -mx-3 w-[68px] shrink-0 select-none"
+              />
+              <LevelPlaque kind="to" level={rewards.toLevel} highlight />
             </div>
           </motion.div>
         )}
@@ -137,7 +141,7 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="relative z-10 mt-6 w-full max-w-xs rounded-3xl border-2 border-white bg-card p-4 shadow-pop"
+            className="relative z-10 mt-4 w-full max-w-xs rounded-3xl border-2 border-white bg-card p-4 shadow-pop"
           >
             <div className="font-pixel-xs uppercase text-foreground/50">Rewards</div>
             <div className="mt-2 space-y-2">
@@ -179,7 +183,7 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="relative z-10 mt-6 w-full max-w-xs"
+            className="relative z-10 mt-4 w-full max-w-xs"
           >
             <Button
               size="lg"
@@ -187,7 +191,7 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
                 e.stopPropagation();
                 onContinue();
               }}
-              className="h-14 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
+              className="h-14 w-full rounded-full border-2 border-white bg-primary font-bold text-primary-foreground shadow-pop"
             >
               Continue
             </Button>
@@ -215,7 +219,7 @@ function LevelUpWordmark() {
     );
   }
   return (
-    <div className="relative w-full max-w-[280px]" style={s.wrapper}>
+    <div className="relative w-full max-w-[250px]" style={s.wrapper}>
       <img
         src={encodeURI(RESULT_ICON.levelUp)}
         alt="Level up!"
@@ -228,48 +232,69 @@ function LevelUpWordmark() {
   );
 }
 
+/** The shield BODY's width on screen. Both plaques are sized from this. */
+const PLAQUE_BODY = 62;
+
 /**
- * One level number on a convex pentagon plaque — flat top, straight sides, a
- * point at the bottom.
+ * One level number on its supplied shield plaque — silver for the level you
+ * left, gold for the one you reached.
  *
- * Two nested clipped boxes rather than a border: `clip-path` cuts a border off
- * with the rest of the box, so the only way to get an outline on a non-
- * rectangular shape is to clip a slightly larger coloured box behind a slightly
- * smaller filled one. `inset-[3px]` is that outline's thickness.
+ * Sized by `plaqueWidth` rather than by a flat width, because the two files
+ * carry differently-sized glows: given the same box the gold shield's body
+ * comes out a fifth smaller than the silver one, which reads as the NEW level
+ * having shrunk. Sizing each file by its own body keeps them matched, and the
+ * highlight's extra 12% is then a deliberate difference rather than an artifact
+ * of the artwork.
  *
- * `highlight` is the level you just reached — gold and raised; the other is the
- * level you left, in muted slate so the pair reads as before → after.
+ * The label is positioned against `centreY`, not centred in the box: a shield
+ * tapers to a point, so its lower half is mostly empty and text on the
+ * geometric middle sits visibly low.
  */
-function LevelShield({ level, highlight = false }: { level: number; highlight?: boolean }) {
-  const clip = "polygon(0% 0%, 100% 0%, 100% 66%, 50% 100%, 0% 66%)";
+function LevelPlaque({
+  kind,
+  level,
+  highlight = false,
+}: {
+  kind: "from" | "to";
+  level: number;
+  highlight?: boolean;
+}) {
+  const w = plaqueWidth(kind, PLAQUE_BODY * (highlight ? 1.12 : 1));
   return (
     <motion.div
       initial={highlight ? { scale: 0.6, opacity: 0 } : false}
       animate={highlight ? { scale: 1, opacity: 1 } : undefined}
       transition={{ type: "spring", stiffness: 260, damping: 14, delay: 0.25 }}
-      className={`relative ${highlight ? "h-[4.75rem] w-[4.25rem]" : "h-16 w-14"}`}
+      className="relative shrink-0"
+      style={{ width: w }}
     >
-      <div
-        className={`absolute inset-0 ${highlight ? "bg-poke-yellow" : "bg-white/35"}`}
-        style={{ clipPath: clip }}
+      <img
+        src={encodeURI(LEVEL_PLAQUE_ICON[kind])}
+        alt=""
+        aria-hidden
+        draggable={false}
+        className="block w-full select-none"
       />
       <div
-        className={`absolute inset-[3px] flex flex-col items-center justify-start pt-1.5 ${
-          highlight ? "bg-primary" : "bg-poke-dark/80"
-        }`}
-        style={{ clipPath: clip }}
+        className="absolute inset-x-0 flex -translate-y-1/2 flex-col items-center leading-none"
+        style={{ top: `${LEVEL_PLAQUE[kind].centreY * 100}%` }}
       >
         <span
-          className={`font-pixel-xs uppercase leading-none ${
-            highlight ? "text-white/80" : "text-white/50"
-          }`}
+          className={`font-pixel-xs uppercase ${highlight ? "text-white/75" : "text-white/45"}`}
+          style={{ fontSize: Math.max(7, Math.round(w * 0.055)) }}
         >
           Lv
         </span>
         <span
-          className={`font-display-lg leading-none ${
-            highlight ? "text-white" : "text-white/70"
-          } ${level >= 100 ? "text-[1.25rem]" : ""}`}
+          className="mt-1 font-display-lg text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.55)]"
+          // Scaled off the BODY, not the file: the gold plaque's box is wider
+          // for the same shield, so a font size in `em` of the box would print
+          // the new level larger than the old one for no reason.
+          style={{
+            fontSize: Math.round(
+              PLAQUE_BODY * (highlight ? 1.12 : 1) * (level >= 100 ? 0.36 : 0.46),
+            ),
+          }}
         >
           {level}
         </span>

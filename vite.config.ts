@@ -159,6 +159,9 @@ export default defineConfig({
         description:
           "Pokémon trivia battles with type-based combat, evolutions, gym leagues, and shareable victories.",
         theme_color: "#dc2626",
+        // The OS paints this behind the platform splash, and BootSplash paints
+        // the same value (SPLASH_BG in components/boot-splash.tsx) so the handoff
+        // from the OS screen to ours is invisible. Change one, change both.
         background_color: "#000000",
         display: "standalone",
         orientation: "portrait",
