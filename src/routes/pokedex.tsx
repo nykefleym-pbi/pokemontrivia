@@ -9,7 +9,9 @@ import { useStoreHydrated } from "@/lib/store-hydration";
 import { EggHatch } from "@/components/mega/EggHatch";
 import { ALL_POKEMON, type PokeType } from "@/lib/pokemon-data";
 import { Input } from "@/components/ui/input";
-import { PokemonSprite, TypeBadge } from "@/components/game-ui";
+import { MiniPokeball, PokemonSprite, TypeBadge } from "@/components/game-ui";
+import { DexCompletionCard } from "@/components/dex-completion-card";
+import { GENERATIONS, generation } from "@/lib/dex-rewards";
 import { dexStatus, isCaught } from "@/lib/pokedex";
 import { typeRowFontSize, DEX_CARD_WIDTH, DEX_CARD_PAD_PX } from "@/lib/type-row-fit";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -40,30 +42,8 @@ const ALL_TYPES: PokeType[] = [
   "fairy",
 ];
 
-const GEN_RANGES: Array<{ gen: number; from: number; to: number }> = [
-  { gen: 1, from: 1, to: 151 },
-  { gen: 2, from: 152, to: 251 },
-  { gen: 3, from: 252, to: 386 },
-  { gen: 4, from: 387, to: 493 },
-  { gen: 5, from: 494, to: 649 },
-  { gen: 6, from: 650, to: 721 },
-  { gen: 7, from: 722, to: 809 },
-  { gen: 8, from: 810, to: 905 },
-  { gen: 9, from: 906, to: 1025 },
-];
-
-/** The caught marker: a 14px Pokeball. `PokeballSpinner`'s 3px border swamps
- *  the shape below ~24px, so this is drawn at size rather than scaled down. */
-function MiniPokeball() {
-  return (
-    <svg viewBox="0 0 32 32" className="h-3.5 w-3.5 shrink-0" aria-hidden>
-      <circle cx="16" cy="16" r="14" fill="#fff" stroke="#1b1d2b" strokeWidth="3" />
-      <path d="M2 16 a14 14 0 0 1 28 0 Z" fill="#ee4b3c" stroke="#1b1d2b" strokeWidth="3" />
-      <rect x="2" y="14" width="28" height="4" fill="#1b1d2b" />
-      <circle cx="16" cy="16" r="4.5" fill="#fff" stroke="#1b1d2b" strokeWidth="3" />
-    </svg>
-  );
-}
+/** The default generation — Kanto, where a new player's dex starts filling. */
+const DEFAULT_GEN = 1;
 
 function PokedexPage() {
   const hasOnboarded = useGameStore((s) => s.hasOnboarded);
@@ -72,10 +52,11 @@ function PokedexPage() {
   const partnerId = useGameStore((s) => s.pokemon?.id ?? null);
   const trainerName = useGameStore((s) => s.trainerName);
   const navigate = useNavigate();
-  const [gen, setGen] = useState(1);
+  const [gen, setGen] = useState(DEFAULT_GEN);
   const [query, setQuery] = useState("");
   const [type, setType] = useState<"all" | PokeType>("all");
   const [capturedOnly, setCapturedOnly] = useState(false);
+  const [seenOnly, setSeenOnly] = useState(false);
   const [shinyOnly, setShinyOnly] = useState(false);
   const [detailId, setDetailId] = useState<number | null>(null);
   const [showShiny, setShowShiny] = useState(false);
@@ -92,7 +73,7 @@ function PokedexPage() {
     if (hydrated && !hasOnboarded) navigate({ to: "/" });
   }, [hydrated, hasOnboarded, navigate]);
 
-  const range = GEN_RANGES.find((g) => g.gen === gen)!;
+  const range = generation(gen);
   const regionTotal = range.to - range.from + 1;
   // The ring counts CAUGHT, not registered: a seen-only entry is progress
   // toward the number, not the number itself.
@@ -107,13 +88,21 @@ function PokedexPage() {
       if (p.id < range.from || p.id > range.to) return false;
       if (q && !p.name.toLowerCase().startsWith(q)) return false;
       if (type !== "all" && !p.types.includes(type)) return false;
-      // `isCaught`, not merely "has an entry" — seen-only entries exist now and
-      // must not satisfy a Caught filter.
-      if (capturedOnly && !isCaught(pokedex[p.id])) return false;
+      // Caught and Seen are one status filter with two switches, not two
+      // independent ones. Treated independently they contradict each other —
+      // an entry cannot be both — so turning both on would empty the grid;
+      // read as a set, it shows everything registered, which is what someone
+      // pressing both is asking for.
+      if (capturedOnly || seenOnly) {
+        const status = dexStatus(pokedex[p.id]);
+        if (status === null) return false;
+        if (status === "caught" && !capturedOnly) return false;
+        if (status === "seen" && !seenOnly) return false;
+      }
       if (shinyOnly && !pokedex[p.id]?.shinyUnlocked) return false;
       return true;
     });
-  }, [range, q, type, capturedOnly, shinyOnly, pokedex]);
+  }, [range, q, type, capturedOnly, seenOnly, shinyOnly, pokedex]);
 
   if (!hydrated || !hasOnboarded) return null;
 
@@ -202,17 +191,56 @@ function PokedexPage() {
             </PopoverContent>
           </Popover>
 
+          {/* Generation sits with the other filters now, immediately after
+              Type, and reads "+ Gen" at its Kanto default so the whole row is
+              one family of chips. Which generation is active is never in doubt
+              even while the chip is unlabelled — the completion card below the
+              search field names the region outright. */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                className={`press shrink-0 rounded-full px-3 py-1.5 text-xs font-bold shadow-card ${
+                  gen === DEFAULT_GEN
+                    ? "bg-card text-foreground/70"
+                    : "bg-primary text-primary-foreground"
+                }`}
+              >
+                {gen === DEFAULT_GEN ? "+ Gen" : `Gen ${gen}`}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 rounded-2xl bg-card p-2" align="start">
+              <div className="flex flex-wrap gap-1">
+                {GENERATIONS.map((g) => (
+                  <button
+                    key={g.gen}
+                    onClick={() => setGen(g.gen)}
+                    className={`press rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                      g.gen === gen
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-foreground/70"
+                    }`}
+                  >
+                    {g.region}
+                  </button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+
           <ToggleChip
             active={capturedOnly}
             onToggle={() => setCapturedOnly((v) => !v)}
             label="Caught"
           />
+          <ToggleChip active={seenOnly} onToggle={() => setSeenOnly((v) => !v)} label="Seen" />
           <ToggleChip active={shinyOnly} onToggle={() => setShinyOnly((v) => !v)} label="Shiny" />
-          {(type !== "all" || capturedOnly || shinyOnly) && (
+          {(type !== "all" || gen !== DEFAULT_GEN || capturedOnly || seenOnly || shinyOnly) && (
             <button
               onClick={() => {
                 setType("all");
+                setGen(DEFAULT_GEN);
                 setCapturedOnly(false);
+                setSeenOnly(false);
                 setShinyOnly(false);
               }}
               className="ml-auto flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-[11px] font-bold text-muted-foreground press"
@@ -223,7 +251,7 @@ function PokedexPage() {
         </div>
       </div>
 
-      {/* Sticky filters */}
+      {/* Sticky search */}
       <div className="sticky top-0 z-20 border-b border-border/60 bg-background/95 px-5 py-3 backdrop-blur">
         <div className="relative">
           <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -234,36 +262,13 @@ function PokedexPage() {
             className="h-11 rounded-full border-0 bg-card pl-11 text-sm shadow-card"
           />
         </div>
-        {/* Generation is a popover chip now, matching "+ Type". As a horizontal
-            scroll strip it was a nine-item row that had to be swiped to reach
-            Gen 7-9, and it read as a second navigation bar under the search
-            field rather than as one more filter. */}
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="press shrink-0 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow-card">
-                Gen {gen}
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-64 rounded-2xl bg-card p-2" align="start">
-              <div className="flex flex-wrap gap-1">
-                {GEN_RANGES.map((g) => (
-                  <button
-                    key={g.gen}
-                    onClick={() => setGen(g.gen)}
-                    className={`press rounded-full px-2.5 py-1 text-[11px] font-bold ${
-                      g.gen === gen
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-foreground/70"
-                    }`}
-                  >
-                    Gen {g.gen}
-                  </button>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
+      </div>
+
+      {/* Deliberately OUTSIDE the sticky block above. Pinned, the search field
+          and this card together hold about a quarter of a phone screen for the
+          whole scroll; only the search earns that. */}
+      <div className="px-5 pt-3">
+        <DexCompletionCard gen={gen} />
       </div>
 
       {/* Grid — three per row.

@@ -322,6 +322,25 @@ function BallLivery({ variant, size }: { variant: BallVariant; size: number }) {
   return null;
 }
 
+/**
+ * A Pokéball at badge size, drawn as one SVG.
+ *
+ * `PokeballSpinner` is built from stacked divs with a fixed 3px border, which
+ * swamps the shape below about 24px — at 14px it reads as a dark blob. This is
+ * the same ball drawn at scale instead, for the Pokédex caught marker and the
+ * completion card's Caught tile.
+ */
+export function MiniPokeball({ className = "h-3.5 w-3.5" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 32 32" className={`shrink-0 ${className}`} aria-hidden>
+      <circle cx="16" cy="16" r="14" fill="#fff" stroke="#1b1d2b" strokeWidth="3" />
+      <path d="M2 16 a14 14 0 0 1 28 0 Z" fill="#ee4b3c" stroke="#1b1d2b" strokeWidth="3" />
+      <rect x="2" y="14" width="28" height="4" fill="#1b1d2b" />
+      <circle cx="16" cy="16" r="4.5" fill="#fff" stroke="#1b1d2b" strokeWidth="3" />
+    </svg>
+  );
+}
+
 export const PokeballSpinner = React.memo(function PokeballSpinner({
   size = 64,
   spinning = false,

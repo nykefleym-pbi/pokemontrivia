@@ -98,6 +98,7 @@ export function buildSavePayload(s: GameState) {
     recentAnswers: s.recentAnswers,
     flags: s.flags,
     claimedAchievements: s.claimedAchievements,
+    claimedDexRewards: s.claimedDexRewards,
     dailyResult: s.dailyResult,
     battleLog: s.battleLog,
     arenaStats: s.arenaStats,
@@ -230,6 +231,7 @@ export const useGameStore = create<GameState>()(
 
       flags: [],
       claimedAchievements: [],
+      claimedDexRewards: [],
       dailyResult: null,
       battleLog: [],
       arenaStats: defaultArenaStats,
@@ -397,6 +399,7 @@ export const useGameStore = create<GameState>()(
           recentAnswers: [],
           flags: [],
           claimedAchievements: [],
+          claimedDexRewards: [],
           dailyResult: null,
           battleLog: [],
           arenaStats: defaultArenaStats,
@@ -610,6 +613,12 @@ export const useGameStore = create<GameState>()(
           return claimed.includes(id) ? s : { claimedAchievements: [...claimed, id] };
         }),
 
+      markDexRewardClaimed: (key) =>
+        set((s) => {
+          const claimed = s.claimedDexRewards ?? [];
+          return claimed.includes(key) ? s : { claimedDexRewards: [...claimed, key] };
+        }),
+
       recordDaily: (r) => set({ dailyResult: r }),
 
       pushBattleLog: (e) => {
@@ -753,10 +762,9 @@ export const useGameStore = create<GameState>()(
           abilityId: p.abilityId ?? null,
           lastSeenWhatsNew: p.lastSeenWhatsNew ?? 0,
           flags: p.flags ?? [],
-          purchasedBundleIds: Array.isArray(p.purchasedBundleIds)
-            ? p.purchasedBundleIds
-            : [],
+          purchasedBundleIds: Array.isArray(p.purchasedBundleIds) ? p.purchasedBundleIds : [],
           claimedAchievements: p.claimedAchievements ?? [],
+          claimedDexRewards: p.claimedDexRewards ?? [],
           // A save from before backdrops were purchasable has neither field,
           // and `...p` would spread `undefined` over the initial values.
           ownedBackdropIds: p.ownedBackdropIds ?? [],
