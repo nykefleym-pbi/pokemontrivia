@@ -1345,7 +1345,13 @@ function BattleMode({
           won={resultWon!}
           opponentName={enemy.name}
           correctCount={correctCountRef.current}
-          totalQuestions={questions.length}
+          // Questions the player actually FACED, not the size of the pool a
+          // battle draws from. A battle ends when someone's HP runs out, which
+          // is usually well before question 20, so "4/20 correct" read as a
+          // much worse round than it was. `answeredCountRef` counts timeouts
+          // too — handleAnswer(-1) is the timeout path — which is right: an
+          // unanswered question was still put in front of them.
+          totalQuestions={answeredCountRef.current}
           xpEarned={xpEarned}
           tpEarned={tpEarned}
           coinsEarned={coinsEarned}

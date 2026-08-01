@@ -1,11 +1,12 @@
-import { type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { motion, type TargetAndTransition } from "framer-motion";
 import { Share2 } from "lucide-react";
 import { AppIcon } from "@/components/app-icon";
-import { PokemonSprite } from "@/components/game-ui";
+import { PokemonSprite, SpriteBurst } from "@/components/game-ui";
 import { MissedReview } from "@/components/MissedReview";
 import { Button } from "@/components/ui/button";
 import { COIN_ICON, RESULT_ICON, REWARD_ICON, TP_ICON } from "@/lib/app-icons";
+import { useGameStore } from "@/lib/store";
 import {
   PLATFORM_SURFACE,
   RESULT_ART,
@@ -63,11 +64,39 @@ function PartnerStage({
   // the visible feet land ON the line rather than above it.
   const spriteBottom = surfaceFromBottom - spriteW * SPRITE_FOOT_PAD;
 
+  // Centre of the visible creature, measured from the box's bottom edge: the
+  // sprite's own middle sits above its empty foot band, not at its box centre.
+  const glowCentre = spriteBottom + spriteW * (0.5 + SPRITE_FOOT_PAD / 2);
+  // Smaller and much fainter on a loss: the defeat sprite is drawn at 80%
+  // opacity, so a bright burst behind it shines straight THROUGH the creature
+  // and the rays read as painted on top of it.
+  const glowSize = spriteW * (won ? 1.3 : 1.1);
+
   return (
     <div
       className="relative mx-auto"
       style={{ width: platformW, height: Math.max(visibleH, spriteW * 0.72 + visibleH * 0.5) }}
     >
+      {/* Sunburst behind the partner — the same `SpriteBurst` the Shop puts
+          behind a discounted item, so the two read as one effect rather than
+          two attempts at "glow". Gold for a win, violet for a loss.
+
+          It sits under the platform as well as the sprite, so the light spills
+          onto the pad instead of stopping at its edge, and it is centred on the
+          visible CREATURE rather than on its sprite box. */}
+      <div
+        aria-hidden
+        // `-z-10` keeps the rays UNDER every word on the screen. The nearest
+        // stacking context is the header block's `relative z-10`, and a
+        // negative z there paints below that block's in-flow content — the
+        // wordmark and the "X/Y correct" line — while the platform and sprite,
+        // being positioned, still sit on top of it. Without this the burst
+        // washed straight across the subtitle.
+        className="pointer-events-none absolute left-1/2 -z-10 -translate-x-1/2"
+        style={{ width: glowSize, height: glowSize, bottom: glowCentre - glowSize / 2 }}
+      >
+        <SpriteBurst tint={won ? "rgba(255,214,120,0.6)" : "rgba(150,125,205,0.13)"} />
+      </div>
       <img
         src={encodeURI(src)}
         alt=""
@@ -95,6 +124,98 @@ function PartnerStage({
 /** The partner is the highlight of this screen, so both are large. */
 const PLATFORM_W = 248;
 const SPRITE_W = 176;
+
+/**
+ * Confetti for a win, drifting ash for a loss.
+ *
+ * `fixed`, not `absolute`, and that is the fix rather than a preference. The
+ * result screens are `overflow-y-auto` scroll containers, so an absolutely
+ * positioned child starting above the top edge is CLIPPED until it drifts into
+ * view — and one that falls past the bottom lengthens the scrollable area,
+ * putting a scrollbar on a screen that has nothing more to read. Taking the
+ * layer out of the scroll box fixes both: it covers the viewport, clips itself,
+ * and contributes no scroll height.
+ *
+ * Reduced motion is handled by `<MotionConfig reducedMotion>` at the root,
+ * which stills the fall; the pieces then simply do not appear, since their
+ * opacity starts at 0.
+ */
+const CONFETTI = [
+  { cls: "h-3 w-2 rounded-[1px] bg-primary", l: 6 },
+  { cls: "h-2 w-2 rounded-full bg-poke-yellow", l: 17 },
+  { cls: "h-2.5 w-2.5 rounded-[1px] bg-poke-blue", l: 28 },
+  { cls: "h-3 w-2 rounded-[1px] bg-hp-good", l: 39 },
+  { cls: "h-2 w-2 rounded-full bg-poke-yellow", l: 50 },
+  { cls: "h-2.5 w-1.5 rounded-[1px] bg-primary", l: 61 },
+  { cls: "h-2.5 w-2.5 rounded-[1px] bg-destructive", l: 72 },
+  { cls: "h-2 w-2 rounded-full bg-poke-blue", l: 83 },
+  { cls: "h-3 w-2 rounded-[1px] bg-poke-yellow", l: 94 },
+  { cls: "h-2 w-2 rounded-full bg-hp-good", l: 11 },
+  { cls: "h-2.5 w-1.5 rounded-[1px] bg-hp-good", l: 45 },
+  { cls: "h-2 w-2 rounded-[1px] bg-primary", l: 67 },
+  { cls: "h-2 w-2 rounded-full bg-poke-yellow", l: 89 },
+  { cls: "h-3 w-2 rounded-[1px] bg-poke-blue", l: 33 },
+  { cls: "h-2 w-2 rounded-full bg-primary", l: 2 },
+  { cls: "h-2.5 w-1.5 rounded-[1px] bg-poke-yellow", l: 23 },
+  { cls: "h-2 w-2 rounded-full bg-destructive", l: 55 },
+  { cls: "h-3 w-2 rounded-[1px] bg-hp-good", l: 78 },
+  { cls: "h-2 w-2 rounded-[1px] bg-poke-blue", l: 97 },
+  { cls: "h-2.5 w-2.5 rounded-full bg-poke-yellow", l: 38 },
+  { cls: "h-2 w-1.5 rounded-[1px] bg-primary", l: 84 },
+  { cls: "h-2 w-2 rounded-full bg-hp-good", l: 63 },
+] as const;
+
+/** Thin cold streaks and specks — rain and ash rather than paper. */
+const GLOOM = [
+  { cls: "h-6 w-px rounded-full bg-white/25", l: 8 },
+  { cls: "h-1.5 w-1.5 rounded-full bg-poke-blue/40", l: 19 },
+  { cls: "h-8 w-px rounded-full bg-white/15", l: 27 },
+  { cls: "h-1 w-1 rounded-full bg-white/30", l: 36 },
+  { cls: "h-5 w-px rounded-full bg-poke-blue/35", l: 47 },
+  { cls: "h-1.5 w-1.5 rounded-full bg-white/20", l: 58 },
+  { cls: "h-7 w-px rounded-full bg-white/20", l: 66 },
+  { cls: "h-1 w-1 rounded-full bg-poke-blue/45", l: 74 },
+  { cls: "h-6 w-px rounded-full bg-white/15", l: 85 },
+  { cls: "h-1.5 w-1.5 rounded-full bg-white/25", l: 93 },
+  { cls: "h-5 w-px rounded-full bg-white/20", l: 41 },
+  { cls: "h-1 w-1 rounded-full bg-poke-blue/40", l: 15 },
+  { cls: "h-7 w-px rounded-full bg-white/18", l: 53 },
+  { cls: "h-1 w-1 rounded-full bg-white/25", l: 62 },
+  { cls: "h-6 w-px rounded-full bg-poke-blue/30", l: 79 },
+  { cls: "h-1.5 w-1.5 rounded-full bg-white/20", l: 31 },
+  { cls: "h-5 w-px rounded-full bg-white/22", l: 97 },
+  { cls: "h-1 w-1 rounded-full bg-poke-blue/35", l: 3 },
+] as const;
+
+function FallingBits({ won }: { won: boolean }) {
+  const bits = won ? CONFETTI : GLOOM;
+  return (
+    <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+      {bits.map((d, i) => (
+        <motion.span
+          key={i}
+          className={`absolute ${d.cls}`}
+          style={{ left: `${d.l}%`, top: "-6%" }}
+          initial={{ y: 0, opacity: 0 }}
+          animate={{
+            y: ["0vh", "112vh"],
+            // Confetti tumbles and swings; ash falls almost straight, with the
+            // barest drift. Same machinery, different physics.
+            x: won ? [0, i % 2 === 0 ? 24 : -24, 0] : [0, i % 2 === 0 ? 7 : -7, 0],
+            rotate: won ? [0, 360] : [0, 0],
+            opacity: won ? [0, 1, 1, 0.85, 0] : [0, 0.9, 0.9, 0.5, 0],
+          }}
+          transition={{
+            duration: won ? 3.4 + (i % 4) * 0.6 : 5.5 + (i % 5) * 0.9,
+            repeat: Infinity,
+            delay: (i % 7) * (won ? 0.45 : 0.8),
+            ease: won ? "easeIn" : "linear",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
 
 export function ResultScreen({
   won,
@@ -147,47 +268,31 @@ export function ResultScreen({
   canShare?: boolean;
   onShare?: () => void;
 }) {
+  // Both outcomes are full-screen takeovers, so the bottom nav has no business
+  // floating over them. Claimed HERE rather than left to whichever screen
+  // rendered us — solo, Elite, Weekly and Mega all reach this component, and
+  // only some of them hold the flag.
+  //
+  // The cleanup restores the PREVIOUS value instead of clearing it: on "Next
+  // Battle" this unmounts while the battle screen stays mounted and still wants
+  // the nav hidden, and a hard `false` would flash it back over the question.
+  const setBattleScreenActive = useGameStore((s) => s.setBattleScreenActive);
+  useEffect(() => {
+    const prev = useGameStore.getState().battleScreenActive;
+    setBattleScreenActive(true);
+    return () => setBattleScreenActive(prev);
+  }, [setBattleScreenActive]);
+
   if (won) {
-    const confetti = [
-      { c: "bg-primary", s: "h-3 w-3 rounded-sm", l: "8%" },
-      { c: "bg-poke-yellow", s: "h-2 w-2 rounded-full", l: "20%" },
-      { c: "bg-poke-blue", s: "h-2.5 w-2.5 rounded-full", l: "32%" },
-      { c: "bg-hp-good", s: "h-3 w-3 rounded-sm", l: "44%" },
-      { c: "bg-poke-yellow", s: "h-2 w-2 rounded-full", l: "56%" },
-      { c: "bg-primary", s: "h-2 w-2 rounded-full", l: "68%" },
-      { c: "bg-destructive", s: "h-2.5 w-2.5 rounded-sm", l: "80%" },
-      { c: "bg-poke-blue", s: "h-2 w-2 rounded-full", l: "92%" },
-      { c: "bg-poke-yellow", s: "h-3 w-3 rounded-sm", l: "14%" },
-      { c: "bg-hp-good", s: "h-2 w-2 rounded-full", l: "74%" },
-    ];
     return (
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         className="relative flex h-full w-full flex-col overflow-y-auto bg-victory px-6 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
       >
-        {confetti.map((d, i) => (
-          <motion.span
-            key={i}
-            className={`pointer-events-none absolute ${d.s} ${d.c}`}
-            style={{ left: d.l, top: "-5%" }}
-            initial={{ y: 0, opacity: 0 }}
-            animate={{
-              y: ["-5%", "115%"],
-              x: [0, i % 2 === 0 ? 20 : -20, 0],
-              rotate: [0, 360],
-              opacity: [0, 1, 1, 0.8, 0],
-            }}
-            transition={{
-              duration: 3.5 + (i % 4) * 0.6,
-              repeat: Infinity,
-              delay: i * 0.4,
-              ease: "easeIn",
-            }}
-          />
-        ))}
+        <FallingBits won />
 
-        <div className="flex flex-col items-center text-center">
+        <div className="relative z-10 flex flex-col items-center text-center">
           {/* The artwork carries "BATTLE WON" and "VICTORY!" itself, so it
               replaces the eyebrow AND the heading rather than sitting above
               them. The alt text is what a screen reader gets instead. */}
@@ -210,7 +315,7 @@ export function ResultScreen({
           </div>
         </div>
 
-        <div className="mx-auto mt-6 w-full max-w-sm rounded-2xl border-2 border-white bg-card p-4 shadow-card">
+        <div className="relative z-10 mx-auto mt-6 w-full max-w-sm rounded-2xl border-2 border-white bg-card p-4 shadow-card">
           {xpEarned > 0 && (
             <Row
               icon={REWARD_ICON.xp}
@@ -260,7 +365,7 @@ export function ResultScreen({
           </div>
         </div>
 
-        <div className="mx-auto mt-auto w-full max-w-sm space-y-2 pt-8">
+        <div className="relative z-10 mx-auto mt-auto w-full max-w-sm space-y-2 pt-8">
           {/* Next Battle starts the next one on the spot when the caller gives us
               a way to (owner request 2026-07-26 — keep the player battling
               instead of dropping them on the hub). Modes with nothing to start
@@ -311,7 +416,9 @@ export function ResultScreen({
       animate={{ opacity: 1 }}
       className="relative flex h-full w-full flex-col overflow-y-auto bg-defeat px-6 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
     >
-      <div className="flex flex-col items-center text-center">
+      <FallingBits won={false} />
+
+      <div className="relative z-10 flex flex-col items-center text-center">
         {/* Carries "BATTLE LOST" and "SO CLOSE!" itself — see the victory
             header for why this replaces both lines rather than joining them. */}
         <OutcomeWordmark
@@ -333,18 +440,22 @@ export function ResultScreen({
         </div>
       </div>
 
-      <MissedReview
-        missed={missed}
-        footer={
-          <p className="text-xs text-white/70">
-            Consolation: <span className="font-bold text-poke-yellow">+{xpEarned} XP</span>
-            {" · "}
-            {streakKept ? "streak kept" : "streak reset"}
-          </p>
-        }
-      />
+      {/* `relative z-10` for the same reason as the blocks above: the falling
+          layer is positioned, so without it the ash paints over this card. */}
+      <div className="relative z-10">
+        <MissedReview
+          missed={missed}
+          footer={
+            <p className="text-xs text-white/70">
+              Consolation: <span className="font-bold text-poke-yellow">+{xpEarned} XP</span>
+              {" · "}
+              {streakKept ? "streak kept" : "streak reset"}
+            </p>
+          }
+        />
+      </div>
 
-      <div className="mx-auto mt-auto w-full max-w-sm space-y-2 pt-8">
+      <div className="relative z-10 mx-auto mt-auto w-full max-w-sm space-y-2 pt-8">
         {!hideRematch && (
           <Button
             size="lg"
