@@ -30,6 +30,8 @@ export const RESULT_ART = {
   defeat: { top: 0.338, bottom: 0.379 } as ArtPadding,
   platformWin: { top: 0.305, bottom: 0.305 } as ArtPadding,
   platformLose: { top: 0.373, bottom: 0.371 } as ArtPadding,
+  /** Level Up.webp — opaque y 155-356 of 512. */
+  levelUp: { top: 0.303, bottom: 0.303 } as ArtPadding,
 } as const;
 
 /**

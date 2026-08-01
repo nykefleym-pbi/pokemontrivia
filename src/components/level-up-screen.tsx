@@ -3,9 +3,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { playSfx } from "@/lib/audio";
 import { ITEMS, trainerSpriteUrl, rankForLevel } from "@/lib/game-data";
-import { ItemIcon } from "@/components/game-ui";
+import { ItemIcon, SpriteBurst } from "@/components/game-ui";
+import { FallingBits } from "@/components/falling-bits";
 import { AppIcon } from "@/components/app-icon";
-import { UI_ICON, COIN_ICON } from "@/lib/app-icons";
+import { UI_ICON, COIN_ICON, RESULT_ICON } from "@/lib/app-icons";
+import { RESULT_ART, trimmedArtStyles } from "@/lib/result-art";
 import { useGameStore } from "@/lib/store";
 import type { LevelUpRewards } from "@/lib/level-rewards";
 
@@ -25,7 +27,6 @@ interface Props {
 export function LevelUpScreen({ rewards, onContinue }: Props) {
   const trainerName = useGameStore((s) => s.trainerName);
   const trainerSprite = useGameStore((s) => s.trainerSprite);
-  const spannedMultiple = rewards.toLevel - rewards.fromLevel > 1;
   const oldRank = rankForLevel(rewards.fromLevel);
   const newRank = rankForLevel(rewards.toLevel);
   const rankedUp = newRank !== oldRank;
@@ -67,27 +68,28 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
       className="fixed inset-0 z-[110] flex flex-col items-center justify-center overflow-y-auto px-6 py-10"
       style={{
         background:
-          "radial-gradient(circle at center, var(--color-poke-yellow) 0%, var(--color-poke-dark) 78%)",
+          "radial-gradient(circle at 50% 34%, oklch(0.42 0.09 265) 0%, oklch(0.24 0.06 265) 52%, oklch(0.16 0.04 265) 100%)",
       }}
       onClick={skipToEnd}
     >
+      <FallingBits won />
+
       <AnimatePresence>
         {step >= 1 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center text-center"
+            className="relative z-10 flex w-full flex-col items-center text-center"
           >
-            <div className="font-pixel-xs uppercase tracking-[0.3em] text-poke-dark/70">
-              Level Up!
-            </div>
+            <LevelUpWordmark />
 
-            <div className="relative mt-4 flex h-32 w-32 items-center justify-center">
-              <motion.div
-                animate={{ scale: [1, 1.08, 1] }}
-                transition={{ duration: 1.1, repeat: Infinity }}
-                className="absolute inset-0 rounded-full bg-white/40 blur-2xl"
-              />
+            {/* The burst is a positioned sibling of the sprite, so it needs an
+                explicit negative z to sit BEHIND it — positioned elements paint
+                above non-positioned in-flow content otherwise. */}
+            <div className="relative mt-4 flex h-36 w-36 items-center justify-center">
+              <div className="absolute inset-0 -z-10">
+                <SpriteBurst tint="rgba(255,206,94,0.5)" />
+              </div>
               <img
                 src={trainerSpriteUrl(trainerSprite)}
                 alt={trainerName}
@@ -95,11 +97,19 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
               />
             </div>
 
-            <div className="mt-3 font-display-lg text-poke-dark">{trainerName}</div>
-            <div className="mt-1 font-display-xl text-poke-dark">
-              {spannedMultiple
-                ? `Lv ${rewards.fromLevel} → Lv ${rewards.toLevel}`
-                : `Lv ${rewards.toLevel}`}
+            <div className="mt-2 font-display-lg text-white">{trainerName}</div>
+
+            <div className="mt-3 flex items-center justify-center gap-3">
+              <LevelShield level={rewards.fromLevel} />
+              <motion.span
+                aria-hidden
+                animate={{ x: [0, 5, 0] }}
+                transition={{ duration: 1.2, repeat: Infinity }}
+                className="-mb-2 text-4xl font-black leading-none tracking-tighter text-poke-yellow drop-shadow-[0_2px_0_rgba(0,0,0,0.35)]"
+              >
+                ›››
+              </motion.span>
+              <LevelShield level={rewards.toLevel} highlight />
             </div>
           </motion.div>
         )}
@@ -111,7 +121,7 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
             initial={{ opacity: 0, scale: 0.85 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ type: "spring", stiffness: 200 }}
-            className="mt-4 rounded-full bg-poke-dark px-4 py-2 text-center shadow-pop"
+            className="relative z-10 mt-4 rounded-full bg-poke-dark px-4 py-2 text-center shadow-pop"
           >
             <div className="flex items-center justify-center gap-1.5 font-pixel-xs uppercase tracking-wide text-poke-yellow">
               <AppIcon src={UI_ICON.badges} className="h-4 w-4" />
@@ -127,7 +137,7 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="mt-6 w-full max-w-xs rounded-3xl bg-card p-4 shadow-pop"
+            className="relative z-10 mt-6 w-full max-w-xs rounded-3xl border-2 border-white bg-card p-4 shadow-pop"
           >
             <div className="font-pixel-xs uppercase text-foreground/50">Rewards</div>
             <div className="mt-2 space-y-2">
@@ -169,7 +179,7 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-6 w-full max-w-xs"
+            className="relative z-10 mt-6 w-full max-w-xs"
           >
             <Button
               size="lg"
@@ -185,6 +195,86 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+/**
+ * The "LEVEL UP!" art, drawn at its visible height.
+ *
+ * Same wrapper/negative-margin pair as the result screen's outcome wordmarks —
+ * see `trimmedArtStyles`, which explains why the negative margin cannot go
+ * straight on the <img>. The old pixel eyebrow stays as the `onError` arm so a
+ * missing or 404ing file degrades to text rather than to a broken image.
+ */
+function LevelUpWordmark() {
+  const [failed, setFailed] = useState(false);
+  const s = trimmedArtStyles(RESULT_ART.levelUp);
+  if (failed) {
+    return (
+      <div className="font-pixel-xs uppercase tracking-[0.3em] text-poke-yellow">Level Up!</div>
+    );
+  }
+  return (
+    <div className="relative w-full max-w-[280px]" style={s.wrapper}>
+      <img
+        src={encodeURI(RESULT_ICON.levelUp)}
+        alt="Level up!"
+        draggable={false}
+        onError={() => setFailed(true)}
+        className="absolute left-0 top-0 w-full select-none"
+        style={s.image}
+      />
+    </div>
+  );
+}
+
+/**
+ * One level number on a convex pentagon plaque — flat top, straight sides, a
+ * point at the bottom.
+ *
+ * Two nested clipped boxes rather than a border: `clip-path` cuts a border off
+ * with the rest of the box, so the only way to get an outline on a non-
+ * rectangular shape is to clip a slightly larger coloured box behind a slightly
+ * smaller filled one. `inset-[3px]` is that outline's thickness.
+ *
+ * `highlight` is the level you just reached — gold and raised; the other is the
+ * level you left, in muted slate so the pair reads as before → after.
+ */
+function LevelShield({ level, highlight = false }: { level: number; highlight?: boolean }) {
+  const clip = "polygon(0% 0%, 100% 0%, 100% 66%, 50% 100%, 0% 66%)";
+  return (
+    <motion.div
+      initial={highlight ? { scale: 0.6, opacity: 0 } : false}
+      animate={highlight ? { scale: 1, opacity: 1 } : undefined}
+      transition={{ type: "spring", stiffness: 260, damping: 14, delay: 0.25 }}
+      className={`relative ${highlight ? "h-[4.75rem] w-[4.25rem]" : "h-16 w-14"}`}
+    >
+      <div
+        className={`absolute inset-0 ${highlight ? "bg-poke-yellow" : "bg-white/35"}`}
+        style={{ clipPath: clip }}
+      />
+      <div
+        className={`absolute inset-[3px] flex flex-col items-center justify-start pt-1.5 ${
+          highlight ? "bg-primary" : "bg-poke-dark/80"
+        }`}
+        style={{ clipPath: clip }}
+      >
+        <span
+          className={`font-pixel-xs uppercase leading-none ${
+            highlight ? "text-white/80" : "text-white/50"
+          }`}
+        >
+          Lv
+        </span>
+        <span
+          className={`font-display-lg leading-none ${
+            highlight ? "text-white" : "text-white/70"
+          } ${level >= 100 ? "text-[1.25rem]" : ""}`}
+        >
+          {level}
+        </span>
+      </div>
+    </motion.div>
   );
 }
 

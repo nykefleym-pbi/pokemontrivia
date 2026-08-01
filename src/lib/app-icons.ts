@@ -47,6 +47,8 @@ export const UI_ICON = {
  */
 export const RESULT_ICON = {
   victory: "/ui/Victory.webp",
+  /** "LEVEL UP!" wordmark for the trainer level-up celebration. */
+  levelUp: "/ui/Level Up.webp",
   defeat: "/ui/Battle Lost.png",
   platformWin: "/ui/Platform.webp",
   platformLose: "/ui/Platform Lose.webp",
