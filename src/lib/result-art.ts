@@ -35,6 +35,40 @@ export const RESULT_ART = {
 } as const;
 
 /**
+ * Where the shield FACE sits inside each level-up plaque file.
+ *
+ * The plaques ship with their glow, and the two glows are not the same size, so
+ * the files are NOT interchangeable at a shared width: rendered 320px wide the
+ * silver shield's body is 59% of the box and the gold one's is 47%. Two numbers
+ * follow from that and both matter.
+ *
+ * `face` is the body's width as a fraction of the file, so a caller that wants
+ * two shields the same size can size each file by its own body instead of by
+ * its bounding box — which is what `plaqueWidth` below does.
+ *
+ * `centreY` is where the number belongs vertically, as a fraction of the file.
+ * Not the face's midpoint: a shield tapers to a point, so its lower half is
+ * mostly empty and text centred on the geometric middle reads as sitting low.
+ *
+ * Measured off the keyed files by scanning the flood-filled face mask, not
+ * eyeballed. Re-measure if the art is redrawn.
+ */
+export const LEVEL_PLAQUE = {
+  from: { face: 0.591, centreY: 0.46 },
+  to: { face: 0.469, centreY: 0.47 },
+} as const;
+
+/**
+ * File width needed to draw a plaque's shield body at `bodyPx`.
+ *
+ * The glow then extends past that on every side, which is the intent — it is
+ * light, and light is meant to spill onto what is behind it.
+ */
+export function plaqueWidth(kind: keyof typeof LEVEL_PLAQUE, bodyPx: number): number {
+  return Math.round(bodyPx / LEVEL_PLAQUE[kind].face);
+}
+
+/**
  * How far down each platform square the partner's feet belong, as a fraction of
  * the square's height.
  *

@@ -47,9 +47,28 @@ const BAR_MS = 4400;
 /** The app's status-bar tint. Must match the fallback in __root.tsx's script. */
 const APP_THEME_COLOR = "#dc2626";
 
-/** Shared with the onboarding hero so the boot screen and step one are one look. */
-const BRAND_GRADIENT =
-  "radial-gradient(circle at 15% 12%, oklch(0.9 0.13 95 / 0.55) 0%, transparent 42%), radial-gradient(circle at 88% 90%, oklch(0.62 0.22 25 / 0.16) 0%, transparent 48%), linear-gradient(168deg, oklch(0.975 0.025 95) 0%, oklch(0.93 0.05 230) 100%)";
+/**
+ * The field the artwork lands on. Must stay in step with `background_color` in
+ * the manifest (vite.config.ts).
+ *
+ * Deliberately the SAME black the OS paints for the platform splash, and not a
+ * brand gradient of its own. The art is fetched at hydration, so there is
+ * always a beat where this screen has none — and with a look of its own that
+ * beat was a whole extra screen going past: a pale gradient carrying a progress
+ * bar and a tip, arriving after the black splash and leaving again the moment
+ * the picture loaded. Matching the splash makes that beat invisible instead:
+ * nothing appears to happen until the artwork does.
+ */
+const SPLASH_BG = "#000000";
+/**
+ * How long the chrome waits for artwork before showing up anyway.
+ *
+ * The bar and the tip are hidden until there is a picture behind them, which is
+ * what keeps the artless frame from reading as a screen. If the file 404s or
+ * the network stalls they must still arrive — a black rectangle for five
+ * seconds is worse than the thing this replaced.
+ */
+const CHROME_GRACE_MS = 1400;
 
 /**
  * Hand the OS status bar back to the app's colour.
@@ -144,13 +163,12 @@ export function BootSplash() {
   // draw lands, so the server and client markup agree and hydration is clean.
   //
   // It stays transparent until the file has actually loaded, so both failure
-  // modes degrade to the gradient: art that 404s, and the browser painting its
-  // broken-image glyph before any error handler could fire.
+  // modes degrade to bare SPLASH_BG: art that 404s, and the browser painting
+  // its broken-image glyph before any error handler could fire.
   //
   // There is deliberately no fallback image. A wordmark here reads as a second
   // splash flashing past on the way to the artwork — briefly on a warm cache,
-  // for the whole download on a cold one — and the bar and tip already make a
-  // bare gradient look like a loading screen on its own.
+  // for the whole download on a cold one.
   const [artLoaded, setArtLoaded] = useState(false);
   const [art, setArt] = useState<string | null>(null);
   useEffect(() => {
@@ -160,6 +178,19 @@ export function BootSplash() {
     rememberLastArt(pick);
     setArt(encodeURI(pick));
   }, []);
+
+  // The bar and the tip wait for the picture. Without this the screen's first
+  // frame is chrome on an empty field — which is precisely the "loading screen
+  // with nothing on it" this is meant to stop being. `CHROME_GRACE_MS` is the
+  // escape hatch for art that never arrives; an empty folder resolves it
+  // immediately, since there is nothing to wait for.
+  const [graced, setGraced] = useState(LOADING_ART.length === 0);
+  useEffect(() => {
+    if (graced) return;
+    const t = setTimeout(() => setGraced(true), CHROME_GRACE_MS);
+    return () => clearTimeout(t);
+  }, [graced]);
+  const showChrome = artLoaded || graced;
 
   if (done) return null;
 
@@ -173,7 +204,7 @@ export function BootSplash() {
       // keeps this hidden in the server-rendered frame, before the effect above
       // has had a chance to run.
       className="boot-splash fixed inset-0 z-[300] overflow-hidden"
-      style={{ background: BRAND_GRADIENT }}
+      style={{ background: SPLASH_BG }}
       role="status"
       aria-busy
       aria-label="Loading Pokémon Trivia Battle"
@@ -197,9 +228,17 @@ export function BootSplash() {
       {/* Scrim: the artwork is arbitrary owner-supplied art, so the bar and tip
           need their own guaranteed-legible backdrop rather than trusting
           whatever happens to be behind them this time. */}
-      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-poke-dark via-poke-dark/85 to-transparent" />
+      <div
+        className={`absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-poke-dark via-poke-dark/85 to-transparent transition-opacity duration-300 ${
+          showChrome ? "opacity-100" : "opacity-0"
+        }`}
+      />
 
-      <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-4 px-8 pb-[calc(env(safe-area-inset-bottom)+2.5rem)]">
+      <div
+        className={`absolute inset-x-0 bottom-0 flex flex-col items-center gap-4 px-8 pb-[calc(env(safe-area-inset-bottom)+2.5rem)] transition-opacity duration-300 ${
+          showChrome ? "opacity-100" : "opacity-0"
+        }`}
+      >
         <div className="w-full max-w-[320px]">
           <div className="font-pixel-xs text-center text-poke-yellow/80">Loading</div>
           <div
