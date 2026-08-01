@@ -24,6 +24,10 @@ vi.mock("framer-motion", () => {
 
 vi.mock("@/components/game-ui", () => ({
   PokemonSprite: () => <img alt="partner" />,
+  // Purely decorative, but it has to exist: a missing export from a `vi.mock`
+  // factory throws at import time and fails every test in the file, not just
+  // the ones that render it.
+  SpriteBurst: () => <div data-testid="sprite-burst" />,
 }));
 
 vi.mock("@/components/MissedReview", () => ({

@@ -19,7 +19,7 @@ import {
   itemTileTint,
   type ShopBundle,
 } from "@/lib/shop-bundles";
-import { ItemIcon } from "@/components/game-ui";
+import { ItemIcon, SpriteBurst } from "@/components/game-ui";
 import { BagCapacityBar, BagOverflowPanel, DiscardItemButton } from "@/components/bag-overflow";
 import { bagCapacity, bagUnitsUsed, isBagExempt } from "@/lib/store/slices/itemsSlice";
 import { syncActivity } from "@/lib/social";
@@ -65,36 +65,6 @@ function RibbonTag({ label, bg }: { label: string; bg: string }) {
     >
       {label}
     </span>
-  );
-}
-
-/**
- * Radiating light behind a product sprite.
- *
- * Two layers on purpose: a conic ray fan for the "burst", and a soft radial
- * glow to keep the rays from cutting hard edges across the artwork. Both are
- * pure CSS so they cost no image weight and inherit no colour of their own —
- * the caller supplies the tint, so the same burst works on a red card and a
- * purple one.
- */
-function SpriteBurst({ tint = "rgba(255,255,255,0.5)" }: { tint?: string }) {
-  return (
-    <>
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 animate-[spin_18s_linear_infinite] rounded-full"
-        style={{
-          background: `repeating-conic-gradient(from 0deg, ${tint} 0deg 6deg, transparent 6deg 16deg)`,
-          maskImage: "radial-gradient(circle, #000 30%, transparent 72%)",
-          WebkitMaskImage: "radial-gradient(circle, #000 30%, transparent 72%)",
-        }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-[18%] rounded-full blur-md"
-        style={{ background: tint }}
-      />
-    </>
   );
 }
 
