@@ -29,6 +29,29 @@ export const UI_ICON = {
   pokeEgg: "/ui/Poke Egg.webp",
 } as const;
 
+/**
+ * Result-screen artwork: the two outcome wordmarks and the two platforms the
+ * partner stands on.
+ *
+ * The wordmarks carry their own copy — "BATTLE WON / VICTORY!" and "BATTLE LOST
+ * / SO CLOSE!" — so they replace BOTH the eyebrow and the heading rather than
+ * sitting above them.
+ *
+ * `Battle Lost` is a .png, not a .webp like its three siblings: that is how it
+ * was supplied. It costs about 45 KB over an equivalent webp and is the one
+ * file here worth re-encoding if the defeat screen ever feels slow.
+ *
+ * Every one of these is a 512x512 square with the art floating in the middle —
+ * see RESULT_ART in lib/result-art.ts for the measured padding, which the
+ * layout has to subtract or the screen ends up mostly empty space.
+ */
+export const RESULT_ICON = {
+  victory: "/ui/Victory.webp",
+  defeat: "/ui/Battle Lost.png",
+  platformWin: "/ui/Platform.webp",
+  platformLose: "/ui/Platform Lose.webp",
+} as const;
+
 /** Arena set-of-5 reward slots, keyed by ArenaRewardKind. */
 export const REWARD_ICON = {
   tp: "/rewards/Training Points.webp",
