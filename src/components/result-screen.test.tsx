@@ -32,6 +32,9 @@ vi.mock("@/components/game-ui", () => ({
 
 vi.mock("@/components/MissedReview", () => ({
   MissedReview: () => <div data-testid="missed-review" />,
+  // Same trap as the game-ui mock below: a missing export from a vi.mock
+  // factory throws at import time and fails every test in the file.
+  MISSED_REVIEW_MAX: 5,
 }));
 
 afterEach(cleanup);
