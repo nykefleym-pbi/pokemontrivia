@@ -1440,7 +1440,6 @@ function BattleMode({
             types={enemy.pokemon.types}
             hp={enemyHp}
             maxHp={enemyMaxHp}
-            statuses={[]}
             abilityName={enemyAbility.name}
             abilityDescription={enemyAbility.description}
             immune={false}
@@ -1500,7 +1499,6 @@ function BattleMode({
             types={player.types}
             hp={playerHp}
             maxHp={playerMaxHp}
-            statuses={statuses}
             abilityName={playerAbility.name}
             abilityDescription={playerAbility.description}
             immune={immune}

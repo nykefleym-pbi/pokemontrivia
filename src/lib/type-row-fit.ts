@@ -38,7 +38,7 @@ export const PIXEL_ADVANCE_EM = 1.06;
 const TYPE_BADGE_PAD_PX = 8;
 /** `gap-0.5` between badges. */
 const TYPE_ROW_GAP_PX = 2;
-/** The panel's own `px-3`, which the row cannot use. */
+/** The combat panel's own `px-3`, which the row cannot use. */
 const PANEL_PAD_PX = 24;
 
 /** Largest badge font size, matching the badge's default `text-[9px]`. */
@@ -51,12 +51,37 @@ const MAX_BADGE_PX = 9;
  */
 export const COMBAT_PANEL_WIDTH = "clamp(9rem,38vw,10.5rem)";
 
-/** A CSS `font-size` that fits `types` on one line inside `panelWidthCss`. */
-export function typeRowFontSize(types: readonly string[], panelWidthCss: string): string {
+/**
+ * A Pokedex grid card's outer width, and what it spends on border + padding.
+ *
+ * Written as an expression rather than a measured number so it tracks the grid
+ * on every screen: the grid container is `px-3` (24px) and `grid-cols-3
+ * gap-2.5` spends 2 x 10px between the columns, leaving `(100vw - 44px) / 3`
+ * per card. The card itself then spends `border-2` (4px) and `px-2` (16px).
+ *
+ * Kept here rather than in the route so the arithmetic that has to agree with
+ * `typeRowFontSize` sits next to it, and so tests can reach it without pulling
+ * in a TanStack route.
+ */
+export const DEX_CARD_WIDTH = "calc((100vw - 44px) / 3)";
+export const DEX_CARD_PAD_PX = 20;
+
+/**
+ * A CSS `font-size` that fits `types` on one line inside `containerWidthCss`.
+ *
+ * `containerPadPx` is everything between that width and the row's own content
+ * box — padding plus border on both sides. It defaults to the combat panel's
+ * `px-3`; the Pokedex card passes its own, since its box is padded differently.
+ */
+export function typeRowFontSize(
+  types: readonly string[],
+  containerWidthCss: string,
+  containerPadPx: number = PANEL_PAD_PX,
+): string {
   const chars = types.reduce((n, t) => n + t.length, 0);
   if (chars === 0) return `${MAX_BADGE_PX}px`;
   const overhead =
     types.length * TYPE_BADGE_PAD_PX + Math.max(0, types.length - 1) * TYPE_ROW_GAP_PX;
   const per = (chars * PIXEL_ADVANCE_EM).toFixed(2);
-  return `min(${MAX_BADGE_PX}px, calc((${panelWidthCss} - ${PANEL_PAD_PX}px - ${overhead}px) / ${per}))`;
+  return `min(${MAX_BADGE_PX}px, calc((${containerWidthCss} - ${containerPadPx}px - ${overhead}px) / ${per}))`;
 }

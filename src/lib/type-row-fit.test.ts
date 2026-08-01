@@ -4,7 +4,13 @@
 // all 136 real dual-type pairs at 8 viewports in Chromium with the real
 // webfont (1088 combinations, zero overflow, zero wrapped rows).
 import { describe, expect, it } from "vitest";
-import { typeRowFontSize, COMBAT_PANEL_WIDTH, PIXEL_ADVANCE_EM } from "@/lib/type-row-fit";
+import {
+  typeRowFontSize,
+  COMBAT_PANEL_WIDTH,
+  DEX_CARD_WIDTH,
+  DEX_CARD_PAD_PX,
+  PIXEL_ADVANCE_EM,
+} from "@/lib/type-row-fit";
 
 /** Solve the emitted `min(9px, calc((W - 24px - Npx) / D))` for a given panel
  *  width, so a test can assert the real rendered size rather than a string. */
@@ -66,6 +72,40 @@ describe("typeRowFontSize", () => {
 
   it("degrades to the plain badge size when there are no types", () => {
     expect(typeRowFontSize([], COMBAT_PANEL_WIDTH)).toBe("9px");
+  });
+
+  // The Pokedex grid reuses the same trick at a different width and padding —
+  // the owner asked for both types on ONE line there too (2026-07-31). Its
+  // cards are much narrower than a combat panel (~92px at 320 wide against the
+  // panel's 144), so the fit is tighter and worth pinning separately.
+  describe("in a Pokedex card", () => {
+    /** Card outer width at a given viewport, per `DEX_CARD_WIDTH`. */
+    const cardPx = (vw: number) => (vw - 44) / 3;
+
+    it("fits the widest real pair on the narrowest phone", () => {
+      const types = ["electric", "fighting"]; // Pawmo, 16 chars
+      const card = cardPx(320);
+      const px = resolvePx(typeRowFontSize(types, DEX_CARD_WIDTH, DEX_CARD_PAD_PX), card);
+      expect(px).toBeGreaterThan(0);
+      expect(neededPx(types, px)).toBeLessThanOrEqual(card - DEX_CARD_PAD_PX + 1e-9);
+    });
+
+    it("fits every length from 1 to 20 characters across phone widths", () => {
+      for (const vw of [320, 360, 390, 412, 430]) {
+        for (let len = 1; len <= 20; len++) {
+          const types = ["a".repeat(Math.ceil(len / 2)), "b".repeat(Math.floor(len / 2))].filter(
+            (t) => t.length > 0,
+          );
+          const card = cardPx(vw);
+          const px = resolvePx(typeRowFontSize(types, DEX_CARD_WIDTH, DEX_CARD_PAD_PX), card);
+          expect(neededPx(types, px)).toBeLessThanOrEqual(card - DEX_CARD_PAD_PX + 1e-9);
+        }
+      }
+    });
+
+    it("still tops out at the 9px badge size when a short type has room", () => {
+      expect(resolvePx(typeRowFontSize(["bug"], DEX_CARD_WIDTH, DEX_CARD_PAD_PX), 1000)).toBe(9);
+    });
   });
 
   it("uses the calibrated advance, not the font's nominal 0.975em", () => {

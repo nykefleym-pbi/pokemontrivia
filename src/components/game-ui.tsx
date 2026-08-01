@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Backpack, Info } from "lucide-react";
 import { spriteFallbacks, type PokeType } from "@/lib/pokemon-data";
 import type { ItemDef, ItemId, StatusKind } from "@/lib/game-data";
-import { STATUS_META, ITEMS } from "@/lib/game-data";
+import { ITEMS } from "@/lib/game-data";
 import { legendaryCategory, isMascotTier } from "@/lib/legendary-data";
 import type { Trivia } from "@/lib/trivia-core";
 import { TimerRing } from "@/components/timer-ring";
@@ -742,7 +742,6 @@ export function CombatPanel({
   types,
   hp,
   maxHp,
-  statuses,
   abilityName,
   abilityDescription,
   immune,
@@ -754,7 +753,6 @@ export function CombatPanel({
   types: PokeType[];
   hp: number;
   maxHp: number;
-  statuses: Array<{ kind: StatusKind }>;
   abilityName: string | null;
   /** Tappable Popover body for the ability chip — omit/null to render a plain chip. */
   abilityDescription?: string | null;
@@ -771,10 +769,21 @@ export function CombatPanel({
   return (
     <div
       style={{ width: COMBAT_PANEL_WIDTH }}
-      className="shrink-0 rounded-2xl bg-card px-3 py-2 backdrop-blur shadow-card"
+      // Type disadvantage is the border, not a chip. A "WEAK" pill sat on the
+      // same row as the ability and read as another ability; the whole card
+      // turning red says the same thing without competing for the row, and
+      // leaves the panel to one job — who this is and how hurt they are.
+      className={`shrink-0 rounded-2xl border-2 bg-card px-3 py-2 shadow-card backdrop-blur ${
+        disadvantaged && !immune ? "border-destructive" : "border-transparent"
+      }`}
     >
       <div className={`flex flex-col ${alignCls}`}>
-        <div className="w-full truncate text-sm font-bold leading-tight">{pokemonName}</div>
+        {/* Hierarchy: the name is the biggest thing on the card, the type and
+            ability chips are supporting detail. They were all within a step of
+            each other, so nothing led. */}
+        <div className="w-full truncate text-[17px] font-extrabold leading-tight">
+          {pokemonName}
+        </div>
 
         {/* One line, always: the badges shrink to fit rather than wrapping or
             spilling out of the fixed-width card. See `typeRowFontSize`. */}
@@ -804,17 +813,22 @@ export function CombatPanel({
             {Math.round(hp)}
           </span>
         </div>
-        {(abilityName || immune || disadvantaged || statuses.length > 0) && (
-          <div className={`mt-1 flex w-full flex-wrap gap-0.5 ${justifyCls}`}>
+        {/* Ability only. The IMMUNE/WEAK pills are now the card's border, and
+            the status pills are gone entirely: every status already animates on
+            the sprite itself (burn flames, freeze, sparks, the confusion
+            orbit), so repeating it here as an emoji chip was a second, quieter
+            copy of information the player is already watching. */}
+        {abilityName && (
+          <div className={`mt-1 flex w-full ${justifyCls}`}>
             {abilityName && (
               <Popover>
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    className="flex max-w-full items-center gap-0.5 rounded-xl bg-primary/10 px-1.5 py-[1px] font-pixel-xs text-primary press"
+                    className="press flex max-w-full items-center gap-0.5 rounded-xl bg-primary/10 px-1.5 py-[1px] font-pixel text-[7px] uppercase leading-none tracking-wide text-primary"
                   >
                     <span className="min-w-0 truncate text-left">{abilityName}</span>
-                    <Info className="mt-[1px] h-2.5 w-2.5 shrink-0 opacity-70" />
+                    <Info className="h-2 w-2 shrink-0 opacity-70" />
                   </button>
                 </PopoverTrigger>
                 <PopoverContent
@@ -828,24 +842,6 @@ export function CombatPanel({
                 </PopoverContent>
               </Popover>
             )}
-            {immune && (
-              <span className="rounded-full bg-hp-good/20 px-1.5 py-[1px] font-pixel-xs text-hp-good">
-                IMMUNE
-              </span>
-            )}
-            {disadvantaged && !immune && (
-              <span className="rounded-full bg-destructive/20 px-1.5 py-[1px] font-pixel-xs text-destructive">
-                WEAK
-              </span>
-            )}
-            {statuses.map((s) => (
-              <span
-                key={s.kind}
-                className={`rounded-full px-1.5 py-[1px] font-pixel-xs ${s.kind === "confused" ? "bg-poke-yellow/30 text-foreground" : "bg-purple-500/20 text-purple-700"}`}
-              >
-                {STATUS_META[s.kind].emoji}
-              </span>
-            ))}
           </div>
         )}
       </div>
