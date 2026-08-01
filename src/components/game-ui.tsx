@@ -29,15 +29,30 @@ function categoryArtFor(item: ItemDef): string | null {
  * surface renders items identically. If the item's own PokeAPI sprite fails to
  * load it falls back to its category art (berries / potions); items with no
  * category art render nothing. */
-export function ItemIcon({ item, className }: { item: ItemDef; className: string }) {
+export function ItemIcon({
+  item,
+  className,
+  fallback = null,
+}: {
+  item: ItemDef;
+  className: string;
+  /**
+   * What to render once the sprite and the category art have both failed.
+   *
+   * Defaults to nothing, which is right wherever the item is NAMED next to its
+   * icon — an empty slot beats a broken-image glyph. Callers that show the icon
+   * ALONE have to pass something, or a 404 leaves the player looking at a
+   * reward they cannot identify (see the level-up screen's reward chips).
+   */
+  fallback?: React.ReactNode;
+}) {
   // Tracked with the item id so switching items restarts the ladder instead of
   // inheriting the previous item's failures.
   const [failure, setFailure] = useState<{ id: string; stage: 1 | 2 }>({ id: "", stage: 1 });
   const stage = failure.id === item.id ? failure.stage : 0;
   const categoryArt = categoryArtFor(item);
 
-  // Out of fallbacks — an empty slot beats a broken-image icon.
-  if (stage === 2 || (stage === 1 && !categoryArt)) return null;
+  if (stage === 2 || (stage === 1 && !categoryArt)) return <>{fallback}</>;
 
   // Dream World sprites (used by X Accuracy) fill their whole canvas with no
   // padding, unlike the flat in-game item sprites (~2/3 fill) used by every
