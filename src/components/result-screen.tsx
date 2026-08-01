@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { motion, type TargetAndTransition } from "framer-motion";
 import { Share2 } from "lucide-react";
 import { AppIcon } from "@/components/app-icon";
@@ -6,24 +6,56 @@ import { PokemonSprite, SpriteBurst } from "@/components/game-ui";
 import { MissedReview } from "@/components/MissedReview";
 import { Button } from "@/components/ui/button";
 import { COIN_ICON, RESULT_ICON, REWARD_ICON, TP_ICON } from "@/lib/app-icons";
+import { useSpriteFootPad } from "@/lib/sprite-foot";
 import { useGameStore } from "@/lib/store";
-import {
-  PLATFORM_SURFACE,
-  RESULT_ART,
-  SPRITE_FOOT_PAD,
-  trimmedArtStyles,
-  type ArtPadding,
-} from "@/lib/result-art";
+import { PLATFORM_SURFACE, RESULT_ART, trimmedArtStyles, type ArtPadding } from "@/lib/result-art";
 
-/** A square outcome wordmark shown at the height of its lettering. */
-function OutcomeWordmark({ src, alt, pad }: { src: string; alt: string; pad: ArtPadding }) {
+/**
+ * A square outcome wordmark shown at the height of its lettering — with the
+ * text it replaced kept as a fallback.
+ *
+ * The fallback is not belt-and-braces. This art carries the ONLY title on the
+ * screen, so an image that does not arrive leaves a blank band where the
+ * heading should be and the result reads as half-rendered (owner report
+ * 2026-08-01, on the Elite Four win). Whatever the cause on the day — a cold
+ * cache, a service worker mid-update, a flaky connection — a screen with no
+ * title is not an acceptable outcome, so failure falls back to the eyebrow and
+ * heading this replaced.
+ */
+function OutcomeWordmark({
+  src,
+  alt,
+  pad,
+  eyebrow,
+  heading,
+  eyebrowClass,
+  headingClass,
+}: {
+  src: string;
+  alt: string;
+  pad: ArtPadding;
+  eyebrow: string;
+  heading: string;
+  eyebrowClass: string;
+  headingClass: string;
+}) {
+  const [failed, setFailed] = useState(false);
   const s = trimmedArtStyles(pad);
+  if (failed) {
+    return (
+      <>
+        <div className={`font-pixel-xs uppercase tracking-[0.25em] ${eyebrowClass}`}>{eyebrow}</div>
+        <h1 className={`mt-2 font-display-xl ${headingClass}`}>{heading}</h1>
+      </>
+    );
+  }
   return (
     <div className="relative w-full max-w-[300px]" style={s.wrapper}>
       <img
         src={encodeURI(src)}
         alt={alt}
         draggable={false}
+        onError={() => setFailed(true)}
         className="absolute left-0 top-0 w-full select-none"
         style={s.image}
       />
@@ -53,6 +85,10 @@ function PartnerStage({
   const art = won ? RESULT_ART.platformWin : RESULT_ART.platformLose;
   const surface = won ? PLATFORM_SURFACE.win : PLATFORM_SURFACE.lose;
   const src = won ? RESULT_ICON.platformWin : RESULT_ICON.platformLose;
+  const [platformFailed, setPlatformFailed] = useState(false);
+  // Measured off this species' own sprite rather than assumed — see
+  // lib/sprite-foot.ts for why a shared constant could never land them all.
+  const footPad = useSpriteFootPad(partnerId);
 
   // Everything is derived from one width so the two layers cannot drift apart.
   const platformW = PLATFORM_W;
@@ -62,11 +98,11 @@ function PartnerStage({
   const surfaceFromBottom = platformW * (1 - art.bottom - surface);
   // The sprite's own bottom edge sits below the surface by its empty band, so
   // the visible feet land ON the line rather than above it.
-  const spriteBottom = surfaceFromBottom - spriteW * SPRITE_FOOT_PAD;
+  const spriteBottom = surfaceFromBottom - spriteW * footPad;
 
   // Centre of the visible creature, measured from the box's bottom edge: the
   // sprite's own middle sits above its empty foot band, not at its box centre.
-  const glowCentre = spriteBottom + spriteW * (0.5 + SPRITE_FOOT_PAD / 2);
+  const glowCentre = spriteBottom + spriteW * (0.5 + footPad / 2);
   // Smaller and much fainter on a loss: the defeat sprite is drawn at 80%
   // opacity, so a bright burst behind it shines straight THROUGH the creature
   // and the rays read as painted on top of it.
@@ -97,14 +133,34 @@ function PartnerStage({
       >
         <SpriteBurst tint={won ? "rgba(255,214,120,0.6)" : "rgba(150,125,205,0.13)"} />
       </div>
-      <img
-        src={encodeURI(src)}
-        alt=""
-        aria-hidden
-        draggable={false}
-        className="pointer-events-none absolute left-0 w-full select-none"
-        style={{ bottom: -platformW * art.bottom }}
-      />
+      {platformFailed ? (
+        // Same reasoning as the wordmark's fallback: without SOMETHING under
+        // the partner it hangs in mid-air, which is the exact complaint this
+        // artwork was added to fix. This is the drawn disc the art replaced.
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 -translate-x-1/2 rounded-[50%]"
+          style={{
+            width: platformW * 0.62,
+            height: platformW * 0.18,
+            bottom: surfaceFromBottom - platformW * 0.09,
+            background: won
+              ? "radial-gradient(ellipse at 50% 35%, oklch(0.88 0.16 145) 0%, oklch(0.72 0.18 145) 55%, oklch(0.55 0.16 150) 100%)"
+              : "oklch(0 0 0 / 0.4)",
+            filter: won ? undefined : "blur(2px)",
+          }}
+        />
+      ) : (
+        <img
+          src={encodeURI(src)}
+          alt=""
+          aria-hidden
+          draggable={false}
+          onError={() => setPlatformFailed(true)}
+          className="pointer-events-none absolute left-0 w-full select-none"
+          style={{ bottom: -platformW * art.bottom }}
+        />
+      )}
       <motion.div
         animate={animate}
         transition={{ duration: won ? 1.4 : 2, repeat: Infinity }}
@@ -300,6 +356,10 @@ export function ResultScreen({
             src={RESULT_ICON.victory}
             alt="Battle won — Victory!"
             pad={RESULT_ART.victory}
+            eyebrow="★ Battle Won ★"
+            heading="Victory!"
+            eyebrowClass="text-primary"
+            headingClass="text-foreground"
           />
           <p className="mt-2 text-sm text-foreground/70">
             {opponentName} defeated · {correctCount}/{totalQuestions} correct
@@ -365,7 +425,12 @@ export function ResultScreen({
           </div>
         </div>
 
-        <div className="relative z-10 mx-auto mt-auto w-full max-w-sm space-y-2 pt-8">
+        {/* `pb-*` on the block, not only on the scroll container. A flex column
+          that scrolls does NOT reliably honour its own padding-bottom past the
+          overflow point, so with a long missed-answers list the last button
+          ran off the bottom of the screen (owner report 2026-08-01). Spacing
+          the last child from the inside always survives. */}
+        <div className="relative z-10 mx-auto mt-auto w-full max-w-sm space-y-2 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-8">
           {/* Next Battle starts the next one on the spot when the caller gives us
               a way to (owner request 2026-07-26 — keep the player battling
               instead of dropping them on the hub). Modes with nothing to start
@@ -425,6 +490,10 @@ export function ResultScreen({
           src={RESULT_ICON.defeat}
           alt="Battle lost — So close!"
           pad={RESULT_ART.defeat}
+          eyebrow="Battle Lost"
+          heading="So close!"
+          eyebrowClass="text-poke-blue/80"
+          headingClass="text-white"
         />
         <p className="mt-2 text-sm text-white/60">
           {opponentName} wins · {correctCount}/{totalQuestions} correct
@@ -455,7 +524,12 @@ export function ResultScreen({
         />
       </div>
 
-      <div className="relative z-10 mx-auto mt-auto w-full max-w-sm space-y-2 pt-8">
+      {/* `pb-*` on the block, not only on the scroll container. A flex column
+          that scrolls does NOT reliably honour its own padding-bottom past the
+          overflow point, so with a long missed-answers list the last button
+          ran off the bottom of the screen (owner report 2026-08-01). Spacing
+          the last child from the inside always survives. */}
+      <div className="relative z-10 mx-auto mt-auto w-full max-w-sm space-y-2 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-8">
         {!hideRematch && (
           <Button
             size="lg"
