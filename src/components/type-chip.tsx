@@ -10,13 +10,15 @@ import { typeColorVar } from "@/lib/type-color";
  * the shape makes the icon inherit whatever the chip's text colour already is,
  * so the two can never disagree — and it costs no second asset.
  *
- * Art is public/types/*.webp, cropped out of PokéAPI's Gen-VIII type badges by
- * scripts/build-type-icons.mjs. A missing file simply masks nothing and the
- * chip shows its label alone, which is a legible state rather than a broken
- * one.
+ * Art is public/types/*.svg, traced out of PokéAPI's Gen-VIII type badges by
+ * scripts/build-type-icons.mjs. Vector, not the 44x44 raster it started as:
+ * the source block is smaller than several of the places this is drawn, so a
+ * bitmap mask was already soft on the type-picker's large chips and had no
+ * headroom at all. A missing file simply masks nothing and the chip shows its
+ * label alone, which is a legible state rather than a broken one.
  */
 export function TypeIcon({ type, className = "h-4 w-4" }: { type: PokeType; className?: string }) {
-  const url = `url(/types/${type}.webp)`;
+  const url = `url(/types/${type}.svg)`;
   return (
     <span
       aria-hidden
