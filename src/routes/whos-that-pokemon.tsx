@@ -6,6 +6,7 @@ import type { ItemId } from "@/lib/game-data";
 import { rollLevelUpRewards } from "@/lib/level-rewards";
 import { PokeballSpinner, PokemonSprite } from "@/components/game-ui";
 import { TypeChip } from "@/components/type-chip";
+import { Button } from "@/components/ui/button";
 import { WhosThatWordmark } from "@/components/whos-that-wordmark";
 import { playCry, playSfx, stopBgm, revealPokemon, playWhosThatShout } from "@/lib/audio";
 import { answerHaptic } from "@/lib/haptics";
@@ -85,7 +86,8 @@ export function WhosThatPokemon() {
   const [dexNonce, setDexNonce] = useState(0);
   const [timeLeft, setTimeLeft] = useState(ANSWER_SECONDS);
   const [now, setNow] = useState(Date.now());
-  const initRef = useRef(false);
+  const [startNonce, setStartNonce] = useState(0);
+  const startedRef = useRef(-1);
   const burnedRef = useRef(false);
   const resolvedRef = useRef(false);
 
@@ -95,9 +97,17 @@ export function WhosThatPokemon() {
   // server picks the Pokémon/mode/reward/shiny-roll and enforces the
   // one-round-per-hour gate itself, instead of trusting a client-generated
   // round + client-only hour-key check.
+  //
+  // Keyed on `startNonce` rather than run-once, so the error state can ask for
+  // another attempt. A single failed call used to be terminal: the guard was a
+  // plain boolean, so one dropped request on a phone left the screen showing
+  // "check your connection" with nothing but CLOSE — and the hour's round was
+  // spent from the player's point of view even though the server never issued
+  // one. The ref still guards against a repeat for the SAME nonce, which is
+  // what keeps StrictMode's double-invoke from starting two rounds.
   useEffect(() => {
-    if (initRef.current) return;
-    initRef.current = true;
+    if (startedRef.current === startNonce) return;
+    startedRef.current = startNonce;
     void (async () => {
       try {
         const res = await startWhosThat();
@@ -111,7 +121,7 @@ export function WhosThatPokemon() {
         setLoadError(true);
       }
     })();
-  }, []);
+  }, [startNonce]);
 
   // No background music here — only the "Who's that Pokémon?!" voice shout plays.
   useEffect(() => {
@@ -320,14 +330,27 @@ export function WhosThatPokemon() {
     return (
       <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-poke-cream px-5 text-center">
         <div className="font-pixel text-[10px] text-poke-dark/60">
-          Couldn't load — check your connection.
+          Couldn&apos;t load — check your connection.
         </div>
-        <button
-          onClick={goHome}
-          className="rounded-full border-2 border-poke-dark/15 bg-white px-5 py-2.5 font-pixel text-[10px] text-poke-dark shadow-card press"
-        >
-          CLOSE
-        </button>
+        <div className="btn-stack w-full max-w-[260px]">
+          <Button
+            size="action"
+            onClick={() => {
+              setLoadError(false);
+              setStartNonce((n) => n + 1);
+            }}
+            className="w-full bg-primary text-primary-foreground shadow-card"
+          >
+            TRY AGAIN
+          </Button>
+          <Button
+            size="action"
+            onClick={goHome}
+            className="w-full border-2 border-poke-dark/15 bg-white text-poke-dark shadow-card"
+          >
+            CLOSE
+          </Button>
+        </div>
       </div>
     );
   }
