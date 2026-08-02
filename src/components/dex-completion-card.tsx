@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { BookOpen, Check, Eye, Gift, Sparkles } from "lucide-react";
+import { BookOpen, Check, Eye, Sparkles } from "lucide-react";
 import { AppIcon } from "@/components/app-icon";
 import { MiniPokeball } from "@/components/game-ui";
 import { COIN_ICON, LOCK_ICON, REWARD_ICON, TP_ICON } from "@/lib/app-icons";
@@ -38,41 +38,82 @@ const REWARD_ART: Record<DexRewardIcon, string> = {
 };
 
 /**
- * One rung of the reward strip: a circular art badge with its threshold under
- * it, in one of three states.
+ * One rung of the ladder — and, once it unlocks, the control that claims it.
  *
- * Sized off the viewport rather than fixed, because the whole strip has to sit
- * beside the completion pill AND the Claim button on one row — the reference
- * design is a desktop-width bar and a 320px phone has about a quarter of that
- * to spend.
+ * Sized off the viewport rather than fixed: four rungs plus their labels have to
+ * fit the width of a 320px phone with room to spare at the ends for the track's
+ * inset.
+ *
+ * There is no separate Claim button any more. A button that is disabled most of
+ * the time still costs its width all of the time, and it pointed at a reward
+ * that was already on screen; tapping the reward itself says the same thing
+ * with nothing added to the row.
+ *
+ * A claimable rung is the only one that reacts to a tap, so it is the only one
+ * that advertises: it grows, glows and pulses. Locked and claimed rungs stay
+ * inert on purpose — an affordance nobody can act on is a worse lie than no
+ * affordance at all.
+ *
+ * `role="button"` on a span rather than a real <button>, because this sits
+ * inside the card's own flip button and nested buttons are invalid HTML.
  */
-function Milestone({ milestone, state }: { milestone: DexMilestone; state: DexMilestoneState }) {
+function Milestone({
+  milestone,
+  state,
+  onClaim,
+}: {
+  milestone: DexMilestone;
+  state: DexMilestoneState;
+  onClaim: () => void;
+}) {
   const reward = DEX_MILESTONE_REWARDS[milestone];
+  const claimable = state === "claimable";
+  const claim = (e: React.SyntheticEvent) => {
+    if (!claimable) return;
+    // The tap must claim WITHOUT also turning the card over.
+    e.stopPropagation();
+    onClaim();
+  };
   return (
     <div className="flex flex-col items-center gap-0.5">
-      <div
-        className={`relative flex h-[clamp(22px,7vw,30px)] w-[clamp(22px,7vw,30px)] items-center justify-center rounded-full bg-white shadow-card ring-2 ${
-          state === "claimed"
-            ? "ring-hp-good"
-            : state === "claimable"
-              ? "ring-poke-yellow"
-              : "ring-white/45"
-        }`}
-      >
-        {/* A locked rung shows the padlock OVER a dimmed glyph rather than
+      {/* Fixed-height slot sized to the LARGEST rung, so the claimable one can
+          grow without shunting its own threshold label below the other three. */}
+      <span className="flex h-[clamp(26px,8.2vw,34px)] items-center justify-center">
+        <span
+          role={claimable ? "button" : undefined}
+          tabIndex={claimable ? 0 : undefined}
+          aria-label={claimable ? `Claim the ${milestone}% reward` : undefined}
+          onClick={claim}
+          onKeyDown={(e) => {
+            if (e.key !== "Enter" && e.key !== " ") return;
+            e.preventDefault();
+            claim(e);
+          }}
+          className={`relative flex items-center justify-center rounded-full bg-white shadow-card ring-2 ${
+            claimable
+              ? "press h-[clamp(26px,8.2vw,34px)] w-[clamp(26px,8.2vw,34px)] animate-pulse ring-poke-yellow ring-offset-2 ring-offset-primary"
+              : `h-[clamp(22px,7vw,30px)] w-[clamp(22px,7vw,30px)] ${
+                  state === "claimed" ? "ring-hp-good" : "ring-white/45"
+                }`
+          }`}
+        >
+          {/* A locked rung shows the padlock OVER a dimmed glyph rather than
             hiding what it pays — the ladder is the reason to keep filling the
             generation, so it has to be legible from the first percent. */}
-        <AppIcon
-          src={REWARD_ART[reward.icon]}
-          className={`h-[78%] w-[78%] ${state === "locked" ? "opacity-30" : ""}`}
-        />
-        {state === "locked" && <AppIcon src={LOCK_ICON} className="absolute h-3 w-3 opacity-90" />}
-        {state === "claimed" && (
-          <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-hp-good ring-2 ring-primary">
-            <Check className="h-2 w-2 text-white" strokeWidth={4} />
-          </span>
-        )}
-      </div>
+          <AppIcon
+            src={REWARD_ART[reward.icon]}
+            className={`h-[78%] w-[78%] ${state === "locked" ? "opacity-30" : ""}`}
+          />
+          {state === "locked" && (
+            <AppIcon src={LOCK_ICON} className="absolute h-3 w-3 opacity-90" />
+          )}
+          {state === "claimed" && (
+            <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-hp-good ring-2 ring-primary">
+              <Check className="h-2 w-2 text-white" strokeWidth={4} />
+            </span>
+          )}
+        </span>
+      </span>
       {/* On the red face the threshold is white — the old foreground greys were
           tuned for a card background and vanish against the primary fill. */}
       <span
@@ -113,15 +154,14 @@ function StatTile({
 }
 
 /**
- * Per-generation completion, its four reward rungs, and a Claim button — with
- * the caught/seen/shiny/total counts on the back, turned to every few seconds.
+ * Per-generation completion and its four reward rungs, with the
+ * caught/seen/shiny/total counts on the back, turned to every few seconds.
  *
- * Laid out as the owner's reference bar: a tinted completion pill on the left,
- * a captioned reward strip with chevrons in the middle, the Claim button on the
- * right, all on ONE row. The reference is a ~1400px desktop bar and this has
- * ~334px to work with, so every piece is sized in viewport units and the pill's
- * label truncates rather than wrapping — the row structure is what carries the
- * design, and it is what breaks first if anything is allowed to grow.
+ * The front is one red band: a single centred line naming the region and its
+ * percentage, over a progress bar whose rungs ARE the rewards. There is no
+ * Claim button — an unlocked rung is claimed by tapping it, which is what lets
+ * the card be a line and a bar rather than three columns fighting for a phone's
+ * width.
  *
  * Reactive to the Pokedex's generation filter: switching to Johto retitles this
  * "Johto Completion" and repoints every number and every rung at that
@@ -171,12 +211,12 @@ export function DexCompletionCard({ gen }: { gen: number }) {
 
   const pct = Math.round(stats.pct * 1000) / 10;
 
-  const onClaim = () => {
-    if (claimable === null) return;
-    const res = claimDexReward(gen, claimable, useGameStore.getState());
+  const onClaim = (milestone: DexMilestone) => {
+    hold();
+    const res = claimDexReward(gen, milestone, useGameStore.getState());
     if (!res) return;
     playSfx("claim_reward");
-    toast.success(`${region} ${claimable}% complete`, {
+    toast.success(`${region} ${milestone}% complete`, {
       description: res.text,
       duration: 4000,
     });
@@ -203,46 +243,16 @@ export function DexCompletionCard({ gen }: { gen: number }) {
             aria-label={`${region} completion — show caught, seen and shiny counts`}
             className={`${faceCls} flex-col gap-1.5 bg-gradient-to-br from-primary to-primary/80 px-2.5`}
           >
-            <div className="flex w-full items-center gap-2">
-              {/* Centred title + percentage. The pokeball balances the Claim
-                  button on the other side so the text lands in the true middle
-                  of the card rather than the middle of the space left over. */}
-              <MiniPokeball className="hidden h-5 w-5 shrink-0 min-[360px]:block" />
-              <div className="min-w-0 flex-1 text-center">
-                <div className="truncate text-[8px] font-bold uppercase leading-none tracking-wide text-white/85">
-                  {region} Completion
-                </div>
-                <div className="mt-1 text-[17px] font-extrabold leading-none tabular-nums text-white">
-                  {pct}%
-                </div>
-              </div>
-
-              {/* Claim. A real button nested inside the flip button, so its tap
-                  must not also turn the card over. */}
-              <span
-                role="button"
-                tabIndex={0}
-                aria-disabled={claimable === null}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  hold();
-                  onClaim();
-                }}
-                onKeyDown={(e) => {
-                  if (e.key !== "Enter" && e.key !== " ") return;
-                  e.preventDefault();
-                  e.stopPropagation();
-                  hold();
-                  onClaim();
-                }}
-                className={`press flex shrink-0 items-center gap-0.5 rounded-xl px-2 py-1.5 text-[11px] font-extrabold ${
-                  claimable !== null
-                    ? "bg-poke-yellow text-poke-dark shadow-card"
-                    : "bg-black/20 text-white/55"
-                }`}
-              >
-                <Gift className="h-3 w-3 shrink-0" />
-                Claim
+            {/* Title and percentage on ONE centred line. Stacked they read as
+                two facts; side by side they read as the one sentence they are.
+                With the Claim button gone there is width to spare for it. */}
+            <div className="flex w-full items-center justify-center gap-1.5">
+              <MiniPokeball className="h-4 w-4 shrink-0" />
+              <span className="truncate text-[9px] font-bold uppercase leading-none tracking-wide text-white/85">
+                {region} Completion
+              </span>
+              <span className="text-[15px] font-extrabold leading-none tabular-nums text-white">
+                {pct}%
               </span>
             </div>
 
@@ -279,7 +289,11 @@ export function DexCompletionCard({ gen }: { gen: number }) {
                   className="absolute top-0 -translate-x-1/2"
                   style={{ left: `calc(var(--rung) / 2 + ${m / 100} * (100% - var(--rung)))` }}
                 >
-                  <Milestone milestone={m} state={dexMilestoneState(m, stats, gen, claimedList)} />
+                  <Milestone
+                    milestone={m}
+                    state={dexMilestoneState(m, stats, gen, claimedList)}
+                    onClaim={() => onClaim(m)}
+                  />
                 </div>
               ))}
               {/* Reserves the row's height: the rungs above are absolute and so
