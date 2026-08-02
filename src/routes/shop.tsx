@@ -287,7 +287,7 @@ function ShopPage() {
   return (
     <div className="bg-poke-cream h-full w-full overflow-y-auto pb-nav safe-x">
       {/* Hero */}
-      <div className="px-5 pb-5 pt-[calc(env(safe-area-inset-top)+1rem)]">
+      <div className="screen-x pb-5 pt-[calc(env(safe-area-inset-top)+1rem)]">
         <p className="font-pixel-xs text-primary">WELCOME TO</p>
         <div className="mt-1 flex items-center justify-between gap-3">
           <h1 className="font-display-xl text-foreground">PokéMart</h1>
@@ -317,7 +317,7 @@ function ShopPage() {
         </div>
       </div>
 
-      <div className="px-5 pb-8 pt-2">
+      <div className="screen-x pb-8 pt-2">
         {/* Daily Gift */}
         {giftClaimable ? (
           <button

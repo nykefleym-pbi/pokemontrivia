@@ -577,7 +577,7 @@ function ProfilePage() {
   return (
     <div className="bg-poke-cream h-full w-full overflow-y-auto pb-nav safe-x">
       {/* Hero strip */}
-      <div className="px-5 pb-5 pt-[calc(env(safe-area-inset-top)+1rem)]">
+      <div className="screen-x pb-5 pt-[calc(env(safe-area-inset-top)+1rem)]">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -612,7 +612,7 @@ function ProfilePage() {
         </motion.div>
       </div>
 
-      <div className="px-5 pb-8 pt-4">
+      <div className="screen-x pb-8 pt-4">
         {/* Partner card */}
         {/* Stat cards */}
         <div className="grid grid-cols-2 gap-3">
@@ -767,7 +767,7 @@ function ProfilePage() {
               </div>
             </div>
           </div>
-          <div className="px-5 pb-6">
+          <div className="screen-x pb-6">
             <div className="grid grid-cols-3 gap-2">
               <CardStat label="Level" value={level} />
               <CardStat label="Pokédex" value={pokedexCount} />

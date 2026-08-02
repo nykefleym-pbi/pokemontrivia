@@ -73,7 +73,17 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
       // centring overflowing content pushes the overflow out of BOTH ends and
       // the top is unreachable, so the wordmark's "AMAZING!" ribbon was cut off
       // and could not be scrolled back into view.
-      className="fixed inset-0 z-[110] flex flex-col items-center overflow-hidden px-5"
+      // `justify-between`, so whatever height is left over is shared out as an
+      // even gap between the bands. Pinning it anywhere — all to the trainer,
+      // or all to one spacer — just moves the hole: the screen reads as either
+      // a marooned sprite or a chasm above the rewards. Spread across five
+      // gaps the same slack reads as breathing room.
+      //
+      // Safe here in a way it was NOT when this centred: content can no longer
+      // exceed the viewport, because the trainer band shrinks first (see
+      // below). `justify-between` would push overflow out of the bottom only,
+      // never off the top where it cannot be scrolled back.
+      className="fixed inset-0 z-[110] flex flex-col items-center justify-between overflow-hidden screen-x"
       style={{
         background:
           "radial-gradient(circle at 50% 34%, oklch(0.42 0.09 265) 0%, oklch(0.24 0.06 265) 52%, oklch(0.16 0.04 265) 100%)",
@@ -96,11 +106,16 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
         )}
       </AnimatePresence>
 
-      {/* The slack lives HERE. Everything else is content-sized, so the trainer
-          is what gives way on a short phone — `min-h-0` is what lets it, since
-          a flex item defaults to min-height:auto and would otherwise refuse to
-          shrink below the image and push the button off the screen. */}
-      <div className="relative z-10 flex min-h-0 w-full flex-1 items-center justify-center py-1">
+      {/* Shrink-only: basis 9.5rem, grow 0, shrink 1.
+          `flex-1` here meant the trainer ate ALL the leftover height on a tall
+          phone — the sprite stayed at its cap and sat marooned in a band half
+          again its own size, with a gulf above and below it. Growth is what had
+          to go, not the shrinking: `min-h-0` still lets this collapse on a
+          short phone (a flex item's min-height defaults to `auto` and would
+          otherwise refuse to go below the image), so the trainer is still what
+          gives way rather than the button falling off the bottom. The slack it
+          no longer takes goes to the spacer below the plaques. */}
+      <div className="relative z-10 flex min-h-0 w-full flex-[0_1_9.5rem] items-center justify-center">
         <AnimatePresence>
           {step >= 1 && (
             <motion.div
@@ -109,12 +124,10 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
               // Square, sized off its own height so the burst stays circular at
               // any viewport.
               //
-              // The cap is deliberately modest. The trainer is WHO levelled up,
-              // not WHAT the screen is about — at 17rem it was the largest
-              // thing here and the plaques, which carry the actual news, read
-              // as a footnote under it. The slack it gives up goes to breathing
-              // room around the level change.
-              className="relative h-full max-h-[11rem] max-w-full"
+              // The trainer is WHO levelled up, not WHAT the screen is about —
+              // given its head it was the largest thing here and the plaques,
+              // which carry the actual news, read as a footnote under it.
+              className="relative h-full max-w-full"
               style={{ aspectRatio: "1" }}
             >
               {/* The burst is a positioned sibling of the sprite, so it needs an
@@ -166,7 +179,7 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
             initial={{ opacity: 0, scale: 0.85 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ type: "spring", stiffness: 200 }}
-            className="relative z-10 mt-2 shrink-0 rounded-full bg-poke-dark px-4 py-1.5 text-center shadow-pop"
+            className="relative z-10 shrink-0 rounded-full bg-poke-dark px-4 py-1.5 text-center shadow-pop"
           >
             <div className="flex items-center justify-center gap-1.5 font-pixel-xs uppercase tracking-wide text-poke-yellow">
               <AppIcon src={UI_ICON.badges} className="h-3.5 w-3.5" />
@@ -182,7 +195,7 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="relative z-10 mt-2 w-full max-w-xs shrink-0 rounded-2xl border-2 border-white bg-card px-3 py-2 shadow-pop"
+            className="relative z-10 w-full max-w-xs shrink-0 rounded-2xl border-2 border-white bg-card px-3 py-2 shadow-pop"
           >
             <div className="text-center font-pixel-xs uppercase text-foreground/50">Rewards</div>
             <div className="mt-1.5 flex items-end justify-center gap-3">
@@ -199,7 +212,7 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="relative z-10 mt-2 w-full max-w-xs shrink-0"
+            className="relative z-10 w-full max-w-xs shrink-0"
           >
             <Button
               size="action"

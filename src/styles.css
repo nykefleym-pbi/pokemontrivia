@@ -202,6 +202,19 @@
   --sidebar-border: oklch(0.35 0.04 265);
 }
 
+/**
+ * The app's screen gutter — the space between content and the edge of the
+ * phone. One value, everywhere, so the eye can't catch a seam moving from
+ * Home to the Arena to a result screen.
+ *
+ * It was px-5 on most screens and px-6 on the result screens, and the owner
+ * read both as too tight (2026-08-02). Use this on a SCREEN ROOT; inner cards
+ * and rows keep their own padding.
+ */
+@utility screen-x {
+  padding-inline: 1.75rem;
+}
+
 @utility font-display-xl {
   font-family: var(--font-display);
   font-size: 2rem;
