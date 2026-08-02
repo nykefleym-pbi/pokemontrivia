@@ -1,9 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Sparkles, X, ArrowRight, Volume2, ChevronLeft, Star, Eye } from "lucide-react";
+import { Search, X, Star, Eye } from "lucide-react";
 import { motion } from "framer-motion";
-import { Fragment } from "react";
 import { playCry, playSfx } from "@/lib/audio";
 import { useGameStore } from "@/lib/store";
 import { useStoreHydrated } from "@/lib/store-hydration";
@@ -12,7 +11,7 @@ import { ALL_POKEMON, type PokeType } from "@/lib/pokemon-data";
 import { Input } from "@/components/ui/input";
 import { MiniPokeball, PokemonSprite, TypeBadge } from "@/components/game-ui";
 import { DexCompletionCard } from "@/components/dex-completion-card";
-import { dexBackdropSrc } from "@/lib/dex-backdrop";
+import { DexDetail } from "@/components/dex-detail";
 import { GENERATIONS, generation } from "@/lib/dex-rewards";
 import { parseDexQuery, matchesDexQuery } from "@/lib/dex-search";
 import { dexStatus } from "@/lib/pokedex";
@@ -398,168 +397,27 @@ function PokedexPage() {
           const p = ALL_POKEMON.find((x) => x.id === detailId);
           if (!p) return null;
           const entry = pokedex[detailId];
-          const got = !!entry;
-          const showS = showShiny && entry?.shinyUnlocked;
-          const displayName = got ? p.name : "???";
-          const primaryType = p.types[0];
-          const backdrop = dexBackdropSrc(p.id, primaryType);
-          const columns = buildEvolutionTree(p);
-          const hasEvolution = !(columns.length <= 1 && (columns[0]?.length ?? 0) <= 1);
           return (
-            <div className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-poke-cream">
-              <div
-                className="relative shrink-0 overflow-hidden screen-x pb-10 screen-top"
-                style={{
-                  background: `linear-gradient(160deg, var(--type-${primaryType}) 0%, color-mix(in oklab, var(--type-${primaryType}) 62%, #000) 100%)`,
-                }}
-              >
-                {/* Habitat artwork, over the type gradient rather than instead
-                    of it: a species with no art of its own — or a build with an
-                    empty public/dex — paints the gradient exactly as before.
-                    See lib/dex-backdrop.ts for the two-tier lookup. */}
-                {backdrop && (
-                  <>
-                    <img
-                      src={backdrop}
-                      alt=""
-                      aria-hidden
-                      className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover"
-                    />
-                    {/* The name, the dex number and the type chips are white on
-                        whatever the artwork happens to be. This scrim is what
-                        keeps them legible over a bright sky. */}
-                    <div
-                      className="pointer-events-none absolute inset-0"
-                      style={{
-                        background:
-                          "linear-gradient(180deg, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0.12) 38%, rgba(0,0,0,0) 62%)",
-                      }}
-                    />
-                  </>
-                )}
-                <div className="relative flex items-center justify-between">
-                  <button
-                    onClick={() => setDetailId(null)}
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-white/25 text-white backdrop-blur press"
-                    aria-label="Back"
-                  >
-                    <ChevronLeft className="h-5 w-5" />
-                  </button>
-                  <span className="font-pixel-xs text-white/90">
-                    #{String(p.id).padStart(4, "0")}
-                  </span>
-                </div>
-                <h2 className="relative mt-4 font-display-xl text-white drop-shadow-sm">
-                  {displayName}
-                </h2>
-                <div className="relative mt-2 flex flex-wrap items-center gap-1.5">
-                  {p.types.map((t) => (
-                    <span
-                      key={t}
-                      className="rounded-full bg-white/25 px-3 py-1 font-pixel-xs uppercase text-white backdrop-blur"
-                    >
-                      {t}
-                    </span>
-                  ))}
-                </div>
-                <div className="relative mt-4 flex items-center justify-center">
-                  <div
-                    className={`flex h-56 w-56 items-center justify-center rounded-full ${
-                      // Over artwork the disc becomes a soft vignette that lifts
-                      // the sprite off a busy scene; over the plain gradient it
-                      // stays the faint highlight it always was.
-                      backdrop ? "bg-black/15 backdrop-blur-[2px]" : "bg-white/10"
-                    }`}
-                  >
-                    <PokemonSprite
-                      id={p.id}
-                      shiny={!!showS}
-                      alt={displayName}
-                      className={`sprite h-44 w-44 ${got ? "" : "sprite-silhouette"}`}
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="flex-1 space-y-4 screen-x screen-bottom pt-5">
-                <div className="rounded-3xl bg-card p-5 shadow-card">
-                  <div className="font-pixel-xs mb-2 text-primary">POKÉDEX ENTRY</div>
-                  {got ? (
-                    <PokedexFlavor pokemonId={p.id} />
-                  ) : (
-                    <p className="text-sm italic leading-relaxed text-foreground/55">
-                      Catch this Pokémon to read its Pokédex entry.
-                    </p>
-                  )}
-                  <button
-                    onClick={() => playCry(p.id)}
-                    className="mt-4 inline-flex items-center gap-2 rounded-full border border-primary/30 px-4 py-2 text-sm font-bold text-primary press"
-                  >
-                    <Volume2 className="h-4 w-4" /> Play cry
-                  </button>
-                  {entry?.shinyUnlocked && (
-                    <button
-                      onClick={() =>
-                        setShowShiny((v) => {
-                          if (!v) playSfx("shiny");
-                          return !v;
-                        })
-                      }
-                      className="ml-2 mt-4 inline-flex items-center gap-2 rounded-full border border-poke-yellow/50 px-4 py-2 text-sm font-bold text-foreground press"
-                    >
-                      <Sparkles className="h-4 w-4 text-poke-yellow" /> {showS ? "Normal" : "Shiny"}
-                    </button>
-                  )}
-                </div>
-                <div className="rounded-3xl bg-card p-5 shadow-card">
-                  <div className="font-pixel-xs mb-3 text-primary">EVOLUTION LINE</div>
-                  {!hasEvolution ? (
-                    <p className="text-center text-xs text-foreground/55">
-                      This Pokémon doesn't evolve.
-                    </p>
-                  ) : (
-                    <div className="flex items-start gap-1 overflow-x-auto">
-                      {columns.map((col, ci) => (
-                        <Fragment key={ci}>
-                          {ci > 0 && (
-                            <div className="flex h-[72px] items-center px-0.5">
-                              <ArrowRight className="h-4 w-4 text-foreground/40" />
-                            </div>
-                          )}
-                          <div
-                            className={
-                              col.length > 4 ? "grid grid-cols-2 gap-1" : "flex flex-col gap-1"
-                            }
-                          >
-                            {col.map((stage) => {
-                              const stageCaught = !!pokedex[stage.id];
-                              return (
-                                <button
-                                  key={stage.id}
-                                  onClick={() => {
-                                    setDetailId(stage.id);
-                                    setShowShiny(false);
-                                  }}
-                                  className="press flex w-[72px] shrink-0 flex-col items-center rounded-2xl p-1.5 active:bg-muted/50"
-                                >
-                                  <PokemonSprite
-                                    id={stage.id}
-                                    alt={stageCaught ? stage.name : "???"}
-                                    className={`sprite h-11 w-11 ${stageCaught ? "" : "sprite-silhouette"}`}
-                                  />
-                                  <span className="mt-0.5 w-full truncate text-center text-[10px] font-bold text-foreground">
-                                    {stageCaught ? stage.name : "???"}
-                                  </span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </Fragment>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+            <DexDetail
+              species={p}
+              caught={!!entry}
+              shinyUnlocked={!!entry?.shinyUnlocked}
+              showShiny={showShiny}
+              onToggleShiny={() =>
+                setShowShiny((v) => {
+                  if (!v) playSfx("shiny");
+                  return !v;
+                })
+              }
+              onPlayCry={() => playCry(p.id)}
+              onSelect={(id) => {
+                setDetailId(id);
+                setShowShiny(false);
+              }}
+              onClose={() => setDetailId(null)}
+              isCaught={(id) => !!pokedex[id]}
+              entry={<PokedexFlavor pokemonId={p.id} />}
+            />
           );
         })()}
     </div>
@@ -641,36 +499,4 @@ function PokedexFlavor({ pokemonId }: { pokemonId: number }) {
   if (loading) return null;
   if (!flavor) return null;
   return <p className="text-sm italic leading-relaxed text-foreground/75">{flavor}</p>;
-}
-
-function buildEvolutionTree(
-  p: import("@/lib/pokemon-data").PokeEntry,
-): import("@/lib/pokemon-data").PokeEntry[][] {
-  const byId = (id: number) => ALL_POKEMON.find((x) => x.id === id);
-  let root = p;
-  const seen = new Set<number>();
-  while (root.evolvesFromId != null && !seen.has(root.evolvesFromId)) {
-    seen.add(root.id);
-    const prev = byId(root.evolvesFromId);
-    if (!prev) break;
-    root = prev;
-  }
-  const columns: import("@/lib/pokemon-data").PokeEntry[][] = [];
-  let frontier = [root];
-  const visited = new Set<number>();
-  while (frontier.length > 0) {
-    const col = frontier.filter((e) => e && !visited.has(e.id));
-    if (col.length === 0) break;
-    col.forEach((e) => visited.add(e.id));
-    columns.push(col);
-    const next: import("@/lib/pokemon-data").PokeEntry[] = [];
-    for (const node of col) {
-      for (const cid of node.evolvesToIds) {
-        const child = byId(cid);
-        if (child && !visited.has(child.id)) next.push(child);
-      }
-    }
-    frontier = next;
-  }
-  return columns;
 }
