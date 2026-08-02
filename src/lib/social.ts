@@ -22,13 +22,65 @@ export interface TrainerProfile {
 }
 
 let bootstrapPromise: Promise<string | null> | null = null;
+let sessionPromise: Promise<string | null> | null = null;
 
-/** Ensure an anonymous session exists; returns the user id (or null on failure). */
-export async function ensureSession(): Promise<string | null> {
+/**
+ * Ensure a usable anonymous session exists; returns the user id (or null).
+ *
+ * "Usable" is the whole point, and is why this is not just `getSession()`.
+ * That call only reads the token cached in local storage — it never asks the
+ * server — so an account deleted server-side still looks signed in for as long
+ * as its JWT has not expired. Every request then fails and NOTHING recovers,
+ * because each retry re-reads the same dead token:
+ *
+ *   auth  403 "User from sub claim in JWT does not exist" (user_not_found)
+ *   db    insert on "profiles" violates foreign key "profiles_id_fkey"
+ *
+ * That is not hypothetical. Deleting a profile now deletes its auth user
+ * (migration 20260802060000), so a hand-deleted test account leaves every
+ * device that was signed into it permanently wedged on "Couldn't load — check
+ * your connection". `getUser()` costs a round trip and settles it against the
+ * server, which is the only way to tell a dead account from a live one.
+ *
+ * A failed check is NOT treated as a dead account unless the server actually
+ * said so. Only a 4xx means "this token is no good"; a request that never
+ * arrived means we are offline, and signing the player out for having no
+ * network would be a far worse bug than the one this fixes.
+ *
+ * Memoised per app load, so the extra round trip happens once rather than on
+ * every one of the ~15 call sites. Only successes are cached — a failure must
+ * be free to retry, or one bad moment at boot would disable syncing until the
+ * app is restarted.
+ */
+export function ensureSession(): Promise<string | null> {
+  if (!sessionPromise) {
+    sessionPromise = resolveSession().then((uid) => {
+      if (uid === null) sessionPromise = null;
+      return uid;
+    });
+  }
+  return sessionPromise;
+}
+
+async function resolveSession(): Promise<string | null> {
   const {
     data: { session },
   } = await supabase.auth.getSession();
-  if (session?.user) return session.user.id;
+  if (session?.user) {
+    const { data, error } = await supabase.auth.getUser();
+    if (!error && data.user) return data.user.id;
+    const status = (error as { status?: number } | null)?.status;
+    // No status at all means the request never reached the server. Keep the
+    // cached session: offline play is supported, deletion is not the default
+    // explanation for a failed fetch.
+    if (typeof status !== "number" || status < 400 || status >= 500) {
+      return session.user.id;
+    }
+    // Local scope only. The server-side session is already gone — that is what
+    // the 4xx said — so asking it to revoke would just fail again and leave the
+    // dead token sitting in storage.
+    await supabase.auth.signOut({ scope: "local" }).catch(() => {});
+  }
   const { data, error } = await supabase.auth.signInAnonymously();
   if (error) {
     console.warn("[social] anon sign-in failed:", error.message);
