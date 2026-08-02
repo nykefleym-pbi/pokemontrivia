@@ -80,7 +80,7 @@ function SplashPage() {
             </div>
 
             {/* hero block */}
-            <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-7 pt-[calc(env(safe-area-inset-top)+2rem)] text-center">
+            <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-7 screen-top text-center">
               <h1 className="mt-6">
                 <AppIcon
                   src={UI_ICON.appLogo}
@@ -97,7 +97,7 @@ function SplashPage() {
             </div>
 
             {/* buttons */}
-            <div className="relative z-10 flex w-full flex-col gap-3 px-7 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-7">
+            <div className="btn-stack screen-x screen-bottom relative z-10 w-full pt-7">
               <Button
                 size="action"
                 className="w-full border-2 border-white bg-primary text-primary-foreground shadow-card press"
@@ -348,7 +348,7 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
   const selectedTrainer = TRAINER_SPRITES.find((t) => t.id === trainerSprite);
 
   return (
-    <div className="flex h-full w-full flex-col screen-x pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+    <div className="flex h-full w-full flex-col screen-x screen-top screen-bottom">
       {/* Top bar */}
       <div className="flex items-center justify-between">
         <button
@@ -389,7 +389,7 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
                 alt="Professor Oak"
                 className="sprite h-[132px] w-[132px] object-contain"
               />
-              <div className="relative -mt-1.5 w-full rounded-2xl bg-card px-[18px] py-3.5 text-center shadow-card">
+              <div className="relative -mt-1.5 w-full rounded-3xl bg-card px-[18px] py-3.5 text-center shadow-card">
                 <div className="absolute left-1/2 top-[-7px] h-3.5 w-3.5 -translate-x-1/2 rotate-45 bg-card" />
                 <div className="relative font-pixel text-[10px] uppercase tracking-wider text-primary">
                   Prof. Oak
@@ -472,7 +472,7 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
                   <button
                     key={t.id}
                     onClick={() => setTrainerSprite(t.id)}
-                    className={`press relative flex flex-col items-center gap-1 rounded-[20px] border-[3px] bg-card px-1.5 py-2.5 shadow-card ${
+                    className={`press relative flex flex-col items-center gap-1 rounded-2xl border-[3px] bg-card px-1.5 py-2.5 shadow-card ${
                       selected ? "border-primary" : "border-transparent"
                     }`}
                   >

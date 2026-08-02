@@ -95,7 +95,7 @@ export function PvpBattleScreen({ questions: rawQuestions, onFinish }: Props) {
     // one mode whose questions were answered on the same paper as the Shop.
     // No BattleStage here — async PvP has no sprites to stand on the platforms,
     // so it takes the artwork as scenery and the same fade underneath.
-    <div className="bg-battle-field relative flex h-full w-full flex-col overflow-hidden px-5 pb-8 pt-6">
+    <div className="bg-battle-field screen-x relative flex h-full w-full flex-col overflow-hidden pb-8 pt-6">
       <div className="battle-stage" aria-hidden />
       <div className="relative z-10 mb-4 flex items-center justify-between">
         <div className="font-pixel-xs text-foreground/60">

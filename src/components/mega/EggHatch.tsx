@@ -68,7 +68,7 @@ export function EggHatch() {
         >
           <div className="absolute inset-0 bg-black/70" />
           <div
-            className="relative w-[330px] max-w-[92vw] overflow-hidden rounded-[28px] bg-card p-6 text-center shadow-card"
+            className="relative w-[330px] max-w-[92vw] overflow-hidden rounded-3xl bg-card p-6 text-center shadow-card"
             onClick={(e) => e.stopPropagation()}
           >
             <button

@@ -330,7 +330,7 @@ export function ResultScreen({
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="relative flex h-full w-full flex-col overflow-y-auto bg-victory screen-x pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)]"
+        className="relative flex h-full w-full flex-col overflow-y-auto bg-victory screen-x screen-top screen-bottom"
       >
         <FallingBits won />
 
@@ -361,7 +361,7 @@ export function ResultScreen({
           </div>
         </div>
 
-        <div className="relative z-10 mx-auto mt-4 w-full max-w-sm rounded-2xl border-2 border-white bg-card p-4 shadow-card">
+        <div className="relative z-10 mx-auto mt-4 w-full max-w-sm rounded-3xl border-2 border-white bg-card p-4 shadow-card">
           {xpEarned > 0 && (
             <Row
               icon={REWARD_ICON.xp}
@@ -416,7 +416,7 @@ export function ResultScreen({
           overflow point, so with a long missed-answers list the last button
           ran off the bottom of the screen (owner report 2026-08-01). Spacing
           the last child from the inside always survives. */}
-        <div className="relative z-10 mx-auto mt-auto w-full max-w-sm space-y-2 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-5">
+        <div className="btn-stack relative z-10 mx-auto mt-auto w-full max-w-sm screen-bottom pt-5">
           {/* Next Battle starts the next one on the spot when the caller gives us
               a way to (owner request 2026-07-26 — keep the player battling
               instead of dropping them on the hub). Modes with nothing to start
@@ -466,7 +466,7 @@ export function ResultScreen({
       ref={fit.ref}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="relative flex h-full w-full flex-col overflow-y-auto bg-defeat screen-x pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)]"
+      className="relative flex h-full w-full flex-col overflow-y-auto bg-defeat screen-x screen-top screen-bottom"
     >
       <FallingBits won={false} />
 
@@ -517,7 +517,7 @@ export function ResultScreen({
           overflow point, so with a long missed-answers list the last button
           ran off the bottom of the screen (owner report 2026-08-01). Spacing
           the last child from the inside always survives. */}
-      <div className="relative z-10 mx-auto mt-auto w-full max-w-sm space-y-2 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-5">
+      <div className="btn-stack relative z-10 mx-auto mt-auto w-full max-w-sm screen-bottom pt-5">
         {!hideRematch && (
           <Button
             size="action"

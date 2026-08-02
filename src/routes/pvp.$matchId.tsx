@@ -116,7 +116,7 @@ function PvpMatchPage() {
 
   if (phase === "not_found") {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-poke-cream px-6 text-center">
+      <div className="screen-x flex h-full w-full flex-col items-center justify-center gap-4 bg-poke-cream text-center">
         <div className="font-display text-lg text-foreground">
           This challenge isn't available anymore.
         </div>
@@ -133,7 +133,7 @@ function PvpMatchPage() {
 
   if (phase === "submit_error") {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-poke-cream px-6 text-center">
+      <div className="screen-x flex h-full w-full flex-col items-center justify-center gap-4 bg-poke-cream text-center">
         <div className="font-display text-lg text-foreground">
           Couldn't submit your result — your answers are still saved here.
         </div>
@@ -151,7 +151,7 @@ function PvpMatchPage() {
 
   if (phase === "inactive") {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-poke-cream px-6 text-center">
+      <div className="screen-x flex h-full w-full flex-col items-center justify-center gap-4 bg-poke-cream text-center">
         <div className="font-display text-lg text-foreground">
           {match?.status === "declined"
             ? "Your opponent declined this challenge."
@@ -174,7 +174,7 @@ function PvpMatchPage() {
   const tied = phase === "result" && myFinal !== null && oppFinal !== null && myFinal === oppFinal;
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-6 bg-poke-cream px-6 text-center">
+    <div className="screen-x flex h-full w-full flex-col items-center justify-center gap-6 bg-poke-cream text-center">
       <img
         src={trainerSpriteUrl(opponentProfile?.trainer_sprite || "red")}
         alt=""

@@ -83,12 +83,10 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
       // exceed the viewport, because the trainer band shrinks first (see
       // below). `justify-between` would push overflow out of the bottom only,
       // never off the top where it cannot be scrolled back.
-      className="fixed inset-0 z-[110] flex flex-col items-center justify-between overflow-hidden screen-x"
+      className="screen-top screen-bottom screen-x fixed inset-0 z-[110] flex flex-col items-center justify-between overflow-hidden"
       style={{
         background:
           "radial-gradient(circle at 50% 34%, oklch(0.42 0.09 265) 0%, oklch(0.24 0.06 265) 52%, oklch(0.16 0.04 265) 100%)",
-        paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)",
-        paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)",
       }}
       onClick={skipToEnd}
     >
@@ -195,7 +193,7 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="relative z-10 w-full max-w-xs shrink-0 rounded-2xl border-2 border-white bg-card px-3 py-2 shadow-pop"
+            className="relative z-10 w-full max-w-xs shrink-0 rounded-3xl border-2 border-white bg-card px-3 py-2 shadow-pop"
           >
             <div className="text-center font-pixel-xs uppercase text-foreground/50">Rewards</div>
             <div className="mt-1.5 flex items-end justify-center gap-3">
