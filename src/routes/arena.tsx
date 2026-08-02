@@ -454,7 +454,7 @@ function ArenaPage() {
     <div className="bg-poke-cream h-full w-full overflow-y-auto pb-nav safe-x">
       {/* Header. Chat lives here now, level with the title, because the list it
           used to hang off is gone — see `latestChatMatchId`. */}
-      <div className="flex items-center justify-between gap-3 screen-x pt-[calc(env(safe-area-inset-top)+1.25rem)] pb-2">
+      <div className="flex items-center justify-between gap-3 screen-x screen-top pb-2">
         <div className="min-w-0">
           <p className="font-pixel-xs text-primary">WELCOME TO</p>
           <h1 className="font-display-lg text-foreground">Battle Arena</h1>

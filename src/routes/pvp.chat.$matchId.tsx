@@ -79,7 +79,7 @@ function PvpChatPage() {
 
   if (phase === "not_found") {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-poke-cream px-6 text-center">
+      <div className="screen-x flex h-full w-full flex-col items-center justify-center gap-4 bg-poke-cream text-center">
         <div className="font-display text-lg text-foreground">
           This chat isn't available anymore.
         </div>

@@ -612,7 +612,7 @@ function MatchPageContent({ matchId }: { matchId: string }) {
 
   if (phase === "not_found") {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-poke-cream px-6 text-center">
+      <div className="screen-x flex h-full w-full flex-col items-center justify-center gap-4 bg-poke-cream text-center">
         <div className="font-display text-lg text-foreground">
           This battle isn't available anymore.
         </div>
@@ -878,7 +878,7 @@ function PvpResultScreen({
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="relative flex h-full w-full flex-col overflow-y-auto bg-victory screen-x pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)]"
+        className="relative flex h-full w-full flex-col overflow-y-auto bg-victory screen-x screen-top screen-bottom"
       >
         {confetti.map((d, i) => (
           <motion.span
@@ -937,7 +937,7 @@ function PvpResultScreen({
           )}
         </div>
 
-        <div className="mx-auto mt-6 w-full max-w-sm rounded-2xl bg-card p-4 text-center shadow-card">
+        <div className="mx-auto mt-6 w-full max-w-sm rounded-3xl bg-card p-4 text-center shadow-card">
           <div className="font-pixel-xs text-foreground/70">{hpLine}</div>
           {berryDrops != null && berryDrops > 0 && (
             <div className="mt-2 flex items-center justify-center gap-1.5 font-display-md text-hp-good">
@@ -949,13 +949,13 @@ function PvpResultScreen({
 
         {friendPrompt}
 
-        <div className="mx-auto mt-auto flex w-full max-w-sm flex-col gap-2 pt-8">
+        <div className="btn-stack mx-auto mt-auto w-full max-w-sm pt-5">
           {onRematch && (
             <Button
               size="action"
               onClick={onRematch}
               disabled={rematchBusy}
-              className="h-14 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop disabled:opacity-70"
+              className="w-full bg-primary text-primary-foreground shadow-pop disabled:opacity-70"
             >
               {rematchBusy ? <Loader2 className="h-5 w-5 animate-spin" /> : "Rematch"}
             </Button>
@@ -965,7 +965,7 @@ function PvpResultScreen({
               size="action"
               variant="outline"
               onClick={onShare}
-              className="h-14 w-full rounded-full border-2 font-bold shadow-card"
+              className="w-full border-2 shadow-card"
             >
               <Share2 className="mr-2 h-4 w-4" />
               Share result
@@ -975,7 +975,7 @@ function PvpResultScreen({
             <Button
               size="action"
               onClick={onBack}
-              className="h-14 flex-1 rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
+              className="flex-1 bg-primary text-primary-foreground shadow-pop"
             >
               Back to Arena
             </Button>
@@ -984,7 +984,7 @@ function PvpResultScreen({
                 size="action"
                 variant="outline"
                 onClick={onChat}
-                className="h-14 flex-1 rounded-full border-2 font-bold shadow-card"
+                className="flex-1 border-2 shadow-card"
               >
                 Chat
               </Button>
@@ -1000,7 +1000,7 @@ function PvpResultScreen({
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="relative flex h-full w-full flex-col overflow-y-auto bg-defeat screen-x pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)]"
+      className="relative flex h-full w-full flex-col overflow-y-auto bg-defeat screen-x screen-top screen-bottom"
     >
       <div className="flex flex-col items-center text-center">
         <div className="font-pixel-xs uppercase tracking-[0.25em] text-poke-blue/80">
@@ -1048,13 +1048,13 @@ function PvpResultScreen({
 
       {friendPrompt}
 
-      <div className="mx-auto mt-auto flex w-full max-w-sm flex-col gap-2 pt-8">
+      <div className="btn-stack mx-auto mt-auto w-full max-w-sm pt-5">
         {onRematch && (
           <Button
             size="action"
             onClick={onRematch}
             disabled={rematchBusy}
-            className="h-14 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop disabled:opacity-70"
+            className="w-full bg-primary text-primary-foreground shadow-pop disabled:opacity-70"
           >
             {rematchBusy ? <Loader2 className="h-5 w-5 animate-spin" /> : "Rematch"}
           </Button>
@@ -1063,7 +1063,7 @@ function PvpResultScreen({
           <Button
             size="action"
             onClick={onBack}
-            className="h-14 flex-1 rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
+            className="flex-1 bg-primary text-primary-foreground shadow-pop"
           >
             Back to Arena
           </Button>
@@ -1077,7 +1077,7 @@ function PvpResultScreen({
               // on this dark screen and the button read as blank (owner report
               // 2026-07-26). The translucent fill is the same treatment Solo's
               // defeat screen gives "Back home".
-              className="h-14 flex-1 rounded-full border-2 border-white/30 bg-white/[0.04] font-bold text-white shadow-card hover:bg-white/10 hover:text-white"
+              className="flex-1 border-2 border-white/30 bg-white/[0.04] text-white shadow-card hover:bg-white/10 hover:text-white"
             >
               Chat
             </Button>

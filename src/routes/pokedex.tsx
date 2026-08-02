@@ -112,7 +112,7 @@ function PokedexPage() {
   return (
     <div className="bg-poke-cream h-full w-full overflow-y-auto pb-nav safe-x">
       {/* Hero */}
-      <div className="screen-x pb-5 pt-[calc(env(safe-area-inset-top)+1rem)]">
+      <div className="screen-x pb-5 screen-top">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             {trainerName && (
@@ -413,7 +413,7 @@ function PokedexPage() {
           return (
             <div className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-poke-cream">
               <div
-                className="relative shrink-0 overflow-hidden screen-x pb-10 pt-[calc(env(safe-area-inset-top)+1rem)]"
+                className="relative shrink-0 overflow-hidden screen-x pb-10 screen-top"
                 style={{
                   background: `linear-gradient(160deg, var(--type-${primaryType}) 0%, color-mix(in oklab, var(--type-${primaryType}) 62%, #000) 100%)`,
                 }}
@@ -485,7 +485,7 @@ function PokedexPage() {
                   </div>
                 </div>
               </div>
-              <div className="flex-1 space-y-4 screen-x pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-5">
+              <div className="flex-1 space-y-4 screen-x screen-bottom pt-5">
                 <div className="rounded-3xl bg-card p-5 shadow-card">
                   <div className="font-pixel-xs mb-2 text-primary">POKÉDEX ENTRY</div>
                   {got ? (

@@ -212,7 +212,7 @@ export function DailyScreen({ questions, onExit }: { questions: Trivia[]; onExit
           animate={{ width: `${progressPct}%` }}
         />
       </div>
-      <div className="flex shrink-0 items-center justify-between pt-[calc(env(safe-area-inset-top)+1rem)] pb-1 px-[max(1.25rem,env(safe-area-inset-left))]">
+      <div className="flex shrink-0 items-center justify-between screen-top pb-1 px-[max(1.25rem,env(safe-area-inset-left))]">
         <div className="w-9" />
         <div className="rounded-full bg-poke-dark px-2.5 py-1 font-pixel text-[9px] text-poke-yellow shadow-card">
           DAILY · {idx + 1}/{total}
@@ -243,7 +243,7 @@ export function DailyScreen({ questions, onExit }: { questions: Trivia[]; onExit
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="relative flex-1 min-h-0 flex items-center justify-center px-4">
+      <div className="screen-x relative flex-1 min-h-0 flex items-center justify-center">
         <motion.div
           className="pointer-events-none absolute left-1/2 top-[18%] z-10 -translate-x-1/2"
           animate={{
@@ -265,7 +265,7 @@ export function DailyScreen({ questions, onExit }: { questions: Trivia[]; onExit
         <PokeballPattern marks={pattern} />
       </div>
 
-      <div className="relative shrink-0 rounded-t-[28px] bg-card pt-14 px-[max(1rem,env(safe-area-inset-left))] pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-[0_-8px_30px_-12px_oklch(0.3_0.05_260/0.25)]">
+      <div className="relative shrink-0 rounded-t-[28px] bg-card pt-14 px-[max(1rem,env(safe-area-inset-left))] screen-bottom shadow-[0_-8px_30px_-12px_oklch(0.3_0.05_260/0.25)]">
         <AnimatePresence mode="wait">
           <QuestionCard
             key={idx}
@@ -354,7 +354,7 @@ function DailyResultScreen({
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex h-full w-full flex-col items-center justify-center overflow-y-auto bg-poke-hero pl-[max(1.5rem,env(safe-area-inset-left))] pr-[max(1.5rem,env(safe-area-inset-right))] py-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)]"
+      className="flex h-full w-full flex-col items-center justify-center overflow-y-auto bg-poke-hero pl-[max(1.5rem,env(safe-area-inset-left))] pr-[max(1.5rem,env(safe-area-inset-right))] py-[calc(env(safe-area-inset-top)+1rem)] screen-bottom"
     >
       <div className="rounded-full bg-poke-yellow px-3 py-1 font-pixel-xs uppercase text-foreground">
         Daily Challenge · {date}
@@ -413,7 +413,7 @@ function DailyResultScreen({
         </div>
       )}
 
-      <div className="mt-4 w-full max-w-xs rounded-2xl bg-card p-4 shadow-card">
+      <div className="mt-4 w-full max-w-xs rounded-3xl bg-card p-4 shadow-card">
         <div className="font-pixel-xs uppercase text-muted-foreground">Today's Pattern</div>
         <div className="mt-3 flex justify-center">
           <PokeballPattern marks={pattern} />

@@ -509,7 +509,7 @@ export function MegaRaidScreen({
           the plan's Phase 2 UI note and this session's investigation. */}
       <div className="relative z-10 flex min-h-0 flex-1 flex-col">
         <div
-          className="relative px-4 pb-2 pt-[calc(env(safe-area-inset-top)+1.25rem)]"
+          className="relative px-4 pb-2 screen-top"
           style={{
             background:
               "radial-gradient(circle at 50% 30%, #2E3A5C 0%, var(--brand-ink) 58%, var(--brand-ink-deep) 100%)",
@@ -638,7 +638,7 @@ export function MegaRaidScreen({
       </div>
 
       {/* QUESTION CARD — pinned bottom, shrink-0, no inner scroll. */}
-      <div className="relative shrink-0 rounded-t-[28px] bg-card pt-12 px-[max(1rem,env(safe-area-inset-left))] pb-[calc(env(safe-area-inset-bottom)+0.75rem)] shadow-[0_-8px_30px_-12px_oklch(0.3_0.05_260/0.25)]">
+      <div className="relative shrink-0 rounded-t-[28px] bg-card pt-12 px-[max(1rem,env(safe-area-inset-left))] screen-bottom shadow-[0_-8px_30px_-12px_oklch(0.3_0.05_260/0.25)]">
         {lowHp && hasAnyPotion && (
           <div
             className="mb-2 flex items-center justify-between rounded-2xl px-3 py-1.5"

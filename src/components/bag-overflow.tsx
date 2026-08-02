@@ -36,7 +36,7 @@ export function BagCapacityBar() {
   const full = used >= cap;
 
   return (
-    <div className="rounded-2xl bg-card px-4 py-3 shadow-card">
+    <div className="rounded-3xl bg-card px-4 py-3 shadow-card">
       <div className="flex items-center justify-between gap-3">
         <div className="font-pixel-xs uppercase tracking-wider text-foreground/45">Bag space</div>
         <div className={`font-pixel-xs ${full ? "text-destructive" : "text-foreground"}`}>
@@ -99,7 +99,7 @@ export function BagOverflowPanel() {
           if (!def) return null;
           const refund = overflowRefundValue(entry.id, entry.qty);
           return (
-            <div key={entry.id} className="rounded-[18px] bg-card px-3.5 py-3 shadow-card">
+            <div key={entry.id} className="rounded-2xl bg-card px-3.5 py-3 shadow-card">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-primary/[0.08]">
                   <ItemIcon item={def} className="h-7 w-7" />
@@ -210,7 +210,7 @@ export function DiscardItemButton({ id }: { id: ItemId }) {
         <DialogContent className="max-w-[330px] gap-0 overflow-hidden p-0">
           {/* Danger-tinted head so the dialog reads as a destructive action at a
               glance, rather than as another shop sheet. */}
-          <div className="bg-destructive/[0.07] px-5 pb-4 pt-5">
+          <div className="screen-x bg-destructive/[0.07] pb-4 pt-5">
             {/* pr-7 keeps a long item name clear of DialogContent's own close X,
                 which sits at right-4 top-4. */}
             <DialogHeader className="space-y-1 pr-7 text-left">
@@ -226,7 +226,7 @@ export function DiscardItemButton({ id }: { id: ItemId }) {
             </DialogHeader>
           </div>
 
-          <div className="px-5 pb-5 pt-4">
+          <div className="screen-x pb-5 pt-4">
             {/* Item, and the count going. */}
             <div className="flex items-center gap-3.5">
               <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[18px] bg-primary/[0.08]">

@@ -2154,7 +2154,7 @@ export function LivePvpBattleScreen({
   if (idx < 0) {
     const secsLeft = Math.max(0, Math.ceil(-elapsed / 1000));
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-poke-cream px-6 text-center">
+      <div className="screen-x flex h-full w-full flex-col items-center justify-center gap-3 bg-poke-cream text-center">
         <div className="font-display-xl text-foreground">Get ready!</div>
         <div className="text-5xl font-extrabold text-primary">{secsLeft}</div>
         <div className="font-pixel-xs text-foreground/60">Battle starting…</div>
@@ -2192,7 +2192,7 @@ export function LivePvpBattleScreen({
   return (
     <div className="relative flex h-full w-full flex-col overflow-hidden bg-battle-field">
       {/* TOP BAR — round pill (Solo-style), signature-fire (timer floats above the card) */}
-      <div className="relative z-10 flex shrink-0 items-center justify-between gap-2 pt-[calc(env(safe-area-inset-top)+1rem)] pb-1 px-[max(1.25rem,env(safe-area-inset-left))]">
+      <div className="relative z-10 flex shrink-0 items-center justify-between gap-2 screen-top pb-1 px-[max(1.25rem,env(safe-area-inset-left))]">
         <div className="flex items-center gap-1 rounded-full bg-card/90 px-2.5 py-1 font-pixel text-[9px] text-foreground shadow-card backdrop-blur">
           QUESTION {displayedIndex + 1}/{PVP_QUESTIONS}
         </div>
@@ -2284,7 +2284,7 @@ export function LivePvpBattleScreen({
           stage runs the full height of the screen, so "below the fade" is still
           painted field. */}
       <div className="relative z-10 shrink-0 bg-[var(--battle-fade-to)]">
-        <div className="relative rounded-t-[28px] bg-card px-[max(1rem,env(safe-area-inset-left))] pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-14 shadow-[0_-8px_30px_-12px_oklch(0.3_0.05_260/0.25)]">
+        <div className="relative rounded-t-[28px] bg-card px-[max(1rem,env(safe-area-inset-left))] screen-bottom pt-14 shadow-[0_-8px_30px_-12px_oklch(0.3_0.05_260/0.25)]">
           <div className="relative">
             <div className="pointer-events-none absolute left-1/2 -top-12 z-10 flex -translate-x-1/2 flex-col items-center">
               <TimerRing
@@ -2430,7 +2430,7 @@ export function LivePvpBattleScreen({
                                 key={it.id}
                                 onClick={() => void handleUseItem(it.id)}
                                 disabled={disabled}
-                                className="flex items-center gap-3.5 rounded-[20px] bg-card px-4 py-3 text-left shadow-card transition press-lg disabled:opacity-40"
+                                className="flex items-center gap-3.5 rounded-2xl bg-card px-4 py-3 text-left shadow-card transition press-lg disabled:opacity-40"
                               >
                                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-primary/[0.08]">
                                   <ItemIcon item={it} className="h-9 w-9" />

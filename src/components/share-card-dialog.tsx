@@ -71,7 +71,7 @@ export function ShareCardDialog({ open, onClose, data, inviteCode }: Props) {
       <DialogContent className="z-[200] flex h-[100dvh] w-screen max-w-none flex-col gap-0 rounded-none border-0 bg-poke-dark p-0 sm:rounded-none">
         <DialogTitle className="sr-only">Share Result</DialogTitle>
         {/* Header */}
-        <div className="flex shrink-0 items-center justify-between px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3">
+        <div className="screen-x flex shrink-0 items-center justify-between screen-top pb-3">
           <button
             onClick={onClose}
             aria-label="Close"
@@ -102,7 +102,7 @@ export function ShareCardDialog({ open, onClose, data, inviteCode }: Props) {
         </div>
 
         {/* Action bar */}
-        <div className="flex shrink-0 gap-3 px-5 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+        <div className="screen-x flex shrink-0 gap-3 pt-3 screen-bottom">
           <Button
             size="action"
             onClick={handleShare}

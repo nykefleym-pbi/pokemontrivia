@@ -649,7 +649,7 @@ export function AppHeader({
 }) {
   return (
     <header
-      className={`sticky top-0 z-30 px-5 pb-3 pt-[calc(env(safe-area-inset-top)+1rem)] ${
+      className={`sticky top-0 z-30 px-5 pb-3 screen-top ${
         gradient ? "bg-poke-hero" : "bg-background/90 backdrop-blur-lg"
       }`}
     >
@@ -1168,7 +1168,7 @@ export function ItemBagSheet({
                                 key={it.id}
                                 disabled={disabled}
                                 onClick={() => onUseItem(it.id)}
-                                className="flex items-center gap-3.5 rounded-[20px] bg-card px-4 py-3 text-left shadow-card transition press-lg disabled:opacity-40"
+                                className="flex items-center gap-3.5 rounded-2xl bg-card px-4 py-3 text-left shadow-card transition press-lg disabled:opacity-40"
                               >
                                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-primary/[0.08]">
                                   <ItemIcon item={it} className="h-9 w-9" />

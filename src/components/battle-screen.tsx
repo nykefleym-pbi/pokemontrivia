@@ -1413,7 +1413,7 @@ function BattleMode({
         )}
       </AnimatePresence>
       {/* top bar */}
-      <div className="relative z-10 flex shrink-0 items-center justify-between gap-2 pt-[calc(env(safe-area-inset-top)+1rem)] pb-1 px-[max(1.25rem,env(safe-area-inset-left))]">
+      <div className="relative z-10 flex shrink-0 items-center justify-between gap-2 screen-top pb-1 px-[max(1.25rem,env(safe-area-inset-left))]">
         <div className="flex items-center gap-2">
           <div
             className={`flex items-center gap-1 rounded-full px-2.5 py-1 font-pixel text-[9px] shadow-card backdrop-blur ${isElite ? "bg-poke-dark text-poke-yellow" : "bg-card/90 text-foreground"}`}
@@ -1546,7 +1546,7 @@ function BattleMode({
           stage runs the full height of the screen, so "below the fade" is still
           painted field. */}
       <div className="relative z-10 shrink-0 bg-[var(--battle-fade-to)]">
-        <div className="relative rounded-t-[28px] bg-card pt-14 px-[max(1rem,env(safe-area-inset-left))] pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-[0_-8px_30px_-12px_oklch(0.3_0.05_260/0.25)]">
+        <div className="relative rounded-t-[28px] bg-card pt-14 px-[max(1rem,env(safe-area-inset-left))] screen-bottom shadow-[0_-8px_30px_-12px_oklch(0.3_0.05_260/0.25)]">
           <AnimatePresence mode="wait">
             {phase !== "intro" && trivia && (
               <QuestionCard

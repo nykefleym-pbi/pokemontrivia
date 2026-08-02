@@ -289,7 +289,7 @@ export function BattleHome({
   return (
     <div className="bg-poke-cream h-full w-full overflow-y-auto pb-nav safe-x">
       {/* Hero — sits directly on yellow gradient, no white card */}
-      <div className="relative screen-x pt-[calc(env(safe-area-inset-top)+1.25rem)] pb-2">
+      <div className="relative screen-x screen-top pb-2">
         <div className="flex items-center gap-3">
           {ring}
           <div className="min-w-0 flex-1">
@@ -323,7 +323,7 @@ export function BattleHome({
             multiplier in the label and a count in the value, two different
             units in one tile. The multiplier is now the sub-line, where the
             other cells put their context. */}
-        <div className="mt-4 flex items-stretch divide-x divide-foreground/10 rounded-2xl border-2 border-white bg-card shadow-card">
+        <div className="mt-4 flex items-stretch divide-x divide-foreground/10 rounded-3xl border-2 border-white bg-card shadow-card">
           <StatCell
             icon={STREAK_ICON}
             label="STREAK"

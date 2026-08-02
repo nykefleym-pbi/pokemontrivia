@@ -202,17 +202,64 @@
   --sidebar-border: oklch(0.35 0.04 265);
 }
 
-/**
- * The app's screen gutter — the space between content and the edge of the
- * phone. One value, everywhere, so the eye can't catch a seam moving from
- * Home to the Arena to a result screen.
+/*
+ * ---------------------------------------------------------------------------
+ * The screen skeleton.
  *
- * It was px-5 on most screens and px-6 on the result screens, and the owner
- * read both as too tight (2026-08-02). Use this on a SCREEN ROOT; inner cards
- * and rows keep their own padding.
+ * Four decisions that every screen shares, in one place, because the app had
+ * been making them 40 times over: the gutter was px-5 / px-6 / px-4, the top
+ * padding was safe+0.75 / +1 / +1.25 / +1.5rem, button stacks were space-y-2
+ * or gap-3 depending on the file, and panels were rounded-2xl on some screens
+ * and rounded-3xl on others. None of that was a design; it was drift, and it
+ * is what "the look changes as you navigate" is made of.
+ *
+ * Use these on screens and panels. A screen that genuinely wants something
+ * else should say so in a comment where it departs — the point is that a
+ * departure is now visible as one.
+ * ---------------------------------------------------------------------------
  */
+
+/** Gutter between content and the edge of the phone. Screen roots only. */
 @utility screen-x {
   padding-inline: 1.75rem;
+}
+
+/** Top of a screen. Clears the notch, then a consistent breath under it. */
+@utility screen-top {
+  padding-top: calc(env(safe-area-inset-top) + 1rem);
+}
+
+/** Bottom of a screen. Clears the home indicator. Not for screens that have
+ *  to clear the bottom NAV as well — those need their own larger value. */
+@utility screen-bottom {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 1rem);
+}
+
+/*
+ * Corner radius has TWO standard values, and which one you want follows from
+ * what the thing is rather than from taste:
+ *
+ *   rounded-3xl (24px)  a PANEL — a card holding a section of a screen
+ *   rounded-2xl (16px)  a ROW, tile or chip living inside one
+ *
+ * Most of the app already did this; the drift was big panels sitting at row
+ * radius (the result and level-up reward cards, Home's stat strip) and a
+ * scatter of one-off 18/20/28px values. Both are folded in. There is no
+ * utility for these — Tailwind's own classes are the standard, and a third
+ * value should be a deliberate, commented exception.
+ */
+
+/**
+ * A vertical run of full-width action buttons — the footer of most flows.
+ *
+ * 0.75rem apart, which is what onboarding (the reference screen) already used
+ * while the result screens sat at 0.5rem: at 58px tall the tighter gap made
+ * three buttons read as one striped block.
+ */
+@utility btn-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 @utility font-display-xl {

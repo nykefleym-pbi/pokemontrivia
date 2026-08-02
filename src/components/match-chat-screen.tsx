@@ -137,7 +137,7 @@ export function MatchChatScreen({
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-poke-cream">
       {/* HEADER — pixel eyebrow à la NearbyBattleSheet's "FACE TO FACE" */}
-      <div className="shrink-0 border-b border-border/60 bg-card px-[max(1rem,env(safe-area-inset-left))] pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3">
+      <div className="shrink-0 border-b border-border/60 bg-card px-[max(1rem,env(safe-area-inset-left))] screen-top pb-3">
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -213,7 +213,7 @@ export function MatchChatScreen({
       </div>
 
       {/* COMPOSER */}
-      <div className="shrink-0 border-t border-border/60 bg-card px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+      <div className="screen-x shrink-0 border-t border-border/60 bg-card pt-3 screen-bottom">
         {reason && (
           <div className="mb-2 rounded-2xl bg-muted px-3 py-2 text-center text-xs text-foreground/60">
             {reason}

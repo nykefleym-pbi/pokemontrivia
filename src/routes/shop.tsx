@@ -287,7 +287,7 @@ function ShopPage() {
   return (
     <div className="bg-poke-cream h-full w-full overflow-y-auto pb-nav safe-x">
       {/* Hero */}
-      <div className="screen-x pb-5 pt-[calc(env(safe-area-inset-top)+1rem)]">
+      <div className="screen-x pb-5 screen-top">
         <p className="font-pixel-xs text-primary">WELCOME TO</p>
         <div className="mt-1 flex items-center justify-between gap-3">
           <h1 className="font-display-xl text-foreground">PokéMart</h1>
@@ -821,7 +821,7 @@ function ShopPage() {
                             return (
                               <div
                                 key={it.id}
-                                className="flex items-center gap-3.5 rounded-[20px] bg-card px-4 py-3 shadow-card"
+                                className="flex items-center gap-3.5 rounded-2xl bg-card px-4 py-3 shadow-card"
                               >
                                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-primary/[0.08]">
                                   <ItemIcon item={it} className="h-9 w-9" />
@@ -873,7 +873,7 @@ function ShopPage() {
                           {ownedBerries.map((it) => (
                             <div
                               key={it.id}
-                              className="flex items-center gap-3.5 rounded-[20px] bg-card px-4 py-3 shadow-card"
+                              className="flex items-center gap-3.5 rounded-2xl bg-card px-4 py-3 shadow-card"
                             >
                               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-primary/[0.08]">
                                 <ItemIcon item={it} className="h-9 w-9" />

@@ -577,7 +577,7 @@ function ProfilePage() {
   return (
     <div className="bg-poke-cream h-full w-full overflow-y-auto pb-nav safe-x">
       {/* Hero strip */}
-      <div className="screen-x pb-5 pt-[calc(env(safe-area-inset-top)+1rem)]">
+      <div className="screen-x pb-5 screen-top">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
