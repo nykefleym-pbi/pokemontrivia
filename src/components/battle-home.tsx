@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Flame, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { BallCycler, PokeballSpinner, PokemonSprite, type DailyMark } from "@/components/game-ui";
@@ -371,16 +371,10 @@ export function BattleHome({
               </p>
             </div>
           </div>
-          {/* The live win streak sits with the button that puts it at risk. Two
-              is where it starts: one win is just a win, two is the first time
-              there is something to lose. */}
-          {winStreak >= 2 && (
-            <div className="relative mt-3 flex items-center gap-2 rounded-2xl bg-primary/10 px-3 py-2">
-              <Flame className="h-4 w-4 shrink-0 text-primary" />
-              <span className="text-sm font-bold text-foreground">{winStreak} wins in a row</span>
-              <span className="ml-auto text-xs text-foreground/60">Don&rsquo;t break it</span>
-            </div>
-          )}
+          {/* The "N wins in a row — don't break it" banner used to sit here.
+              Removed at the owner's call: the STREAK cell in the stat strip
+              above already carries the number, so this was the same fact twice
+              on one screen, and it pushed the Start Battle button down. */}
           <Button
             size="action"
             onClick={onStart}
