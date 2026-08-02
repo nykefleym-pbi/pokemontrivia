@@ -17,7 +17,6 @@ import { parseDexQuery, matchesDexQuery } from "@/lib/dex-search";
 import { dexStatus } from "@/lib/pokedex";
 import { typeRowFontSize, DEX_CARD_WIDTH, DEX_CARD_PAD_PX } from "@/lib/type-row-fit";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { pokeApiUrls } from "@/lib/api/pokeapi";
 
 export const Route = createFileRoute("/pokedex")({
   component: PokedexPage,
@@ -416,7 +415,6 @@ function PokedexPage() {
               }}
               onClose={() => setDetailId(null)}
               isCaught={(id) => !!pokedex[id]}
-              entry={<PokedexFlavor pokemonId={p.id} />}
             />
           );
         })()}
@@ -444,59 +442,4 @@ function ToggleChip({
       {label}
     </button>
   );
-}
-
-function PokedexFlavor({ pokemonId }: { pokemonId: number }) {
-  const [flavor, setFlavor] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setFlavor(null);
-    fetch(pokeApiUrls.species(pokemonId))
-      .then((r) => r.json())
-      .then((data) => {
-        if (cancelled) return;
-        const entries = data.flavor_text_entries ?? [];
-        const preferredVersions = [
-          "scarlet",
-          "violet",
-          "sword",
-          "shield",
-          "ultra-sun",
-          "sun",
-          "x",
-          "black-2",
-          "platinum",
-        ];
-        let best: { flavor_text: string } | undefined;
-        for (const ver of preferredVersions) {
-          best = entries.find(
-            (e: { language: { name: string }; version: { name: string } }) =>
-              e.language.name === "en" && e.version.name === ver,
-          );
-          if (best) break;
-        }
-        if (!best) {
-          best = entries.find((e: { language: { name: string } }) => e.language.name === "en");
-        }
-        if (best) {
-          setFlavor(best.flavor_text.replace(/[\n\f]/g, " ").replace(/POKéMON/g, "Pokémon"));
-        }
-      })
-      .catch(() => {
-        /* silent */
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [pokemonId]);
-
-  if (loading) return null;
-  if (!flavor) return null;
-  return <p className="text-sm italic leading-relaxed text-foreground/75">{flavor}</p>;
 }

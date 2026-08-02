@@ -16,7 +16,17 @@ import { typeColorVar } from "@/lib/type-color";
  * headroom at all. A missing file simply masks nothing and the chip shows its
  * label alone, which is a legible state rather than a broken one.
  */
-export function TypeIcon({ type, className = "h-4 w-4" }: { type: PokeType; className?: string }) {
+export function TypeIcon({
+  type,
+  className = "h-4 w-4",
+  style,
+}: {
+  type: PokeType;
+  className?: string;
+  /** Merged AFTER the mask properties, so a caller can position or size the
+   *  glyph without having to restate the mask. */
+  style?: React.CSSProperties;
+}) {
   const url = `url(/types/${type}.svg)`;
   return (
     <span
@@ -31,6 +41,7 @@ export function TypeIcon({ type, className = "h-4 w-4" }: { type: PokeType; clas
         WebkitMaskRepeat: "no-repeat",
         maskPosition: "center",
         WebkitMaskPosition: "center",
+        ...style,
       }}
     />
   );
@@ -62,14 +73,14 @@ export function TypeChip({
   type: PokeType;
   selected?: boolean;
   onClick?: () => void;
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg";
   /**
    * Drop the glyph and keep the word.
    *
    * The label is what identifies a type; the glyph is decoration on top of it.
    * So where a chip has to fit somewhere genuinely narrow — two of them side by
-   * side under a 84px evolution rung — the icon is what goes, rather than the
-   * chip being allowed to overflow or the word being truncated to "POIS…".
+   * side under an evolution rung — the icon is what goes, rather than the chip
+   * being allowed to overflow or the word being truncated to "POIS…".
    */
   icon?: boolean;
 }) {
@@ -80,26 +91,38 @@ export function TypeChip({
   const box =
     size === "lg"
       ? "gap-2 px-5 py-3 text-base"
-      : size === "sm"
-        ? "gap-1 px-1.5 py-1 text-[7px] justify-center"
-        : "gap-1.5 px-2 py-2.5 text-[9px] justify-center";
+      : size === "xs"
+        ? "gap-1 px-[3px] py-[3px] text-[7px] tracking-normal justify-center"
+        : size === "sm"
+          ? "gap-0.5 px-1.5 py-[3px] text-[8px] justify-center"
+          : "gap-1.5 px-2 py-2.5 text-[9px] justify-center";
+  // `xs` and `sm` are set in the DISPLAY face rather than the pixel one. Press
+  // Start 2P is fixed-pitch and enormous per character — "ELECTRIC" at 8px is
+  // about 64px of glyph before any padding — so two pixel-font chips physically
+  // cannot sit side by side in the hero column or under an evolution rung,
+  // which is what forced them to wrap. The proportional face is a little over
+  // half the width and lets the pair stay on one row at every dual typing in
+  // the roster.
+  const face = size === "xs" || size === "sm" ? "font-display font-extrabold" : "font-pixel";
   const Tag = onClick ? "button" : "span";
   return (
     <Tag
       onClick={onClick}
       aria-pressed={onClick ? Boolean(selected) : undefined}
       style={style}
-      className={`inline-flex items-center rounded-full border-2 font-pixel uppercase tracking-wide transition ${box} ${
+      className={`inline-flex min-w-0 items-center rounded-full border-2 uppercase tracking-wide transition ${face} ${box} ${
         onClick ? "press" : ""
       }`}
     >
       {icon && (
         <TypeIcon
           type={type}
-          className={size === "lg" ? "h-5 w-5" : size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5"}
+          className={
+            size === "lg" ? "h-5 w-5" : size === "xs" || size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5"
+          }
         />
       )}
-      {type}
+      <span className="truncate">{type}</span>
     </Tag>
   );
 }

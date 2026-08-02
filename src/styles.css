@@ -815,6 +815,64 @@
   animation: float-up 1s ease-out forwards;
 }
 
+/* Drift for the Pokédex hero's background particles.
+ *
+ * Four waypoints, not two: a two-stop loop is a straight line retraced, which
+ * reads as a shudder. These wander out and back along a rough quadrilateral,
+ * and because every particle is handed its own --dx/--dy/--rot/--dur/--delay
+ * the set never falls into step. Long durations by design — this is meant to
+ * be noticed only if you look for it. */
+@keyframes hero-drift {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  25% {
+    transform: translate3d(var(--dx, 8px), calc(var(--dy, 8px) * -1), 0) rotate(var(--rot, 8deg));
+  }
+  50% {
+    transform: translate3d(calc(var(--dx, 8px) * -0.6), var(--dy, 8px), 0) rotate(0deg);
+  }
+  75% {
+    transform: translate3d(calc(var(--dx, 8px) * -1), calc(var(--dy, 8px) * -0.4), 0)
+      rotate(calc(var(--rot, 8deg) * -1));
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+}
+.hero-particle {
+  animation: hero-drift var(--dur, 18s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+/* Snow inside the Pokédex detail's snow globe.
+ *
+ * Falls the FULL height of the globe's box and fades in and out at both ends,
+ * so a mote never pops into existence against the glass — it drifts a little
+ * sideways on the way down, because a dead-vertical fall reads as a progress
+ * bar rather than as something floating. The parent clips, so the travel
+ * distance is expressed in percent of that box and needs no JS to resize. */
+@keyframes dome-shine-fall {
+  0% {
+    transform: translate3d(0, -10%, 0) scale(0.6);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--drift, 6px), 780%, 0) scale(1);
+    opacity: 0;
+  }
+}
+.dome-shine {
+  animation: dome-shine-fall var(--fall, 7s) linear infinite;
+  animation-delay: var(--delay, 0s);
+}
+
 @keyframes pokeball-spin {
   0% {
     transform: rotate(0deg) scale(1);
@@ -1091,6 +1149,8 @@
   .animate-bounce,
   .animate-ping,
   .animate-wiggle,
+  .dome-shine,
+  .hero-particle,
   .animate-ball-flip {
     animation: none;
   }
@@ -1122,6 +1182,8 @@
 :root.reduce-motion .animate-spin,
 :root.reduce-motion .animate-bounce,
 :root.reduce-motion .animate-ping,
+:root.reduce-motion .dome-shine,
+:root.reduce-motion .hero-particle,
 :root.reduce-motion .animate-wiggle,
 :root.reduce-motion .animate-ball-flip {
   animation: none;

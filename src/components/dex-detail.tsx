@@ -16,11 +16,14 @@ const scale = (len: string, k: number) => `calc(${len} * ${k})`;
  * The orb the sprite stands inside.
  *
  * Viewport-relative so it grows with the phone, capped so it cannot take the
- * whole hero on a tablet-width window. The name column is whatever is left, and
- * it is the half that can afford to be narrow — a long name wraps, an orb that
- * shrinks makes the sprite unreadable.
+ * whole hero on a tablet-width window.
+ *
+ * 46vw rather than 52 because the column beside it has to hold the widest dual
+ * typing in the roster — ELECTRIC + FLYING — on ONE row. At 52vw that pair had
+ * about 128px to live in and needed 144, so both chips shortened to "ELEC..." /
+ * "FL...". The orb loses 30px; a label that cannot be read loses more.
  */
-const ORB = "min(52vw, 230px)";
+const ORB = "min(46vw, 215px)";
 
 /**
  * How much of the circle the glass dome shows, measured from its top.
@@ -121,9 +124,40 @@ function SpriteOrb({
             opacity: 0.55,
           }}
         />
+        {/* The neon core, as in the reference: a bright bloom of the type's own
+            colour sitting BEHIND the sprite, so the creature is lit from within
+            the globe rather than pasted onto a tinted disc. Two stops — a hot
+            near-white centre and a saturated halo — because a single stop reads
+            as a wash rather than as a light source. */}
+        <div
+          className="absolute left-1/2 -translate-x-1/2 rounded-full blur-xl"
+          style={{
+            width: scale(ORB, 0.72),
+            height: scale(ORB, 0.72),
+            top: scale(ORB, 0.16),
+            background: `radial-gradient(circle, color-mix(in oklab, ${typeVar} 25%, #fff) 0%, color-mix(in oklab, ${typeVar} 85%, #fff) 45%, transparent 72%)`,
+            opacity: 0.75,
+          }}
+        />
+
+        {/* Falling shines — the snow in the snow globe.
+
+            Clipped to the CIRCLE, not to this wrapper. The wrapper is a
+            rectangle, so a mote placed near its top-left corner lands outside
+            the glass entirely — which is what put a row of stray glowing dots
+            along the top of the globe. This inner clipper is the circle itself,
+            so a mote is only ever visible where there is glass to be behind. */}
+        <div
+          className="absolute inset-x-0 top-0 overflow-hidden rounded-full"
+          style={{ height: ORB }}
+        >
+          <DomeShines />
+        </div>
+
         {/* The specular highlight. Without one the dome is a tinted disc; this
             single soft patch off-centre is what makes it read as curved glass
-            with something behind it. */}
+            with something behind it. Above the shines so the glass stays in
+            front of what is falling inside it. */}
         <div
           className="absolute rounded-[50%] blur-md"
           style={{
@@ -211,6 +245,57 @@ function SpriteOrb({
 }
 
 /**
+ * The snow in the snow globe.
+ *
+ * Fixed, hand-placed motes rather than `Math.random()` at render: a random
+ * layout is a new layout on every re-render, so the snow would teleport
+ * whenever the species data landed or the shiny toggle flipped. These are also
+ * deliberately uneven in size, speed and delay — evenly spaced motes falling at
+ * one rate read as a loading bar, not as something drifting.
+ *
+ * The whole set is inside the dome's `overflow-hidden` wrapper, so a mote that
+ * has fallen past the grass line is clipped rather than escaping onto the page.
+ * `.dome-shine` is switched off under reduce-motion (see styles.css), which
+ * leaves the motes sitting still — still decorative, no movement.
+ */
+const SHINES = [
+  { x: 12, size: 3, fall: 7.5, delay: 0, drift: 8 },
+  { x: 27, size: 2, fall: 9.5, delay: 2.4, drift: -6 },
+  { x: 38, size: 4, fall: 6.5, delay: 4.1, drift: 5 },
+  { x: 50, size: 2, fall: 10.5, delay: 1.2, drift: -9 },
+  { x: 61, size: 3, fall: 8, delay: 5.6, drift: 7 },
+  { x: 72, size: 2, fall: 9, delay: 3.3, drift: -5 },
+  { x: 83, size: 4, fall: 7, delay: 6.4, drift: 6 },
+  { x: 20, size: 2, fall: 11, delay: 7.8, drift: -7 },
+  { x: 55, size: 3, fall: 8.5, delay: 9.2, drift: 4 },
+  { x: 90, size: 2, fall: 9.8, delay: 5, drift: -4 },
+] as const;
+
+function DomeShines() {
+  return (
+    <>
+      {SHINES.map((s, i) => (
+        <span
+          key={i}
+          className="dome-shine absolute top-0 rounded-full bg-white"
+          style={
+            {
+              left: `${s.x}%`,
+              width: s.size,
+              height: s.size,
+              boxShadow: `0 0 ${s.size * 2}px ${s.size / 2}px rgba(255,255,255,0.9)`,
+              "--fall": `${s.fall}s`,
+              "--delay": `${s.delay}s`,
+              "--drift": `${s.drift}px`,
+            } as React.CSSProperties
+          }
+        />
+      ))}
+    </>
+  );
+}
+
+/**
  * A Pokéball drawn as an OUTLINE, for use as a background watermark.
  *
  * `MiniPokeball` is the solid red-and-white ball — correct as a mark next to a
@@ -218,9 +303,15 @@ function SpriteOrb({
  * halves turn into a pale blob. This is the same shape as line work, so it
  * survives being faded almost to nothing.
  */
-function PokeballWatermark({ className }: { className?: string }) {
+function PokeballWatermark({
+  className,
+  style,
+}: {
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   return (
-    <svg viewBox="0 0 64 64" fill="none" className={className} aria-hidden>
+    <svg viewBox="0 0 64 64" fill="none" className={className} style={style} aria-hidden>
       <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="4" />
       <path d="M4 32h20M40 32h20" stroke="currentColor" strokeWidth="4" />
       <circle cx="32" cy="32" r="8" stroke="currentColor" strokeWidth="4" />
@@ -241,14 +332,110 @@ function PokeballWatermark({ className }: { className?: string }) {
 function HeroPattern({ type }: { type: PokeType }) {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden text-white">
-      <PokeballWatermark className="absolute -left-8 top-[46%] h-36 w-36 opacity-[0.07]" />
-      <PokeballWatermark className="absolute -right-6 top-[6%] h-24 w-24 opacity-[0.06]" />
-      <PokeballWatermark className="absolute left-[46%] -bottom-8 h-28 w-28 opacity-[0.05]" />
-      <TypeIcon type={type} className="absolute left-[38%] top-[8%] h-12 w-12 opacity-[0.08]" />
-      <TypeIcon type={type} className="absolute left-2 bottom-[6%] h-16 w-16 opacity-[0.06]" />
-      <TypeIcon type={type} className="absolute right-[8%] top-[40%] h-10 w-10 opacity-[0.07]" />
+      {PARTICLES.map((p, i) =>
+        p.ball ? (
+          <PokeballWatermark key={i} className="hero-particle absolute" style={particleStyle(p)} />
+        ) : (
+          <TypeIcon
+            key={i}
+            type={type}
+            className="hero-particle absolute"
+            style={particleStyle(p)}
+          />
+        ),
+      )}
     </div>
   );
+}
+
+/**
+ * The hero's scatter of Pokéballs and type glyphs.
+ *
+ * Sized as PARTICLES, not as decoration at scale: the first pass drew them at
+ * 96–144px, which put a Pokéball the size of the sprite behind the name and
+ * read as a broken background image rather than as texture. These are 18–34px,
+ * small enough to sit behind type without competing with it and large enough
+ * that the shape is still legible as a Pokéball.
+ *
+ * Each drifts on its own loop — its own distance, rotation, duration and delay
+ * — so the set wanders rather than pulsing in unison. Hand-placed rather than
+ * generated, for the same reason the snow is: a random layout would reshuffle
+ * itself on every re-render, and `Math.random()` in a component body would give
+ * SSR and hydration two different answers.
+ */
+const PARTICLES = [
+  { x: 4, y: 12, size: 22, opacity: 0.1, ball: true, dx: 10, dy: 7, rot: 12, dur: 19, delay: 0 },
+  { x: 34, y: 4, size: 16, opacity: 0.09, ball: false, dx: -8, dy: 9, rot: -16, dur: 24, delay: 3 },
+  { x: 52, y: 15, size: 26, opacity: 0.07, ball: true, dx: 7, dy: -6, rot: 9, dur: 21, delay: 6 },
+  {
+    x: 88,
+    y: 8,
+    size: 18,
+    opacity: 0.1,
+    ball: false,
+    dx: -11,
+    dy: 5,
+    rot: 14,
+    dur: 27,
+    delay: 1.5,
+  },
+  { x: 17, y: 34, size: 18, opacity: 0.08, ball: false, dx: 9, dy: 8, rot: -11, dur: 23, delay: 8 },
+  { x: 43, y: 40, size: 30, opacity: 0.06, ball: true, dx: -6, dy: -9, rot: 7, dur: 30, delay: 4 },
+  { x: 94, y: 30, size: 24, opacity: 0.08, ball: true, dx: 8, dy: 6, rot: -13, dur: 18, delay: 10 },
+  { x: 7, y: 55, size: 28, opacity: 0.07, ball: true, dx: -9, dy: 7, rot: 10, dur: 26, delay: 2 },
+  {
+    x: 30,
+    y: 62,
+    size: 20,
+    opacity: 0.09,
+    ball: false,
+    dx: 11,
+    dy: -7,
+    rot: -9,
+    dur: 20,
+    delay: 7,
+  },
+  {
+    x: 66,
+    y: 70,
+    size: 16,
+    opacity: 0.08,
+    ball: false,
+    dx: -7,
+    dy: 10,
+    rot: 15,
+    dur: 29,
+    delay: 5,
+  },
+  {
+    x: 20,
+    y: 84,
+    size: 24,
+    opacity: 0.07,
+    ball: true,
+    dx: 6,
+    dy: -8,
+    rot: -12,
+    dur: 22,
+    delay: 11,
+  },
+  { x: 48, y: 90, size: 18, opacity: 0.09, ball: false, dx: -10, dy: 6, rot: 8, dur: 25, delay: 9 },
+  { x: 80, y: 88, size: 26, opacity: 0.06, ball: true, dx: 9, dy: 9, rot: -10, dur: 17, delay: 13 },
+] as const;
+
+function particleStyle(p: (typeof PARTICLES)[number]): React.CSSProperties {
+  return {
+    left: `${p.x}%`,
+    top: `${p.y}%`,
+    width: p.size,
+    height: p.size,
+    opacity: p.opacity,
+    "--dx": `${p.dx}px`,
+    "--dy": `${p.dy}px`,
+    "--rot": `${p.rot}deg`,
+    "--dur": `${p.dur}s`,
+    "--delay": `${p.delay}s`,
+  } as React.CSSProperties;
 }
 
 /**
@@ -273,10 +460,68 @@ function StatRow({ icon, value, label }: { icon: React.ReactNode; value: string;
   );
 }
 
+/**
+ * The Pokédex entry, in each of the four states it can actually be in.
+ *
+ * The state this exists for is the middle one. The previous version rendered
+ * `null` both while the fetch was in flight AND when it came back with nothing,
+ * so a slow network left the card's body empty with no way to tell "loading"
+ * from "gave up" — the card just looked broken. A skeleton says wait; a
+ * sentence says it failed.
+ */
+function DexEntryText({
+  caught,
+  status,
+  flavor,
+}: {
+  caught: boolean;
+  status: "loading" | "ready" | "error";
+  flavor: string | null;
+}) {
+  if (!caught) {
+    return (
+      <p className="text-sm italic leading-relaxed text-foreground/55">
+        Catch this Pokémon to read its Pokédex entry.
+      </p>
+    );
+  }
+  if (status === "loading") {
+    return (
+      <div className="space-y-2" aria-hidden>
+        <div className="h-3.5 w-full animate-pulse rounded bg-muted" />
+        <div className="h-3.5 w-[92%] animate-pulse rounded bg-muted" />
+        <div className="h-3.5 w-[64%] animate-pulse rounded bg-muted" />
+      </div>
+    );
+  }
+  // Two different nothings, and they need different sentences. A failed request
+  // is worth retrying; a species PokéAPI simply has no English entry for is not,
+  // and telling someone to reopen would send them round a loop that can never
+  // succeed.
+  if (status === "error") {
+    return (
+      <p className="text-sm italic leading-relaxed text-foreground/55">
+        Couldn't load this Pokédex entry. Reopen to try again.
+      </p>
+    );
+  }
+  if (!flavor) {
+    return (
+      <p className="text-sm italic leading-relaxed text-foreground/55">
+        No Pokédex entry has been recorded for this Pokémon.
+      </p>
+    );
+  }
+  return <p className="text-sm italic leading-relaxed text-foreground/75">{flavor}</p>;
+}
+
 /** A titled white card — the shape every block below the hero uses. */
 function DexCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-3xl bg-card p-4 shadow-card">
+    // p-3, not p-4: the evolution row is the widest thing on this screen and
+    // the eight pixels are the difference between three stages fitting and the
+    // last one being clipped on a 390px phone.
+    <div className="rounded-3xl bg-card p-3 shadow-card">
       <div className="mb-3 flex items-center gap-2">
         {/* A Pokéball, not the Pokédex book: the ball is this app's mark and it
             already heads the evolution card, so one glyph carries both. */}
@@ -302,8 +547,6 @@ export interface DexDetailProps {
   onClose: () => void;
   /** Whether any species in the evolution line has been caught. */
   isCaught: (id: number) => boolean;
-  /** The flavour text block — fetched by the route, rendered here. */
-  entry: React.ReactNode;
 }
 
 /**
@@ -320,6 +563,12 @@ export interface DexDetailProps {
  * the one with room to breathe, so the strip is gone and its Play cry button
  * moved into the card.
  *
+ * Every fact on this screen — the entry, the genus, height, weight and the
+ * abilities — comes from PokéAPI through the single `useSpeciesDetail` call
+ * below. The entry used to be a `ReactNode` prop the route filled with its own
+ * fetching component, which meant a SECOND request for the same
+ * /pokemon-species document and a second, silent failure mode.
+ *
  * A component rather than JSX inside the route because it can then be rendered
  * against a fixed species to be looked at, which is how the layout was checked.
  */
@@ -333,7 +582,6 @@ export function DexDetail({
   onSelect,
   onClose,
   isCaught,
-  entry,
 }: DexDetailProps) {
   const detail = useSpeciesDetail(p.id);
   const primaryType = p.types[0];
@@ -413,9 +661,16 @@ export function DexDetail({
                 {caught ? (detail.genus ?? "") : ""}
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-1">
+            {/* One row, guaranteed. The column beside the orb is about 124px
+                on a small phone, which is roughly what two chips need — so
+                `flex-wrap` was landing on two lines there. `flex-nowrap` with
+                `min-w-0` chips keeps them on one row and shortens a label in
+                the worst case instead. */}
+            <div className="flex w-full flex-nowrap items-center gap-1">
               {p.types.map((t) => (
-                <TypeChip key={t} type={t} selected size="sm" />
+                <span key={t} className="flex min-w-0">
+                  <TypeChip type={t} selected size="sm" />
+                </span>
               ))}
             </div>
             <div className="mt-1 flex flex-col gap-2">
@@ -460,13 +715,7 @@ export function DexDetail({
 
       <div className="screen-x screen-bottom flex-1 space-y-4 pt-4">
         <DexCard title="Pokédex Entry">
-          {caught ? (
-            entry
-          ) : (
-            <p className="text-sm italic leading-relaxed text-foreground/55">
-              Catch this Pokémon to read its Pokédex entry.
-            </p>
-          )}
+          <DexEntryText caught={caught} status={detail.status} flavor={detail.flavor} />
           {/* The ability and Play cry share one row, the facts on the left and
               the action on the right — the arrangement the reference uses for
               its entry strip. The row always renders, because the button is not
@@ -511,16 +760,22 @@ export function DexDetail({
           {!hasEvolution ? (
             <p className="text-center text-xs text-foreground/55">This Pokémon doesn't evolve.</p>
           ) : (
-            <div className="flex items-stretch gap-1 overflow-x-auto">
+            <div className="flex items-stretch gap-0.5 overflow-x-auto">
               {columns.map((col, ci) => (
                 <Fragment key={ci}>
                   {ci > 0 && (
                     <div className="flex items-center">
-                      <ChevronRight className="h-4 w-4 shrink-0 text-foreground/35" />
+                      <ChevronRight className="h-3.5 w-3.5 shrink-0 text-foreground/35" />
                     </div>
                   )}
+                  {/* THIS is the row's flex item, not the rung — the rungs sit
+                      inside it in a column. Sizing the rung itself was applying
+                      flex-basis to the vertical axis, which is why three
+                      attempts at a rung width all left the last stage clipped. */}
                   <div
-                    className={col.length > 3 ? "grid grid-cols-2 gap-1" : "flex flex-col gap-1"}
+                    className={`min-w-0 shrink grow basis-[72px] ${
+                      col.length > 3 ? "grid grid-cols-2 gap-1" : "flex flex-col gap-1"
+                    }`}
                   >
                     {col.map((stage) => (
                       <EvolutionStage
@@ -565,8 +820,12 @@ function EvolutionStage({
   typeVar: string;
   onSelect: (id: number) => void;
 }) {
-  // 84px, not wider: three rungs plus two arrows have to fit the card without
-  // the row turning into a scroller, and a three-stage line is the common case.
+  // Full width of whatever share the column above hands it. The sizing lives on
+  // that column, not here — see the comment at its declaration.
+  //
+  // `min-w-0` matters as much as the width: without it the button's automatic
+  // min-content floor lets a wide pair of type chips push it past its own
+  // `w-[92px]`, which is what made the row overflow in the first place.
   //
   // The "you are here" ring takes the page's type colour rather than a fixed
   // green. Green is right on the reference because the reference is a Grass
@@ -583,7 +842,7 @@ function EvolutionStage({
             }
           : undefined
       }
-      className={`press flex w-[84px] shrink-0 flex-col items-center gap-1 rounded-2xl border-2 p-1 ${
+      className={`press flex w-full min-w-0 flex-col items-center gap-1 rounded-2xl border-2 p-0.5 ${
         current ? "" : "border-transparent active:bg-muted/50"
       }`}
     >
@@ -595,9 +854,20 @@ function EvolutionStage({
       <span className="w-full truncate text-center text-[11px] font-bold text-foreground">
         {caught ? stage.name : "???"}
       </span>
-      <span className="flex w-full flex-wrap justify-center gap-0.5">
+      {/* One row, never two. `flex-nowrap` plus `flex-1 min-w-0` on each chip
+          makes the pair split the rung's width evenly, so a long dual typing
+          (Electric/Flying) stays on one line rather than wrapping and making
+          this rung taller than its neighbours. Natural widths, not `flex-1`:
+          forcing equal halves truncated the longer of the two to "POI...". */}
+      {/* `min-w-0` here as well as on the button. A flex item's default
+          min-width is min-content, so without it this row's natural width — two
+          chips at full label width — becomes a floor the rung cannot shrink
+          past, and the rung ignores its own flex-basis and sizes to content.
+          That is what kept the third stage clipped through three attempts at
+          picking a fixed rung width. */}
+      <span className="flex w-full min-w-0 flex-nowrap justify-center gap-px">
         {stage.types.map((t) => (
-          <TypeChip key={t} type={t} selected size="sm" icon={false} />
+          <TypeChip key={t} type={t} selected size="xs" icon={false} />
         ))}
       </span>
     </button>
