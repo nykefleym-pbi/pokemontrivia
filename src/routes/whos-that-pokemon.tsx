@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useGameStore } from "@/lib/store";
 import { findPokemon, spriteUrl, type PokeType } from "@/lib/pokemon-data";
 import type { ItemId } from "@/lib/game-data";
@@ -8,12 +8,11 @@ import { PokeballSpinner, PokemonSprite } from "@/components/game-ui";
 import { TypeChip } from "@/components/type-chip";
 import { Button } from "@/components/ui/button";
 import { WhosThatWordmark } from "@/components/whos-that-wordmark";
+import { WhosThatCaught } from "@/components/whos-that-caught";
 import { playCry, playSfx, stopBgm, revealPokemon, playWhosThatShout } from "@/lib/audio";
 import { answerHaptic } from "@/lib/haptics";
 import { pokeApiUrls } from "@/lib/api/pokeapi";
 import { syncActivity } from "@/lib/social";
-import { AppIcon } from "@/components/app-icon";
-import { REWARD_ICON } from "@/lib/app-icons";
 import {
   checkGuess,
   findByNorm,
@@ -80,6 +79,10 @@ export function WhosThatPokemon() {
   const [selTypes, setSelTypes] = useState<PokeType[]>([]);
   const [selChoice, setSelChoice] = useState<string | null>(null);
   const [caught, setCaught] = useState<{ id: number; name: string } | null>(null);
+  // Both are set from the server's response when the guess resolves, and only
+  // read by the result screen.
+  const [awardedXp, setAwardedXp] = useState(0);
+  const [dexWasNew, setDexWasNew] = useState(true);
   const [playsLeft, setPlaysLeft] = useState(CRY_PLAYS);
   const [dexEntry, setDexEntry] = useState<DexEntry | null>(null);
   const [dexLoading, setDexLoading] = useState(false);
@@ -127,6 +130,18 @@ export function WhosThatPokemon() {
   useEffect(() => {
     stopBgm();
   }, []);
+
+  // Claim the full-screen lock, the same way the battle, daily and mega screens
+  // do. `bottom-nav.tsx` also matches this route by PATH, but a path match only
+  // holds while the router agrees the URL is this one — it says nothing during a
+  // transition, and nothing at all if the screen is ever mounted from somewhere
+  // else. The claim is a counter the screen owns for exactly as long as it is
+  // mounted, which is the property actually wanted here.
+  const setBattleScreenActive = useGameStore((s) => s.setBattleScreenActive);
+  useEffect(() => {
+    setBattleScreenActive(true);
+    return () => setBattleScreenActive(false);
+  }, [setBattleScreenActive]);
 
   // "Who's that Pokémon?!" voice shout once per fresh round (silhouette shown).
   const shoutedRef = useRef<number | null>(null);
@@ -224,9 +239,16 @@ export function WhosThatPokemon() {
       setPhase(res.correct ? "correct" : "incorrect");
       if (res.alreadyGranted || !res.reward) return;
       const prevLevel = useGameStore.getState().level;
+      // Read the XP the SERVER granted rather than a client constant — it is
+      // the only place the amount is decided, and the result screen prints it.
+      setAwardedXp(res.reward.xp);
+      // Whether this is a first registration has to be sampled BEFORE the
+      // capture is recorded, or it is always false by the time the screen asks.
+      const dexId = caughtGuess?.id ?? res.monId;
+      setDexWasNew(!useGameStore.getState().pokedex[dexId]);
       addXp(res.reward.xp);
       grantItem(res.reward.itemId as ItemId, res.reward.itemQty);
-      recordPokedexCapture(caughtGuess?.id ?? res.monId, res.isShiny);
+      recordPokedexCapture(dexId, res.isShiny);
       useGameStore.getState().pushBattleLog({
         opponent: "Who's That Pokémon",
         won: true,
@@ -365,67 +387,16 @@ export function WhosThatPokemon() {
   if (phase === "correct") {
     const shown = caught ?? { id: round.monId, name: round.name };
     return (
-      <div className="flex h-full w-full flex-col overflow-y-auto bg-poke-cream px-5 pb-8 pt-10">
-        <div className="relative flex flex-col items-center">
-          <div
-            className="absolute inset-x-0 top-4 mx-auto h-56 w-56"
-            style={{
-              background:
-                "repeating-conic-gradient(from 0deg, rgba(245,197,24,0.22) 0deg 6deg, transparent 6deg 14deg)",
-            }}
-          />
-          {round.isShiny && (
-            <div className="z-10 mb-1 rounded-full bg-poke-yellow px-3 py-1 font-pixel text-[10px] text-poke-dark shadow-card">
-              SHINY!
-            </div>
-          )}
-          <PokemonSprite
-            id={shown.id}
-            shiny={round.isShiny}
-            alt={shown.name}
-            className={`relative z-10 h-44 w-44 [image-rendering:pixelated] ${round.isShiny ? "drop-shadow-[0_0_14px_rgba(245,197,24,0.85)]" : ""}`}
-          />
-          <h1 className="z-10 mt-2 text-3xl font-extrabold text-foreground">It's {shown.name}!</h1>
-        </div>
-        <div className="mt-6 space-y-3">
-          <Row
-            icon={
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-poke-yellow/30">
-                <AppIcon src={REWARD_ICON.xp} className="h-7 w-7" />
-              </div>
-            }
-            title="+100 XP"
-          />
-          <Row
-            sub="You got"
-            title={round.rewardName}
-            icon={
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10">
-                <img
-                  src={round.rewardIcon}
-                  alt={round.rewardName}
-                  className="h-7 w-7 [image-rendering:pixelated]"
-                />
-              </div>
-            }
-          />
-          <Row
-            icon={
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-hp-good/20 text-xl">
-                ✓
-              </div>
-            }
-            title="Added to Pokédex"
-          />
-        </div>
-        <div className="flex-1" />
-        <button
-          onClick={goHome}
-          className="rounded-full bg-primary py-4 font-pixel text-base tracking-wide text-primary-foreground shadow-card press-lg"
-        >
-          COLLECT
-        </button>
-      </div>
+      <WhosThatCaught
+        id={shown.id}
+        name={shown.name}
+        isShiny={round.isShiny}
+        awardedXp={awardedXp}
+        rewardName={round.rewardName}
+        rewardIcon={round.rewardIcon}
+        dexWasNew={dexWasNew}
+        onCollect={goHome}
+      />
     );
   }
 
@@ -694,14 +665,11 @@ export function WhosThatPokemon() {
   );
 }
 
-function Row({ icon, title, sub }: { icon: ReactNode; title: string; sub?: string }) {
-  return (
-    <div className="flex items-center gap-3.5 rounded-3xl bg-white px-4 py-3 shadow-card">
-      {icon}
-      <div className="min-w-0">
-        {sub && <div className="text-xs text-poke-dark/50">{sub}</div>}
-        <div className="font-bold leading-tight text-poke-dark">{title}</div>
-      </div>
-    </div>
-  );
-}
+/**
+ * One reward on the catch screen: art over a tinted card, then what it is.
+ *
+ * The tint is passed as a raw colour and mixed here rather than taken as a
+ * class, because the three tiles differ ONLY by hue — spelling out three
+ * near-identical class strings at the call site is how they drift apart.
+ */
+

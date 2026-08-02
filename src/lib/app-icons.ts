@@ -30,6 +30,13 @@ export const UI_ICON = {
   /** Who's That Pokémon's title. 512x512 with 29.5% transparent top and bottom
    *  — see RESULT_ART.whosThat; render it through <WhosThatWordmark>. */
   whosThat: "/ui/Who's that Pokemon.webp",
+  /** "YOU CAUGHT A" ribbon — the header of the Who's That result screen. */
+  youCaught: "/ui/You caught a.webp",
+  /** Radial light burst, drawn BEHIND the caught Pokémon's sprite. Replaces the
+   *  conic-gradient sunburst that used to sit there. */
+  lightBurst: "/ui/Light Burst.webp",
+  /** Pokédex book — the "added to Pokédex" reward tile. */
+  pokedexBook: "/ui/Pokedex.webp",
 } as const;
 
 /**

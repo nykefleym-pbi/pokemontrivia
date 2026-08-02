@@ -88,7 +88,7 @@ describe("WhosThatPokemon server-authority wiring", () => {
       fireEvent.click(screen.getByText("SUBMIT"));
     });
 
-    expect(await screen.findByText("It's Pikachu!")).toBeTruthy();
+    expect(await screen.findByText("COLLECT")).toBeTruthy();
     expect(submitWhosThat).toHaveBeenCalledWith("round-1", { guessText: "Pikachu" });
     const state = useGameStore.getState();
     expect(state.xp).toBe(initialStoreState.xp + 100);
@@ -133,7 +133,7 @@ describe("WhosThatPokemon server-authority wiring", () => {
       fireEvent.click(screen.getByText("SUBMIT"));
     });
 
-    expect(await screen.findByText("It's Pikachu!")).toBeTruthy();
+    expect(await screen.findByText("COLLECT")).toBeTruthy();
     expect(submitWhosThat).toHaveBeenCalledWith("round-2", { guessTypes: ["electric"] });
   });
 
@@ -148,7 +148,7 @@ describe("WhosThatPokemon server-authority wiring", () => {
       fireEvent.click(screen.getByText("SUBMIT"));
     });
 
-    await screen.findByText("It's Pikachu!");
+    await screen.findByText("COLLECT");
     const state = useGameStore.getState();
     expect(state.xp).toBe(initialStoreState.xp);
     expect(state.inventory.potion ?? 0).toBe(initialStoreState.inventory.potion ?? 0);
@@ -165,7 +165,7 @@ describe("WhosThatPokemon server-authority wiring", () => {
       fireEvent.click(screen.getByText("SUBMIT"));
     });
 
-    expect(await screen.findByText("It's Pikachu!")).toBeTruthy();
+    expect(await screen.findByText("COLLECT")).toBeTruthy();
     // No reward applied — a network failure never grants XP/items locally.
     expect(useGameStore.getState().xp).toBe(initialStoreState.xp);
   });
