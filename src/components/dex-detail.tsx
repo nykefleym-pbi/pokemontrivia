@@ -1,9 +1,9 @@
 import { Fragment, useState } from "react";
 import { ChevronLeft, ChevronRight, Ruler, Star, Volume2, Weight } from "lucide-react";
 import { MiniPokeball, PokemonSprite } from "@/components/game-ui";
-import { TypeChip } from "@/components/type-chip";
+import { TypeChip, TypeIcon } from "@/components/type-chip";
 import { RESULT_ICON } from "@/lib/app-icons";
-import { ALL_POKEMON, type PokeEntry } from "@/lib/pokemon-data";
+import { ALL_POKEMON, type PokeEntry, type PokeType } from "@/lib/pokemon-data";
 import { dexBackdropSrc } from "@/lib/dex-backdrop";
 import { PLATFORM_SURFACE, RESULT_ART } from "@/lib/result-art";
 import { useSpriteFootPad } from "@/lib/sprite-foot";
@@ -23,7 +23,28 @@ const scale = (len: string, k: number) => `calc(${len} * ${k})`;
 const ORB = "min(52vw, 230px)";
 
 /**
- * The species' sprite standing on the platform, wrapped in a glowing orb.
+ * How much of the circle the glass dome shows, measured from its top.
+ *
+ * This is the snow-globe line, and it is the number the whole stage is built
+ * around rather than a consequence of the platform's position: the glass is a
+ * circle cut flat where the grass begins, and the platform is then placed so
+ * its SURFACE lands exactly on that cut. Measured off the reference, where the
+ * dome's interior stops at the grass about four-fifths of the way down.
+ *
+ * Driving it this way round matters. The other way — clipping the dome to
+ * wherever the platform happened to sit — makes the globe's shape a side
+ * effect of two art-padding constants, so re-tuning the platform silently
+ * changes how much of a sphere the glass is.
+ */
+const DOME_CUT = 0.79;
+
+/**
+ * The species' sprite standing on the platform under a glass dome.
+ *
+ * A snow globe, not a sphere: the glass is cut flat at the grass line and the
+ * platform sits in the cut, with a soft elliptical bloom wrapping its base the
+ * way the reference's does. A full circle put the platform's stone rim inside a
+ * bubble, which reads as a marble rather than as something standing on ground.
  *
  * The platform and sprite arithmetic is the result screen's — same art, same
  * measured constants — rather than a second set of eyeballed offsets: the
@@ -31,7 +52,7 @@ const ORB = "min(52vw, 230px)";
  * empty band under each species' own art) and the platform by its opaque
  * region, because both files are squares with transparent padding.
  *
- * The orb tints itself from the type colour the hero is already using, so it
+ * The dome tints itself from the type colour the hero is already using, so it
  * needs no per-type asset. The owner's type/legendary backdrops land later and
  * will sit behind this, not replace it.
  */
@@ -54,38 +75,83 @@ function SpriteOrb({
 
   // Everything below is a fraction of the orb, so the parts cannot drift apart
   // when the orb resizes.
-  // Narrower than the orb: at full width the platform's rim cuts straight
-  // across the circle's edge instead of sitting inside it.
-  const stageW = scale(ORB, 0.86);
+  // Wide enough that the grass covers the dome's chord where the two meet.
+  // Platform.webp is 97.7% opaque across (measured), so the visible disc is
+  // very nearly this wide, and the circle's chord at DOME_CUT is about 0.82 of
+  // the orb — any narrower and bare glass edges stick out past the grass.
+  const stageW = scale(ORB, 0.9);
   // Deliberately large — the owner asked for the sprite enlarged to the
-  // reference, where the creature fills most of the orb. Kept just under the
+  // reference, where the creature fills most of the dome. Kept just under the
   // platform's width so it reads as standing ON the disc rather than as a
   // second layer the same size as it.
   const spriteW = scale(ORB, 0.72);
-  const stageBottom = scale(ORB, 0.11);
   // Distance from the platform box's bottom edge up to the surface line. Not
   // the middle of the disc: it is drawn in three-quarter view, so the top face
   // is an ellipse in the upper part of the shape.
   const surfaceFromBottom = scale(stageW, 1 - art.bottom - PLATFORM_SURFACE.win);
+  // The platform is placed so its surface meets the dome's cut. Usually a small
+  // negative number — the stone rim hangs just below the glass, as it does in
+  // the reference.
+  const stageBottom = `calc(${scale(ORB, 1 - DOME_CUT)} - ${surfaceFromBottom})`;
 
   return (
     <div className="relative shrink-0" style={{ width: ORB, height: ORB }}>
-      {/* The orb itself: a lit sphere in the type's colour. Three stacked
-          layers rather than one gradient — a bright core, a rim, and a soft
-          outer bloom — because a single radial gradient reads as a flat disc
-          at this size. */}
+      {/* The glass dome. The circle is full size but the wrapper only reaches
+          the grass line, so it is cut flat there — including its rim, which is
+          what makes the arc read as a globe sitting on the ground rather than
+          as a ball with a disc inside it. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 rounded-full"
+        className="pointer-events-none absolute inset-x-0 top-0 overflow-hidden"
+        style={{ height: scale(ORB, DOME_CUT) }}
+      >
+        <div
+          className="absolute inset-x-0 top-0 rounded-full"
+          style={{
+            height: ORB,
+            background: `radial-gradient(circle at 50% 42%, color-mix(in oklab, ${typeVar} 55%, #fff) 0%, color-mix(in oklab, ${typeVar} 72%, #000) 58%, color-mix(in oklab, ${typeVar} 55%, #000) 100%)`,
+            boxShadow: `inset 0 0 ${scale(ORB, 0.12)} rgba(255,255,255,0.35)`,
+          }}
+        />
+        <div
+          className="absolute inset-x-0 top-0 rounded-full border-2"
+          style={{
+            height: ORB,
+            borderColor: `color-mix(in oklab, ${typeVar} 45%, #fff)`,
+            opacity: 0.55,
+          }}
+        />
+        {/* The specular highlight. Without one the dome is a tinted disc; this
+            single soft patch off-centre is what makes it read as curved glass
+            with something behind it. */}
+        <div
+          className="absolute rounded-[50%] blur-md"
+          style={{
+            left: "14%",
+            top: "10%",
+            width: "34%",
+            height: "22%",
+            background: "rgba(255,255,255,0.4)",
+          }}
+        />
+      </div>
+
+      {/* The bloom where the glass meets the ground. In the reference the
+          dome's outline does not stop dead at the grass — it fades into a soft
+          ellipse hugging the platform's base, which is what ties the glass to
+          the ground instead of leaving it hovering over a separate disc.
+          Deliberately faint and heavily blurred: at any real strength it stops
+          reading as light and becomes a stray oval drawn behind the art. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 -translate-x-1/2 rounded-[50%] blur-[6px]"
         style={{
-          background: `radial-gradient(circle at 50% 42%, color-mix(in oklab, ${typeVar} 55%, #fff) 0%, color-mix(in oklab, ${typeVar} 72%, #000) 58%, color-mix(in oklab, ${typeVar} 55%, #000) 100%)`,
-          boxShadow: `inset 0 0 ${scale(ORB, 0.12)} rgba(255,255,255,0.35), 0 0 ${scale(ORB, 0.14)} color-mix(in oklab, ${typeVar} 60%, transparent)`,
+          width: scale(ORB, 0.98),
+          height: scale(ORB, 0.24),
+          bottom: scale(ORB, -0.06),
+          boxShadow: `0 0 ${scale(ORB, 0.06)} ${scale(ORB, 0.01)} color-mix(in oklab, ${typeVar} 55%, #fff)`,
+          opacity: 0.3,
         }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 rounded-full border-2"
-        style={{ borderColor: `color-mix(in oklab, ${typeVar} 45%, #fff)`, opacity: 0.55 }}
       />
 
       {/* The stage: platform art with the sprite standing on its surface. Its
@@ -144,16 +210,62 @@ function SpriteOrb({
   );
 }
 
-/** One measured fact in the hero — art, the number, then what it is. */
+/**
+ * A Pokéball drawn as an OUTLINE, for use as a background watermark.
+ *
+ * `MiniPokeball` is the solid red-and-white ball — correct as a mark next to a
+ * heading, wrong at 40% of the hero's height and 6% opacity, where its filled
+ * halves turn into a pale blob. This is the same shape as line work, so it
+ * survives being faded almost to nothing.
+ */
+function PokeballWatermark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 64 64" fill="none" className={className} aria-hidden>
+      <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="4" />
+      <path d="M4 32h20M40 32h20" stroke="currentColor" strokeWidth="4" />
+      <circle cx="32" cy="32" r="8" stroke="currentColor" strokeWidth="4" />
+    </svg>
+  );
+}
+
+/**
+ * The hero's background pattern: drifting Pokéballs and the species' own type
+ * glyph, as in the reference.
+ *
+ * Everything here is `currentColor` at a few percent so it works over both the
+ * plain type gradient AND a habitat photo — a fixed tint that read as texture
+ * on one would read as smudges on the other. Deliberately asymmetric and partly
+ * cropped by the hero's edges: a neat grid of them would read as a UI element
+ * rather than as depth.
+ */
+function HeroPattern({ type }: { type: PokeType }) {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden text-white">
+      <PokeballWatermark className="absolute -left-8 top-[46%] h-36 w-36 opacity-[0.07]" />
+      <PokeballWatermark className="absolute -right-6 top-[6%] h-24 w-24 opacity-[0.06]" />
+      <PokeballWatermark className="absolute left-[46%] -bottom-8 h-28 w-28 opacity-[0.05]" />
+      <TypeIcon type={type} className="absolute left-[38%] top-[8%] h-12 w-12 opacity-[0.08]" />
+      <TypeIcon type={type} className="absolute left-2 bottom-[6%] h-16 w-16 opacity-[0.06]" />
+      <TypeIcon type={type} className="absolute right-[8%] top-[40%] h-10 w-10 opacity-[0.07]" />
+    </div>
+  );
+}
+
+/**
+ * One measured fact in the hero — art, the number, then what it is.
+ *
+ * The reference's hierarchy: the VALUE is the largest thing in the row, the
+ * label sits under it small and letterspaced, and the glyph is loose art rather
+ * than something in a chip. An earlier pass boxed the icon, which gave the row
+ * three competing weights instead of one clear one.
+ */
 function StatRow({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }) {
   return (
-    <div className="flex items-center gap-2">
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/20 text-white">
-        {icon}
-      </span>
+    <div className="flex items-center gap-2.5">
+      <span className="shrink-0 text-white drop-shadow-sm">{icon}</span>
       <span className="min-w-0">
         <span className="block font-display-md leading-none text-white">{value}</span>
-        <span className="block font-pixel text-[7px] uppercase tracking-[0.15em] text-white/60">
+        <span className="mt-1 block font-pixel text-[7px] uppercase tracking-[0.18em] text-white/55">
           {label}
         </span>
       </span>
@@ -262,6 +374,10 @@ export function DexDetail({
           </>
         )}
 
+        {/* Drifting Pokéballs and the species' type glyph. Above the backdrop
+            and its scrim, below every piece of content. */}
+        <HeroPattern type={primaryType} />
+
         <div className="relative flex items-center justify-between">
           <button
             onClick={onClose}
@@ -270,9 +386,8 @@ export function DexDetail({
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/25 px-3 py-1.5 font-pixel text-[11px] tabular-nums text-white backdrop-blur">
+          <span className="rounded-full border border-white/25 bg-black/25 px-3.5 py-1.5 font-pixel text-[11px] tabular-nums text-white backdrop-blur">
             #{String(p.id).padStart(4, "0")}
-            <MiniPokeball className="h-4 w-4" />
           </span>
         </div>
 
@@ -289,9 +404,12 @@ export function DexDetail({
               >
                 {displayName}
               </h2>
-              {/* "Seed Pokémon". Reserved even while the fetch is in flight so
-                  the type chips do not jump down when it lands. */}
-              <p className="mt-1 min-h-[1.125rem] text-[13px] font-semibold leading-tight text-white/75">
+              {/* "Seed Pokémon" — the reference's second tier: noticeably
+                  smaller than the name but larger and lighter than the stat
+                  labels, so it reads as a subtitle rather than as a caption.
+                  Height reserved even while the fetch is in flight so the type
+                  chips do not jump down when it lands. */}
+              <p className="mt-1.5 min-h-[1.25rem] text-[15px] font-medium leading-tight text-white/80">
                 {caught ? (detail.genus ?? "") : ""}
               </p>
             </div>
@@ -302,12 +420,12 @@ export function DexDetail({
             </div>
             <div className="mt-1 flex flex-col gap-2">
               <StatRow
-                icon={<Ruler className="h-4 w-4" />}
+                icon={<Ruler className="h-5 w-5" strokeWidth={2.5} />}
                 value={detail.heightM != null ? `${detail.heightM.toFixed(1)} m` : "—"}
                 label="Height"
               />
               <StatRow
-                icon={<Weight className="h-4 w-4" />}
+                icon={<Weight className="h-5 w-5" strokeWidth={2.5} />}
                 value={detail.weightKg != null ? `${detail.weightKg.toFixed(1)} kg` : "—"}
                 label="Weight"
               />
@@ -349,34 +467,44 @@ export function DexDetail({
               Catch this Pokémon to read its Pokédex entry.
             </p>
           )}
-          {caught && detail.abilities.length > 0 && (
-            <div className="mt-4 border-t border-border/60 pt-3">
-              {/* The card's own heading is the app's red; this sub-label takes
-                  the species' type colour, as the reference does — it reads as
-                  a detail OF this Pokémon rather than a second section. */}
-              <div
-                className="font-pixel text-[8px] uppercase tracking-[0.15em]"
-                style={{ color: `color-mix(in oklab, ${typeVar} 78%, #000)` }}
-              >
-                {detail.abilities.length > 1 ? "Abilities" : "Ability"}
-              </div>
-              <div className="mt-1 text-sm font-bold text-foreground">
-                {detail.abilities.join(" · ")}
-              </div>
+          {/* The ability and Play cry share one row, the facts on the left and
+              the action on the right — the arrangement the reference uses for
+              its entry strip. The row always renders, because the button is not
+              conditional on the ability having arrived (or existing at all);
+              only the left half is. */}
+          <div className="mt-4 flex items-end justify-between gap-3 border-t border-border/60 pt-3">
+            <div className="min-w-0">
+              {caught && detail.abilities.length > 0 && (
+                <>
+                  {/* The card's own heading is the app's red; this sub-label
+                      takes the species' type colour, as the reference does — it
+                      reads as a detail OF this Pokémon rather than as a second
+                      section. */}
+                  <div
+                    className="font-pixel text-[8px] uppercase tracking-[0.15em]"
+                    style={{ color: `color-mix(in oklab, ${typeVar} 78%, #000)` }}
+                  >
+                    {detail.abilities.length > 1 ? "Abilities" : "Ability"}
+                  </div>
+                  <div className="mt-1.5 truncate text-sm font-bold text-foreground">
+                    {detail.abilities.join(" · ")}
+                  </div>
+                </>
+              )}
             </div>
-          )}
-          {/* Tinted to the species' type, which is what makes the reference's
-              button green on a Grass page. A fixed colour would be right for
-              exactly one of the eighteen types. */}
-          <button
-            onClick={onPlayCry}
-            className="press mt-4 inline-flex items-center gap-2 rounded-full border-2 border-white px-4 py-2 text-sm font-bold text-white shadow-card"
-            style={{
-              background: `linear-gradient(180deg, ${typeVar} 0%, color-mix(in oklab, ${typeVar} 72%, #000) 100%)`,
-            }}
-          >
-            <Volume2 className="h-4 w-4" /> Play cry
-          </button>
+            {/* Tinted to the species' type, which is what makes the reference's
+                button green on a Grass page. A fixed colour would be right for
+                exactly one of the eighteen types. */}
+            <button
+              onClick={onPlayCry}
+              className="press inline-flex shrink-0 items-center gap-2 rounded-full border-2 border-white px-4 py-2 text-sm font-bold text-white shadow-card"
+              style={{
+                background: `linear-gradient(180deg, ${typeVar} 0%, color-mix(in oklab, ${typeVar} 72%, #000) 100%)`,
+              }}
+            >
+              <Volume2 className="h-4 w-4" /> Play cry
+            </button>
+          </div>
         </DexCard>
 
         <DexCard title="Evolution Line">
@@ -400,6 +528,7 @@ export function DexDetail({
                         stage={stage}
                         current={stage.id === p.id}
                         caught={isCaught(stage.id)}
+                        typeVar={typeVar}
                         onSelect={onSelect}
                       />
                     ))}
@@ -426,20 +555,36 @@ function EvolutionStage({
   stage,
   current,
   caught,
+  typeVar,
   onSelect,
 }: {
   stage: PokeEntry;
   current: boolean;
   caught: boolean;
+  /** The OPEN species' type colour, so the highlight matches the page. */
+  typeVar: string;
   onSelect: (id: number) => void;
 }) {
   // 84px, not wider: three rungs plus two arrows have to fit the card without
   // the row turning into a scroller, and a three-stage line is the common case.
+  //
+  // The "you are here" ring takes the page's type colour rather than a fixed
+  // green. Green is right on the reference because the reference is a Grass
+  // page; on Charizard it read as an unrelated highlight sitting in an orange
+  // screen.
   return (
     <button
       onClick={() => onSelect(stage.id)}
+      style={
+        current
+          ? {
+              borderColor: `color-mix(in oklab, ${typeVar} 55%, transparent)`,
+              background: `color-mix(in oklab, ${typeVar} 10%, transparent)`,
+            }
+          : undefined
+      }
       className={`press flex w-[84px] shrink-0 flex-col items-center gap-1 rounded-2xl border-2 p-1 ${
-        current ? "border-hp-good/60 bg-hp-good/10" : "border-transparent active:bg-muted/50"
+        current ? "" : "border-transparent active:bg-muted/50"
       }`}
     >
       <PokemonSprite
