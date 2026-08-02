@@ -53,7 +53,16 @@ export function EggHatch() {
         className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-card shadow-card press"
         aria-label="Poké Eggs"
       >
-        <AppIcon src={UI_ICON.pokeEgg} className="h-7 w-7" />
+        {/* The egg twitches when the player is actually carrying one. The
+            keyframes are still for the first 82% of their cycle and only move
+            over the last fifth, so this reads as an egg stirring every few
+            seconds rather than as an icon that jitters — and it says nothing at
+            all when there is no egg to stir. Reduced motion switches it off
+            centrally (see the .animate-wiggle rules in styles.css). */}
+        <AppIcon
+          src={UI_ICON.pokeEgg}
+          className={`h-7 w-7 ${eggs.length > 0 ? "animate-wiggle" : ""}`}
+        />
         {eggs.length > 0 && (
           <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-poke-dark px-1 text-[11px] font-extrabold text-white">
             {eggs.length}

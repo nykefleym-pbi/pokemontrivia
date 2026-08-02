@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { BookOpen, Check, ChevronRight, Eye, Gift, Sparkles } from "lucide-react";
+import { BookOpen, Check, Eye, Gift, Sparkles } from "lucide-react";
 import { AppIcon } from "@/components/app-icon";
 import { MiniPokeball } from "@/components/game-ui";
 import { COIN_ICON, LOCK_ICON, REWARD_ICON, TP_ICON } from "@/lib/app-icons";
@@ -51,12 +51,12 @@ function Milestone({ milestone, state }: { milestone: DexMilestone; state: DexMi
   return (
     <div className="flex flex-col items-center gap-0.5">
       <div
-        className={`relative flex h-[clamp(20px,6.6vw,28px)] w-[clamp(20px,6.6vw,28px)] items-center justify-center rounded-full bg-white shadow-card ring-2 ${
+        className={`relative flex h-[clamp(22px,7vw,30px)] w-[clamp(22px,7vw,30px)] items-center justify-center rounded-full bg-white shadow-card ring-2 ${
           state === "claimed"
             ? "ring-hp-good"
             : state === "claimable"
               ? "ring-poke-yellow"
-              : "ring-black/5"
+              : "ring-white/45"
         }`}
       >
         {/* A locked rung shows the padlock OVER a dimmed glyph rather than
@@ -68,14 +68,16 @@ function Milestone({ milestone, state }: { milestone: DexMilestone; state: DexMi
         />
         {state === "locked" && <AppIcon src={LOCK_ICON} className="absolute h-3 w-3 opacity-90" />}
         {state === "claimed" && (
-          <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-hp-good ring-2 ring-card">
+          <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-hp-good ring-2 ring-primary">
             <Check className="h-2 w-2 text-white" strokeWidth={4} />
           </span>
         )}
       </div>
+      {/* On the red face the threshold is white — the old foreground greys were
+          tuned for a card background and vanish against the primary fill. */}
       <span
         className={`text-[8px] font-bold leading-none tabular-nums ${
-          state === "locked" ? "text-foreground/35" : "text-foreground/70"
+          state === "locked" ? "text-white/55" : "text-white"
         }`}
       >
         {milestone}%
@@ -185,12 +187,12 @@ export function DexCompletionCard({ gen }: { gen: number }) {
   };
 
   const faceCls =
-    "press-card flex h-full w-full items-center gap-1.5 rounded-2xl border-2 border-white bg-card p-2 text-left shadow-card";
+    "press-card flex h-full w-full items-center gap-1.5 rounded-2xl border-2 border-white p-2 text-left shadow-card";
 
   return (
-    <div className="flip-card h-[86px] w-full">
+    <div className="flip-card h-[96px] w-full">
       <div className="flip-card-inner" data-flipped={flipped}>
-        {/* Front — completion pill, reward strip, Claim. */}
+        {/* Front — the whole face is the completion bar. */}
         <div className="flip-face">
           <button
             type="button"
@@ -199,79 +201,97 @@ export function DexCompletionCard({ gen }: { gen: number }) {
               setFlipped(true);
             }}
             aria-label={`${region} completion — show caught, seen and shiny counts`}
-            className={faceCls}
+            className={`${faceCls} flex-col gap-1.5 bg-gradient-to-br from-primary to-primary/80 px-2.5`}
           >
-            {/* Completion pill. */}
-            <div className="flex min-w-0 flex-1 items-center gap-1 rounded-xl bg-gradient-to-br from-primary to-primary/75 px-1.5 py-1.5">
-              {/* The pill's avatar is the first thing to go on a narrow phone:
-                  below 360px the row cannot afford both it and an untruncated
-                  "<Region> Completion". */}
-              <MiniPokeball className="hidden h-4 w-4 shrink-0 min-[360px]:block" />
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-[7px] font-bold uppercase leading-none tracking-wide text-white/80">
+            <div className="flex w-full items-center gap-2">
+              {/* Centred title + percentage. The pokeball balances the Claim
+                  button on the other side so the text lands in the true middle
+                  of the card rather than the middle of the space left over. */}
+              <MiniPokeball className="hidden h-5 w-5 shrink-0 min-[360px]:block" />
+              <div className="min-w-0 flex-1 text-center">
+                <div className="truncate text-[8px] font-bold uppercase leading-none tracking-wide text-white/85">
                   {region} Completion
                 </div>
-                <div className="mt-0.5 text-[15px] font-extrabold leading-none tabular-nums text-white">
+                <div className="mt-1 text-[17px] font-extrabold leading-none tabular-nums text-white">
                   {pct}%
                 </div>
-                <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-black/25">
-                  <div
-                    className="h-full rounded-full bg-white transition-[width] duration-500"
-                    style={{ width: `${Math.min(100, stats.pct * 100)}%` }}
-                  />
-                </div>
               </div>
-            </div>
 
-            {/* Reward strip. */}
-            <div className="flex shrink-0 flex-col items-center gap-0.5">
-              <span className="text-[7px] font-bold leading-none text-foreground/50">
-                Rewards for completion
+              {/* Claim. A real button nested inside the flip button, so its tap
+                  must not also turn the card over. */}
+              <span
+                role="button"
+                tabIndex={0}
+                aria-disabled={claimable === null}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  hold();
+                  onClaim();
+                }}
+                onKeyDown={(e) => {
+                  if (e.key !== "Enter" && e.key !== " ") return;
+                  e.preventDefault();
+                  e.stopPropagation();
+                  hold();
+                  onClaim();
+                }}
+                className={`press flex shrink-0 items-center gap-0.5 rounded-xl px-2 py-1.5 text-[11px] font-extrabold ${
+                  claimable !== null
+                    ? "bg-poke-yellow text-poke-dark shadow-card"
+                    : "bg-black/20 text-white/55"
+                }`}
+              >
+                <Gift className="h-3 w-3 shrink-0" />
+                Claim
               </span>
-              <div className="flex items-center gap-0.5">
-                {DEX_MILESTONES.map((m, i) => (
-                  <div key={m} className="flex items-center gap-0.5">
-                    {i > 0 && <ChevronRight className="h-2 w-2 shrink-0 text-foreground/25" />}
-                    <Milestone
-                      milestone={m}
-                      state={dexMilestoneState(m, stats, gen, claimedList)}
-                    />
-                  </div>
-                ))}
-              </div>
             </div>
 
-            {/* Claim. A real button nested inside the flip button, so its tap
-                must not also turn the card over. */}
-            <span
-              role="button"
-              tabIndex={0}
-              aria-disabled={claimable === null}
-              onClick={(e) => {
-                e.stopPropagation();
-                hold();
-                onClaim();
-              }}
-              onKeyDown={(e) => {
-                if (e.key !== "Enter" && e.key !== " ") return;
-                e.preventDefault();
-                e.stopPropagation();
-                hold();
-                onClaim();
-              }}
-              className={`press flex shrink-0 items-center gap-0.5 rounded-xl px-2 py-2 text-[11px] font-extrabold ${
-                claimable !== null
-                  ? "bg-poke-yellow text-poke-dark shadow-card"
-                  : "bg-muted text-muted-foreground"
-              }`}
+            {/* The reward rungs ARE the progress bar.
+             *
+             * They used to be a separate strip crammed into a middle column
+             * beside the pill, which is what made the row feel crowded — three
+             * elements each fighting for a third of a phone's width. Laid along
+             * the track they cost no extra width at all, and the bar gains a
+             * meaning it did not have: the fill physically reaches a rung at
+             * the moment that rung unlocks.
+             *
+             * That only holds because the track is INSET by half a rung at each
+             * end and every position is measured across the inset span. Placing
+             * a rung at a naive `left: 25%` would put its centre a half-rung to
+             * the left of where the fill says 25% is, and the 100% rung would
+             * hang off the card entirely. */}
+            <div
+              className="relative w-full"
+              style={{ "--rung": "clamp(22px, 7vw, 30px)" } as React.CSSProperties}
             >
-              <Gift className="h-3 w-3 shrink-0" />
-              Claim
-            </span>
+              <div
+                className="absolute inset-x-[calc(var(--rung)/2)] h-1.5 -translate-y-1/2 overflow-hidden rounded-full bg-black/30"
+                style={{ top: "calc(var(--rung) / 2)" }}
+              >
+                <div
+                  className="h-full rounded-full bg-white transition-[width] duration-500"
+                  style={{ width: `${Math.min(100, stats.pct * 100)}%` }}
+                />
+              </div>
+              {DEX_MILESTONES.map((m) => (
+                <div
+                  key={m}
+                  className="absolute top-0 -translate-x-1/2"
+                  style={{ left: `calc(var(--rung) / 2 + ${m / 100} * (100% - var(--rung)))` }}
+                >
+                  <Milestone milestone={m} state={dexMilestoneState(m, stats, gen, claimedList)} />
+                </div>
+              ))}
+              {/* Reserves the row's height: the rungs above are absolute and so
+                  contribute none of their own. */}
+              <div className="h-[calc(var(--rung)+12px)]" aria-hidden />
+            </div>
           </button>
         </div>
 
-        {/* Back — the counts, icons only. */}
+        {/* Back — the counts, icons only. Deliberately NOT red: it is a
+            different kind of information, and the colour change is what makes
+            the turn legible at a glance. */}
         <div className="flip-face flip-face-back">
           <button
             type="button"
@@ -280,7 +300,7 @@ export function DexCompletionCard({ gen }: { gen: number }) {
               setFlipped(false);
             }}
             aria-label={`${region} counts — show completion rewards`}
-            className={faceCls}
+            className={`${faceCls} bg-card`}
           >
             <div className="grid w-full grid-cols-4 gap-1.5">
               <StatTile

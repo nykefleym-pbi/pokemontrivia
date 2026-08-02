@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Search, Sparkles, X, ArrowRight, Volume2, ChevronLeft, Star, Eye } from "lucide-react";
+import { motion } from "framer-motion";
 import { Fragment } from "react";
 import { playCry, playSfx } from "@/lib/audio";
 import { useGameStore } from "@/lib/store";
@@ -13,7 +14,8 @@ import { MiniPokeball, PokemonSprite, TypeBadge } from "@/components/game-ui";
 import { DexCompletionCard } from "@/components/dex-completion-card";
 import { dexBackdropSrc } from "@/lib/dex-backdrop";
 import { GENERATIONS, generation } from "@/lib/dex-rewards";
-import { dexStatus, isCaught } from "@/lib/pokedex";
+import { parseDexQuery, matchesDexQuery } from "@/lib/dex-search";
+import { dexStatus } from "@/lib/pokedex";
 import { typeRowFontSize, DEX_CARD_WIDTH, DEX_CARD_PAD_PX } from "@/lib/type-row-fit";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { pokeApiUrls } from "@/lib/api/pokeapi";
@@ -74,20 +76,19 @@ function PokedexPage() {
     if (hydrated && !hasOnboarded) navigate({ to: "/" });
   }, [hydrated, hasOnboarded, navigate]);
 
-  const range = generation(gen);
-  const regionTotal = range.to - range.from + 1;
-  // The ring counts CAUGHT, not registered: a seen-only entry is progress
-  // toward the number, not the number itself.
-  const regionCaught = ALL_POKEMON.filter(
-    (p) => p.id >= range.from && p.id <= range.to && isCaught(pokedex[p.id]),
-  ).length;
-  const regionPct = regionTotal > 0 ? regionCaught / regionTotal : 0;
+  // The search box understands the same vocabulary as the chips — region, type,
+  // caught/seen/shiny, dex number — so anything typeable is also filterable.
+  // See lib/dex-search.ts.
+  const parsed = useMemo(() => parseDexQuery(query), [query]);
+  // A typed region MOVES the grid rather than filtering it, because the grid is
+  // scoped to one generation at a time. It overrides the Gen chip while the
+  // word is in the box; deleting it hands control straight back.
+  const effectiveGen = parsed.gen ?? gen;
+  const range = generation(effectiveGen);
 
-  const q = query.trim().toLowerCase();
   const filtered = useMemo(() => {
     return ALL_POKEMON.filter((p) => {
       if (p.id < range.from || p.id > range.to) return false;
-      if (q && !p.name.toLowerCase().startsWith(q)) return false;
       if (type !== "all" && !p.types.includes(type)) return false;
       // Caught and Seen are one status filter with two switches, not two
       // independent ones. Treated independently they contradict each other —
@@ -101,13 +102,17 @@ function PokedexPage() {
         if (status === "seen" && !seenOnly) return false;
       }
       if (shinyOnly && !pokedex[p.id]?.shinyUnlocked) return false;
-      return true;
+      const entry = pokedex[p.id];
+      const st = dexStatus(entry);
+      return matchesDexQuery(parsed, p, {
+        caught: st === "caught",
+        seen: st !== null,
+        shiny: !!entry?.shinyUnlocked,
+      });
     });
-  }, [range, q, type, capturedOnly, seenOnly, shinyOnly, pokedex]);
+  }, [range, parsed, type, capturedOnly, seenOnly, shinyOnly, pokedex]);
 
   if (!hydrated || !hasOnboarded) return null;
-
-  const ringCirc = 2 * Math.PI * 26;
 
   return (
     <div className="bg-poke-cream h-full w-full overflow-y-auto pb-nav safe-x">
@@ -121,37 +126,12 @@ function PokedexPage() {
             <h1 className="font-display-xl text-foreground">Pokédex</h1>
           </div>
 
-          <div className="flex items-center gap-3">
-            <EggHatch />
-            <div className="relative h-16 w-16 shrink-0">
-              <svg viewBox="0 0 64 64" className="absolute inset-0 h-full w-full -rotate-90">
-                <circle
-                  cx="32"
-                  cy="32"
-                  r="26"
-                  fill="none"
-                  stroke="oklch(0.22 0.04 260 / 0.12)"
-                  strokeWidth="6"
-                />
-                <circle
-                  cx="32"
-                  cy="32"
-                  r="26"
-                  fill="none"
-                  stroke="var(--color-primary)"
-                  strokeWidth="6"
-                  strokeLinecap="round"
-                  strokeDasharray={ringCirc}
-                  strokeDashoffset={ringCirc * (1 - regionPct)}
-                  style={{ transition: "stroke-dashoffset 0.5s ease" }}
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
-                <span className="text-base font-extrabold text-foreground">{regionCaught}</span>
-                <span className="text-[10px] text-foreground/55">/ {regionTotal}</span>
-              </div>
-            </div>
-          </div>
+          {/* The caught/total ring used to sit here. It said the same thing as
+              the completion card a few hundred pixels below — same generation,
+              same numbers — so it cost a corner of the header to repeat the
+              card. The egg takes the space instead, which is the one thing on
+              this screen with nowhere else to live. */}
+          <EggHatch />
         </div>
         <div className="mt-3 flex flex-wrap gap-1.5">
           <Popover>
@@ -235,6 +215,11 @@ function PokedexPage() {
           />
           <ToggleChip active={seenOnly} onToggle={() => setSeenOnly((v) => !v)} label="Seen" />
           <ToggleChip active={shinyOnly} onToggle={() => setShinyOnly((v) => !v)} label="Shiny" />
+          {/* Clear is an icon, and it sits in the row rather than being pushed
+              to the far end by `ml-auto`. As a labelled pill at the end of the
+              line it took enough width to wrap the row onto two lines on a
+              narrow phone — a control that only exists to tidy up should not be
+              the thing that costs the most space. */}
           {(type !== "all" || gen !== DEFAULT_GEN || capturedOnly || seenOnly || shinyOnly) && (
             <button
               onClick={() => {
@@ -244,9 +229,11 @@ function PokedexPage() {
                 setSeenOnly(false);
                 setShinyOnly(false);
               }}
-              className="ml-auto flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-[11px] font-bold text-muted-foreground press"
+              aria-label="Clear filters"
+              title="Clear filters"
+              className="press flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground shadow-card"
             >
-              <X className="h-3 w-3" /> Clear
+              <X className="h-3.5 w-3.5" />
             </button>
           )}
         </div>
@@ -259,7 +246,7 @@ function PokedexPage() {
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search name…"
+            placeholder="Name, #, type, region, caught…"
             className="h-11 rounded-full border-0 bg-card pl-11 text-sm shadow-card"
           />
         </div>
@@ -269,7 +256,7 @@ function PokedexPage() {
           and this card together hold about a quarter of a phone screen for the
           whole scroll; only the search earns that. */}
       <div className="screen-x pt-3">
-        <DexCompletionCard gen={gen} />
+        <DexCompletionCard gen={effectiveGen} />
       </div>
 
       {/* Grid — three per row.
@@ -279,7 +266,7 @@ function PokedexPage() {
           both type chips and a status line. */}
       <div className="px-3 pb-8 pt-3">
         <div className="grid grid-cols-3 gap-2.5">
-          {filtered.map((p) => {
+          {filtered.map((p, i) => {
             const e = pokedex[p.id];
             const status = dexStatus(e);
             const got = status !== null;
@@ -287,8 +274,16 @@ function PokedexPage() {
             const shiny = !!e?.shinyUnlocked;
             const isPartner = partnerId === p.id;
             return (
-              <button
+              <motion.button
                 key={p.id}
+                // Same entrance as the Shop's item grid (routes/shop.tsx) —
+                // same three-column shape, so it should feel the same. The
+                // stagger is capped so a 151-card generation still finishes
+                // arriving in well under half a second; uncapped, the last
+                // Kanto card would wait four and a half.
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: Math.min(i, 12) * 0.03 }}
                 onClick={() => {
                   setDetailId(p.id);
                   // Open in shiny form when the shiny is unlocked.
@@ -387,7 +382,7 @@ function PokedexPage() {
                     <span className="text-foreground/30">Unknown</span>
                   )}
                 </div>
-              </button>
+              </motion.button>
             );
           })}
           {filtered.length === 0 && (
