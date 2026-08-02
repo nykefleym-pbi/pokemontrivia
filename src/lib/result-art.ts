@@ -32,6 +32,8 @@ export const RESULT_ART = {
   platformLose: { top: 0.373, bottom: 0.371 } as ArtPadding,
   /** Level Up.webp — opaque y 155-356 of 512. */
   levelUp: { top: 0.303, bottom: 0.303 } as ArtPadding,
+  /** Who's that Pokemon.webp — opaque y 151-360 of 512. */
+  whosThat: { top: 0.295, bottom: 0.295 } as ArtPadding,
 } as const;
 
 /**
@@ -46,16 +48,20 @@ export const RESULT_ART = {
  * two shields the same size can size each file by its own body instead of by
  * its bounding box — which is what `plaqueWidth` below does.
  *
- * `centreY` is where the number belongs vertically, as a fraction of the file.
- * Not the face's midpoint: a shield tapers to a point, so its lower half is
- * mostly empty and text centred on the geometric middle reads as sitting low.
+ * `faceTop` and `faceBottom` are where that plate starts and ends vertically,
+ * as fractions of the file. The label is centred BETWEEN them rather than
+ * placed at a tuned offset: the two shields have differently-sized glows AND
+ * differently-sized faces (the gold plate is 173px tall in its file, the silver
+ * 215px), so a single offset that looked right on one sat high on the other —
+ * which is exactly what it did.
  *
- * Measured off the keyed files by scanning the flood-filled face mask, not
- * eyeballed. Re-measure if the art is redrawn.
+ * All three numbers are measured off the keyed files by flood-filling the dark
+ * plate inward from the centre, not eyeballed. Re-measure if the art is
+ * redrawn.
  */
 export const LEVEL_PLAQUE = {
-  from: { face: 0.591, centreY: 0.46 },
-  to: { face: 0.469, centreY: 0.47 },
+  from: { face: 0.591, faceTop: 0.191, faceBottom: 0.824 },
+  to: { face: 0.469, faceTop: 0.249, faceBottom: 0.766 },
 } as const;
 
 /**
