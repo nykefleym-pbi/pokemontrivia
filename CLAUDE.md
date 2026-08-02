@@ -37,6 +37,37 @@ record of WHY, and a squash is where that gets lost.
 This is authorization to merge, not to skip the checks.
 Green still means tsc, the full suite, and CI.
 
+## Shipping does not end at the merge
+
+Owner's standing instruction (2026-08-02): always deploy
+to production, so it can be tested on a phone. The merge
+is not the deliverable — a build the owner can open is.
+
+Vercel auto-promotes `main`, so merging usually IS the
+deploy. "Usually" is the trap: report it only after
+CONFIRMING it, and confirm it against the served bytes,
+not a status field.
+
+    mcp__Vercel__get_project -> latestDeployment
+      .target == "production" && .readyState == "READY"
+    mcp__Vercel__web_fetch_vercel_url
+      https://pokemontriviabattle.vercel.app/<a file the
+      change added or altered>
+
+Fetch through the Vercel tool, not curl — the sandbox
+proxy 403s vercel.app and supabase.co, and curl reports
+that as HTTP 000, which reads like a dead site.
+
+The deployment API's `state` has been observed stuck on
+BUILDING for 11 minutes after a 33-second build finished.
+Build logs and a real fetch are the truth; `state` is not.
+
+Anything the app needs that Vercel does NOT carry has to
+be shipped separately, or the deploy is live and broken:
+Supabase migrations (`apply_migration`) and Edge Functions
+(bundle, then `deploy_edge_function`). Check whether the
+change touched `supabase/` before calling it shipped.
+
 ## Signature abilities: never infer liveness. Compute it.
 
 In this codebase a function can be exported, imported,
