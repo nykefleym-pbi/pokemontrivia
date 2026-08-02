@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Flame, Sparkles } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import {
 } from "@/lib/game-data";
 import { findGymLeader, GYM_LEADERS } from "@/lib/gym-leaders";
 import { COIN_ICON, STREAK_ICON, TP_ICON } from "@/lib/app-icons";
+import { currentWinStreak } from "@/lib/win-streak";
 
 /**
  * The shared look of every tappable mode card on Home.
@@ -233,7 +234,13 @@ export function BattleHome({
   const weeklyLeague = useGameStore((s) => s.weeklyLeague);
   const gymBadges = useGameStore((s) => s.gymBadges);
   const bestStreak = useGameStore((s) => s.stats.bestStreak);
-  const winStreak = useGameStore((s) => s.arenaStats.currentWinStreak);
+  // Derived from the battle log, NOT from `arenaStats.currentWinStreak`. That
+  // stored counter is written by `recordArenaBattle`, whose only caller is the
+  // live PvP screen — so a player who had just won three regular battles saw a
+  // streak of 0 here. Every mode writes to the log, so reading it makes the
+  // number true for all of them, and true for wins already banked.
+  const battleLog = useGameStore((s) => s.battleLog);
+  const winStreak = useMemo(() => currentWinStreak(battleLog), [battleLog]);
   const weekRange = getWeekRangeUtc();
 
   const weeklyLeader = weeklyLeague ? findGymLeader(weeklyLeague.gymLeaderId) : null;
