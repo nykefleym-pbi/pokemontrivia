@@ -336,7 +336,7 @@ export function WhosThatPokemon() {
 
   if (locked) {
     return (
-      <div className="flex h-full w-full flex-col overflow-y-auto bg-poke-cream px-5 pb-10 pt-8 text-center">
+      <div className="flex h-full w-full flex-col overflow-y-auto bg-poke-cream screen-x pb-10 pt-8 text-center">
         <h1 className="font-pixel text-lg leading-relaxed text-foreground">
           WHO'S THAT
           <br />

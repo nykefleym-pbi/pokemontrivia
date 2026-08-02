@@ -289,7 +289,7 @@ export function BattleHome({
   return (
     <div className="bg-poke-cream h-full w-full overflow-y-auto pb-nav safe-x">
       {/* Hero — sits directly on yellow gradient, no white card */}
-      <div className="relative px-5 pt-[calc(env(safe-area-inset-top)+1.25rem)] pb-2">
+      <div className="relative screen-x pt-[calc(env(safe-area-inset-top)+1.25rem)] pb-2">
         <div className="flex items-center gap-3">
           {ring}
           <div className="min-w-0 flex-1">
@@ -343,7 +343,7 @@ export function BattleHome({
       </div>
 
       {/* Battle card */}
-      <div className="px-5 pt-3">
+      <div className="screen-x pt-3">
         <div className="relative overflow-hidden rounded-3xl border-2 border-white bg-card p-5 shadow-card">
           <div className="pointer-events-none absolute -right-8 -bottom-8 opacity-[0.06]">
             <PokeballSpinner size={180} />
@@ -394,7 +394,7 @@ export function BattleHome({
 
           Mega keeps its cell even when there is no raid — collapsing it would
           reflow the other two every time the event ends. */}
-      <div className="grid grid-cols-3 gap-2 px-5 pt-3">
+      <div className="grid grid-cols-3 gap-2 screen-x pt-3">
         <button
           onClick={() => !dailyDone && !loading && onStartDaily()}
           aria-disabled={dailyDone || loading}
@@ -503,7 +503,7 @@ export function BattleHome({
         )}
       </div>
 
-      <div className="px-5 pt-2.5">
+      <div className="screen-x pt-2.5">
         <button
           onClick={() => !whosThatOnCooldown && navigate({ to: "/whos-that-pokemon" })}
           aria-disabled={whosThatOnCooldown}

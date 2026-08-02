@@ -454,7 +454,7 @@ function ArenaPage() {
     <div className="bg-poke-cream h-full w-full overflow-y-auto pb-nav safe-x">
       {/* Header. Chat lives here now, level with the title, because the list it
           used to hang off is gone — see `latestChatMatchId`. */}
-      <div className="flex items-center justify-between gap-3 px-5 pt-[calc(env(safe-area-inset-top)+1.25rem)] pb-2">
+      <div className="flex items-center justify-between gap-3 screen-x pt-[calc(env(safe-area-inset-top)+1.25rem)] pb-2">
         <div className="min-w-0">
           <p className="font-pixel-xs text-primary">WELCOME TO</p>
           <h1 className="font-display-lg text-foreground">Battle Arena</h1>
@@ -481,7 +481,7 @@ function ArenaPage() {
       </div>
 
       {/* ── Group 1 — trainer + record ─────────────────────────────────────── */}
-      <div className="px-5 pt-3">
+      <div className="screen-x pt-3">
         <div className="flex items-center gap-3 rounded-3xl bg-card p-4 shadow-card">
           <img
             src={trainerSpriteUrl(trainerSprite)}
@@ -518,7 +518,7 @@ function ArenaPage() {
       </div>
 
       {/* ── Group 2 — the two badges ───────────────────────────────────────── */}
-      <div className="flex gap-3 px-5 pt-3">
+      <div className="flex gap-3 screen-x pt-3">
         <TrophyCard label="PVP" count={arenaStats.nearbyBattles} art={ARENA_BADGE_ICON.nearby} />
         <TrophyCard
           label="TRAINING"
@@ -528,7 +528,7 @@ function ArenaPage() {
       </div>
 
       {/* ── Group 3 — rewards, and the one button that starts a battle ─────── */}
-      <div className="px-5 pt-3">
+      <div className="screen-x pt-3">
         <div className="rounded-3xl bg-card p-4 shadow-card">
           {/* Two views of the same thing — what this battle earns you, and where
               it puts you — sharing one panel. The rankings used to be a second
@@ -687,7 +687,7 @@ function ArenaPage() {
       </div>
 
       {/* ── Group 4 — Nearby Battle (QR + scanner) ─────────────────────────── */}
-      <div className="px-5 pt-3">
+      <div className="screen-x pt-3">
         <div className="rounded-3xl bg-card p-4 shadow-card">
           <SectionLabel>NEARBY BATTLE</SectionLabel>
           {/* Scanner replaces the QR in place — same footprint, no layout jump. */}

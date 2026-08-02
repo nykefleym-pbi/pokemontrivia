@@ -92,27 +92,34 @@ function PartnerStage({
   const footPad = useSpriteFootPad(partnerId);
 
   // Everything is derived from one width so the two layers cannot drift apart.
+  //
+  // These are CSS expressions rather than numbers now, because the widths are
+  // viewport-capped (see PLATFORM_W) and there is no number to multiply until
+  // the browser resolves the `min()`. Same arithmetic, handed to `calc`.
   const platformW = PLATFORM_W;
   const spriteW = SPRITE_W;
-  const visibleH = platformW * (1 - art.top - art.bottom);
+  const visibleH = scale(platformW, 1 - art.top - art.bottom);
   // Distance from the box's bottom edge up to the surface line.
-  const surfaceFromBottom = platformW * (1 - art.bottom - surface);
+  const surfaceFromBottom = scale(platformW, 1 - art.bottom - surface);
   // The sprite's own bottom edge sits below the surface by its empty band, so
   // the visible feet land ON the line rather than above it.
-  const spriteBottom = surfaceFromBottom - spriteW * footPad;
+  const spriteBottom = `calc(${surfaceFromBottom} - ${scale(spriteW, footPad)})`;
 
   // Centre of the visible creature, measured from the box's bottom edge: the
   // sprite's own middle sits above its empty foot band, not at its box centre.
-  const glowCentre = spriteBottom + spriteW * (0.5 + footPad / 2);
+  const glowCentre = `calc(${spriteBottom} + ${scale(spriteW, 0.5 + footPad / 2)})`;
   // Smaller and much fainter on a loss: the defeat sprite is drawn at 80%
   // opacity, so a bright burst behind it shines straight THROUGH the creature
   // and the rays read as painted on top of it.
-  const glowSize = spriteW * (won ? 1.3 : 1.1);
+  const glowSize = scale(spriteW, won ? 1.3 : 1.1);
 
   return (
     <div
       className="relative mx-auto"
-      style={{ width: platformW, height: Math.max(visibleH, spriteW * 0.72 + visibleH * 0.5) }}
+      style={{
+        width: platformW,
+        height: `max(${visibleH}, calc(${scale(spriteW, 0.72)} + ${scale(visibleH, 0.5)}))`,
+      }}
     >
       {/* Sunburst behind the partner — the same `SpriteBurst` the Shop puts
           behind a discounted item, so the two read as one effect rather than
@@ -130,7 +137,11 @@ function PartnerStage({
         // being positioned, still sit on top of it. Without this the burst
         // washed straight across the subtitle.
         className="pointer-events-none absolute left-1/2 -z-10 -translate-x-1/2"
-        style={{ width: glowSize, height: glowSize, bottom: glowCentre - glowSize / 2 }}
+        style={{
+          width: glowSize,
+          height: glowSize,
+          bottom: `calc(${glowCentre} - ${scale(glowSize, 0.5)})`,
+        }}
       >
         <SpriteBurst tint={won ? "rgba(255,214,120,0.6)" : "rgba(150,125,205,0.13)"} />
       </div>
@@ -142,9 +153,9 @@ function PartnerStage({
           aria-hidden
           className="pointer-events-none absolute left-1/2 -translate-x-1/2 rounded-[50%]"
           style={{
-            width: platformW * 0.62,
-            height: platformW * 0.18,
-            bottom: surfaceFromBottom - platformW * 0.09,
+            width: scale(platformW, 0.62),
+            height: scale(platformW, 0.18),
+            bottom: `calc(${surfaceFromBottom} - ${scale(platformW, 0.09)})`,
             background: won
               ? "radial-gradient(ellipse at 50% 35%, oklch(0.88 0.16 145) 0%, oklch(0.72 0.18 145) 55%, oklch(0.55 0.16 150) 100%)"
               : "oklch(0 0 0 / 0.4)",
@@ -159,7 +170,7 @@ function PartnerStage({
           draggable={false}
           onError={() => setPlatformFailed(true)}
           className="pointer-events-none absolute left-0 w-full select-none"
-          style={{ bottom: -platformW * art.bottom }}
+          style={{ bottom: scale(platformW, -art.bottom) }}
         />
       )}
       <motion.div
@@ -178,9 +189,24 @@ function PartnerStage({
   );
 }
 
-/** The partner is the highlight of this screen, so both are large. */
-const PLATFORM_W = 248;
-const SPRITE_W = 176;
+/** `len * k` as a CSS expression — the widths below are `min()`, not numbers. */
+const scale = (len: string, k: number) => `calc(${len} * ${k})`;
+
+/**
+ * The partner is the highlight of this screen, so both are large — but capped
+ * against the VIEWPORT as well as in pixels.
+ *
+ * Everything else here is type and buttons, which do not shrink: on a short
+ * phone the stage is the only thing with slack in it. `min()` leaves a 844pt
+ * screen exactly as it was (32vh = 270 > 248, so the pixel value wins) and
+ * takes ~35px off an iPhone SE, where it is the difference between a small
+ * scroll and a long one.
+ *
+ * `useSpriteFootPad` and PLATFORM_SURFACE are fractions of this width, so both
+ * layers follow it down on their own.
+ */
+const PLATFORM_W = "min(248px, 32vh)";
+const SPRITE_W = "min(176px, 22.7vh)";
 
 /**
  * Trims the missed-answers list until the buttons under it fit on screen.
@@ -304,7 +330,7 @@ export function ResultScreen({
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="relative flex h-full w-full flex-col overflow-y-auto bg-victory px-6 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
+        className="relative flex h-full w-full flex-col overflow-y-auto bg-victory screen-x pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)]"
       >
         <FallingBits won />
 
@@ -335,7 +361,7 @@ export function ResultScreen({
           </div>
         </div>
 
-        <div className="relative z-10 mx-auto mt-6 w-full max-w-sm rounded-2xl border-2 border-white bg-card p-4 shadow-card">
+        <div className="relative z-10 mx-auto mt-4 w-full max-w-sm rounded-2xl border-2 border-white bg-card p-4 shadow-card">
           {xpEarned > 0 && (
             <Row
               icon={REWARD_ICON.xp}
@@ -390,7 +416,7 @@ export function ResultScreen({
           overflow point, so with a long missed-answers list the last button
           ran off the bottom of the screen (owner report 2026-08-01). Spacing
           the last child from the inside always survives. */}
-        <div className="relative z-10 mx-auto mt-auto w-full max-w-sm space-y-2 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-8">
+        <div className="relative z-10 mx-auto mt-auto w-full max-w-sm space-y-2 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-5">
           {/* Next Battle starts the next one on the spot when the caller gives us
               a way to (owner request 2026-07-26 — keep the player battling
               instead of dropping them on the hub). Modes with nothing to start
@@ -440,7 +466,7 @@ export function ResultScreen({
       ref={fit.ref}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="relative flex h-full w-full flex-col overflow-y-auto bg-defeat px-6 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
+      className="relative flex h-full w-full flex-col overflow-y-auto bg-defeat screen-x pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)]"
     >
       <FallingBits won={false} />
 
@@ -491,7 +517,7 @@ export function ResultScreen({
           overflow point, so with a long missed-answers list the last button
           ran off the bottom of the screen (owner report 2026-08-01). Spacing
           the last child from the inside always survives. */}
-      <div className="relative z-10 mx-auto mt-auto w-full max-w-sm space-y-2 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-8">
+      <div className="relative z-10 mx-auto mt-auto w-full max-w-sm space-y-2 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-5">
         {!hideRematch && (
           <Button
             size="action"

@@ -348,7 +348,7 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
   const selectedTrainer = TRAINER_SPRITES.find((t) => t.id === trainerSprite);
 
   return (
-    <div className="flex h-full w-full flex-col px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+    <div className="flex h-full w-full flex-col screen-x pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)]">
       {/* Top bar */}
       <div className="flex items-center justify-between">
         <button

@@ -112,7 +112,7 @@ function PokedexPage() {
   return (
     <div className="bg-poke-cream h-full w-full overflow-y-auto pb-nav safe-x">
       {/* Hero */}
-      <div className="px-5 pb-5 pt-[calc(env(safe-area-inset-top)+1rem)]">
+      <div className="screen-x pb-5 pt-[calc(env(safe-area-inset-top)+1rem)]">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             {trainerName && (
@@ -253,7 +253,7 @@ function PokedexPage() {
       </div>
 
       {/* Sticky search */}
-      <div className="sticky top-0 z-20 border-b border-border/60 bg-background/95 px-5 py-3 backdrop-blur">
+      <div className="sticky top-0 z-20 border-b border-border/60 bg-background/95 screen-x py-3 backdrop-blur">
         <div className="relative">
           <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -268,7 +268,7 @@ function PokedexPage() {
       {/* Deliberately OUTSIDE the sticky block above. Pinned, the search field
           and this card together hold about a quarter of a phone screen for the
           whole scroll; only the search earns that. */}
-      <div className="px-5 pt-3">
+      <div className="screen-x pt-3">
         <DexCompletionCard gen={gen} />
       </div>
 
@@ -413,7 +413,7 @@ function PokedexPage() {
           return (
             <div className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-poke-cream">
               <div
-                className="relative shrink-0 overflow-hidden px-5 pb-10 pt-[calc(env(safe-area-inset-top)+1rem)]"
+                className="relative shrink-0 overflow-hidden screen-x pb-10 pt-[calc(env(safe-area-inset-top)+1rem)]"
                 style={{
                   background: `linear-gradient(160deg, var(--type-${primaryType}) 0%, color-mix(in oklab, var(--type-${primaryType}) 62%, #000) 100%)`,
                 }}
@@ -485,7 +485,7 @@ function PokedexPage() {
                   </div>
                 </div>
               </div>
-              <div className="flex-1 space-y-4 px-5 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-5">
+              <div className="flex-1 space-y-4 screen-x pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-5">
                 <div className="rounded-3xl bg-card p-5 shadow-card">
                   <div className="font-pixel-xs mb-2 text-primary">POKÉDEX ENTRY</div>
                   {got ? (

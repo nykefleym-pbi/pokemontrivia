@@ -878,7 +878,7 @@ function PvpResultScreen({
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="relative flex h-full w-full flex-col overflow-y-auto bg-victory px-6 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
+        className="relative flex h-full w-full flex-col overflow-y-auto bg-victory screen-x pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)]"
       >
         {confetti.map((d, i) => (
           <motion.span
@@ -1000,7 +1000,7 @@ function PvpResultScreen({
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="relative flex h-full w-full flex-col overflow-y-auto bg-defeat px-6 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
+      className="relative flex h-full w-full flex-col overflow-y-auto bg-defeat screen-x pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)]"
     >
       <div className="flex flex-col items-center text-center">
         <div className="font-pixel-xs uppercase tracking-[0.25em] text-poke-blue/80">
