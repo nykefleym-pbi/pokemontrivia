@@ -267,6 +267,7 @@ export function ResultScreen({
   currentLevel,
   levelProgressPct,
   newTrophies: _newTrophies,
+  badgeEarned,
   missed,
   onRebattle,
   onBackHome,
@@ -292,6 +293,15 @@ export function ResultScreen({
   xpForThisLevel: number;
   levelProgressPct: number;
   newTrophies: Array<{ name: string }>;
+  /**
+   * The Gym Badge this win earned, if any.
+   *
+   * Weekly League only: it is the whole point of the mode — one attempt a week,
+   * and a badge you keep — and it was the one reward the screen never mentioned.
+   * The badge was already granted and already visible in Profile; the player
+   * just had no moment where they were told.
+   */
+  badgeEarned?: { name: string; iconUrl: string };
   missed: Array<{ question: string; correctAnswer: string; explanation: string }>;
   onRebattle: () => void;
   onBackHome: () => void;
@@ -396,6 +406,7 @@ export function ResultScreen({
               valueClass="text-hp-good"
             />
           )}
+          {badgeEarned && <BadgeRow badge={badgeEarned} />}
           <div className="my-3 border-t border-dashed border-foreground/15" />
           <div className="flex items-center gap-2">
             <span className="font-pixel-xs text-foreground/70">
@@ -537,6 +548,34 @@ export function ResultScreen({
         </Button>
       </div>
     </motion.div>
+  );
+}
+
+/**
+ * The Gym Badge a Weekly League win earns.
+ *
+ * Deliberately louder than the XP and coin rows around it — bigger art, its own
+ * tinted plate, the word BADGE above the name — because it is the only reward
+ * on this screen that is permanent and the only one the mode exists for. A row
+ * that matched the others would have read as a fourth number.
+ *
+ * The sprite is a local file (public/badges), so no fallback ladder: if it were
+ * to 404 the alt text still names the badge.
+ */
+function BadgeRow({ badge }: { badge: { name: string; iconUrl: string } }) {
+  return (
+    <div className="mt-2 flex items-center gap-3 rounded-2xl border-2 border-poke-yellow/60 bg-poke-yellow/15 px-3 py-2">
+      <img
+        src={encodeURI(badge.iconUrl)}
+        alt={badge.name}
+        draggable={false}
+        className="h-11 w-11 shrink-0 object-contain drop-shadow"
+      />
+      <div className="min-w-0">
+        <div className="font-pixel-xs uppercase tracking-wide text-foreground/60">Badge earned</div>
+        <div className="truncate font-display-md leading-tight text-foreground">{badge.name}</div>
+      </div>
+    </div>
   );
 }
 

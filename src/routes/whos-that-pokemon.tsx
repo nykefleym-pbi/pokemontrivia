@@ -5,6 +5,8 @@ import { findPokemon, spriteUrl, type PokeType } from "@/lib/pokemon-data";
 import type { ItemId } from "@/lib/game-data";
 import { rollLevelUpRewards } from "@/lib/level-rewards";
 import { PokeballSpinner, PokemonSprite } from "@/components/game-ui";
+import { TypeChip } from "@/components/type-chip";
+import { WhosThatWordmark } from "@/components/whos-that-wordmark";
 import { playCry, playSfx, stopBgm, revealPokemon, playWhosThatShout } from "@/lib/audio";
 import { answerHaptic } from "@/lib/haptics";
 import { pokeApiUrls } from "@/lib/api/pokeapi";
@@ -48,46 +50,6 @@ const TYPES: PokeType[] = [
   "steel",
   "fairy",
 ];
-const TYPE_BG: Record<PokeType, string> = {
-  normal: "bg-type-normal",
-  fire: "bg-type-fire",
-  water: "bg-type-water",
-  electric: "bg-type-electric",
-  grass: "bg-type-grass",
-  ice: "bg-type-ice",
-  fighting: "bg-type-fighting",
-  poison: "bg-type-poison",
-  ground: "bg-type-ground",
-  flying: "bg-type-flying",
-  psychic: "bg-type-psychic",
-  bug: "bg-type-bug",
-  rock: "bg-type-rock",
-  ghost: "bg-type-ghost",
-  dragon: "bg-type-dragon",
-  dark: "bg-poke-dark",
-  steel: "bg-muted-foreground",
-  fairy: "bg-pink-400",
-};
-const TYPE_TEXT: Record<PokeType, string> = {
-  normal: "text-type-normal",
-  fire: "text-type-fire",
-  water: "text-type-water",
-  electric: "text-type-electric",
-  grass: "text-type-grass",
-  ice: "text-type-ice",
-  fighting: "text-type-fighting",
-  poison: "text-type-poison",
-  ground: "text-type-ground",
-  flying: "text-type-flying",
-  psychic: "text-type-psychic",
-  bug: "text-type-bug",
-  rock: "text-type-rock",
-  ghost: "text-type-ghost",
-  dragon: "text-type-dragon",
-  dark: "text-poke-dark",
-  steel: "text-muted-foreground",
-  fairy: "text-pink-400",
-};
 
 function fmtHMS(ms: number): string {
   const s = Math.max(0, Math.floor(ms / 1000));
@@ -337,11 +299,7 @@ export function WhosThatPokemon() {
   if (locked) {
     return (
       <div className="flex h-full w-full flex-col overflow-y-auto bg-poke-cream screen-x pb-10 pt-8 text-center">
-        <h1 className="font-pixel text-lg leading-relaxed text-foreground">
-          WHO'S THAT
-          <br />
-          POKÉMON?
-        </h1>
+        <WhosThatWordmark />
         <div className="flex flex-1 flex-col items-center justify-center gap-3">
           <div className="font-pixel text-[10px] uppercase tracking-wide text-foreground/50">
             Play again in
@@ -482,8 +440,12 @@ export function WhosThatPokemon() {
   }
 
   const silhouettePanel = (
+    // Edge to edge: `-mx-7` cancels the screen gutter this sits inside, which
+    // is the only way a child of a padded screen reaches the bezel. Height is
+    // unchanged from the square it replaced (16rem), so the reveal beat and the
+    // space below it stay where they were — this got WIDER, not taller.
     <div
-      className="relative mx-auto mt-6 aspect-square w-64 overflow-hidden rounded-[28px] shadow-card"
+      className="relative -mx-7 mt-6 h-64 overflow-hidden border-y-4 border-poke-yellow shadow-card"
       style={{
         background: "radial-gradient(circle at 50% 45%, #ff6a5d 0%, #e03a2f 55%, #b3261c 100%)",
       }}
@@ -495,10 +457,21 @@ export function WhosThatPokemon() {
             "repeating-conic-gradient(from 0deg at 50% 45%, rgba(255,255,255,0.10) 0deg 4deg, transparent 4deg 9deg)",
         }}
       />
+      {/* Golden halo behind the shape. Blurred and circular so it reads as the
+          silhouette being lit rather than as a second border. */}
+      <div
+        aria-hidden
+        className="absolute left-1/2 top-1/2 h-52 w-52 -translate-x-1/2 -translate-y-1/2 rounded-full blur-2xl"
+        style={{ background: "radial-gradient(circle, rgba(255,214,92,0.55) 0%, transparent 70%)" }}
+      />
+      {/* `h-[15rem]` inside an `h-64` (16rem) box: the small padding the owner
+          asked for is the 0.5rem left top and bottom. PokéAPI sprites carry
+          their own transparent margin, so the black shape lands short of that
+          again and never touches the gold rule. */}
       <PokemonSprite
         id={round.monId}
         alt="silhouette"
-        className="absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 [filter:brightness(0)] [image-rendering:pixelated]"
+        className="absolute left-1/2 top-1/2 h-[15rem] w-[15rem] -translate-x-1/2 -translate-y-1/2 [filter:brightness(0)] [image-rendering:pixelated]"
       />
     </div>
   );
@@ -538,11 +511,7 @@ export function WhosThatPokemon() {
           {`0:${String(timeLeft).padStart(2, "0")}`}
         </div>
       </div>
-      <h1 className="mt-3 text-center font-pixel text-lg leading-relaxed text-foreground">
-        WHO'S THAT
-        <br />
-        POKÉMON?
-      </h1>
+      <WhosThatWordmark className="mt-3" />
 
       {(round.mode === "1A" || round.mode === "1B") && silhouettePanel}
 
@@ -606,11 +575,7 @@ export function WhosThatPokemon() {
             {round.types.map((t, i) => (
               <div key={t} className="flex items-center gap-3">
                 {i > 0 && <span className="font-pixel text-lg text-foreground/50">+</span>}
-                <span
-                  className={`rounded-full px-6 py-3 font-pixel text-base uppercase tracking-wide text-white shadow-card ${TYPE_BG[t]}`}
-                >
-                  {t}
-                </span>
+                <TypeChip type={t} size="lg" />
               </div>
             ))}
           </div>
@@ -681,19 +646,14 @@ export function WhosThatPokemon() {
           <div className="text-center text-xl font-extrabold text-poke-dark">What type is it?</div>
           <div className="mt-0.5 text-center text-sm text-poke-dark/55">Pick 1 or 2 types.</div>
           <div className="mt-3 grid grid-cols-3 gap-2">
-            {TYPES.map((t) => {
-              const on = selTypes.includes(t);
-              return (
-                <button
-                  key={t}
-                  onClick={() => toggleType(t)}
-                  className={`rounded-full border-2 py-2.5 font-pixel text-[9px] uppercase tracking-wide transition press ${on ? `${TYPE_BG[t]} border-transparent text-white` : `border-current bg-transparent ${TYPE_TEXT[t]}`}`}
-                >
-                  {on ? "✓ " : ""}
-                  {t}
-                </button>
-              );
-            })}
+            {TYPES.map((t) => (
+              <TypeChip
+                key={t}
+                type={t}
+                selected={selTypes.includes(t)}
+                onClick={() => toggleType(t)}
+              />
+            ))}
           </div>
           <button
             onClick={submit}

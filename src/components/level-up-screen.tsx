@@ -73,17 +73,16 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
       // centring overflowing content pushes the overflow out of BOTH ends and
       // the top is unreachable, so the wordmark's "AMAZING!" ribbon was cut off
       // and could not be scrolled back into view.
-      // `justify-between`, so whatever height is left over is shared out as an
-      // even gap between the bands. Pinning it anywhere — all to the trainer,
-      // or all to one spacer — just moves the hole: the screen reads as either
-      // a marooned sprite or a chasm above the rewards. Spread across five
-      // gaps the same slack reads as breathing room.
+      // The news — wordmark, trainer, level change, rank, rewards — is ONE
+      // group, stacked tight; only the button is pushed away, by `mt-auto` on
+      // its own band. Spreading the slack evenly (`justify-between`) gave every
+      // band the same gap and left the plaques and the rewards floating a long
+      // way from the sprite they belong with; the eye reads five separate
+      // things instead of one event.
       //
-      // Safe here in a way it was NOT when this centred: content can no longer
-      // exceed the viewport, because the trainer band shrinks first (see
-      // below). `justify-between` would push overflow out of the bottom only,
-      // never off the top where it cannot be scrolled back.
-      className="screen-top screen-bottom screen-x fixed inset-0 z-[110] flex flex-col items-center justify-between overflow-hidden"
+      // Safe here in a way centring was not: content cannot exceed the
+      // viewport, because the trainer band shrinks first (see below).
+      className="screen-top screen-bottom screen-x fixed inset-0 z-[110] flex flex-col items-center gap-2 overflow-hidden"
       style={{
         background:
           "radial-gradient(circle at 50% 34%, oklch(0.42 0.09 265) 0%, oklch(0.24 0.06 265) 52%, oklch(0.16 0.04 265) 100%)",
@@ -113,7 +112,7 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
           otherwise refuse to go below the image), so the trainer is still what
           gives way rather than the button falling off the bottom. The slack it
           no longer takes goes to the spacer below the plaques. */}
-      <div className="relative z-10 flex min-h-0 w-full flex-[0_1_9.5rem] items-center justify-center">
+      <div className="relative z-10 flex min-h-0 w-full flex-[0_1_11rem] items-center justify-center">
         <AnimatePresence>
           {step >= 1 && (
             <motion.div
@@ -177,7 +176,7 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
             initial={{ opacity: 0, scale: 0.85 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ type: "spring", stiffness: 200 }}
-            className="relative z-10 shrink-0 rounded-full bg-poke-dark px-4 py-1.5 text-center shadow-pop"
+            className="relative z-10 shrink-0 rounded-full bg-poke-dark px-4 py-1.5 text-center shadow-float"
           >
             <div className="flex items-center justify-center gap-1.5 font-pixel-xs uppercase tracking-wide text-poke-yellow">
               <AppIcon src={UI_ICON.badges} className="h-3.5 w-3.5" />
@@ -193,7 +192,7 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="relative z-10 w-full max-w-xs shrink-0 rounded-3xl border-2 border-white bg-card px-3 py-2 shadow-pop"
+            className="relative z-10 w-full max-w-xs shrink-0 rounded-3xl border-2 border-white bg-card px-3 py-2 shadow-float"
           >
             <div className="text-center font-pixel-xs uppercase text-foreground/50">Rewards</div>
             <div className="mt-1.5 flex items-end justify-center gap-3">
@@ -210,7 +209,7 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="relative z-10 w-full max-w-xs shrink-0"
+            className="relative z-10 mt-auto w-full max-w-xs shrink-0 pt-3"
           >
             <Button
               size="action"
@@ -218,7 +217,7 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
                 e.stopPropagation();
                 onContinue();
               }}
-              className="w-full border-2 border-white bg-primary text-primary-foreground shadow-pop"
+              className="w-full border-2 border-white bg-primary text-primary-foreground shadow-float"
             >
               Continue
             </Button>
@@ -425,9 +424,16 @@ function LevelPlaque({
         draggable={false}
         className="block w-full select-none"
       />
+      {/* The label box IS the shield's plate, and the label centres inside it.
+          Positioning the text at a tuned offset instead was what made "LV 2"
+          sit high — the gold plate is shorter than the silver one, so one
+          offset cannot serve both. */}
       <div
-        className="absolute inset-x-0 flex -translate-y-1/2 flex-col items-center leading-none"
-        style={{ top: `${LEVEL_PLAQUE[kind].centreY * 100}%` }}
+        className="absolute inset-x-0 flex flex-col items-center justify-center leading-none"
+        style={{
+          top: `${LEVEL_PLAQUE[kind].faceTop * 100}%`,
+          height: `${(LEVEL_PLAQUE[kind].faceBottom - LEVEL_PLAQUE[kind].faceTop) * 100}%`,
+        }}
       >
         <span
           className={`font-pixel-xs uppercase ${highlight ? "text-white/75" : "text-white/45"}`}

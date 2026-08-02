@@ -1365,6 +1365,14 @@ function BattleMode({
           xpForThisLevel={prog.need}
           levelProgressPct={pct}
           newTrophies={newTrophiesRef.current}
+          // Only the Weekly League grants one, and only on a win — see
+          // recordWeeklyLeagueResult, which is what actually adds it to
+          // gymBadges. This just tells the player it happened.
+          badgeEarned={
+            isWeekly && resultWon && gymLeader
+              ? { name: gymLeader.badge, iconUrl: gymLeader.badgeIconUrl }
+              : undefined
+          }
           missed={missedRef.current}
           onRebattle={() => onExit()}
           onBackHome={() => onExit()}

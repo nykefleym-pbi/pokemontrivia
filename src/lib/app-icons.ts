@@ -27,6 +27,9 @@ export const UI_ICON = {
   settings: "/ui/Settings.webp",
   dailyGift: "/ui/Daily Gift Box.webp",
   pokeEgg: "/ui/Poke Egg.webp",
+  /** Who's That Pokémon's title. 512x512 with 29.5% transparent top and bottom
+   *  — see RESULT_ART.whosThat; render it through <WhosThatWordmark>. */
+  whosThat: "/ui/Who's that Pokemon.webp",
 } as const;
 
 /**
