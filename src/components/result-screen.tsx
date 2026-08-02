@@ -399,19 +399,19 @@ export function ResultScreen({
               labelled "Next Battle" that quietly just left the battle. */}
           {!hideRematch && (
             <Button
-              size="lg"
+              size="action"
               onClick={() => (onRematch ? onRematch() : onRebattle())}
-              className="h-14 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
+              className="w-full bg-primary text-primary-foreground shadow-pop"
             >
               Next Battle
             </Button>
           )}
           {canShare && onShare && (
             <Button
-              size="lg"
+              size="action"
               variant="outline"
               onClick={onShare}
-              className="h-14 w-full rounded-full border-2 border-foreground/15 bg-card font-bold text-foreground hover:bg-card/80"
+              className="w-full border-2 border-foreground/15 bg-card text-foreground hover:bg-card/80"
             >
               <span className="flex items-center gap-2">
                 <Share2 className="h-5 w-5" aria-hidden />
@@ -422,10 +422,10 @@ export function ResultScreen({
           {/* The way out, now that the primary button no longer is one. Mirrors
               the defeat screen's own "Back home". */}
           <Button
-            size="lg"
+            size="action"
             variant="outline"
             onClick={onBackHome}
-            className="h-14 w-full rounded-full border-2 border-foreground/15 bg-card font-bold text-foreground hover:bg-card/80"
+            className="w-full border-2 border-foreground/15 bg-card text-foreground hover:bg-card/80"
           >
             Back home
           </Button>
@@ -494,18 +494,18 @@ export function ResultScreen({
       <div className="relative z-10 mx-auto mt-auto w-full max-w-sm space-y-2 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-8">
         {!hideRematch && (
           <Button
-            size="lg"
+            size="action"
             onClick={() => (onRematch ? onRematch() : onRebattle())}
-            className="h-14 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
+            className="w-full bg-primary text-primary-foreground shadow-pop"
           >
             Rematch
           </Button>
         )}
         <Button
-          size="lg"
+          size="action"
           variant="outline"
           onClick={onBackHome}
-          className="h-14 w-full rounded-full border-2 border-white/20 bg-white/[0.04] font-bold text-white hover:bg-white/10"
+          className="w-full border-2 border-white/20 bg-white/[0.04] text-white hover:bg-white/10"
         >
           Back home
         </Button>

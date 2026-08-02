@@ -626,10 +626,10 @@ function ShopPage() {
                 </span>
               </div>
               <Button
-                size="lg"
+                size="action"
                 onClick={confirmBundle}
                 disabled={coins < bundleConfirm.cost}
-                className="mt-4 h-12 w-full rounded-full text-base font-bold"
+                className="mt-4 w-full"
               >
                 <AppIcon src={COIN_ICON} alt="" className="mr-2 h-5 w-5" />
                 {coins < bundleConfirm.cost
@@ -742,9 +742,10 @@ function ShopPage() {
                 return (
                   <div className="mt-5 space-y-2">
                     <Button
+                      size="action"
                       disabled={!canAfford}
                       onClick={confirmPurchase}
-                      className="h-13 w-full rounded-full bg-primary py-6 text-base font-bold text-primary-foreground shadow-pop disabled:opacity-50"
+                      className="w-full bg-primary text-primary-foreground shadow-pop disabled:opacity-50"
                     >
                       Confirm — {totalCost.toLocaleString()} Coins
                     </Button>

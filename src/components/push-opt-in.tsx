@@ -187,18 +187,20 @@ export function PushOptIn() {
         <div className="mt-3 flex flex-col gap-2">
           {!(mode === "install" && ios) && (
             <Button
+              size="action"
               onClick={() => void (mode === "install" ? acceptInstall() : acceptPush())}
               disabled={busyAction}
-              className="h-12 w-full rounded-full font-bold"
+              className="w-full"
             >
               {busyAction ? "Just a sec…" : mode === "install" ? "Add to home screen" : "Notify me"}
             </Button>
           )}
           <Button
+            size="action"
             variant="ghost"
             onClick={decline}
             disabled={busyAction}
-            className="h-11 w-full rounded-full font-bold text-foreground/60"
+            className="w-full text-foreground/60"
           >
             {mode === "install" && ios ? "Got it" : "Not now"}
           </Button>

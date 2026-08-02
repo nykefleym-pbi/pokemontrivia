@@ -935,9 +935,10 @@ function ProfilePage() {
               className="rounded-2xl bg-card"
             />
             <Button
+              size="action"
               onClick={() => void submitFeedback()}
               disabled={sendingFeedback || feedbackMsg.trim().length < 10}
-              className="h-12 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
+              className="w-full bg-primary text-primary-foreground shadow-pop"
             >
               {sendingFeedback ? "Sending…" : "Send"}
             </Button>
@@ -1057,12 +1058,13 @@ function ProfilePage() {
           </SheetHeader>
           <div className="mt-3">
             <Button
+              size="action"
               variant="outline"
               onClick={() => {
                 setPvpHistoryOpen(false);
                 void navigate({ to: "/arena" });
               }}
-              className="h-11 w-full rounded-full"
+              className="w-full"
             >
               <Swords className="mr-1.5 h-4 w-4" /> Start a new battle in the Arena
             </Button>
@@ -1769,7 +1771,11 @@ function ProfilePage() {
                       loading="lazy"
                       className="aspect-[12/13] w-full object-cover transition-[filter] duration-200"
                       style={{
-                        filter: active ? "none" : owned ? "grayscale(1)" : "grayscale(1) brightness(0.6)",
+                        filter: active
+                          ? "none"
+                          : owned
+                            ? "grayscale(1)"
+                            : "grayscale(1) brightness(0.6)",
                       }}
                     />
                     {!owned && (

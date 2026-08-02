@@ -52,9 +52,7 @@ export function ShareCardDialog({ open, onClose, data, inviteCode }: Props) {
         share?: (d: { files?: File[]; title?: string; text?: string }) => Promise<void>;
       };
       if (nav.canShare && nav.share && nav.canShare({ files: [file] })) {
-        const text = inviteCode
-          ? `Beat my score! ${inviteUrl(inviteCode)}`
-          : "Beat my score!";
+        const text = inviteCode ? `Beat my score! ${inviteUrl(inviteCode)}` : "Beat my score!";
         await nav.share({ files: [file], title: "Pokémon Trivia Battle", text });
       } else {
         handleSave();
@@ -106,17 +104,19 @@ export function ShareCardDialog({ open, onClose, data, inviteCode }: Props) {
         {/* Action bar */}
         <div className="flex shrink-0 gap-3 px-5 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
           <Button
+            size="action"
             onClick={handleShare}
             disabled={!imageUrl}
-            className="h-14 flex-1 rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
+            className="flex-1 bg-primary text-primary-foreground shadow-pop"
           >
             <Share2 className="mr-2 h-5 w-5" /> Share
           </Button>
           <Button
+            size="action"
             onClick={handleSave}
             disabled={!imageUrl}
             variant="outline"
-            className="h-14 flex-1 rounded-full border-2 border-black/10 bg-white font-bold text-poke-dark hover:bg-white/90"
+            className="flex-1 border-2 border-black/10 bg-white text-poke-dark hover:bg-white/90"
           >
             <ImageIcon className="mr-2 h-5 w-5" /> Save image
           </Button>

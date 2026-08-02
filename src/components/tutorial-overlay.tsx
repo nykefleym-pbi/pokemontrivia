@@ -88,8 +88,9 @@ export function TutorialOverlay({ step, onDismiss, onSkip }: Props) {
                   Skip tutorial
                 </button>
                 <Button
+                  size="action"
                   onClick={onDismiss}
-                  className="h-11 rounded-full bg-primary px-6 font-bold text-primary-foreground shadow-pop"
+                  className="bg-primary text-primary-foreground shadow-pop"
                 >
                   {current.id === 3 ? "Start battling" : "Got it"}
                 </Button>

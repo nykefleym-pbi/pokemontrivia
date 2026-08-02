@@ -83,7 +83,9 @@ function PvpChatPage() {
         <div className="font-display text-lg text-foreground">
           This chat isn't available anymore.
         </div>
-        <Button onClick={() => navigate({ to: "/arena" })}>Back to Arena</Button>
+        <Button size="action" onClick={() => navigate({ to: "/arena" })}>
+          Back to Arena
+        </Button>
       </div>
     );
   }
