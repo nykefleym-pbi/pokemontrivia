@@ -375,10 +375,10 @@ export function BattleHome({
             </div>
           )}
           <Button
-            size="lg"
+            size="action"
             onClick={onStart}
             disabled={loading}
-            className="relative mt-4 h-14 w-full rounded-full border-2 border-white bg-primary text-base font-bold shadow-pop press-lg"
+            className="relative mt-4 w-full border-2 border-white bg-primary shadow-pop press-lg"
           >
             <Sparkles className="mr-2 h-4 w-4" />
             {loading ? "Summoning..." : "Start Battle"}

@@ -88,9 +88,9 @@ export function ElitePendingTakeover({
           <Skeleton className="h-14 w-full rounded-full" />
         ) : (
           <Button
-            size="lg"
+            size="action"
             onClick={onStart}
-            className="h-14 w-full rounded-full bg-poke-yellow text-base font-bold text-foreground shadow-pop hover:bg-poke-yellow/90"
+            className="w-full bg-poke-yellow text-foreground shadow-pop hover:bg-poke-yellow/90"
           >
             <Crown className="mr-2 h-5 w-5" /> Challenge {elite.name}
           </Button>

@@ -40,83 +40,84 @@ export function PartnerCard({
 
   return (
     <LegendaryFrame pokemonId={pokemon.id} types={pokemon.types ?? []} className="mt-3">
-    <div className="rounded-3xl bg-card p-4 shadow-card">
-      <div className="flex items-center gap-4">
-        <div className="shrink-0">
-          <PokemonSprite id={pokemon.id} alt={pokemon.name} className="sprite h-20 w-20" />
+      <div className="rounded-3xl bg-card p-4 shadow-card">
+        <div className="flex items-center gap-4">
+          <div className="shrink-0">
+            <PokemonSprite id={pokemon.id} alt={pokemon.name} className="sprite h-20 w-20" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="font-display-lg text-xl font-extrabold text-foreground truncate">
+                {pokemon.name}
+              </span>
+              {(pokemon.types ?? []).slice(0, 1).map((t) => (
+                <TypeBadge key={t} type={t} size="sm" />
+              ))}
+            </div>
+            <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-poke-blue to-primary"
+                style={{ width: `${cost ? Math.min(100, (tp / cost) * 100) : 100}%` }}
+              />
+            </div>
+            <div className="mt-1 text-xs font-semibold text-foreground/60">
+              TP {tp}
+              {cost ? ` · ×${mult.toFixed(2)}` : ""}
+            </div>
+          </div>
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="font-display-lg text-xl font-extrabold text-foreground truncate">
-              {pokemon.name}
-            </span>
-            {(pokemon.types ?? []).slice(0, 1).map((t) => (
-              <TypeBadge key={t} type={t} size="sm" />
-            ))}
-          </div>
-          <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-poke-blue to-primary"
-              style={{ width: `${cost ? Math.min(100, (tp / cost) * 100) : 100}%` }}
-            />
-          </div>
-          <div className="mt-1 text-xs font-semibold text-foreground/60">
-            TP {tp}
-            {cost ? ` · ×${mult.toFixed(2)}` : ""}
-          </div>
-        </div>
-      </div>
-      {canEvolve(pokemon) && cost !== null && (
-        <div className="mt-4 flex items-center gap-3">
-          <Button
-            onClick={handleEvolveClick}
-            disabled={!eligible}
-            className={`h-12 flex-1 rounded-full font-bold shadow-pop ${
-              eligible
-                ? "bg-gradient-to-r from-poke-yellow to-primary text-white"
-                : "bg-muted text-foreground/50"
-            }`}
-          >
-            {/* TP progress lives in the bar under the Pokémon's name; don't
+        {canEvolve(pokemon) && cost !== null && (
+          <div className="mt-4 flex items-center gap-3">
+            <Button
+              size="action"
+              onClick={handleEvolveClick}
+              disabled={!eligible}
+              className={`flex-1 shadow-pop ${
+                eligible
+                  ? "bg-gradient-to-r from-poke-yellow to-primary text-white"
+                  : "bg-muted text-foreground/50"
+              }`}
+            >
+              {/* TP progress lives in the bar under the Pokémon's name; don't
                 repeat it here (feedback ab8a72c9). */}
-            ✦ Evolve
-          </Button>
-        </div>
-      )}
-      {pokemon.isFullyEvolved && (
-        <div className="mt-4 rounded-full bg-muted py-2 text-center text-xs font-bold text-foreground/60">
-          Fully evolved
-        </div>
-      )}
-
-      <Dialog open={evoOpen} onOpenChange={setEvoOpen}>
-        <DialogContent className="max-w-xs">
-          <DialogHeader>
-            <DialogTitle>Choose evolution</DialogTitle>
-          </DialogHeader>
-          <div className="grid grid-cols-2 gap-2">
-            {targets.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => {
-                  setEvoOpen(false);
-                  onEvolve(t);
-                }}
-                className="flex flex-col items-center rounded-2xl border-2 p-3 transition hover:border-primary press"
-              >
-                <PokemonSprite id={t.id} alt={t.name} className="sprite h-16 w-16" />
-                <div className="mt-1 text-xs font-semibold">{t.name}</div>
-                <div className="mt-1 flex gap-0.5">
-                  {t.types.map((tt) => (
-                    <TypeBadge key={tt} type={tt} size="sm" />
-                  ))}
-                </div>
-              </button>
-            ))}
+              ✦ Evolve
+            </Button>
           </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+        )}
+        {pokemon.isFullyEvolved && (
+          <div className="mt-4 rounded-full bg-muted py-2 text-center text-xs font-bold text-foreground/60">
+            Fully evolved
+          </div>
+        )}
+
+        <Dialog open={evoOpen} onOpenChange={setEvoOpen}>
+          <DialogContent className="max-w-xs">
+            <DialogHeader>
+              <DialogTitle>Choose evolution</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-2 gap-2">
+              {targets.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => {
+                    setEvoOpen(false);
+                    onEvolve(t);
+                  }}
+                  className="flex flex-col items-center rounded-2xl border-2 p-3 transition hover:border-primary press"
+                >
+                  <PokemonSprite id={t.id} alt={t.name} className="sprite h-16 w-16" />
+                  <div className="mt-1 text-xs font-semibold">{t.name}</div>
+                  <div className="mt-1 flex gap-0.5">
+                    {t.types.map((tt) => (
+                      <TypeBadge key={tt} type={tt} size="sm" />
+                    ))}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
     </LegendaryFrame>
   );
 }

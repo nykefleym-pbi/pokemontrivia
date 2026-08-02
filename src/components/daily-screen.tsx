@@ -422,17 +422,17 @@ function DailyResultScreen({
 
       {shareData && (
         <Button
-          size="lg"
+          size="action"
           onClick={() => setShareOpen(true)}
-          className="mt-5 h-12 w-full max-w-xs rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
+          className="mt-5 w-full max-w-xs bg-primary text-primary-foreground shadow-pop"
         >
           Share result
         </Button>
       )}
       <Button
-        size="lg"
+        size="action"
         onClick={onExit}
-        className="mt-5 h-12 w-full max-w-xs rounded-full border-2 border-poke-dark/20 bg-card font-bold text-foreground shadow-card hover:bg-card/80"
+        className="mt-5 w-full max-w-xs border-2 border-poke-dark/20 bg-card text-foreground shadow-card hover:bg-card/80"
       >
         Back
       </Button>

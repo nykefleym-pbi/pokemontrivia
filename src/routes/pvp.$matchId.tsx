@@ -15,7 +15,8 @@ export const Route = createFileRoute("/pvp/$matchId")({
   component: PvpMatchPage,
 });
 
-type Phase = "loading" | "not_found" | "playing" | "waiting" | "inactive" | "submit_error" | "result";
+type Phase =
+  "loading" | "not_found" | "playing" | "waiting" | "inactive" | "submit_error" | "result";
 
 function phaseForCompletedSide(status: PvpMatch["status"]): Phase {
   if (status === "completed") return "result";
@@ -119,7 +120,9 @@ function PvpMatchPage() {
         <div className="font-display text-lg text-foreground">
           This challenge isn't available anymore.
         </div>
-        <Button onClick={() => navigate({ to: "/arena" })}>Back to Arena</Button>
+        <Button size="action" onClick={() => navigate({ to: "/arena" })}>
+          Back to Arena
+        </Button>
       </div>
     );
   }
@@ -135,6 +138,7 @@ function PvpMatchPage() {
           Couldn't submit your result — your answers are still saved here.
         </div>
         <Button
+          size="action"
           onClick={() => {
             if (pendingResult) void handleFinish(pendingResult);
           }}
@@ -156,17 +160,15 @@ function PvpMatchPage() {
         {myScore !== null && (
           <div className="font-pixel-xs text-foreground/60">Your score: {myScore}</div>
         )}
-        <Button onClick={() => navigate({ to: "/arena" })}>Back to Arena</Button>
+        <Button size="action" onClick={() => navigate({ to: "/arena" })}>
+          Back to Arena
+        </Button>
       </div>
     );
   }
 
   const iAmChallenger = myId === match?.challengerId;
-  const myFinal = match
-    ? iAmChallenger
-      ? match.challengerScore
-      : match.opponentScore
-    : myScore;
+  const myFinal = match ? (iAmChallenger ? match.challengerScore : match.opponentScore) : myScore;
   const oppFinal = match ? (iAmChallenger ? match.opponentScore : match.challengerScore) : null;
   const won = phase === "result" && myFinal !== null && oppFinal !== null && myFinal > oppFinal;
   const tied = phase === "result" && myFinal !== null && oppFinal !== null && myFinal === oppFinal;
@@ -195,7 +197,9 @@ function PvpMatchPage() {
           </div>
         </>
       )}
-      <Button onClick={() => navigate({ to: "/arena" })}>Back to Arena</Button>
+      <Button size="action" onClick={() => navigate({ to: "/arena" })}>
+        Back to Arena
+      </Button>
     </div>
   );
 }

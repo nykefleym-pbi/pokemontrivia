@@ -661,9 +661,10 @@ function ArenaPage() {
               rewards read as what this button is FOR. Same here — and it is now
               the only way in, since Online falls back to Training by itself. */}
           <Button
+            size="action"
             onClick={() => void handleBattleOnline()}
             disabled={rewardsBlockBattling || trainingBusy}
-            className="mt-4 h-14 w-full rounded-full bg-gradient-to-b from-primary to-primary/85 text-lg font-bold tracking-wide shadow-pop transition press-lg disabled:opacity-60"
+            className="mt-4 w-full bg-gradient-to-b from-primary to-primary/85 tracking-wide shadow-pop transition press-lg disabled:opacity-60"
           >
             {trainingBusy ? (
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -702,6 +703,7 @@ function ArenaPage() {
                 : "Scan this Battle Code with another device to battle!"}
             </p>
             <Button
+              size="action"
               onClick={() => {
                 if (rewardsBlockBattling) {
                   toast.error(claimFirstMessage);
@@ -710,7 +712,7 @@ function ArenaPage() {
                 setScanOpen((v) => !v);
               }}
               disabled={rewardsBlockBattling && !scanOpen}
-              className="mt-3 h-12 w-full rounded-full font-bold shadow-pop transition press-lg"
+              className="mt-3 w-full shadow-pop transition press-lg"
             >
               <QrCode className="mr-1.5 h-4 w-4" />
               {scanOpen ? "Show My Battle Code" : "Scan a Battle Code"}

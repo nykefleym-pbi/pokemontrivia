@@ -54,10 +54,10 @@ export function WeeklyLeagueCard({
       <div className="mt-1.5 text-[10px] text-muted-foreground">One attempt — no retries.</div>
 
       <Button
-        size="lg"
+        size="action"
         onClick={onStart}
         disabled={loading}
-        className="mt-4 h-12 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
+        className="mt-4 w-full bg-primary text-primary-foreground shadow-pop"
       >
         <Swords className="mr-2 h-4 w-4" />
         {loading ? "Loading..." : resumeMode ? "Resume Challenge" : `Challenge ${leader.name}`}

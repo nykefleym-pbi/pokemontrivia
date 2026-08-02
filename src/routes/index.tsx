@@ -99,16 +99,16 @@ function SplashPage() {
             {/* buttons */}
             <div className="relative z-10 flex w-full flex-col gap-3 px-7 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-7">
               <Button
-                size="lg"
-                className="h-[58px] w-full rounded-full border-2 border-white bg-primary text-[17px] font-bold text-primary-foreground shadow-card press"
+                size="action"
+                className="w-full border-2 border-white bg-primary text-primary-foreground shadow-card press"
                 onClick={() => setStep("create")}
               >
                 New Trainer
               </Button>
               <Button
-                size="lg"
+                size="action"
                 variant="outline"
-                className="h-[58px] w-full rounded-full border-2 border-white bg-card text-[17px] font-bold text-foreground shadow-card press"
+                className="w-full border-2 border-white bg-card text-foreground shadow-card press"
                 onClick={() => {
                   useGameStore.getState().startGuestSession();
                   navigate({ to: "/battle", search: { autostart: 1 } as never });
@@ -190,9 +190,7 @@ const STEPS: Step[] = ["name", "trainer", "pokemon"];
  * without tinting what is behind it, and matches the rim Home's Start Battle
  * already uses.
  */
-const ONBOARD_CTA =
-  "h-[58px] w-full rounded-full border-2 border-white bg-primary text-[17px] font-bold " +
-  "shadow-card press disabled:opacity-50";
+const ONBOARD_CTA = "w-full border-2 border-white bg-primary shadow-card press disabled:opacity-50";
 
 function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: string }) {
   const [substep, setSubstep] = useState<Step>("name");
@@ -433,7 +431,7 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
 
             <div className="mt-auto px-1 pb-2 pt-6">
               <Button
-                size="lg"
+                size="action"
                 disabled={
                   claiming ||
                   nameAvail === "checking" ||
@@ -523,7 +521,7 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
             )}
 
             <div className="mt-auto px-1 pb-2 pt-6">
-              <Button size="lg" onClick={() => setSubstep("pokemon")} className={ONBOARD_CTA}>
+              <Button size="action" onClick={() => setSubstep("pokemon")} className={ONBOARD_CTA}>
                 Next: Choose Pokémon
               </Button>
             </div>
@@ -615,7 +613,7 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
               })()}
 
             <div className="mt-auto pt-5">
-              <Button size="lg" disabled={!pick} onClick={start} className={ONBOARD_CTA}>
+              <Button size="action" disabled={!pick} onClick={start} className={ONBOARD_CTA}>
                 Start Adventure
               </Button>
             </div>

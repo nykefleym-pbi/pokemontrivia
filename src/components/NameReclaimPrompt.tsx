@@ -136,9 +136,10 @@ export function NameReclaimPrompt() {
         </div>
         <div className="mt-2 flex justify-end">
           <Button
+            size="action"
             onClick={() => void handleConfirm()}
             disabled={!canConfirm}
-            className="h-11 rounded-full px-6 font-bold"
+            className=""
           >
             {submitting ? "Saving…" : "Confirm"}
           </Button>

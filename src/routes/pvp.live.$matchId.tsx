@@ -616,7 +616,9 @@ function MatchPageContent({ matchId }: { matchId: string }) {
         <div className="font-display text-lg text-foreground">
           This battle isn't available anymore.
         </div>
-        <Button onClick={() => navigate({ to: "/arena" })}>Back to Arena</Button>
+        <Button size="action" onClick={() => navigate({ to: "/arena" })}>
+          Back to Arena
+        </Button>
       </div>
     );
   }
@@ -950,7 +952,7 @@ function PvpResultScreen({
         <div className="mx-auto mt-auto flex w-full max-w-sm flex-col gap-2 pt-8">
           {onRematch && (
             <Button
-              size="lg"
+              size="action"
               onClick={onRematch}
               disabled={rematchBusy}
               className="h-14 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop disabled:opacity-70"
@@ -960,7 +962,7 @@ function PvpResultScreen({
           )}
           {onShare && (
             <Button
-              size="lg"
+              size="action"
               variant="outline"
               onClick={onShare}
               className="h-14 w-full rounded-full border-2 font-bold shadow-card"
@@ -971,7 +973,7 @@ function PvpResultScreen({
           )}
           <div className="flex gap-2">
             <Button
-              size="lg"
+              size="action"
               onClick={onBack}
               className="h-14 flex-1 rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
             >
@@ -979,7 +981,7 @@ function PvpResultScreen({
             </Button>
             {onChat && (
               <Button
-                size="lg"
+                size="action"
                 variant="outline"
                 onClick={onChat}
                 className="h-14 flex-1 rounded-full border-2 font-bold shadow-card"
@@ -1049,7 +1051,7 @@ function PvpResultScreen({
       <div className="mx-auto mt-auto flex w-full max-w-sm flex-col gap-2 pt-8">
         {onRematch && (
           <Button
-            size="lg"
+            size="action"
             onClick={onRematch}
             disabled={rematchBusy}
             className="h-14 w-full rounded-full bg-primary font-bold text-primary-foreground shadow-pop disabled:opacity-70"
@@ -1059,7 +1061,7 @@ function PvpResultScreen({
         )}
         <div className="flex gap-2">
           <Button
-            size="lg"
+            size="action"
             onClick={onBack}
             className="h-14 flex-1 rounded-full bg-primary font-bold text-primary-foreground shadow-pop"
           >
@@ -1067,7 +1069,7 @@ function PvpResultScreen({
           </Button>
           {onChat && (
             <Button
-              size="lg"
+              size="action"
               variant="outline"
               onClick={onChat}
               // The outline variant carries `bg-background`, which is near-white

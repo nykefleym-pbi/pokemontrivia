@@ -107,9 +107,14 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               // Square, sized off its own height so the burst stays circular at
-              // any viewport. The cap keeps a tall phone from blowing the
-              // trainer up past the plaques.
-              className="relative h-full max-h-[17rem] max-w-full"
+              // any viewport.
+              //
+              // The cap is deliberately modest. The trainer is WHO levelled up,
+              // not WHAT the screen is about — at 17rem it was the largest
+              // thing here and the plaques, which carry the actual news, read
+              // as a footnote under it. The slack it gives up goes to breathing
+              // room around the level change.
+              className="relative h-full max-h-[11rem] max-w-full"
               style={{ aspectRatio: "1" }}
             >
               {/* The burst is a positioned sibling of the sprite, so it needs an
@@ -135,8 +140,6 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
             animate={{ opacity: 1, y: 0 }}
             className="relative z-10 flex w-full shrink-0 flex-col items-center text-center"
           >
-            <div className="font-display-md text-white">{trainerName}</div>
-
             {/* Negative gaps, deliberately: each plaque carries its own glow out
                 to the edge of its box, so touching boxes read as a comfortable
                 gap and a real gap reads as a chasm. */}
@@ -149,7 +152,7 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
                 draggable={false}
                 animate={{ x: [0, 5, 0] }}
                 transition={{ duration: 1.2, repeat: Infinity }}
-                className="relative z-10 -mx-3 w-[60px] shrink-0 select-none"
+                className="relative z-10 -mx-3 w-[66px] shrink-0 select-none"
               />
               <LevelPlaque kind="to" level={rewards.toLevel} highlight />
             </div>
@@ -199,12 +202,12 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
             className="relative z-10 mt-2 w-full max-w-xs shrink-0"
           >
             <Button
-              size="lg"
+              size="action"
               onClick={(e) => {
                 e.stopPropagation();
                 onContinue();
               }}
-              className="h-12 w-full rounded-full border-2 border-white bg-primary font-bold text-primary-foreground shadow-pop"
+              className="w-full border-2 border-white bg-primary text-primary-foreground shadow-pop"
             >
               Continue
             </Button>
@@ -341,7 +344,7 @@ function LevelUpWordmark() {
     );
   }
   return (
-    <div className="relative w-full max-w-[250px]" style={s.wrapper}>
+    <div className="relative w-full max-w-[300px]" style={s.wrapper}>
       <img
         src={encodeURI(RESULT_ICON.levelUp)}
         alt="Level up!"
@@ -354,8 +357,22 @@ function LevelUpWordmark() {
   );
 }
 
-/** The shield BODY's width on screen. Both plaques are sized from this. */
-const PLAQUE_BODY = 56;
+/** The shield BODY's width on screen at scale 1. Both plaques derive from it. */
+const PLAQUE_BODY = 66;
+
+/**
+ * How big each plaque is relative to the other.
+ *
+ * The gap is the point: this is a before-and-after, and a pair drawn the same
+ * size states two facts instead of showing one becoming the other. The old
+ * level is drawn down and the new one up, so the growth is visible without a
+ * word of copy.
+ *
+ * ONE scale drives both the shield and its number, so "the grey container is
+ * smaller" and "its number is smaller" cannot drift apart — which they would
+ * the moment either was tuned on its own.
+ */
+const PLAQUE_SCALE = { from: 0.8, to: 1.18 } as const;
 
 /**
  * One level number on its supplied shield plaque — silver for the level you
@@ -363,10 +380,9 @@ const PLAQUE_BODY = 56;
  *
  * Sized by `plaqueWidth` rather than by a flat width, because the two files
  * carry differently-sized glows: given the same box the gold shield's body
- * comes out a fifth smaller than the silver one, which reads as the NEW level
- * having shrunk. Sizing each file by its own body keeps them matched, and the
- * highlight's extra 12% is then a deliberate difference rather than an artifact
- * of the artwork.
+ * comes out a fifth smaller than the silver one, which would cancel out the
+ * growth the pair exists to show. Sizing each file by its own measured body
+ * makes PLAQUE_SCALE mean what it says.
  *
  * The label is positioned against `centreY`, not centred in the box: a shield
  * tapers to a point, so its lower half is mostly empty and text on the
@@ -381,7 +397,8 @@ function LevelPlaque({
   level: number;
   highlight?: boolean;
 }) {
-  const w = plaqueWidth(kind, PLAQUE_BODY * (highlight ? 1.12 : 1));
+  const body = PLAQUE_BODY * PLAQUE_SCALE[kind];
+  const w = plaqueWidth(kind, body);
   return (
     <motion.div
       initial={highlight ? { scale: 0.6, opacity: 0 } : false}
@@ -403,20 +420,16 @@ function LevelPlaque({
       >
         <span
           className={`font-pixel-xs uppercase ${highlight ? "text-white/75" : "text-white/45"}`}
-          style={{ fontSize: Math.max(7, Math.round(w * 0.055)) }}
+          style={{ fontSize: Math.max(7, Math.round(body * 0.14)) }}
         >
           Lv
         </span>
         <span
           className="mt-1 font-display-lg text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.55)]"
           // Scaled off the BODY, not the file: the gold plaque's box is wider
-          // for the same shield, so a font size in `em` of the box would print
+          // for the same shield, so a font size taken from the box would print
           // the new level larger than the old one for no reason.
-          style={{
-            fontSize: Math.round(
-              PLAQUE_BODY * (highlight ? 1.12 : 1) * (level >= 100 ? 0.36 : 0.46),
-            ),
-          }}
+          style={{ fontSize: Math.round(body * (level >= 100 ? 0.36 : 0.46)) }}
         >
           {level}
         </span>

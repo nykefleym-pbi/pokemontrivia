@@ -22,6 +22,26 @@ const buttonVariants = cva(
         sm: "h-8 rounded-md px-3 text-xs",
         lg: "h-10 rounded-md px-8",
         icon: "h-9 w-9",
+        /**
+         * The app's action button: every "do the thing" button in a flow —
+         * Continue, Next Battle, Rematch, Claim, Back home — is this size.
+         *
+         * Taken from onboarding's "New Trainer", which the owner named as the
+         * reference. Before this the same button was h-11, h-12, h-13 or h-14
+         * depending on which screen you were on, because each call site picked
+         * its own; the level-up screen's Continue read as visibly smaller than
+         * everything around it and that is what surfaced the drift.
+         *
+         * Geometry only — height, radius, padding, type size. Colour, border
+         * and shadow stay with the call site, because a primary and a
+         * secondary action are the same SIZE and deliberately not the same
+         * look.
+         *
+         * Not for: icon buttons, chips inside list rows, or the mode cards on
+         * Home (Daily Quest and friends), which are artwork with their own
+         * geometry rather than instances of this.
+         */
+        action: "h-[58px] rounded-full px-6 text-[17px] font-bold",
       },
     },
     defaultVariants: {
