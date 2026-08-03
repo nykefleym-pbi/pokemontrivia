@@ -1650,6 +1650,7 @@ export type Database = {
         Returns: Json
       }
       decline_pvp_challenge: { Args: { _match_id: string }; Returns: Json }
+      delete_my_account: { Args: Record<string, never>; Returns: undefined }
       enqueue_pvp: {
         Args: { _partner_id?: number; _questions: Json }
         Returns: Json
