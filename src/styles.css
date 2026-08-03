@@ -847,24 +847,29 @@
 
 /* Snow inside the Pokédex detail's snow globe.
  *
- * Falls the FULL height of the globe's box and fades in and out at both ends,
- * so a mote never pops into existence against the glass — it drifts a little
- * sideways on the way down, because a dead-vertical fall reads as a progress
- * bar rather than as something floating. The parent clips, so the travel
- * distance is expressed in percent of that box and needs no JS to resize. */
+ * Falls to the platform and fades in and out at both ends, so a mote never pops
+ * into existence against the glass. It drifts sideways on the way down, because
+ * a dead-vertical fall reads as a progress bar rather than as something
+ * floating.
+ *
+ * The distance is `--drop`, a LENGTH the component computes from the globe's
+ * size. It was a percentage, which is a percentage of the MOTE's own height —
+ * two to four pixels — so the snow travelled about twenty pixels and stopped
+ * nowhere near the ground. A percentage can never work here: the motes differ
+ * in size, so each would fall a different distance for the same number. */
 @keyframes dome-shine-fall {
   0% {
-    transform: translate3d(0, -10%, 0) scale(0.6);
+    transform: translate3d(0, 0, 0) scale(0.55);
     opacity: 0;
   }
-  12% {
+  10% {
     opacity: 1;
   }
-  70% {
+  80% {
     opacity: 1;
   }
   100% {
-    transform: translate3d(var(--drift, 6px), 780%, 0) scale(1);
+    transform: translate3d(var(--drift, 6px), var(--drop, 160px), 0) scale(1);
     opacity: 0;
   }
 }

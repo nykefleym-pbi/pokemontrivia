@@ -1,4 +1,5 @@
-import { Fragment, useState } from "react";
+import { Fragment, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Ruler, Star, Volume2, Weight } from "lucide-react";
 import { MiniPokeball, PokemonSprite } from "@/components/game-ui";
 import { TypeChip, TypeIcon } from "@/components/type-chip";
@@ -8,6 +9,7 @@ import { dexBackdropSrc } from "@/lib/dex-backdrop";
 import { PLATFORM_SURFACE, RESULT_ART } from "@/lib/result-art";
 import { useSpriteFootPad } from "@/lib/sprite-foot";
 import { useSpeciesDetail } from "@/lib/species-detail";
+import { useHorizontalSwipe } from "@/lib/swipe";
 
 /** `len * k` as a CSS expression — the widths here are `min()`, not numbers. */
 const scale = (len: string, k: number) => `calc(${len} * ${k})`;
@@ -40,6 +42,23 @@ const ORB = "min(46vw, 215px)";
  * changes how much of a sphere the glass is.
  */
 const DOME_CUT = 0.79;
+
+/**
+ * The paging slide.
+ *
+ * `custom` is the direction of the last move: +1 for the next species, -1 for
+ * the previous. The outgoing sheet leaves the way the finger went and the
+ * incoming one arrives from the opposite edge, which is what makes the gesture
+ * read as moving ALONG a list rather than as two unrelated screens swapping.
+ *
+ * Only 12% of the width, not a full page: at full width the whole screen is in
+ * flight for the entire transition and the eye has nothing to hold on to.
+ */
+const SLIDE = {
+  enter: (d: number) => ({ x: d > 0 ? "12%" : "-12%", opacity: 0 }),
+  center: { x: 0, opacity: 1 },
+  exit: (d: number) => ({ x: d > 0 ? "-12%" : "12%", opacity: 0 }),
+};
 
 /**
  * The species' sprite standing on the platform under a glass dome.
@@ -259,16 +278,18 @@ function SpriteOrb({
  * leaves the motes sitting still — still decorative, no movement.
  */
 const SHINES = [
-  { x: 12, size: 3, fall: 7.5, delay: 0, drift: 8 },
-  { x: 27, size: 2, fall: 9.5, delay: 2.4, drift: -6 },
-  { x: 38, size: 4, fall: 6.5, delay: 4.1, drift: 5 },
-  { x: 50, size: 2, fall: 10.5, delay: 1.2, drift: -9 },
-  { x: 61, size: 3, fall: 8, delay: 5.6, drift: 7 },
-  { x: 72, size: 2, fall: 9, delay: 3.3, drift: -5 },
-  { x: 83, size: 4, fall: 7, delay: 6.4, drift: 6 },
-  { x: 20, size: 2, fall: 11, delay: 7.8, drift: -7 },
-  { x: 55, size: 3, fall: 8.5, delay: 9.2, drift: 4 },
-  { x: 90, size: 2, fall: 9.8, delay: 5, drift: -4 },
+  { x: 12, top: 2, size: 3, fall: 6.5, delay: 0, drift: 10 },
+  { x: 27, top: 18, size: 2, fall: 8.5, delay: 1.1, drift: -8 },
+  { x: 38, top: 6, size: 4, fall: 5.5, delay: 2.6, drift: 7 },
+  { x: 50, top: 30, size: 2, fall: 9, delay: 0.6, drift: -11 },
+  { x: 61, top: 10, size: 3, fall: 7, delay: 3.4, drift: 9 },
+  { x: 72, top: 24, size: 2, fall: 8, delay: 1.8, drift: -7 },
+  { x: 83, top: 4, size: 4, fall: 6, delay: 4.2, drift: 8 },
+  { x: 20, top: 40, size: 2, fall: 9.5, delay: 2.2, drift: -9 },
+  { x: 55, top: 14, size: 3, fall: 7.5, delay: 5, drift: 6 },
+  { x: 90, top: 34, size: 2, fall: 8.8, delay: 3, drift: -6 },
+  { x: 33, top: 48, size: 3, fall: 7.2, delay: 0.3, drift: 8 },
+  { x: 67, top: 44, size: 2, fall: 9.2, delay: 4.6, drift: -10 },
 ] as const;
 
 function DomeShines() {
@@ -277,10 +298,20 @@ function DomeShines() {
       {SHINES.map((s, i) => (
         <span
           key={i}
-          className="dome-shine absolute top-0 rounded-full bg-white"
+          className="dome-shine absolute rounded-full bg-white"
           style={
             {
               left: `${s.x}%`,
+              // Staggered start heights as well as delays: with every mote
+              // starting at the very top, the globe is empty for the first few
+              // seconds and then suddenly snows.
+              top: `${s.top}%`,
+              // Each mote's own distance — from where it starts down to the
+              // grass — rather than one shared length. With a shared one a mote
+              // starting halfway down spends most of its animation below the
+              // cut, clipped and invisible, so the lower half of the globe
+              // looked emptier than the top.
+              "--drop": `calc(${scale(ORB, DOME_CUT)} - ${scale(ORB, s.top / 100)})`,
               width: s.size,
               height: s.size,
               boxShadow: `0 0 ${s.size * 2}px ${s.size / 2}px rgba(255,255,255,0.9)`,
@@ -358,42 +389,100 @@ function HeroPattern({ type }: { type: PokeType }) {
  * that the shape is still legible as a Pokéball.
  *
  * Each drifts on its own loop — its own distance, rotation, duration and delay
- * — so the set wanders rather than pulsing in unison. Hand-placed rather than
+ * — so the set wanders rather than pulsing in unison. The travel is deliberately
+ * generous (roughly 20-30px and up to 55 degrees, over 12-20s): at the previous
+ * 6-11px the motion was technically there and read as completely static.
+ * Hand-placed rather than
  * generated, for the same reason the snow is: a random layout would reshuffle
  * itself on every re-render, and `Math.random()` in a component body would give
  * SSR and hydration two different answers.
  */
 const PARTICLES = [
-  { x: 4, y: 12, size: 22, opacity: 0.1, ball: true, dx: 10, dy: 7, rot: 12, dur: 19, delay: 0 },
-  { x: 34, y: 4, size: 16, opacity: 0.09, ball: false, dx: -8, dy: 9, rot: -16, dur: 24, delay: 3 },
-  { x: 52, y: 15, size: 26, opacity: 0.07, ball: true, dx: 7, dy: -6, rot: 9, dur: 21, delay: 6 },
+  { x: 4, y: 12, size: 22, opacity: 0.1, ball: true, dx: 26, dy: 20, rot: 40, dur: 13, delay: 0 },
   {
-    x: 88,
-    y: 8,
-    size: 18,
-    opacity: 0.1,
+    x: 34,
+    y: 4,
+    size: 16,
+    opacity: 0.09,
     ball: false,
-    dx: -11,
-    dy: 5,
-    rot: 14,
-    dur: 27,
+    dx: -22,
+    dy: 24,
+    rot: -55,
+    dur: 16,
+    delay: 2,
+  },
+  {
+    x: 52,
+    y: 15,
+    size: 26,
+    opacity: 0.07,
+    ball: true,
+    dx: 20,
+    dy: -18,
+    rot: 32,
+    dur: 14,
+    delay: 4,
+  },
+  { x: 88, y: 8, size: 18, opacity: 0.1, ball: false, dx: -28, dy: 15, rot: 48, dur: 18, delay: 1 },
+  {
+    x: 17,
+    y: 34,
+    size: 18,
+    opacity: 0.08,
+    ball: false,
+    dx: 24,
+    dy: 22,
+    rot: -38,
+    dur: 15,
+    delay: 5,
+  },
+  {
+    x: 43,
+    y: 40,
+    size: 30,
+    opacity: 0.06,
+    ball: true,
+    dx: -18,
+    dy: -25,
+    rot: 26,
+    dur: 20,
+    delay: 3,
+  },
+  {
+    x: 94,
+    y: 30,
+    size: 24,
+    opacity: 0.08,
+    ball: true,
+    dx: 22,
+    dy: 18,
+    rot: -44,
+    dur: 12,
+    delay: 7,
+  },
+  {
+    x: 7,
+    y: 55,
+    size: 28,
+    opacity: 0.07,
+    ball: true,
+    dx: -25,
+    dy: 20,
+    rot: 35,
+    dur: 17,
     delay: 1.5,
   },
-  { x: 17, y: 34, size: 18, opacity: 0.08, ball: false, dx: 9, dy: 8, rot: -11, dur: 23, delay: 8 },
-  { x: 43, y: 40, size: 30, opacity: 0.06, ball: true, dx: -6, dy: -9, rot: 7, dur: 30, delay: 4 },
-  { x: 94, y: 30, size: 24, opacity: 0.08, ball: true, dx: 8, dy: 6, rot: -13, dur: 18, delay: 10 },
-  { x: 7, y: 55, size: 28, opacity: 0.07, ball: true, dx: -9, dy: 7, rot: 10, dur: 26, delay: 2 },
   {
     x: 30,
     y: 62,
     size: 20,
     opacity: 0.09,
     ball: false,
-    dx: 11,
-    dy: -7,
-    rot: -9,
-    dur: 20,
-    delay: 7,
+    dx: 30,
+    dy: -20,
+    rot: -30,
+    dur: 14,
+    delay: 6,
   },
   {
     x: 66,
@@ -401,11 +490,11 @@ const PARTICLES = [
     size: 16,
     opacity: 0.08,
     ball: false,
-    dx: -7,
-    dy: 10,
-    rot: 15,
-    dur: 29,
-    delay: 5,
+    dx: -20,
+    dy: 28,
+    rot: 52,
+    dur: 19,
+    delay: 3.5,
   },
   {
     x: 20,
@@ -413,14 +502,36 @@ const PARTICLES = [
     size: 24,
     opacity: 0.07,
     ball: true,
-    dx: 6,
-    dy: -8,
-    rot: -12,
-    dur: 22,
-    delay: 11,
+    dx: 18,
+    dy: -22,
+    rot: -42,
+    dur: 15,
+    delay: 8,
   },
-  { x: 48, y: 90, size: 18, opacity: 0.09, ball: false, dx: -10, dy: 6, rot: 8, dur: 25, delay: 9 },
-  { x: 80, y: 88, size: 26, opacity: 0.06, ball: true, dx: 9, dy: 9, rot: -10, dur: 17, delay: 13 },
+  {
+    x: 48,
+    y: 90,
+    size: 18,
+    opacity: 0.09,
+    ball: false,
+    dx: -26,
+    dy: 17,
+    rot: 28,
+    dur: 16,
+    delay: 6.5,
+  },
+  {
+    x: 80,
+    y: 88,
+    size: 26,
+    opacity: 0.06,
+    ball: true,
+    dx: 24,
+    dy: 26,
+    rot: -36,
+    dur: 13,
+    delay: 9,
+  },
 ] as const;
 
 function particleStyle(p: (typeof PARTICLES)[number]): React.CSSProperties {
@@ -547,6 +658,14 @@ export interface DexDetailProps {
   onClose: () => void;
   /** Whether any species in the evolution line has been caught. */
   isCaught: (id: number) => boolean;
+  /**
+   * Neighbours in the list the player is browsing — the FILTERED grid, not the
+   * whole roster, so swiping stays inside a Kanto/Grass filter instead of
+   * wandering out of it. Either may be null at the ends of that list; the swipe
+   * is then ignored rather than wrapping.
+   */
+  prevId?: number | null;
+  nextId?: number | null;
 }
 
 /**
@@ -582,6 +701,8 @@ export function DexDetail({
   onSelect,
   onClose,
   isCaught,
+  prevId,
+  nextId,
 }: DexDetailProps) {
   const detail = useSpeciesDetail(p.id);
   const primaryType = p.types[0];
@@ -591,209 +712,249 @@ export function DexDetail({
   const columns = buildEvolutionTree(p);
   const hasEvolution = !(columns.length <= 1 && (columns[0]?.length ?? 0) <= 1);
 
+  // Which way the last move went, so the incoming species slides in from the
+  // side it came from. Kept in a ref rather than state: it is read during the
+  // render that the id change triggers, and setting state here would mean two
+  // renders and a frame of the wrong direction.
+  const dir = useRef(0);
+  const go = (id: number, d: number) => {
+    dir.current = d;
+    onSelect(id);
+  };
+  const swipe = useHorizontalSwipe({
+    onPrev: prevId != null ? () => go(prevId, -1) : undefined,
+    onNext: nextId != null ? () => go(nextId, 1) : undefined,
+  });
+
   return (
-    <div className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-poke-cream">
-      <div
-        className="screen-x screen-top relative shrink-0 overflow-hidden rounded-b-[2rem] pb-6"
-        style={{
-          background: `linear-gradient(160deg, ${typeVar} 0%, color-mix(in oklab, ${typeVar} 62%, #000) 100%)`,
-        }}
-      >
-        {/* Habitat artwork over the type gradient rather than instead of it: a
+    <div
+      className="fixed inset-0 z-50 overflow-hidden bg-poke-cream"
+      {...swipe}
+      /* The sheet paginates on a horizontal swipe. `touch-action: pan-y` (from
+         the hook) leaves vertical scrolling to the browser, so the two gestures
+         do not fight — see lib/swipe.ts for why this is not framer's `drag`. */
+    >
+      <AnimatePresence initial={false} custom={dir.current} mode="popLayout">
+        <motion.div
+          key={p.id}
+          custom={dir.current}
+          variants={SLIDE}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={{ duration: 0.22, ease: "easeOut" }}
+          className="absolute inset-0 flex flex-col overflow-y-auto"
+        >
+          <div
+            className="screen-x screen-top relative shrink-0 overflow-hidden rounded-b-[2rem] pb-6"
+            style={{
+              background: `linear-gradient(160deg, ${typeVar} 0%, color-mix(in oklab, ${typeVar} 62%, #000) 100%)`,
+            }}
+          >
+            {/* Habitat artwork over the type gradient rather than instead of it: a
             species with no art of its own paints the gradient exactly as
             before. See lib/dex-backdrop.ts for the two-tier lookup. */}
-        {backdrop && (
-          <>
-            <img
-              src={backdrop}
-              alt=""
-              aria-hidden
-              className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover"
-            />
-            {/* The name, number and chips are white on whatever the artwork
+            {backdrop && (
+              <>
+                <img
+                  src={backdrop}
+                  alt=""
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover"
+                />
+                {/* The name, number and chips are white on whatever the artwork
                 happens to be. This scrim keeps them legible over a bright sky. */}
-            <div
-              className="pointer-events-none absolute inset-0"
-              style={{
-                background:
-                  "linear-gradient(180deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.2) 45%, rgba(0,0,0,0.1) 100%)",
-              }}
-            />
-          </>
-        )}
+                <div
+                  className="pointer-events-none absolute inset-0"
+                  style={{
+                    background:
+                      "linear-gradient(180deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.2) 45%, rgba(0,0,0,0.1) 100%)",
+                  }}
+                />
+              </>
+            )}
 
-        {/* Drifting Pokéballs and the species' type glyph. Above the backdrop
+            {/* Drifting Pokéballs and the species' type glyph. Above the backdrop
             and its scrim, below every piece of content. */}
-        <HeroPattern type={primaryType} />
+            <HeroPattern type={primaryType} />
 
-        <div className="relative flex items-center justify-between">
-          <button
-            onClick={onClose}
-            className="press flex h-10 w-10 items-center justify-center rounded-full border border-white/30 bg-white/20 text-white backdrop-blur"
-            aria-label="Back"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <span className="rounded-full border border-white/25 bg-black/25 px-3.5 py-1.5 font-pixel text-[11px] tabular-nums text-white backdrop-blur">
-            #{String(p.id).padStart(4, "0")}
-          </span>
-        </div>
+            <div className="relative flex items-center justify-between">
+              <button
+                onClick={onClose}
+                className="press flex h-10 w-10 items-center justify-center rounded-full border border-white/30 bg-white/20 text-white backdrop-blur"
+                aria-label="Back"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <span className="rounded-full border border-white/25 bg-black/25 px-3.5 py-1.5 font-pixel text-[11px] tabular-nums text-white backdrop-blur">
+                #{String(p.id).padStart(4, "0")}
+              </span>
+            </div>
 
-        <div className="relative mt-3 flex items-start gap-2">
-          <div className="flex min-w-0 flex-1 flex-col gap-2">
-            <div>
-              {/* Fluid rather than a fixed 2rem: the column beside the orb is
+            <div className="relative mt-3 flex items-start gap-2">
+              <div className="flex min-w-0 flex-1 flex-col gap-2">
+                <div>
+                  {/* Fluid rather than a fixed 2rem: the column beside the orb is
                   about 160px on a small phone, and "Bulbasaur" set at 2rem
                   wraps mid-word there. This holds the reference's size on a
                   normal phone and gives longer names somewhere to go. */}
-              <h2
-                className="font-display-xl break-words leading-[0.95] text-white drop-shadow-sm"
-                style={{ fontSize: "clamp(1.25rem, 6.5vw, 1.875rem)" }}
-              >
-                {displayName}
-              </h2>
-              {/* "Seed Pokémon" — the reference's second tier: noticeably
+                  <h2
+                    className="font-display-xl break-words leading-[0.95] text-white drop-shadow-sm"
+                    style={{ fontSize: "clamp(1.25rem, 6.5vw, 1.875rem)" }}
+                  >
+                    {displayName}
+                  </h2>
+                  {/* "Seed Pokémon" — the reference's second tier: noticeably
                   smaller than the name but larger and lighter than the stat
                   labels, so it reads as a subtitle rather than as a caption.
                   Height reserved even while the fetch is in flight so the type
                   chips do not jump down when it lands. */}
-              <p className="mt-1.5 min-h-[1.25rem] text-[15px] font-medium leading-tight text-white/80">
-                {caught ? (detail.genus ?? "") : ""}
-              </p>
-            </div>
-            {/* One row, guaranteed. The column beside the orb is about 124px
+                  <p className="mt-1.5 min-h-[1.25rem] text-[15px] font-medium leading-tight text-white/80">
+                    {caught ? (detail.genus ?? "") : ""}
+                  </p>
+                </div>
+                {/* One row, guaranteed. The column beside the orb is about 124px
                 on a small phone, which is roughly what two chips need — so
                 `flex-wrap` was landing on two lines there. `flex-nowrap` with
                 `min-w-0` chips keeps them on one row and shortens a label in
                 the worst case instead. */}
-            <div className="flex w-full flex-nowrap items-center gap-1">
-              {p.types.map((t) => (
-                <span key={t} className="flex min-w-0">
-                  <TypeChip type={t} selected size="sm" />
-                </span>
-              ))}
-            </div>
-            <div className="mt-1 flex flex-col gap-2">
-              <StatRow
-                icon={<Ruler className="h-5 w-5" strokeWidth={2.5} />}
-                value={detail.heightM != null ? `${detail.heightM.toFixed(1)} m` : "—"}
-                label="Height"
-              />
-              <StatRow
-                icon={<Weight className="h-5 w-5" strokeWidth={2.5} />}
-                value={detail.weightKg != null ? `${detail.weightKg.toFixed(1)} kg` : "—"}
-                label="Weight"
-              />
+                <div className="flex w-full flex-nowrap items-center gap-1">
+                  {p.types.map((t) => (
+                    <span key={t} className="flex min-w-0">
+                      <TypeChip type={t} selected size="sm" />
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-1 flex flex-col gap-2">
+                  <StatRow
+                    icon={<Ruler className="h-5 w-5" strokeWidth={2.5} />}
+                    value={detail.heightM != null ? `${detail.heightM.toFixed(1)} m` : "—"}
+                    label="Height"
+                  />
+                  <StatRow
+                    icon={<Weight className="h-5 w-5" strokeWidth={2.5} />}
+                    value={detail.weightKg != null ? `${detail.weightKg.toFixed(1)} kg` : "—"}
+                    label="Weight"
+                  />
+                </div>
+              </div>
+
+              <div className="relative shrink-0">
+                <SpriteOrb
+                  id={p.id}
+                  name={displayName}
+                  shiny={showShiny && shinyUnlocked}
+                  caught={caught}
+                  typeVar={typeVar}
+                />
+                {shinyUnlocked && (
+                  <button
+                    onClick={onToggleShiny}
+                    aria-pressed={showShiny}
+                    aria-label={showShiny ? "Show normal colours" : "Show shiny colours"}
+                    className={`press absolute -right-1 top-1 flex h-10 w-10 items-center justify-center rounded-full border-2 backdrop-blur ${
+                      showShiny
+                        ? "border-white bg-poke-yellow text-poke-dark"
+                        : "border-white/40 bg-black/30 text-poke-yellow"
+                    }`}
+                  >
+                    <Star className="h-5 w-5" fill="currentColor" />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
-          <div className="relative shrink-0">
-            <SpriteOrb
-              id={p.id}
-              name={displayName}
-              shiny={showShiny && shinyUnlocked}
-              caught={caught}
-              typeVar={typeVar}
-            />
-            {shinyUnlocked && (
-              <button
-                onClick={onToggleShiny}
-                aria-pressed={showShiny}
-                aria-label={showShiny ? "Show normal colours" : "Show shiny colours"}
-                className={`press absolute -right-1 top-1 flex h-10 w-10 items-center justify-center rounded-full border-2 backdrop-blur ${
-                  showShiny
-                    ? "border-white bg-poke-yellow text-poke-dark"
-                    : "border-white/40 bg-black/30 text-poke-yellow"
-                }`}
-              >
-                <Star className="h-5 w-5" fill="currentColor" />
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="screen-x screen-bottom flex-1 space-y-4 pt-4">
-        <DexCard title="Pokédex Entry">
-          <DexEntryText caught={caught} status={detail.status} flavor={detail.flavor} />
-          {/* The ability and Play cry share one row, the facts on the left and
+          <div className="screen-x screen-bottom flex-1 space-y-4 pt-4">
+            <DexCard title="Pokédex Entry">
+              <DexEntryText caught={caught} status={detail.status} flavor={detail.flavor} />
+              {/* The ability and Play cry share one row, the facts on the left and
               the action on the right — the arrangement the reference uses for
               its entry strip. The row always renders, because the button is not
               conditional on the ability having arrived (or existing at all);
               only the left half is. */}
-          <div className="mt-4 flex items-end justify-between gap-3 border-t border-border/60 pt-3">
-            <div className="min-w-0">
-              {caught && detail.abilities.length > 0 && (
-                <>
-                  {/* The card's own heading is the app's red; this sub-label
+              <div className="mt-4 flex items-end justify-between gap-3 border-t border-border/60 pt-3">
+                <div className="min-w-0">
+                  {caught && detail.abilities.length > 0 && (
+                    <>
+                      {/* The card's own heading is the app's red; this sub-label
                       takes the species' type colour, as the reference does — it
                       reads as a detail OF this Pokémon rather than as a second
                       section. */}
-                  <div
-                    className="font-pixel text-[8px] uppercase tracking-[0.15em]"
-                    style={{ color: `color-mix(in oklab, ${typeVar} 78%, #000)` }}
-                  >
-                    {detail.abilities.length > 1 ? "Abilities" : "Ability"}
-                  </div>
-                  <div className="mt-1.5 truncate text-sm font-bold text-foreground">
-                    {detail.abilities.join(" · ")}
-                  </div>
-                </>
-              )}
-            </div>
-            {/* Tinted to the species' type, which is what makes the reference's
+                      <div
+                        className="font-pixel text-[8px] uppercase tracking-[0.15em]"
+                        style={{ color: `color-mix(in oklab, ${typeVar} 78%, #000)` }}
+                      >
+                        {detail.abilities.length > 1 ? "Abilities" : "Ability"}
+                      </div>
+                      <div className="mt-1.5 truncate text-sm font-bold text-foreground">
+                        {detail.abilities.join(" · ")}
+                      </div>
+                    </>
+                  )}
+                </div>
+                {/* Tinted to the species' type, which is what makes the reference's
                 button green on a Grass page. A fixed colour would be right for
                 exactly one of the eighteen types. */}
-            <button
-              onClick={onPlayCry}
-              className="press inline-flex shrink-0 items-center gap-2 rounded-full border-2 border-white px-4 py-2 text-sm font-bold text-white shadow-card"
-              style={{
-                background: `linear-gradient(180deg, ${typeVar} 0%, color-mix(in oklab, ${typeVar} 72%, #000) 100%)`,
-              }}
-            >
-              <Volume2 className="h-4 w-4" /> Play cry
-            </button>
-          </div>
-        </DexCard>
+                {/* The white rim needs something OUTSIDE it to be visible: the card
+                behind this button is also white, so a plain `border-white` was
+                there all along and read as no border at all. The extra hairline
+                ring in the species' own colour is what separates the two. */}
+                <button
+                  onClick={onPlayCry}
+                  className="press inline-flex shrink-0 items-center gap-2 rounded-full border-2 border-white px-4 py-2 text-sm font-bold text-white"
+                  style={{
+                    background: `linear-gradient(180deg, ${typeVar} 0%, color-mix(in oklab, ${typeVar} 72%, #000) 100%)`,
+                    boxShadow: `0 0 0 1.5px color-mix(in oklab, ${typeVar} 45%, transparent), var(--shadow-card)`,
+                  }}
+                >
+                  <Volume2 className="h-4 w-4" /> Play cry
+                </button>
+              </div>
+            </DexCard>
 
-        <DexCard title="Evolution Line">
-          {!hasEvolution ? (
-            <p className="text-center text-xs text-foreground/55">This Pokémon doesn't evolve.</p>
-          ) : (
-            <div className="flex items-stretch gap-0.5 overflow-x-auto">
-              {columns.map((col, ci) => (
-                <Fragment key={ci}>
-                  {ci > 0 && (
-                    <div className="flex items-center">
-                      <ChevronRight className="h-3.5 w-3.5 shrink-0 text-foreground/35" />
-                    </div>
-                  )}
-                  {/* THIS is the row's flex item, not the rung — the rungs sit
+            <DexCard title="Evolution Line">
+              {!hasEvolution ? (
+                <p className="text-center text-xs text-foreground/55">
+                  This Pokémon doesn't evolve.
+                </p>
+              ) : (
+                <div className="flex items-stretch gap-0.5 overflow-x-auto">
+                  {columns.map((col, ci) => (
+                    <Fragment key={ci}>
+                      {ci > 0 && (
+                        <div className="flex items-center">
+                          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-foreground/35" />
+                        </div>
+                      )}
+                      {/* THIS is the row's flex item, not the rung — the rungs sit
                       inside it in a column. Sizing the rung itself was applying
                       flex-basis to the vertical axis, which is why three
                       attempts at a rung width all left the last stage clipped. */}
-                  <div
-                    className={`min-w-0 shrink grow basis-[72px] ${
-                      col.length > 3 ? "grid grid-cols-2 gap-1" : "flex flex-col gap-1"
-                    }`}
-                  >
-                    {col.map((stage) => (
-                      <EvolutionStage
-                        key={stage.id}
-                        stage={stage}
-                        current={stage.id === p.id}
-                        caught={isCaught(stage.id)}
-                        typeVar={typeVar}
-                        onSelect={onSelect}
-                      />
-                    ))}
-                  </div>
-                </Fragment>
-              ))}
-            </div>
-          )}
-        </DexCard>
-      </div>
+                      <div
+                        className={`min-w-0 shrink grow basis-[72px] ${
+                          col.length > 3 ? "grid grid-cols-2 gap-1" : "flex flex-col gap-1"
+                        }`}
+                      >
+                        {col.map((stage) => (
+                          <EvolutionStage
+                            key={stage.id}
+                            stage={stage}
+                            current={stage.id === p.id}
+                            caught={isCaught(stage.id)}
+                            typeVar={typeVar}
+                            onSelect={onSelect}
+                          />
+                        ))}
+                      </div>
+                    </Fragment>
+                  ))}
+                </div>
+              )}
+            </DexCard>
+          </div>
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }
