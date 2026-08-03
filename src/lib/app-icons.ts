@@ -93,6 +93,19 @@ export const REWARD_ICON = {
 } as const;
 
 /**
+ * The two share-card stat glyphs that are not rewards: accuracy and speed.
+ *
+ * They live beside REWARD_ICON rather than inside it because they are not
+ * ArenaRewardKinds — nothing grants "avg time" — but they sit in the same
+ * folder and are drawn at the same size on the share card's stat row, so all
+ * four tiles read as one set.
+ */
+export const STAT_ICON = {
+  correct: "/rewards/Correct.webp",
+  avgTime: "/rewards/Avg Time.webp",
+} as const;
+
+/**
  * Backdrop for any VS-screen half whose trainer has none of their own — the
  * opponent's side (their pick is not synced) and yours before you have chosen.
  *

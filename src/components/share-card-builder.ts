@@ -1,6 +1,6 @@
 import QRCode from "qrcode";
 import { findPokemon } from "@/lib/pokemon-data";
-import { REWARD_ICON, RESULT_ICON, STREAK_ICON } from "@/lib/app-icons";
+import { REWARD_ICON, RESULT_ICON, STAT_ICON, STREAK_ICON } from "@/lib/app-icons";
 import { PLATFORM_SURFACE, SPRITE_FOOT_PAD } from "@/lib/result-art";
 
 export interface BattleShareData {
@@ -93,21 +93,26 @@ export async function buildShareCard(data: ShareData): Promise<string> {
   canvas.height = H;
   const ctx = canvas.getContext("2d")!;
 
-  // Cream page behind the card, so the rounded body has something to sit on.
-  ctx.fillStyle = "#fbf3df";
-  ctx.fillRect(0, 0, W, H);
-
   ctx.save();
   roundRectPath(ctx, 0, 0, W, H, 56);
   ctx.clip();
 
-  // ----- TOP: red header -----
+  // ----- The red card, edge to edge -----
+  // Red fills the WHOLE card, not just a header band, and the cream panel is
+  // inset within it. That inset is the design: the red showing down both sides
+  // and along the bottom is the card's border, so there is one frame rather
+  // than a red block sitting on top of a separate cream block.
+  const bodyInset = 30;
+  const bodyX = bodyInset;
+  const bodyW = W - bodyInset * 2;
+  const tileGap = 18;
+
   const headerH = 470;
-  const grad = ctx.createLinearGradient(0, 0, W, headerH);
+  const grad = ctx.createLinearGradient(0, 0, W, H);
   grad.addColorStop(0, "#e8402f");
   grad.addColorStop(1, "#c0301f");
   ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, headerH);
+  ctx.fillRect(0, 0, W, H);
 
   // Faint Pokéball watermarks, as in the reference. Outlines rather than solid
   // discs: at 8% on red a filled ball is a pale blotch, a ring reads as texture.
@@ -200,9 +205,14 @@ export async function buildShareCard(data: ShareData): Promise<string> {
     spriteSize,
   );
 
-  // ----- BOTTOM: cream body -----
+  // Celebration around the partner, drawn LAST of the header so it lands on
+  // top of the creature rather than behind it.
+  drawCelebration(ctx, spriteCX, platformY - spriteSize * 0.42, spriteSize);
+
+  // ----- The cream panel, inset inside the red -----
+  const bodyY = headerH - 40;
   ctx.fillStyle = "#fbf7ec";
-  roundRectPath(ctx, 0, headerH - 40, W, H - headerH + 40, 44);
+  roundRectPath(ctx, bodyX, bodyY, bodyW, H - bodyY - bodyInset, 44);
   ctx.fill();
 
   // The outcome banner straddles the seam, as in the reference.
@@ -227,50 +237,37 @@ export async function buildShareCard(data: ShareData): Promise<string> {
   }
 
   // ----- Stat tiles -----
-  // XP and Streak carry the app's own reward art rather than a shape drawn
-  // here: the player already knows those two glyphs from the Arena reward strip
-  // and Home's streak pill, and a card that invents new ones for the same two
-  // stats stops looking like the same game. Correct and Avg Time have no
-  // supplied art, so they keep drawn pictograms — deliberately, not by default.
+  // All four glyphs are the app's own art. Three of them the player already
+  // knows from elsewhere — the Arena reward strip and Home's streak pill — so
+  // drawing lookalikes for the other two would have made the same four stats
+  // read as two different sets.
   let y = headerH + 52;
-  const pad = 60;
-  const gap = 18;
-  const tileW = (W - pad * 2 - gap * 3) / 4;
+  const tileW = (bodyW - tileGap * 3) / 4;
   const tileH = 196;
-  const tiles: {
-    val: string;
-    label: string;
-    color: string;
-    icon?: StatIcon;
-    art?: string;
-  }[] = [
+  const tiles: { val: string; label: string; color: string; art: string }[] = [
     {
       val: `${data.correctCount ?? 0}/${data.totalQuestions ?? 0}`,
       label: "CORRECT",
       color: "#3f9d5a",
-      icon: "target",
+      art: STAT_ICON.correct,
     },
     {
       val: data.avgTimeMs && data.avgTimeMs > 0 ? `${(data.avgTimeMs / 1000).toFixed(1)}s` : "—",
       label: "AVG TIME",
       color: "#2f6fd0",
-      icon: "timer",
+      art: STAT_ICON.avgTime,
     },
     { val: `+${data.xpEarned ?? 0}`, label: "XP EARNED", color: "#e23b2e", art: REWARD_ICON.xp },
     { val: `${data.topStreak}`, label: "STREAK", color: "#e8811f", art: STREAK_ICON },
   ];
   for (const [i, t] of tiles.entries()) {
-    const x = pad + i * (tileW + gap);
+    const x = bodyX + i * (tileW + tileGap);
     ctx.fillStyle = "#f1f0ea";
     roundRectPath(ctx, x, y, tileW, tileH, 22);
     ctx.fill();
 
-    const iconSize = 46;
-    if (t.art) {
-      await drawArt(ctx, t.art, x + tileW / 2 - iconSize / 2, y + 18, iconSize);
-    } else if (t.icon) {
-      drawStatIcon(ctx, t.icon, x + tileW / 2, y + 18 + iconSize / 2, 36);
-    }
+    const iconSize = 52;
+    await drawArt(ctx, t.art, x + tileW / 2 - iconSize / 2, y + 15, iconSize);
 
     ctx.textAlign = "center";
     ctx.fillStyle = t.color;
@@ -289,17 +286,21 @@ export async function buildShareCard(data: ShareData): Promise<string> {
   // one `pad` above the card's, rather than leaving the dead cream band the
   // reference fills with a daily-challenge footer we do not have.
   y += tileH + 30;
-  const panelH = H - y - pad;
+  // The panel's own bottom edge lands one tile-gap above the cream panel's, so
+  // the cream shows as an even margin on all four sides of the stack.
+  const panelH = H - bodyInset - tileGap - y;
+  const panelX = bodyX + tileGap;
+  const panelW = bodyW - tileGap * 2;
   ctx.fillStyle = "#ffffff";
-  roundRectPath(ctx, pad, y, W - pad * 2, panelH, 26);
+  roundRectPath(ctx, panelX, y, panelW, panelH, 26);
   ctx.fill();
   ctx.strokeStyle = "#e7e3d6";
   ctx.lineWidth = 2;
-  roundRectPath(ctx, pad, y, W - pad * 2, panelH, 26);
+  roundRectPath(ctx, panelX, y, panelW, panelH, 26);
   ctx.stroke();
 
   const qrSize = Math.min(190, panelH - 44);
-  const qrX = pad + 32;
+  const qrX = panelX + 30;
   const qrY = y + (panelH - qrSize) / 2;
   await drawQrCode(ctx, SHARE_URL, qrX, qrY, qrSize);
 
@@ -916,81 +917,69 @@ function drawSparkle(
   ctx.restore();
 }
 
-type StatIcon = "target" | "timer" | "star" | "flame";
-
 /**
- * The pictogram at the top of a stat tile, drawn in paths rather than as a font
- * glyph: emoji render differently on every platform, and this card is a PNG
- * that has to look the same wherever it was generated.
+ * Sparkles and confetti ringing the partner.
+ *
+ * Positions are a fixed table, not `Math.random()`: a share card is generated
+ * fresh every time it is opened, so a random scatter would make the same
+ * battle produce a visibly different picture on each open — and there is no
+ * seed on this path to make it reproducible. Hand-placed also lets the ring
+ * stay clear of the creature's face and of the outcome banner below.
+ *
+ * Each entry is in units of `size`, measured from the centre.
  */
-function drawStatIcon(
+const CELEBRATION: {
+  dx: number;
+  dy: number;
+  /** Sparkle radius, or confetti length, as a fraction of `size`. */
+  s: number;
+  color: string;
+  /** Confetti carry a rotation; sparkles do not. */
+  rot?: number;
+}[] = [
+  { dx: -0.52, dy: -0.34, s: 0.062, color: "#f7dd6a" },
+  // Kept below the outcome ribbon's underside: at dy -0.42 this sparkle landed
+  // on the "I" of VICTORY.
+  { dx: 0.5, dy: -0.05, s: 0.05, color: "#ffffff" },
+  { dx: 0.58, dy: 0.06, s: 0.042, color: "#f7dd6a" },
+  { dx: -0.58, dy: 0.12, s: 0.036, color: "#ffffff" },
+  { dx: 0.16, dy: -0.56, s: 0.045, color: "#f7dd6a" },
+  { dx: -0.28, dy: -0.56, s: 0.03, color: "#ffffff" },
+  { dx: -0.66, dy: -0.06, s: 0.052, color: "#7fd4f5", rot: -0.5 },
+  { dx: 0.68, dy: -0.24, s: 0.052, color: "#ffffff", rot: 0.8 },
+  { dx: 0.42, dy: 0.32, s: 0.048, color: "#f7dd6a", rot: 0.3 },
+  { dx: -0.44, dy: 0.34, s: 0.048, color: "#7ee0a0", rot: -1.1 },
+  { dx: 0.02, dy: -0.66, s: 0.044, color: "#7fd4f5", rot: 0.6 },
+  { dx: -0.16, dy: 0.44, s: 0.042, color: "#ffffff", rot: 1.2 },
+  { dx: 0.3, dy: -0.66, s: 0.04, color: "#7ee0a0", rot: -0.4 },
+  // Left of the wordmark's tail rather than just past it, where it read as a
+  // stray mark after "BATTLE" instead of as confetti.
+  { dx: -0.72, dy: -0.18, s: 0.04, color: "#ffffff", rot: 0.9 },
+];
+
+function drawCelebration(
   ctx: CanvasRenderingContext2D,
-  icon: StatIcon,
   cx: number,
   cy: number,
   size: number,
 ) {
-  const r = size / 2;
-  ctx.save();
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  if (icon === "target") {
-    ctx.strokeStyle = "#3f9d5a";
-    ctx.lineWidth = size * 0.13;
-    [1, 0.62, 0.24].forEach((k) => {
-      ctx.beginPath();
-      ctx.arc(cx, cy, r * k, 0, Math.PI * 2);
-      ctx.stroke();
-    });
-  } else if (icon === "timer") {
-    ctx.strokeStyle = "#2f6fd0";
-    ctx.lineWidth = size * 0.13;
-    ctx.beginPath();
-    ctx.arc(cx, cy + r * 0.1, r * 0.9, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(cx, cy + r * 0.1);
-    ctx.lineTo(cx, cy - r * 0.4);
-    ctx.moveTo(cx, cy + r * 0.1);
-    ctx.lineTo(cx + r * 0.45, cy + r * 0.1);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(cx - r * 0.42, cy - r * 0.95);
-    ctx.lineTo(cx + r * 0.42, cy - r * 0.95);
-    ctx.stroke();
-  } else if (icon === "star") {
-    ctx.fillStyle = "#e23b2e";
-    ctx.beginPath();
-    for (let i = 0; i < 10; i++) {
-      const a = -Math.PI / 2 + (i * Math.PI) / 5;
-      const rad = i % 2 === 0 ? r : r * 0.45;
-      const px = cx + Math.cos(a) * rad;
-      const py = cy + Math.sin(a) * rad;
-      if (i === 0) ctx.moveTo(px, py);
-      else ctx.lineTo(px, py);
+  for (const p of CELEBRATION) {
+    const x = cx + p.dx * size;
+    const y = cy + p.dy * size;
+    if (p.rot === undefined) {
+      drawSparkle(ctx, x, y, p.s * size, p.color);
+      continue;
     }
-    ctx.closePath();
+    // Confetti: a small rounded rectangle on its own axis.
+    const len = p.s * size;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(p.rot);
+    ctx.fillStyle = p.color;
+    roundRectPath(ctx, -len / 2, -len / 4, len, len / 2, len / 6);
     ctx.fill();
-  } else {
-    // flame
-    ctx.fillStyle = "#e8811f";
-    ctx.beginPath();
-    ctx.moveTo(cx, cy - r);
-    ctx.quadraticCurveTo(cx + r * 0.95, cy - r * 0.1, cx + r * 0.55, cy + r * 0.55);
-    ctx.quadraticCurveTo(cx + r * 0.2, cy + r, cx, cy + r);
-    ctx.quadraticCurveTo(cx - r * 0.2, cy + r, cx - r * 0.55, cy + r * 0.55);
-    ctx.quadraticCurveTo(cx - r * 0.95, cy - r * 0.1, cx, cy - r);
-    ctx.closePath();
-    ctx.fill();
-    ctx.fillStyle = "#f7d24e";
-    ctx.beginPath();
-    ctx.moveTo(cx, cy - r * 0.15);
-    ctx.quadraticCurveTo(cx + r * 0.45, cy + r * 0.28, cx, cy + r * 0.82);
-    ctx.quadraticCurveTo(cx - r * 0.45, cy + r * 0.28, cx, cy - r * 0.15);
-    ctx.closePath();
-    ctx.fill();
+    ctx.restore();
   }
-  ctx.restore();
 }
 
 /**
