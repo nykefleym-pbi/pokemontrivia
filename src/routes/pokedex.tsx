@@ -396,6 +396,16 @@ function PokedexPage() {
           const p = ALL_POKEMON.find((x) => x.id === detailId);
           if (!p) return null;
           const entry = pokedex[detailId];
+          // Swipe walks the FILTERED list, so a Kanto/Grass filter is still a
+          // Kanto/Grass filter after paging. A species opened from an evolution
+          // line may not be in that list at all (Ivysaur while filtering on
+          // "caught", say) — `indexOf` returns -1 and both neighbours come back
+          // null, which the sheet reads as "nowhere to swipe".
+          const at = filtered.findIndex((x) => x.id === detailId);
+          const neighbours = {
+            prevId: at > 0 ? filtered[at - 1].id : null,
+            nextId: at >= 0 && at < filtered.length - 1 ? filtered[at + 1].id : null,
+          };
           return (
             <DexDetail
               species={p}
@@ -415,6 +425,8 @@ function PokedexPage() {
               }}
               onClose={() => setDetailId(null)}
               isCaught={(id) => !!pokedex[id]}
+              prevId={neighbours.prevId}
+              nextId={neighbours.nextId}
             />
           );
         })()}
