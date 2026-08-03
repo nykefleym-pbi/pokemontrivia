@@ -77,6 +77,7 @@ export function WhosThatPokemon() {
   const [locked, setLocked] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [phase, setPhase] = useState<"play" | "correct" | "incorrect">("play");
+  const [fledReason, setFledReason] = useState<"timeout" | "wrong">("wrong");
   const [guess, setGuess] = useState("");
   const [selTypes, setSelTypes] = useState<PokeType[]>([]);
   const [selChoice, setSelChoice] = useState<string | null>(null);
@@ -227,9 +228,17 @@ export function WhosThatPokemon() {
   // reward actually gets applied, using the server's response rather than
   // a client-recomputed WHOS_THAT_XP/round.rewardId (see whos-that/index.ts).
   const resolveGuess = useCallback(
-    async (guessPayload: WhosThatGuess, caughtGuess: { id: number; name: string } | null) => {
+    async (
+      guessPayload: WhosThatGuess,
+      caughtGuess: { id: number; name: string } | null,
+      // Passed explicitly by the timer rather than inferred from an empty
+      // payload: "no guess" and "the clock ran out" happen to coincide today,
+      // but only one of them is what the fled screen is reporting.
+      viaTimeout = false,
+    ) => {
       if (!roundId || resolvedRef.current) return;
       resolvedRef.current = true;
+      setFledReason(viaTimeout ? "timeout" : "wrong");
       if (caughtGuess) setCaught(caughtGuess);
       let res;
       try {
@@ -281,7 +290,7 @@ export function WhosThatPokemon() {
       // An empty guess fails every mode's check server-side, so this both
       // resolves the round (no lingering "unresolved" row to resume into)
       // and matches the original always-incorrect-on-timeout behavior.
-      void resolveGuess({}, null);
+      void resolveGuess({}, null, true);
       return;
     }
     const t = setTimeout(() => setTimeLeft((v) => v - 1), 1000);
@@ -411,6 +420,7 @@ export function WhosThatPokemon() {
         flavor={fledDetail.flavor}
         flavorSettled={fledDetail.status !== "loading"}
         countdown={fmtHMS(msToNextHour)}
+        reason={fledReason}
         onClose={goHome}
       />
     );

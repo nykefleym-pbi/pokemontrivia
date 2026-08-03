@@ -31,6 +31,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Textarea } from "@/components/ui/textarea";
 import { useGameStore } from "@/lib/store";
 import { useStoreHydrated } from "@/lib/store-hydration";
+import { hardReset } from "@/lib/hard-reset";
 import {
   listFriends,
   addFriendByCode,
@@ -146,7 +147,6 @@ function ProfilePage() {
   const ownedBackdropIds = useGameStore((s) => s.ownedBackdropIds);
   const versusBackdropBattles = useGameStore((s) => s.versusBackdropBattles);
   const buyVersusBackdrop = useGameStore((s) => s.buyVersusBackdrop);
-  const reset = useGameStore((s) => s.reset);
   const battleLog = useGameStore((s) => s.battleLog);
   const flags = useGameStore((s) => s.flags);
   const peakLevel = useGameStore((s) => s.peakLevel);
@@ -557,9 +557,14 @@ function ProfilePage() {
     }
   }
 
+  // Deliberately NOT the store's `reset()` + navigate. That left the audio
+  // settings, the Supabase session and every module-level cache in place, so
+  // the "new" trainer inherited the old one's sound preferences and — because
+  // the account was unchanged — the old one's server-side cooldowns. See
+  // lib/hard-reset.ts. It ends in a document reload, so there is nothing to
+  // navigate to afterwards.
   function doReset() {
-    reset();
-    navigate({ to: "/" });
+    void hardReset();
   }
 
   const winRate = stats.battles > 0 ? Math.round((stats.wins / stats.battles) * 100) : 0;
@@ -1619,7 +1624,9 @@ function ProfilePage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Reset all progress?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will erase your trainer, level, items, and stats. This cannot be undone.
+              This erases everything on this device — your trainer, level, items, stats and
+              settings — and starts a brand-new account, so game cooldowns start over too. It
+              cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
