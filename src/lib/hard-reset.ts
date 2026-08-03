@@ -46,15 +46,31 @@ import { supabase } from "@/integrations/supabase/client";
  * for no benefit.
  */
 export async function hardReset(): Promise<void> {
-  // Order matters: sign out FIRST. It reads and rewrites the auth token in
-  // localStorage, so clearing storage before it would leave the token behind
-  // when signOut writes its own cleared value back.
+  // Delete the account FIRST, while the session that authorises it still
+  // exists. Signing out or clearing storage beforehand would drop the token
+  // this needs, and the row would be stranded with no way to reach it.
+  //
+  // Orphaning it is not a harmless leftover: `claim_trainer_name` refuses any
+  // name held by a row that is not yours, so an abandoned profile keeps your
+  // trainer name forever and resetting costs you the name you reset to keep.
+  // Every other table cascades off `profiles`, so this clears the server-side
+  // cooldowns too rather than merely leaving them unreachable.
+  try {
+    await supabase.rpc("delete_my_account");
+  } catch {
+    // Offline, or already signed out. The local wipe below still happens: a
+    // reset that stops because the network is down is worse than one that
+    // leaves a row behind, and the row is recoverable by hand while a
+    // half-reset device is not.
+  }
+
+  // Then sign out, and BEFORE clearing storage: signOut reads and rewrites the
+  // auth token in localStorage, so clearing first would leave the token it
+  // writes back sitting in supposedly-empty storage.
   try {
     await supabase.auth.signOut({ scope: "local" });
   } catch {
-    // Offline, or the session was already dead. Clearing storage below removes
-    // the token either way, so this is a best-effort tidy rather than a step
-    // the reset depends on.
+    // As above — best-effort tidy. Clearing storage removes the token anyway.
   }
 
   try {

@@ -5,9 +5,9 @@
 // `window.localStorage` and `window.location`.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const signOut = vi.hoisted(() => vi.fn());
+const { signOut, rpc } = vi.hoisted(() => ({ signOut: vi.fn(), rpc: vi.fn() }));
 vi.mock("@/integrations/supabase/client", () => ({
-  supabase: { auth: { signOut } },
+  supabase: { auth: { signOut }, rpc },
 }));
 
 import { hardReset } from "./hard-reset";
@@ -16,6 +16,7 @@ const replace = vi.fn();
 
 beforeEach(() => {
   signOut.mockReset().mockResolvedValue({ error: null });
+  rpc.mockReset().mockResolvedValue({ error: null });
   replace.mockReset();
   window.localStorage.clear();
   window.sessionStorage.clear();
@@ -70,6 +71,44 @@ describe("hardReset", () => {
 
     expect(window.localStorage.getItem("sb-project-auth-token")).toBeNull();
     expect(window.localStorage.length).toBe(0);
+  });
+
+  it("deletes the account, so its trainer name is released", async () => {
+    // The orphaned profile keeps the name: claim_trainer_name refuses any name
+    // held by a row that is not yours, so leaving it behind means resetting
+    // costs you your own name with no way to reclaim it in-app.
+    await hardReset();
+    expect(rpc).toHaveBeenCalledWith("delete_my_account");
+  });
+
+  it("deletes BEFORE signing out — the session is what authorises the delete", async () => {
+    const order: string[] = [];
+    rpc.mockImplementation(async () => {
+      order.push("delete");
+      return { error: null };
+    });
+    signOut.mockImplementation(async () => {
+      order.push("signOut");
+      return { error: null };
+    });
+
+    await hardReset();
+
+    expect(order).toEqual(["delete", "signOut"]);
+  });
+
+  it("still wipes and reloads when the delete fails", async () => {
+    // A reset that stops because the network is down is worse than one that
+    // leaves a row behind: the row can be removed by hand, a half-reset device
+    // cannot be fixed by anyone.
+    rpc.mockRejectedValue(new Error("offline"));
+    window.localStorage.setItem("poke-trivia-store", "{}");
+
+    await expect(hardReset()).resolves.toBeUndefined();
+
+    expect(signOut).toHaveBeenCalled();
+    expect(window.localStorage.length).toBe(0);
+    expect(replace).toHaveBeenCalledWith("/");
   });
 
   it("signs out so the next boot mints a new anonymous user", async () => {
