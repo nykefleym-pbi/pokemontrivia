@@ -9,6 +9,8 @@ import { TypeChip } from "@/components/type-chip";
 import { Button } from "@/components/ui/button";
 import { WhosThatWordmark } from "@/components/whos-that-wordmark";
 import { WhosThatCaught } from "@/components/whos-that-caught";
+import { WhosThatFled } from "@/components/whos-that-fled";
+import { useSpeciesDetail } from "@/lib/species-detail";
 import { playCry, playSfx, stopBgm, revealPokemon, playWhosThatShout } from "@/lib/audio";
 import { answerHaptic } from "@/lib/haptics";
 import { pokeApiUrls } from "@/lib/api/pokeapi";
@@ -82,11 +84,16 @@ export function WhosThatPokemon() {
   // Both are set from the server's response when the guess resolves, and only
   // read by the result screen.
   const [awardedXp, setAwardedXp] = useState(0);
-  const [dexWasNew, setDexWasNew] = useState(true);
   const [playsLeft, setPlaysLeft] = useState(CRY_PLAYS);
   const [dexEntry, setDexEntry] = useState<DexEntry | null>(null);
   const [dexLoading, setDexLoading] = useState(false);
   const [dexNonce, setDexNonce] = useState(0);
+  // The fled screen's Pokédex entry. Uses the shared cached hook rather than
+  // the mode-5 fetch above, for two reasons: that one is gated to mode 5 and
+  // this screen is reachable from every mode, and it MASKS the species name —
+  // correct while you are still guessing, wrong once the answer is on screen.
+  // Passing null outside the fled phase keeps it from fetching during play.
+  const fledDetail = useSpeciesDetail(phase === "incorrect" ? round?.monId ?? null : null);
   const [timeLeft, setTimeLeft] = useState(ANSWER_SECONDS);
   const [now, setNow] = useState(Date.now());
   const [startNonce, setStartNonce] = useState(0);
@@ -242,10 +249,7 @@ export function WhosThatPokemon() {
       // Read the XP the SERVER granted rather than a client constant — it is
       // the only place the amount is decided, and the result screen prints it.
       setAwardedXp(res.reward.xp);
-      // Whether this is a first registration has to be sampled BEFORE the
-      // capture is recorded, or it is always false by the time the screen asks.
       const dexId = caughtGuess?.id ?? res.monId;
-      setDexWasNew(!useGameStore.getState().pokedex[dexId]);
       addXp(res.reward.xp);
       grantItem(res.reward.itemId as ItemId, res.reward.itemQty);
       recordPokedexCapture(dexId, res.isShiny);
@@ -394,7 +398,6 @@ export function WhosThatPokemon() {
         awardedXp={awardedXp}
         rewardName={round.rewardName}
         rewardIcon={round.rewardIcon}
-        dexWasNew={dexWasNew}
         onCollect={goHome}
       />
     );
@@ -402,34 +405,14 @@ export function WhosThatPokemon() {
 
   if (phase === "incorrect") {
     return (
-      <div className="flex h-full w-full flex-col overflow-y-auto items-center bg-poke-cream px-5 pb-8 pt-12 text-center">
-        <PokemonSprite
-          id={round.monId}
-          alt={round.name}
-          className="h-40 w-40 [image-rendering:pixelated] opacity-90"
-        />
-        <h1 className="mt-4 text-3xl font-extrabold text-foreground">Not quite…</h1>
-        {round.mode === "4" ? (
-          <p className="mt-2 text-lg text-foreground/70">
-            e.g. <span className="font-bold text-foreground">{round.name}</span> has that typing.
-          </p>
-        ) : (
-          <p className="mt-2 text-lg text-foreground/70">
-            It was <span className="font-bold text-foreground">{round.name}</span>.
-          </p>
-        )}
-        <div className="mt-6 font-pixel text-[10px] uppercase tracking-wide text-foreground/45">
-          Play again in
-        </div>
-        <div className="mt-1 font-pixel text-base text-primary">{fmtHMS(msToNextHour)}</div>
-        <div className="flex-1" />
-        <button
-          onClick={goHome}
-          className="w-full rounded-full border-2 border-poke-dark/15 bg-white py-3.5 font-pixel text-sm tracking-wide text-poke-dark shadow-card press-lg"
-        >
-          CLOSE
-        </button>
-      </div>
+      <WhosThatFled
+        id={round.monId}
+        name={round.name}
+        flavor={fledDetail.flavor}
+        flavorSettled={fledDetail.status !== "loading"}
+        countdown={fmtHMS(msToNextHour)}
+        onClose={goHome}
+      />
     );
   }
 

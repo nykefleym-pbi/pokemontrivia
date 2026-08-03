@@ -37,6 +37,12 @@ export const UI_ICON = {
   lightBurst: "/ui/Light Burst.webp",
   /** Pokédex book — the "added to Pokédex" reward tile. */
   pokedexBook: "/ui/Pokedex.webp",
+  /** "It fled!" wordmark — the Who's That timeout screen's heading. */
+  itFled: "/ui/It fled.webp",
+  /** Speed lines trailing into a dust puff, drawn LEFT to RIGHT: the lines are
+   *  on the left and the puff on the right, so it belongs beside a sprite that
+   *  is running rightwards, not centred behind one. */
+  dash: "/ui/Dash.webp",
 } as const;
 
 /**

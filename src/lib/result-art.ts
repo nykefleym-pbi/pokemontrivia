@@ -34,6 +34,12 @@ export const RESULT_ART = {
   levelUp: { top: 0.303, bottom: 0.303 } as ArtPadding,
   /** Who's that Pokemon.webp — opaque y 151-360 of 512. */
   whosThat: { top: 0.295, bottom: 0.295 } as ArtPadding,
+  /** It fled.webp — opaque y 211-297 of 512. The tallest padding of the set:
+   *  the lettering is a single short line, so untrimmed it reserves nearly six
+   *  times the height it draws. */
+  itFled: { top: 0.412, bottom: 0.418 } as ArtPadding,
+  /** Dash.webp — opaque y 172-339 of 512. */
+  dash: { top: 0.336, bottom: 0.336 } as ArtPadding,
 } as const;
 
 /**

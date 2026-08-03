@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Check } from "lucide-react";
 import { AppIcon } from "@/components/app-icon";
+import { ConfettiRain } from "@/components/confetti-rain";
 import { PokemonSprite } from "@/components/game-ui";
 import { TypeChip } from "@/components/type-chip";
 import { Button } from "@/components/ui/button";
@@ -23,8 +24,9 @@ function RewardTile({
 }: {
   tint: string;
   icon: ReactNode;
-  title: string;
-  caption: string;
+  title: ReactNode;
+  /** Omitted on the Pokédex tile, which carries no category. */
+  caption?: string;
   /** The reference puts a green tick on the Pokédex tile — the one reward that
    *  is a state change rather than a quantity. */
   check?: boolean;
@@ -51,12 +53,14 @@ function RewardTile({
       </span>
       {/* The caption is a PILL, as in the reference — bare text at this size
           reads as a stray label rather than as the tile's category. */}
-      <span
-        className="rounded-full px-1.5 py-0.5 font-pixel text-[7px] uppercase leading-none"
-        style={{ background: `color-mix(in oklab, ${tint} 26%, #fff)`, color: tint }}
-      >
-        {caption}
-      </span>
+      {caption && (
+        <span
+          className="rounded-full px-1.5 py-0.5 font-pixel text-[7px] uppercase leading-none"
+          style={{ background: `color-mix(in oklab, ${tint} 26%, #fff)`, color: tint }}
+        >
+          {caption}
+        </span>
+      )}
     </div>
   );
 }
@@ -70,8 +74,6 @@ export interface CaughtScreenProps {
   awardedXp: number;
   rewardName: string;
   rewardIcon: string;
-  /** False when this species was already in the Pokédex. */
-  dexWasNew: boolean;
   onCollect: () => void;
 }
 
@@ -99,12 +101,18 @@ export function WhosThatCaught({
   awardedXp,
   rewardName,
   rewardIcon,
-  dexWasNew,
   onCollect,
 }: CaughtScreenProps) {
   const species = findPokemon(id);
   return (
-    <div className="screen-x screen-top screen-bottom flex h-full w-full flex-col items-center gap-2 overflow-hidden bg-poke-cream">
+    <div className="screen-x screen-top screen-bottom relative flex h-full w-full flex-col items-center gap-2 overflow-hidden bg-poke-cream">
+      {/* Confetti over the whole screen. It is ABOVE the artwork on purpose —
+          tucked behind, it would be hidden by the light burst across the middle
+          third, which is most of the screen. It stays under the Collect button
+          so the one tap target never has something crossing it, and it is
+          `pointer-events-none` throughout. */}
+      <ConfettiRain className="z-20" />
+
       {/* Header ribbon, sized by HEIGHT so a long name below it can never
           change the art's shape. */}
       <img
@@ -140,13 +148,30 @@ export function WhosThatCaught({
           screen and washed out the name and the type chips. Capped, a tall
           phone gets a bigger sprite and a short one still shrinks to fit. */}
       <div className="relative flex max-h-[18rem] min-h-0 flex-[1_1_11.5rem] items-center justify-center">
-        <img
-          src={encodeURI(UI_ICON.lightBurst)}
-          alt=""
+        {/* The burst is CLIPPED to this band so it stops reaching the dex
+            number above and the type chips below — the thing the owner
+            reported.
+            The mask is RADIAL, not a vertical ramp. A vertical-only fade still
+            leaves the left and right edges cut square, and the result reads as
+            a yellow rectangle of light rather than as a glow; `ellipse` follows
+            the band's own proportions, so the falloff stays even on a tall
+            phone and a short one alike. */}
+        <div
           aria-hidden
-          draggable={false}
-          className="pointer-events-none absolute h-[145%] w-auto max-w-none select-none"
-        />
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+          style={{
+            maskImage: "radial-gradient(ellipse 50% 50% at 50% 50%, #000 55%, transparent 100%)",
+            WebkitMaskImage:
+              "radial-gradient(ellipse 50% 50% at 50% 50%, #000 55%, transparent 100%)",
+          }}
+        >
+          <img
+            src={encodeURI(UI_ICON.lightBurst)}
+            alt=""
+            draggable={false}
+            className="absolute left-1/2 top-1/2 h-[130%] w-auto max-w-none -translate-x-1/2 -translate-y-1/2 select-none"
+          />
+        </div>
         {isShiny && (
           <div className="absolute -top-1 z-20 rounded-full bg-poke-yellow px-3 py-1 font-pixel text-[10px] text-poke-dark shadow-card">
             SHINY!
@@ -198,11 +223,20 @@ export function WhosThatCaught({
             title={rewardName}
             caption="ITEM"
           />
+          {/* No caption pill on this tile (owner ruling: the NEW ENTRY /
+              REGISTERED label is gone). Without it the tile is a line shorter
+              than its neighbours, so the title is set on two deliberate lines
+              instead of wrapping wherever the width happens to break. */}
           <RewardTile
             tint="var(--color-hp-good)"
             icon={<AppIcon src={UI_ICON.pokedexBook} className="h-9 w-9" />}
-            title="Added to Pokédex"
-            caption={dexWasNew ? "NEW ENTRY" : "REGISTERED"}
+            title={
+              <>
+                Added to
+                <br />
+                Pokédex
+              </>
+            }
             check
           />
         </div>
@@ -213,7 +247,7 @@ export function WhosThatCaught({
       <Button
         size="action"
         onClick={onCollect}
-        className="mt-auto w-full shrink-0 border-2 border-white bg-primary font-pixel text-sm tracking-wide text-primary-foreground shadow-card"
+        className="relative z-30 mt-auto w-full shrink-0 border-2 border-white bg-primary font-pixel text-sm tracking-wide text-primary-foreground shadow-card"
       >
         COLLECT
       </Button>
