@@ -32,6 +32,12 @@ export interface FledScreenProps {
   flavorSettled: boolean;
   /** Formatted countdown to the next playable hour, e.g. "00:15:11". */
   countdown: string;
+  /**
+   * How the round was lost. Both paths land on this same screen, so the line
+   * above the countdown has to say which one happened: telling a player who
+   * answered that they ran out of time is simply wrong, and it was.
+   */
+  reason: "timeout" | "wrong";
   onClose: () => void;
 }
 
@@ -41,6 +47,7 @@ export function WhosThatFled({
   flavor,
   flavorSettled,
   countdown,
+  reason,
   onClose,
 }: FledScreenProps) {
   const species = findPokemon(id);
@@ -96,8 +103,16 @@ export function WhosThatFled({
       </div>
 
       <p className="mt-3 shrink-0 text-lg leading-snug text-poke-dark">
-        You <span className="font-extrabold text-primary">weren&rsquo;t able to guess</span> it in
-        time.
+        {reason === "timeout" ? (
+          <>
+            You <span className="font-extrabold text-primary">weren&rsquo;t able to guess</span> it
+            in time.
+          </>
+        ) : (
+          <>
+            That <span className="font-extrabold text-primary">wasn&rsquo;t the right guess</span>.
+          </>
+        )}
         <br />
         <span className="font-extrabold text-primary">{name}</span> escaped!
       </p>

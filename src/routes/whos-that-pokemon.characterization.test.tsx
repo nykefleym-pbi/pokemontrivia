@@ -112,9 +112,42 @@ describe("WhosThatPokemon server-authority wiring", () => {
     // (it has, twice) because it asserts the DATA rather than the copy.
     expect(await screen.findByText("Pikachu")).toBeTruthy();
     expect(await screen.findByAltText("It fled!")).toBeTruthy();
+    // The wrong-guess wording, not the timeout wording. Both paths land on this
+    // same screen, and telling a player who answered that they ran out of time
+    // is simply false — which is what it used to say.
+    expect(screen.getByText(/wasn’t the right guess/)).toBeTruthy();
+    expect(screen.queryByText(/in time/)).toBeNull();
     const state = useGameStore.getState();
     expect(state.xp).toBe(initialStoreState.xp);
     expect(state.pokedex[25]).toBeFalsy();
+  });
+
+  it("running out of time shows the timeout wording, not the wrong-guess one", async () => {
+    submitWhosThat.mockResolvedValue({
+      correct: false,
+      reward: null,
+      monId: 25,
+      name: "Pikachu",
+      isShiny: false,
+    });
+    seedStore();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    render(<WhosThatPokemon />);
+
+    await screen.findByPlaceholderText("Type the Pokémon's name…");
+    // Drain the round clock without answering. The timer resolves the round
+    // with an empty guess, which is the ONLY thing distinguishing this path
+    // from a wrong answer server-side — hence the explicit flag it passes.
+    for (let i = 0; i < 25; i++) {
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
+    }
+
+    expect(await screen.findByAltText("It fled!")).toBeTruthy();
+    expect(screen.getByText(/in time/)).toBeTruthy();
+    expect(screen.queryByText(/wasn’t the right guess/)).toBeNull();
+    vi.useRealTimers();
   });
 
   it("sends the selected types for a 1B round, validated server-side", async () => {
