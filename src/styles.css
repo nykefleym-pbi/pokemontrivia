@@ -878,6 +878,42 @@
   animation-delay: var(--delay, 0s);
 }
 
+/* Falling confetti on the Who's That catch screen.
+ *
+ * Same lesson as the snow above: the fall distance is `--fall-to`, a LENGTH,
+ * not a percentage — a percentage in `translate` resolves against the confetto's
+ * OWN size, which here is a few pixels, so the whole shower would travel about
+ * as far as one piece is tall.
+ *
+ * The piece spins on two axes as it drops. `rotateY` is what makes it read as a
+ * flat rectangle tumbling rather than a coloured dot sliding down: the width
+ * appears to pinch to nothing twice per turn.
+ *
+ * It fades out over the last fifth so nothing vanishes mid-air at the bottom of
+ * the run, and starts from `-10%` opacity-wise so a piece entering at the top
+ * is not simply switched on. */
+@keyframes confetti-fall {
+  0% {
+    transform: translate3d(0, 0, 0) rotateY(0deg) rotate(0deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--sway, 10px), var(--fall-to, 420px), 0) rotateY(900deg)
+      rotate(var(--spin, 220deg));
+    opacity: 0;
+  }
+}
+.confetti-piece {
+  animation: confetti-fall var(--dur, 3.4s) linear infinite;
+  animation-delay: var(--delay, 0s);
+}
+
 @keyframes pokeball-spin {
   0% {
     transform: rotate(0deg) scale(1);
@@ -1156,6 +1192,7 @@
   .animate-wiggle,
   .dome-shine,
   .hero-particle,
+  .confetti-piece,
   .animate-ball-flip {
     animation: none;
   }
@@ -1189,6 +1226,7 @@
 :root.reduce-motion .animate-ping,
 :root.reduce-motion .dome-shine,
 :root.reduce-motion .hero-particle,
+:root.reduce-motion .confetti-piece,
 :root.reduce-motion .animate-wiggle,
 :root.reduce-motion .animate-ball-flip {
   animation: none;

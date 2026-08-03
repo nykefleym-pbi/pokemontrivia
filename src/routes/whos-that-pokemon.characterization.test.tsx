@@ -107,7 +107,11 @@ describe("WhosThatPokemon server-authority wiring", () => {
       fireEvent.click(screen.getByText("SUBMIT"));
     });
 
-    expect(await screen.findByText("Not quite…")).toBeTruthy();
+    // The screen names the species that got away — that is what "shows the
+    // answer" means here, and it survives the wording of the heading changing
+    // (it has, twice) because it asserts the DATA rather than the copy.
+    expect(await screen.findByText("Pikachu")).toBeTruthy();
+    expect(await screen.findByAltText("It fled!")).toBeTruthy();
     const state = useGameStore.getState();
     expect(state.xp).toBe(initialStoreState.xp);
     expect(state.pokedex[25]).toBeFalsy();
