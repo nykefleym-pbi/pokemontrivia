@@ -1,4 +1,7 @@
+import QRCode from "qrcode";
 import { findPokemon } from "@/lib/pokemon-data";
+import { REWARD_ICON, RESULT_ICON, STREAK_ICON } from "@/lib/app-icons";
+import { PLATFORM_SURFACE, SPRITE_FOOT_PAD } from "@/lib/result-art";
 
 export interface BattleShareData {
   type: "elite" | "weekly" | "daily-perfect" | "battle";
@@ -66,6 +69,16 @@ export type ShareData = BattleShareData | EvolutionShareData | TrainerCardShareD
 const CARD_SIZE = 1080;
 const SYSTEM_FONT = "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
+/**
+ * Where the card's QR points, and what the link pill under it reads.
+ *
+ * One constant for both so the picture and the text can never disagree — a card
+ * whose printed URL is not what the QR encodes is worse than no QR at all,
+ * because the reader trusts the one they cannot verify.
+ */
+const SHARE_URL = "https://pokemontriviabattle.vercel.app";
+const SHARE_URL_LABEL = "POKEMONTRIVIABATTLE.VERCEL.APP";
+
 export async function buildShareCard(data: ShareData): Promise<string> {
   if (data.type === "evolution") {
     return buildEvolutionCard(data);
@@ -80,161 +93,236 @@ export async function buildShareCard(data: ShareData): Promise<string> {
   canvas.height = H;
   const ctx = canvas.getContext("2d")!;
 
-  // Clip whole canvas as a rounded card
+  // Cream page behind the card, so the rounded body has something to sit on.
+  ctx.fillStyle = "#fbf3df";
+  ctx.fillRect(0, 0, W, H);
+
   ctx.save();
   roundRectPath(ctx, 0, 0, W, H, 56);
   ctx.clip();
 
-  // ----- TOP: red gradient header -----
-  const headerH = Math.round(H * 0.42); // ~454
+  // ----- TOP: red header -----
+  const headerH = 470;
   const grad = ctx.createLinearGradient(0, 0, W, headerH);
-  grad.addColorStop(0, "#e23b2e");
-  grad.addColorStop(1, "#b5341f");
+  grad.addColorStop(0, "#e8402f");
+  grad.addColorStop(1, "#c0301f");
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, headerH);
 
-  // faint radial glow behind partner sprite (right side)
-  const rg = ctx.createRadialGradient(W * 0.74, headerH * 0.6, 20, W * 0.74, headerH * 0.6, 320);
-  rg.addColorStop(0, "rgba(255,255,255,0.14)");
-  rg.addColorStop(1, "rgba(255,255,255,0)");
-  ctx.fillStyle = rg;
-  ctx.fillRect(0, 0, W, headerH);
+  // Faint Pokéball watermarks, as in the reference. Outlines rather than solid
+  // discs: at 8% on red a filled ball is a pale blotch, a ring reads as texture.
+  drawPokeballOutline(ctx, 140, 300, 160, "rgba(255,255,255,0.09)");
+  drawPokeballOutline(ctx, 430, 140, 78, "rgba(255,255,255,0.06)");
 
-  // Top labels
+  // Partner geometry. The platform has to clear TWO things: the cream body,
+  // whose rounded top edge starts at `headerH - 40`, and the outcome banner
+  // that straddles that seam — so it sits well above both rather than at the
+  // header's own bottom edge, where it was being sliced in half.
+  const spriteCX = W * 0.71;
+  const spriteSize = 285;
+  const platformY = headerH - 140;
+
+  // The burst behind the partner — drawn BEFORE the sprite so the rays sit
+  // behind the creature rather than across it, and centred on the creature's
+  // mass rather than the header's, or it reads as a second light source.
+  drawSunburst(ctx, spriteCX, platformY - spriteSize * 0.42, 300);
+
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
+  drawPokeballGlyph(ctx, 74, 68, 15);
   ctx.fillStyle = "#ffffff";
-  ctx.font = `700 28px ${SYSTEM_FONT}`;
-  drawTrackedText(ctx, "POKÉMON TRIVIA BATTLE", 60, 78, 2);
+  ctx.font = `800 30px ${SYSTEM_FONT}`;
+  drawTrackedText(ctx, "POKÉMON TRIVIA BATTLE", 100, 79, 1.5);
 
-  ctx.textAlign = "right";
-  ctx.fillStyle = "#f2d64e";
-  ctx.font = `800 28px ${SYSTEM_FONT}`;
-  drawTrackedText(
-    ctx,
-    data.type === "daily-perfect" ? "★ PERFECT" : "★ VICTORY",
-    W - 60,
-    78,
-    2,
-    "right",
-  );
+  // The outcome ribbon, top-right. Same pennant the Shop pins on a discounted
+  // item (`RibbonTag`, routes/shop.tsx): a horizontal strip that runs off the
+  // right edge with its left end notched to a point. The app has exactly one
+  // ribbon shape and this is it — a second one invented for the share card
+  // would read as a different product.
+  drawRibbon(ctx, data.type === "daily-perfect" ? "PERFECT" : "VICTORY", W, 54);
 
-  // Trainer avatar (circular)
-  const avatarD = 150;
-  const avatarCX = 60 + avatarD / 2;
-  const avatarCY = 230;
+  // Trainer avatar, ringed in white as the reference has it.
+  const avatarD = 156;
+  const avatarCX = 76 + avatarD / 2;
+  const avatarCY = 250;
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(avatarCX, avatarCY, avatarD / 2 + 7, 0, Math.PI * 2);
+  ctx.fillStyle = "#ffffff";
+  ctx.fill();
+  ctx.restore();
   await drawCircleImage(ctx, data.trainerSpriteUrl, avatarCX, avatarCY, avatarD);
 
-  // Trainer name + level/rank
+  // Name, then the rank title under it. No level badge — owner ruling.
+  //
+  // The name is fitted to the gap between the avatar and the partner rather
+  // than truncated at a character count: names are proportional, so a fixed
+  // cutoff either clips "MMMMMMMMMMMMM" into the sprite or ellipsises "iiiii"
+  // that had room to spare.
+  const textX = avatarCX + avatarD / 2 + 34;
+  const nameMaxW = spriteCX - spriteSize / 2 - 16 - textX;
   ctx.textAlign = "left";
   ctx.fillStyle = "#ffffff";
-  ctx.font = `800 60px ${SYSTEM_FONT}`;
-  ctx.fillText(truncate(data.trainerName, 14), avatarCX + avatarD / 2 + 30, 220);
+  let nameSize = 62;
+  ctx.font = `800 ${nameSize}px ${SYSTEM_FONT}`;
+  while (nameSize > 38 && ctx.measureText(data.trainerName).width > nameMaxW) {
+    nameSize -= 2;
+    ctx.font = `800 ${nameSize}px ${SYSTEM_FONT}`;
+  }
+  let name = data.trainerName;
+  while (name.length > 1 && ctx.measureText(name).width > nameMaxW) {
+    name = truncate(name, name.length - 1);
+  }
+  ctx.fillText(name, textX, avatarCY - 6);
 
-  ctx.fillStyle = "rgba(255,255,255,0.8)";
-  ctx.font = `700 28px ${SYSTEM_FONT}`;
-  drawTrackedText(
+  ctx.fillStyle = "rgba(255,255,255,0.9)";
+  ctx.font = `800 30px ${SYSTEM_FONT}`;
+  drawTrackedText(ctx, (data.rank ?? "Trainer").toUpperCase(), textX, avatarCY + 44, 1.5);
+
+  // Partner on the result screen's own platform art. `platformY` is where the
+  // FEET go, so both the platform square and the sprite square are positioned
+  // from it through their measured padding rather than by eye — see
+  // PLATFORM_SURFACE and SPRITE_FOOT_PAD.
+  const platformW = 330;
+  await drawArt(
     ctx,
-    `LV ${data.level ?? 1} · ${(data.rank ?? "Trainer").toUpperCase()}`,
-    avatarCX + avatarD / 2 + 30,
-    266,
-    1.5,
+    RESULT_ICON.platformWin,
+    spriteCX - platformW / 2,
+    platformY - platformW * PLATFORM_SURFACE.win,
+    platformW,
   );
-
-  // Partner sprite (large, lower-right of header)
-  const spriteSize = 300;
   await drawPokemonSprite(
     ctx,
     data.partnerPokemonId,
     data.partnerShiny,
-    W - spriteSize - 30,
-    headerH - spriteSize + 30,
+    spriteCX - spriteSize / 2,
+    platformY - spriteSize * (1 - SPRITE_FOOT_PAD),
     spriteSize,
   );
 
-  // ----- BOTTOM: white body -----
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, headerH, W, H - headerH);
+  // ----- BOTTOM: cream body -----
+  ctx.fillStyle = "#fbf7ec";
+  roundRectPath(ctx, 0, headerH - 40, W, H - headerH + 40, 44);
+  ctx.fill();
 
-  let y = headerH + 90;
-  ctx.textAlign = "left";
-  ctx.fillStyle = "#23252f";
-  ctx.font = `800 52px ${SYSTEM_FONT}`;
-  ctx.fillText(
-    data.type === "daily-perfect"
-      ? "Perfect Daily Quest!"
-      : `defeated ${truncate(data.opponentName, 18)}`,
-    60,
-    y,
-  );
+  // The outcome banner straddles the seam, as in the reference.
+  {
+    const label =
+      data.type === "daily-perfect"
+        ? "PERFECT DAILY!"
+        : `DEFEATED ${truncate(data.opponentName, 16).toUpperCase()}!`;
+    ctx.font = `800 38px ${SYSTEM_FONT}`;
+    const pillW = Math.min(W - 160, ctx.measureText(label).width + 200);
+    const pillH = 76;
+    const pillX = (W - pillW) / 2;
+    const pillY = headerH - 74;
+    ctx.fillStyle = "#1c2333";
+    roundRectPath(ctx, pillX, pillY, pillW, pillH, pillH / 2);
+    ctx.fill();
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#ffffff";
+    drawTrackedText(ctx, label, W / 2, pillY + 51, 1, "center");
+    drawSparkle(ctx, pillX + 46, pillY + pillH / 2, 15, "#f2d64e");
+    drawSparkle(ctx, pillX + pillW - 46, pillY + pillH / 2, 15, "#f2d64e");
+  }
 
-  y += 46;
-  ctx.fillStyle = "#6f7280";
-  ctx.font = `500 28px ${SYSTEM_FONT}`;
-  const ctxLabel =
-    data.type === "weekly"
-      ? `${data.badgeName ? data.badgeName.replace(" Badge", "") + " circuit" : "Gym circuit"}`
-      : data.type === "elite"
-        ? "Elite Four"
-        : data.type === "daily-perfect"
-          ? "Daily challenge"
-          : "Trainer battle";
-  ctx.fillText(`${ctxLabel} · ${formatDate(data.dateISO)}`, 60, y);
-
-  // Stat chips
-  y += 50;
-  const chipGap = 20;
-  const chipW = (W - 120 - chipGap * 3) / 4;
-  const chipH = 140;
-  const chips = [
+  // ----- Stat tiles -----
+  // XP and Streak carry the app's own reward art rather than a shape drawn
+  // here: the player already knows those two glyphs from the Arena reward strip
+  // and Home's streak pill, and a card that invents new ones for the same two
+  // stats stops looking like the same game. Correct and Avg Time have no
+  // supplied art, so they keep drawn pictograms — deliberately, not by default.
+  let y = headerH + 52;
+  const pad = 60;
+  const gap = 18;
+  const tileW = (W - pad * 2 - gap * 3) / 4;
+  const tileH = 196;
+  const tiles: {
+    val: string;
+    label: string;
+    color: string;
+    icon?: StatIcon;
+    art?: string;
+  }[] = [
     {
       val: `${data.correctCount ?? 0}/${data.totalQuestions ?? 0}`,
       label: "CORRECT",
       color: "#3f9d5a",
+      icon: "target",
     },
     {
-      val: data.avgTimeMs && data.avgTimeMs > 0 ? `${(data.avgTimeMs / 1000).toFixed(1)}s` : "—s",
+      val: data.avgTimeMs && data.avgTimeMs > 0 ? `${(data.avgTimeMs / 1000).toFixed(1)}s` : "—",
       label: "AVG TIME",
-      color: "#23252f",
+      color: "#2f6fd0",
+      icon: "timer",
     },
-    { val: `+${data.xpEarned ?? 0}`, label: "XP", color: "#e23b2e" },
-    { val: `${data.topStreak}`, label: "STREAK", color: "#23252f" },
+    { val: `+${data.xpEarned ?? 0}`, label: "XP EARNED", color: "#e23b2e", art: REWARD_ICON.xp },
+    { val: `${data.topStreak}`, label: "STREAK", color: "#e8811f", art: STREAK_ICON },
   ];
-  chips.forEach((chip, i) => {
-    const cx = 60 + i * (chipW + chipGap);
-    ctx.fillStyle = "#f1f2f5";
-    roundRectPath(ctx, cx, y, chipW, chipH, 18);
+  for (const [i, t] of tiles.entries()) {
+    const x = pad + i * (tileW + gap);
+    ctx.fillStyle = "#f1f0ea";
+    roundRectPath(ctx, x, y, tileW, tileH, 22);
     ctx.fill();
 
+    const iconSize = 46;
+    if (t.art) {
+      await drawArt(ctx, t.art, x + tileW / 2 - iconSize / 2, y + 18, iconSize);
+    } else if (t.icon) {
+      drawStatIcon(ctx, t.icon, x + tileW / 2, y + 18 + iconSize / 2, 36);
+    }
+
     ctx.textAlign = "center";
-    ctx.fillStyle = chip.color;
-    ctx.font = `800 42px ${SYSTEM_FONT}`;
-    ctx.fillText(chip.val, cx + chipW / 2, y + 68);
+    ctx.fillStyle = t.color;
+    ctx.font = `800 46px ${SYSTEM_FONT}`;
+    ctx.fillText(t.val, x + tileW / 2, y + 134);
 
     ctx.fillStyle = "#7d7f8a";
-    ctx.font = `700 20px ${SYSTEM_FONT}`;
-    drawTrackedText(ctx, chip.label, cx + chipW / 2, y + 108, 1.5, "center");
-  });
+    ctx.font = `700 21px ${SYSTEM_FONT}`;
+    drawTrackedText(ctx, t.label, x + tileW / 2, y + 170, 1.2, "center");
+  }
 
-  // Footer
-  y += chipH + 50;
-  ctx.strokeStyle = "#e6e8ec";
+  // ----- Invite panel: QR, then the two lines of copy -----
+  // This is where the reference puts its "achievement unlocked" strip; the
+  // owner replaced that block with the QR, so this panel is the only thing
+  // between the stats and the bottom edge — sized to land its own bottom edge
+  // one `pad` above the card's, rather than leaving the dead cream band the
+  // reference fills with a daily-challenge footer we do not have.
+  y += tileH + 30;
+  const panelH = H - y - pad;
+  ctx.fillStyle = "#ffffff";
+  roundRectPath(ctx, pad, y, W - pad * 2, panelH, 26);
+  ctx.fill();
+  ctx.strokeStyle = "#e7e3d6";
   ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(60, y);
-  ctx.lineTo(W - 60, y);
+  roundRectPath(ctx, pad, y, W - pad * 2, panelH, 26);
   ctx.stroke();
 
-  y += 50;
-  ctx.textAlign = "left";
-  ctx.fillStyle = "#6f7280";
-  ctx.font = `700 24px ${SYSTEM_FONT}`;
-  drawTrackedText(ctx, "◓ POKEMONTRIVIABATTLE.VERCEL.APP", 60, y, 1.5);
+  const qrSize = Math.min(190, panelH - 44);
+  const qrX = pad + 32;
+  const qrY = y + (panelH - qrSize) / 2;
+  await drawQrCode(ctx, SHARE_URL, qrX, qrY, qrSize);
 
-  ctx.textAlign = "right";
-  ctx.fillStyle = "#e23b2e";
+  const copyX = qrX + qrSize + 36;
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#1c2333";
+  ctx.font = `800 44px ${SYSTEM_FONT}`;
+  ctx.fillText("Catch 'em all with me", copyX, y + panelH / 2 - 14);
+
+  // The link as a dark pill, the way the reference draws it. The width has to
+  // include the tracking `drawTrackedText` adds, or the last characters render
+  // past the pill's right edge — which is exactly what "…VERCEL.APP" did.
+  const linkH = 62;
+  const linkY = y + panelH / 2 + 12;
   ctx.font = `800 24px ${SYSTEM_FONT}`;
-  drawTrackedText(ctx, "BEAT MY SCORE ›", W - 60, y, 1.5, "right");
+  const linkTracking = 1;
+  const linkW =
+    ctx.measureText(SHARE_URL_LABEL).width + linkTracking * (SHARE_URL_LABEL.length - 1) + 60;
+  ctx.fillStyle = "#1c2333";
+  roundRectPath(ctx, copyX, linkY, linkW, linkH, linkH / 2);
+  ctx.fill();
+  ctx.fillStyle = "#ffffff";
+  drawTrackedText(ctx, SHARE_URL_LABEL, copyX + 26, linkY + 39, 1);
 
   ctx.restore();
   return canvas.toDataURL("image/png");
@@ -659,6 +747,283 @@ function formatDate(iso: string): string {
 
 function truncate(s: string, max: number): string {
   return s.length > max ? s.slice(0, max - 1) + "…" : s;
+}
+
+/**
+ * A Pokéball drawn as concentric strokes — the header watermark.
+ *
+ * Stroked, not filled: at the 6–9% alpha the reference uses, a solid disc on
+ * red reads as a pale smudge, while the ring keeps its silhouette.
+ */
+function drawPokeballOutline(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  r: number,
+  color: string,
+) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = Math.max(3, r * 0.055);
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx - r, cy);
+  ctx.lineTo(cx + r, cy);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(cx, cy, r * 0.3, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+/** Radiating wedges behind the partner sprite. */
+function drawSunburst(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
+  ctx.save();
+  ctx.fillStyle = "rgba(255,255,255,0.13)";
+  const rays = 16;
+  const half = Math.PI / rays / 2.2;
+  for (let i = 0; i < rays; i++) {
+    const a = (i / rays) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(a - half) * r, cy + Math.sin(a - half) * r);
+    ctx.lineTo(cx + Math.cos(a + half) * r, cy + Math.sin(a + half) * r);
+    ctx.closePath();
+    ctx.fill();
+  }
+  // Soft core so the rays emerge from light rather than from a point.
+  const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * 0.75);
+  g.addColorStop(0, "rgba(255,255,255,0.22)");
+  g.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r * 0.75, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+/** The little solid Pokéball beside the wordmark. */
+function drawPokeballGlyph(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fillStyle = "#ffffff";
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, Math.PI, 0);
+  ctx.closePath();
+  ctx.fillStyle = "#ff5a4a";
+  ctx.fill();
+  ctx.strokeStyle = "#1c2333";
+  ctx.lineWidth = Math.max(1.5, r * 0.13);
+  ctx.beginPath();
+  ctx.moveTo(cx - r, cy);
+  ctx.lineTo(cx + r, cy);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(cx, cy, r * 0.34, 0, Math.PI * 2);
+  ctx.fillStyle = "#ffffff";
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
+
+/**
+ * The app's one ribbon shape, drawn on canvas.
+ *
+ * This is the geometry of `RibbonTag` in routes/shop.tsx — the tag pinned to a
+ * discounted item — transcribed from its `clip-path`: a horizontal strip that
+ * runs off the RIGHT edge with its left end notched to a point at mid-height.
+ * The share card gets the same silhouette rather than a corner banner of its
+ * own, so the two read as the same product. Keep them in step if either moves.
+ *
+ * The fill is gold rather than the shop's purple or brand red: this ribbon sits
+ * on the red header, where both of those sink into the background. The shape is
+ * what carries the recognition; the colour has to earn its contrast locally.
+ */
+function drawRibbon(ctx: CanvasRenderingContext2D, label: string, W: number, top: number) {
+  const h = 68;
+  const notch = 22;
+  ctx.save();
+  ctx.font = `800 34px ${SYSTEM_FONT}`;
+  const tracking = 3;
+  const textW = ctx.measureText(label).width + tracking * (label.length - 1);
+  const left = W - (textW + 76);
+
+  const g = ctx.createLinearGradient(left, top, W, top + h);
+  g.addColorStop(0, "#f7dd6a");
+  g.addColorStop(1, "#e8a93c");
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.moveTo(left + notch, top);
+  ctx.lineTo(W, top);
+  ctx.lineTo(W, top + h);
+  ctx.lineTo(left + notch, top + h);
+  ctx.lineTo(left, top + h / 2);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = "#7a4c0c";
+  ctx.textAlign = "left";
+  drawTrackedText(ctx, label, left + notch + 26, top + h / 2 + 12, tracking);
+  ctx.restore();
+}
+
+/**
+ * Draws one of the app's own .webp assets into a square box.
+ *
+ * Filenames under public/ contain spaces, so the path is encoded here — the
+ * same reason components go through `<AppIcon>` rather than a raw `src`. A
+ * failed load is skipped silently: a share card missing its platform is still
+ * a share card, and there is no second chance to render one.
+ */
+async function drawArt(
+  ctx: CanvasRenderingContext2D,
+  src: string,
+  x: number,
+  y: number,
+  size: number,
+) {
+  try {
+    const img = await loadImage(encodeURI(src));
+    ctx.drawImage(img, x, y, size, size);
+  } catch {
+    /* skip */
+  }
+}
+
+/** Four-point sparkle — the glints either side of the outcome banner. */
+function drawSparkle(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  size: number,
+  color: string,
+) {
+  const waist = size * 0.22;
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - size);
+  ctx.quadraticCurveTo(cx + waist, cy - waist, cx + size, cy);
+  ctx.quadraticCurveTo(cx + waist, cy + waist, cx, cy + size);
+  ctx.quadraticCurveTo(cx - waist, cy + waist, cx - size, cy);
+  ctx.quadraticCurveTo(cx - waist, cy - waist, cx, cy - size);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+type StatIcon = "target" | "timer" | "star" | "flame";
+
+/**
+ * The pictogram at the top of a stat tile, drawn in paths rather than as a font
+ * glyph: emoji render differently on every platform, and this card is a PNG
+ * that has to look the same wherever it was generated.
+ */
+function drawStatIcon(
+  ctx: CanvasRenderingContext2D,
+  icon: StatIcon,
+  cx: number,
+  cy: number,
+  size: number,
+) {
+  const r = size / 2;
+  ctx.save();
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  if (icon === "target") {
+    ctx.strokeStyle = "#3f9d5a";
+    ctx.lineWidth = size * 0.13;
+    [1, 0.62, 0.24].forEach((k) => {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r * k, 0, Math.PI * 2);
+      ctx.stroke();
+    });
+  } else if (icon === "timer") {
+    ctx.strokeStyle = "#2f6fd0";
+    ctx.lineWidth = size * 0.13;
+    ctx.beginPath();
+    ctx.arc(cx, cy + r * 0.1, r * 0.9, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx, cy + r * 0.1);
+    ctx.lineTo(cx, cy - r * 0.4);
+    ctx.moveTo(cx, cy + r * 0.1);
+    ctx.lineTo(cx + r * 0.45, cy + r * 0.1);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx - r * 0.42, cy - r * 0.95);
+    ctx.lineTo(cx + r * 0.42, cy - r * 0.95);
+    ctx.stroke();
+  } else if (icon === "star") {
+    ctx.fillStyle = "#e23b2e";
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const a = -Math.PI / 2 + (i * Math.PI) / 5;
+      const rad = i % 2 === 0 ? r : r * 0.45;
+      const px = cx + Math.cos(a) * rad;
+      const py = cy + Math.sin(a) * rad;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fill();
+  } else {
+    // flame
+    ctx.fillStyle = "#e8811f";
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - r);
+    ctx.quadraticCurveTo(cx + r * 0.95, cy - r * 0.1, cx + r * 0.55, cy + r * 0.55);
+    ctx.quadraticCurveTo(cx + r * 0.2, cy + r, cx, cy + r);
+    ctx.quadraticCurveTo(cx - r * 0.2, cy + r, cx - r * 0.55, cy + r * 0.55);
+    ctx.quadraticCurveTo(cx - r * 0.95, cy - r * 0.1, cx, cy - r);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "#f7d24e";
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - r * 0.15);
+    ctx.quadraticCurveTo(cx + r * 0.45, cy + r * 0.28, cx, cy + r * 0.82);
+    ctx.quadraticCurveTo(cx - r * 0.45, cy + r * 0.28, cx, cy - r * 0.15);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+/**
+ * The invite QR. Rendered by the same `qrcode` package the Battle Code block
+ * uses, at 3× the on-card size so the modules stay crisp when the 1080px card
+ * is scaled down by whatever app it lands in.
+ *
+ * A failure here leaves a light placeholder rather than throwing: the card is
+ * still worth sharing without its QR, and `buildShareCard` has no other
+ * recovery path — it returns the finished PNG or nothing.
+ */
+async function drawQrCode(
+  ctx: CanvasRenderingContext2D,
+  url: string,
+  x: number,
+  y: number,
+  size: number,
+) {
+  try {
+    const dataUrl = await QRCode.toDataURL(url, {
+      width: size * 3,
+      margin: 1,
+      color: { dark: "#1c2333ff", light: "#ffffffff" },
+    });
+    const img = await loadImage(dataUrl);
+    ctx.drawImage(img, x, y, size, size);
+  } catch {
+    ctx.save();
+    ctx.fillStyle = "#f1f0ea";
+    roundRectPath(ctx, x, y, size, size, 12);
+    ctx.fill();
+    ctx.restore();
+  }
 }
 
 // Manual letter-spacing (canvas has no native letter-spacing on older browsers)
