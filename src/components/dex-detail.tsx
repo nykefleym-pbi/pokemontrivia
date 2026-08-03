@@ -1,5 +1,4 @@
-import { Fragment, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { Fragment, useState } from "react";
 import { ChevronLeft, ChevronRight, Ruler, Star, Volume2, Weight } from "lucide-react";
 import { MiniPokeball, PokemonSprite } from "@/components/game-ui";
 import { TypeChip, TypeIcon } from "@/components/type-chip";
@@ -9,7 +8,6 @@ import { dexBackdropSrc } from "@/lib/dex-backdrop";
 import { PLATFORM_SURFACE, RESULT_ART } from "@/lib/result-art";
 import { useSpriteFootPad } from "@/lib/sprite-foot";
 import { useSpeciesDetail } from "@/lib/species-detail";
-import { useHorizontalSwipe } from "@/lib/swipe";
 
 /** `len * k` as a CSS expression — the widths here are `min()`, not numbers. */
 const scale = (len: string, k: number) => `calc(${len} * ${k})`;
@@ -42,23 +40,6 @@ const ORB = "min(46vw, 215px)";
  * changes how much of a sphere the glass is.
  */
 const DOME_CUT = 0.79;
-
-/**
- * The paging slide.
- *
- * `custom` is the direction of the last move: +1 for the next species, -1 for
- * the previous. The outgoing sheet leaves the way the finger went and the
- * incoming one arrives from the opposite edge, which is what makes the gesture
- * read as moving ALONG a list rather than as two unrelated screens swapping.
- *
- * Only 12% of the width, not a full page: at full width the whole screen is in
- * flight for the entire transition and the eye has nothing to hold on to.
- */
-const SLIDE = {
-  enter: (d: number) => ({ x: d > 0 ? "12%" : "-12%", opacity: 0 }),
-  center: { x: 0, opacity: 1 },
-  exit: (d: number) => ({ x: d > 0 ? "-12%" : "12%", opacity: 0 }),
-};
 
 /**
  * The species' sprite standing on the platform under a glass dome.
@@ -658,14 +639,6 @@ export interface DexDetailProps {
   onClose: () => void;
   /** Whether any species in the evolution line has been caught. */
   isCaught: (id: number) => boolean;
-  /**
-   * Neighbours in the list the player is browsing — the FILTERED grid, not the
-   * whole roster, so swiping stays inside a Kanto/Grass filter instead of
-   * wandering out of it. Either may be null at the ends of that list; the swipe
-   * is then ignored rather than wrapping.
-   */
-  prevId?: number | null;
-  nextId?: number | null;
 }
 
 /**
@@ -701,8 +674,6 @@ export function DexDetail({
   onSelect,
   onClose,
   isCaught,
-  prevId,
-  nextId,
 }: DexDetailProps) {
   const detail = useSpeciesDetail(p.id);
   const primaryType = p.types[0];
@@ -712,249 +683,214 @@ export function DexDetail({
   const columns = buildEvolutionTree(p);
   const hasEvolution = !(columns.length <= 1 && (columns[0]?.length ?? 0) <= 1);
 
-  // Which way the last move went, so the incoming species slides in from the
-  // side it came from. Kept in a ref rather than state: it is read during the
-  // render that the id change triggers, and setting state here would mean two
-  // renders and a frame of the wrong direction.
-  const dir = useRef(0);
-  const go = (id: number, d: number) => {
-    dir.current = d;
-    onSelect(id);
-  };
-  const swipe = useHorizontalSwipe({
-    onPrev: prevId != null ? () => go(prevId, -1) : undefined,
-    onNext: nextId != null ? () => go(nextId, 1) : undefined,
-  });
-
   return (
-    <div
-      className="fixed inset-0 z-50 overflow-hidden bg-poke-cream"
-      {...swipe}
-      /* The sheet paginates on a horizontal swipe. `touch-action: pan-y` (from
-         the hook) leaves vertical scrolling to the browser, so the two gestures
-         do not fight — see lib/swipe.ts for why this is not framer's `drag`. */
-    >
-      <AnimatePresence initial={false} custom={dir.current} mode="popLayout">
-        <motion.div
-          key={p.id}
-          custom={dir.current}
-          variants={SLIDE}
-          initial="enter"
-          animate="center"
-          exit="exit"
-          transition={{ duration: 0.22, ease: "easeOut" }}
-          className="absolute inset-0 flex flex-col overflow-y-auto"
-        >
-          <div
-            className="screen-x screen-top relative shrink-0 overflow-hidden rounded-b-[2rem] pb-6"
-            style={{
-              background: `linear-gradient(160deg, ${typeVar} 0%, color-mix(in oklab, ${typeVar} 62%, #000) 100%)`,
-            }}
-          >
-            {/* Habitat artwork over the type gradient rather than instead of it: a
+    <div className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-poke-cream">
+      <div
+        className="screen-x screen-top relative shrink-0 overflow-hidden rounded-b-[2rem] pb-6"
+        style={{
+          background: `linear-gradient(160deg, ${typeVar} 0%, color-mix(in oklab, ${typeVar} 62%, #000) 100%)`,
+        }}
+      >
+        {/* Habitat artwork over the type gradient rather than instead of it: a
             species with no art of its own paints the gradient exactly as
             before. See lib/dex-backdrop.ts for the two-tier lookup. */}
-            {backdrop && (
-              <>
-                <img
-                  src={backdrop}
-                  alt=""
-                  aria-hidden
-                  className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover"
-                />
-                {/* The name, number and chips are white on whatever the artwork
+        {backdrop && (
+          <>
+            <img
+              src={backdrop}
+              alt=""
+              aria-hidden
+              className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover"
+            />
+            {/* The name, number and chips are white on whatever the artwork
                 happens to be. This scrim keeps them legible over a bright sky. */}
-                <div
-                  className="pointer-events-none absolute inset-0"
-                  style={{
-                    background:
-                      "linear-gradient(180deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.2) 45%, rgba(0,0,0,0.1) 100%)",
-                  }}
-                />
-              </>
-            )}
+            <div
+              className="pointer-events-none absolute inset-0"
+              style={{
+                background:
+                  "linear-gradient(180deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.2) 45%, rgba(0,0,0,0.1) 100%)",
+              }}
+            />
+          </>
+        )}
 
-            {/* Drifting Pokéballs and the species' type glyph. Above the backdrop
+        {/* Drifting Pokéballs and the species' type glyph. Above the backdrop
             and its scrim, below every piece of content. */}
-            <HeroPattern type={primaryType} />
+        <HeroPattern type={primaryType} />
 
-            <div className="relative flex items-center justify-between">
-              <button
-                onClick={onClose}
-                className="press flex h-10 w-10 items-center justify-center rounded-full border border-white/30 bg-white/20 text-white backdrop-blur"
-                aria-label="Back"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              <span className="rounded-full border border-white/25 bg-black/25 px-3.5 py-1.5 font-pixel text-[11px] tabular-nums text-white backdrop-blur">
-                #{String(p.id).padStart(4, "0")}
-              </span>
-            </div>
+        <div className="relative flex items-center justify-between">
+          <button
+            onClick={onClose}
+            className="press flex h-10 w-10 items-center justify-center rounded-full border border-white/30 bg-white/20 text-white backdrop-blur"
+            aria-label="Back"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <span className="rounded-full border border-white/25 bg-black/25 px-3.5 py-1.5 font-pixel text-[11px] tabular-nums text-white backdrop-blur">
+            #{String(p.id).padStart(4, "0")}
+          </span>
+        </div>
 
-            <div className="relative mt-3 flex items-start gap-2">
-              <div className="flex min-w-0 flex-1 flex-col gap-2">
-                <div>
-                  {/* Fluid rather than a fixed 2rem: the column beside the orb is
+        <div className="relative mt-3 flex items-start gap-2">
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <div>
+              {/* Fluid rather than a fixed 2rem: the column beside the orb is
                   about 160px on a small phone, and "Bulbasaur" set at 2rem
                   wraps mid-word there. This holds the reference's size on a
                   normal phone and gives longer names somewhere to go. */}
-                  <h2
-                    className="font-display-xl break-words leading-[0.95] text-white drop-shadow-sm"
-                    style={{ fontSize: "clamp(1.25rem, 6.5vw, 1.875rem)" }}
-                  >
-                    {displayName}
-                  </h2>
-                  {/* "Seed Pokémon" — the reference's second tier: noticeably
+              <h2
+                className="font-display-xl break-words leading-[0.95] text-white drop-shadow-sm"
+                style={{ fontSize: "clamp(1.25rem, 6.5vw, 1.875rem)" }}
+              >
+                {displayName}
+              </h2>
+              {/* "Seed Pokémon" — the reference's second tier: noticeably
                   smaller than the name but larger and lighter than the stat
                   labels, so it reads as a subtitle rather than as a caption.
                   Height reserved even while the fetch is in flight so the type
                   chips do not jump down when it lands. */}
-                  <p className="mt-1.5 min-h-[1.25rem] text-[15px] font-medium leading-tight text-white/80">
-                    {caught ? (detail.genus ?? "") : ""}
-                  </p>
-                </div>
-                {/* One row, guaranteed. The column beside the orb is about 124px
+              <p className="mt-1.5 min-h-[1.25rem] text-[15px] font-medium leading-tight text-white/80">
+                {caught ? (detail.genus ?? "") : ""}
+              </p>
+            </div>
+            {/* One row, guaranteed. The column beside the orb is about 124px
                 on a small phone, which is roughly what two chips need — so
                 `flex-wrap` was landing on two lines there. `flex-nowrap` with
                 `min-w-0` chips keeps them on one row and shortens a label in
                 the worst case instead. */}
-                <div className="flex w-full flex-nowrap items-center gap-1">
-                  {p.types.map((t) => (
-                    <span key={t} className="flex min-w-0">
-                      <TypeChip type={t} selected size="sm" />
-                    </span>
-                  ))}
-                </div>
-                <div className="mt-1 flex flex-col gap-2">
-                  <StatRow
-                    icon={<Ruler className="h-5 w-5" strokeWidth={2.5} />}
-                    value={detail.heightM != null ? `${detail.heightM.toFixed(1)} m` : "—"}
-                    label="Height"
-                  />
-                  <StatRow
-                    icon={<Weight className="h-5 w-5" strokeWidth={2.5} />}
-                    value={detail.weightKg != null ? `${detail.weightKg.toFixed(1)} kg` : "—"}
-                    label="Weight"
-                  />
-                </div>
-              </div>
-
-              <div className="relative shrink-0">
-                <SpriteOrb
-                  id={p.id}
-                  name={displayName}
-                  shiny={showShiny && shinyUnlocked}
-                  caught={caught}
-                  typeVar={typeVar}
-                />
-                {shinyUnlocked && (
-                  <button
-                    onClick={onToggleShiny}
-                    aria-pressed={showShiny}
-                    aria-label={showShiny ? "Show normal colours" : "Show shiny colours"}
-                    className={`press absolute -right-1 top-1 flex h-10 w-10 items-center justify-center rounded-full border-2 backdrop-blur ${
-                      showShiny
-                        ? "border-white bg-poke-yellow text-poke-dark"
-                        : "border-white/40 bg-black/30 text-poke-yellow"
-                    }`}
-                  >
-                    <Star className="h-5 w-5" fill="currentColor" />
-                  </button>
-                )}
-              </div>
+            <div className="flex w-full flex-nowrap items-center gap-1">
+              {p.types.map((t) => (
+                <span key={t} className="flex min-w-0">
+                  <TypeChip type={t} selected size="sm" />
+                </span>
+              ))}
+            </div>
+            <div className="mt-1 flex flex-col gap-2">
+              <StatRow
+                icon={<Ruler className="h-5 w-5" strokeWidth={2.5} />}
+                value={detail.heightM != null ? `${detail.heightM.toFixed(1)} m` : "—"}
+                label="Height"
+              />
+              <StatRow
+                icon={<Weight className="h-5 w-5" strokeWidth={2.5} />}
+                value={detail.weightKg != null ? `${detail.weightKg.toFixed(1)} kg` : "—"}
+                label="Weight"
+              />
             </div>
           </div>
 
-          <div className="screen-x screen-bottom flex-1 space-y-4 pt-4">
-            <DexCard title="Pokédex Entry">
-              <DexEntryText caught={caught} status={detail.status} flavor={detail.flavor} />
-              {/* The ability and Play cry share one row, the facts on the left and
+          <div className="relative shrink-0">
+            <SpriteOrb
+              id={p.id}
+              name={displayName}
+              shiny={showShiny && shinyUnlocked}
+              caught={caught}
+              typeVar={typeVar}
+            />
+            {shinyUnlocked && (
+              <button
+                onClick={onToggleShiny}
+                aria-pressed={showShiny}
+                aria-label={showShiny ? "Show normal colours" : "Show shiny colours"}
+                className={`press absolute -right-1 top-1 flex h-10 w-10 items-center justify-center rounded-full border-2 backdrop-blur ${
+                  showShiny
+                    ? "border-white bg-poke-yellow text-poke-dark"
+                    : "border-white/40 bg-black/30 text-poke-yellow"
+                }`}
+              >
+                <Star className="h-5 w-5" fill="currentColor" />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="screen-x screen-bottom flex-1 space-y-4 pt-4">
+        <DexCard title="Pokédex Entry">
+          <DexEntryText caught={caught} status={detail.status} flavor={detail.flavor} />
+          {/* The ability and Play cry share one row, the facts on the left and
               the action on the right — the arrangement the reference uses for
               its entry strip. The row always renders, because the button is not
               conditional on the ability having arrived (or existing at all);
               only the left half is. */}
-              <div className="mt-4 flex items-end justify-between gap-3 border-t border-border/60 pt-3">
-                <div className="min-w-0">
-                  {caught && detail.abilities.length > 0 && (
-                    <>
-                      {/* The card's own heading is the app's red; this sub-label
+          <div className="mt-4 flex items-end justify-between gap-3 border-t border-border/60 pt-3">
+            <div className="min-w-0">
+              {caught && detail.abilities.length > 0 && (
+                <>
+                  {/* The card's own heading is the app's red; this sub-label
                       takes the species' type colour, as the reference does — it
                       reads as a detail OF this Pokémon rather than as a second
                       section. */}
-                      <div
-                        className="font-pixel text-[8px] uppercase tracking-[0.15em]"
-                        style={{ color: `color-mix(in oklab, ${typeVar} 78%, #000)` }}
-                      >
-                        {detail.abilities.length > 1 ? "Abilities" : "Ability"}
-                      </div>
-                      <div className="mt-1.5 truncate text-sm font-bold text-foreground">
-                        {detail.abilities.join(" · ")}
-                      </div>
-                    </>
-                  )}
-                </div>
-                {/* Tinted to the species' type, which is what makes the reference's
+                  <div
+                    className="font-pixel text-[8px] uppercase tracking-[0.15em]"
+                    style={{ color: `color-mix(in oklab, ${typeVar} 78%, #000)` }}
+                  >
+                    {detail.abilities.length > 1 ? "Abilities" : "Ability"}
+                  </div>
+                  <div className="mt-1.5 truncate text-sm font-bold text-foreground">
+                    {detail.abilities.join(" · ")}
+                  </div>
+                </>
+              )}
+            </div>
+            {/* Tinted to the species' type, which is what makes the reference's
                 button green on a Grass page. A fixed colour would be right for
                 exactly one of the eighteen types. */}
-                {/* The white rim needs something OUTSIDE it to be visible: the card
+            {/* The white rim needs something OUTSIDE it to be visible: the card
                 behind this button is also white, so a plain `border-white` was
                 there all along and read as no border at all. The extra hairline
                 ring in the species' own colour is what separates the two. */}
-                <button
-                  onClick={onPlayCry}
-                  className="press inline-flex shrink-0 items-center gap-2 rounded-full border-2 border-white px-4 py-2 text-sm font-bold text-white"
-                  style={{
-                    background: `linear-gradient(180deg, ${typeVar} 0%, color-mix(in oklab, ${typeVar} 72%, #000) 100%)`,
-                    boxShadow: `0 0 0 1.5px color-mix(in oklab, ${typeVar} 45%, transparent), var(--shadow-card)`,
-                  }}
-                >
-                  <Volume2 className="h-4 w-4" /> Play cry
-                </button>
-              </div>
-            </DexCard>
+            <button
+              onClick={onPlayCry}
+              className="press inline-flex shrink-0 items-center gap-2 rounded-full border-2 border-white px-4 py-2 text-sm font-bold text-white"
+              style={{
+                background: `linear-gradient(180deg, ${typeVar} 0%, color-mix(in oklab, ${typeVar} 72%, #000) 100%)`,
+                boxShadow: `0 0 0 1.5px color-mix(in oklab, ${typeVar} 45%, transparent), var(--shadow-card)`,
+              }}
+            >
+              <Volume2 className="h-4 w-4" /> Play cry
+            </button>
+          </div>
+        </DexCard>
 
-            <DexCard title="Evolution Line">
-              {!hasEvolution ? (
-                <p className="text-center text-xs text-foreground/55">
-                  This Pokémon doesn't evolve.
-                </p>
-              ) : (
-                <div className="flex items-stretch gap-0.5 overflow-x-auto">
-                  {columns.map((col, ci) => (
-                    <Fragment key={ci}>
-                      {ci > 0 && (
-                        <div className="flex items-center">
-                          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-foreground/35" />
-                        </div>
-                      )}
-                      {/* THIS is the row's flex item, not the rung — the rungs sit
+        <DexCard title="Evolution Line">
+          {!hasEvolution ? (
+            <p className="text-center text-xs text-foreground/55">This Pokémon doesn't evolve.</p>
+          ) : (
+            <div className="flex items-stretch gap-0.5 overflow-x-auto">
+              {columns.map((col, ci) => (
+                <Fragment key={ci}>
+                  {ci > 0 && (
+                    <div className="flex items-center">
+                      <ChevronRight className="h-3.5 w-3.5 shrink-0 text-foreground/35" />
+                    </div>
+                  )}
+                  {/* THIS is the row's flex item, not the rung — the rungs sit
                       inside it in a column. Sizing the rung itself was applying
                       flex-basis to the vertical axis, which is why three
                       attempts at a rung width all left the last stage clipped. */}
-                      <div
-                        className={`min-w-0 shrink grow basis-[72px] ${
-                          col.length > 3 ? "grid grid-cols-2 gap-1" : "flex flex-col gap-1"
-                        }`}
-                      >
-                        {col.map((stage) => (
-                          <EvolutionStage
-                            key={stage.id}
-                            stage={stage}
-                            current={stage.id === p.id}
-                            caught={isCaught(stage.id)}
-                            typeVar={typeVar}
-                            onSelect={onSelect}
-                          />
-                        ))}
-                      </div>
-                    </Fragment>
-                  ))}
-                </div>
-              )}
-            </DexCard>
-          </div>
-        </motion.div>
-      </AnimatePresence>
+                  <div
+                    className={`min-w-0 shrink grow basis-[72px] ${
+                      col.length > 3 ? "grid grid-cols-2 gap-1" : "flex flex-col gap-1"
+                    }`}
+                  >
+                    {col.map((stage) => (
+                      <EvolutionStage
+                        key={stage.id}
+                        stage={stage}
+                        current={stage.id === p.id}
+                        caught={isCaught(stage.id)}
+                        typeVar={typeVar}
+                        onSelect={onSelect}
+                      />
+                    ))}
+                  </div>
+                </Fragment>
+              ))}
+            </div>
+          )}
+        </DexCard>
+      </div>
     </div>
   );
 }
