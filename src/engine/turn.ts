@@ -543,8 +543,12 @@ export function applyAnswer(
   const wrongStreak = s.wrongStreak + 1;
 
   let wrongDmg = 10;
-  if (config.immune) wrongDmg = 5;
-  else if (config.disadvantaged) wrongDmg = 15;
+  // The opponent counterattacks on a miss: roll the ENEMY's attack type into
+  // the PLAYER (roles swapped from the correct-answer hit), so a wrong answer
+  // is scaled by the real Gen 6+ matchup — 0.25/0.5/1/2/4 — instead of the old
+  // flat 5/10/15 flags. Immune floors to 0.25x (never 0), same as the offense.
+  const wrongMatchup = typeMatchup(config.enemyTypes, config.playerTypes, input.questionIdx);
+  if (wrongMatchup.multiplier !== 1) wrongDmg = Math.max(1, Math.round(wrongDmg * wrongMatchup.multiplier));
   if (abilityId === "no-guard") wrongDmg += 2;
   if (config.items.assaultVestActive) wrongDmg = Math.floor(wrongDmg / 2);
   // King's Rock: 50% chance to negate wrong-answer HP loss entirely, whole battle.

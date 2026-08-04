@@ -1280,7 +1280,7 @@ function BattlePage() {
         />
       ) : phase === "daily" ? (
         <BattleScreen key={battleKey} questions={questions} onExit={exitBattle} mode="daily" />
-      ) : pendingLevelUp ? (
+      ) : phase === "home" && pendingLevelUp ? (
         <LevelUpScreen rewards={pendingLevelUp} onContinue={clearPendingLevelUp} />
       ) : pendingElite ? (
         <ElitePendingTakeover
