@@ -26,7 +26,7 @@ export const Route = createFileRoute("/api/trivia-batch")({
           };
           difficulties =
             normalizeDifficultyBand(body.difficulties ?? body.difficulty) ?? difficulties;
-          if (Array.isArray(body.excludeIds)) excludeIds = body.excludeIds.slice(-500);
+          if (Array.isArray(body.excludeIds)) excludeIds = body.excludeIds.slice(-2000);
         } catch {
           /* defaults */
         }

@@ -86,11 +86,11 @@ describe("/api/trivia-batch difficulty handling", () => {
     expect(body.questions).toHaveLength(20);
   });
 
-  it("caps the exclude list it forwards at the most recent 500", async () => {
-    const ids = Array.from({ length: 700 }, (_, i) => `x${i}`);
+  it("caps the exclude list it forwards at the most recent 2000", async () => {
+    const ids = Array.from({ length: 2100 }, (_, i) => `x${i}`);
     await ask({ difficulties: ["easy"], excludeIds: ids });
     const sent = (picked.mock.calls[0][0] as { excludeIds: string[] }).excludeIds;
-    expect(sent).toHaveLength(500);
-    expect(sent[0]).toBe("x200");
+    expect(sent).toHaveLength(2000);
+    expect(sent[0]).toBe("x100");
   });
 });

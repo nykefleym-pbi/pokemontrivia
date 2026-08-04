@@ -60,7 +60,7 @@ export function ScanPanel({ active, onClose }: { active: boolean; onClose: () =>
           difficulties: adaptiveDifficultyBand(level, recentAnswers),
           seenHashes,
           seenSamples: seenQuestions.slice(-80),
-          excludeIds: seenCuratedIds.slice(-500),
+          excludeIds: seenCuratedIds,
           flowSeed: Math.floor(Math.random() * 1_000_000),
         });
         if (!data.questions || data.questions.length < 5) {
