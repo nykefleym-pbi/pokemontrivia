@@ -543,8 +543,15 @@ function runPureScenario({
 describe("live-pvp-battle-screen engine-verification (resolvePvpAnswer vs. the real component)", () => {
   it("plain partner (no signature ability) — correct/wrong script", async () => {
     const script: Action[] = ["correct", "correct", "wrong", "correct", "correct", "wrong", "correct"];
-    const domTrace = await runDomScenario({ script });
-    const pureTrace = runPureScenario({ script });
+    // Pin both sides' partner ids so the DOM path (which resolves types off the
+    // match's partner ids) and the pure path (off `playerPokemon`/`opponentId`)
+    // face the SAME matchup — now that per-question type effectiveness makes the
+    // opponent's type affect damage, the old null-partner default diverged.
+    const domTrace = await runDomScenario({
+      script,
+      matchOverrides: { hostPartnerId: PLAYER.id, guestPartnerId: 1 },
+    });
+    const pureTrace = runPureScenario({ script, opponentId: 1 });
     expect(pureTrace).toEqual(domTrace);
   });
 

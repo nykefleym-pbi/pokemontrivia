@@ -25,7 +25,9 @@ import {
   isPlayerImmune,
   canEvolve,
   type PokeEntry,
+  type PokeType,
 } from "@/lib/pokemon-data";
+import { typeMatchup, type EffectivenessBand } from "@/lib/type-chart";
 import { getAbility as getAbilityFn, rollAbilityId, type Ability } from "@/lib/abilities";
 import { TutorialOverlay } from "@/components/tutorial-overlay";
 import {
@@ -35,6 +37,7 @@ import {
   CombatPanel,
   QuestionCard,
   ItemBagSheet,
+  EffectivenessPill,
 } from "@/components/game-ui";
 import {
   AlertDialog,
@@ -258,6 +261,10 @@ function BattleMode({
     n: number;
     super: boolean;
     speedy: boolean;
+    /** Per-question type matchup, for the compact effectiveness pill. */
+    band?: EffectivenessBand;
+    attackType?: string;
+    mult?: number;
   } | null>(null);
   const [bagOpen, setBagOpen] = useState(false);
   const [confirmExit, setConfirmExit] = useState(false);
@@ -717,8 +724,11 @@ function BattleMode({
       speedBonusTotalRef.current += speedBonus;
       dmg += speedBonus;
 
-      // type effectiveness AFTER multiplier
-      if (superEff) dmg *= 2;
+      // Per-question type effectiveness AFTER the streak/speed multiplier. Must
+      // stay byte-identical to engine/turn.ts's `typeMatchup` fold (same inputs,
+      // same Math.max(1, round)) or the engine-verification parity test fails.
+      const matchup = typeMatchup(player.types, enemy.pokemon.types, questionIdx);
+      if (matchup.multiplier !== 1) dmg = Math.max(1, Math.round(dmg * matchup.multiplier));
       if (xAttackActive) {
         dmg += 20;
         consumeXAttack();
@@ -786,7 +796,15 @@ function BattleMode({
       if (dmg > topDmgRef.current) topDmgRef.current = dmg;
       setEnemyHp(newEnemyHp);
       setShakeWho("enemy");
-      setFloatDmg({ who: "enemy", n: dmg, super: superEff, speedy: speedBonus >= 3 });
+      setFloatDmg({
+        who: "enemy",
+        n: dmg,
+        super: matchup.band === "super",
+        speedy: speedBonus >= 3,
+        band: matchup.band,
+        attackType: matchup.attackType,
+        mult: matchup.multiplier,
+      });
       setStreak(newStreak);
       recordAnswer(true, elapsed, newStreak);
       playSfx("correct");
@@ -1478,10 +1496,18 @@ function BattleMode({
             )}
             <StatusEffectOverlay statuses={[]} />
             {floatDmg?.who === "enemy" && (
-              <div className="animate-float-up pointer-events-none absolute left-1/2 top-4 z-20 -translate-x-1/2 font-pixel text-base text-destructive">
-                -{floatDmg.n}
-                {floatDmg.super && " SUPER"}
-                {floatDmg.speedy && " FAST"}
+              <div className="animate-float-up pointer-events-none absolute left-1/2 top-4 z-20 flex -translate-x-1/2 flex-col items-center gap-0.5">
+                <span className="font-pixel text-base text-destructive">
+                  -{floatDmg.n}
+                  {floatDmg.speedy && " FAST"}
+                </span>
+                {floatDmg.band && floatDmg.band !== "neutral" && (
+                  <EffectivenessPill
+                    band={floatDmg.band}
+                    attackType={floatDmg.attackType as PokeType | undefined}
+                    multiplier={floatDmg.mult}
+                  />
+                )}
               </div>
             )}
           </motion.div>

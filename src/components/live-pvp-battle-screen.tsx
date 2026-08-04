@@ -15,6 +15,7 @@ import {
   PokeballSpinner,
   ItemIcon,
   StatusEffectOverlay,
+  EffectivenessPill,
 } from "@/components/game-ui";
 import { typeRowFontSize, COMBAT_PANEL_WIDTH } from "@/lib/type-row-fit";
 import { findPokemon, type PokeType } from "@/lib/pokemon-data";
@@ -274,6 +275,7 @@ function ArenaSprite({
   floatN,
   statuses,
   confused,
+  pill,
 }: {
   id: number | null;
   back: boolean;
@@ -281,6 +283,7 @@ function ArenaSprite({
   floatN: number | null;
   statuses: Array<{ kind: StatusKind }>;
   confused?: boolean;
+  pill?: React.ReactNode;
 }) {
   return (
     <div className="relative shrink-0">
@@ -314,6 +317,11 @@ function ArenaSprite({
         {floatN != null && (
           <div className="animate-float-up pointer-events-none absolute top-4 left-1/2 z-20 -translate-x-1/2 font-pixel text-base text-destructive">
             -{floatN}
+          </div>
+        )}
+        {pill != null && (
+          <div className="pointer-events-none absolute top-12 left-1/2 z-20 -translate-x-1/2">
+            {pill}
           </div>
         )}
       </motion.div>
@@ -611,6 +619,15 @@ export function LivePvpBattleScreen({
   // triggers it without touching any game logic.
   const [shakeWho, setShakeWho] = useState<"player" | "opponent" | null>(null);
   const [floatDmg, setFloatDmg] = useState<{ who: "player" | "opponent"; n: number } | null>(null);
+  // Per-question type-effectiveness pill, shown beside the sprite that just took
+  // the hit. Set from the resolved turn's `matchup` (server-authoritative), and
+  // cleared shortly after so it tracks the same beat as the damage float.
+  const [effectPill, setEffectPill] = useState<{
+    who: "player" | "opponent";
+    band: "immune" | "resisted" | "neutral" | "super";
+    attackType?: PokeType;
+    multiplier?: number;
+  } | null>(null);
   const prevMyHpRef = useRef(myHp);
   const prevOppHpRef = useRef(oppHp);
   // Fix — battle intro (feedback 254db1d9): mirror Solo's send-out beat before
@@ -1562,6 +1579,19 @@ export function LivePvpBattleScreen({
     const { result } = res;
     const landedHit = result.correct && !result.confusionMissed;
 
+    // Effectiveness pill on the opponent for MY landed hit (my rolled type into
+    // their type(s)). Cleared on the same ~1.2s beat as the damage float.
+    if (landedHit && result.matchup && result.matchup.band !== "neutral") {
+      const m = result.matchup;
+      setEffectPill({
+        who: "opponent",
+        band: m.band,
+        attackType: m.attackType as PokeType,
+        multiplier: m.multiplier,
+      });
+      setTimeout(() => setEffectPill((p) => (p?.who === "opponent" ? null : p)), 1200);
+    }
+
     setStreak(result.streak);
     onAnswered?.({ streakAfter: result.streak, elapsedMs });
 
@@ -1923,6 +1953,19 @@ export function LivePvpBattleScreen({
           if (botWrongStreakRef.current === CONFUSE_AT) applyConfused("opponent", idxAtAnswer);
         }
 
+        // Effectiveness pill on ME for the bot's landed hit (its rolled type
+        // into my type(s)).
+        if (result.correct && !result.confusionMissed && result.matchup && result.matchup.band !== "neutral") {
+          const m = result.matchup;
+          setEffectPill({
+            who: "player",
+            band: m.band,
+            attackType: m.attackType as PokeType,
+            multiplier: m.multiplier,
+          });
+          setTimeout(() => setEffectPill((pill) => (pill?.who === "player" ? null : pill)), 1200);
+        }
+
         if (result.resolved && !finishedRef.current) {
           finishedRef.current = true;
           const won = result.winnerId ? result.winnerId === myId : null;
@@ -2245,6 +2288,15 @@ export function LivePvpBattleScreen({
             floatN={floatDmg?.who === "opponent" ? floatDmg.n : null}
             statuses={oppStatusesDisplay}
             confused={oppConfused}
+            pill={
+              effectPill?.who === "opponent" ? (
+                <EffectivenessPill
+                  band={effectPill.band}
+                  attackType={effectPill.attackType}
+                  multiplier={effectPill.multiplier}
+                />
+              ) : null
+            }
           />
         }
         playerSprite={
@@ -2255,6 +2307,15 @@ export function LivePvpBattleScreen({
             floatN={floatDmg?.who === "player" ? floatDmg.n : null}
             statuses={myStatusesDisplay}
             confused={selfConfused}
+            pill={
+              effectPill?.who === "player" ? (
+                <EffectivenessPill
+                  band={effectPill.band}
+                  attackType={effectPill.attackType}
+                  multiplier={effectPill.multiplier}
+                />
+              ) : null
+            }
           />
         }
         playerPanel={

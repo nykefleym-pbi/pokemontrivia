@@ -64,7 +64,7 @@ exports[`live-pvp-battle-screen characterization (signature-ability coverage) > 
   },
   {
     "correct": true,
-    "dmg": 7,
+    "dmg": 14,
     "questionIndex": 1,
     "selfDmg": 0,
   },
@@ -76,7 +76,7 @@ exports[`live-pvp-battle-screen characterization (signature-ability coverage) > 
   },
   {
     "correct": true,
-    "dmg": 11,
+    "dmg": 22,
     "questionIndex": 3,
     "selfDmg": 0,
   },
@@ -88,7 +88,7 @@ exports[`live-pvp-battle-screen characterization (signature-ability coverage) > 
   },
   {
     "correct": true,
-    "dmg": 17,
+    "dmg": 34,
     "questionIndex": 5,
     "selfDmg": 0,
   },
@@ -128,19 +128,19 @@ exports[`live-pvp-battle-screen characterization (signature-ability coverage) > 
 [
   {
     "correct": true,
-    "dmg": 9,
+    "dmg": 18,
     "questionIndex": 0,
     "selfDmg": 0,
   },
   {
     "correct": true,
-    "dmg": 9,
+    "dmg": 18,
     "questionIndex": 1,
     "selfDmg": 0,
   },
   {
     "correct": true,
-    "dmg": 26,
+    "dmg": 52,
     "questionIndex": 2,
     "selfDmg": 0,
   },
