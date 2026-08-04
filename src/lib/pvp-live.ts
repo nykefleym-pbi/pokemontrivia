@@ -440,7 +440,7 @@ export async function startTrainingMatch(): Promise<
       difficulties: adaptiveDifficultyBand(s.level, s.recentAnswers),
       seenHashes: s.seenQuestionHashes,
       seenSamples: s.seenQuestions.slice(-80),
-      excludeIds: s.seenCuratedIds.slice(-500),
+      excludeIds: s.seenCuratedIds,
       flowSeed: Math.floor(Math.random() * 1_000_000),
     });
     if (!data.questions || data.questions.length < 5) {
@@ -488,7 +488,7 @@ export async function prepareQueueTicket(): Promise<
       difficulties: adaptiveDifficultyBand(s.level, s.recentAnswers),
       seenHashes: s.seenQuestionHashes,
       seenSamples: s.seenQuestions.slice(-80),
-      excludeIds: s.seenCuratedIds.slice(-500),
+      excludeIds: s.seenCuratedIds,
       flowSeed: Math.floor(Math.random() * 1_000_000),
     });
     if (!data.questions || data.questions.length < 5) return { ok: false, error: "questions" };

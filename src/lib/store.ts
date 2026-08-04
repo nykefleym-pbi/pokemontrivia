@@ -34,7 +34,12 @@ export * from "./store/types";
 
 const MAX_SEEN_HASHES = 500;
 const MAX_SEEN_TEXTS = 200;
-const MAX_SEEN_CURATED = 500;
+// Curated question de-dup window. Kept at ~50% of the ~4,000-question bank so a
+// player sees no repeats until they've exhausted roughly half the bank — the
+// selection RPC serves unseen questions first, so a complete exclude list means
+// repeats only begin once the unseen pool for a difficulty runs low. Past this
+// many distinct seen questions the oldest roll off and can recur (by design).
+const MAX_SEEN_CURATED = 2000;
 
 export function normalizeQuestion(s: string): string {
   return s

@@ -1038,7 +1038,7 @@ export function QuestionCard({
                           : "border-border/60 text-foreground hover:border-primary/50"
                 } disabled:cursor-not-allowed`}
               >
-                <span className="min-w-0 flex-1 truncate">{opt}</span>
+                <span className="min-w-0 flex-1 break-words">{opt}</span>
                 {isCorrect && (
                   <span className="ml-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-hp-good text-[12px] text-white">
                     ✓
