@@ -868,8 +868,11 @@ function BattleMode({
       // Matchup-aware wrong-answer damage
 
       let wrongDmg = 10;
-      if (immune) wrongDmg = 5;
-      else if (disadvantaged) wrongDmg = 15;
+      // Byte-identical to engine/turn.ts's wrong-answer fold: the enemy's type
+      // rolls into the player (roles swapped from the offensive hit above), so
+      // a miss is scaled by the real matchup instead of the old flat 5/10/15.
+      const wrongMatchup = typeMatchup(enemy.pokemon.types, player.types, questionIdx);
+      if (wrongMatchup.multiplier !== 1) wrongDmg = Math.max(1, Math.round(wrongDmg * wrongMatchup.multiplier));
       if (playerAbility.id === "no-guard") wrongDmg += 2;
       if (assaultVestActiveRef.current) wrongDmg = Math.floor(wrongDmg / 2);
       // King's Rock: 50% chance to negate HP loss on any wrong answer, for the whole battle
@@ -966,7 +969,15 @@ function BattleMode({
 
       setPlayerHp(newPlayerHp);
       setShakeWho("player");
-      setFloatDmg({ who: "player", n: wrongDmg, super: false, speedy: false });
+      setFloatDmg({
+        who: "player",
+        n: wrongDmg,
+        super: wrongMatchup.band === "super",
+        speedy: false,
+        band: wrongMatchup.band,
+        attackType: wrongMatchup.attackType,
+        mult: wrongMatchup.multiplier,
+      });
       // Sand Force: the first two wrong answers keep the streak alive.
       const keepStreak =
         playerAbility.id === "sand-force" && abilityStateRef.current.sandForceUsed < 2;
@@ -1526,8 +1537,15 @@ function BattleMode({
             />
             <StatusEffectOverlay statuses={statuses} />
             {floatDmg?.who === "player" && (
-              <div className="animate-float-up pointer-events-none absolute left-1/2 top-4 z-20 -translate-x-1/2 font-pixel text-base text-destructive">
-                -{floatDmg.n}
+              <div className="animate-float-up pointer-events-none absolute left-1/2 top-4 z-20 flex -translate-x-1/2 flex-col items-center gap-1">
+                <span className="font-pixel text-base text-destructive">-{floatDmg.n}</span>
+                {floatDmg.band && floatDmg.band !== "neutral" && (
+                  <EffectivenessPill
+                    band={floatDmg.band}
+                    attackType={floatDmg.attackType as PokeType | undefined}
+                    multiplier={floatDmg.mult}
+                  />
+                )}
               </div>
             )}
           </motion.div>
