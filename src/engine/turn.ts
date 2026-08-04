@@ -61,6 +61,8 @@ import type { ItemId } from "../content/items/item-def";
 import type { AbilityId } from "../lib/abilities";
 import { baseDamageForLevel, getTpMultiplier } from "../lib/level-curve";
 import { streakMultiplier } from "./damage";
+import { typeMatchup } from "../lib/type-chart";
+import type { PokeType } from "../lib/pokemon-data.generated";
 import type { Rng } from "./rng";
 
 /** A client-submitted action in a solo battle. */
@@ -72,6 +74,7 @@ export type BattleAction =
 /** A server-emitted event resulting from applying one BattleAction. */
 export type BattleEvent =
   | { type: "damage_dealt"; target: "player" | "enemy"; amount: number; crit?: boolean }
+  | { type: "type_effect"; attackType: PokeType; band: "immune" | "resisted" | "neutral" | "super"; multiplier: number }
   | { type: "status_applied"; target: "player" | "enemy"; kind: StatusKind }
   | { type: "status_cured"; target: "player" | "enemy"; kind: StatusKind }
   | { type: "item_consumed"; itemId: ItemId }
@@ -207,6 +210,12 @@ export interface BattleConfig {
   superEff: boolean;
   disadvantaged: boolean;
   immune: boolean;
+  /** Raw types for the per-question type-effectiveness roll (typeMatchup). The
+   *  booleans above stay for the whole-battle ability flags and intro banner;
+   *  these drive the correct-answer damage multiplier, which is rolled fresh
+   *  each question. */
+  playerTypes: PokeType[];
+  enemyTypes: PokeType[];
   /** Player's current Training Points for this partner — feeds getTpMultiplier. */
   trainingPoints: number;
   /** Extra timer seconds this battle (Sand Veil's onBattleStart effect). */
@@ -396,7 +405,19 @@ export function applyAnswer(
     if (abilityId === "swift-swim") speedBonus = Math.max(3, speedBonus);
     dmg += speedBonus;
 
-    if (config.superEff) dmg *= 2;
+    // Per-question type effectiveness (owner ruling 2026-08-04): the attacker
+    // rolls one of its types this question and the mainline product against the
+    // enemy's type(s) scales the hit (immune floored to 0.25×). Replaces the old
+    // whole-battle `superEff ? ×2` flag; `config.superEff` still drives the
+    // intro banner and the flag-reading abilities below.
+    const matchup = typeMatchup(config.playerTypes, config.enemyTypes, input.questionIdx);
+    if (matchup.multiplier !== 1) dmg = Math.max(1, Math.round(dmg * matchup.multiplier));
+    events.push({
+      type: "type_effect",
+      attackType: matchup.attackType,
+      band: matchup.band,
+      multiplier: matchup.multiplier,
+    });
     if (items.xAttackActive) {
       dmg += 20;
       items = { ...items, xAttackActive: false };

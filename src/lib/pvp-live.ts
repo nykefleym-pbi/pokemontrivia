@@ -890,6 +890,9 @@ export interface PvpLiveTurnResult {
   correct: boolean;
   dmg: number;
   selfDmg: number;
+  /** Per-question type matchup for the landed hit (null on a miss/wrong/frozen),
+   *  for the compact effectiveness pill. Mirrors PvpAnswerOutcome.matchup. */
+  matchup: { band: "immune" | "resisted" | "neutral" | "super"; attackType: string; multiplier: number } | null;
   timeMs: number;
   confusionMissed: boolean;
   triggerFired: boolean;
@@ -923,6 +926,7 @@ function fromTurnResponse(r: Record<string, unknown>): PvpLiveTurnResult {
     correct: !!r.correct,
     dmg: (r.dmg as number | undefined) ?? 0,
     selfDmg: (r.selfDmg as number | undefined) ?? 0,
+    matchup: (r.matchup as PvpLiveTurnResult["matchup"] | undefined) ?? null,
     timeMs: (r.timeMs as number | undefined) ?? 0,
     confusionMissed: !!r.confusionMissed,
     triggerFired: !!r.triggerFired,

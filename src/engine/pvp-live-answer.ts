@@ -37,6 +37,7 @@ import {
   type SignatureContext,
   type SignatureEngineSpec,
 } from "../lib/signature-abilities";
+import { typeMatchup, type EffectivenessBand } from "../lib/type-chart";
 import {
   applyDamageMod,
   applySelfDmgMod,
@@ -148,6 +149,10 @@ export interface PvpAnswerOutcome {
   /** The engine trigger's fired/not-fired verdict for THIS answer — the same
    *  value the client's `sigEngineTick` call and `fireCappedPayload` gate on. */
   triggerFired: boolean;
+  /** Per-question type matchup for the landed hit — the rolled attacking type
+   *  and its effectiveness band/multiplier, for the compact effectiveness pill.
+   *  Null on a miss/wrong/frozen answer (no hit to characterize). */
+  matchup: { band: EffectivenessBand; attackType: PokeType; multiplier: number } | null;
   state: PvpEngineState;
 }
 
@@ -181,6 +186,8 @@ export function resolvePvpAnswer(input: PvpAnswerInput, state: PvpEngineState): 
   let landedHit = false;
   let streakAfterAnswer = 0;
   let confusionMissed = false;
+  let landedMatchup: { band: EffectivenessBand; attackType: PokeType; multiplier: number } | null =
+    null;
 
   // Pre-answer confused state never changes mid-resolution (mirrors the real
   // component: `selfConfused`/`myStatuses` are React state, immutable within
@@ -302,7 +309,21 @@ export function resolvePvpAnswer(input: PvpAnswerInput, state: PvpEngineState): 
         outgoingFactor: indexFactor,
         rng,
       });
-      dmg = computed + (mods.secondHitFraction ? Math.round(computed * mods.secondHitFraction) : 0);
+      // Per-question type effectiveness (owner ruling 2026-08-04): roll one of
+      // my types this question and scale by the mainline product into the
+      // opponent's type(s), immune floored to 0.25×. Same resolver Solo uses.
+      // Deterministic in (myTypes, oppType, questionIndex), so the client's
+      // optimistic compute and any server recompute land on the identical number.
+      const matchup =
+        input.myTypes && input.myTypes.length > 0
+          ? typeMatchup(input.myTypes, input.oppType as PokeType[], input.questionIndex)
+          : null;
+      landedMatchup = matchup;
+      const scaled =
+        matchup && matchup.multiplier !== 1
+          ? Math.max(1, Math.round(computed * matchup.multiplier))
+          : computed;
+      dmg = scaled + (mods.secondHitFraction ? Math.round(scaled * mods.secondHitFraction) : 0);
     }
   } else {
     streak = 0;
@@ -394,6 +415,7 @@ export function resolvePvpAnswer(input: PvpAnswerInput, state: PvpEngineState): 
     selfDmg,
     confusionMissed,
     triggerFired,
+    matchup: landedMatchup,
     state: {
       streak,
       correctCount,

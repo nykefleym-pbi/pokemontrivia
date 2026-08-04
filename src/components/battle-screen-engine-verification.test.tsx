@@ -320,6 +320,8 @@ function runPure(
     superEff,
     disadvantaged,
     immune,
+    playerTypes: PLAYER.types,
+    enemyTypes: enemy.types,
     trainingPoints: 0,
     bonusTime,
     isNormalType: PLAYER.types.includes("normal"),

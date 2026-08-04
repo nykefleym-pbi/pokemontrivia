@@ -89,6 +89,8 @@ export function resolveBattleSetup(cfg: SoloBattleCfg): ResolvedBattleSetup {
     superEff: isSuperEffective(player, enemy),
     disadvantaged: isPlayerDisadvantaged(player, enemy),
     immune: isPlayerImmune(player, enemy),
+    playerTypes: cfg.playerTypes,
+    enemyTypes: cfg.enemyTypes,
     trainingPoints: cfg.trainingPoints,
     bonusTime: cfg.abilityId === "sand-veil" ? 2 : 0,
     isNormalType: cfg.playerTypes.includes("normal"),

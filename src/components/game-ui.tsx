@@ -123,6 +123,45 @@ export const TypeBadge = React.memo(function TypeBadge({
   );
 });
 
+/** Compact per-question type-effectiveness indicator, shared by every battle
+ *  mode (Solo/PvP/Training) so they read identically. Renders nothing on a
+ *  neutral matchup — only the notable bands earn a pill. `attackType` is the
+ *  single type the attacker rolled this question (see typeMatchup): showing it
+ *  is what makes the per-question RNG legible ("why was it 2× that time?"). */
+const EFFECT_MULT_LABEL: Record<number, string> = { 0.25: "¼×", 0.5: "½×", 2: "2×", 4: "4×" };
+export const EffectivenessPill = React.memo(function EffectivenessPill({
+  band,
+  attackType,
+  multiplier,
+  className = "",
+}: {
+  band: "immune" | "resisted" | "neutral" | "super";
+  attackType?: PokeType;
+  multiplier?: number;
+  className?: string;
+}) {
+  if (band === "neutral") return null;
+  const label =
+    band === "super"
+      ? "Super effective"
+      : band === "resisted"
+        ? "Not very effective"
+        : "Barely scratched";
+  const mult = multiplier != null ? (EFFECT_MULT_LABEL[multiplier] ?? `${multiplier}×`) : "";
+  const tone = band === "super" ? "bg-red-500/90" : "bg-slate-600/90";
+  return (
+    <span
+      className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-1.5 py-0.5 font-pixel text-[9px] leading-none text-white ${tone} ${className}`}
+    >
+      {attackType && (
+        <span className={`h-1.5 w-1.5 rounded-full ${typeColorMap[attackType]}`} aria-hidden />
+      )}
+      {mult && <span>{mult}</span>}
+      <span className="normal-case">{label}</span>
+    </span>
+  );
+});
+
 /**
  * Bordered status-frame for a Legendary/Mythical partner card, styled after
  * classic Pokémon summary-screen frames (ornamented corners, no glow). Wraps
