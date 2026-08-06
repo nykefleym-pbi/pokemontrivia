@@ -5,12 +5,17 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useFramePortalContainer } from "@/components/frame-portal";
 
 const Dialog = DialogPrimitive.Root;
 
 const DialogTrigger = DialogPrimitive.Trigger;
 
-const DialogPortal = DialogPrimitive.Portal;
+// Portals into the desktop phone-frame when one is active (so dialogs stay
+// inside the mock phone), else into document.body — see components/frame-portal.
+const DialogPortal = ({ ...props }: React.ComponentProps<typeof DialogPrimitive.Portal>) => (
+  <DialogPrimitive.Portal container={useFramePortalContainer()} {...props} />
+);
 
 const DialogClose = DialogPrimitive.Close;
 

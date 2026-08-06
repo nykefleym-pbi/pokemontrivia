@@ -62,8 +62,12 @@ export const COMBAT_PANEL_WIDTH = "clamp(9rem,38vw,10.5rem)";
  * Kept here rather than in the route so the arithmetic that has to agree with
  * `typeRowFontSize` sits next to it, and so tests can reach it without pulling
  * in a TanStack route.
+ *
+ * Capped at `--frame-width` (the phone-column / desktop-mockup width) rather
+ * than the raw viewport, so a wide desktop — where the grid lives inside the
+ * 480px phone frame — doesn't blow the cards up past the column.
  */
-export const DEX_CARD_WIDTH = "calc((100vw - 44px) / 3)";
+export const DEX_CARD_WIDTH = "calc((min(100vw, var(--frame-width)) - 44px) / 3)";
 export const DEX_CARD_PAD_PX = 20;
 
 /**

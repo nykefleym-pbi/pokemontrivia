@@ -351,6 +351,94 @@
   }
 }
 
+/* ── Desktop phone mockup ──────────────────────────────────────────────────
+ * On non-mobile viewports the whole app is rendered inside a phone-shaped
+ * frame so the mobile-proportioned UI doesn't stretch (see routes/__root.tsx,
+ * gated on useIsMobile() + isStandalone()). On phones/installed PWA none of
+ * this applies — the app renders full-bleed exactly as before.
+ *
+ * The frame is a `position: fixed` CONTAINING BLOCK (via `transform`), so every
+ * `fixed inset-0` overlay in the app — plus the Radix/Vaul dialogs, sheets and
+ * drawers we portal into it — resolves to the phone instead of the viewport.
+ */
+:root {
+  /* Default (phones / unframed): the Pokédex card math treats the full viewport
+   * as the screen width. The desktop frame overrides this with its real width. */
+  --frame-width: 100vw;
+}
+.app-root {
+  height: 100dvh;
+  width: 100%;
+  overflow: hidden;
+  background-color: var(--color-background);
+}
+.app-root--framed {
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  /* No background here: the beige <DesktopBackdrop> (fixed, -z-10) is the
+   * surround, and an element's own background would paint OVER its negative-z
+   * children and hide it. */
+  background: transparent;
+  /* Aspect-locked to a real phone (9 : 19.5): the height fills the window (up to
+   * a cap) and the WIDTH is derived from it, so the mockup keeps true handset
+   * proportions instead of going squarish on a short window. */
+  --frame-height: min(calc(100dvh - 2.5rem), 920px);
+  --frame-width: min(calc(100vw - 2.5rem), calc(var(--frame-height) * 9 / 19.5));
+}
+.phone-frame {
+  position: relative;
+  /* Above the <DesktopBackdrop> (z-0), which fills the viewport behind it. */
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  width: var(--frame-width);
+  height: var(--frame-height);
+  overflow: hidden;
+  border-radius: 2.75rem;
+  background-color: var(--color-background);
+  /* Bezel rings (screen edge → black body → highlight) + device drop shadow. */
+  box-shadow:
+    0 0 0 2px oklch(0.7 0 0 / 0.25),
+    0 0 0 12px oklch(0.15 0.01 260),
+    0 0 0 13px oklch(0.34 0.01 260 / 0.7),
+    0 40px 80px -24px oklch(0 0 0 / 0.6),
+    0 18px 40px -30px oklch(0 0 0 / 0.55);
+  /* Makes this element the containing block for `position: fixed` descendants,
+   * corralling every full-screen overlay into the phone. Keep in sync with the
+   * portal container wired in components/frame-portal.tsx. */
+  transform: translateZ(0);
+  will-change: transform;
+}
+/* Faux status bar: a flow band at the top so the notch/island never overlaps
+ * screen content (env(safe-area-inset-top) is 0 on desktop). */
+.phone-statusbar {
+  position: relative;
+  flex: 0 0 auto;
+  height: 1.9rem;
+}
+.phone-statusbar::before {
+  content: "";
+  position: absolute;
+  top: 0.45rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 32%;
+  height: 1.05rem;
+  border-radius: 999px;
+  background: oklch(0.14 0.01 260);
+}
+/* The screen surface below the status bar; screens size to it via h-full. */
+.phone-screen {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: var(--color-background);
+}
+
 @layer base {
   * {
     border-color: var(--color-border);

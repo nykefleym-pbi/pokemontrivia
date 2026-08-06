@@ -74,7 +74,7 @@ export function ItemIcon({
   );
 }
 
-const typeColorMap: Record<PokeType, string> = {
+export const typeColorMap: Record<PokeType, string> = {
   normal: "bg-type-normal",
   fire: "bg-type-fire",
   water: "bg-type-water",
