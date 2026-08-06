@@ -68,7 +68,10 @@ export function ShareCardDialog({ open, onClose, data, inviteCode }: Props) {
       {/* z-[200]: must sit above full-screen overlays that open this dialog
           (the evolution screen is fixed at z-[100]); the default z-50 would
           render it invisibly underneath while still blocking all clicks. */}
-      <DialogContent className="z-[200] flex h-[100dvh] w-screen max-w-none flex-col gap-0 rounded-none border-0 bg-poke-dark p-0 sm:rounded-none">
+      {/* `inset-0` (not 100dvh/100vw) so it fills whatever containing block it
+          lands in: the viewport on a phone, or the desktop phone-frame when one
+          is active. Overrides DialogContent's centered base classes. */}
+      <DialogContent className="inset-0 z-[200] flex h-full w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-0 bg-poke-dark p-0 sm:rounded-none">
         <DialogTitle className="sr-only">Share Result</DialogTitle>
         {/* Header */}
         <div className="screen-x flex shrink-0 items-center justify-between screen-top pb-3">

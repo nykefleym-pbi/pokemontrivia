@@ -6,6 +6,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useFramePortalContainer } from "@/components/frame-portal";
 
 const Sheet = SheetPrimitive.Root;
 
@@ -13,7 +14,10 @@ const SheetTrigger = SheetPrimitive.Trigger;
 
 const SheetClose = SheetPrimitive.Close;
 
-const SheetPortal = SheetPrimitive.Portal;
+// Portals into the desktop phone-frame when one is active — see frame-portal.
+const SheetPortal = ({ ...props }: React.ComponentProps<typeof SheetPrimitive.Portal>) => (
+  <SheetPrimitive.Portal container={useFramePortalContainer()} {...props} />
+);
 
 const SheetOverlay = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Overlay>,

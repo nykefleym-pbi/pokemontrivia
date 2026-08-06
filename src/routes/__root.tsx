@@ -6,13 +6,16 @@ import {
   Scripts,
   useRouterState,
 } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { battleFieldCssUrl } from "@/lib/battle-field";
 import { MotionConfig } from "framer-motion";
 import { unlockAudio, playSfx, playBgm } from "@/lib/audio";
 import { installNativeGestureGuards } from "@/lib/native-gestures";
 import { trackReturnVisit } from "@/lib/analytics";
-import { captureInstallPrompt } from "@/lib/install-prompt";
+import { captureInstallPrompt, isStandalone } from "@/lib/install-prompt";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { FramePortalProvider } from "@/components/frame-portal";
+import { DesktopBackdrop } from "@/components/desktop-backdrop";
 import { PushOptIn } from "@/components/push-opt-in";
 import { BottomNav } from "@/components/bottom-nav";
 import { BootSplash } from "@/components/boot-splash";
@@ -218,6 +221,17 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   useEnsureSocial();
 
+  // Desktop / iPad browsers render the whole app inside a phone-shaped mockup so
+  // the mobile-proportioned UI doesn't stretch. `mounted` keeps the server and
+  // first client paint unframed (full-bleed) so there's no hydration mismatch —
+  // on a phone that's the final state; on desktop the frame swaps in after mount.
+  // isStandalone() is only read once mounted (client), so it never runs on SSR.
+  const isMobile = useIsMobile();
+  const [frameEl, setFrameEl] = useState<HTMLElement | null>(null);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const framed = mounted && !isMobile && !isStandalone();
+
   const darkMode = useGameStore((s) => s.darkMode);
   useEffect(() => {
     const root = document.documentElement;
@@ -292,30 +306,52 @@ function RootComponent() {
     else if (pathname === "/arena") playBgm("arena");
   }, [pathname]);
   return (
-    <MotionConfig reducedMotion={reducedMotion ? "always" : "user"}>
-      <div className="h-[100dvh] w-full overflow-hidden bg-background">
-        <div className="mx-auto flex h-[100dvh] w-full max-w-[480px] flex-col overflow-hidden bg-background">
-          <Outlet />
-          <BottomNav />
+    // When framed, the phone-frame element is the portal target for Radix/Vaul
+    // overlays so they stay inside the phone; when not, `null` → default body
+    // portal (today's behavior). See components/frame-portal.tsx.
+    <FramePortalProvider value={framed ? frameEl : null}>
+      <MotionConfig reducedMotion={reducedMotion ? "always" : "user"}>
+        <div className={framed ? "app-root app-root--framed" : "app-root"}>
+          {framed && <DesktopBackdrop />}
+          {/* The phone. Framed: a fixed-containing block (`transform`) so every
+              overlay below resolves to it, not the viewport. Unframed: the exact
+              centered 480px column the app has always used. */}
+          <div
+            ref={setFrameEl}
+            className={
+              framed
+                ? "phone-frame"
+                : "mx-auto flex h-[100dvh] w-full max-w-[480px] flex-col overflow-hidden bg-background"
+            }
+          >
+            {framed && <div className="phone-statusbar" aria-hidden />}
+            {/* `display:contents` when unframed so Outlet/BottomNav stay direct
+                children of the column (pixel-identical to before). */}
+            <div className={framed ? "phone-screen" : "contents"}>
+              <Outlet />
+              <BottomNav />
+            </div>
+            {/* Single app-wide toaster: every route (incl. /pvp/live Training &
+                Nearby Battle) renders toasts through this. Do NOT add per-route
+                <Toaster>s — multiple mounts double every toast. Sonner renders
+                fixed positioning inline here, so when framed it's caught by the
+                phone-frame containing block; unframed it spans the viewport. */}
+            <Toaster position="top-center" />
+            <FriendRequestInbox />
+            <PvpInviteInbox />
+            <LivePvpWatcher />
+            <NameReclaimPrompt />
+            <PushOptIn />
+
+            <PwaRegister />
+            <Analytics />
+
+            {/* Last child, and fixed at z-[300]: the boot screen covers the whole
+                app — including the overlays above — until it retires itself. */}
+            <BootSplash />
+          </div>
         </div>
-        {/* Single app-wide toaster: every route (incl. /pvp/live Training & Nearby
-            Battle) renders toasts through this. Do NOT add per-route <Toaster>s —
-            multiple mounts double every toast. Sonner uses fixed positioning, so
-            the ancestor overflow-hidden here does not clip it. */}
-        <Toaster position="top-center" />
-        <FriendRequestInbox />
-        <PvpInviteInbox />
-        <LivePvpWatcher />
-        <NameReclaimPrompt />
-        <PushOptIn />
-
-        <PwaRegister />
-        <Analytics />
-
-        {/* Last child, and fixed at z-[300]: the boot screen covers the whole
-            app — including the overlays above — until it retires itself. */}
-        <BootSplash />
-      </div>
-    </MotionConfig>
+      </MotionConfig>
+    </FramePortalProvider>
   );
 }

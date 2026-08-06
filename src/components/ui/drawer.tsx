@@ -2,6 +2,7 @@ import * as React from "react";
 import { Drawer as DrawerPrimitive } from "vaul";
 
 import { cn } from "@/lib/utils";
+import { useFramePortalContainer } from "@/components/frame-portal";
 
 const Drawer = ({
   shouldScaleBackground = true,
@@ -13,7 +14,10 @@ Drawer.displayName = "Drawer";
 
 const DrawerTrigger = DrawerPrimitive.Trigger;
 
-const DrawerPortal = DrawerPrimitive.Portal;
+// Portals into the desktop phone-frame when one is active — see frame-portal.
+const DrawerPortal = ({ ...props }: React.ComponentProps<typeof DrawerPrimitive.Portal>) => (
+  <DrawerPrimitive.Portal container={useFramePortalContainer()} {...props} />
+);
 
 const DrawerClose = DrawerPrimitive.Close;
 
