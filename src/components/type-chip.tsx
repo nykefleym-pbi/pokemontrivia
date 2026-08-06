@@ -73,7 +73,13 @@ export function TypeChip({
   type: PokeType;
   selected?: boolean;
   onClick?: () => void;
-  size?: "xs" | "sm" | "md" | "lg";
+  /**
+   * `pick` is `md` with the vertical padding halved — the 18-type picker in
+   * Who's That Pokémon mode 1B is six rows deep, so 8px a row is 48px of screen,
+   * which is what lets the silhouette above it stay large. It keeps `md`'s pixel
+   * face and 9px label; only the padding moves, so the tap target stays ~28px.
+   */
+  size?: "xs" | "sm" | "md" | "pick" | "lg";
   /**
    * Drop the glyph and keep the word.
    *
@@ -95,7 +101,9 @@ export function TypeChip({
         ? "gap-1 px-[3px] py-[3px] text-[7px] tracking-normal justify-center"
         : size === "sm"
           ? "gap-0.5 px-1.5 py-[3px] text-[8px] justify-center"
-          : "gap-1.5 px-2 py-2.5 text-[9px] justify-center";
+          : size === "pick"
+            ? "gap-1 px-2 py-1.5 text-[9px] justify-center"
+            : "gap-1.5 px-2 py-2.5 text-[9px] justify-center";
   // `xs` and `sm` are set in the DISPLAY face rather than the pixel one. Press
   // Start 2P is fixed-pitch and enormous per character — "ELECTRIC" at 8px is
   // about 64px of glyph before any padding — so two pixel-font chips physically
