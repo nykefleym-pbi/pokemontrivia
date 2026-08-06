@@ -431,8 +431,17 @@ export function WhosThatPokemon() {
     // is the only way a child of a padded screen reaches the bezel. Height is
     // unchanged from the square it replaced (16rem), so the reveal beat and the
     // space below it stay where they were — this got WIDER, not taller.
+    // `h-64` is the WANTED height, not a guaranteed one: this is a flex item in
+    // a fixed-height column, so it gets compressed by whatever sits below it —
+    // mode 1B's 18-chip type picker squeezed it from 256px to 143px on a
+    // 390x844 phone. That is fine on its own; what cropped the silhouette
+    // (owner report 2026-08-06) is that the sprite inside was a FIXED 15rem and
+    // `overflow-hidden` cut off whatever no longer fit. The sprite is now sized
+    // as a share of the panel (below), so shrinking scales it instead of
+    // clipping it, and `min-h` stops the shrink before the shape gets too small
+    // to read — past that the screen scrolls.
     <div
-      className="relative -mx-7 mt-6 h-64 overflow-hidden border-y-4 border-poke-yellow shadow-card"
+      className="relative -mx-7 mt-6 h-64 min-h-[11.5rem] overflow-hidden border-y-4 border-poke-yellow shadow-card"
       style={{
         background: "radial-gradient(circle at 50% 45%, #ff6a5d 0%, #e03a2f 55%, #b3261c 100%)",
       }}
@@ -451,14 +460,17 @@ export function WhosThatPokemon() {
         className="absolute left-1/2 top-1/2 h-52 w-52 -translate-x-1/2 -translate-y-1/2 rounded-full blur-2xl"
         style={{ background: "radial-gradient(circle, rgba(255,214,92,0.55) 0%, transparent 70%)" }}
       />
-      {/* `h-[15rem]` inside an `h-64` (16rem) box: the small padding the owner
-          asked for is the 0.5rem left top and bottom. PokéAPI sprites carry
-          their own transparent margin, so the black shape lands short of that
-          again and never touches the gold rule. */}
+      {/* Sized as a PERCENTAGE of the panel, not a fixed 15rem: 94% of the
+          16rem box is the same ~15rem it has always been, but it now tracks the
+          panel instead of being able to outgrow it and get clipped. `w-full` +
+          `object-contain` (PokemonSprite's default) means the height is the
+          binding constraint, so a tall Pokémon fits whole. PokéAPI sprites carry
+          their own transparent margin, so the black shape lands short of the
+          remaining 0.5rem again and never touches the gold rule. */}
       <PokemonSprite
         id={round.monId}
         alt="silhouette"
-        className="absolute left-1/2 top-1/2 h-[15rem] w-[15rem] -translate-x-1/2 -translate-y-1/2 [filter:brightness(0)] [image-rendering:pixelated]"
+        className="absolute left-1/2 top-1/2 h-[94%] w-full -translate-x-1/2 -translate-y-1/2 [filter:brightness(0)] [image-rendering:pixelated]"
       />
     </div>
   );
@@ -637,6 +649,7 @@ export function WhosThatPokemon() {
               <TypeChip
                 key={t}
                 type={t}
+                size="pick"
                 selected={selTypes.includes(t)}
                 onClick={() => toggleType(t)}
               />
