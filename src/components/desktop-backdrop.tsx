@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { PokeballSpinner, typeColorMap } from "@/components/game-ui";
+import { PokeballSpinner } from "@/components/game-ui";
+import { TypeIcon } from "@/components/type-chip";
+import { typeColorVar } from "@/lib/type-color";
 import type { PokeType } from "@/lib/pokemon-data.generated";
 
 const TYPES: PokeType[] = [
@@ -50,7 +52,7 @@ function buildDrifters(count: number): Drifter[] {
 
 /**
  * The ambient wallpaper behind the desktop phone mockup: the home tab's beige
- * (`.bg-poke-cream`) with Poké Balls and type-coloured discs drifting at
+ * (`.bg-poke-cream`) with Poké Balls and real type glyphs drifting at
  * randomised, wildly-varying speeds. Rendered only when the frame is active
  * (see routes/__root.tsx), so phones never pay for it. `pointer-events-none`
  * and low-opacity so it never competes with the phone it sits behind.
@@ -79,9 +81,12 @@ export function DesktopBackdrop() {
           {d.kind === "ball" ? (
             <PokeballSpinner size={d.size} />
           ) : (
-            <div
-              className={`rounded-full ${typeColorMap[d.type]}`}
-              style={{ width: d.size * 0.72, height: d.size * 0.72 }}
+            // The real type glyph (public/types/*.svg) in its own type colour —
+            // the same icon the Pokédex detail screen drifts, not a plain disc.
+            <TypeIcon
+              type={d.type}
+              className="block shrink-0"
+              style={{ width: d.size * 0.82, height: d.size * 0.82, color: typeColorVar(d.type) }}
             />
           )}
         </motion.div>

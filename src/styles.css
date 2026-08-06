@@ -375,16 +375,15 @@
 .app-root--framed {
   display: grid;
   place-items: center;
-  padding: 1.25rem;
-  /* No background here: the beige <DesktopBackdrop> (fixed, -z-10) is the
-   * surround, and an element's own background would paint OVER its negative-z
-   * children and hide it. */
+  /* Tight margin so the phone gets as much of the window as possible. */
+  padding: 0.5rem;
+  /* No background here: the beige <DesktopBackdrop> (z-0) is the surround. */
   background: transparent;
   /* Aspect-locked to a real phone (9 : 19.5): the height fills the window (up to
-   * a cap) and the WIDTH is derived from it, so the mockup keeps true handset
-   * proportions instead of going squarish on a short window. */
-  --frame-height: min(calc(100dvh - 2.5rem), 920px);
-  --frame-width: min(calc(100vw - 2.5rem), calc(var(--frame-height) * 9 / 19.5));
+   * the app's native 480px width → ~1040px tall) and the WIDTH is derived from
+   * it, so the mockup keeps true handset proportions instead of going squarish. */
+  --frame-height: min(calc(100dvh - 1rem), 1040px);
+  --frame-width: min(calc(100vw - 1rem), calc(var(--frame-height) * 9 / 19.5));
 }
 .phone-frame {
   position: relative;
@@ -437,6 +436,34 @@
   flex-direction: column;
   overflow: hidden;
   background-color: var(--color-background);
+}
+
+/* Non-mobile scrollbars. The app hides every scrollbar globally (touch devices
+ * don't need them), but inside the desktop phone mockup there's no touch and no
+ * affordance to scroll long screens (Settings, Badges, Trophies, Battle
+ * History…). Re-enable a thin scrollbar for anything that scrolls inside the
+ * frame — scoped to `.phone-frame`, which only exists on non-mobile, so phones
+ * are untouched. A scrollbar still only appears on containers that overflow. */
+/* Standard properties (Chrome/Edge/Firefox): a thin, always-visible, coloured
+ * bar. In Blink these take precedence and DISABLE ::-webkit-scrollbar, which is
+ * fine — the ::-webkit block below is purely a Safari fallback (Safari ignores
+ * the standard properties). Together they cover every desktop browser. */
+.phone-frame,
+.phone-frame *:not(html) {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--color-foreground) 34%, transparent) transparent;
+}
+/* Safari / older WebKit only (Blink ignores this once scrollbar-width is set). */
+.phone-frame ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.phone-frame ::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--color-foreground) 34%, transparent);
+  border-radius: 999px;
+}
+.phone-frame ::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 @layer base {
