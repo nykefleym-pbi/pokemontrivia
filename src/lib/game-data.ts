@@ -279,14 +279,27 @@ export const TP_REWARDS = {
   weeklyWin: 100,
 };
 
-// Evolution follows the mainline games' level requirements converted to TP at
-// 1 level = 1,000 TP (feedback 582e8210 — e.g. Bulbasaur→Ivysaur at level 16
-// = 16,000 TP). Per-species evolve levels aren't in the generated dataset, so
-// each stage uses the typical mainline level for that stage: first evolutions
-// cluster around level 16, second evolutions around level 36. Tune here.
+// Evolution follows the mainline games' level requirements converted to TP —
+// first evolutions cluster around level 16, second evolutions around level 36
+// (per-species evolve levels aren't in the generated dataset, so each stage
+// uses the typical level for that stage).
+//
+// The conversion is 1 level = 100 TP. It was 1,000, which nobody could reach
+// (owner report 2026-08-17, "I find it hard to evolve my pokemon"): a battle
+// pays at most 20 TP (TP_REWARDS.battleWinPerCorrect, capped), so 16,000 TP was
+// ~800 flawless battles for a FIRST evolution, and the rest of the TP economy
+// tops out two orders of magnitude below that — TP_DAMAGE_TIERS gives its
+// maximum multiplier at 1,500 TP. Two systems spending the same currency were
+// priced on different scales, and evolution was the one that was wrong.
+//
+// At 100/level the two line up: an engaged day is roughly 10 battle wins plus
+// the Daily (~200-230 TP), so a first evolution is about a week of play and
+// lands just past the top damage tier — you finish maxing the partner out at
+// about the moment you can evolve it. The mainline 16:36 ratio is preserved,
+// so a second evolution is a bit over twice as far again. Tune here.
 export const EVOLUTION_TP_COST: Record<1 | 2, number> = {
-  1: 16000,
-  2: 36000,
+  1: 1600,
+  2: 3600,
 };
 
 /** Returns UTC timestamp of the most recent Monday 00:00:00. */

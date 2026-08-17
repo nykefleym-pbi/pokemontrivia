@@ -3,7 +3,8 @@ import { Swords, Trophy, HeartCrack } from "lucide-react";
 import type { WeeklyLeagueState } from "@/lib/store";
 import { findGymLeader } from "@/lib/gym-leaders";
 import { Button } from "@/components/ui/button";
-import { PokemonSprite, TypeBadge } from "@/components/game-ui";
+import { PokemonSprite } from "@/components/game-ui";
+import { TypeChip } from "@/components/type-chip";
 
 interface Props {
   weeklyLeague: WeeklyLeagueState;
@@ -38,7 +39,7 @@ export function WeeklyLeagueCard({
 
       <div className="mt-3 font-display-md text-foreground">{leader.name}</div>
       <div className="mt-1.5">
-        <TypeBadge type={leader.type} size="sm" />
+        <TypeChip type={leader.type} selected size="sm" />
       </div>
 
       <div className="mt-3 px-2 text-xs italic text-muted-foreground line-clamp-2">

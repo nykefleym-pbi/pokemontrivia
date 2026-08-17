@@ -190,7 +190,7 @@ export function WhosThatCaught({
       {species && (
         <div className="flex shrink-0 flex-wrap items-center justify-center gap-1.5">
           {species.types.map((t) => (
-            <TypeChip key={t} type={t} />
+            <TypeChip key={t} type={t} selected size="sm" />
           ))}
         </div>
       )}

@@ -525,6 +525,12 @@
   filter: brightness(0) opacity(0.32) !important;
 }
 
+/* Seen but not caught: the real sprite with its colour drained, so the shape
+ * is fully readable but plainly unfinished next to a caught card. */
+.sprite-seen {
+  filter: grayscale(1) opacity(0.85) !important;
+}
+
 /* White silhouette used by the evolution animation morph */
 .sprite-evolve-silhouette {
   filter: brightness(0) invert(1) drop-shadow(0 0 12px oklch(0.95 0.18 95)) !important;

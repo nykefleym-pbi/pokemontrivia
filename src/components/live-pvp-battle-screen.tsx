@@ -11,12 +11,12 @@ import { useGameStore, type ActiveStatus, type PvpStatStages } from "@/lib/store
 import {
   BattleStage,
   PokemonSprite,
-  TypeBadge,
   PokeballSpinner,
   ItemIcon,
   StatusEffectOverlay,
   EffectivenessPill,
 } from "@/components/game-ui";
+import { TypeChip } from "@/components/type-chip";
 import { typeRowFontSize, COMBAT_PANEL_WIDTH } from "@/lib/type-row-fit";
 import { findPokemon, type PokeType } from "@/lib/pokemon-data";
 import { ITEMS, STATUS_META, type ItemId, type StatusKind, type PvpStat } from "@/lib/game-data";
@@ -213,10 +213,12 @@ function PvpCombatPanel({
         {types.length > 0 && (
           <div className={`mt-1 flex w-full flex-nowrap gap-0.5 ${justifyCls}`}>
             {types.map((t) => (
-              <TypeBadge
+              <TypeChip
                 key={t}
                 type={t}
+                selected
                 size="sm"
+                className="min-w-0"
                 fontSize={typeRowFontSize(types, COMBAT_PANEL_WIDTH)}
               />
             ))}

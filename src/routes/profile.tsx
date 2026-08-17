@@ -65,7 +65,8 @@ import { PartnerTypeFilter } from "@/components/partner-type-filter";
 import { matchesPartnerFilters, partnerTypeOptions } from "@/lib/partner-filter";
 
 import { EvolutionScreen } from "@/components/evolution-screen";
-import { PokemonSprite, TypeBadge } from "@/components/game-ui";
+import { PokemonSprite } from "@/components/game-ui";
+import { TypeChip } from "@/components/type-chip";
 import { FACEBOOK_PAGE_NAME, FACEBOOK_PAGE_URL } from "@/lib/social-links";
 import { BattleLogList } from "@/components/battle-log-list";
 import {
@@ -1680,7 +1681,7 @@ function ProfilePage() {
                 {/* Type is what grants the ability, and it's what the chips
                     filter on — showing it here makes the filter legible. */}
                 <div className="mt-0.5">
-                  <TypeBadge type={p.types[0]} size="sm" />
+                  <TypeChip type={p.types[0]} selected size="sm" />
                 </div>
               </button>
             ))}

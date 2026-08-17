@@ -69,6 +69,8 @@ export function TypeChip({
   onClick,
   size = "md",
   icon = true,
+  fontSize,
+  className = "",
 }: {
   type: PokeType;
   selected?: boolean;
@@ -89,6 +91,15 @@ export function TypeChip({
    * being allowed to overflow or the word being truncated to "POIS…".
    */
   icon?: boolean;
+  /**
+   * CSS length overriding the size's label size, for rows that must stay on ONE
+   * line inside a fixed-width card — the Pokédex grid cell and the battle combat
+   * panel both compute one with `typeRowFontSize`. Everyone else leaves it
+   * undefined and gets the size's own type size.
+   */
+  fontSize?: string;
+  /** Extra classes for the wrapper (e.g. `min-w-0` in a nowrap row). */
+  className?: string;
 }) {
   const c = typeColorVar(type);
   const style: React.CSSProperties = selected
@@ -104,6 +115,10 @@ export function TypeChip({
           : size === "pick"
             ? "gap-1 px-2 py-1.5 text-[9px] justify-center"
             : "gap-1.5 px-2 py-2.5 text-[9px] justify-center";
+  // A caller-computed size wins over the size's own, so strip the class rather
+  // than let two font sizes fight — the inline style would win anyway, but the
+  // dead class is what makes a row look unaffected by `typeRowFontSize`.
+  const boxCls = fontSize ? box.replace(/text-\[[^\]]+\]|text-base/, "") : box;
   // `xs` and `sm` are set in the DISPLAY face rather than the pixel one. Press
   // Start 2P is fixed-pitch and enormous per character — "ELECTRIC" at 8px is
   // about 64px of glyph before any padding — so two pixel-font chips physically
@@ -117,17 +132,28 @@ export function TypeChip({
     <Tag
       onClick={onClick}
       aria-pressed={onClick ? Boolean(selected) : undefined}
-      style={style}
-      className={`inline-flex min-w-0 items-center rounded-full border-2 uppercase tracking-wide transition ${face} ${box} ${
+      style={fontSize ? { ...style, fontSize } : style}
+      className={`inline-flex min-w-0 items-center whitespace-nowrap rounded-full border-2 uppercase tracking-wide transition ${face} ${boxCls} ${
         onClick ? "press" : ""
-      }`}
+      } ${className}`}
     >
       {icon && (
         <TypeIcon
           type={type}
+          // Under a caller-computed font size the glyph is sized in `em` so it
+          // shrinks with the label. A fixed 12px icon beside a 6px word is the
+          // icon wearing the chip, and it would eat the width the shrink was
+          // buying in the first place.
           className={
-            size === "lg" ? "h-5 w-5" : size === "xs" || size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5"
+            fontSize
+              ? ""
+              : size === "lg"
+                ? "h-5 w-5"
+                : size === "xs" || size === "sm"
+                  ? "h-3 w-3"
+                  : "h-3.5 w-3.5"
           }
+          style={fontSize ? { width: "1.25em", height: "1.25em" } : undefined}
         />
       )}
       <span className="truncate">{type}</span>

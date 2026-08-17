@@ -7,7 +7,8 @@ import { STARTING_PARTNERS, type PokeEntry } from "@/lib/pokemon-data";
 import { matchesPartnerSearch } from "@/lib/partner-filter";
 import { toast } from "sonner";
 import { getAbilityById, rollAbilityId } from "@/lib/abilities";
-import { TypeBadge, PokeballSpinner, PokemonSprite } from "@/components/game-ui";
+import { PokeballSpinner, PokemonSprite } from "@/components/game-ui";
+import { TypeChip } from "@/components/type-chip";
 import { TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
 import { trainerQuote } from "@/lib/trainer-quotes";
 import { Button } from "@/components/ui/button";
@@ -577,7 +578,7 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
                       {p.name}
                     </span>
                     <div className="mt-0.5">
-                      <TypeBadge type={p.types[0]} size="sm" />
+                      <TypeChip type={p.types[0]} selected size="sm" />
                     </div>
                   </button>
                 );
@@ -601,7 +602,7 @@ function TrainerCreate({ onBack, refCode }: { onBack: () => void; refCode?: stri
                 if (!ability) return null;
                 return (
                   <div className="mt-4 flex items-center gap-3 rounded-2xl bg-primary/10 p-3">
-                    <TypeBadge type={ability.type} size="sm" />
+                    <TypeChip type={ability.type} selected size="sm" />
                     <div className="min-w-0">
                       <div className="text-sm font-bold text-foreground">{ability.name}</div>
                       <p className="text-xs leading-snug text-foreground/70">

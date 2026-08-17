@@ -241,6 +241,14 @@ export function BattleHome({
   // number true for all of them, and true for wins already banked.
   const battleLog = useGameStore((s) => s.battleLog);
   const winStreak = useMemo(() => currentWinStreak(battleLog), [battleLog]);
+  // The STREAK tile counts CORRECT ANSWERS, not battles won (owner report
+  // 2026-08-17): it used to show `winStreak` over a "Best:" sub-line taken from
+  // `stats.bestStreak`, which is an ANSWER streak — a count of battles sitting
+  // on top of a count of answers, two units in one tile. Answer streaks reset
+  // every battle, so the live number is the last battle's best run; the log
+  // entry already records it (`BattleLogEntry.bestStreak`). Wins keep their own
+  // line under the battle card.
+  const lastAnswerStreak = battleLog[0]?.bestStreak ?? 0;
   const weekRange = getWeekRangeUtc();
 
   const weeklyLeader = weeklyLeague ? findGymLeader(weeklyLeague.gymLeaderId) : null;
@@ -334,7 +342,7 @@ export function BattleHome({
           <StatCell
             icon={STREAK_ICON}
             label="STREAK"
-            value={String(winStreak)}
+            value={String(lastAnswerStreak)}
             sub={bestStreak > 0 ? `Best: ${bestStreak}` : undefined}
             valueClass="text-primary"
           />
@@ -371,10 +379,16 @@ export function BattleHome({
               </p>
             </div>
           </div>
-          {/* The "N wins in a row — don't break it" banner used to sit here.
-              Removed at the owner's call: the STREAK cell in the stat strip
-              above already carries the number, so this was the same fact twice
-              on one screen, and it pushed the Start Battle button down. */}
+          {/* Wins live here again, as one line rather than the old banner. The
+              banner was removed because the STREAK cell duplicated it — but that
+              cell now counts correct ANSWERS, so the win streak has nowhere else
+              to go and no longer repeats anything. A line, not a banner: it
+              costs a row of text instead of pushing Start Battle down. */}
+          {winStreak > 0 && (
+            <p className="relative mt-3 text-center text-[11px] font-bold text-primary">
+              {winStreak} {winStreak === 1 ? "win" : "wins"} in a row
+            </p>
+          )}
           <Button
             size="action"
             onClick={onStart}

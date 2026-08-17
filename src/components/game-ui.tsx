@@ -8,6 +8,7 @@ import { ITEMS } from "@/lib/game-data";
 import { legendaryCategory, isMascotTier } from "@/lib/legendary-data";
 import type { Trivia } from "@/lib/trivia-core";
 import { TimerRing } from "@/components/timer-ring";
+import { TypeChip } from "@/components/type-chip";
 import { typeRowFontSize, COMBAT_PANEL_WIDTH } from "@/lib/type-row-fit";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -95,33 +96,12 @@ export const typeColorMap: Record<PokeType, string> = {
   fairy: "bg-pink-400",
 };
 
-export const TypeBadge = React.memo(function TypeBadge({
-  type,
-  size = "md",
-  fontSize,
-}: {
-  type: PokeType;
-  size?: "sm" | "md";
-  /** CSS length overriding the badge's 9px type size — see `typeRowFontSize`.
-   *  Callers that must keep a multi-type row on ONE line pass a computed value;
-   *  everyone else leaves it undefined and gets the fixed size. */
-  fontSize?: string;
-}) {
-  const sizeCls =
-    size === "sm"
-      ? `${fontSize ? "px-1" : "px-1.5"} py-[2px] tracking-tight`
-      : "px-2.5 py-0.5 tracking-wide";
-  return (
-    <span
-      style={fontSize ? { fontSize } : undefined}
-      className={`inline-flex items-center whitespace-nowrap rounded-full font-pixel uppercase text-white shadow-sm ${
-        fontSize ? "" : "text-[9px]"
-      } ${sizeCls} ${typeColorMap[type]}`}
-    >
-      {type}
-    </span>
-  );
-});
+/* `TypeBadge` lived here: a flat pixel-font pill with no glyph, a second way of
+ * drawing the same fact as `TypeChip`. Every screen now uses the chip the
+ * Pokédex detail screen uses — full type colour, white label, type glyph — so
+ * the two no longer drift (owner request 2026-08-17). `typeColorMap` above
+ * stays: the effectiveness pill's dot still needs a bare colour class.
+ */
 
 /** Compact per-question type-effectiveness indicator, shared by every battle
  *  mode (Solo/PvP/Training) so they read identically. Renders nothing on a
@@ -938,10 +918,12 @@ export function CombatPanel({
             spilling out of the fixed-width card. See `typeRowFontSize`. */}
         <div className={`mt-1 flex w-full flex-nowrap gap-0.5 ${justifyCls}`}>
           {types.map((t) => (
-            <TypeBadge
+            <TypeChip
               key={t}
               type={t}
+              selected
               size="sm"
+              className="min-w-0"
               fontSize={typeRowFontSize(types, COMBAT_PANEL_WIDTH)}
             />
           ))}
