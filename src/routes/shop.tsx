@@ -770,10 +770,13 @@ function ShopPage() {
             <SheetTitle className="text-center font-display-lg text-foreground">
               Your Bag
             </SheetTitle>
+            {/* No "N items in your bag" here: <BagCapacityBar> below already
+                states the count as "Bag space N / M", which is the same number
+                with the limit attached (owner report 2026-08-17). The empty
+                state keeps a line because there is no bar reading to replace
+                it — nothing held means nothing to count. */}
             <SheetDescription className="text-center text-sm">
-              {totalItems > 0
-                ? `${totalItems} item${totalItems === 1 ? "" : "s"} in your bag`
-                : "Stock up on items to use in battle"}
+              {totalItems > 0 ? "" : "Stock up on items to use in battle"}
             </SheetDescription>
           </SheetHeader>
           {(() => {

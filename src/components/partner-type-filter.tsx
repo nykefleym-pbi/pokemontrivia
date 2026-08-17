@@ -1,5 +1,5 @@
 import type { PokeType } from "@/lib/pokemon-data";
-import { TypeBadge } from "@/components/game-ui";
+import { TypeChip } from "@/components/type-chip";
 
 /**
  * Type chips for the partner pickers. The predicates that go with it live in
@@ -47,7 +47,7 @@ export function PartnerTypeFilter({
               : "opacity-45"
           }`}
         >
-          <TypeBadge type={t} />
+          <TypeChip type={t} selected size="sm" />
         </button>
       ))}
     </div>

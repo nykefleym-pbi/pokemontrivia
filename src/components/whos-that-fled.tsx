@@ -142,7 +142,7 @@ export function WhosThatFled({
         </div>
         <div className="flex gap-3">
           <div className="flex shrink-0 flex-col gap-1.5">
-            {species?.types.map((t) => <TypeChip key={t} type={t} size="xs" icon />)}
+            {species?.types.map((t) => <TypeChip key={t} type={t} selected size="sm" icon />)}
           </div>
           <div className="min-w-0 flex-1 border-l-2 border-poke-dark/10 pl-3">
             {/* Three states, said apart. The old screen rendered nothing while

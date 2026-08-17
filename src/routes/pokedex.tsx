@@ -9,7 +9,8 @@ import { useStoreHydrated } from "@/lib/store-hydration";
 import { EggHatch } from "@/components/mega/EggHatch";
 import { ALL_POKEMON, type PokeType } from "@/lib/pokemon-data";
 import { Input } from "@/components/ui/input";
-import { MiniPokeball, PokemonSprite, TypeBadge } from "@/components/game-ui";
+import { MiniPokeball, PokemonSprite } from "@/components/game-ui";
+import { TypeChip } from "@/components/type-chip";
 import { DexCompletionCard } from "@/components/dex-completion-card";
 import { DexDetail } from "@/components/dex-detail";
 import { GENERATIONS, generation } from "@/lib/dex-rewards";
@@ -300,7 +301,17 @@ function PokedexPage() {
                         ? {
                             backgroundImage: `linear-gradient(135deg, color-mix(in oklab, var(--type-${p.types[0]}) 18%, transparent), var(--color-card))`,
                           }
-                        : {}),
+                        : got
+                          ? {
+                              // Seen but not caught: the SAME gradient the caught
+                              // card gets, drained of its type colour (owner
+                              // request 2026-08-17). Grey rather than absent, so
+                              // a seen card reads as a caught card you haven't
+                              // finished — which is what it is — instead of as an
+                              // unknown one.
+                              backgroundImage: `linear-gradient(135deg, color-mix(in oklab, var(--color-foreground) 14%, transparent), var(--color-card))`,
+                            }
+                          : {}),
                   } as React.CSSProperties
                 }
                 className={`press relative flex flex-col items-center rounded-2xl border-2 px-2 pb-2.5 pt-2 shadow-card ${
@@ -338,7 +349,12 @@ function PokedexPage() {
                   id={p.id}
                   shiny={shiny}
                   alt={got ? p.name : "???"}
-                  className={`sprite h-[88px] w-[88px] ${got ? "" : "sprite-silhouette"}`}
+                  // Three states, three treatments: caught is in full colour,
+                  // SEEN is greyscale (you've met it, you haven't got it), and
+                  // unknown stays a flat silhouette.
+                  className={`sprite h-[88px] w-[88px] ${
+                    caught ? "" : got ? "sprite-seen" : "sprite-silhouette"
+                  }`}
                 />
 
                 <div className="mt-0.5 w-full truncate text-center text-[14px] font-extrabold leading-tight text-foreground">
@@ -353,15 +369,21 @@ function PokedexPage() {
                 <div className="mt-1 flex w-full flex-nowrap items-center justify-center gap-1">
                   {got ? (
                     p.types.map((t) => (
-                      <TypeBadge
+                      <TypeChip
                         key={t}
                         type={t}
+                        selected
                         size="sm"
                         fontSize={typeRowFontSize(p.types, DEX_CARD_WIDTH, DEX_CARD_PAD_PX)}
                       />
                     ))
                   ) : (
-                    <span className="font-pixel-xs text-foreground/35">???</span>
+                    // An empty spacer, not a second "???" — the name line right
+                    // above already says it, and saying it twice per card put
+                    // the string on screen 300 times in a full Kanto grid (owner
+                    // report 2026-08-17). It still occupies the row so unknown
+                    // cards stay the same height as the rest of the grid.
+                    <span aria-hidden className="h-[15px]" />
                   )}
                 </div>
 

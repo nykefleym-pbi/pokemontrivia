@@ -1,11 +1,11 @@
 /**
- * Sizing for a combat panel's type-badge row, kept on ONE line.
+ * Sizing for a combat panel's / Pokédex card's type-chip row, kept on ONE line.
  *
  * The panel is a fixed `clamp()` width and the widest real pair —
- * ELECTRIC/FIGHTING (Pawmo), 16 characters — is far wider than that at the
- * badge's normal 9px. Wrapping to a second line was rejected (owner ruling
- * 2026-07-26) and truncating a type name is worse, so the row shrinks to fit:
- * full 9px whenever the pair is short enough, smaller only when it must be.
+ * ELECTRIC/FIGHTING (Pawmo), 16 characters — is wider than that at the chip's
+ * normal 8px. Wrapping to a second line was rejected (owner ruling 2026-07-26)
+ * and truncating a type name is worse, so the row shrinks to fit: full 8px
+ * whenever the pair is short enough, smaller only when it must be.
  *
  * Expressed as CSS arithmetic rather than a measure-then-resize effect because
  * every input is known up front — the panel width is a CSS expression, the
@@ -17,32 +17,40 @@
  */
 
 /**
- * Per-character advance of Press Start 2P at the badge's `tracking-tight`, in
- * ems.
+ * Per-character advance of the chip's label, in ems.
  *
- * The font's nominal advance is 0.975em, but that is the wrong number to divide
- * by: at the fractional font sizes this formula produces, the browser quantizes
- * each glyph's advance upward and the effective ratio drifts as high as
- * ~1.047em/char. 1.06 is calibrated — swept against all 136 real dual-type
- * pairs at 7 viewports (320–480px) with the real webfont, it is the smallest
- * constant that overflows zero of the 952 combinations, worst case ~3.7px of
- * slack.
+ * The label is Outfit (`font-display`) at `font-extrabold uppercase
+ * tracking-wide`. Measured in Chromium with the real webfont at 100px across
+ * all 18 type names, the widest per-character advance is 0.766em (GROUND, BUG,
+ * DRAGON); 0.79 is that plus a margin for the browser quantizing each glyph's
+ * advance upward at the fractional font sizes this formula produces.
  *
- * Re-measure if the badge font or its tracking changes. Deriving this from the
- * font's nominal advance rather than measuring it is exactly the mistake that
- * left 67 of those 952 combinations still overflowing.
+ * It was 1.06 when the row was drawn with `TypeBadge` in Press Start 2P — a
+ * fixed-pitch face nearly half again as wide per character. Re-measure if the
+ * chip's font or tracking changes; deriving this from a font's nominal advance
+ * rather than measuring it is exactly the mistake that once left 67 of 952
+ * rendered combinations overflowing.
  */
-export const PIXEL_ADVANCE_EM = 1.06;
+export const CHIP_ADVANCE_EM = 0.79;
 
-/** `px-1` on each badge. */
-const TYPE_BADGE_PAD_PX = 8;
-/** `gap-0.5` between badges. */
-const TYPE_ROW_GAP_PX = 2;
+/**
+ * What one chip spends regardless of font size: `px-1.5` (12px), `border-2`
+ * (4px) and the `gap-0.5` (2px) between its glyph and its label.
+ */
+const CHIP_FIXED_PX = 18;
+
+/** The chip's type glyph, sized in `em` so it shrinks with the label. */
+const CHIP_ICON_EM = 1.25;
+
+/** The widest gap any caller puts between two chips (`gap-1` in the Pokédex
+ *  grid; the combat panel's `gap-0.5` is narrower, so this is the safe one). */
+const TYPE_ROW_GAP_PX = 4;
 /** The combat panel's own `px-3`, which the row cannot use. */
 const PANEL_PAD_PX = 24;
 
-/** Largest badge font size, matching the badge's default `text-[9px]`. */
-const MAX_BADGE_PX = 9;
+/** Largest label size, matching the `sm` chip's own `text-[8px]` — so a row
+ *  with room to spare is exactly the chip every other screen draws. */
+const MAX_BADGE_PX = 8;
 
 /**
  * The combat panel's width, shared by the panel box and `typeRowFontSize` so
@@ -85,7 +93,9 @@ export function typeRowFontSize(
   const chars = types.reduce((n, t) => n + t.length, 0);
   if (chars === 0) return `${MAX_BADGE_PX}px`;
   const overhead =
-    types.length * TYPE_BADGE_PAD_PX + Math.max(0, types.length - 1) * TYPE_ROW_GAP_PX;
-  const per = (chars * PIXEL_ADVANCE_EM).toFixed(2);
+    types.length * CHIP_FIXED_PX + Math.max(0, types.length - 1) * TYPE_ROW_GAP_PX;
+  // The glyph scales with the label, so it belongs in the divisor beside the
+  // characters, not in the fixed overhead.
+  const per = (chars * CHIP_ADVANCE_EM + types.length * CHIP_ICON_EM).toFixed(2);
   return `min(${MAX_BADGE_PX}px, calc((${containerWidthCss} - ${containerPadPx}px - ${overhead}px) / ${per}))`;
 }

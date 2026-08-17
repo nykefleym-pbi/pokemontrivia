@@ -5,7 +5,8 @@ import { EVOLUTION_TP_COST, getTpMultiplier } from "@/lib/game-data";
 import { canEvolve, getEvolutionTargets, type PokeEntry } from "@/lib/pokemon-data";
 import { type TrainerProfile } from "@/lib/social";
 import { GYM_LEADERS, type GymLeader } from "@/lib/gym-leaders";
-import { TypeBadge, PokemonSprite, LegendaryFrame } from "@/components/game-ui";
+import { PokemonSprite, LegendaryFrame } from "@/components/game-ui";
+import { TypeChip } from "@/components/type-chip";
 import { AppIcon } from "@/components/app-icon";
 import { UI_ICON } from "@/lib/app-icons";
 import { Button } from "@/components/ui/button";
@@ -51,7 +52,7 @@ export function PartnerCard({
                 {pokemon.name}
               </span>
               {(pokemon.types ?? []).slice(0, 1).map((t) => (
-                <TypeBadge key={t} type={t} size="sm" />
+                <TypeChip key={t} type={t} selected size="sm" />
               ))}
             </div>
             <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-muted">
@@ -109,7 +110,7 @@ export function PartnerCard({
                   <div className="mt-1 text-xs font-semibold">{t.name}</div>
                   <div className="mt-1 flex gap-0.5">
                     {t.types.map((tt) => (
-                      <TypeBadge key={tt} type={tt} size="sm" />
+                      <TypeChip key={tt} type={tt} selected size="sm" />
                     ))}
                   </div>
                 </button>
@@ -248,11 +249,28 @@ function BadgeCell({ leader, got }: { leader: GymLeader; got: boolean }) {
           className={`h-12 w-12 ${got ? "" : "opacity-20 grayscale"}`}
         />
       )}
-      {got && (
-        <div className="mt-1 truncate text-center text-[10px] font-semibold leading-tight text-foreground">
-          {leader.name}
-        </div>
-      )}
+      {/* Named whether or not it is earned (owner request 2026-08-17). A locked
+          cell used to be art alone, so the grid gave no clue which leader it
+          was or what it is called — the name was only in the `title` tooltip,
+          which a phone has no way to show. The badge name goes under the
+          leader's: the art IS the badge, so it is the line that identifies what
+          you are looking at, and the leader is who you take it from. Both
+          truncate rather than wrap, so a long pair can't make one cell taller
+          than the rest of the row. */}
+      <div
+        className={`mt-1 w-full truncate text-center text-[10px] font-semibold leading-tight ${
+          got ? "text-foreground" : "text-foreground/40"
+        }`}
+      >
+        {leader.name}
+      </div>
+      <div
+        className={`w-full truncate text-center text-[9px] leading-tight ${
+          got ? "text-foreground/55" : "text-foreground/30"
+        }`}
+      >
+        {leader.badge.replace(/\s*badge$/i, "")}
+      </div>
     </div>
   );
 }
