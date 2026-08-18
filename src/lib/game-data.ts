@@ -19,6 +19,7 @@ export {
   enemyHpForLevel,
   baseDamageForLevel,
   getTpMultiplier,
+  lifetimeTp,
   TP_DAMAGE_TIERS,
   type TpDamageBoost,
 } from "./level-curve";

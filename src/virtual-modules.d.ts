@@ -22,3 +22,14 @@ declare module "virtual:dex-backdrops" {
   const manifest: { readonly types: readonly string[]; readonly pokemon: readonly number[] };
   export default manifest;
 }
+
+/**
+ * `virtual:preload-assets` — the app-chrome image URLs the boot screen warms
+ * into the browser cache while it holds ("/types/fire.svg", "/ui/…webp", …).
+ * Built by preloadAssetsManifest() in vite.config.ts from the folders listed in
+ * PRELOAD_DIRS; empty when none of them exist.
+ */
+declare module "virtual:preload-assets" {
+  const urls: readonly string[];
+  export default urls;
+}

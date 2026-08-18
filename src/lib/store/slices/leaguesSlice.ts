@@ -10,6 +10,7 @@ export const createLeaguesSlice: StoreSlice<
     | "weeklyLeagueHistory"
     | "gymBadges"
     | "trainingPoints"
+    | "trainingPointsSpent"
     | "initWeeklyLeague"
     | "startWeeklyLeagueAttempt"
     | "recordWeeklyLeagueResult"
@@ -22,6 +23,7 @@ export const createLeaguesSlice: StoreSlice<
   weeklyLeagueHistory: [],
   gymBadges: [],
   trainingPoints: {},
+  trainingPointsSpent: {},
 
   initWeeklyLeague: () => {
     const s = get();
@@ -82,12 +84,20 @@ export const createLeaguesSlice: StoreSlice<
     });
   },
 
+  // Anything that spends TP must also record it here: the damage multiplier
+  // reads balance + spent, so a spend that goes unrecorded is a silent
+  // multiplier cut. (`evolvePartner` does its own bookkeeping in store.ts
+  // because it also moves the remainder onto the evolved species.)
   spendTrainingPoints: (pokemonId, amount) => {
     const s = get();
     const current = s.trainingPoints[pokemonId] ?? 0;
     if (current < amount) return false;
     set({
       trainingPoints: { ...s.trainingPoints, [pokemonId]: current - amount },
+      trainingPointsSpent: {
+        ...s.trainingPointsSpent,
+        [pokemonId]: (s.trainingPointsSpent[pokemonId] ?? 0) + amount,
+      },
     });
     return true;
   },

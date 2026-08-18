@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import LOADING_ART from "virtual:loading-art";
+import PRELOAD_ASSETS from "virtual:preload-assets";
 import { pickLoadingArt } from "@/lib/app-icons";
 import { buildProgressSteps } from "@/lib/loading-progress";
 import { randomTip } from "@/lib/loading-tips";
 import { setBootSilence } from "@/lib/audio";
+import { preloadAppAssets } from "@/lib/preload-assets";
 
 /**
  * Pokémon GO-style loading screen, mounted once by RootComponent: a piece of
@@ -115,6 +117,13 @@ export function BootSplash() {
   const [tip, setTip] = useState("");
 
   useEffect(() => {
+    // Warm the app's own artwork into the cache. Done before the has-trainer
+    // gate on purpose: someone still choosing a starter skips this screen, but
+    // they are about to walk into the same type chips and reward icons as
+    // everyone else, and their first minutes are the ones with an empty cache.
+    // It is fire-and-forget and never blocks the hand-off (see preload-assets).
+    preloadAppAssets(PRELOAD_ASSETS);
+
     // No trainer yet — retire immediately rather than run five seconds of timers
     // behind a screen CSS is already hiding. The tint needs no release here: the
     // inline script already chose the app colour for a player without one.

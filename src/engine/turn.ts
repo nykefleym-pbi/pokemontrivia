@@ -216,7 +216,11 @@ export interface BattleConfig {
    *  each question. */
   playerTypes: PokeType[];
   enemyTypes: PokeType[];
-  /** Player's current Training Points for this partner — feeds getTpMultiplier. */
+  /** Player's LIFETIME Training Points for this partner (balance + spent) —
+   *  feeds getTpMultiplier. Lifetime rather than balance so evolving, which
+   *  spends the balance, doesn't drop the partner's damage multiplier; see
+   *  `lifetimeTp`. Named for the cfg field it is copied from, which is
+   *  persisted on solo_battles rows and so cannot be renamed freely. */
   trainingPoints: number;
   /** Extra timer seconds this battle (Sand Veil's onBattleStart effect). */
   bonusTime: number;
