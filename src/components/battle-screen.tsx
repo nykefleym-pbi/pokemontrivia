@@ -12,6 +12,7 @@ import {
   streakMultiplier,
   streakLabel,
   getTpMultiplier,
+  lifetimeTp,
   xpProgressInLevel,
   rankForLevel,
 } from "@/lib/game-data";
@@ -550,7 +551,13 @@ function BattleMode({
       mode: isElite ? "elite" : isWeekly ? "weekly" : "battle",
       enemyPokemonId: enemy.pokemon.id,
       enemyTypes: enemy.pokemon.types,
-      trainingPoints: store.trainingPoints[player.id] ?? 0,
+      // LIFETIME TP (balance + spent), not the balance — the damage multiplier
+      // reads lifetime earnings so evolving, which spends the balance, doesn't
+      // knock the partner back to x1.00 (owner ruling 2026-08-17). The cfg
+      // field keeps its name because it is persisted on solo_battles rows and
+      // in-flight battles must still validate; what changed is the number the
+      // client puts in it, and the server applies whatever it is given.
+      trainingPoints: lifetimeTp(store.trainingPoints, store.trainingPointsSpent, player.id),
       items: {
         assaultVestActive: assaultVestActiveRef.current,
         kingsRockActive: kingsRockActiveRef.current,
@@ -707,8 +714,11 @@ function BattleMode({
       let dmg = Math.round(
         baseDmg * (metronomeActiveRef.current ? 3.0 : streakMultiplier(newStreak)),
       );
-      // TP damage boost
-      const tpNow = useGameStore.getState().trainingPoints[player.id] ?? 0;
+      // TP damage boost, off LIFETIME TP so it survives evolving — must match
+      // what went into the battle cfg above, or the optimistic client preview
+      // and the server's replay disagree on damage.
+      const tpState = useGameStore.getState();
+      const tpNow = lifetimeTp(tpState.trainingPoints, tpState.trainingPointsSpent, player.id);
       const tpMult = getTpMultiplier(tpNow);
       if (tpMult > 1.0) dmg = Math.round(dmg * tpMult);
       // time bonus

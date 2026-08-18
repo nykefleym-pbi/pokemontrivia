@@ -15,11 +15,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 export function PartnerCard({
   pokemon,
   tp,
+  lifetime,
   onChange: _onChange,
   onEvolve,
 }: {
   pokemon: PokeEntry;
+  /** Spendable balance — what the evolution bar fills against. */
   tp: number;
+  /** Everything this partner has ever earned — what the damage multiplier
+   *  reads, and what evolving no longer resets. See `lifetimeTp`. */
+  lifetime: number;
   onChange: () => void;
   onEvolve: (target: PokeEntry) => void;
 }) {
@@ -27,7 +32,10 @@ export function PartnerCard({
   const stage = pokemon.evolutionStage;
   const cost = stage === 1 || stage === 2 ? EVOLUTION_TP_COST[stage] : null;
   const eligible = canEvolve(pokemon) && cost !== null && tp >= cost;
-  const mult = getTpMultiplier(tp);
+  // Lifetime TP, so the figure survives evolving — and shown whether or not
+  // there is an evolution left, because a fully-evolved partner still has a
+  // multiplier and used to be told nothing about it.
+  const mult = getTpMultiplier(lifetime);
   const [evoOpen, setEvoOpen] = useState(false);
 
   function handleEvolveClick() {
@@ -62,8 +70,7 @@ export function PartnerCard({
               />
             </div>
             <div className="mt-1 text-xs font-semibold text-foreground/60">
-              TP {tp}
-              {cost ? ` · ×${mult.toFixed(2)}` : ""}
+              TP {tp} · Damage ×{mult.toFixed(2)}
             </div>
           </div>
         </div>

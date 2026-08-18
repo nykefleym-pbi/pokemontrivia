@@ -74,6 +74,70 @@ function loadingArtManifest(): Plugin {
   };
 }
 
+/**
+ * Which public/ folders the boot screen warms into the browser cache, exposed
+ * as `virtual:preload-assets` — a plain array of URL paths.
+ *
+ * These are the app's CHROME: type glyphs, reward and item art, the UI set, the
+ * battle field. Small, and drawn on almost every screen, which is exactly the
+ * set that used to pop in — or briefly 404-flash — a beat after a screen opened.
+ *
+ * Deliberately NOT here: `trainers/` (6 MB, 357 files, one is needed per
+ * player), `badges/` (7.7 MB), `versus/`, `loading/` (the splash picks one
+ * itself), `icons/` (15 MB of iOS splash screens the OS fetches on its own),
+ * `dex/` (its art is nested per type and per species, and the detail screen
+ * needs exactly one of them) and `song/`. Warming those would spend the boot window competing with the work
+ * the app is actually doing behind the screen.
+ *
+ * Same mechanism and same reasons as `loadingArtManifest` above: files under
+ * public/ never enter the module graph, and static hosting serves no directory
+ * index, so a build-time read is the only way to know what is there.
+ */
+const PRELOAD_DIRS = ["types", "rewards", "items", "ui", "field"] as const;
+/** Total budget for the warm set. It shares the network with the app booting
+ *  behind the splash, so this is a ceiling, not a target. */
+const PRELOAD_BUDGET_KB = 2048;
+
+function preloadAssetsManifest(): Plugin {
+  const virtualId = "virtual:preload-assets";
+  const resolvedId = `\0${virtualId}`;
+  return {
+    name: "preload-assets-manifest",
+    resolveId(source) {
+      return source === virtualId ? resolvedId : null;
+    },
+    load(id) {
+      if (id !== resolvedId) return null;
+      const urls: string[] = [];
+      let totalKb = 0;
+      for (const folder of PRELOAD_DIRS) {
+        const dir = fileURLToPath(new URL(`public/${folder}/`, import.meta.url));
+        let entries: string[] = [];
+        try {
+          entries = readdirSync(dir).sort();
+        } catch {
+          continue; // A folder that isn't there yet is simply nothing to warm.
+        }
+        for (const name of entries) {
+          if (name.startsWith(".") || name.endsWith(".txt")) continue;
+          const stat = statSync(`${dir}${name}`);
+          if (!stat.isFile()) continue;
+          totalKb += stat.size / 1024;
+          urls.push(`/${folder}/${encodeURIComponent(name)}`);
+        }
+      }
+      if (totalKb > PRELOAD_BUDGET_KB) {
+        this.warn(
+          `The boot preload set is ${totalKb.toFixed(0)} KB, over its ${PRELOAD_BUDGET_KB} KB ` +
+            `budget. It is fetched while the app boots behind the splash, so trim a folder out ` +
+            `of PRELOAD_DIRS or re-encode what grew.`,
+        );
+      }
+      return `export default ${JSON.stringify(urls)};`;
+    },
+  };
+}
+
 /** A Pokédex detail backdrop is painted behind a 56-unit sprite disc and read
  *  at full-bleed, so it is heavier than an icon but still fetched on a tap. */
 const DEX_BACKDROP_BUDGET_KB = 220;
@@ -138,6 +202,7 @@ export default defineConfig({
   resolve: { dedupe: ["react", "react-dom"] },
   plugins: [
     loadingArtManifest(),
+    preloadAssetsManifest(),
     dexBackdropManifest(),
     nitro(),
     tsConfigPaths(),

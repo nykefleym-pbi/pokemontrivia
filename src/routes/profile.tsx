@@ -56,6 +56,7 @@ import { validateTrainerName, claimErrorMessage, TRAINER_NAME_MAX } from "@/lib/
 import { inviteUrl } from "@/lib/referral-rewards";
 import {
   rankForLevel,
+  lifetimeTp,
   TRAINER_SPRITES,
   trainerSpriteUrl,
   adaptiveDifficultyBand,
@@ -154,6 +155,7 @@ function ProfilePage() {
   const pokedex = useGameStore((s) => s.pokedex);
 
   const trainingPoints = useGameStore((s) => s.trainingPoints);
+  const trainingPointsSpent = useGameStore((s) => s.trainingPointsSpent);
   const evolvePartner = useGameStore((s) => s.evolvePartner);
   const gymBadges = useGameStore((s) => s.gymBadges);
   const seenHashes = useGameStore((s) => s.seenQuestionHashes);
@@ -644,6 +646,7 @@ function ProfilePage() {
         <PartnerCard
           pokemon={pokemon}
           tp={trainingPoints[pokemon.id] ?? 0}
+          lifetime={lifetimeTp(trainingPoints, trainingPointsSpent, pokemon.id)}
           onChange={() => setPickerOpen(true)}
           onEvolve={(target) => {
             const ok = evolvePartner(target);

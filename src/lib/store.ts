@@ -112,6 +112,7 @@ export function buildSavePayload(s: GameState) {
     defeatedElites: s.defeatedElites,
     abilityCodex: s.abilityCodex,
     trainingPoints: s.trainingPoints,
+    trainingPointsSpent: s.trainingPointsSpent,
     weeklyLeague: s.weeklyLeague,
     gymBadges: s.gymBadges,
     weeklyLeagueHistory: s.weeklyLeagueHistory,
@@ -273,6 +274,14 @@ export const useGameStore = create<GameState>()(
         const newTpMap = { ...s.trainingPoints };
         delete newTpMap[fromId];
         newTpMap[toPokemon.id] = (newTpMap[toPokemon.id] ?? 0) + remainingTp;
+        // The spend follows the balance onto the EVOLVED species, along with
+        // whatever the pre-evolution had already spent. The damage multiplier
+        // reads balance + spent, so this is what stops evolving — the thing all
+        // that TP was being saved for — from resetting the partner to ×1.00.
+        const newSpentMap = { ...s.trainingPointsSpent };
+        const carriedSpend = newSpentMap[fromId] ?? 0;
+        delete newSpentMap[fromId];
+        newSpentMap[toPokemon.id] = (newSpentMap[toPokemon.id] ?? 0) + carriedSpend + cost;
         set({
           pokemon: toPokemon,
           // Keep the rolled ability across evolution unless the primary type
@@ -282,6 +291,7 @@ export const useGameStore = create<GameState>()(
               ? s.abilityId
               : rollAbilityId(toPokemon.types),
           trainingPoints: newTpMap,
+          trainingPointsSpent: newSpentMap,
           pokedex: {
             ...s.pokedex,
             [toPokemon.id]: {
@@ -431,6 +441,7 @@ export const useGameStore = create<GameState>()(
           defeatedElites: [],
           abilityCodex: [],
           trainingPoints: {},
+          trainingPointsSpent: {},
           weeklyLeague: null,
           gymBadges: [],
           weeklyLeagueHistory: [],
@@ -801,6 +812,11 @@ export const useGameStore = create<GameState>()(
           defeatedElites: p.defeatedElites ?? [],
           abilityCodex: p.abilityCodex ?? [],
           trainingPoints: p.trainingPoints ?? {},
+          // Absent on every save written before the multiplier moved to
+          // lifetime TP. Defaulting to {} makes lifetime == balance, which is
+          // exactly right for a partner that has never evolved and is the only
+          // honest answer for one that has: what it spent was never recorded.
+          trainingPointsSpent: p.trainingPointsSpent ?? {},
           weeklyLeague: p.weeklyLeague ?? null,
           gymBadges: p.gymBadges ?? [],
           weeklyLeagueHistory: p.weeklyLeagueHistory ?? [],

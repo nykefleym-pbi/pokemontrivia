@@ -8,6 +8,7 @@ import {
   rankForLevel,
   xpProgressInLevel,
   getTpMultiplier,
+  lifetimeTp,
   trainerSpriteUrl,
   getWeekRangeUtc,
 } from "@/lib/game-data";
@@ -231,6 +232,7 @@ export function BattleHome({
   const xp = useGameStore((s) => s.xp);
   const coins = useGameStore((s) => s.coins);
   const trainingPoints = useGameStore((s) => s.trainingPoints);
+  const trainingPointsSpent = useGameStore((s) => s.trainingPointsSpent);
   const weeklyLeague = useGameStore((s) => s.weeklyLeague);
   const gymBadges = useGameStore((s) => s.gymBadges);
   const bestStreak = useGameStore((s) => s.stats.bestStreak);
@@ -265,7 +267,9 @@ export function BattleHome({
   const rank = rankForLevel(level);
   const xpProg = xpProgressInLevel(xp);
   const partnerTp = trainingPoints[pokemon.id] ?? 0;
-  const tpMult = getTpMultiplier(partnerTp);
+  // Off LIFETIME TP, matching what the battle engine multiplies damage by —
+  // the balance drops when you evolve, the multiplier no longer does.
+  const tpMult = getTpMultiplier(lifetimeTp(trainingPoints, trainingPointsSpent, pokemon.id));
   const xpPct = Math.min(100, (xpProg.current / xpProg.need) * 100);
 
   // Avatar frame. The ring is intentionally decorative (a GO-style badge
@@ -351,7 +355,9 @@ export function BattleHome({
             icon={TP_ICON}
             label="TP"
             value={String(partnerTp)}
-            sub={`×${tpMult.toFixed(2)}`}
+            // "Damage x1.20", not a bare "x1.20": the number was on screen with
+            // nothing to say what it multiplied (owner request 2026-08-17).
+            sub={`Damage ×${tpMult.toFixed(2)}`}
             valueClass="text-poke-blue"
           />
         </div>

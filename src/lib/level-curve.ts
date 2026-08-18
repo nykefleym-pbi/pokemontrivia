@@ -37,6 +37,23 @@ export const TP_DAMAGE_TIERS: TpDamageBoost[] = [
   { threshold: 1500, multiplier: 1.2 },
 ];
 
+/**
+ * The TP figure the damage multiplier reads: everything this partner has ever
+ * earned, not what is left after evolving.
+ *
+ * Reconstructed as balance + spent rather than tracked as its own running
+ * total, because the balance is also written server-side (save-sync,
+ * daily-run, mega-reward-claim) and an "earned" counter maintained only in the
+ * client would miss those grants.
+ */
+export function lifetimeTp(
+  trainingPoints: Record<number, number>,
+  trainingPointsSpent: Record<number, number>,
+  pokemonId: number,
+): number {
+  return (trainingPoints[pokemonId] ?? 0) + (trainingPointsSpent[pokemonId] ?? 0);
+}
+
 export function getTpMultiplier(tp: number): number {
   let mult = 1.0;
   for (const tier of TP_DAMAGE_TIERS) {

@@ -296,6 +296,20 @@ export interface GameState {
 
   // Phase 3: per-partner Training Points
   trainingPoints: Record<number, number>;
+  /**
+   * TP SPENT per Pokémon, which is what makes the damage multiplier read off
+   * LIFETIME earnings rather than the current balance (owner ruling
+   * 2026-08-17). Evolution is the only spender, and it used to knock a maxed
+   * partner from ×1.20 back to ×1.00 — the game punishing you for the thing it
+   * was asking you to do.
+   *
+   * Spent, not earned: `trainingPoints` is also written by the SERVER
+   * (save-sync, daily-run and mega-reward-claim all fold TP grants into the
+   * save), so a client-maintained "earned" total would silently miss every
+   * grant that arrived from an Edge Function. Balance + spent reconstructs the
+   * lifetime figure no matter who did the granting — see `lifetimeTp`.
+   */
+  trainingPointsSpent: Record<number, number>;
 
   // Phase 4: Weekly League
   weeklyLeague: WeeklyLeagueState | null;
