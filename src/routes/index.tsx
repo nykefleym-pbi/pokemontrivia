@@ -1,3 +1,4 @@
+import { pageHead } from "@/lib/seo";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -27,6 +28,7 @@ import { validateTrainerName, claimErrorMessage, TRAINER_NAME_MAX } from "@/lib/
 import { track } from "@/lib/analytics";
 
 export const Route = createFileRoute("/")({
+  head: () => pageHead("/"),
   component: SplashPage,
   validateSearch: (s: Record<string, unknown>): { ref?: string } =>
     typeof s.ref === "string" ? { ref: s.ref } : {},

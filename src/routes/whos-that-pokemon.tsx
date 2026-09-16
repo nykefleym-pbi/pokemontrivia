@@ -1,3 +1,4 @@
+import { pageHead } from "@/lib/seo";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useGameStore } from "@/lib/store";
@@ -26,6 +27,7 @@ import {
 import { startWhosThat, submitWhosThat } from "@/services/client/whos-that";
 
 export const Route = createFileRoute("/whos-that-pokemon")({
+  head: () => pageHead("/whos-that-pokemon"),
   component: WhosThatPokemon,
 });
 

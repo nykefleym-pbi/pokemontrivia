@@ -2,7 +2,7 @@ import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Backpack, Info } from "lucide-react";
-import { spriteFallbacks, type PokeType } from "@/lib/pokemon-data";
+import { findPokemon, spriteFallbacks, type PokeType } from "@/lib/pokemon-data";
 import type { ItemDef, ItemId, StatusKind } from "@/lib/game-data";
 import { ITEMS } from "@/lib/game-data";
 import { legendaryCategory, isMascotTier } from "@/lib/legendary-data";
@@ -707,6 +707,18 @@ export function SpriteBurst({ tint = "rgba(255,255,255,0.5)" }: { tint?: string 
   );
 }
 
+/** Alt text for a sprite: the species name, and whether it is the shiny
+ *  variant — a shiny Charizard is visibly a different image, so describing both
+ *  as "Charizard" loses the one thing that distinguishes them.
+ *
+ *  Falls back to the id for anything the dex does not know (forms are minted
+ *  with ids like 10194), which is still no worse than what it replaced. */
+function spriteAlt(id: number, shiny?: boolean): string {
+  const name = findPokemon(id)?.name;
+  if (!name) return `Pokémon #${id}`;
+  return shiny ? `Shiny ${name}` : name;
+}
+
 export const PokemonSprite = React.memo(function PokemonSprite({
   id,
   shiny = false,
@@ -743,7 +755,10 @@ export const PokemonSprite = React.memo(function PokemonSprite({
   return (
     <img
       src={src}
-      alt={alt ?? `Pokemon ${id}`}
+      // "Pokemon 25" describes nothing — not to a screen reader, not to an image
+      // search, and not to a sighted user on a failed image. The dex is already
+      // loaded on every screen that renders a sprite, so the real name is free.
+      alt={alt ?? spriteAlt(id, shiny)}
       // `object-contain` FIRST so a caller's own class can still override it.
       // Every caller sizes this with a square box (h-36 w-36, h-full w-full),
       // which silently stretches any source that is not square — and the

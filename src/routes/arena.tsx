@@ -1,3 +1,4 @@
+import { pageHead } from "@/lib/seo";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
@@ -35,6 +36,7 @@ import { ensureSession } from "@/lib/social";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/arena")({
+  head: () => pageHead("/arena"),
   component: ArenaPage,
   // `nearby: 1` came from PvP Rematch and used to force the Battle tab. There
   // are no tabs any more — Battle is the whole page — so nothing reads it, but

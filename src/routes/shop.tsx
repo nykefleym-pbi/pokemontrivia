@@ -1,3 +1,4 @@
+import { pageHead } from "@/lib/seo";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
@@ -33,6 +34,7 @@ import {
 } from "@/components/ui/sheet";
 
 export const Route = createFileRoute("/shop")({
+  head: () => pageHead("/shop"),
   component: ShopPage,
 });
 

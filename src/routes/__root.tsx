@@ -30,6 +30,12 @@ import { Toaster } from "@/components/ui/sonner";
 import { Analytics } from "@vercel/analytics/react";
 
 import appCss from "../styles.css?url";
+import { OG_IMAGE, OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, PAGES, SITE_URL } from "@/lib/seo";
+
+/** The site-wide fallback copy. Every page route overrides both via `pageHead`;
+ *  this is what a route without an entry would show, and it is the home page's
+ *  text so the fallback is never worse than the front door. */
+const HOME = PAGES[0];
 
 // Apple PWA launch ("splash") images. w/h are each device's PORTRAIT CSS-point
 // dimensions; the orientation media feature selects the portrait vs landscape
@@ -115,41 +121,31 @@ export const Route = createRootRoute({
         content:
           "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover",
       },
-      { title: "Pokémon Trivia Battle" },
-      {
-        name: "description",
-        content:
-          "A vibrant Pokémon trivia battler with AI-generated questions, type effectiveness, items and ranks.",
-      },
+      { title: HOME.title },
+      { name: "description", content: HOME.description },
       // theme-color is deliberately NOT declared here. The boot screen needs a
       // different status-bar tint than the app, and this list is fixed at build
       // time — so the pre-paint script in RootShell creates the tag instead, and
       // BootSplash releases it. Declaring it here as well would have the router
       // re-assert the app's red over that on every navigation.
-      { property: "og:title", content: "Pokémon Trivia Battle" },
-      {
-        property: "og:description",
-        content:
-          "A vibrant Pokémon trivia battler with AI-generated questions, type effectiveness, items and ranks.",
-      },
+      { property: "og:title", content: HOME.title },
+      { property: "og:description", content: HOME.description },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "Pokémon Trivia Battle" },
+      { property: "og:site_name", content: "Pokémon Trivia Battle" },
+      { property: "og:locale", content: "en_US" },
+      // summary_large_image, not summary: with a 1200x630 image, `summary`
+      // crops it to a small square thumbnail and wastes the artwork.
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: HOME.title },
+      { name: "twitter:description", content: HOME.description },
+      { property: "og:image", content: OG_IMAGE },
+      { property: "og:image:width", content: String(OG_IMAGE_WIDTH) },
+      { property: "og:image:height", content: String(OG_IMAGE_HEIGHT) },
       {
-        name: "twitter:description",
-        content:
-          "A vibrant Pokémon trivia battler with AI-generated questions, type effectiveness, items and ranks.",
+        property: "og:image:alt",
+        content: "Pokémon Trivia Battle — answer questions to attack.",
       },
-      {
-        property: "og:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4821ffd7-0b16-4355-afee-f0c11331bc94/id-preview-899adb33--3026bd96-efdd-46df-80e9-123ce9557fc1.lovable.app-1776994971470.png",
-      },
-      {
-        name: "twitter:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4821ffd7-0b16-4355-afee-f0c11331bc94/id-preview-899adb33--3026bd96-efdd-46df-80e9-123ce9557fc1.lovable.app-1776994971470.png",
-      },
+      { name: "twitter:image", content: OG_IMAGE },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
       { name: "apple-mobile-web-app-title", content: "Trivia Battle" },
@@ -181,11 +177,63 @@ export const Route = createRootRoute({
   notFoundComponent: NotFoundComponent,
 });
 
+/** Structured data, so a result can render as a game rather than a blue link.
+ *
+ *  `VideoGame` is the accurate type — this is a playable game, not an article or
+ *  a product — and `WebSite` carries the name a sitelinks box would use. Both go
+ *  in one `@graph` because two separate ld+json blocks describing the same page
+ *  invite Google to treat them as unrelated entities.
+ *
+ *  Emitted here rather than through the route's `head()` because a JSON-LD block
+ *  is a script with a body, and this shell already owns the one other inline
+ *  script on the page. Keeping both in the same place means there is exactly one
+ *  spot to check when something in `<head>` looks wrong. */
+const JSON_LD = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_URL}/#website`,
+      url: `${SITE_URL}/`,
+      name: "Pokémon Trivia Battle",
+      description: PAGES[0].description,
+      inLanguage: "en",
+    },
+    {
+      "@type": "VideoGame",
+      "@id": `${SITE_URL}/#game`,
+      name: "Pokémon Trivia Battle",
+      url: `${SITE_URL}/`,
+      description: PAGES[0].description,
+      image: OG_IMAGE,
+      inLanguage: "en",
+      // Browser-playable, free, no install. These three are what turn a result
+      // into something a player can act on from the search page.
+      gamePlatform: ["Web browser", "Android", "iOS"],
+      applicationCategory: "GameApplication",
+      operatingSystem: "Any",
+      playMode: ["SinglePlayer", "MultiPlayer"],
+      genre: ["Trivia", "Quiz", "Role-playing game"],
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "USD",
+        availability: "https://schema.org/InStock",
+      },
+      isAccessibleForFree: true,
+    },
+  ],
+};
+
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
         <HeadContent />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
+        />
         {/* Runs synchronously before first paint, so everything here is decided
             without a flash of the wrong thing. It has to read localStorage
             directly: the store rehydrates after React mounts, by which point a

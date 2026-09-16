@@ -1,3 +1,4 @@
+import { pageHead } from "@/lib/seo";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -126,6 +127,7 @@ import { Slider } from "@/components/ui/slider";
 import { track } from "@/lib/analytics";
 
 export const Route = createFileRoute("/profile")({
+  head: () => pageHead("/profile"),
   component: ProfilePage,
 });
 

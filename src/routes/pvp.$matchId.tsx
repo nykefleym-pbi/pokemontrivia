@@ -1,3 +1,4 @@
+import { noindexHead } from "@/lib/seo";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -12,6 +13,7 @@ import { playBgm } from "@/lib/audio";
 import { trainerSpriteUrl } from "@/lib/game-data";
 
 export const Route = createFileRoute("/pvp/$matchId")({
+  head: () => noindexHead(),
   component: PvpMatchPage,
 });
 

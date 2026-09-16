@@ -1,3 +1,4 @@
+import { pageHead } from "@/lib/seo";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -20,6 +21,7 @@ import { typeRowFontSize, DEX_CARD_WIDTH, DEX_CARD_PAD_PX } from "@/lib/type-row
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export const Route = createFileRoute("/pokedex")({
+  head: () => pageHead("/pokedex"),
   component: PokedexPage,
 });
 

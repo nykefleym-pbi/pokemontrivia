@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WhosThatPokemonRouteImport } from './routes/whos-that-pokemon'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as ReferRouteImport } from './routes/refer'
 import { Route as ProfileRouteImport } from './routes/profile'
@@ -29,6 +30,11 @@ import { Route as PvpChatMatchIdRouteImport } from './routes/pvp.chat.$matchId'
 const WhosThatPokemonRoute = WhosThatPokemonRouteImport.update({
   id: '/whos-that-pokemon',
   path: '/whos-that-pokemon',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ShopRoute = ShopRouteImport.update({
@@ -115,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/refer': typeof ReferRoute
   '/shop': typeof ShopRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/whos-that-pokemon': typeof WhosThatPokemonRoute
   '/api/daily-challenge': typeof ApiDailyChallengeRoute
   '/api/mega-questions': typeof ApiMegaQuestionsRoute
@@ -133,6 +140,7 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/refer': typeof ReferRoute
   '/shop': typeof ShopRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/whos-that-pokemon': typeof WhosThatPokemonRoute
   '/api/daily-challenge': typeof ApiDailyChallengeRoute
   '/api/mega-questions': typeof ApiMegaQuestionsRoute
@@ -152,6 +160,7 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/refer': typeof ReferRoute
   '/shop': typeof ShopRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/whos-that-pokemon': typeof WhosThatPokemonRoute
   '/api/daily-challenge': typeof ApiDailyChallengeRoute
   '/api/mega-questions': typeof ApiMegaQuestionsRoute
@@ -172,6 +181,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/refer'
     | '/shop'
+    | '/sitemap.xml'
     | '/whos-that-pokemon'
     | '/api/daily-challenge'
     | '/api/mega-questions'
@@ -190,6 +200,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/refer'
     | '/shop'
+    | '/sitemap.xml'
     | '/whos-that-pokemon'
     | '/api/daily-challenge'
     | '/api/mega-questions'
@@ -208,6 +219,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/refer'
     | '/shop'
+    | '/sitemap.xml'
     | '/whos-that-pokemon'
     | '/api/daily-challenge'
     | '/api/mega-questions'
@@ -227,6 +239,7 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   ReferRoute: typeof ReferRoute
   ShopRoute: typeof ShopRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   WhosThatPokemonRoute: typeof WhosThatPokemonRoute
   ApiDailyChallengeRoute: typeof ApiDailyChallengeRoute
   ApiMegaQuestionsRoute: typeof ApiMegaQuestionsRoute
@@ -245,6 +258,13 @@ declare module '@tanstack/react-router' {
       path: '/whos-that-pokemon'
       fullPath: '/whos-that-pokemon'
       preLoaderRoute: typeof WhosThatPokemonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/shop': {
@@ -363,6 +383,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   ReferRoute: ReferRoute,
   ShopRoute: ShopRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   WhosThatPokemonRoute: WhosThatPokemonRoute,
   ApiDailyChallengeRoute: ApiDailyChallengeRoute,
   ApiMegaQuestionsRoute: ApiMegaQuestionsRoute,

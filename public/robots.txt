@@ -1,0 +1,23 @@
+# Pokémon Trivia Battle
+#
+# Everything a stranger can usefully land on is crawlable. The disallows below
+# are not about hiding anything — they keep the index free of URLs that are
+# dead on arrival for anyone who did not create them.
+
+User-agent: *
+Allow: /
+
+# One URL per match played, useful only to the two people in it, and unreachable
+# once the match ends. The pages also carry `noindex`; this saves the crawl.
+Disallow: /pvp/
+
+# Personal, and identical in shape for every player.
+Disallow: /profile
+
+# A referral landing URL is meaningful only with someone's code attached.
+Disallow: /refer
+
+# JSON endpoints. Nothing here renders as a page.
+Disallow: /api/
+
+Sitemap: https://pokemontriviabattle.vercel.app/sitemap.xml
