@@ -1,3 +1,4 @@
+import { noindexHead } from "@/lib/seo";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useGameStore } from "@/lib/store";
@@ -11,6 +12,7 @@ import { fetchRecentChatMessages, getChatState, subscribeToMatchChat } from "@/l
 import type { ChatMessage, ChatState } from "@/lib/pvp-chat-types";
 
 export const Route = createFileRoute("/pvp/chat/$matchId")({
+  head: () => noindexHead(),
   component: PvpChatPage,
 });
 

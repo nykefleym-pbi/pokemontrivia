@@ -1,3 +1,4 @@
+import { noindexHead } from "@/lib/seo";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
@@ -58,6 +59,7 @@ import { VERSUS_BACKDROP } from "@/lib/app-icons";
 import type { BattleShareData } from "@/components/share-card-builder";
 
 export const Route = createFileRoute("/pvp/live/$matchId")({
+  head: () => noindexHead(),
   component: LivePvpMatchPage,
 });
 

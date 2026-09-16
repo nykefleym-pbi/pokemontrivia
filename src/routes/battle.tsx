@@ -1,3 +1,4 @@
+import { pageHead } from "@/lib/seo";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -69,6 +70,7 @@ function ModePrep({ label }: { label: string }) {
 }
 
 export const Route = createFileRoute("/battle")({
+  head: () => pageHead("/battle"),
   component: BattlePage,
   validateSearch: (s: Record<string, unknown>) => ({
     autostart: s.autostart ? 1 : 0,

@@ -1,3 +1,4 @@
+import { pageHead } from "@/lib/seo";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useGameStore } from "@/lib/store";
@@ -10,6 +11,7 @@ import { PokeballSpinner } from "@/components/game-ui";
 // new users land on "/" with the code carried over, which auto-advances
 // straight into trainer creation (see routes/index.tsx).
 export const Route = createFileRoute("/refer")({
+  head: () => pageHead("/refer"),
   component: ReferPage,
   validateSearch: (s: Record<string, unknown>): { code?: string } =>
     typeof s.code === "string" ? { code: s.code } : {},
