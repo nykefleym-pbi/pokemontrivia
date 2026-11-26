@@ -1,8 +1,10 @@
 import { createRouter, useRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 
-function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function DefaultErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
   const router = useRouter();
+  // The router types a thrown value as unknown: anything can be thrown, not only an Error.
+  const message = error instanceof Error ? error.message : typeof error === "string" ? error : "";
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-5">
@@ -29,9 +31,9 @@ function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => vo
         <p className="mt-2 text-sm text-foreground/60">
           An unexpected error occurred. Please try again.
         </p>
-        {error.message && (
+        {message && (
           <p className="mt-4 rounded-xl bg-poke-blue/10 px-3 py-2 text-left font-mono text-xs text-poke-blue break-words">
-            {error.message}
+            {message}
           </p>
         )}
         <div className="mt-6 flex items-center justify-center gap-3">
