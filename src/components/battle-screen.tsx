@@ -1,7 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  NaBattleField,
+  FieldSprite,
+  NaHpCard,
+  NaCombo,
+  NaDamage,
+  NaQuestionPanel,
+  NaFeedbackBanner,
+  MOVE_BY_TYPE,
+  type AnswerState,
+} from "@/components/na/battle";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { Sparkles, Crown } from "lucide-react";
+import { Sparkles, Play } from "lucide-react";
 import { useGameStore, getItemDef } from "@/lib/store";
 import { MAX_ITEMS_PER_BATTLE } from "@/lib/store/slices/itemsSlice";
 import {
@@ -34,11 +45,7 @@ import { TutorialOverlay } from "@/components/tutorial-overlay";
 import {
   PokemonSprite,
   StatusEffectOverlay,
-  BattleStage,
-  CombatPanel,
-  QuestionCard,
   ItemBagSheet,
-  EffectivenessPill,
 } from "@/components/game-ui";
 import {
   AlertDialog,
@@ -281,6 +288,18 @@ function BattleMode({
     mult?: number;
   } | null>(null);
   const [bagOpen, setBagOpen] = useState(false);
+  // The last hit on the opponent, for the "Correct!" banner (3.3).
+  const lastHitRef = useRef<{ n: number; type: string } | null>(null);
+  // The question panel's height, so the field can shrink on short phones (3.2).
+  const [panelH, setPanelH] = useState(380);
+  const panelObserver = useRef<ResizeObserver | null>(null);
+  const panelRefCb = useCallback((el: HTMLDivElement | null) => {
+    panelObserver.current?.disconnect();
+    if (!el || typeof ResizeObserver === "undefined") return;
+    panelObserver.current = new ResizeObserver(() => setPanelH(el.offsetHeight));
+    panelObserver.current.observe(el);
+    setPanelH(el.offsetHeight);
+  }, []);
   const [confirmExit, setConfirmExit] = useState(false);
   // Browser/Android back mid-battle asks to forfeit instead of silently
   // leaving (feedback 2286b6fc). Reuses the existing Leave-battle dialog.
@@ -351,17 +370,22 @@ function BattleMode({
     venom: 0,
   });
   const [timer, setTimer] = useState(20);
+  const [abilityPulse, setAbilityPulse] = useState(false);
 
   function triggerAbilityToast(ability: Ability) {
     const already = abilityStateRef.current.triggered.has(ability.id);
     const now = Date.now();
     const recentlyShown = now - lastAbilityToastRef.current < 1500;
-    if (!recentlyShown) {
+    // Figma 3.3: the toast explains the ability once per battle; after that its chip pulses.
+    if (!already && !recentlyShown) {
       toast.info(`${ability.name} activated!`, {
         description: ability.description,
         duration: 2200,
       });
       lastAbilityToastRef.current = now;
+    } else if (already) {
+      setAbilityPulse(true);
+      setTimeout(() => setAbilityPulse(false), 1200);
     }
     if (!already) {
       abilityStateRef.current.triggered.add(ability.id);
@@ -1458,219 +1482,152 @@ function BattleMode({
     );
   }
 
-  const totalQuestions = questions.length;
-  const progressPct = Math.min(100, (questionIdx / Math.max(1, totalQuestions)) * 100);
+  // ---- Figma 3.2 / 3.3 / 3.5: the battlefield, the HP cards, the combo and the question panel.
+  const hour = new Date().getHours();
+  const fieldMode = isWeekly ? "gym" : isElite ? "elite" : hour >= 18 || hour < 6 ? "evening" : "morning";
+  const trainerLine = isWeekly && gymLeader ? `Gym Leader ${gymLeader.name}` : isElite && eliteMember ? `Elite Four ${eliteMember.name}` : enemy.name;
+  if (floatDmg?.who === "enemy") lastHitRef.current = { n: floatDmg.n, type: floatDmg.attackType ?? player.types[0] };
+  const dmgCaption = (d: NonNullable<typeof floatDmg>): { caption: string | null; tone: "gold" | "brand" | "glass" } =>
+    d.band === "super"
+      ? { caption: `Super effective${d.mult ? ` ×${d.mult}` : ""}`, tone: "gold" }
+      : d.band === "resisted"
+        ? { caption: "Not very effective", tone: "glass" }
+        : d.band === "immune"
+          ? { caption: "No effect", tone: "glass" }
+          : d.speedy
+            ? { caption: "Fast hit", tone: "brand" }
+            : { caption: null, tone: "gold" };
+  const answerStates: AnswerState[] = trivia
+    ? trivia.options.map((_, i) => {
+        if (phase === "feedback") {
+          if (i === trivia.correct) return chosen === trivia.correct ? "correct" : "reveal";
+          return chosen === i ? "wrong" : "dimmed";
+        }
+        if (revealedWrong === i || revealedWrong2 === i) return "struck";
+        if (phase === "question" && revealedCorrect === i) return "reveal";
+        return "default";
+      })
+    : [];
+  const ok = !!trivia && chosen === trivia.correct;
+  const hit = lastHitRef.current;
+  const feedbackSub = ok
+    ? [hit ? `${MOVE_BY_TYPE[hit.type] ?? "Tackle"} · ${hit.n} damage` : null, streak >= 2 ? `${streak} in a row` : null].filter(Boolean).join(" · ") || "Nice one!"
+    : trivia
+      ? `It's ${trivia.options[trivia.correct]}.`
+      : "";
 
   return (
-    <div className="bg-battle-field relative flex h-full min-h-0 w-full flex-col overflow-hidden">
-      {/* progress bar */}
-      <div className="absolute left-0 right-0 top-0 z-40 h-1 bg-poke-dark/20">
-        <motion.div
-          className="h-full bg-gradient-to-r from-poke-yellow to-primary"
-          initial={false}
-          animate={{ width: `${progressPct}%` }}
-        />
-      </div>
-      {/* streak banner overlay */}
-      <AnimatePresence>
-        {streakBanner && (
-          <motion.div
-            key={streakBanner}
-            initial={{ scale: 0.4, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 1.4, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 220, damping: 14 }}
-            className="pointer-events-none absolute inset-x-0 top-1/3 z-50 flex justify-center"
+    <div className="relative h-full min-h-0 w-full overflow-hidden bg-night-deep">
+      <NaBattleField mode={fieldMode} panelHeight={panelH}>
+        <motion.div className="absolute inset-0" initial={{ x: 60, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
+          <FieldSprite
+            id={enemy.pokemon.id}
+            shiny={enemy.isShiny}
+            k={2}
+            cx={286}
+            feetY={215}
+            className={`${shakeWho === "enemy" ? "animate-shake" : ""} ${enemy.isShiny ? "shiny-glow" : ""}`}
           >
-            <div className="rounded-2xl bg-poke-dark/80 px-6 py-3 font-pixel text-lg text-poke-yellow shadow-pop">
-              {streakBanner}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      {/* top bar */}
-      <div className="relative z-10 flex shrink-0 items-center justify-between gap-2 screen-top pb-1 px-[max(1.25rem,env(safe-area-inset-left))]">
-        <div className="flex items-center gap-2">
-          <div
-            className={`flex items-center gap-1 rounded-full px-2.5 py-1 font-pixel text-[9px] shadow-card backdrop-blur ${isElite ? "bg-poke-dark text-poke-yellow" : "bg-card/90 text-foreground"}`}
-          >
-            {isElite && <Crown className="h-3 w-3" />}
-            {isElite
-              ? `ELITE · ${eliteMember!.region}`
-              : `ROUND ${Math.floor(questionIdx / QUESTIONS_PER_SET) + 1}/${Math.max(1, Math.ceil(questions.length / QUESTIONS_PER_SET))}`}
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {streak >= 1 && (
-            <div className="rounded-full bg-primary px-2.5 py-1 font-pixel text-[9px] uppercase text-primary-foreground shadow-card">
-              Streak ×{streak}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* COMBAT ARENA — both combatants stand on the platforms painted into
-          the field artwork. BattleStage owns that registration; the old
-          hand-drawn green ground-shadow ellipses are gone with it, because the
-          painting has real ones and two shadows under one sprite read as a
-          rendering fault. */}
-      <BattleStage
-        enemyPanel={
-          <CombatPanel
-            align="left"
-            pokemonName={enemy.pokemon.name}
-            types={enemy.pokemon.types}
-            hp={enemyHp}
-            maxHp={enemyMaxHp}
-            abilityName={enemyAbility.name}
-            abilityDescription={enemyAbility.description}
-            immune={false}
-            disadvantaged={false}
-            testId="enemy"
-          />
-        }
-        enemySprite={
-          <motion.div
-            className={`relative ${shakeWho === "enemy" ? "animate-shake" : ""}`}
-            initial={{ x: 60, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-          >
-            <PokemonSprite
-              id={enemy.pokemon.id}
-              shiny={enemy.isShiny}
-              alt={enemy.pokemon.name}
-              className={`sprite relative z-10 h-36 w-36 ${enemy.isShiny ? "shiny-glow" : ""}`}
-            />
-            {enemy.isShiny && (
-              <Sparkles className="pointer-events-none absolute right-2 top-2 z-20 h-4 w-4 animate-pulse text-yellow-300 drop-shadow" />
-            )}
+            {enemy.isShiny && <Sparkles className="pointer-events-none absolute -right-2 -top-2 z-20 h-4 w-4 animate-pulse text-yellow-300 drop-shadow" />}
             <StatusEffectOverlay statuses={[]} />
-            {floatDmg?.who === "enemy" && (
-              <div className="animate-float-up pointer-events-none absolute left-1/2 top-4 z-20 flex -translate-x-1/2 flex-col items-center gap-0.5">
-                <span className="font-pixel text-base text-destructive">
-                  -{floatDmg.n}
-                  {floatDmg.speedy && " FAST"}
-                </span>
-                {floatDmg.band && floatDmg.band !== "neutral" && (
-                  <EffectivenessPill
-                    band={floatDmg.band}
-                    attackType={floatDmg.attackType as PokeType | undefined}
-                    multiplier={floatDmg.mult}
-                  />
-                )}
-              </div>
-            )}
-          </motion.div>
-        }
-        playerSprite={
-          <motion.div
-            className={`relative ${shakeWho === "player" ? "animate-shake" : ""}`}
-            initial={{ x: -60, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
+          </FieldSprite>
+        </motion.div>
+        <motion.div className="absolute inset-0" initial={{ x: -60, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
+          <FieldSprite
+            id={player.id}
+            back
+            k={3}
+            cx={104}
+            feetY={420}
+            className={`${shakeWho === "player" ? "animate-shake" : ""} ${streak >= 5 ? "mega-glow" : ""}`}
           >
-            <PokemonSprite
-              id={player.id}
-              back
-              alt={player.name}
-              className={`sprite relative z-10 h-40 w-40 ${streak >= 5 ? "mega-glow" : ""}`}
-            />
             <StatusEffectOverlay statuses={statuses} />
-            {floatDmg?.who === "player" && (
-              <div className="animate-float-up pointer-events-none absolute left-1/2 top-4 z-20 flex -translate-x-1/2 flex-col items-center gap-1">
-                <span className="font-pixel text-base text-destructive">-{floatDmg.n}</span>
-                {floatDmg.band && floatDmg.band !== "neutral" && (
-                  <EffectivenessPill
-                    band={floatDmg.band}
-                    attackType={floatDmg.attackType as PokeType | undefined}
-                    multiplier={floatDmg.mult}
-                  />
-                )}
-              </div>
-            )}
-          </motion.div>
-        }
-        playerPanel={
-          <CombatPanel
-            align="right"
-            pokemonName={player.name}
-            types={player.types}
-            hp={playerHp}
-            maxHp={playerMaxHp}
-            abilityName={playerAbility.name}
-            abilityDescription={playerAbility.description}
-            immune={immune}
-            disadvantaged={disadvantaged}
-            testId="player"
-          />
-        }
-      />
-      {/* The stage is absolutely positioned, so this spacer is what pushes the
-          question card to the bottom of the screen. It used to carry a
-          fade-to-white gradient as well; that is gone — as a flex child its
-          height moved whenever the card's content changed (a feedback line
-          appearing, an item row), so the gradient jumped around mid-battle and
-          washed parts of the field on and off. The artwork fades out on its own
-          at the bottom, which is what the fade was imitating. */}
-      <div className="min-h-0 flex-1" />
-
-      {/* intro banner overlay */}
-      <AnimatePresence>
-        {introBanner && (
-          <motion.div
-            key={introBanner}
-            initial={{ y: -10, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -10, opacity: 0 }}
-            className="pointer-events-none absolute inset-x-5 top-1/2 z-40 -translate-y-1/2"
-          >
-            <div className="rounded-2xl border-2 border-poke-dark bg-card/95 p-3 text-center text-sm font-semibold shadow-pop backdrop-blur">
-              {introBanner}
-            </div>
-          </motion.div>
+          </FieldSprite>
+        </motion.div>
+        <NaHpCard
+          side="enemy"
+          trainer={trainerLine}
+          name={enemy.pokemon.name}
+          hp={enemyHp}
+          maxHp={enemyMaxHp}
+          types={enemy.pokemon.types}
+          abilityName={enemyAbility.name}
+          abilityDescription={enemyAbility.description}
+          testId="enemy"
+          style={{ left: 12, top: 56 }}
+        />
+        {streak >= 2 && (
+          <NaCombo count={streak} multiplier={metronomeActiveRef.current ? 3 : streakMultiplier(streak)} style={{ left: 12, top: 206 }} />
         )}
-      </AnimatePresence>
+        <NaHpCard
+          side="player"
+          name={player.name}
+          hp={playerHp}
+          maxHp={playerMaxHp}
+          types={player.types}
+          abilityName={playerAbility.name}
+          abilityDescription={playerAbility.description}
+          danger={disadvantaged && !immune}
+          pulse={abilityPulse ? "" : null}
+          testId="player"
+          style={{ left: 178, top: 262 }}
+        />
+        {floatDmg && (
+          <NaDamage
+            key={`${floatDmg.who}-${floatDmg.n}-${questionIdx}`}
+            value={`-${floatDmg.n}`}
+            {...dmgCaption(floatDmg)}
+            style={floatDmg.who === "enemy" ? { left: 120, top: 34 } : { left: 286, top: 222 }}
+          />
+        )}
+        {/* Narration: "Picnicker Janine sent out Tirtouga!" */}
+        <AnimatePresence>
+          {introBanner && (
+            <motion.div
+              key={introBanner}
+              initial={{ y: -10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -10, opacity: 0 }}
+              className="pointer-events-none absolute left-4 top-[330px] z-30 flex w-[358px] items-center gap-2.5 rounded-[14px] border border-white/[0.12] bg-night-deep/75 px-3.5 py-2.5 backdrop-blur-xl"
+            >
+              <Play className="h-3.5 w-3.5 shrink-0 fill-reward-gold text-reward-gold" />
+              <span className="na-body-strong text-foreground">{introBanner}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </NaBattleField>
 
-      {/* QUESTION CARD — thumb zone, pinned bottom */}
-      {/* The card sits on a full-width band of the fade colour. Its own top
-          corners are rounded, and without this the artwork behind them showed
-          through as two green notches either side of the question card — the
-          stage runs the full height of the screen, so "below the fade" is still
-          painted field. */}
-      <div className="relative z-10 shrink-0 bg-[var(--battle-fade-to)]">
-        <div className="relative rounded-t-[28px] bg-card pt-14 px-[max(1rem,env(safe-area-inset-left))] screen-bottom shadow-[0_-8px_30px_-12px_oklch(0.3_0.05_260/0.25)]">
-          <AnimatePresence mode="wait">
-            {phase !== "intro" && trivia && (
-              <QuestionCard
-                key={questionIdx}
-                trivia={trivia}
-                phase={phase as "question" | "feedback"}
-                chosen={chosen}
-                revealedWrong={revealedWrong}
-                revealedWrong2={revealedWrong2}
-                revealedCorrect={revealedCorrect}
-                timer={timer}
-                maxTime={TIMER_BASE + bonusTime}
-                lastElapsedMs={lastElapsedMs}
-                onAnswer={handleAnswer}
-              >
-                <ItemBagSheet
-                  bagOpen={bagOpen}
-                  onBagOpenChange={setBagOpen}
-                  inventory={inventory}
-                  usedThisBattle={usedThisBattle}
-                  itemsUsedThisBattleCount={itemsUsedThisBattleCount}
-                  maxItemsPerBattle={MAX_ITEMS_PER_BATTLE}
-                  itemCapReached={itemCapReached}
-                  choiceSpecsActive={choiceSpecsActive}
-                  anyItemUsedThisBattle={anyItemUsedThisBattle}
-                  escapeDisabled={isWeekly || isElite}
-                  onUseItem={tryUseItem}
-                />
-              </QuestionCard>
-            )}
-          </AnimatePresence>
-        </div>
-      </div>
+      {phase !== "intro" && trivia && (
+        <NaQuestionPanel
+          panelRef={panelRefCb}
+          seconds={timer}
+          maxSeconds={TIMER_BASE + bonusTime}
+          category={trivia.category}
+          progress={`Q${questionIdx + 1}`}
+          question={trivia.question}
+          options={trivia.options}
+          states={answerStates}
+          disabled={(i) => phase !== "question" || answerStates[i] === "struck"}
+          onAnswer={handleAnswer}
+          bag={
+            <ItemBagSheet
+              variant="icon"
+              bagOpen={bagOpen}
+              onBagOpenChange={setBagOpen}
+              inventory={inventory}
+              usedThisBattle={usedThisBattle}
+              itemsUsedThisBattleCount={itemsUsedThisBattleCount}
+              maxItemsPerBattle={MAX_ITEMS_PER_BATTLE}
+              itemCapReached={itemCapReached}
+              choiceSpecsActive={choiceSpecsActive}
+              anyItemUsedThisBattle={anyItemUsedThisBattle}
+              escapeDisabled={isWeekly || isElite}
+              onUseItem={tryUseItem}
+            />
+          }
+          banner={phase === "feedback" ? <NaFeedbackBanner ok={ok} title={ok ? "Correct!" : "Not quite"} sub={feedbackSub} /> : null}
+        />
+      )}
 
       <AlertDialog open={confirmExit} onOpenChange={setConfirmExit}>
         <AlertDialogContent>

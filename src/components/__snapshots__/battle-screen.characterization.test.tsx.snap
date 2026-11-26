@@ -517,6 +517,83 @@ exports[`battle-screen ability characterization (regression baseline) > ability:
 ]
 `;
 
+exports[`battle-screen ability characterization (regression baseline) > ability: adaptable 2`] = `
+[
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "93",
+    "playerHp": "105",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "93",
+    "playerHp": "105",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "93",
+    "playerHp": "105",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "93",
+    "playerHp": "105",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "93",
+    "playerHp": "105",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "93",
+    "playerHp": "105",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "93",
+    "playerHp": "105",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "93",
+    "playerHp": "105",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "93",
+    "playerHp": "105",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "93",
+    "playerHp": "105",
+  },
+  {
+    "action": "wrong",
+    "ended": false,
+    "enemyHp": "93",
+    "playerHp": "105",
+  },
+  {
+    "action": "correct",
+    "ended": false,
+    "enemyHp": "93",
+    "playerHp": "105",
+  },
+]
+`;
+
 exports[`battle-screen ability characterization (regression baseline) > ability: aerilate 1`] = `
 [
   {

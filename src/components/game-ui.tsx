@@ -15,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CATEGORIES, CATEGORY_OF, BAG_SHORT_DESC } from "@/lib/item-categories";
 import { ITEM_CATEGORY_ICON } from "@/lib/app-icons";
 import { BATTLE_PLATFORM } from "@/lib/battle-field";
+import { NaGlossIcon } from "@/components/na/gloss-icon";
 
 /** Owner-supplied category art, used when an item's own sprite fails to load:
  * every berry shares one image, the three potions another. Items outside these
@@ -1117,7 +1118,10 @@ export function ItemBagSheet({
   anyItemUsedThisBattle,
   escapeDisabled,
   onUseItem,
+  variant = "row",
 }: {
+  /** "icon": only Figma's bag button (3.2 question header); "row": the bag plus up to 3 quick items. */
+  variant?: "row" | "icon";
   bagOpen: boolean;
   onBagOpenChange: (open: boolean) => void;
   inventory: Partial<Record<ItemId, number>>;
@@ -1144,12 +1148,23 @@ export function ItemBagSheet({
   };
 
   return (
-    <div className="mt-3 flex items-center justify-center gap-3">
+    <div className={variant === "icon" ? "flex" : "mt-3 flex items-center justify-center gap-3"}>
       <Sheet open={bagOpen} onOpenChange={onBagOpenChange}>
         <SheetTrigger asChild>
-          <button className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition press">
-            <Backpack className="h-6 w-6 text-muted-foreground" />
-          </button>
+          {variant === "icon" ? (
+            <button
+              type="button"
+              aria-label="Your bag"
+              data-testid="bag-button"
+              className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-white/10 press"
+            >
+              <NaGlossIcon kind="bag" size={18} />
+            </button>
+          ) : (
+            <button data-testid="bag-button" className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition press">
+              <Backpack className="h-6 w-6 text-muted-foreground" />
+            </button>
+          )}
         </SheetTrigger>
         <SheetContent side="bottom" className="rounded-t-3xl">
           <SheetHeader>
@@ -1202,6 +1217,7 @@ export function ItemBagSheet({
                             return (
                               <button
                                 key={it.id}
+                                data-testid={`bag-item-${it.id}`}
                                 disabled={disabled}
                                 onClick={() => onUseItem(it.id)}
                                 className="flex items-center gap-3.5 rounded-2xl bg-card px-4 py-3 text-left shadow-card transition press-lg disabled:opacity-40"
@@ -1241,7 +1257,7 @@ export function ItemBagSheet({
           })()}
         </SheetContent>
       </Sheet>
-      {ITEMS.filter(
+      {variant === "row" && ITEMS.filter(
         (it) =>
           (inventory[it.id] ?? 0) > 0 &&
           it.id !== "focusband" &&

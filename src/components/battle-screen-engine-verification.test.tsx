@@ -237,7 +237,10 @@ async function runDom(
       await vi.advanceTimersByTimeAsync(3000);
     });
     for (const itemId of opts.useItemsBeforeStep?.[i] ?? []) {
-      const itemBtn = screen.queryByTestId(`item-${itemId}`);
+      // Items live in the bag now (Figma 3.2): open it, then tap the item.
+      const bag = screen.queryByTestId("bag-button");
+      if (bag) await act(async () => fireEvent.click(bag));
+      const itemBtn = screen.queryByTestId(`bag-item-${itemId}`);
       if (itemBtn) await act(async () => fireEvent.click(itemBtn));
     }
     const idx = action === "correct" ? correctIdx : wrongIdx;
