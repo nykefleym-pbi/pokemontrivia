@@ -71,8 +71,33 @@
   --color-brand-slate: var(--brand-slate);
   --color-brand-cream: var(--brand-cream);
 
+  /* Night Arena by design name: bg-night-card, text-reward-gold, ... */
+  --color-night-base: var(--night-base);
+  --color-night-deep: var(--night-deep);
+  --color-night-raised: var(--night-raised);
+  --color-night-card: var(--night-card);
+  --color-night-card-2: var(--night-card-2);
+  --color-night-line: var(--night-line);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-on-gold: var(--text-on-gold);
+  --color-reward-gold: var(--reward-gold);
+  --color-reward-gold-dark: var(--reward-gold-dark);
+  --color-brand-red-dark: var(--brand-red-dark);
+  --color-brand-red-light: var(--brand-red-light);
+  --color-streak-flame: var(--streak-flame);
+  --color-streak-ice: var(--streak-ice);
+  --color-success: var(--state-success);
+  --color-success-dark: var(--state-success-dark);
+  --color-danger: var(--state-danger);
+  --color-danger-dark: var(--state-danger-dark);
+  --color-info: var(--state-info);
+  --color-info-dark: var(--state-info-dark);
+
   --font-pixel: "Press Start 2P", monospace;
   --font-display: "Outfit", sans-serif;
+  /* Night Arena display face: titles, buttons and big numbers */
+  --font-lilita: "Lilita One", "Outfit", sans-serif;
 
   --shadow-card: 0 10px 30px -12px oklch(0.5 0.15 250 / 0.18);
   --shadow-float: 0 16px 40px -16px oklch(0.22 0.04 260 / 0.28);
@@ -163,43 +188,88 @@
   --brand-cream: #fbf3df;
 }
 
+/*
+ * Night Arena — the app's one look (owner ruling 2026-11-26: dark only; `dark`
+ * is always on <html>). Every value is a token from the Figma design file
+ * ("Trivia Battle · UX wireframes", Night Arena collection), mapped onto the
+ * shadcn names the screens already use, so 800+ semantic classes follow it.
+ */
 .dark {
-  --background: oklch(0.19 0.05 275);
-  --foreground: oklch(0.95 0.01 250);
+  --background: #0b1026; /* night/base */
+  --foreground: #f4f6ff; /* text/primary */
 
-  --card: oklch(0.24 0.05 265);
-  --card-foreground: oklch(0.95 0.01 250);
+  --card: #1b2353; /* night/card */
+  --card-foreground: #f4f6ff;
 
-  --popover: oklch(0.24 0.05 265);
-  --popover-foreground: oklch(0.95 0.01 250);
+  --popover: #141a3f; /* night/raised */
+  --popover-foreground: #f4f6ff;
 
-  --primary: oklch(0.62 0.22 25);
-  --primary-foreground: oklch(0.99 0 0);
+  --primary: #ff3b4e; /* brand/red */
+  --primary-foreground: #ffffff;
 
-  --secondary: oklch(0.3 0.05 265);
-  --secondary-foreground: oklch(0.95 0.01 250);
+  --secondary: #252f6b; /* night/card-2 */
+  --secondary-foreground: #f4f6ff;
 
-  --muted: oklch(0.3 0.04 265);
-  --muted-foreground: oklch(0.7 0.03 255);
+  --muted: #141a3f; /* night/raised */
+  --muted-foreground: #b7bee8; /* text/secondary */
 
-  --accent: oklch(0.4 0.12 280);
-  --accent-foreground: oklch(0.95 0.01 250);
+  --accent: #ffc83d; /* reward/gold */
+  --accent-foreground: #3a2400; /* text/on-gold */
 
-  --destructive: oklch(0.62 0.24 27);
-  --destructive-foreground: oklch(0.99 0 0);
+  --destructive: #ff5c8a; /* state/danger */
+  --destructive-foreground: #ffffff;
 
-  --border: oklch(0.35 0.04 265);
-  --input: oklch(0.35 0.04 265);
-  --ring: oklch(0.62 0.22 25);
+  --border: #2f3a7a; /* night/line */
+  --input: #252f6b;
+  --ring: #ffc83d;
 
-  --poke-red: oklch(0.62 0.22 25);
-  --poke-yellow: oklch(0.85 0.17 90);
-  --poke-blue: oklch(0.6 0.18 245);
+  --poke-red: #ff3b4e;
+  --poke-yellow: #ffc83d;
+  --poke-blue: #5b8cff; /* state/info */
   /* --poke-dark intentionally unchanged (used as dark element bg) */
 
-  --sidebar: oklch(0.22 0.05 270);
-  --sidebar-foreground: oklch(0.95 0.01 250);
-  --sidebar-border: oklch(0.35 0.04 265);
+  --hp-good: #2ee59d;
+  --hp-warn: #f5a623;
+  --hp-low: #ee3f58;
+
+  --type-grass: #4cd07d;
+  --type-poison: #b26bea;
+  --type-water: #4c9bff;
+  --type-rock: #c9b26b;
+  --type-normal: #b5b09f;
+  --type-flying: #93a9ff;
+  --type-electric: #ffd23f;
+  --type-ghost: #8a6be8;
+  --type-fire: #ff7b3d;
+
+  --sidebar: #141a3f;
+  --sidebar-foreground: #f4f6ff;
+  --sidebar-border: #2f3a7a;
+}
+
+/* Night Arena tokens by their design names, for reworked screens. */
+:root {
+  --night-base: #0b1026;
+  --night-deep: #070a1a;
+  --night-raised: #141a3f;
+  --night-card: #1b2353;
+  --night-card-2: #252f6b;
+  --night-line: #2f3a7a;
+  --text-secondary: #b7bee8;
+  --text-muted: #8e98cf;
+  --text-on-gold: #3a2400;
+  --reward-gold: #ffc83d;
+  --reward-gold-dark: #b07a00;
+  --brand-red-dark: #a3142c;
+  --brand-red-light: #ff7a85;
+  --streak-flame: #ff8a1f;
+  --streak-ice: #7fd6ff;
+  --state-success: #2ee59d;
+  --state-success-dark: #0e8a57;
+  --state-danger: #ff5c8a;
+  --state-danger-dark: #a3204a;
+  --state-info: #5b8cff;
+  --state-info-dark: #2b4fb8;
 }
 
 /*
@@ -297,6 +367,117 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+
+/*
+ * ---------------------------------------------------------------------------
+ * Night Arena kit — the Figma design's text styles, buttons, answer tiles and
+ * surfaces, value for value (file "Trivia Battle · UX wireframes", 2026-11).
+ * Names follow the Figma styles: NA/Display L -> na-display-l, Button/Brand ->
+ * na-btn-primary, and so on. Reworked screens use these, not one-off values.
+ * ---------------------------------------------------------------------------
+ */
+
+/* Text styles: Lilita One for display, buttons and numbers; Outfit for the rest. */
+@utility na-display-xl { font-family: var(--font-lilita); font-size: 48px; line-height: 52px; font-weight: 400; }
+@utility na-display-l { font-family: var(--font-lilita); font-size: 32px; line-height: 36px; font-weight: 400; }
+@utility na-display-m { font-family: var(--font-lilita); font-size: 24px; line-height: 28px; font-weight: 400; }
+@utility na-display-s { font-family: var(--font-lilita); font-size: 20px; line-height: 24px; font-weight: 400; }
+@utility na-button-l { font-family: var(--font-lilita); font-size: 20px; line-height: 24px; font-weight: 400; letter-spacing: 0.02em; text-transform: uppercase; }
+@utility na-button-m { font-family: var(--font-lilita); font-size: 17px; line-height: 20px; font-weight: 400; letter-spacing: 0.02em; text-transform: uppercase; }
+@utility na-number-l { font-family: var(--font-lilita); font-size: 22px; line-height: 26px; font-weight: 400; font-variant-numeric: tabular-nums; }
+@utility na-number-m { font-family: var(--font-lilita); font-size: 16px; line-height: 20px; font-weight: 400; font-variant-numeric: tabular-nums; }
+@utility na-title { font-family: var(--font-display); font-size: 20px; line-height: 26px; font-weight: 700; }
+@utility na-headline { font-family: var(--font-display); font-size: 17px; line-height: 22px; font-weight: 700; }
+@utility na-body { font-family: var(--font-display); font-size: 15px; line-height: 21px; font-weight: 400; }
+@utility na-body-strong { font-family: var(--font-display); font-size: 15px; line-height: 21px; font-weight: 600; }
+@utility na-caption { font-family: var(--font-display); font-size: 13px; line-height: 18px; font-weight: 500; }
+@utility na-label { font-family: var(--font-display); font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+/* Text/Emboss: the hard drop under white type on red and on art. */
+@utility na-emboss { text-shadow: 0 2px 0 rgb(0 0 0 / 0.45); }
+
+/* Buttons: chunky, with a 3D lip (Duolingo press depth). Size first, then kind.
+ * Pressed: the face drops 3px into the lip, which shrinks to 1px. */
+@utility na-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  white-space: nowrap; user-select: none; position: relative;
+  transition: transform 110ms cubic-bezier(0.2, 0, 0.2, 1), box-shadow 110ms ease, filter 150ms ease, opacity 150ms ease;
+  &:disabled, &[aria-disabled="true"] { opacity: 0.45; filter: saturate(0.6); pointer-events: none; }
+  &:focus-visible { outline: 3px solid var(--reward-gold); outline-offset: 3px; }
+}
+@utility na-btn-l { height: 56px; border-radius: 18px; padding-inline: 28px; font-family: var(--font-lilita); font-size: 20px; line-height: 24px; letter-spacing: 0.02em; text-transform: uppercase; }
+@utility na-btn-m { height: 44px; border-radius: 14px; padding-inline: 18px; font-family: var(--font-lilita); font-size: 17px; line-height: 20px; letter-spacing: 0.02em; text-transform: uppercase; }
+@utility na-btn-primary {
+  color: #f4f6ff; text-shadow: 0 2px 0 rgb(0 0 0 / 0.45);
+  background: linear-gradient(180deg, #ff7a85 0%, #ff3b4e 45%, #e3233b 100%);
+  box-shadow: 0 4px 0 #a3142c, 0 10px 24px rgb(255 59 78 / 0.38), inset 0 1.5px 0 rgb(255 255 255 / 0.35);
+  &:active { transform: translateY(3px); box-shadow: 0 1px 0 #a3142c, 0 4px 12px rgb(255 59 78 / 0.3), inset 0 1.5px 0 rgb(255 255 255 / 0.35); }
+}
+@utility na-btn-gold {
+  color: #3a2400;
+  background: linear-gradient(180deg, #ffe38a 0%, #ffc83d 50%, #f0a800 100%);
+  box-shadow: 0 4px 0 #b07a00, 0 10px 24px rgb(255 200 61 / 0.32), inset 0 1.5px 0 rgb(255 255 255 / 0.5);
+  &:active { transform: translateY(3px); box-shadow: 0 1px 0 #b07a00, 0 4px 12px rgb(255 200 61 / 0.25), inset 0 1.5px 0 rgb(255 255 255 / 0.5); }
+}
+@utility na-btn-success {
+  color: #05261a;
+  background: linear-gradient(180deg, #7bf7c4 0%, #2ee59d 50%, #14bf7b 100%);
+  box-shadow: 0 4px 0 #0e8a57, 0 10px 22px rgb(46 229 157 / 0.28), inset 0 1.5px 0 rgb(255 255 255 / 0.4);
+  &:active { transform: translateY(3px); box-shadow: 0 1px 0 #0e8a57, inset 0 1.5px 0 rgb(255 255 255 / 0.4); }
+}
+@utility na-btn-secondary {
+  color: #f4f6ff; background: #252f6b; border: 1px solid rgb(255 255 255 / 0.16);
+  box-shadow: 0 4px 0 #04060f, inset 0 1px 0 rgb(255 255 255 / 0.1);
+  &:active { transform: translateY(3px); box-shadow: 0 1px 0 #04060f, inset 0 1px 0 rgb(255 255 255 / 0.1); }
+}
+@utility na-btn-danger {
+  color: #ffffff; background: #ff5c8a;
+  box-shadow: 0 4px 0 #a3204a, inset 0 1.5px 0 rgb(255 255 255 / 0.25);
+  &:active { transform: translateY(3px); box-shadow: 0 1px 0 #a3204a, inset 0 1.5px 0 rgb(255 255 255 / 0.25); }
+}
+@utility na-btn-ghost { color: #f4f6ff; background: rgb(255 255 255 / 0.1); &:active { transform: translateY(2px); } }
+@utility na-btn-text { color: var(--text-secondary); font-family: var(--font-display); font-size: 15px; font-weight: 600; text-transform: none; letter-spacing: 0; &:active { opacity: 0.7; } }
+
+/* Answer tiles, A-D: 56px, 16px radius, the same lip as the buttons. */
+@utility na-answer {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; border-radius: 16px;
+  padding: 0 14px 0 10px; text-align: left; color: #f4f6ff;
+  background: #1b2353; border: 1px solid rgb(255 255 255 / 0.1);
+  box-shadow: 0 4px 0 #04060f, inset 0 1px 0 rgb(255 255 255 / 0.1);
+  font-family: var(--font-display); font-size: 17px; line-height: 22px; font-weight: 700;
+  transition: transform 110ms cubic-bezier(0.2, 0, 0.2, 1), box-shadow 110ms ease, background 150ms ease, border-color 150ms ease, opacity 150ms ease;
+  &:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 #04060f, inset 0 1px 0 rgb(255 255 255 / 0.1); }
+}
+@utility na-answer-selected { border: 2px solid #5b8cff; box-shadow: 0 4px 0 #2b4fb8, inset 0 1.5px 0 rgb(255 255 255 / 0.3); }
+@utility na-answer-correct { color: #05261a; border-color: transparent; background: linear-gradient(180deg, #7bf7c4 0%, #2ee59d 50%, #14bf7b 100%); box-shadow: 0 4px 0 #0e8a57, 0 10px 22px rgb(46 229 157 / 0.28), inset 0 1.5px 0 rgb(255 255 255 / 0.4); }
+@utility na-answer-wrong { border: 2px solid #ff5c8a; background: rgb(255 92 138 / 0.16); box-shadow: 0 4px 0 #a3204a, inset 0 1.5px 0 rgb(255 255 255 / 0.25); }
+@utility na-answer-reveal { border: 2px solid #2ee59d; background: rgb(46 229 157 / 0.12); }
+@utility na-answer-dimmed { opacity: 0.5; color: var(--text-muted); }
+/* The A-D key square inside a tile. */
+@utility na-answer-key { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 32px; height: 32px; border-radius: 10px; background: rgb(255 255 255 / 0.1); color: var(--text-secondary); font-family: var(--font-lilita); font-size: 16px; line-height: 20px; }
+
+/* BG/Night: indigo at the top fading into the night — every screen's ground. */
+@utility na-bg-night { background: linear-gradient(180deg, #1c2363 0%, #0b1026 55%, #070a1a 100%); }
+
+/* Surfaces. */
+@utility na-card { background: linear-gradient(180deg, #232c66 0%, #161d47 100%); box-shadow: 0 10px 28px rgb(0 0 0 / 0.4), inset 0 1px 0 rgb(255 255 255 / 0.08); }
+@utility na-glass { background: rgb(255 255 255 / 0.08); border: 1px solid rgb(255 255 255 / 0.12); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14), 0 12px 32px rgb(0 0 0 / 0.35); }
+@utility na-deep { background: rgb(7 10 26 / 0.6); border: 1px solid rgb(255 255 255 / 0.16); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
+@utility na-raised { background: #141a3f; box-shadow: 0 10px 28px rgb(0 0 0 / 0.4), inset 0 1px 0 rgb(255 255 255 / 0.08); }
+@utility na-glow-gold { box-shadow: 0 0 28px rgb(255 200 61 / 0.55); }
+@utility na-glow-success { box-shadow: 0 0 24px rgb(46 229 157 / 0.5); }
+@utility na-glow-brand { box-shadow: 0 0 28px rgb(255 59 78 / 0.5); }
+@utility na-glow-info { box-shadow: 0 0 20px rgb(91 140 255 / 0.55); }
+/* Gradient fills by Figma name. */
+@utility na-fill-brand { background: linear-gradient(180deg, #ff7a85 0%, #ff3b4e 45%, #e3233b 100%); }
+@utility na-fill-gold { background: linear-gradient(180deg, #ffe38a 0%, #ffc83d 50%, #f0a800 100%); }
+@utility na-fill-success { background: linear-gradient(180deg, #7bf7c4 0%, #2ee59d 50%, #14bf7b 100%); }
+@utility na-fill-info { background: linear-gradient(180deg, #8db0ff 0%, #4c7dff 100%); }
+@utility na-fill-flame { background: linear-gradient(180deg, #ffc15a 0%, #ff6a1f 100%); }
+@utility na-hp-healthy { background: linear-gradient(90deg, #86f8b8 0%, #25cc72 100%); }
+@utility na-hp-warn { background: linear-gradient(90deg, #ffe07a 0%, #f5a623 100%); }
+@utility na-hp-low { background: linear-gradient(90deg, #ff9a9a 0%, #ee3f58 100%); }
+/* Type chip: a glass pill with a type-colour dot. */
+@utility na-type-chip { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 3px 9px 3px 7px; background: rgb(255 255 255 / 0.14); font-family: var(--font-display); font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: #f4f6ff; }
 
 /* The boot loading screen (src/components/boot-splash.tsx) only applies to
  * players who already have a trainer. `has-trainer` is set on <html> before
@@ -435,7 +616,8 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background-color: var(--color-background);
+  /* BG/Night on the desktop phone too (Night Arena). */
+  background: linear-gradient(180deg, #1c2363 0%, #0b1026 55%, #070a1a 100%);
 }
 
 /* Non-mobile scrollbars. The app hides every scrollbar globally (touch devices
@@ -488,6 +670,10 @@
     color: var(--color-foreground);
     font-family: var(--font-display);
     -webkit-font-smoothing: antialiased;
+  }
+  /* Night Arena BG/Night: indigo at the top fading into the night. */
+  .dark body {
+    background: linear-gradient(180deg, #1c2363 0%, #0b1026 55%, #070a1a 100%) fixed;
   }
 
   /* This is a game in a PWA shell, not a document: the native long-press
@@ -599,7 +785,7 @@
   --battle-fade-to: oklch(1 0 0);
 }
 .dark {
-  --battle-fade-to: oklch(0.19 0.05 275);
+  --battle-fade-to: #0b1026; /* night/base */
 }
 .bg-battle-field {
   background: var(--battle-fade-to);

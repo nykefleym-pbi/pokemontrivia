@@ -354,7 +354,9 @@ export interface GameState {
    * false if the egg doesn't exist or isn't ready yet. */
   hatchPokeEgg: (eggId: string) => boolean;
   markMegaRewardClaimed: (eventId: string) => void;
-  startGuestSession: () => void;
+  /** Play without a name. `partner`/`abilityId` come from the first-session
+   *  partner picker; without them a random starter is rolled. */
+  startGuestSession: (partner?: PokeEntry, abilityId?: AbilityId) => void;
 
   reset: () => void;
   setName: (name: string) => void;

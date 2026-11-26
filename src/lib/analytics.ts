@@ -14,6 +14,8 @@ import { track as vercelTrack } from "@vercel/analytics";
  */
 export type AnalyticsEvent =
   | "onboard_complete"
+  /** First session: partner chosen, first battle starts before any name. */
+  | "onboard_play_first"
   | "first_battle_complete"
   | "battle_complete"
   | "daily_claimed"

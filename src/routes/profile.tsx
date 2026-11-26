@@ -12,7 +12,6 @@ import {
   VolumeX,
   Music,
   ChevronRight,
-  Moon,
   Copy,
   Share2,
   UserPlus,
@@ -425,8 +424,6 @@ function ProfilePage() {
   const [sfxOn, setSfxState] = useState(true);
   const [musicVol, setMusicVolState] = useState(35);
   const [sfxVol, setSfxVolState] = useState(100);
-  const darkMode = useGameStore((s) => s.darkMode);
-  const setDarkMode = useGameStore((s) => s.setDarkMode);
   const reducedMotion = useGameStore((s) => s.reducedMotion);
   const setReducedMotion = useGameStore((s) => s.setReducedMotion);
 
@@ -1254,25 +1251,6 @@ function ProfilePage() {
                   <div className="w-10 text-right text-xs font-semibold tabular-nums text-foreground">
                     {sfxVol}%
                   </div>
-                </div>
-                <div className="flex items-center justify-between p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
-                      <Moon className="h-5 w-5 text-foreground" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-foreground">Dark mode</div>
-                      <div className="text-xs text-foreground/55">Easier on the eyes at night</div>
-                    </div>
-                  </div>
-                  {/* TODO: dark theme not yet implemented */}
-                  <Switch
-                    checked={darkMode}
-                    onCheckedChange={(v) => {
-                      setDarkMode(v);
-                      if (v) playSfx("darkness");
-                    }}
-                  />
                 </div>
                 <div className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-3">

@@ -278,6 +278,10 @@ function BattleMode({
   const [streakBanner, setStreakBanner] = useState<string | null>(null);
   const [lastElapsedMs, setLastElapsedMs] = useState(0);
   const questionStart = useRef<number>(0);
+  // For the victory screen's Time tile and catch card (Figma 4.1 / 1.5).
+  const battleStartRef = useRef<number | null>(null);
+  const durationMsRef = useRef(0);
+  const caughtRef = useRef<{ id: number; name: string; isNew: boolean; shiny: boolean } | null>(null);
   const startedRef = useRef(false);
   const battleEndedRef = useRef(false);
   // server-first-refactor P3 — set once startSoloBattle resolves; every
@@ -494,6 +498,7 @@ function BattleMode({
     setPhase("question");
     setTimer(TIMER_BASE + bonusTime);
     questionStart.current = Date.now();
+    if (battleStartRef.current === null) battleStartRef.current = questionStart.current;
     // scope reveal
     if (scopeRevealedThisBattle) {
       const wrongs = [0, 1, 2, 3].filter((i) => i !== data.correct);
@@ -1130,6 +1135,7 @@ function BattleMode({
     setCoinsEarned(adjustedCoins);
     setTpEarned(tpAward);
     setResultWon(won);
+    durationMsRef.current = battleStartRef.current ? Date.now() - battleStartRef.current : 0;
     if (tpAward > 0) useGameStore.getState().addTrainingPoints(player.id, tpAward);
     if (adjustedCoins > 0) useGameStore.getState().addCoins(adjustedCoins);
 
@@ -1140,6 +1146,12 @@ function BattleMode({
 
     // Pokédex capture on win
     if (won) {
+      caughtRef.current = {
+        id: enemy.pokemon.id,
+        name: enemy.pokemon.name,
+        isNew: !useGameStore.getState().pokedex[enemy.pokemon.id]?.caught,
+        shiny: enemy.isShiny,
+      };
       recordPokedexCapture(enemy.pokemon.id, enemy.isShiny);
       if (!isWeekly && !isElite) useGameStore.getState().consumeGuaranteedShiny();
     }
@@ -1291,7 +1303,8 @@ function BattleMode({
       setTimeout(() => playSfx("reward"), 950);
       if (xpAward > 0) setTimeout(() => playSfx("xp"), 1150);
       if (newTrophiesRef.current.length) setTimeout(() => playSfx("claim_reward"), 1500);
-      toast.success(`Victory! +${xpAward} XP`, { duration: 2500 });
+      // No "Victory! +N XP" toast: the victory screen's tiles say it (Figma 4.1,
+      // one pop-up at a time).
     } else {
       setTimeout(() => playSfx("disappointed"), 450);
       toast.error(`Defeat — +${xpAward} XP`, { duration: 2500 });
@@ -1413,6 +1426,8 @@ function BattleMode({
               : undefined
           }
           missed={missedRef.current}
+          durationMs={durationMsRef.current}
+          caught={caughtRef.current ?? undefined}
           onRebattle={() => onExit()}
           onBackHome={() => onExit()}
           onRematch={onRematch}

@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { motion, type TargetAndTransition } from "framer-motion";
-import { Share2 } from "lucide-react";
+import { RotateCcw, Share2 } from "lucide-react";
+import { NaRewardIcon } from "@/components/na/reward-icon";
+import { toast } from "sonner";
+import { NaButton } from "@/components/na/button";
+import { NaSheet } from "@/components/na/sheet";
+import { NaCatchCard, NaGlassRow, NaRewardTile, VictoryHero } from "@/components/na/celebration";
+import { SaveProgressSheet } from "@/components/save-progress-sheet";
+import { enablePushNotifications, getPushSubscriptionState, pushSupported } from "@/lib/push";
 import { AppIcon } from "@/components/app-icon";
 import { PokemonSprite, SpriteBurst } from "@/components/game-ui";
 import { FallingBits } from "@/components/falling-bits";
@@ -269,6 +276,8 @@ export function ResultScreen({
   newTrophies: _newTrophies,
   badgeEarned,
   missed,
+  durationMs,
+  caught,
   onRebattle,
   onBackHome,
   onRematch,
@@ -303,6 +312,10 @@ export function ResultScreen({
    */
   badgeEarned?: { name: string; iconUrl: string };
   missed: Array<{ question: string; correctAnswer: string; explanation: string }>;
+  /** First question to the end, for the Time tile. */
+  durationMs?: number;
+  /** The Pokémon this win caught (every win does), for the catch card. */
+  caught?: { id: number; name: string; isNew: boolean; shiny: boolean };
   onRebattle: () => void;
   onBackHome: () => void;
   onRematch?: () => void;
@@ -335,142 +348,164 @@ export function ResultScreen({
   // outcomes; on a win nothing is attached to the ref and it does nothing.
   const fit = useFitMissedCount(missed.length);
 
+  // 1.5/1.6: a guest is asked to save a trainer name after every win until they
+  // do (owner ruling 2026-11-26); the sheet rises once the rewards have landed.
+  const isGuest = useGameStore((s) => s.isGuest);
+  // "Your first Pokédex entry!" (1.5): this win's catch is the only one so far.
+  const firstCatch = useGameStore((s) => Object.values(s.pokedex).filter((e) => e?.caught).length <= 1);
+  const [saveOpen, setSaveOpen] = useState(false);
+  useEffect(() => {
+    if (!won || !isGuest) return;
+    const t = window.setTimeout(() => setSaveOpen(true), 1400);
+    return () => window.clearTimeout(t);
+  }, [won, isGuest]);
+  const [mistakesOpen, setMistakesOpen] = useState(false);
+
+  // 4.1 Tomorrow row: only when reminders can be turned on here and are not yet.
+  const [canRemind, setCanRemind] = useState(false);
+  useEffect(() => {
+    if (!won || !pushSupported()) return;
+    let live = true;
+    void getPushSubscriptionState().then((s) => live && setCanRemind(!s.subscribed));
+    return () => {
+      live = false;
+    };
+  }, [won]);
+  async function remindMe() {
+    const res = await enablePushNotifications();
+    if (res.ok) {
+      setCanRemind(false);
+      toast.success("You're set — we'll tell you when something's ready.");
+    }
+  }
+
   if (won) {
+    const accuracy = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
+    const secs = Math.max(0, Math.round((durationMs ?? 0) / 1000));
+    const time = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`;
     return (
+      // Figma 4.1 Victory (and 1.5 First win): thunder, then the rewards, then
+      // what is next. One screen, no level bar: goals live on Home and Profile.
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="relative flex h-full w-full flex-col overflow-y-auto bg-victory screen-x screen-top screen-bottom"
+        className="relative flex h-full w-full flex-col items-center gap-3 overflow-y-auto px-4 pt-12 screen-top screen-bottom"
       >
-        <FallingBits won />
-
-        <div className="relative z-10 flex flex-col items-center text-center">
-          {/* The artwork carries "BATTLE WON" and "VICTORY!" itself, so it
-              replaces the eyebrow AND the heading rather than sitting above
-              them. The alt text is what a screen reader gets instead. */}
-          <OutcomeWordmark
-            src={RESULT_ICON.victory}
-            alt="Battle won — Victory!"
-            pad={RESULT_ART.victory}
-            eyebrow="★ Battle Won ★"
-            heading="Victory!"
-            eyebrowClass="text-primary"
-            headingClass="text-foreground"
-          />
-          <p className="mt-2 text-sm text-foreground/70">
-            {opponentName} defeated · {correctCount}/{totalQuestions} correct
-          </p>
-
-          <div className="mt-1">
-            <PartnerStage
-              partnerId={partnerId}
-              partnerName={partnerName}
-              won
-              animate={{ y: [0, -8, 0] }}
-            />
-          </div>
+        <VictoryHero />
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <span className="na-body-strong text-text-secondary">
+            You beat {opponentName} · {correctCount} of {totalQuestions} right
+          </span>
+          {missed.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setMistakesOpen(true)}
+              className="na-label flex items-center gap-1 rounded-full bg-white/[0.12] px-2.5 py-1 text-foreground"
+            >
+              <RotateCcw className="h-3.5 w-3.5 text-reward-gold" aria-hidden />
+              {missed.length} {missed.length === 1 ? "mistake" : "mistakes"}
+            </button>
+          )}
         </div>
 
-        <div className="relative z-10 mx-auto mt-4 w-full max-w-sm rounded-3xl border-2 border-white bg-card p-4 shadow-card">
-          {xpEarned > 0 && (
-            <Row
-              icon={REWARD_ICON.xp}
-              label="XP earned"
-              value={`+${xpEarned}`}
-              valueClass="text-primary"
-            />
-          )}
+        <div className="flex gap-[9px]">
+          <NaRewardTile
+            tone="xp"
+            label="Total XP"
+            value={`+${xpEarned}`}
+            icon={<NaRewardIcon kind="XP" size={30} />}
+          />
+          <NaRewardTile tone="success" label="Accuracy" value={`${accuracy}%`} icon={<NaRewardIcon kind="Accuracy" size={30} />} />
+          <NaRewardTile tone="info" label="Time" value={time} icon={<NaRewardIcon kind="Time" size={30} />} />
+        </div>
+
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
           {coinsEarned > 0 && (
-            <Row
-              icon={COIN_ICON}
-              label="Coins earned"
-              value={`+${coinsEarned}`}
-              valueClass="text-poke-yellow"
-            />
-          )}
-          <Row
-            icon={TP_ICON}
-            label={`${partnerName} TP`}
-            value={`+${tpEarned}`}
-            valueClass="text-poke-blue"
-          />
-          {speedBonus > 0 && (
-            <Row
-              label={
-                <>
-                  Speed bonus{" "}
-                  <span className="font-pixel text-[9px] text-hp-good">UNDER 5S AVG</span>
-                </>
-              }
-              value={`+${speedBonus}`}
-              valueClass="text-hp-good"
-            />
-          )}
-          {badgeEarned && <BadgeRow badge={badgeEarned} />}
-          <div className="my-3 border-t border-dashed border-foreground/15" />
-          <div className="flex items-center gap-2">
-            <span className="font-pixel-xs text-foreground/70">
-              Lv {currentLevel} · {Math.round(levelProgressPct)}%
+            <span className="na-body-strong flex items-center gap-1.5 text-foreground">
+              <NaRewardIcon kind="Coin" size={24} /> +{coinsEarned} coins
             </span>
-            <div className="h-2 flex-1 overflow-hidden rounded-full bg-foreground/15">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-poke-yellow via-primary to-destructive transition-[width] duration-700"
-                style={{ width: `${levelProgressPct}%` }}
-              />
-            </div>
-            <span className="font-pixel-xs text-foreground/70">Lv {currentLevel + 1}</span>
-          </div>
+          )}
+          {tpEarned > 0 && (
+            <span className="na-body-strong flex items-center gap-1.5 text-foreground">
+              <NaRewardIcon kind="TP" size={24} /> +{tpEarned} Training Points
+            </span>
+          )}
+          {speedBonus > 0 && (
+            <span className="na-body-strong text-success">+{speedBonus} speed bonus</span>
+          )}
         </div>
 
-        {/* `pb-*` on the block, not only on the scroll container. A flex column
-          that scrolls does NOT reliably honour its own padding-bottom past the
-          overflow point, so with a long missed-answers list the last button
-          ran off the bottom of the screen (owner report 2026-08-01). Spacing
-          the last child from the inside always survives. */}
-        <div className="btn-stack relative z-10 mx-auto mt-auto w-full max-w-sm screen-bottom pt-5">
-          {/* Next Battle starts the next one on the spot when the caller gives us
-              a way to (owner request 2026-07-26 — keep the player battling
-              instead of dropping them on the hub). Modes with nothing to start
-              again — the daily and the weekly league are one attempt each — set
-              hideRematch, because falling back to onRebattle() left a button
-              labelled "Next Battle" that quietly just left the battle. */}
-          {!hideRematch && (
-            <Button
-              size="action"
-              onClick={() => (onRematch ? onRematch() : onRebattle())}
-              className="w-full bg-primary text-primary-foreground shadow-pop"
-            >
-              Next Battle
-            </Button>
-          )}
-          {canShare && onShare && (
-            <Button
-              size="action"
-              variant="outline"
-              onClick={onShare}
-              className="w-full border-2 border-foreground/15 bg-card text-foreground hover:bg-card/80"
-            >
-              <span className="flex items-center gap-2">
-                <Share2 className="h-5 w-5" aria-hidden />
-                Share result
+        {badgeEarned && <BadgeRow badge={badgeEarned} />}
+
+        {caught && (
+          <NaCatchCard
+            sprite={<PokemonSprite id={caught.id} shiny={caught.shiny} alt={caught.name} className="sprite h-[96px] w-[96px] scale-[1.35]" />}
+            title={`You caught ${caught.name}!`}
+            isNew={caught.isNew}
+            sub={caught.isNew ? (firstCatch ? "Your first Pokédex entry!" : "New Pokédex entry!") : `${caught.name} is in your Pokédex.`}
+          />
+        )}
+
+        {isGuest ? (
+          <NaGlassRow
+            tone="gold"
+            lead={<NaRewardIcon kind="Trophy" size={40} />}
+            title="Save your progress"
+            sub="Choose a trainer name to keep your Pokémon and progress safe!"
+            onClick={() => setSaveOpen(true)}
+            trailing={
+              <span className="na-btn na-btn-m na-btn-gold pointer-events-none" aria-hidden>
+                Save
               </span>
-            </Button>
+            }
+          />
+        ) : (
+          canRemind && (
+            <NaGlassRow
+              lead={<NaRewardIcon kind="Gift" size={36} />}
+              title="Tomorrow"
+              sub="Your next Daily Quest and daily gift are waiting!"
+              trailing={
+                <NaButton kind="secondary" size="M" onClick={() => void remindMe()}>
+                  Remind me
+                </NaButton>
+              }
+            />
+          )
+        )}
+
+        <div className="min-h-2 flex-1" />
+        {/* Next battle starts the next one on the spot when the caller gives us
+            a way to (owner request 2026-07-26). One-attempt modes (Daily, the
+            Weekly League) set hideRematch rather than a button that only left. */}
+        {!hideRematch && (
+          <NaButton block onClick={() => (onRematch ? onRematch() : onRebattle())}>
+            Next battle
+          </NaButton>
+        )}
+        <div className="flex w-full gap-2.5 pb-1">
+          {canShare && onShare && (
+            <NaButton kind="secondary" size="M" className="flex-1" onClick={onShare}>
+              <Share2 className="h-5 w-5" aria-hidden /> Share
+            </NaButton>
           )}
-          {/* The way out, now that the primary button no longer is one. Mirrors
-              the defeat screen's own "Back home". */}
-          <Button
-            size="action"
-            variant="outline"
-            onClick={onBackHome}
-            className="w-full border-2 border-foreground/15 bg-card text-foreground hover:bg-card/80"
-          >
-            Back home
-          </Button>
+          <NaButton kind={hideRematch ? "primary" : "text"} size={hideRematch ? "L" : "M"} className="flex-1" onClick={onBackHome}>
+            Home
+          </NaButton>
         </div>
+
+        <SaveProgressSheet open={saveOpen} onOpenChange={setSaveOpen} />
+        <NaSheet
+          open={mistakesOpen}
+          onOpenChange={setMistakesOpen}
+          title="Learn from the mistake"
+          primary={{ label: "Got it", onClick: () => setMistakesOpen(false) }}
+        >
+          <MissedReview missed={missed} />
+        </NaSheet>
       </motion.div>
     );
   }
-
   // DEFEAT
   return (
     <motion.div

@@ -142,7 +142,7 @@ function StatTile({
 }) {
   return (
     <div
-      className="flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl bg-white/70 py-2"
+      className="flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl bg-white/[0.08] py-2"
       aria-label={`${label}: ${value}`}
     >
       {icon}
@@ -227,7 +227,7 @@ export function DexCompletionCard({ gen }: { gen: number }) {
   };
 
   const faceCls =
-    "press-card flex h-full w-full items-center gap-1.5 rounded-2xl border-2 border-white p-2 text-left shadow-card";
+    "press-card flex h-full w-full items-center gap-1.5 rounded-2xl border-2 border-white/20 p-2 text-left shadow-card";
 
   return (
     <div className="flip-card h-[96px] w-full">

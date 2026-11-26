@@ -336,17 +336,20 @@ export const useGameStore = create<GameState>()(
         set({ seenCuratedIds: merged.slice(-MAX_SEEN_CURATED) });
       },
 
-      startGuestSession: () => {
-        // Guests get a non-legendary, base-stage starter that can still evolve
-        // (feedback 96098111 + d4e7dcc3): legendaries/mythicals are Poké-Egg
-        // exclusive, and a base-stage Pokémon with an evolution ahead of it lets
-        // the guest experience levelling up and evolving. Falls back to any
-        // non-legendary if the strict pool were ever empty. Plus a random
+      startGuestSession: (partner, abilityId) => {
+        // The first session plays before it asks for a name (Figma flow "First
+        // session"): the player picks a partner, battles as a guest, and saves a
+        // name after the first win. With no partner given (the old "Play as
+        // Guest"), guests get a non-legendary, base-stage starter that can still
+        // evolve (feedback 96098111 + d4e7dcc3): legendaries/mythicals are
+        // Poké-Egg exclusive, and a base-stage Pokémon with an evolution ahead of
+        // it lets the guest experience levelling up and evolving. Falls back to
+        // any non-legendary if the strict pool were ever empty. Plus a random
         // trainer name, not a Pokémon name.
         const nonLegendary = ALL_POKEMON.filter((p) => !isLegendaryOrMythical(p.id));
         const guestPool = nonLegendary.filter((p) => isStartingPartner(p) && canEvolve(p));
         const pool = guestPool.length > 0 ? guestPool : nonLegendary;
-        const poke = pool[Math.floor(Math.random() * pool.length)];
+        const poke = partner ?? pool[Math.floor(Math.random() * pool.length)];
         const trainer = TRAINER_SPRITES[Math.floor(Math.random() * TRAINER_SPRITES.length)];
         set({
           hasOnboarded: true,
@@ -355,7 +358,7 @@ export const useGameStore = create<GameState>()(
           engageShownThisSession: true,
           trainerName: randomGuestName(),
           pokemon: poke,
-          abilityId: rollAbilityId(poke.types),
+          abilityId: abilityId ?? rollAbilityId(poke.types),
           pokedex: {
             ...get().pokedex,
             [poke.id]: {
@@ -756,6 +759,9 @@ export const useGameStore = create<GameState>()(
         // Sync bookkeeping: not part of "the save" itself, but must survive
         // reloads so store-sync.ts knows the right baseVersion to push next.
         serverSaveVersion: s.serverSaveVersion,
+        // Local only: a guest stays a guest across reloads, so the win screen
+        // keeps asking them to save (Figma 1.5/1.6). Old saves merge as false.
+        isGuest: s.isGuest,
       }),
 
       merge: (persisted, current) => {

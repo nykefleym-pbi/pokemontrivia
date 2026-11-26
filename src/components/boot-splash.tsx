@@ -47,7 +47,7 @@ const LOADING_MS = 5000;
 /** The bar finishes slightly early, leaving a beat of full bar before handoff. */
 const BAR_MS = 4400;
 /** The app's status-bar tint. Must match the fallback in __root.tsx's script. */
-const APP_THEME_COLOR = "#dc2626";
+const APP_THEME_COLOR = "#0B1026"; // Night Arena night/base
 
 /**
  * The field the artwork lands on. Must stay in step with `background_color` in

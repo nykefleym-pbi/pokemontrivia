@@ -168,7 +168,7 @@ export const Route = createRootRoute({
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Press+Start+2P&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Lilita+One&family=Outfit:wght@400;500;600;700;800&family=Press+Start+2P&display=swap",
       },
     ],
   }),
@@ -227,7 +227,9 @@ const JSON_LD = {
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    // Night Arena is the one look (owner ruling 2026-11-26: dark only), so `dark`
+    // is on the server-rendered <html> rather than decided from storage.
+    <html lang="en" className="dark">
       <head>
         <HeadContent />
         <script
@@ -239,7 +241,6 @@ function RootShell({ children }: { children: React.ReactNode }) {
             directly: the store rehydrates after React mounts, by which point a
             new player would already have seen a loading screen meant for someone
             with a trainer.
-              `dark`        — the theme.
               `has-trainer` — gates the boot loading screen, which only applies to
                               players who already have one. Onboarding sets
                               hasOnboarded, and so does "Play as Guest", so the
@@ -254,7 +255,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
                               loading screen retires. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var s=JSON.parse(localStorage.getItem('poke-trivia-store')||'{}');var d=document.documentElement;var b=!!(s&&s.state&&s.state.hasOnboarded);if(s&&s.state&&s.state.darkMode)d.classList.add('dark');if(b)d.classList.add('has-trainer');var m=document.createElement('meta');m.name='theme-color';m.content=b?'#000000':'#dc2626';document.head.appendChild(m);}catch(e){}`,
+            __html: `try{var s=JSON.parse(localStorage.getItem('poke-trivia-store')||'{}');var d=document.documentElement;var b=!!(s&&s.state&&s.state.hasOnboarded);if(b)d.classList.add('has-trainer');var m=document.createElement('meta');m.name='theme-color';m.content=b?'#000000':'#0B1026';document.head.appendChild(m);}catch(e){}`,
           }}
         />
       </head>
@@ -279,13 +280,6 @@ function RootComponent() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const framed = mounted && !isMobile && !isStandalone();
-
-  const darkMode = useGameStore((s) => s.darkMode);
-  useEffect(() => {
-    const root = document.documentElement;
-    if (darkMode) root.classList.add("dark");
-    else root.classList.remove("dark");
-  }, [darkMode]);
 
   const reducedMotion = useGameStore((s) => s.reducedMotion);
   useEffect(() => {
@@ -369,7 +363,7 @@ function RootComponent() {
             className={
               framed
                 ? "phone-frame"
-                : "mx-auto flex h-[100dvh] w-full max-w-[480px] flex-col overflow-hidden bg-background"
+                : "na-bg-night mx-auto flex h-[100dvh] w-full max-w-[480px] flex-col overflow-hidden"
             }
           >
             {framed && <div className="phone-statusbar" aria-hidden />}

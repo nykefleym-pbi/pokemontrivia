@@ -336,10 +336,10 @@ function ShopPage() {
               <AppIcon src={UI_ICON.dailyGift} className="h-12 w-12" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="font-pixel-xs uppercase text-foreground/70">
+              <div className="font-pixel-xs uppercase text-on-gold/70">
                 Daily Gift · Day {giftNextDay}
               </div>
-              <div className="text-lg font-extrabold leading-tight text-foreground">
+              <div className="text-lg font-extrabold leading-tight text-on-gold">
                 Tap to open your free item!
               </div>
               <div className="mt-2.5 flex items-center gap-1.5">
@@ -350,7 +350,7 @@ function ShopPage() {
                   return (
                     <div
                       key={day}
-                      className={`flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold ${filled ? "bg-primary text-white" : active ? "bg-white text-primary ring-2 ring-primary" : "bg-black/10 text-foreground/40"}`}
+                      className={`flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold ${filled ? "bg-primary text-white" : active ? "bg-white text-primary ring-2 ring-primary" : "bg-black/10 text-on-gold/50"}`}
                     >
                       {day === 7 ? "★" : day}
                     </div>
@@ -546,12 +546,12 @@ function ShopPage() {
                   transition={{ delay: Math.min(i, 12) * 0.03 }}
                   onClick={() => setConfirmState({ item, cost: priceOf(item.cost) })}
                   className={`relative flex flex-col items-center rounded-2xl border-2 p-2 pt-2.5 text-center shadow-card press ${
-                    item.premium ? "border-poke-yellow" : "border-white"
+                    item.premium ? "border-poke-yellow" : "border-white/15"
                   }`}
                   style={{
-                    // Tint at the top fading to white, so the sprite sits on
-                    // colour and the text below sits on paper.
-                    background: `linear-gradient(180deg, ${itemTileTint(item.id)} 0%, #fff 78%)`,
+                    // Tint at the top fading to the night card, so the sprite
+                    // sits on colour and the text below on the dark theme.
+                    background: `linear-gradient(180deg, ${itemTileTint(item.id)} 0%, var(--night-card) 62%)`,
                   }}
                 >
                   {/* Premium is the gold rim, not a badge. The star sat in the
@@ -563,20 +563,20 @@ function ShopPage() {
                   <div className="mt-1.5 line-clamp-2 text-[11px] font-extrabold leading-tight text-foreground">
                     {item.name}
                   </div>
-                  <div className="mt-0.5 line-clamp-2 text-[9px] leading-tight text-foreground/55">
+                  <div className="mt-0.5 line-clamp-2 text-[9px] leading-tight text-text-secondary">
                     {item.desc}
                   </div>
                   {/* Owned always renders, even at zero. It used to appear only
                       when held, which moved the price up and down between tiles
                       in the same row and left the two colliding. */}
-                  <span className="mb-1.5 mt-2 rounded-full bg-black/[0.07] px-2 py-0.5 font-pixel-xs text-[8px] leading-none text-foreground/60">
+                  <span className="mb-1.5 mt-2 rounded-full bg-white/10 px-2 py-0.5 font-pixel-xs text-[8px] leading-none text-text-secondary">
                     OWNED ×{owned}
                   </span>
                   <span
                     className={`mt-auto flex w-full items-center justify-center gap-1 rounded-full px-1 py-1.5 text-[11px] font-extrabold ${
                       canAfford
-                        ? "bg-white text-foreground shadow-sm"
-                        : "bg-black/10 text-foreground/40"
+                        ? "bg-white/15 text-foreground shadow-sm"
+                        : "bg-black/25 text-text-muted"
                     }`}
                   >
                     <AppIcon src={COIN_ICON} alt="" className="h-3.5 w-3.5" />

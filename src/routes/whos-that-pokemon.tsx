@@ -366,7 +366,7 @@ export function WhosThatPokemon() {
   if (loadError) {
     return (
       <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-poke-cream px-5 text-center">
-        <div className="font-pixel text-[10px] text-poke-dark/60">
+        <div className="font-pixel text-[10px] text-text-secondary">
           Couldn&apos;t load — check your connection.
         </div>
         <div className="btn-stack w-full max-w-[260px]">
@@ -596,7 +596,7 @@ export function WhosThatPokemon() {
             </div>
           ) : dexEntry.flavor === "" ? (
             <div className="py-12 text-center">
-              <div className="font-pixel text-[10px] text-poke-dark/60">
+              <div className="font-pixel text-[10px] text-text-secondary">
                 Couldn't load the entry.
               </div>
               <button
@@ -644,8 +644,8 @@ export function WhosThatPokemon() {
 
       {round.mode === "1B" && (
         <div className="mt-5 flex flex-1 flex-col">
-          <div className="text-center text-xl font-extrabold text-poke-dark">What type is it?</div>
-          <div className="mt-0.5 text-center text-sm text-poke-dark/55">Pick 1 or 2 types.</div>
+          <div className="text-center text-xl font-extrabold text-foreground">What type is it?</div>
+          <div className="mt-0.5 text-center text-sm text-text-secondary">Choose 1 or 2 types.</div>
           <div className="mt-3 grid grid-cols-3 gap-2">
             {TYPES.map((t) => (
               <TypeChip

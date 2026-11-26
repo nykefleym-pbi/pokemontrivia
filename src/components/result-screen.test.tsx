@@ -76,7 +76,7 @@ function setup(overrides: Partial<Parameters<typeof ResultScreen>[0]> = {}) {
 describe("ResultScreen — victory", () => {
   it("starts the next battle from Next Battle rather than leaving the battle", () => {
     const { onRematch, onRebattle, onBackHome } = setup();
-    fireEvent.click(screen.getByRole("button", { name: "Next Battle" }));
+    fireEvent.click(screen.getByRole("button", { name: "Next battle" }));
     expect(onRematch).toHaveBeenCalledTimes(1);
     expect(onRebattle).not.toHaveBeenCalled();
     expect(onBackHome).not.toHaveBeenCalled();
@@ -84,13 +84,13 @@ describe("ResultScreen — victory", () => {
 
   it("falls back to leaving for a mode with nothing to restart (daily, weekly)", () => {
     const { onRebattle } = setup({ onRematch: undefined });
-    fireEvent.click(screen.getByRole("button", { name: "Next Battle" }));
+    fireEvent.click(screen.getByRole("button", { name: "Next battle" }));
     expect(onRebattle).toHaveBeenCalledTimes(1);
   });
 
   it("offers a way home, and it goes home", () => {
     const { onBackHome, onRematch } = setup();
-    fireEvent.click(screen.getByRole("button", { name: "Back home" }));
+    fireEvent.click(screen.getByRole("button", { name: "Home" }));
     expect(onBackHome).toHaveBeenCalledTimes(1);
     expect(onRematch).not.toHaveBeenCalled();
   });
@@ -98,10 +98,10 @@ describe("ResultScreen — victory", () => {
   it("keeps Share result available alongside both", () => {
     const onShare = vi.fn();
     setup({ canShare: true, onShare });
-    fireEvent.click(screen.getByRole("button", { name: /Share result/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^Share$/ }));
     expect(onShare).toHaveBeenCalledTimes(1);
-    expect(screen.getByRole("button", { name: "Next Battle" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Back home" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Next battle" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Home" })).toBeTruthy();
   });
 });
 
@@ -122,10 +122,10 @@ describe("ResultScreen — defeat", () => {
 });
 
 describe("ResultScreen — one-attempt modes (hideRematch)", () => {
-  it("victory: no rematch button, but Back home still gets you out", () => {
+  it("victory: no rematch button, but Home still gets you out", () => {
     setup({ won: true, hideRematch: true });
     expect(screen.queryByRole("button", { name: /next battle/i })).toBeNull();
-    expect(screen.getByRole("button", { name: /back home/i })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /^home$/i })).toBeTruthy();
   });
 
   it("defeat: no rematch button, but Back home still gets you out", () => {

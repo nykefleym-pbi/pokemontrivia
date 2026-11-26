@@ -102,7 +102,7 @@ export function WhosThatFled({
         />
       </div>
 
-      <p className="mt-3 shrink-0 text-lg leading-snug text-poke-dark">
+      <p className="mt-3 shrink-0 text-lg leading-snug text-foreground">
         {reason === "timeout" ? (
           <>
             You <span className="font-extrabold text-primary">weren&rsquo;t able to guess</span> it
