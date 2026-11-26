@@ -174,8 +174,8 @@
   --sidebar-border: oklch(0.9 0.02 250);
   --sidebar-ring: oklch(0.62 0.22 25);
 
-  --bottom-nav-height: 4.5rem;
-  --bottom-nav-total: calc(4.5rem + env(safe-area-inset-bottom) + 0.75rem);
+  --bottom-nav-height: 4rem;
+  --bottom-nav-total: calc(4rem + env(safe-area-inset-bottom) + 0.75rem);
 
   /* Brand palette (exact hex — used by mega/battle UI; single source of truth) */
   --brand-gold: #f2d64e;
@@ -391,7 +391,7 @@
 @utility na-body { font-family: var(--font-display); font-size: 15px; line-height: 21px; font-weight: 400; }
 @utility na-body-strong { font-family: var(--font-display); font-size: 15px; line-height: 21px; font-weight: 600; }
 @utility na-caption { font-family: var(--font-display); font-size: 13px; line-height: 18px; font-weight: 500; }
-@utility na-label { font-family: var(--font-display); font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+@utility na-label { font-family: var(--font-display); font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.04em; }
 /* Text/Emboss: the hard drop under white type on red and on art. */
 @utility na-emboss { text-shadow: 0 2px 0 rgb(0 0 0 / 0.45); }
 

@@ -151,7 +151,7 @@ export function SaveProgressSheet({
       footnote="No worries! You can keep battling without saving for now."
     >
       <label className="flex flex-col gap-1.5">
-        <span className="na-label text-text-secondary">Trainer name</span>
+        <span className="na-label uppercase text-text-secondary">Trainer name</span>
         <span
           className={`flex h-[54px] items-center gap-2 rounded-[14px] border-2 bg-night-deep/60 px-3.5 ${
             good ? "border-success" : bad ? "border-danger" : "border-white/[0.16]"
@@ -178,7 +178,7 @@ export function SaveProgressSheet({
         )}
       </label>
 
-      <span className="na-label text-text-secondary">Choose your look</span>
+      <span className="na-label uppercase text-text-secondary">Choose your look</span>
       <div className="flex flex-wrap gap-3">
         {looks.map((t) => {
           const on = t.id === sprite;

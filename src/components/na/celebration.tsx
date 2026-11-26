@@ -156,7 +156,7 @@ export function NaRewardTile({
   const t = TILE[tone];
   return (
     <div className="flex w-[108px] flex-col items-center rounded-2xl p-0.5" style={{ background: t.bg }}>
-      <div className="na-label py-[5px] text-[#0b1026]">{label}</div>
+      <div className="na-label uppercase py-[5px] text-[#0b1026]">{label}</div>
       <div className="flex w-full flex-col items-center gap-1 rounded-[14px] bg-night-raised px-2 py-2.5">
         <span className="flex h-[30px] items-center justify-center" style={{ color: t.fg }}>
           {icon}
@@ -186,7 +186,7 @@ export function NaCatchCard({
     <div className="na-glow-gold flex w-full items-center gap-3 rounded-[18px] border-[1.5px] border-reward-gold bg-night-deep/60 py-3 pl-0 pr-3">
       <div className="-ml-2 flex h-[84px] w-[96px] shrink-0 items-center justify-center overflow-visible">{sprite}</div>
       <div className="flex min-w-0 flex-col items-start gap-1">
-        {isNew && <span className="na-fill-gold na-label rounded-md px-[5px] py-px text-on-gold">New</span>}
+        {isNew && <span className="na-fill-gold na-label uppercase rounded-md px-[5px] py-px text-on-gold">New</span>}
         <span className="na-headline text-foreground">{title}</span>
         <span className="na-caption text-text-secondary">{sub}</span>
       </div>

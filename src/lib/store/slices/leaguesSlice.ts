@@ -1,7 +1,7 @@
 import type { GameState, WeeklyLeagueAttempt } from "@/lib/store/types";
 import type { StoreSlice } from "@/lib/store/slice";
 import { getWeekRangeUtc } from "@/lib/game-data";
-import { pickRandomGymLeader } from "@/lib/gym-leaders";
+import { ROUTE_START, nextRoute, routeGym, stopsLeft } from "@/lib/route";
 
 export const createLeaguesSlice: StoreSlice<
   Pick<
@@ -9,6 +9,8 @@ export const createLeaguesSlice: StoreSlice<
     | "weeklyLeague"
     | "weeklyLeagueHistory"
     | "gymBadges"
+    | "route"
+    | "recordRouteStopWin"
     | "trainingPoints"
     | "trainingPointsSpent"
     | "initWeeklyLeague"
@@ -25,11 +27,18 @@ export const createLeaguesSlice: StoreSlice<
   trainingPoints: {},
   trainingPointsSpent: {},
 
+  route: ROUTE_START,
+
   initWeeklyLeague: () => {
     const s = get();
     const { start: weekStartTs } = getWeekRangeUtc();
-    if (s.weeklyLeague && s.weeklyLeague.weekStartTs === weekStartTs) return;
-    const leader = pickRandomGymLeader(s.gymBadges);
+    // This week's gym is the one at the end of the player's route. A week drawn
+    // before the route existed (a random leader) is swapped while still untried;
+    // a week already played keeps its result.
+    const leader = routeGym(s.route);
+    if (s.weeklyLeague && s.weeklyLeague.weekStartTs === weekStartTs) {
+      if (s.weeklyLeague.status !== "not_started" || s.weeklyLeague.gymLeaderId === leader.id) return;
+    }
     set({
       weeklyLeague: {
         weekStartTs,
@@ -69,11 +78,20 @@ export const createLeaguesSlice: StoreSlice<
     if (won && !s.gymBadges.includes(s.weeklyLeague.gymLeaderId)) {
       newBadges = [...s.gymBadges, s.weeklyLeague.gymLeaderId];
     }
+    // Winning the route's gym opens the next route straight away; its gym can
+    // be challenged from next week's Weekly League.
+    const routeWon = won && s.weeklyLeague.gymLeaderId === routeGym(s.route).id;
     set({
       weeklyLeague: { ...s.weeklyLeague, status: won ? "won" : "lost" },
       gymBadges: newBadges,
       weeklyLeagueHistory: newHistory,
+      ...(routeWon ? { route: nextRoute(s.route) } : {}),
     });
+  },
+
+  recordRouteStopWin: () => {
+    const r = get().route;
+    if (stopsLeft(r) > 0) set({ route: { ...r, beaten: r.beaten + 1 } });
   },
 
   addTrainingPoints: (pokemonId, amount) => {

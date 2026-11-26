@@ -46,6 +46,22 @@ import { preloadAppAssets } from "@/lib/preload-assets";
 const LOADING_MS = 5000;
 /** The bar finishes slightly early, leaving a beat of full bar before handoff. */
 const BAR_MS = 4400;
+/** Later opens the same day move on once the app is up (Figma 2.1, owner ruling 2026-11-27). */
+const QUICK_LOADING_MS = 1200;
+const QUICK_BAR_MS = 1000;
+const BOOT_DAY_KEY = "poke-trivia-boot-day";
+
+/** The full 5 s only on the first open of the day. Storage failing means a full one. */
+function bootTimings(): { loading: number; bar: number } {
+  const today = new Date().toISOString().slice(0, 10);
+  try {
+    if (localStorage.getItem(BOOT_DAY_KEY) === today) return { loading: QUICK_LOADING_MS, bar: QUICK_BAR_MS };
+    localStorage.setItem(BOOT_DAY_KEY, today);
+  } catch {
+    /* private mode */
+  }
+  return { loading: LOADING_MS, bar: BAR_MS };
+}
 /** The app's status-bar tint. Must match the fallback in __root.tsx's script. */
 const APP_THEME_COLOR = "#0B1026"; // Night Arena night/base
 
@@ -139,7 +155,8 @@ export function BootSplash() {
     setBootSilence(true);
     setTip(randomTip());
 
-    const timers = buildProgressSteps(BAR_MS).map((step) =>
+    const t = bootTimings();
+    const timers = buildProgressSteps(t.bar).map((step) =>
       setTimeout(() => setProgress(step.to), step.at),
     );
     timers.push(
@@ -147,7 +164,7 @@ export function BootSplash() {
         setBootSilence(false);
         releaseStatusBarTint();
         setDone(true);
-      }, LOADING_MS),
+      }, t.loading),
     );
     // Still restore on unmount, so a teardown mid-sequence (a dev remount, a
     // route-level error boundary) cannot leave the app permanently silent.

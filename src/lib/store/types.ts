@@ -5,6 +5,7 @@ import type { PokeEntry } from "../pokemon-data";
 import type { AbilityId } from "../abilities";
 import type { LevelUpRewards } from "../level-rewards";
 import type { WhosThatRound } from "../whos-that";
+import type { RouteState } from "../route";
 
 export interface PlayerStats {
   battles: number;
@@ -138,6 +139,10 @@ export interface GameState {
   engageDismissCount: number;
   engageDismissDate: string | null;
   engageShownThisSession: boolean;
+  /** Pop-up queue (Figma 2.2), this app open only: which pop-up has shown, and
+   *  whether the install sheet has decided. One per open, install before the carousel. */
+  popupOwner: "install" | "carousel" | null;
+  installSettled: boolean;
   /** ISO date (YYYY-MM-DD) the Facebook promo card was last put in front of the
    *  player. The card is offered at most once per calendar day, so this is the
    *  whole gate — there is no separate "dismissed" flag, because dismissing it
@@ -315,6 +320,8 @@ export interface GameState {
   weeklyLeague: WeeklyLeagueState | null;
   gymBadges: string[];
   weeklyLeagueHistory: WeeklyLeagueAttempt[];
+  /** Where the player is on the Home route (lib/route.ts). Its gym is the Weekly League. */
+  route: RouteState;
 
   // preferences
   darkMode: boolean;
@@ -334,6 +341,9 @@ export interface GameState {
   setNameReconciled: (v: boolean) => void;
   setNeedsNameReclaim: (v: boolean) => void;
   setEngageShownThisSession: (v: boolean) => void;
+  /** Takes this open's one pop-up slot; false if another pop-up already has it. */
+  claimPopup: (kind: "install" | "carousel") => boolean;
+  settleInstall: () => void;
   setWhosThatRound: (round: WhosThatRound, hourKey: number) => void;
   clearWhosThatRound: () => void;
 
@@ -466,6 +476,8 @@ export interface GameState {
   initWeeklyLeague: () => void;
   startWeeklyLeagueAttempt: () => void;
   recordWeeklyLeagueResult: (won: boolean) => void;
+  /** A trainer stop on the route was beaten. */
+  recordRouteStopWin: () => void;
 
   // preferences actions
   setDarkMode: (v: boolean) => void;

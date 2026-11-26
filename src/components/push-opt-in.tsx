@@ -1,15 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { Bell, Share, SquarePlus } from "lucide-react";
+import { Share, SquarePlus } from "lucide-react";
 import { toast } from "sonner";
 import { useGameStore } from "@/lib/store";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { NaSheet } from "@/components/na/sheet";
 import { enablePushNotifications, getPushSubscriptionState, pushSupported } from "@/lib/push";
 import { shouldAskForPush, shouldOfferInstall } from "@/lib/push-opt-in";
 import {
@@ -44,12 +37,18 @@ export function PushOptIn() {
   const recordPushPrompt = useGameStore((s) => s.recordPushPrompt);
 
   const [subscribed, setSubscribed] = useState(true); // assume yes until we know
+  const [checked, setChecked] = useState(false);
   const [canInstall, setCanInstall] = useState(false);
   const [busyAction, setBusyAction] = useState(false);
   const [open, setOpen] = useState(false);
+  const claimPopup = useGameStore((s) => s.claimPopup);
+  const settleInstall = useGameStore((s) => s.settleInstall);
 
   useEffect(() => {
-    void getPushSubscriptionState().then((s) => setSubscribed(s.subscribed));
+    void getPushSubscriptionState().then((s) => {
+      setSubscribed(s.subscribed);
+      setChecked(true);
+    });
   }, []);
 
   useEffect(() => {
@@ -96,13 +95,17 @@ export function PushOptIn() {
   const mode: "install" | "push" | null = wantsInstall ? "install" : wantsPush ? "push" : null;
 
   useEffect(() => {
-    if (mode && !open) {
+    if (!checked) return;
+    // One pop-up per app open (Figma 2.2): this sheet goes before the
+    // "Ready to play?" carousel, which waits for this decision.
+    if (mode && !open && claimPopup("install")) {
       setOpen(true);
       track("push_prompt_shown", { source: "first-win", mode });
     }
+    settleInstall();
     // Only opens; closing is the player's or the handler's job.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode]);
+  }, [mode, checked]);
 
   const decline = useCallback(() => {
     // First no is recoverable, second is final.
@@ -149,63 +152,42 @@ export function PushOptIn() {
   }
 
   if (!mode) return null;
+  const iosInstall = mode === "install" && ios;
 
+  // Figma 2.2: the install sheet. The notification ask (not drawn) shares it.
   return (
-    <Dialog open={open} onOpenChange={(next) => (next ? setOpen(true) : decline())}>
-      <DialogContent className="sm:max-w-md rounded-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {mode === "install" ? (
-              <SquarePlus className="h-5 w-5 text-primary" />
-            ) : (
-              <Bell className="h-5 w-5 text-primary" />
-            )}
-            {mode === "install" ? "Keep it on your home screen" : "Want a nudge when it's ready?"}
-          </DialogTitle>
-          <DialogDescription>
-            {mode === "install"
-              ? ios
-                ? "Add the app to your home screen to play full-screen — and it's the only way iPhone will let us tell you when your egg hatches."
-                : "Add the app to your home screen so it opens full-screen, like a real app."
-              : "Your Daily Quest, your Poké Egg and the weekly gym leader all come back on a timer. We'll let you know when they do — nothing else."}
-          </DialogDescription>
-        </DialogHeader>
-
-        {mode === "install" && ios && (
-          <ol className="mt-1 space-y-2 text-sm text-foreground/80">
-            <li className="flex items-center gap-2">
-              <Share className="h-4 w-4 shrink-0 text-primary" />
-              Tap Share at the bottom of Safari
-            </li>
-            <li className="flex items-center gap-2">
-              <SquarePlus className="h-4 w-4 shrink-0 text-primary" />
-              Choose &ldquo;Add to Home Screen&rdquo;
-            </li>
-          </ol>
-        )}
-
-        <div className="mt-3 flex flex-col gap-2">
-          {!(mode === "install" && ios) && (
-            <Button
-              size="action"
-              onClick={() => void (mode === "install" ? acceptInstall() : acceptPush())}
-              disabled={busyAction}
-              className="w-full"
-            >
-              {busyAction ? "Just a sec…" : mode === "install" ? "Add to home screen" : "Notify me"}
-            </Button>
-          )}
-          <Button
-            size="action"
-            variant="ghost"
-            onClick={decline}
-            disabled={busyAction}
-            className="w-full text-foreground/60"
-          >
-            {mode === "install" && ios ? "Got it" : "Not now"}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+    <NaSheet
+      open={open}
+      onOpenChange={(next) => (next ? setOpen(true) : decline())}
+      title={mode === "install" ? "Add Pokémon Trivia Battle to your home screen" : "Want a nudge when it's ready?"}
+      body={
+        mode === "install"
+          ? "Jump into battles with just one tap!"
+          : "Your Daily Quest, your Poké Egg and the weekly gym leader all come back on a timer. We'll let you know when they do — nothing else."
+      }
+      primary={
+        iosInstall
+          ? { label: "Got it", onClick: decline }
+          : {
+              label: busyAction ? "Just a sec…" : mode === "install" ? "Show me" : "Notify me",
+              onClick: () => void (mode === "install" ? acceptInstall() : acceptPush()),
+              disabled: busyAction,
+            }
+      }
+      secondary={iosInstall ? undefined : { label: mode === "install" ? "Maybe Later" : "Not now", onClick: decline }}
+    >
+      {iosInstall && (
+        <ol className="na-glass flex flex-col gap-2.5 rounded-2xl p-3.5">
+          <li className="na-body flex items-center gap-2.5 text-foreground">
+            <Share className="h-5 w-5 shrink-0 text-reward-gold" />
+            Tap Share at the bottom of Safari
+          </li>
+          <li className="na-body flex items-center gap-2.5 text-foreground">
+            <SquarePlus className="h-5 w-5 shrink-0 text-reward-gold" />
+            Choose &ldquo;Add to Home Screen&rdquo;
+          </li>
+        </ol>
+      )}
+    </NaSheet>
   );
 }

@@ -17,6 +17,7 @@ import { clampStage } from "./pvp-combat";
 import { rollAbilityId } from "./abilities";
 import { ALL_POKEMON, rehydratePokemon, isStartingPartner, canEvolve } from "./pokemon-data";
 import { isLegendaryOrMythical } from "./legendary-data";
+import { ROUTE_START } from "./route";
 import { randomGuestName } from "./trainer-name";
 import { createMegaSlice } from "@/lib/store/slices/megaSlice";
 import { createWhosThatSlice } from "@/lib/store/slices/whosThatSlice";
@@ -116,6 +117,7 @@ export function buildSavePayload(s: GameState) {
     weeklyLeague: s.weeklyLeague,
     gymBadges: s.gymBadges,
     weeklyLeagueHistory: s.weeklyLeagueHistory,
+    route: s.route,
     darkMode: s.darkMode,
     reducedMotion: s.reducedMotion,
     friendCode: s.friendCode,
@@ -448,6 +450,7 @@ export const useGameStore = create<GameState>()(
           weeklyLeague: null,
           gymBadges: [],
           weeklyLeagueHistory: [],
+          route: ROUTE_START,
           claimedMegaRewards: [],
           pokeEggs: [],
         }),

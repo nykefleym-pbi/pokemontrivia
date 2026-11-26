@@ -46,3 +46,21 @@ export function currentWinStreak(log: readonly BattleLogEntry[]): number {
   }
   return streak;
 }
+
+/**
+ * The day streak on Home (Figma 2.3 / 2.6): days in a row with at least one
+ * battle won, like a Duolingo lesson a day. It stays alive through today until
+ * today is won: `secured` says today already counts.
+ * shortcut: reads the last 300 log entries; a longer streak undercounts.
+ */
+export function dayStreak(log: readonly BattleLogEntry[], now = Date.now()): { days: number; secured: boolean } {
+  const won = new Set<string>();
+  for (const e of log) {
+    if (e.won && (e.mode === undefined || BATTLE_MODES.has(e.mode))) won.add(new Date(e.timestamp).toISOString().slice(0, 10));
+  }
+  const day = (offset: number) => new Date(now - offset * 86_400_000).toISOString().slice(0, 10);
+  const secured = won.has(day(0));
+  let days = 0;
+  for (let i = secured ? 0 : 1; won.has(day(i)); i++) days++;
+  return { days, secured };
+}

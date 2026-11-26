@@ -400,7 +400,7 @@ export function ResultScreen({
             <button
               type="button"
               onClick={() => setMistakesOpen(true)}
-              className="na-label flex items-center gap-1 rounded-full bg-white/[0.12] px-2.5 py-1 text-foreground"
+              className="na-label uppercase flex items-center gap-1 rounded-full bg-white/[0.12] px-2.5 py-1 text-foreground"
             >
               <RotateCcw className="h-3.5 w-3.5 text-reward-gold" aria-hidden />
               {missed.length} {missed.length === 1 ? "mistake" : "mistakes"}

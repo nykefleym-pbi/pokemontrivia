@@ -66,6 +66,10 @@ export const createProfileSlice: StoreSlice<
     | "setNameReconciled"
     | "setNeedsNameReclaim"
     | "setEngageShownThisSession"
+    | "popupOwner"
+    | "installSettled"
+    | "claimPopup"
+    | "settleInstall"
     | "recordEngageDismiss"
     | "markFacebookPromoSeen"
     | "pushPromptState"
@@ -132,6 +136,16 @@ export const createProfileSlice: StoreSlice<
   setNameReconciled: (v) => set({ nameReconciled: v }),
   setNeedsNameReclaim: (v) => set({ needsNameReclaim: v }),
   setEngageShownThisSession: (v) => set({ engageShownThisSession: v }),
+
+  popupOwner: null,
+  installSettled: false,
+  claimPopup: (kind) => {
+    const owner = get().popupOwner;
+    if (owner && owner !== kind) return false;
+    set({ popupOwner: kind });
+    return true;
+  },
+  settleInstall: () => set({ installSettled: true }),
 
   markFacebookPromoSeen: () => set({ facebookPromoDate: new Date().toISOString().slice(0, 10) }),
 

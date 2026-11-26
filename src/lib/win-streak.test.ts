@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { currentWinStreak } from "@/lib/win-streak";
+import { currentWinStreak, dayStreak } from "@/lib/win-streak";
 import type { BattleLogEntry } from "@/lib/store/types";
 
 /** Newest first, the order `pushBattleLog` actually stores. */
@@ -50,5 +50,26 @@ describe("currentWinStreak", () => {
 
   it("counts legacy entries that carry no mode", () => {
     expect(currentWinStreak(log([true], [true], [false]))).toBe(2);
+  });
+});
+
+describe("dayStreak", () => {
+  const D = 86_400_000;
+  const now = Date.UTC(2026, 10, 27, 12);
+  const at = (daysAgo: number, won: boolean, mode: BattleLogEntry["mode"] = "battle"): BattleLogEntry => ({
+    opponent: "x", won, xpGained: 0, bestStreak: 0, timestamp: now - daysAgo * D, mode,
+  });
+
+  it("counts yesterday's run as alive until today is won", () => {
+    expect(dayStreak([at(1, true), at(2, true)], now)).toEqual({ days: 2, secured: false });
+  });
+
+  it("adds today once a battle is won today", () => {
+    expect(dayStreak([at(0, true), at(1, true), at(2, true)], now)).toEqual({ days: 3, secured: true });
+  });
+
+  it("breaks on a missed day and ignores losses and the Daily Quest", () => {
+    expect(dayStreak([at(1, true), at(3, true)], now).days).toBe(1);
+    expect(dayStreak([at(0, false), at(0, true, "daily")], now)).toEqual({ days: 0, secured: false });
   });
 });

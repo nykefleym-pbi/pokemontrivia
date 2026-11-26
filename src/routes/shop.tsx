@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { playSfx, playItemCue } from "@/lib/audio";
 import { Star, ShoppingBag, Minus, Plus } from "lucide-react";
 import { useGameStore } from "@/lib/store";
-import { litGiftPips } from "@/lib/daily-gift";
+import { useDailyGift } from "@/lib/use-daily-gift";
 import { useStoreHydrated } from "@/lib/store-hydration";
 import { ITEMS, type ItemDef } from "@/lib/game-data";
 import { getAbility } from "@/lib/abilities";
@@ -95,59 +95,15 @@ function ShopPage() {
   const markFeaturedDealPurchased = useGameStore((s) => s.markFeaturedDealPurchased);
   const applyItem = useGameStore((s) => s.useItem);
   const autoItems = useGameStore((s) => s.autoItems);
-  const dailyGiftLastClaim = useGameStore((s) => s.dailyGiftLastClaim);
-  const dailyGiftStreak = useGameStore((s) => s.dailyGiftStreak);
-  const dailyGiftFreezeUsedDate = useGameStore((s) => s.dailyGiftFreezeUsedDate);
-  const claimDailyGift = useGameStore((s) => s.claimDailyGift);
-  const [giftNow, setGiftNow] = useState(Date.now());
-  useEffect(() => {
-    const i = setInterval(() => setGiftNow(Date.now()), 1000);
-    return () => clearInterval(i);
-  }, []);
-  const giftToday = new Date(giftNow).toISOString().slice(0, 10);
-  const giftClaimable = dailyGiftLastClaim !== giftToday;
-  // Shared with Home's strip, and aware of the weekly forgiven miss — a streak
-  // the freeze can still rescue must keep its pips lit, or the player sees it
-  // "reset" and stops trying a day before it would have been saved.
-  const giftLit = litGiftPips({
-    lastClaim: dailyGiftLastClaim,
-    streak: dailyGiftStreak,
-    freezeUsedDate: dailyGiftFreezeUsedDate,
-    today: giftToday,
-  });
-  const giftNextDay = (giftLit % 7) + 1;
-  const giftMsToNext =
-    Date.UTC(
-      new Date(giftNow).getUTCFullYear(),
-      new Date(giftNow).getUTCMonth(),
-      new Date(giftNow).getUTCDate() + 1,
-    ) - giftNow;
-  const giftClock = `${Math.floor(giftMsToNext / 3_600_000)}h ${String(Math.floor((giftMsToNext % 3_600_000) / 60_000)).padStart(2, "0")}m`;
-  function handleClaimGift() {
-    const res = claimDailyGift();
-    if (!res) return;
-    void syncActivity("last_gift_claim");
-    const it = ITEMS.find((x) => x.id === res.itemId);
-    if (res.shiny) {
-      toast.success(
-        `Day 7 reward! ${res.qty}× ${it?.name ?? "item"} — your next battle win is a guaranteed shiny!`,
-      );
-    } else {
-      toast.success(`Daily Gift opened: ${res.qty}× ${it?.name ?? "item"}`);
-    }
-    // Worth its own toast: the player is about to see a streak number that
-    // arithmetic says should have reset, and an unexplained one reads as a bug.
-    if (res.usedFreeze) {
-      toast.success("Streak saved", {
-        description: "You missed a day — this one's forgiven. One free miss a week.",
-      });
-    }
-    if (res.comebackCoins > 0) {
-      toast.success(`Welcome back! +${res.comebackCoins} coins`, {
-        description: "Good to see you again.",
-      });
-    }
-  }
+  // Shared with the gift chest on the Home route (Figma 2.5).
+  const {
+    now: giftNow,
+    claimable: giftClaimable,
+    lit: giftLit,
+    nextDay: giftNextDay,
+    clock: giftClock,
+    claim: handleClaimGift,
+  } = useDailyGift();
   const toggleAutoItem = useGameStore((s) => s.toggleAutoItem);
 
   const [tab, setTab] = useState<Category>("HEALING");

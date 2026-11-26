@@ -1,20 +1,24 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { ShoppingBag, BookOpen, User, Swords } from "lucide-react";
-import { motion } from "framer-motion";
+import { Home, ShoppingBag, BookOpen, User, Swords } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 
 const TABS = [
-  { to: "/battle", label: "Home", Icon: PokeballIcon },
+  { to: "/battle", label: "Home", Icon: Home },
   { to: "/shop", label: "Shop", Icon: ShoppingBag },
   { to: "/arena", label: "Arena", Icon: Swords },
   { to: "/pokedex", label: "Dex", Icon: BookOpen },
   { to: "/profile", label: "Profile", Icon: User },
 ] as const;
 
+/**
+ * Figma "Tab bar": labelled tabs across the bottom, the active one in a red
+ * tint. The Shop gets a dot while today's gift is still unopened.
+ */
 export function BottomNav() {
   const loc = useLocation();
   const path = loc.pathname;
   const battleScreenActive = useGameStore((s) => s.battleScreenActive);
+  const giftReady = useGameStore((s) => s.dailyGiftLastClaim !== new Date().toISOString().slice(0, 10));
 
   if (path === "/" || path === "") return null;
   if (path.startsWith("/whos-that-pokemon")) return null;
@@ -26,60 +30,33 @@ export function BottomNav() {
 
   return (
     <nav
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center"
-      style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.12] bg-night-deep/[0.92] backdrop-blur-xl"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <div className="pointer-events-auto grid h-16 w-[min(440px,calc(100%-1.5rem))] grid-cols-5 items-center rounded-full border border-border/60 bg-card/95 px-2 shadow-[var(--shadow-float)] backdrop-blur-xl">
-        {TABS.map((t) => (
-          <NavCell key={t.to} tab={t} active={path.startsWith(t.to)} emphasize={t.to === "/arena"} />
-        ))}
+      <div className="mx-auto grid h-16 max-w-[440px] grid-cols-5 px-2.5 py-1.5">
+        {TABS.map(({ to, label, Icon }) => {
+          const on = path.startsWith(to);
+          return (
+            <Link
+              key={to}
+              to={to}
+              aria-label={label}
+              aria-current={on ? "page" : undefined}
+              className="flex flex-col items-center justify-center gap-[3px] press"
+            >
+              <span
+                className={`relative flex h-[30px] w-[52px] items-center justify-center rounded-xl ${on ? "bg-primary/20" : ""}`}
+              >
+                <Icon className={`h-[22px] w-[22px] ${on ? "text-[#FF7A85]" : "text-text-muted"}`} strokeWidth={2.2} />
+                {to === "/shop" && giftReady && (
+                  <span className="absolute right-2 top-px h-2.5 w-2.5 rounded-full border-2 border-night-deep bg-primary" />
+                )}
+              </span>
+              <span className={`na-label ${on ? "text-foreground" : "text-text-muted"}`}>{label}</span>
+            </Link>
+          );
+        })}
       </div>
     </nav>
-  );
-}
-
-function NavCell({
-  tab,
-  active,
-  emphasize,
-}: {
-  tab: { to: string; label: string; Icon: React.ComponentType<{ className?: string }> };
-  active: boolean;
-  emphasize?: boolean;
-}) {
-  const { Icon, label, to } = tab;
-  return (
-    <Link
-      to={to}
-      aria-label={label}
-      className="relative flex h-full flex-col items-center justify-center transition press"
-    >
-      {active ? (
-        <motion.span
-          layoutId="bottom-nav-active-pill"
-          transition={{ type: "spring", stiffness: 500, damping: 32 }}
-          initial={{ opacity: 0, scale: 0.7 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className={`flex items-center justify-center rounded-full bg-primary text-primary-foreground shadow-pop ${
-            emphasize ? "h-10 w-10" : "h-9 w-9"
-          }`}
-        >
-          <Icon className={emphasize ? "h-5 w-5" : "h-[18px] w-[18px]"} />
-        </motion.span>
-      ) : (
-        <span className="text-[13px] font-bold text-foreground/60">{label}</span>
-      )}
-    </Link>
-  );
-}
-
-function PokeballIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 32 32" className={className} aria-hidden>
-      <circle cx="16" cy="16" r="14" fill="#fff" stroke="#1b1d2b" strokeWidth="2.5" />
-      <path d="M2 16 a14 14 0 0 1 28 0 Z" fill="currentColor" stroke="#1b1d2b" strokeWidth="2.5" />
-      <rect x="2" y="14.5" width="28" height="3" fill="#1b1d2b" />
-      <circle cx="16" cy="16" r="4" fill="#fff" stroke="#1b1d2b" strokeWidth="2.5" />
-    </svg>
   );
 }

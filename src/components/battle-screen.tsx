@@ -56,6 +56,8 @@ import { playSfx, revealPokemon, playBattleResult, playItemCue } from "@/lib/aud
 import { answerHaptic } from "@/lib/haptics";
 import { type EliteMember, regionCompleted } from "@/lib/elite-four";
 import type { GymLeader } from "@/lib/gym-leaders";
+import { routeOpponent } from "@/lib/route";
+import { SHINY_CHANCE } from "@/lib/game-data";
 import { ShareCardDialog } from "@/components/share-card-dialog";
 import type { ShareData } from "@/components/share-card-builder";
 import { trainerSpriteUrl } from "@/lib/game-data";
@@ -81,6 +83,8 @@ interface Props {
   mode?: "battle" | "daily" | "elite" | "weekly";
   eliteMember?: EliteMember;
   gymLeader?: GymLeader | null;
+  /** A battle on the Home route: the opponent comes from the route, and a win beats its stop. */
+  route?: boolean;
 }
 
 export function BattleScreen({
@@ -90,6 +94,7 @@ export function BattleScreen({
   mode = "battle",
   eliteMember,
   gymLeader,
+  route,
 }: Props) {
   // Randomize option order once per battle so repeat questions can't be
   // answered from memorized answer positions.
@@ -117,7 +122,7 @@ export function BattleScreen({
       />
     );
   }
-  return <BattleMode questions={questions} onExit={onExit} onRematch={onRematch} />;
+  return <BattleMode questions={questions} onExit={onExit} onRematch={onRematch} route={route} />;
 }
 
 function BattleMode({
@@ -126,7 +131,8 @@ function BattleMode({
   onRematch,
   eliteMember,
   gymLeader,
-}: Pick<Props, "questions" | "onExit" | "onRematch"> & {
+  route,
+}: Pick<Props, "questions" | "onExit" | "onRematch" | "route"> & {
   eliteMember?: EliteMember;
   gymLeader?: GymLeader;
 }) {
@@ -183,7 +189,14 @@ function BattleMode({
   const tickBattleStatusCure = useGameStore((s) => s.tickBattleStatusCure);
   const clearAllBattleStatuses = useGameStore((s) => s.clearAllBattleStatuses);
 
+  // The route stop this battle is for (null: an extra battle, or not a route battle).
+  const routeStopRef = useRef<number | null>(null);
   const [enemy] = useState<EnemyTrainer>(() => {
+    if (route && !gymLeader && !eliteMember) {
+      const o = routeOpponent(useGameStore.getState().route, SHINY_CHANCE);
+      routeStopRef.current = o.stop;
+      return useGameStore.getState().guaranteedShinyPending ? { ...o.enemy, isShiny: true } : o.enemy;
+    }
     if (gymLeader) {
       const poke: PokeEntry = findPokemon(gymLeader.signaturePokemonId) ?? {
         id: gymLeader.signaturePokemonId,
@@ -1154,6 +1167,7 @@ function BattleMode({
       };
       recordPokedexCapture(enemy.pokemon.id, enemy.isShiny);
       if (!isWeekly && !isElite) useGameStore.getState().consumeGuaranteedShiny();
+      if (routeStopRef.current !== null) useGameStore.getState().recordRouteStopWin();
     }
 
     // Elite Four bookkeeping + premium item rewards

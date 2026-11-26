@@ -13,7 +13,7 @@ import { playBgm } from "@/lib/audio";
 import { ApiError } from "@/lib/api/client";
 import { MegaRaidScreen } from "@/components/mega/MegaRaidScreen";
 import { MegaLeaderboard } from "@/components/mega/MegaLeaderboard";
-import { BattleHome, type MegaHomeState } from "@/components/battle-home";
+import { RouteHome, type MegaHomeState } from "@/components/route-home";
 import { ElitePendingTakeover } from "@/components/elite-pending-takeover";
 import { LevelUpScreen } from "@/components/level-up-screen";
 
@@ -134,6 +134,8 @@ function BattlePage() {
   const recordEngageDismiss = useGameStore((s) => s.recordEngageDismiss);
   const engageShownThisSession = useGameStore((s) => s.engageShownThisSession);
   const setEngageShownThisSession = useGameStore((s) => s.setEngageShownThisSession);
+  const installSettled = useGameStore((s) => s.installSettled);
+  const popupOwner = useGameStore((s) => s.popupOwner);
   const [engageCards, setEngageCards] = useState<Array<{
     kind: "whatsnew" | "daily" | "weekly" | "whosthat" | "mega" | "megaleaderboard" | "facebook";
     title: string;
@@ -572,7 +574,10 @@ function BattlePage() {
   useEffect(() => {
     if (!hasOnboarded) return;
     if (engageShownRef.current || engageShownThisSession) return;
-    if (phase !== "home" || pendingElite) return;
+    if (phase !== "home" || pendingElite || pendingLevelUp) return;
+    // One pop-up per app open (Figma 2.2): level-up, then the install sheet, then this.
+    if (!installSettled && !engageDelayPassed) return;
+    if (popupOwner && popupOwner !== "carousel") return;
     const dismissedToday = engageDismissDate === today ? engageDismissCount : 0;
     if (dismissedToday >= 3) return;
     const hasMega = !!activeMega && Date.parse(activeMega.endsAt) > Date.now();
@@ -704,6 +709,7 @@ function BattlePage() {
       // has had the chance to see it: crediting only a tap would bring the card
       // back every session until they engaged, which is the nagging this gate
       // exists to prevent.
+      if (!useGameStore.getState().claimPopup("carousel")) return;
       if (facebookIncluded) markFacebookPromoSeen();
       engageShownRef.current = true;
       setEngageShownThisSession(true);
@@ -713,6 +719,9 @@ function BattlePage() {
   }, [
     phase,
     pendingElite,
+    pendingLevelUp,
+    installSettled,
+    popupOwner,
     today,
     dailyDone,
     weeklyLeague,
@@ -1251,6 +1260,7 @@ function BattlePage() {
           questions={questions}
           onExit={exitBattle}
           onRematch={continueBattling}
+          route
         />
       ) : phase === "elite" && eliteOpponent ? (
         <BattleScreen
@@ -1293,7 +1303,7 @@ function BattlePage() {
       ) : phase === "loading" && prepping ? (
         <ModePrep label={prepping} />
       ) : (
-        <BattleHome
+        <RouteHome
           onStart={startBattle}
           onStartDaily={startDaily}
           onStartWeekly={startWeekly}
@@ -1301,7 +1311,6 @@ function BattlePage() {
           mega={megaHomeState}
           loading={phase === "loading"}
           dailyDone={dailyDone}
-          dailyResult={dailyDone ? dailyResult : null}
         />
       )}
     </>

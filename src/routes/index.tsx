@@ -187,7 +187,7 @@ function PartnerPicker({ referred, onStart }: { referred: boolean; onStart: () =
         <p className="na-body text-text-secondary">
           Your adventure starts here! Battle trainers and help your Pokémon evolve.
         </p>
-        {!query.trim() && <p className="na-label text-text-secondary">Great first picks</p>}
+        {!query.trim() && <p className="na-label uppercase text-text-secondary">Great first picks</p>}
 
         {list.map((p) => {
           const on = pick?.id === p.id;
