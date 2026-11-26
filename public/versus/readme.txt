@@ -58,7 +58,7 @@ TRAINING BOT
              anchored to the seam so the trainer stands on the ground, and
              padding under the feet lifts it back into the air.
 
-             Budget 500 KB. Clembot.png is 640x640 / 6 frames / 338 KB.
+             Budget 500 KB. Clembot.png is 640x640 / 6 frames / 35 KB.
 
              640 is the RIGHT canvas, not an oversized one: the sprite draws
              about 195 CSS px wide, which is ~585 device px on a 3x phone.
@@ -66,10 +66,17 @@ TRAINING BOT
              compared CSS pixels to source pixels and forgot DPR. Shrinking
              would soften it on any good screen.)
 
-             It arrived at 920 KB and was re-encoded to 338 KB with the frames
-             pixel-identical and the 200 ms delays intact. sharp's libvips
-             cannot read APNG frames, so the re-encode inflates and unfilters
-             them by hand; the recipe is in the commit that did it.
+             It arrived at 920 KB (true-colour, 6 frames). A first re-encode
+             to 338 KB moved it to one shared 256-colour palette and scrambled
+             the colours of frames 2-6. The file now is clean pixel art: the
+             original's ~4 px grid, every art pixel a 4x4 block, 50 colours
+             shared by all 6 frames (indexed PNG), 200 ms delays, endless loop,
+             feet within 2 px of where they were. Its source is code, in the
+             Figma wireframes plugin (dev/scene/clembot.js).
+
+             CHECK AN APNG FRAME BY FRAME. drawImage() and sharp only see
+             frame 0, so a broken frame 2 passes both. Decode every frame with
+             ImageDecoder (Chromium, secure origin such as localhost) and look.
   Backdrop   None of its own — it stands on the shared default, Forest.
 
 
