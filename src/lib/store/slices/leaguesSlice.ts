@@ -1,7 +1,7 @@
 import type { GameState, WeeklyLeagueAttempt } from "@/lib/store/types";
 import type { StoreSlice } from "@/lib/store/slice";
 import { getWeekRangeUtc } from "@/lib/game-data";
-import { ROUTE_START, nextRoute, routeGym, stopsLeft } from "@/lib/route";
+import { ROUTE_START, nextRoute, regionRoute, routeGym, stopsLeft } from "@/lib/route";
 
 export const createLeaguesSlice: StoreSlice<
   Pick<
@@ -10,7 +10,9 @@ export const createLeaguesSlice: StoreSlice<
     | "weeklyLeagueHistory"
     | "gymBadges"
     | "route"
+    | "routeSaved"
     | "recordRouteStopWin"
+    | "chooseRegion"
     | "trainingPoints"
     | "trainingPointsSpent"
     | "initWeeklyLeague"
@@ -92,6 +94,18 @@ export const createLeaguesSlice: StoreSlice<
   recordRouteStopWin: () => {
     const r = get().route;
     if (stopsLeft(r) > 0) set({ route: { ...r, beaten: r.beaten + 1 } });
+  },
+
+  routeSaved: {},
+  chooseRegion: (region) => {
+    const s = get();
+    if (region === s.route.region) return;
+    set({
+      routeSaved: { ...s.routeSaved, [s.route.region]: { gym: s.route.gym, beaten: s.route.beaten } },
+      route: regionRoute(region, s.route, s.routeSaved),
+    });
+    // An untried week follows the route to the new region's gym.
+    get().initWeeklyLeague();
   },
 
   addTrainingPoints: (pokemonId, amount) => {

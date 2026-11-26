@@ -399,7 +399,7 @@
  * Pressed: the face drops 3px into the lip, which shrinks to 1px. */
 @utility na-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  white-space: nowrap; user-select: none; position: relative;
+  white-space: nowrap; user-select: none; position: relative; flex-shrink: 0;
   transition: transform 110ms cubic-bezier(0.2, 0, 0.2, 1), box-shadow 110ms ease, filter 150ms ease, opacity 150ms ease;
   &:disabled, &[aria-disabled="true"] { opacity: 0.45; filter: saturate(0.6); pointer-events: none; }
   &:focus-visible { outline: 3px solid var(--reward-gold); outline-offset: 3px; }

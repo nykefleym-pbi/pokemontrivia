@@ -1,4 +1,6 @@
 import { useId } from "react";
+import { hifi } from "@/components/na/gloss-data";
+import { uniqueIds } from "@/components/na/gloss-icon";
 
 /**
  * Night Arena reward icons (Figma "Reward icon" set): vector tokens with a 3D
@@ -29,9 +31,8 @@ export type RewardIconKind = "Coin" | "XP" | "TP" | "Streak" | "Freeze" | "Gift"
 export function NaRewardIcon({ kind, size = 24, className }: { kind: RewardIconKind; size?: number; className?: string }) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const [defs, body] = ICON[kind];
-  const html = `<defs>${defs}</defs>${body}`
-    .replace(/id="([ab])"/g, `id="$1${uid}"`)
-    .replace(/url\(#([ab])\)/g, `url(#$1${uid})`);
+  // The design file's high-fidelity pass (light on top, shade below) on every gradient shape.
+  const html = uniqueIds(hifi(`<defs>${defs}</defs>${body}`) as string, uid);
   return (
     <svg
       aria-hidden

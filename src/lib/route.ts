@@ -71,12 +71,19 @@ export function routeNumber(r: RouteState): number {
   return n + r.gym + 1;
 }
 
-/** The route after its gym is won. After the last gym of the last region the
- *  road starts again in Kanto (badges already owned are not paid twice).
- *  shortcut: loops to Kanto after Unova; upgrade when a post-game is designed. */
+/** The route after its gym is won. Each region has its own fixed route (owner
+ *  ruling 2026-11-27); after a region's last gym its route starts again from
+ *  the first gym (badges already owned are not paid twice).
+ *  shortcut: a finished region loops; upgrade when a post-game is designed. */
 export function nextRoute(r: RouteState): RouteState {
-  if (r.gym + 1 < regionGyms(r.region).length) return { region: r.region, gym: r.gym + 1, beaten: 0 };
-  return { region: (r.region + 1) % ROUTE_REGIONS.length, gym: 0, beaten: 0 };
+  return { region: r.region, gym: (r.gym + 1) % regionGyms(r.region).length, beaten: 0 };
+}
+
+/** Where a region's route stands: the saved place, or its start. */
+export function regionRoute(region: number, current: RouteState, saved: Record<number, { gym: number; beaten: number }>): RouteState {
+  if (region === current.region) return current;
+  const s = saved[region];
+  return { region, gym: s?.gym ?? 0, beaten: s?.beaten ?? 0 };
 }
 
 const CLASSES: Array<[id: string, label: string]> = [

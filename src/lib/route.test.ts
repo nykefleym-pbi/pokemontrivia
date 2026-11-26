@@ -10,6 +10,7 @@ import {
   stopsForGym,
   stopsLeft,
   gymTown,
+  regionRoute,
 } from "./route";
 import { isLegendaryOrMythical } from "./legendary-data";
 
@@ -23,24 +24,24 @@ describe("route", () => {
     expect(stopTrainer(ROUTE_START, 1)).toBe("Lass Ivy");
   });
 
-  it("adds one stop per gym and starts again in each region", () => {
+  it("adds one stop per gym; each region has its own route", () => {
     expect([0, 1, 7].map(stopsForGym)).toEqual([4, 5, 11]);
-    let r = ROUTE_START;
-    for (let i = 0; i < 8; i++) r = nextRoute(r);
-    expect(r).toEqual({ region: 1, gym: 0, beaten: 0 });
-    expect(routeGym(r).id).toBe("falkner");
-    expect(stopsLeft(r)).toBe(4);
-    expect(routeNumber(r)).toBe(9);
+    const johto = regionRoute(1, ROUTE_START, {});
+    expect(routeGym(johto).id).toBe("falkner");
+    expect(stopsLeft(johto)).toBe(4);
+    expect(routeNumber(johto)).toBe(9);
+    expect(regionRoute(1, ROUTE_START, { 1: { gym: 2, beaten: 3 } })).toEqual({ region: 1, gym: 2, beaten: 3 });
   });
 
-  it("covers all 42 gyms, then loops to Kanto", () => {
+  it("walks a region's gyms in order, then starts that route again", () => {
     let r = ROUTE_START;
-    const seen = new Set<string>();
-    for (let i = 0; i < 42; i++) {
-      seen.add(routeGym(r).id);
+    const seen: string[] = [];
+    for (let i = 0; i < 8; i++) {
+      seen.push(routeGym(r).id);
       r = nextRoute(r);
     }
-    expect(seen.size).toBe(42);
+    expect(seen.slice(0, 3)).toEqual(["brock", "misty", "lt-surge"]);
+    expect(new Set(seen).size).toBe(8);
     expect(r).toEqual(ROUTE_START);
     expect(regionGyms(4).length).toBe(10);
   });

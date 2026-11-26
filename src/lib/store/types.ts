@@ -322,6 +322,8 @@ export interface GameState {
   weeklyLeagueHistory: WeeklyLeagueAttempt[];
   /** Where the player is on the Home route (lib/route.ts). Its gym is the Weekly League. */
   route: RouteState;
+  /** Each other region's place on its own route, kept while you battle elsewhere. */
+  routeSaved: Record<number, { gym: number; beaten: number }>;
 
   // preferences
   darkMode: boolean;
@@ -478,6 +480,8 @@ export interface GameState {
   recordWeeklyLeagueResult: (won: boolean) => void;
   /** A trainer stop on the route was beaten. */
   recordRouteStopWin: () => void;
+  /** Switch to another region's route (Figma 6.2), keeping every region's place. */
+  chooseRegion: (region: number) => void;
 
   // preferences actions
   setDarkMode: (v: boolean) => void;

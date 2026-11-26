@@ -93,14 +93,15 @@ function SplashPage() {
 /** 1.1 Landing: see it, then play. */
 function Landing({ onPlay }: { onPlay: () => void }) {
   return (
-    <div className="flex h-full w-full flex-col items-center gap-3.5 overflow-y-auto px-5 pb-6 screen-top screen-bottom">
-      <h1 className="shrink-0">
-        <AppIcon src={UI_ICON.appLogo} alt="Pokémon Trivia Battle" className="w-[230px]" eager />
+    // Figma 1.1: padding 16 / 20 / 24, 14 between; logo 230×130, clip 350×300, button 56 at the foot.
+    <div className="flex h-full w-full flex-col items-center gap-3.5 overflow-y-auto px-5 pb-[calc(env(safe-area-inset-bottom)+24px)] pt-[calc(env(safe-area-inset-top)+16px)]">
+      <h1 className="flex h-[130px] w-[230px] shrink-0 items-center justify-center">
+        <AppIcon src={UI_ICON.appLogo} alt="Pokémon Trivia Battle" className="h-[130px] w-[230px] object-contain" eager />
       </h1>
       {/* The battle clip: a question, a right answer, a hit, the combo, a miss
           and a knockout, then the logo. Muted and looping; the poster is its
           first frame, so a phone that blocks autoplay still shows a battle. */}
-      <div className="na-glow-gold relative aspect-[7/6] max-h-[38vh] w-full max-w-[350px] shrink-0 overflow-hidden rounded-3xl border-[1.5px] border-reward-gold/60">
+      <div className="na-glow-gold relative aspect-[7/6] w-full max-w-[350px] shrink-0 overflow-hidden rounded-3xl border-[1.5px] border-reward-gold/60">
         <video
           className="h-full w-full object-cover"
           src="/onboarding/battle-preview.mp4"
@@ -119,11 +120,11 @@ function Landing({ onPlay }: { onPlay: () => void }) {
       <p className="na-body text-center text-text-secondary">
         Answer trivia, defeat trainers, catch Pokémon, and build your team!
       </p>
-      <div className="flex-1" />
-      <NaButton block onClick={onPlay}>
+      <div className="min-h-0 flex-1" />
+      <NaButton block className="shrink-0" onClick={onPlay}>
         Play now
       </NaButton>
-      <p className="na-caption text-center text-text-muted">No sign-up required!</p>
+      <p className="na-caption shrink-0 text-center text-text-muted">No sign-up required!</p>
     </div>
   );
 }
@@ -181,8 +182,8 @@ function PartnerPicker({ referred, onStart }: { referred: boolean; onStart: () =
   }
 
   return (
-    <div className="flex h-full w-full flex-col px-4 pb-4 screen-top screen-bottom">
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pt-3">
+    <div className="flex h-full w-full flex-col px-4 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-[calc(env(safe-area-inset-top)+12px)]">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
         <h1 className="na-display-m text-foreground">Choose your partner</h1>
         <p className="na-body text-text-secondary">
           Your adventure starts here! Battle trainers and help your Pokémon evolve.
@@ -205,7 +206,7 @@ function PartnerPicker({ referred, onStart }: { referred: boolean; onStart: () =
                 {/* PokéAPI sprites carry wide transparent margins; Figma uses the
                     sprite cropped to the Pokémon, so scale it to fill the 80pt tile. */}
                 <div className="flex h-20 w-20 shrink-0 items-center justify-center">
-                  <PokemonSprite id={p.id} alt={p.name} className="sprite h-[76px] w-[76px] scale-[1.6]" />
+                  <PokemonSprite id={p.id} alt={p.name} className="sprite h-[76px] w-[76px] scale-[2.1]" />
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                   <span className="na-display-s truncate text-foreground">{p.name}</span>

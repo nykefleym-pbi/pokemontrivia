@@ -1,11 +1,13 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Check, Clock, Lock, Star } from "lucide-react";
+import { Check, Clock } from "lucide-react";
+import { NaGlossIcon } from "@/components/na/gloss-icon";
 import { toast } from "sonner";
 import { useGameStore } from "@/lib/store";
 import { PokemonSprite } from "@/components/game-ui";
 import { trainerSpriteUrl, xpProgressInLevel, getWeekRangeUtc } from "@/lib/game-data";
-import { ROUTE_REGIONS, gymTown, routeGym, routeNumber, stopTrainer, stopsForGym, stopsLeft } from "@/lib/route";
+import { GENERATIONS } from "@/lib/dex-rewards";
+import { ROUTE_REGIONS, regionRoute, gymTown, routeGym, routeNumber, stopTrainer, stopsForGym, stopsLeft } from "@/lib/route";
 import { dayStreak } from "@/lib/win-streak";
 import { useDailyGift } from "@/lib/use-daily-gift";
 import { NaRewardIcon } from "@/components/na/reward-icon";
@@ -118,6 +120,7 @@ export function RouteHome({
   const whosThatHourKey = useGameStore((s) => s.whosThatHourKey);
   const gift = useDailyGift(30_000);
   const [giftOpen, setGiftOpen] = useState(false);
+  const [regionOpen, setRegionOpen] = useState(false);
 
   const now = gift.now;
   const streak = useMemo(() => dayStreak(battleLog, now), [battleLog, now]);
@@ -158,9 +161,11 @@ export function RouteHome({
     if (i !== undefined) { used.add(i); sides.push({ kind, from: i }); }
   };
   fork("daily", [0, 2]);
-  fork("whos", [currentIdx, currentIdx + 1, currentIdx - 1, 1]);
-  const megaLive = mega !== null && mega !== "none";
-  if (megaLive) fork("mega", [main.length - 2, main.length - 1, main.length - 3]);
+  // Figma: off the trainer just before START (2.6), or off START when a chest is before it (2.3).
+  const beforeCur = main[currentIdx - 1]?.kind === "stop" ? currentIdx - 1 : currentIdx;
+  fork("whos", [beforeCur, currentIdx, currentIdx + 1, 1]);
+  // Always on the road; greyed out while no raid is live (owner ruling 2026-11-27).
+  fork("mega", [main.length - 2, main.length - 1, main.length - 3]);
 
   // ---- geometry, measured against the real width.
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -173,12 +178,26 @@ export function RouteHome({
     setW(el.clientWidth || 390);
     return () => ro.disconnect();
   }, []);
-  const colX = (i: number) => (i % 2 === 0 ? W * 0.27 : W * 0.73);
+  // Figma 2.3 / 2.4 / 2.6: columns at x 105 and 285 of 390; the first stop's
+  // middle 44 below the route's top; 120 between stops, 230 into START (the
+  // partner walks that stretch), 150 after it (170 when a side route hangs
+  // there), 180 into the gym, 126 after a first stop with a side route.
+  const colX = (i: number) => (i % 2 === 0 ? (W * 105) / 390 : (W * 285) / 390);
+  const hasSide = (i: number) => sides.some((s) => s.from === i);
   const placed: Placed[] = [];
-  let y = currentIdx === 0 ? 150 : 60;
+  let y = currentIdx === 0 ? 154 : 44;
   main.forEach((m, i) => {
-    // Extra room after a stop with a side route (its name and timer hang below it).
-    if (i > 0) y += 140 + (i === currentIdx ? 60 : 0) + (m.kind === "gym" ? 30 : 0) + (sides.some((s) => s.from === i - 1) ? 30 : 0);
+    if (i > 0) {
+      const prevCur = i - 1 === currentIdx;
+      const prevChest = main[i - 1].kind === "chest";
+      y +=
+        120 +
+        (i === currentIdx ? (hasSide(i - 1) ? 60 : 130) : 0) +
+        (prevChest ? -20 : 0) +
+        (prevCur ? 30 + (hasSide(i - 1) ? 20 : 0) : 0) +
+        (m.kind === "gym" ? 60 : 0) +
+        (i === 1 && hasSide(0) ? 6 : 0);
+    }
     placed.push({ key: m.key, cx: colX(i), cy: y, r: R[m.kind] });
   });
   const height = y + 190;
@@ -190,10 +209,11 @@ export function RouteHome({
     return [p.cx + dir * (p.r + 6), p.cy + dy];
   };
   const segs = placed.slice(1).map((_, k) => seg(att(k, false), att(k + 1, true)));
-  // Your partner walks halfway into START; the very first stop has nothing before it.
+  // Your partner on the trail into START: halfway (2.3), 60% once today is secured (2.6).
   const partnerSeg = currentIdx - 1;
+  const partnerF = streak.secured ? 0.6 : 0.5;
   const partnerAt =
-    partnerSeg >= 0 ? evenDots(segs[partnerSeg], 1).find((p) => p.d >= 0.5)! : { x: placed[0].cx, y: placed[0].cy - 108, d: 0 };
+    partnerSeg >= 0 ? evenDots(segs[partnerSeg], 1).find((p) => p.d >= partnerF)! : { x: placed[0].cx, y: placed[0].cy - 108, d: 0 };
 
   // Open at the top like 2.3, scrolling only as far as it takes to show START above the tabs.
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -201,7 +221,7 @@ export function RouteHome({
   useEffect(() => {
     const sc = scrollRef.current, wrap = wrapRef.current;
     if (!sc || !wrap) return;
-    sc.scrollTop = Math.max(0, wrap.offsetTop + curY + 140 - sc.clientHeight);
+    sc.scrollTop = Math.max(0, wrap.offsetTop + curY + 128 - sc.clientHeight);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.region, route.gym, route.beaten]);
 
@@ -229,21 +249,21 @@ export function RouteHome({
 
   const sideNode = (s: { kind: SideKind; from: number }) => {
     const fromP = placed[s.from];
-    const cx = fromP.cx > W / 2 ? W * 0.27 : W * 0.73;
+    const cx = fromP.cx > W / 2 ? (W * 105) / 390 : (W * 285) / 390;
     const a = att(s.from, s.from === placed.length - 1);
     const dir = cx > a[0] ? 1 : -1;
-    let label = "", chip = "", done = false, onClick = () => {};
+    let label = "", chip = "", done = false, off = false, onClick = () => {};
     let art: React.ReactNode = null;
     if (s.kind === "daily") {
       label = "Daily Quest";
       done = dailyDone;
       chip = done ? "Done" : `${dailyHours} h left`;
-      art = <PokemonSprite id={479} alt="" className="sprite h-[58px] w-[58px]" />;
+      art = <PokemonSprite id={479} alt="" className="sprite h-[58px] w-[58px] scale-[1.45]" />;
       onClick = () => (done ? toast("Today's Daily Quest is done. A new one tomorrow!") : !loading && onStartDaily());
     } else if (s.kind === "whos") {
       label = "Who's That?";
       chip = whosReady ? "Play now" : `New in ${whosMin} min`;
-      art = <PokemonSprite id={25} alt="" className="h-[50px] w-[50px] [filter:brightness(0)] [image-rendering:pixelated]" />;
+      art = <PokemonSprite id={25} alt="" className="h-[50px] w-[50px] scale-[1.4] [filter:brightness(0)] [image-rendering:pixelated]" />;
       onClick = () => (whosReady ? navigate({ to: "/whos-that-pokemon" }) : toast(`A new round starts in ${whosMin} min.`));
     } else if (mega !== null && mega !== "none") {
       label = "Mega Raid";
@@ -253,8 +273,14 @@ export function RouteHome({
       chip = mega.reason === "cleared" ? "Cleared" : mega.reason === "exhausted" ? "No tries left" : `Ends in ${dd > 0 ? `${dd}d ` : ""}${hh}h`;
       art = <NaRewardIcon kind="XP" size={40} />;
       onClick = () => (!mega.disabled ? onStartMega() : toast("You're done with this Mega Raid."));
+    } else {
+      label = "Mega Raid";
+      off = true;
+      chip = mega === null ? "Checking" : "No raid now";
+      art = <NaRewardIcon kind="XP" size={40} />;
+      onClick = () => toast("No Mega Raid right now. Check back soon!");
     }
-    return { cx, y: a[1], a, dir, label, chip, done, art, onClick };
+    return { cx, y: a[1], a, dir, label, chip, done, off, art, onClick };
   };
 
   return (
@@ -290,16 +316,24 @@ export function RouteHome({
         <Pill kind="Coin" value={coins.toLocaleString()} />
       </div>
 
-      {/* Route banner + the streak line (2.3) */}
-      <div className="px-4 pt-2">
-        <div className="na-glass flex items-center gap-3 rounded-[20px] py-3 pl-4 pr-3">
+      {/* Route banner + the streak line (2.3): banner 7 below the top bar, the line 6 below it, the route right after. */}
+      <div className="px-4 pt-[7px]">
+        <div className="na-glass flex min-h-[86px] items-center gap-3 rounded-[20px] py-3 pl-4 pr-3">
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
             <span className="na-label text-reward-gold">{ROUTE_REGIONS[route.region].toUpperCase()}</span>
             <span className="na-display-s text-foreground">Route {routeNumber(route)}</span>
             <span className="na-caption text-text-secondary">{bannerSub}</span>
           </div>
+          <button
+            type="button"
+            aria-label="Choose your region"
+            onClick={() => setRegionOpen(true)}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-night-card-2 shadow-[0_4px_0_#141A3F] press"
+          >
+            <NaGlossIcon kind="map" size={22} />
+          </button>
         </div>
-        <div className="mt-2 flex justify-center">
+        <div className="mt-1.5 flex justify-center">
           <span
             className={`flex items-center gap-1.5 rounded-full py-[5px] pl-1.5 pr-3 ${streak.secured ? "bg-success/[0.16]" : "bg-white/10"}`}
           >
@@ -315,7 +349,7 @@ export function RouteHome({
           {segs.map((sg, i) =>
             evenDots(sg, 14).map((p, j) => {
               if (Math.hypot(p.x - partnerAt.x, p.y - partnerAt.y) < 18) return null;
-              const walked = i < partnerSeg || (i === partnerSeg && p.d <= 0.5);
+              const walked = i < partnerSeg || (i === partnerSeg && p.d <= partnerF);
               return <circle key={`${i}-${j}`} cx={p.x} cy={p.y} r={3} fill={walked ? "#FFC83D" : "rgba(244,246,255,0.3)"} />;
             }),
           )}
@@ -344,7 +378,7 @@ export function RouteHome({
             const cur = m.state === "current";
             return (
               <div key={m.key} className="absolute flex w-[130px] -translate-x-1/2 flex-col items-center" style={{ left: p.cx, top: p.cy - R.stop }}>
-                {cur && <span className="absolute -top-11"><StartTag /></span>}
+                {cur && <span className="absolute -top-9"><StartTag /></span>}
                 <button
                   type="button"
                   aria-label={cur ? `Battle ${m.label}` : m.label}
@@ -359,8 +393,8 @@ export function RouteHome({
                   }`}
                 >
                   {m.state === "done" && <Check className="h-8 w-8 text-on-gold" strokeWidth={3.5} />}
-                  {cur && <Star className="h-8 w-8 fill-[#FFC83D] text-[#FFC83D]" />}
-                  {m.state === "locked" && <Lock className="h-7 w-7 text-text-muted" strokeWidth={2.5} />}
+                  {cur && <NaGlossIcon kind="star" size={32} />}
+                  {m.state === "locked" && <NaGlossIcon kind="lock" size={28} />}
                 </button>
                 <span className={`na-caption mt-1.5 text-center ${m.state === "locked" ? "text-text-muted" : "text-text-secondary"}`}>{m.label}</span>
               </div>
@@ -387,7 +421,7 @@ export function RouteHome({
           }
           return (
             <div key={m.key} className="absolute flex w-[170px] -translate-x-1/2 flex-col items-center gap-1.5" style={{ left: p.cx, top: p.cy - R.gym }}>
-              {gymOpen && <span className="absolute -top-11"><StartTag /></span>}
+              {gymOpen && <span className="absolute -top-9"><StartTag /></span>}
               <button
                 type="button"
                 aria-label={`${town}: ${leader.name}`}
@@ -413,13 +447,13 @@ export function RouteHome({
                 type="button"
                 aria-label={n.label}
                 onClick={n.onClick}
-                className={`flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-[2.5px] bg-night-card-2 shadow-[0_5px_0_#141A3F] press ${n.done ? "opacity-60" : ""}`}
+                className={`flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-[2.5px] bg-night-card-2 shadow-[0_5px_0_#141A3F] press ${n.off ? "opacity-45 grayscale" : n.done ? "opacity-60" : ""}`}
                 style={{ borderColor: SIDE_COLOR[s.kind] }}
               >
                 {n.art}
               </button>
               <span className="na-body-strong text-center text-foreground">{n.label}</span>
-              <TimerChip text={n.chip} done={n.done} color={SIDE_COLOR[s.kind]} />
+              <TimerChip text={n.chip} done={n.done} color={n.off ? "#8E98CF" : SIDE_COLOR[s.kind]} />
             </div>
           );
         })}
@@ -427,9 +461,9 @@ export function RouteHome({
         {/* Your partner on the trail, with a line (2.3 / 2.6) */}
         <div className="pointer-events-none absolute" style={{ left: partnerAt.x, top: partnerAt.y }}>
           <span className="absolute -left-5 -top-[5px] h-2.5 w-10 rounded-[50%] bg-night-deep/55" />
-          <PokemonSprite id={pokemon.id} alt={pokemon.name} className="sprite absolute -left-8 -top-[60px] h-16 w-16 max-w-none origin-bottom scale-[1.5]" />
+          <PokemonSprite id={pokemon.id} alt={pokemon.name} className="sprite absolute -left-8 -top-[40px] h-16 w-16 max-w-none origin-bottom scale-[2.1]" />
           <span
-            className={`na-caption absolute -top-10 whitespace-nowrap rounded-xl bg-foreground px-2.5 py-1.5 text-night-base ${
+            className={`na-caption absolute -top-[43px] whitespace-nowrap rounded-xl bg-foreground px-2.5 py-1.5 text-night-base ${
               streak.secured ? "right-[34px]" : "left-[34px]"
             }`}
           >
@@ -439,6 +473,7 @@ export function RouteHome({
       </div>
 
       <GiftCalendar open={giftOpen} onOpenChange={setGiftOpen} gift={gift} />
+      <RegionSheet open={regionOpen} onOpenChange={setRegionOpen} />
     </div>
   );
 }
@@ -495,6 +530,70 @@ function GiftCalendar({
           );
         })}
       </div>
+    </NaSheet>
+  );
+}
+
+/** 6.2 Choose your region: each region has its own fixed route; your place on every one is kept. */
+function RegionSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+  const route = useGameStore((s) => s.route);
+  const saved = useGameStore((s) => s.routeSaved);
+  const pokedex = useGameStore((s) => s.pokedex);
+  const chooseRegion = useGameStore((s) => s.chooseRegion);
+  const [pick, setPick] = useState(route.region);
+  useEffect(() => {
+    if (open) setPick(route.region);
+  }, [open, route.region]);
+  return (
+    <NaSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      title="CHOOSE YOUR REGION"
+      body="Battle with Pokémon from your chosen region and complete your Pokédex faster!"
+      primary={{
+        label: `Battle in ${ROUTE_REGIONS[pick]}`,
+        onClick: () => {
+          chooseRegion(pick);
+          onOpenChange(false);
+        },
+      }}
+      secondary={{ label: "Cancel", onClick: () => onOpenChange(false) }}
+    >
+      {ROUTE_REGIONS.map((name, i) => {
+        const g = GENERATIONS.find((x) => x.region === name)!;
+        const n = g.to - g.from + 1;
+        let caught = 0;
+        for (let id = g.from; id <= g.to; id++) if (pokedex[id]?.caught) caught++;
+        const on = i === pick;
+        const r = regionRoute(i, route, saved);
+        return (
+          <button
+            key={name}
+            type="button"
+            aria-pressed={on}
+            onClick={() => setPick(i)}
+            className={`flex w-full items-center gap-3 rounded-2xl bg-white/[0.08] p-3 text-left ${on ? "border-2 border-primary" : "border border-white/[0.12]"}`}
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-night-deep/60">
+              <NaGlossIcon kind="map" size={22} />
+            </span>
+            <span className="flex min-w-0 flex-1 flex-col gap-1">
+              <span className="na-headline text-foreground">{name}</span>
+              <span className="na-caption text-text-secondary">
+                {caught} of {n} caught · Route {routeNumber(r)}
+              </span>
+              <span className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.12]">
+                <span className="na-fill-gold block h-full rounded-full" style={{ width: `${(caught / n) * 100}%` }} />
+              </span>
+            </span>
+            <span
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${on ? "border-primary" : "border-white/30"}`}
+            >
+              {on && <span className="h-3 w-3 rounded-full bg-primary" />}
+            </span>
+          </button>
+        );
+      })}
     </NaSheet>
   );
 }

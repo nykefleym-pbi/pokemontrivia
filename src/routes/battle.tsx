@@ -246,7 +246,8 @@ function BattlePage() {
   }, [phase]);
 
   const loadMegaStats = useCallback(async () => {
-    const ev = await fetchActiveMegaEvent();
+    // A failed lookup reads as "no raid" so the Home stop greys out instead of checking forever.
+    const ev = await fetchActiveMegaEvent().catch(() => null);
     if (!ev) {
       setActiveMega(null);
       setMegaStats({ rank: 0, total: 0, attempts: 0, won: false });
