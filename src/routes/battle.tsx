@@ -14,7 +14,7 @@ import { ApiError } from "@/lib/api/client";
 import { MegaRaidScreen } from "@/components/mega/MegaRaidScreen";
 import { MegaLeaderboard } from "@/components/mega/MegaLeaderboard";
 import { RouteHome, type MegaHomeState } from "@/components/route-home";
-import { ElitePendingTakeover } from "@/components/elite-pending-takeover";
+import { EliteChallenge } from "@/components/elite-challenge";
 import { LevelUpScreen } from "@/components/level-up-screen";
 
 import {
@@ -161,9 +161,9 @@ function BattlePage() {
   const recordWeeklyLeagueResult = useGameStore((s) => s.recordWeeklyLeagueResult);
 
   const pendingElite = nextPendingElite(peakLevel, defeatedElites);
-  // The Elite Four takeover screen blocks the hub whenever an elite is pending
-  // and we're not already in the elite battle.
-  const eliteTakeover = !!pendingElite && phase !== "elite";
+  // 11.1: a pending challenger stands on the road; her stop opens the 11.2 challenge.
+  const [eliteOpen, setEliteOpen] = useState(false);
+  const eliteTakeover = !!pendingElite && eliteOpen && phase !== "elite";
 
   // Home-screen Mega Raid card state (the raid entry moved here from the Battle
   // Arena tab). `null` while stats are still loading, `"none"` once we've
@@ -383,6 +383,7 @@ function BattlePage() {
       markQuestionsSeen(data.questions.map((q) => q.question));
       setEliteOpponent(pendingElite);
       setQuestions(data.questions);
+      setEliteOpen(false); // the battle ends back on Home's road
       setPhase("elite");
     } catch (e) {
       if (e instanceof ApiError && e.status === 429) {
@@ -1295,12 +1296,8 @@ function BattlePage() {
         <BattleScreen key={battleKey} questions={questions} onExit={exitBattle} mode="daily" />
       ) : phase === "home" && pendingLevelUp ? (
         <LevelUpScreen rewards={pendingLevelUp} onContinue={clearPendingLevelUp} />
-      ) : pendingElite ? (
-        <ElitePendingTakeover
-          elite={pendingElite}
-          onStart={startElite}
-          loading={phase === "loading"}
-        />
+      ) : pendingElite && eliteOpen ? (
+        <EliteChallenge elite={pendingElite} onStart={startElite} onBack={() => setEliteOpen(false)} loading={phase === "loading"} />
       ) : phase === "loading" && prepping ? (
         <ModePrep label={prepping} />
       ) : (
@@ -1312,6 +1309,8 @@ function BattlePage() {
           mega={megaHomeState}
           loading={phase === "loading"}
           dailyDone={dailyDone}
+          elite={pendingElite}
+          onElite={() => setEliteOpen(true)}
         />
       )}
     </>

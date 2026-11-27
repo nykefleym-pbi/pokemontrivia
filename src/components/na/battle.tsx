@@ -603,7 +603,8 @@ export function NaIntroTrainer({ art, leaving, gym }: { art: string; leaving: bo
         style={gym ? { left: 131, top: 368, width: 134, height: 18 } : { left: 140, top: 404, width: 110, height: 18 }}
       />
       {art && gym ? (
-        <GymLeaderArt art={art} />
+        // 10.1: the figure Figma draws is 152 tall, centred on x 198, feet at y 381
+        <FittedTrainer art={art} height={152} cx={198} feetY={381} />
       ) : art ? (
         <img
           src={art}
@@ -618,23 +619,23 @@ export function NaIntroTrainer({ art, leaving, gym }: { art: string; leaving: bo
 }
 
 /**
- * 10.1: the app's own leader art (owner rule: never the design's copy), its visible
- * figure fitted to the one Figma draws: 152 tall, centred on x 198, feet at y 381.
+ * The app's own trainer art (owner rule: never the design's copy), its visible
+ * figure fitted to the one Figma draws: `height` tall, centred on cx, feet at feetY.
  */
-function GymLeaderArt({ art }: { art: string }) {
+export function FittedTrainer({ art, height, cx, feetY, alt = "" }: { art: string; height: number; cx: number; feetY: number; alt?: string }) {
   const tr = useTrim(art);
   if (!tr) return null;
   const t = tr.trim;
-  const k = 152 / t.h;
+  const k = height / t.h;
   return (
     <img
       src={art}
-      alt=""
+      alt={alt}
       draggable={false}
       className="absolute max-w-none [image-rendering:pixelated]"
       style={{
-        left: 198 - (t.x + t.w / 2) * k,
-        top: 381 - (t.y + t.h) * k,
+        left: cx - (t.x + t.w / 2) * k,
+        top: feetY - (t.y + t.h) * k,
         width: tr.img.naturalWidth * k,
         height: tr.img.naturalHeight * k,
       }}

@@ -1,6 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Check, Clock } from "lucide-react";
 import { NaIcon } from "@/components/na/icon";
 import { NaGlossIcon } from "@/components/na/gloss-icon";
 import { toast } from "sonner";
@@ -14,6 +13,8 @@ import { dayStreak } from "@/lib/win-streak";
 import { useDailyGift } from "@/lib/use-daily-gift";
 import { NaRewardIcon } from "@/components/na/reward-icon";
 import { NaSheet } from "@/components/na/sheet";
+import { FittedTrainer } from "@/components/na/battle";
+import type { EliteMember } from "@/lib/elite-four";
 import { NaRegionRow } from "@/components/na/region-row";
 
 /** Home's Mega Raid state: `null` while loading, `"none"` when no raid is live
@@ -37,11 +38,12 @@ type StopState = "done" | "current" | "locked";
 type Main =
   | { key: string; kind: "stop"; state: StopState; label: string }
   | { key: string; kind: "chest" }
-  | { key: string; kind: "gym" };
+  | { key: string; kind: "gym" }
+  | { key: string; kind: "elite" };
 type SideKind = "daily" | "whos" | "mega";
 interface Placed { key: string; cx: number; cy: number; r: number }
 
-const R = { stop: 36, chest: 36, gym: 46, side: 32 };
+const R = { stop: 36, chest: 36, gym: 46, elite: 46, side: 32 };
 const SIDE_COLOR: Record<SideKind, string> = { daily: "#FF8A1F", whos: "#5B8CFF", mega: "#FF7A85" };
 
 /** Cubic from a to b leaving and entering horizontally, as the road in Figma. */
@@ -74,7 +76,7 @@ function evenDots(s: ReturnType<typeof seg>, gap: number) {
 function TimerChip({ text, done, color }: { text: string; done?: boolean; color?: string }) {
   return (
     <span className={`flex items-center gap-1 rounded-full px-[9px] py-[3px] ${done ? "bg-success/[0.18]" : "bg-white/[0.12]"}`}>
-      {done ? <NaIcon name="check" size={12} className="text-success" /> : <Clock className="h-3 w-3" style={{ color: color ?? "#FFC83D" }} strokeWidth={2.5} />}
+      {done ? <NaIcon name="check" size={12} className="text-success" /> : <span style={{ color: color ?? "#FFC83D" }}><NaIcon name="clock" size={12} /></span>}
       <span className="na-label whitespace-nowrap text-foreground">{text}</span>
     </span>
   );
@@ -92,6 +94,8 @@ export function RouteHome({
   mega,
   loading,
   dailyDone,
+  elite,
+  onElite,
 }: {
   onStart: () => void;
   onStartDaily: () => void;
@@ -100,6 +104,9 @@ export function RouteHome({
   mega: MegaHomeState;
   loading: boolean;
   dailyDone: boolean;
+  /** 11.1: the Elite Four member blocking the road, if any; her stop opens the challenge (11.2). */
+  elite?: EliteMember | null;
+  onElite?: () => void;
 }) {
   const navigate = useNavigate();
   const pokemon = useGameStore((s) => s.pokemon);
@@ -140,7 +147,18 @@ export function RouteHome({
     if (i === 0) main.push({ key: "chest", kind: "chest" });
   }
   main.push({ key: "gym", kind: "gym" });
-  const currentIdx = left > 0 ? main.findIndex((m) => m.kind === "stop" && m.state === "current") : main.length - 1;
+  // 11.1: a pending Elite Four member stands on the road as its START; the trainers after her wait.
+  if (elite) {
+    const at = left > 0 ? main.findIndex((m) => m.kind === "stop" && m.state === "current") : main.length - 1;
+    const cur = main[at];
+    if (cur.kind === "stop") main[at] = { ...cur, state: "locked" };
+    main.splice(at, 0, { key: "elite", kind: "elite" });
+  }
+  const currentIdx = elite
+    ? main.findIndex((m) => m.kind === "elite")
+    : left > 0
+      ? main.findIndex((m) => m.kind === "stop" && m.state === "current")
+      : main.length - 1;
 
   // Side routes fork off the stop they belong to, into the other column.
   const sides: Array<{ kind: SideKind; from: number }> = [];
@@ -179,13 +197,16 @@ export function RouteHome({
     if (i > 0) {
       const prevCur = i - 1 === currentIdx;
       const prevChest = main[i - 1].kind === "chest";
+      // 11.1: the Elite Four stop sits 180 below the stop before it (160 after the chest)
       y +=
-        120 +
-        (i === currentIdx ? (hasSide(i - 1) ? 60 : 130) : 0) +
-        (prevChest ? -20 : 0) +
-        (prevCur ? 30 + (hasSide(i - 1) ? 20 : 0) : 0) +
-        (m.kind === "gym" ? 60 : 0) +
-        (i === 1 && hasSide(0) ? 6 : 0);
+        m.kind === "elite"
+          ? 180 + (prevChest ? -20 : 0)
+          : 120 +
+            (i === currentIdx ? (hasSide(i - 1) ? 60 : 130) : 0) +
+            (prevChest ? -20 : 0) +
+            (prevCur ? 30 + (hasSide(i - 1) ? 20 : 0) : 0) +
+            (m.kind === "gym" ? 60 : 0) +
+            (i === 1 && hasSide(0) ? 6 : 0);
     }
     placed.push({ key: m.key, cx: colX(i), cy: y, r: R[m.kind] });
   });
@@ -216,8 +237,9 @@ export function RouteHome({
 
   if (!pokemon) return null;
 
-  const bannerSub =
-    left > 0
+  const bannerSub = elite
+    ? `${elite.name} of the ${elite.title} is blocking your path!`
+    : left > 0
       ? `Defeat ${left} more trainer${left === 1 ? "" : "s"} to reach ${town}!`
       : gymOpen
         ? `${town} is open! Beat ${leader.name} for the ${leader.badge}!`
@@ -371,6 +393,27 @@ export function RouteHome({
               </div>
             );
           }
+          if (m.kind === "elite" && elite) {
+            return (
+              <div key={m.key} className="absolute flex w-[170px] -translate-x-1/2 flex-col items-center gap-1.5" style={{ left: p.cx, top: p.cy - R.elite }}>
+                <span className="absolute -top-9"><StartTag /></span>
+                <button
+                  type="button"
+                  aria-label={`${elite.title} ${elite.name}`}
+                  onClick={onElite}
+                  className="na-glow-brand relative h-[92px] w-[92px] overflow-hidden rounded-full border-[3px] border-brand-red bg-night-card press"
+                >
+                  <FittedTrainer art={elite.trainerSpriteUrl} height={74} cx={43} feetY={82} />
+                </button>
+                <span className="flex items-center gap-1">
+                  <NaGlossIcon kind="crown" size={14} />
+                  <span className="na-label uppercase text-[#FF7A85]">{elite.title}</span>
+                </span>
+                <span className="na-headline text-center text-foreground">{elite.name}</span>
+                <span className="na-caption text-center text-text-secondary">Defeat {elite.name} to unlock the next route!</span>
+              </div>
+            );
+          }
           if (m.kind === "chest") {
             return (
               <div key={m.key} className="absolute flex w-[110px] -translate-x-1/2 flex-col items-center gap-1.5" style={{ left: p.cx, top: p.cy - R.chest }}>
@@ -435,10 +478,10 @@ export function RouteHome({
           <PokemonSprite id={pokemon.id} alt={pokemon.name} className="sprite absolute -left-8 -top-[40px] h-16 w-16 max-w-none origin-bottom scale-[2.1]" />
           <span
             className={`na-caption absolute -top-[43px] whitespace-nowrap rounded-xl bg-foreground px-2.5 py-1.5 text-night-base ${
-              streak.secured ? "right-[34px]" : "left-[34px]"
+              streak.secured || elite ? "right-[34px]" : "left-[34px]"
             }`}
           >
-            {streak.secured ? "See you tomorrow!" : "Let's go!"}
+            {elite ? "You've got this!" : streak.secured ? "See you tomorrow!" : "Let's go!"}
           </span>
         </div>
       </div>

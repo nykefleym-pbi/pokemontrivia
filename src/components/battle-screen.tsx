@@ -69,7 +69,7 @@ import type { ItemId } from "@/lib/game-data";
 import { ACHIEVEMENTS, unlockedAchievements } from "@/lib/achievements";
 import { playSfx, revealPokemon, playBattleResult, playItemCue } from "@/lib/audio";
 import { answerHaptic } from "@/lib/haptics";
-import { type EliteMember, regionCompleted } from "@/lib/elite-four";
+import { ELITE_FOUR, type EliteMember, regionCompleted } from "@/lib/elite-four";
 import type { GymLeader } from "@/lib/gym-leaders";
 import { routeOpponent } from "@/lib/route";
 import { SHINY_CHANCE } from "@/lib/game-data";
@@ -1279,6 +1279,9 @@ function BattleMode({
     setCoinsEarned(adjustedCoins);
     setTpEarned(tpAward);
     setResultWon(won);
+    // Trophies held before this battle's results land (the Elite Four bookkeeping
+    // below would otherwise already count Elite Slayer as held).
+    const before = new Set(unlockedAchievements(useGameStore.getState()));
     durationMsRef.current = battleStartRef.current ? Date.now() - battleStartRef.current : 0;
     if (tpAward > 0) useGameStore.getState().addTrainingPoints(player.id, tpAward);
     if (adjustedCoins > 0) useGameStore.getState().addCoins(adjustedCoins);
@@ -1317,12 +1320,7 @@ function BattleMode({
           luckyegg: (inv.luckyegg ?? 0) + 1,
         },
       });
-      // Both glyphs dropped, not just Lucky Egg's: one item keeping an emoji
-      // while the other lost it reads as a bug in a single composed line.
-      toast.success("Rare Candy +1 · Lucky Egg +1", { duration: 4000 });
-      if (regionDone) {
-        toast.success(`${eliteMember.region} Elite Four cleared!`, { duration: 4500 });
-      }
+      // The items and a cleared region show on the 11.3 result (its rewards card and trophy row).
     }
 
     // Weekly League: record result + prep share card
@@ -1389,8 +1387,6 @@ function BattleMode({
       });
     }
 
-    // snapshot achievements before/after
-    const before = new Set(unlockedAchievements(useGameStore.getState()));
     const prevLevel = useGameStore.getState().level;
     endBattle(won, xpAward);
     const newLevel = useGameStore.getState().level;
@@ -1568,6 +1564,21 @@ function BattleMode({
           badgeEarned={
             isWeekly && resultWon && gymLeader
               ? { name: gymLeader.badge, iconUrl: gymLeader.badgeIconUrl, leader: gymLeader.name }
+              : undefined
+          }
+          eliteWin={
+            isElite && resultWon && eliteMember
+              ? {
+                  name: eliteMember.name,
+                  region: eliteMember.region,
+                  members: ELITE_FOUR.filter((m) => m.region === eliteMember.region).map((m) => ({
+                    id: m.id,
+                    name: m.name,
+                    art: m.trainerSpriteUrl,
+                    unlockLevel: m.unlockLevel,
+                  })),
+                  defeated: useGameStore.getState().defeatedElites,
+                }
               : undefined
           }
           missed={missedRef.current}

@@ -5,6 +5,10 @@ import { NaRewardIcon } from "@/components/na/reward-icon";
 import { NaButton } from "@/components/na/button";
 import { NaGlossIcon } from "@/components/na/gloss-icon";
 import { GYM_LEADERS } from "@/lib/gym-leaders";
+import { ITEMS } from "@/lib/game-data";
+import { ACHIEVEMENTS } from "@/lib/achievements";
+import { FittedTrainer } from "@/components/na/battle";
+import { ItemIcon } from "@/components/game-ui";
 import { NaCatchCard, NaGlassRow, NaRewardTile, NaWordmark, VictoryHero } from "@/components/na/celebration";
 import { SaveProgressSheet } from "@/components/save-progress-sheet";
 import { MistakesReview } from "@/components/mistakes-review";
@@ -32,6 +36,7 @@ export function ResultScreen({
   speedBonus,
   newTrophies: _newTrophies,
   badgeEarned,
+  eliteWin,
   missed,
   durationMs,
   caught,
@@ -66,6 +71,8 @@ export function ResultScreen({
    * and a badge you keep — and it was the one reward the screen never mentioned.
    */
   badgeEarned?: { name: string; iconUrl: string; leader: string };
+  /** An Elite Four win (11.3): who fell and the region's four. */
+  eliteWin?: EliteWinInfo;
   missed: MissedAnswer[];
   /** First question to the end, for the Time tile. */
   durationMs?: number;
@@ -198,18 +205,32 @@ export function ResultScreen({
     );
   }
 
-  if (badgeEarned) {
+  if (badgeEarned || eliteWin) {
     return (
       <>
-        <BadgeWon
-          badge={badgeEarned}
-          tiles={tiles}
-          coinsEarned={coinsEarned}
-          tpEarned={tpEarned}
-          canShare={canShare}
-          onShare={onShare}
-          onHome={() => leave(onBackHome)}
-        />
+        {eliteWin ? (
+          <EliteWon
+            elite={eliteWin}
+            accuracy={accuracy}
+            time={time}
+            coinsEarned={coinsEarned}
+            tpEarned={tpEarned}
+            trophies={_newTrophies}
+            canShare={canShare}
+            onShare={onShare}
+            onHome={() => leave(onBackHome)}
+          />
+        ) : (
+          <BadgeWon
+            badge={badgeEarned!}
+            tiles={tiles}
+            coinsEarned={coinsEarned}
+            tpEarned={tpEarned}
+            canShare={canShare}
+            onShare={onShare}
+            onHome={() => leave(onBackHome)}
+          />
+        )}
         <SaveProgressSheet open={saveOpen} onOpenChange={setSaveOpen} />
         {streakThen && (
           <StreakSafe
@@ -357,6 +378,111 @@ export function ResultScreen({
  * slams down with a shake (0.4 s), then BADGE EARNED! slams in and the rewards
  * rise (0.8 s). No rings or glow behind it (owner rule: no sunbursts).
  */
+/** The Elite Four member a win just beat, and her region's four for the progress row (11.3). */
+export interface EliteWinInfo {
+  name: string;
+  region: string;
+  members: Array<{ id: string; name: string; art: string; unlockLevel: number }>;
+  defeated: string[];
+}
+
+/**
+ * Figma 11.3 "Elite Four win": the Victory hero, accuracy and time, every reward
+ * in one card (no XP), the trophy it unlocked, and how far through the region you are.
+ */
+function EliteWon({
+  elite,
+  accuracy,
+  time,
+  coinsEarned,
+  tpEarned,
+  trophies,
+  canShare,
+  onShare,
+  onHome,
+}: {
+  elite: EliteWinInfo;
+  accuracy: number;
+  time: string;
+  coinsEarned: number;
+  tpEarned: number;
+  trophies: Array<{ name: string }>;
+  canShare?: boolean;
+  onShare?: () => void;
+  onHome: () => void;
+}) {
+  const items = ["candy", "luckyegg"].map((id) => ITEMS.find((x) => x.id === id)).filter((x): x is NonNullable<typeof x> => !!x);
+  const trophy = trophies.map((t) => ACHIEVEMENTS.find((a) => a.name === t.name)).find((a) => a && a.id.startsWith("elite_"));
+  const done = new Set(elite.defeated);
+  const rise = (d: number) => ({ initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { delay: d, duration: 0.3 } });
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="relative flex h-full w-full flex-col items-center gap-3 overflow-y-auto px-4 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-[calc(env(safe-area-inset-top)+8px)]"
+    >
+      <VictoryHero />
+      <p className="na-body-strong text-center text-text-secondary">You defeated {elite.name} of the Elite Four!</p>
+      <motion.div {...rise(0.6)} className="flex gap-[9px]">
+        <NaRewardTile tone="success" label="Accuracy" value={`${accuracy}%`} icon={<NaRewardIcon kind="Accuracy" size={30} />} />
+        <NaRewardTile tone="info" label="Time" value={time} icon={<NaRewardIcon kind="Time" size={30} />} />
+      </motion.div>
+      <motion.div {...rise(0.7)} className="na-glass flex w-full flex-col gap-2.5 rounded-[18px] p-3.5">
+        <span className="flex items-center gap-2.5">
+          <NaRewardIcon kind="Coin" size={28} />
+          <span className="na-body-strong text-foreground">+{coinsEarned.toLocaleString("en-US")} coins</span>
+        </span>
+        {tpEarned > 0 && (
+          <span className="flex items-center gap-2.5">
+            <NaRewardIcon kind="TP" size={28} />
+            <span className="na-body-strong text-foreground">+{tpEarned} Training Points</span>
+          </span>
+        )}
+        <span className="flex items-center gap-2.5">
+          {items.map((it) => (
+            <ItemIcon key={it.id} item={it} className="h-7 w-7 shrink-0" />
+          ))}
+          <span className="na-body-strong text-foreground">+1 Rare Candy and +1 Lucky Egg</span>
+        </span>
+      </motion.div>
+      {trophy && (
+        <motion.div {...rise(0.8)} className="w-full">
+          <NaGlassRow
+            tone="gold"
+            lead={<NaRewardIcon kind="Trophy" size={40} />}
+            title={`New trophy: ${trophy.name}`}
+            sub={trophy.id === "elite_first" ? "Your first Elite Four victory!" : trophy.desc}
+          />
+        </motion.div>
+      )}
+      <motion.div {...rise(0.9)} className="flex gap-3">
+        {elite.members.map((m) => {
+          const beat = done.has(m.id);
+          return (
+            <span key={m.id} className="flex w-[72px] flex-col items-center gap-1">
+              <span
+                className={`relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border-2 bg-night-card-2 ${beat ? "border-success" : "border-white/20"}`}
+              >
+                {beat ? <FittedTrainer art={m.art} height={40} cx={22} feetY={44} alt={m.name} /> : <NaGlossIcon kind="lock" size={20} />}
+              </span>
+              <span className={`na-label ${beat ? "text-success" : "text-text-muted"}`}>{beat ? "Defeated!" : `Level ${m.unlockLevel}`}</span>
+            </span>
+          );
+        })}
+      </motion.div>
+      <div className="min-h-2 flex-1" />
+      <NaButton block onClick={onHome}>
+        Let&apos;s go!
+      </NaButton>
+      {canShare && onShare && (
+        <NaButton kind="secondary" size="M" block onClick={onShare}>
+          Share
+        </NaButton>
+      )}
+    </motion.div>
+  );
+}
+
 function BadgeWon({
   badge,
   tiles,
