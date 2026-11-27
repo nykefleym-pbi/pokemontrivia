@@ -246,8 +246,14 @@ export function NaHpCard({
   testId,
   style,
   shiny,
+  lead,
+  children,
 }: {
   shiny?: boolean;
+  /** Before the name (15.2: the live dot). */
+  lead?: React.ReactNode;
+  /** Under the ability (live battles: stat changes). */
+  children?: React.ReactNode;
   side: "enemy" | "player";
   trainer?: string | null;
   name: string;
@@ -281,6 +287,8 @@ export function NaHpCard({
     >
       {side === "enemy" && trainer && <span className="na-caption truncate text-text-secondary">{trainer}</span>}
       <div className="flex items-center justify-between gap-2">
+        <span className="flex min-w-0 items-center gap-1.5">
+        {lead}
         {shiny ? (
           // 14.2: a shiny's name turns gold, with stars after it (no SHINY tag)
           <span className="flex min-w-0 items-center gap-0.5">
@@ -291,6 +299,7 @@ export function NaHpCard({
         ) : (
           <span className="na-headline truncate text-foreground">{name}</span>
         )}
+        </span>
         <span className="na-number-m shrink-0 text-foreground" data-testid={testId && `${testId}-hp`}>
           {Math.round(hp)}
         </span>
@@ -334,6 +343,7 @@ export function NaHpCard({
           </PopoverContent>
         </Popover>
       )}
+      {children}
     </div>
   );
 }

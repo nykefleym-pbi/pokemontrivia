@@ -1,28 +1,31 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FieldSprite, NaBattleField, NaHpCard, NaQuestionPanel, type AnswerState } from "@/components/na/battle";
+import { NaGlossIcon } from "@/components/na/gloss-icon";
+import { NaSheet } from "@/components/na/sheet";
+
 import { toast } from "sonner";
-import { Backpack, Info } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
+
 import type { Trivia, MissedAnswer } from "@/lib/trivia-core";
 import { shuffleTriviaOptionsWithOrder } from "@/lib/trivia-core";
 import { playSfx, playCry } from "@/lib/audio";
 import { answerHaptic } from "@/lib/haptics";
 import { useGameStore, type ActiveStatus, type PvpStatStages } from "@/lib/store";
 import {
-  BattleStage,
-  PokemonSprite,
+
+
   PokeballSpinner,
   ItemIcon,
   StatusEffectOverlay,
   EffectivenessPill,
 } from "@/components/game-ui";
-import { TypeChip } from "@/components/type-chip";
-import { typeRowFontSize, COMBAT_PANEL_WIDTH } from "@/lib/type-row-fit";
+
+
 import { findPokemon, type PokeType } from "@/lib/pokemon-data";
 import { ITEMS, STATUS_META, type ItemId, type StatusKind, type PvpStat } from "@/lib/game-data";
 import { MAX_ITEMS_PER_BATTLE } from "@/lib/store/slices/itemsSlice";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { CATEGORIES, CATEGORY_OF, BAG_SHORT_DESC } from "@/lib/item-categories";
+
+import { BAG_SHORT_DESC } from "@/lib/item-categories";
 import {
   multiplierConditionHolds,
   phasePayoffIndex,
@@ -79,9 +82,6 @@ import {
 } from "@/lib/signature-abilities";
 import { nextWrathStacks, thunderclapFires, THUNDERCLAP_COOLDOWN } from "@/lib/signature-bespoke";
 import { isWeatherStatSource, isMyWeatherActive } from "@/lib/pvp-weather";
-import { TimerRing } from "@/components/timer-ring";
-import { AppIcon } from "@/components/app-icon";
-import { LOCK_ICON } from "@/lib/app-icons";
 import { useBattleFxCues } from "@/hooks/useBattleFxCues";
 import type { BattleSide, BattleStatusKind } from "@/lib/training-battle-fx-types";
 
@@ -140,38 +140,8 @@ const CLIENT_ONLY_ITEMS: ItemId[] = ["scope", "xaccuracy"];
  * Battle bag in this pass — see the implementation report for scope notes. */
 const SERVER_EFFECT_ITEMS: ItemId[] = ["potion", "superpotion", "maxpotion"];
 
-/** Same grouped layout as Solo's bag/Shop, plus a Berries group since Nearby
- * Battle is the only mode that carries berries (deliberately excluded from
- * CATEGORIES so they never show up in Solo's bag/Shop). */
-const PVP_BAG_GROUPS: Array<{ id: string; label: string }> = [
-  ...CATEGORIES,
-  { id: "BERRY", label: "Berries" },
-];
-
 function statBarLabel(stat: PvpStat): string {
   return { attack: "ATK", defense: "DEF", speed: "SPD", crit: "CRIT" }[stat];
-}
-
-function StatChips({ stages }: { stages: PvpStatStages }) {
-  const entries = (Object.keys(stages) as PvpStat[])
-    .map((k) => ({ stat: k, val: stages[k] }))
-    .filter((e) => e.val !== 0);
-  if (entries.length === 0) return null;
-  return (
-    <div className="flex flex-wrap gap-1">
-      {entries.map((e) => (
-        <span
-          key={e.stat}
-          className={`rounded-full px-1.5 py-[1px] font-pixel-xs ${
-            e.val > 0 ? "bg-hp-good/20 text-hp-good" : "bg-destructive/20 text-destructive"
-          }`}
-        >
-          {statBarLabel(e.stat)} {e.val > 0 ? "▲" : "▼"}
-          {Math.abs(e.val) > 1 ? Math.abs(e.val) : ""}
-        </span>
-      ))}
-    </div>
-  );
 }
 
 /** Solo-style CombatPanel adapted for Nearby Battle: same card frame, type
@@ -179,157 +149,6 @@ function StatChips({ stages }: { stages: PvpStatStages }) {
  * PvP's stat-stage and status chips instead of ability/immunity chips. */
 /** One ability chip+popover in a combat panel (a legendary shows two). */
 type AbilityChip = { name: string; desc: string | null };
-
-function PvpCombatPanel({
-  align,
-  name,
-  types,
-  hp,
-  stages,
-  abilities = [],
-}: {
-  align: "left" | "right";
-  name: string;
-  types: PokeType[];
-  hp: number;
-  stages: PvpStatStages;
-  abilities?: AbilityChip[];
-}) {
-  const pct = Math.max(0, Math.min(100, (hp / PVP_MAX_HP) * 100));
-  const barColor = pct > 50 ? "bg-hp-good" : pct > 20 ? "bg-hp-warn" : "bg-hp-low";
-  const alignCls = align === "right" ? "items-end text-right" : "items-start text-left";
-  const justifyCls = align === "right" ? "justify-end" : "justify-start";
-  const hasChips = abilities.length > 0 || (Object.values(stages) as number[]).some((v) => v !== 0);
-
-  return (
-    <div
-      style={{ width: COMBAT_PANEL_WIDTH }}
-      className="shrink-0 rounded-2xl bg-card px-3 py-2 backdrop-blur shadow-card"
-    >
-      <div className={`flex flex-col ${alignCls}`}>
-        {/* Same hierarchy as Solo's CombatPanel: the name leads, the chips
-            support. */}
-        <div className="w-full truncate text-[17px] font-extrabold leading-tight">{name}</div>
-        {types.length > 0 && (
-          <div className={`mt-1 flex w-full flex-nowrap gap-0.5 ${justifyCls}`}>
-            {types.map((t) => (
-              <TypeChip
-                key={t}
-                type={t}
-                selected
-                size="sm"
-                className="min-w-0"
-                fontSize={typeRowFontSize(types, COMBAT_PANEL_WIDTH)}
-              />
-            ))}
-          </div>
-        )}
-        <div className="mt-1.5 flex w-full items-center gap-2">
-          <div className="h-2 flex-1 overflow-hidden rounded-full bg-poke-dark/15">
-            <motion.div
-              className={`h-full ${barColor}`}
-              initial={false}
-              animate={{ width: `${pct}%` }}
-              transition={{ type: "spring", stiffness: 100, damping: 18 }}
-            />
-          </div>
-          <span className="text-[11px] font-bold tabular-nums text-foreground">
-            {Math.max(0, Math.round(hp))}
-          </span>
-        </div>
-        {hasChips && (
-          <div className={`mt-1 flex w-full flex-wrap items-center gap-0.5 ${justifyCls}`}>
-            {abilities.map((a, i) => (
-              <Popover key={`${a.name}-${i}`}>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    className="press flex max-w-full items-center gap-0.5 rounded-xl bg-primary/10 px-1.5 py-[1px] font-pixel text-[7px] uppercase leading-none tracking-wide text-primary"
-                  >
-                    <span className="min-w-0 truncate text-left">{a.name}</span>
-                    <Info className="h-2 w-2 shrink-0 opacity-70" />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent
-                  align={align === "right" ? "end" : "start"}
-                  className="w-56 text-xs"
-                >
-                  <div className="font-bold text-primary">{a.name}</div>
-                  {a.desc && <p className="mt-1 leading-snug text-muted-foreground">{a.desc}</p>}
-                </PopoverContent>
-              </Popover>
-            ))}
-            <StatChips stages={stages} />
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/** Sprite over a soft radial "shadow" ellipse, mirroring Solo's arena. Falls
- * back to a Poké Ball when the side's partner dex id is unknown (a non-signature
- * partner, or an opponent whose species the match row doesn't expose). */
-function ArenaSprite({
-  id,
-  back,
-  shake,
-  floatN,
-  statuses,
-  confused,
-  pill,
-}: {
-  id: number | null;
-  back: boolean;
-  shake: boolean;
-  floatN: number | null;
-  statuses: Array<{ kind: StatusKind }>;
-  confused?: boolean;
-  pill?: React.ReactNode;
-}) {
-  return (
-    <div className="relative shrink-0">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute bottom-3 left-1/2 h-8 w-28 -translate-x-1/2 rounded-[50%]"
-        style={{
-          background:
-            "radial-gradient(ellipse at 50% 35%, oklch(0.88 0.16 145) 0%, oklch(0.72 0.18 145) 55%, oklch(0.55 0.16 150) 100%)",
-          boxShadow: "0 8px 14px -6px oklch(0.3 0.1 150 / 0.35), inset 0 1px 0 oklch(1 0 0 / 0.35)",
-        }}
-      />
-      <motion.div
-        className={`relative ${shake ? "animate-shake" : ""}`}
-        initial={{ x: back ? -60 : 60, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-      >
-        {id != null ? (
-          <PokemonSprite
-            id={id}
-            back={back}
-            alt={back ? "Your Pokémon" : "Opponent's Pokémon"}
-            className="sprite relative z-10 h-32 w-32"
-          />
-        ) : (
-          <div className="relative z-10 flex h-32 w-32 items-center justify-center">
-            <PokeballSpinner size={72} />
-          </div>
-        )}
-        <StatusEffectOverlay statuses={statuses} confused={confused} />
-        {floatN != null && (
-          <div className="animate-float-up pointer-events-none absolute top-4 left-1/2 z-20 -translate-x-1/2 font-pixel text-base text-destructive">
-            -{floatN}
-          </div>
-        )}
-        {pill != null && (
-          <div className="pointer-events-none absolute top-12 left-1/2 z-20 -translate-x-1/2">
-            {pill}
-          </div>
-        )}
-      </motion.div>
-    </div>
-  );
-}
 
 // ── signature-rework M1 engine helpers (Frontend-B, shard B) ────────────────
 // Pure, component-independent glue for the server-authoritative per-answer
@@ -596,6 +415,19 @@ export function LivePvpBattleScreen({
   // on a realtime round trip. -1 = nothing answered yet.
   const [selfAnsweredIdx, setSelfAnsweredIdx] = useState(-1);
   const [oppAnsweredIdx, setOppAnsweredIdx] = useState(-1);
+  // Figma 15.4: the bag's Berries / Items tabs and the row picked before Use.
+  const [bagTab, setBagTab] = useState<"berries" | "items">("berries");
+  const [bagPick, setBagPick] = useState<ItemId | null>(null);
+  // The question panel's height, so the field can shrink on short phones (as in 3.2).
+  const [panelH, setPanelH] = useState(380);
+  const panelObserver = useRef<ResizeObserver | null>(null);
+  const panelRefCb = useCallback((el: HTMLDivElement | null) => {
+    panelObserver.current?.disconnect();
+    if (!el || typeof ResizeObserver === "undefined") return;
+    panelObserver.current = new ResizeObserver(() => setPanelH(el.offsetHeight));
+    panelObserver.current.observe(el);
+    setPanelH(el.offsetHeight);
+  }, []);
   // Mirror of displayedIndex read inside timers/effects that must see the latest
   // value without a stale closure (Fix 3: wall-clock ceiling and both-answered
   // early-advance converge on it so neither re-enters nor rewinds a question).
@@ -2199,10 +2031,10 @@ export function LivePvpBattleScreen({
   if (idx < 0) {
     const secsLeft = Math.max(0, Math.ceil(-elapsed / 1000));
     return (
-      <div className="screen-x flex h-full w-full flex-col items-center justify-center gap-3 bg-poke-cream text-center">
-        <div className="font-display-xl text-foreground">Get ready!</div>
-        <div className="text-5xl font-extrabold text-primary">{secsLeft}</div>
-        <div className="font-pixel-xs text-foreground/60">Battle starting…</div>
+      <div className="na-bg-night flex h-full w-full flex-col items-center justify-center gap-2 text-center">
+        <div className="na-display-m text-foreground">Get ready!</div>
+        <div className="na-display-xl text-reward-gold">{secsLeft}</div>
+        <div className="na-caption text-text-secondary">Battle starting…</div>
       </div>
     );
   }
@@ -2234,298 +2066,204 @@ export function LivePvpBattleScreen({
   const myStatusesDisplay = mergeConfused(myStatuses, selfConfused, selfConfusedTicksRef.current);
   const oppStatusesDisplay = mergeConfused(oppStatuses, oppConfused, oppConfusedTicksRef.current);
 
+  const answerStates: AnswerState[] = q.options.map((_, i) => {
+    if (selected !== null) {
+      if (i === q.correct) return selected === i ? "correct" : "reveal";
+      return selected === i ? "wrong" : "dimmed";
+    }
+    if (revealedWrong === i || eliminatedChoices.includes(i)) return "struck";
+    if (revealedCorrect === i) return "reveal";
+    return "default";
+  });
+  // 15.2: a glowing dot before their name: red while they think, green once they answer.
+  const oppThinking = oppAnsweredIdx < displayedIndex;
+  const hour = new Date().getHours();
+  const berries = bagItems.filter((it) => it.isBerry);
+  const others = bagItems.filter((it) => !it.isBerry);
+  const shown = bagTab === "berries" ? berries : others;
+  const picked = shown.find((it) => it.id === bagPick) ?? null;
+  const bagFull = itemsUsedRef.current >= MAX_ITEMS_PER_BATTLE;
+  const liveSprite = (who: "opponent" | "player", id: number | null, statuses: ActiveStatus[], confused: boolean) => {
+    const enemy = who === "opponent";
+    const hit = floatDmg?.who === who ? floatDmg.n : null;
+    const pill = effectPill?.who === who ? <EffectivenessPill band={effectPill.band} attackType={effectPill.attackType} multiplier={effectPill.multiplier} /> : null;
+    if (id == null)
+      return (
+        <div className="absolute flex h-24 w-24 items-center justify-center" style={enemy ? { left: 238, top: 120 } : { left: 56, top: 330 }}>
+          <PokeballSpinner size={64} />
+        </div>
+      );
+    return (
+      <FieldSprite id={id} back={!enemy} k={enemy ? 2 : 3} cx={enemy ? 286 : 104} feetY={enemy ? 215 : 420} className={shakeWho === who ? "animate-shake" : ""}>
+        <StatusEffectOverlay statuses={statuses} confused={confused} />
+        {hit != null && (
+          <span className="na-display-m animate-float-up pointer-events-none absolute left-1/2 top-2 z-20 -translate-x-1/2 text-foreground" style={{ WebkitTextStroke: "3px #070a1a", paintOrder: "stroke fill" }}>
+            -{hit}
+          </span>
+        )}
+        {pill && <div className="pointer-events-none absolute left-1/2 top-10 z-20 -translate-x-1/2">{pill}</div>}
+      </FieldSprite>
+    );
+  };
+  const statChips = (stages: PvpStatStages) => {
+    const on = (Object.keys(stages) as PvpStat[]).filter((k) => stages[k] !== 0);
+    if (!on.length) return null;
+    return (
+      <span className="flex flex-wrap gap-1">
+        {on.map((k) => (
+          <span key={k} className={`na-label rounded-full px-1.5 py-px ${stages[k] > 0 ? "bg-success/20 text-success" : "bg-danger/20 text-danger"}`}>
+            {statBarLabel(k)} {stages[k] > 0 ? "▲" : "▼"}
+            {Math.abs(stages[k]) > 1 ? Math.abs(stages[k]) : ""}
+          </span>
+        ))}
+      </span>
+    );
+  };
+
   return (
-    <div className="relative flex h-full w-full flex-col overflow-hidden bg-battle-field">
-      {/* TOP BAR — round pill (Solo-style), signature-fire (timer floats above the card) */}
-      <div className="relative z-10 flex shrink-0 items-center justify-between gap-2 screen-top pb-1 px-[max(1.25rem,env(safe-area-inset-left))]">
-        <div className="flex items-center gap-1 rounded-full bg-card/90 px-2.5 py-1 font-pixel text-[9px] text-foreground shadow-card backdrop-blur">
-          QUESTION {displayedIndex + 1}/{PVP_QUESTIONS}
+    // Figma 15.2 "A live battle against a real trainer": the field, both HP cards
+    // (theirs with the live dot), the question panel and the bag (15.4).
+    <div className="relative h-full w-full overflow-hidden bg-night-deep">
+      <NaBattleField mode={hour >= 18 || hour < 6 ? "evening" : "morning"} panelHeight={panelH}>
+        {liveSprite("opponent", opponentPartnerId, oppStatusesDisplay, oppConfused)}
+        {liveSprite("player", mySpriteId, myStatusesDisplay, selfConfused)}
+        <NaHpCard
+          side="enemy"
+          trainer={opponentName}
+          name={oppEntry?.name ?? opponentName}
+          hp={oppHp}
+          maxHp={PVP_MAX_HP}
+          types={oppTypes}
+          abilityName={oppAbilities[0]?.name}
+          abilityDescription={oppAbilities[0]?.desc}
+          lead={
+            <span
+              aria-label={oppThinking ? "Thinking" : "Answered"}
+              className={`h-2.5 w-2.5 shrink-0 rounded-full ${oppThinking ? "na-glow-brand animate-pulse bg-brand-red" : "na-glow-success bg-success"}`}
+            />
+          }
+          style={{ left: 12, top: 56 }}
+        >
+          {statChips(oppStages)}
+        </NaHpCard>
+        <NaHpCard
+          side="player"
+          name={myPokemon?.name ?? findPokemon(partnerId ?? -1)?.name ?? "You"}
+          hp={myHp}
+          maxHp={PVP_MAX_HP}
+          types={myTypes}
+          abilityName={myAbilities[0]?.name}
+          abilityDescription={myAbilities[0]?.desc}
+          style={{ left: 178, top: 262 }}
+        >
+          {statChips(myStages)}
+        </NaHpCard>
+        {/* Signature moves fire on their own (owner ruling 2026-07-13); this says which and how many are left. */}
+        {hasPayload && (
+          <span className="na-label absolute flex items-center gap-1 rounded-full border border-white/[0.16] bg-night-deep/70 px-2.5 py-1 text-foreground" style={{ right: 12, top: 56 }} title={signatureMoveName(partnerId) ?? "Signature move"}>
+            {displayedIndex < mySuppressedUntil && <NaGlossIcon kind="lock" size={12} />}
+            {signatureMoveName(partnerId)}
+            <span className="tabular-nums text-text-secondary">
+              {displayedIndex < mySuppressedUntil ? "locked" : `${Math.max(0, payloadCap - payloadUsed)}/${payloadCap}`}
+            </span>
+          </span>
+        )}
+      </NaBattleField>
+
+      {frozen || stillSleepLocked ? (
+        <div ref={panelRefCb} className="absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-2 rounded-t-[28px] bg-night-raised px-4 pb-[calc(env(safe-area-inset-bottom)+40px)] pt-10 text-center">
+          <span className="na-title text-foreground">{frozen ? "Frozen solid!" : "Waking up…"}</span>
+          <span className="na-caption text-text-secondary">{frozen ? "This question is skipped." : "Your partner is asleep. Hang on!"}</span>
         </div>
-        <div className="flex items-center gap-2">
-          {/* Owner ruling 2026-07-13: signature moves are AUTOMATIC. The Fire button
-              is gone — a row's manual-phase effects now fire off its own engine
-              trigger (see `fireCappedPayload`), still capped at the uses they always
-              had. The signature name and what it does stay visible on the combat
-              panel's ability chip. */}
-          {hasPayload && (
-            <div
-              title={signatureMoveName(partnerId) ?? "Signature move"}
-              className="flex items-center gap-1 rounded-full bg-card/90 px-3 py-1.5 font-pixel text-[9px] text-foreground shadow-card backdrop-blur"
-            >
-              {displayedIndex < mySuppressedUntil && (
-                <AppIcon src={LOCK_ICON} className="h-2.5 w-2.5" />
-              )}{" "}
-              {signatureMoveName(partnerId)}
-              <span className="tabular-nums opacity-70">
-                {displayedIndex < mySuppressedUntil
-                  ? "locked"
-                  : `${Math.max(0, payloadCap - payloadUsed)}/${payloadCap}`}
+      ) : (
+        <NaQuestionPanel
+          panelRef={panelRefCb}
+          seconds={msLeft / 1000}
+          maxSeconds={Math.ceil(personalTimerMs / 1000)}
+          category={q.category || "Trivia"}
+          progress={`Q${displayedIndex + 1}`}
+          question={q.question}
+          options={q.options}
+          states={answerStates}
+          disabled={(i) => selected !== null || revealedWrong === i || eliminatedChoices.includes(i)}
+          onAnswer={(i) => handleAnswer(i)}
+          bag={
+            <button type="button" aria-label="Open your bag" onClick={() => setBagOpen(true)} className="relative press">
+              <NaGlossIcon kind="bag" size={28} />
+              <span className="na-label absolute -right-2 -top-1.5 rounded-full bg-night-card-2 px-1 text-foreground">
+                {itemsUsedRef.current}/{MAX_ITEMS_PER_BATTLE}
               </span>
-            </div>
-          )}
-          {/* No chat entry point here by design (owner ruling 2026-07-26):
-              chat lives on the Battle Arena screen and on the post-battle
-              result screen, never mid-battle. */}
+            </button>
+          }
+          banner={selected !== null ? <span className="na-caption mt-1 text-center text-text-secondary">Locked in! The next question comes soon.</span> : null}
+        />
+      )}
+
+      {/* Figma 15.4 "Your bag": Berries and Items tabs, pick one, then Use. */}
+      <NaSheet
+        open={bagOpen}
+        onOpenChange={(o) => {
+          setBagOpen(o);
+          if (!o) setBagPick(null);
+        }}
+        title="Your bag"
+        body="Use up to 3 items per battle. Berries can only be used in Nearby Battles!"
+        primary={{
+          label: picked ? `Use ${picked.name}` : "Choose an item",
+          disabled: !picked || bagFull || usedItemIdsRef.current.has(picked.id),
+          onClick: () => {
+            if (!picked) return;
+            void handleUseItem(picked.id);
+            setBagPick(null);
+            setBagOpen(false);
+          },
+        }}
+        secondary={{ label: "Close", onClick: () => setBagOpen(false) }}
+        footnote="Win a Nearby Battle to earn 2 berries!"
+      >
+        <div className="flex gap-1 rounded-[14px] bg-night-deep/60 p-1">
+          {(["berries", "items"] as const).map((k) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => {
+                setBagTab(k);
+                setBagPick(null);
+              }}
+              className={`flex h-[38px] flex-1 items-center justify-center rounded-[10px] capitalize ${bagTab === k ? "na-body-strong bg-night-card-2 text-foreground shadow-[0_4px_0_#141A3F]" : "na-body text-text-secondary"}`}
+            >
+              {k}
+            </button>
+          ))}
         </div>
-      </div>
-
-      {/* COMBAT ARENA — both partners stand on the platforms painted into the
-          field artwork, same registration as Solo. */}
-      <BattleStage
-        enemyPanel={
-          <PvpCombatPanel
-            align="left"
-            name={oppEntry?.name ?? opponentName}
-            types={oppTypes}
-            hp={oppHp}
-            stages={oppStages}
-            abilities={oppAbilities}
-          />
-        }
-        enemySprite={
-          <ArenaSprite
-            id={opponentPartnerId}
-            back={false}
-            shake={shakeWho === "opponent"}
-            floatN={floatDmg?.who === "opponent" ? floatDmg.n : null}
-            statuses={oppStatusesDisplay}
-            confused={oppConfused}
-            pill={
-              effectPill?.who === "opponent" ? (
-                <EffectivenessPill
-                  band={effectPill.band}
-                  attackType={effectPill.attackType}
-                  multiplier={effectPill.multiplier}
-                />
-              ) : null
-            }
-          />
-        }
-        playerSprite={
-          <ArenaSprite
-            id={mySpriteId}
-            back
-            shake={shakeWho === "player"}
-            floatN={floatDmg?.who === "player" ? floatDmg.n : null}
-            statuses={myStatusesDisplay}
-            confused={selfConfused}
-            pill={
-              effectPill?.who === "player" ? (
-                <EffectivenessPill
-                  band={effectPill.band}
-                  attackType={effectPill.attackType}
-                  multiplier={effectPill.multiplier}
-                />
-              ) : null
-            }
-          />
-        }
-        playerPanel={
-          <PvpCombatPanel
-            align="right"
-            name={myPokemon?.name ?? findPokemon(partnerId ?? -1)?.name ?? "You"}
-            types={myTypes}
-            hp={myHp}
-            stages={myStages}
-            abilities={myAbilities}
-          />
-        }
-      />
-      {/* The stage is absolutely positioned, so this spacer is what pushes the
-          question card to the bottom of the screen. It used to carry a
-          fade-to-white gradient as well; that is gone — as a flex child its
-          height moved whenever the card's content changed (a feedback line
-          appearing, an item row), so the gradient jumped around mid-battle and
-          washed parts of the field on and off. The artwork fades out on its own
-          at the bottom, which is what the fade was imitating. */}
-      <div className="min-h-0 flex-1" />
-
-      {/* QUESTION CARD — thumb zone, pinned bottom, floating timer pill above */}
-      {/* The card sits on a full-width band of the fade colour. Its own top
-          corners are rounded, and without this the artwork behind them showed
-          through as two green notches either side of the question card — the
-          stage runs the full height of the screen, so "below the fade" is still
-          painted field. */}
-      <div className="relative z-10 shrink-0 bg-[var(--battle-fade-to)]">
-        <div className="relative rounded-t-[28px] bg-card px-[max(1rem,env(safe-area-inset-left))] screen-bottom pt-14 shadow-[0_-8px_30px_-12px_oklch(0.3_0.05_260/0.25)]">
-          <div className="relative">
-            <div className="pointer-events-none absolute left-1/2 -top-12 z-10 flex -translate-x-1/2 flex-col items-center">
-              <TimerRing
-                timer={Math.ceil(msLeft / 1000)}
-                maxTime={Math.ceil(personalTimerMs / 1000)}
-              />
-              {!frozen && <p className="mt-1.5 font-pixel-xs text-foreground/70">{q.category}</p>}
-            </div>
-
-            {frozen ? (
-              <div className="flex flex-col items-center justify-center gap-2 py-6 text-center">
-                <div className="text-4xl">❄️</div>
-                <div className="font-display text-lg text-foreground">Frozen solid!</div>
-                <div className="text-xs text-foreground/60">This question is skipped.</div>
-              </div>
-            ) : stillSleepLocked ? (
-              <div className="flex flex-col items-center justify-center gap-2 py-6 text-center">
-                <div className="text-4xl">😴</div>
-                <div className="text-xs text-foreground/60">Waking up…</div>
-              </div>
-            ) : (
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={displayedIndex}
-                  initial={{ y: 40, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: -10, opacity: 0 }}
-                >
-                  <p className="text-center font-display text-[clamp(0.95rem,4vw,1.125rem)] font-bold leading-snug text-foreground">
-                    {q.question}
-                  </p>
-                  <div className="mt-3 grid grid-cols-1 gap-2">
-                    {q.options.map((opt, i) => {
-                      const isCorrectOpt = i === q.correct;
-                      const isSelected = selected === i;
-                      const showState = selected !== null;
-                      // Battle aids (feedback b9d53ba1) — only while unanswered. Azelf's
-                      // Future Sight culls a rolled set of wrong options and reuses the
-                      // same dimmed/disabled treatment, so the two aids read identically.
-                      const isDimmed =
-                        selected === null && (revealedWrong === i || eliminatedChoices.includes(i));
-                      const isHinted = selected === null && revealedCorrect === i;
-                      return (
-                        <button
-                          key={i}
-                          data-testid={`option-${i}`}
-                          disabled={selected !== null || isDimmed}
-                          onClick={() => handleAnswer(i)}
-                          className={`min-h-[48px] rounded-2xl border-2 px-4 py-3 text-left font-display text-base transition press-lg ${
-                            showState && isCorrectOpt
-                              ? "border-hp-good bg-hp-good/15 text-hp-good"
-                              : showState && isSelected && !isCorrectOpt
-                                ? "border-destructive bg-destructive/10 text-destructive"
-                                : isDimmed
-                                  ? "border-border/60 line-through opacity-50"
-                                  : isHinted
-                                    ? "border-hp-good bg-hp-good/10 text-hp-good"
-                                    : "border-border bg-card text-foreground"
-                          }`}
-                        >
-                          {opt}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {selected !== null && (
-                    <div className="mt-3 text-center font-pixel-xs text-foreground/50">
-                      Locked in — next question soon
-                    </div>
-                  )}
-
-                  {/* Item shortcuts row — matches Solo's bag placement inside the question card */}
-                  <div className="mt-3 flex items-center justify-center gap-3">
-                    <button
-                      onClick={() => setBagOpen(true)}
-                      className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition press"
-                    >
-                      <Backpack className="h-6 w-6 text-muted-foreground" />
-                      <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-poke-dark px-1 font-pixel text-[9px] text-white">
-                        {itemsUsedRef.current}/{MAX_ITEMS_PER_BATTLE}
-                      </span>
-                    </button>
-                    {bagItems.slice(0, 3).map((it) => (
-                      <button
-                        key={it.id}
-                        disabled={
-                          itemsUsedRef.current >= MAX_ITEMS_PER_BATTLE ||
-                          usedItemIdsRef.current.has(it.id)
-                        }
-                        onClick={() => void handleUseItem(it.id)}
-                        className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition press disabled:opacity-40"
-                      >
-                        <ItemIcon item={it} className="h-8 w-8" />
-                      </button>
-                    ))}
-                  </div>
-                </motion.div>
-              </AnimatePresence>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <Sheet open={bagOpen} onOpenChange={setBagOpen}>
-        <SheetContent side="bottom" className="rounded-t-3xl">
-          <SheetHeader>
-            <SheetTitle className="text-center font-display-lg text-foreground">
-              Your Bag
-            </SheetTitle>
-            <div className="text-center text-xs font-semibold text-muted-foreground">
-              {itemsUsedRef.current}/{MAX_ITEMS_PER_BATTLE} items used this battle
-            </div>
-          </SheetHeader>
-          {(() => {
-            const bagGroups = PVP_BAG_GROUPS.map((cat) => ({
-              ...cat,
-              items: bagItems.filter((it) => CATEGORY_OF[it.id] === cat.id),
-            })).filter((g) => g.items.length > 0);
+        {shown.length === 0 ? (
+          <p className="na-body py-4 text-center text-text-secondary">{bagTab === "berries" ? "No berries yet. Win a Nearby Battle to earn some!" : "No battle items in your bag."}</p>
+        ) : (
+          shown.map((it) => {
+            const used = usedItemIdsRef.current.has(it.id);
+            const on = bagPick === it.id;
             return (
-              <div className="my-4 max-h-[65vh] overflow-y-auto">
-                {bagGroups.length === 0 ? (
-                  <div className="rounded-3xl bg-poke-yellow/15 p-6 text-center">
-                    <div className="font-display-md text-foreground">Your bag is empty</div>
-                    <p className="mt-1 text-xs text-foreground/60">
-                      Play more PvP battles to earn berries!
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-4 pb-2">
-                    {bagGroups.map((group) => (
-                      <div key={group.id}>
-                        <div className="mb-2 font-pixel-xs uppercase tracking-wider text-foreground/45">
-                          {group.label}
-                        </div>
-                        <div className="flex flex-col gap-2.5">
-                          {group.items.map((it) => {
-                            const owned = inventory[it.id] ?? 0;
-                            const disabled =
-                              itemsUsedRef.current >= MAX_ITEMS_PER_BATTLE ||
-                              usedItemIdsRef.current.has(it.id);
-                            return (
-                              <button
-                                key={it.id}
-                                onClick={() => void handleUseItem(it.id)}
-                                disabled={disabled}
-                                className="flex items-center gap-3.5 rounded-2xl bg-card px-4 py-3 text-left shadow-card transition press-lg disabled:opacity-40"
-                              >
-                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-primary/[0.08]">
-                                  <ItemIcon item={it} className="h-9 w-9" />
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                                    {it.name}
-                                    <span className="font-pixel text-[9px] text-primary">
-                                      ×{owned}
-                                    </span>
-                                  </div>
-                                  <div className="text-[11px] leading-tight text-muted-foreground">
-                                    {BAG_SHORT_DESC[it.id] ?? it.desc}
-                                  </div>
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <button
+                key={it.id}
+                type="button"
+                disabled={used || bagFull}
+                onClick={() => setBagPick(it.id)}
+                className={`flex items-center gap-2.5 rounded-2xl border p-2.5 text-left disabled:opacity-50 ${on ? "border-2 border-brand-red bg-white/[0.14]" : "border-white/[0.12] bg-white/[0.08]"}`}
+              >
+                <ItemIcon item={it} className="h-10 w-10 shrink-0" />
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="na-body-strong text-foreground">{it.name}</span>
+                  <span className="na-caption text-text-secondary">{BAG_SHORT_DESC[it.id] ?? it.desc}</span>
+                </span>
+                <span className="na-number-m text-foreground">×{inventory[it.id] ?? 0}</span>
+              </button>
             );
-          })()}
-        </SheetContent>
-      </Sheet>
+          })
+        )}
+      </NaSheet>
     </div>
   );
 }
-
 /** Re-exported so callers that only need the status kind type don't have to
  * reach into game-data directly. */
 export type { StatusKind };
