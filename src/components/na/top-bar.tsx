@@ -4,7 +4,8 @@ import { trainerSpriteUrl, xpProgressInLevel } from "@/lib/game-data";
 import { useGameStore } from "@/lib/store";
 import { dayStreak } from "@/lib/win-streak";
 
-function Pill({ kind, value }: { kind: "Streak" | "Coin"; value: string }) {
+/** Figma "Stat pill": your reward art and a number. */
+export function NaStatPill({ kind, value }: { kind: "Streak" | "Coin"; value: string }) {
   return (
     <span className="flex items-center gap-1.5 rounded-full border border-white/[0.14] bg-night-deep/60 py-[3px] pl-[3px] pr-3">
       <NaRewardIcon kind={kind} size={28} />
@@ -48,8 +49,8 @@ export function NaTopBar({ onAvatar, avatarLabel, afterName }: { onAvatar: () =>
           </span>
         </span>
       </div>
-      <Pill kind="Streak" value={String(streak)} />
-      <Pill kind="Coin" value={coins.toLocaleString()} />
+      <NaStatPill kind="Streak" value={String(streak)} />
+      <NaStatPill kind="Coin" value={coins.toLocaleString()} />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { useGameStore } from "@/lib/store";
 import { ITEM_BY_ID } from "@/content/items";
 import type { ItemId } from "@/lib/game-data";
 import { ItemIcon } from "@/components/game-ui";
+import { NaButton } from "@/components/na/button";
 import { Slider } from "@/components/ui/slider";
 import {
   Dialog,
@@ -36,35 +37,33 @@ export function BagCapacityBar() {
   const full = used >= cap;
 
   return (
-    <div className="rounded-3xl bg-card px-4 py-3 shadow-card">
+    // Figma 7.1c Bag space: the bar turns red when the bag is full (17.10).
+    <div className={`na-glass flex flex-col gap-2 rounded-[20px] p-3.5 ${full ? "border-danger/60" : ""}`}>
       <div className="flex items-center justify-between gap-3">
-        <div className="font-pixel-xs uppercase tracking-wider text-foreground/45">Bag space</div>
-        <div className={`font-pixel-xs ${full ? "text-destructive" : "text-foreground"}`}>
+        <span className="na-label uppercase text-text-secondary">Bag space</span>
+        <span className={`na-number-m ${full ? "text-danger" : "text-foreground"}`}>
           {used}/{cap}
-        </div>
+        </span>
       </div>
-      <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
-        <div
-          className={`h-full rounded-full transition-[width] ${full ? "bg-destructive" : "bg-hp-good"}`}
-          style={{ width: `${pct}%` }}
-        />
+      <div className="h-2 w-full overflow-hidden rounded bg-night-deep">
+        <div className={`h-full rounded transition-[width] ${full ? "bg-danger" : "na-fill-success"}`} style={{ width: `${pct}%` }} />
       </div>
-      {price === null ? (
-        <p className="mt-2 text-xs text-foreground/55">Bag fully upgraded.</p>
-      ) : (
-        <button
+      {price !== null && (
+        <NaButton
+          kind="secondary"
+          size="M"
+          block
+          disabled={coins < price}
           onClick={() => {
-            if (purchaseBagUpgrade()) toast.success(`Bag upgraded — ${cap + 10} slots`);
+            if (purchaseBagUpgrade()) toast.success(`Bag upgraded: ${cap + 10} slots!`);
             else toast.error(`Need ${price.toLocaleString()} coins`);
           }}
-          disabled={coins < price}
-          className="mt-2.5 inline-flex h-9 w-full items-center justify-center rounded-full bg-primary px-4 text-xs font-bold text-primary-foreground shadow-pop transition press disabled:opacity-40"
         >
-          +10 space · {price.toLocaleString()} coins
-        </button>
+          +10 space · {price.toLocaleString()}
+        </NaButton>
       )}
-      <p className="mt-1.5 text-[11px] leading-snug text-foreground/50">
-        Berries don&apos;t take up bag space.
+      <p className="na-caption text-text-muted">
+        {price === null ? "Bag fully upgraded! " : ""}Berries don&apos;t use bag space.
       </p>
     </div>
   );
@@ -201,7 +200,7 @@ export function DiscardItemButton({ id }: { id: ItemId }) {
           setQty(1);
           setOpen(true);
         }}
-        className="flex h-8 items-center justify-center rounded-full bg-muted px-2.5 text-xs font-bold text-foreground/45 transition press"
+        className="press flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/[0.12] text-text-muted"
       >
         <Trash2 className="h-4 w-4" />
       </button>

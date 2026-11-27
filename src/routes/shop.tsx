@@ -1,29 +1,31 @@
 import { pageHead } from "@/lib/seo";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { playSfx, playItemCue } from "@/lib/audio";
-import { Star, ShoppingBag, Minus, Plus } from "lucide-react";
+import { ArrowLeft, Minus, Plus } from "lucide-react";
+import { NaGlossIcon } from "@/components/na/gloss-icon";
+import { NaStatPill } from "@/components/na/top-bar";
+import { NaGlassRow } from "@/components/na/celebration";
+import { NaRewardIcon } from "@/components/na/reward-icon";
+import { NaButton } from "@/components/na/button";
 import { useGameStore } from "@/lib/store";
 import { useDailyGift } from "@/lib/use-daily-gift";
 import { useStoreHydrated } from "@/lib/store-hydration";
 import { ITEMS, type ItemDef } from "@/lib/game-data";
 import { getAbility } from "@/lib/abilities";
-import { CATEGORIES, CATEGORY_OF, BAG_SHORT_DESC, type ItemCategory } from "@/lib/item-categories";
+import { CATEGORIES, CATEGORY_OF, type ItemCategory } from "@/lib/item-categories";
 import { AppIcon } from "@/components/app-icon";
-import { UI_ICON, COIN_ICON } from "@/lib/app-icons";
+import { COIN_ICON } from "@/lib/app-icons";
 import {
   SHOP_BUNDLES,
   bundleFaceValue,
   bundleSavingPct,
-  itemTileTint,
   type ShopBundle,
 } from "@/lib/shop-bundles";
-import { ItemIcon, SpriteBurst } from "@/components/game-ui";
+import { ItemIcon } from "@/components/game-ui";
 import { BagCapacityBar, BagOverflowPanel, DiscardItemButton } from "@/components/bag-overflow";
 import { bagCapacity, bagUnitsUsed, isBagExempt } from "@/lib/store/slices/itemsSlice";
-import { syncActivity } from "@/lib/social";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -40,33 +42,83 @@ export const Route = createFileRoute("/shop")({
 
 type Category = ItemCategory;
 
-/**
- * A horizontal ribbon tag, pinned to the card's top-right and running off the
- * edge.
- *
- * This was a 45° corner banner. A diagonal band across the top-right corner
- * cuts straight through the one column that has to stay readable — the price —
- * and no amount of padding fixes that without pushing the price off-centre.
- * Horizontal keeps the ribbon read (it still overhangs, and the card's
- * `overflow-hidden` still clips it) while confining it to a 22px strip the
- * price simply starts below.
- *
- * The left end is notched into a pennant by `clip-path` rather than rounded,
- * which is what separates "ribbon" from "chip that drifted into the corner".
- * The label is `font-extrabold`, not the pixel face — the pixel face has no
- * small size that stays legible.
- */
-function RibbonTag({ label, bg }: { label: string; bg: string }) {
+/** Bag items that fire by themselves in battle; the bag lets you switch each off. */
+const AUTO_ITEMS = new Set(["focusband", "quickclaw", "assaultvest", "revive", "oranberry", "silkscarf", "kingsrock", "leftovers", "metronome"]);
+
+/** "5 Potions, 2 Super Potions, a Revive and an Escape Rope" (Oxford comma off for two). */
+function bundleContents(b: ShopBundle): string {
+  const parts = b.contents.map((c) => {
+    const name = ITEMS.find((i) => i.id === c.id)?.name ?? c.id;
+    return c.qty > 1 ? `${c.qty} ${name}s` : `${/^[AEIOU]/i.test(name) ? "an" : "a"} ${name}`;
+  });
+  return parts.length < 2 ? parts.join("") : `${parts.slice(0, -1).join(", ")}${parts.length > 2 ? "," : ""} and ${parts[parts.length - 1]}`;
+}
+
+/** Figma "Shop item": the item on a dark tile, name, what it does, an optional meter, and its price. */
+function ShopRow({
+  icon,
+  name,
+  sub,
+  price,
+  progress,
+  short,
+  dim,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  name: string;
+  sub: string;
+  price?: number;
+  progress?: number;
+  /** Not enough coins: the price dims. */
+  short?: boolean;
+  dim?: boolean;
+  onClick?: () => void;
+}) {
   return (
-    <span
-      className="pointer-events-none absolute -right-1 top-3 z-20 py-[5px] pl-4 pr-4 text-[9px] font-extrabold uppercase tracking-wider text-white shadow-md"
-      style={{
-        background: bg,
-        clipPath: "polygon(10px 0, 100% 0, 100% 100%, 10px 100%, 0 50%)",
-      }}
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={!onClick}
+      className={`na-glass flex w-full items-center gap-3 rounded-[18px] p-3 text-left ${dim ? "opacity-55" : ""}`}
     >
-      {label}
-    </span>
+      <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[14px] bg-night-deep/60">{icon}</span>
+      <span className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="na-headline text-foreground">{name}</span>
+        <span className="na-caption text-text-secondary">{sub}</span>
+        {progress != null && (
+          <span className="block h-2 w-full overflow-hidden rounded bg-night-deep">
+            <span className="na-fill-gold block h-full rounded" style={{ width: `${Math.max(2, Math.min(100, progress * 100))}%` }} />
+          </span>
+        )}
+      </span>
+      {price != null && (
+        <span className={`flex shrink-0 items-center gap-1.5 rounded-xl bg-night-card-2 px-3 py-2 shadow-[0_4px_0_#141A3F] ${short ? "opacity-60" : ""}`}>
+          <NaRewardIcon kind="Coin" size={20} />
+          <span className="na-number-m text-foreground">{price.toLocaleString()}</span>
+        </span>
+      )}
+    </button>
+  );
+}
+
+/** The four categories as a glass pill strip; the open one is white. */
+function NaTabs({ value, onChange }: { value: Category; onChange: (c: Category) => void }) {
+  return (
+    <div role="tablist" className="flex gap-1 rounded-full bg-white/[0.08] p-1">
+      {CATEGORIES.map((c) => (
+        <button
+          key={c.id}
+          type="button"
+          role="tab"
+          aria-selected={value === c.id}
+          onClick={() => onChange(c.id)}
+          className={`na-body-strong flex-1 rounded-full px-1 py-2 ${value === c.id ? "bg-[#f4f6ff] text-night-base" : "text-text-secondary"}`}
+        >
+          {c.label}
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -99,7 +151,6 @@ function ShopPage() {
   const {
     now: giftNow,
     claimable: giftClaimable,
-    lit: giftLit,
     nextDay: giftNextDay,
     clock: giftClock,
     claim: handleClaimGift,
@@ -110,6 +161,7 @@ function ShopPage() {
   const [confirmState, setConfirmState] = useState<ConfirmState>(null);
   const [bundleConfirm, setBundleConfirm] = useState<ShopBundle | null>(null);
   const [bagOpen, setBagOpen] = useState(false);
+  const [bagTab, setBagTab] = useState<Category>("HEALING");
   const [qty, setQty] = useState(1);
 
   const totalItems = useMemo(
@@ -146,6 +198,8 @@ function ShopPage() {
   if (!hydrated || !hasOnboarded) return null;
 
   const items = ITEMS.filter((it) => CATEGORY_OF[it.id] === tab);
+  // The cheapest shop item you can't afford yet: the "Almost yours" row.
+  const almost = ITEMS.filter((it) => !it.pvpOnly && CATEGORY_OF[it.id] && priceOf(it.cost) > coins).sort((a, b) => a.cost - b.cost)[0];
 
   // The discounted featured item is limited to one purchase per day.
   const todayISO = new Date().toISOString().slice(0, 10);
@@ -219,7 +273,6 @@ function ShopPage() {
     setConfirmState(null);
   }
 
-  const ownedInBag = ITEMS.filter((it) => (inventory[it.id] ?? 0) > 0);
 
   function handleUseFromBag(it: ItemDef) {
     const ok = applyItem(it.id);
@@ -243,306 +296,105 @@ function ShopPage() {
   }
 
   return (
-    <div className="bg-poke-cream h-full w-full overflow-y-auto pb-nav safe-x">
-      {/* Hero */}
-      <div className="screen-x pb-5 screen-top">
-        <p className="font-pixel-xs text-primary">WELCOME TO</p>
-        <div className="mt-1 flex items-center justify-between gap-3">
-          <h1 className="font-display-xl text-foreground">PokéMart</h1>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                playSfx("bag_open");
-                setBagOpen(true);
-              }}
-              className="relative flex h-11 w-11 items-center justify-center rounded-full bg-card shadow-card press"
-              aria-label="Open bag"
-            >
-              <ShoppingBag className="h-5 w-5 text-foreground" />
-              {totalItems > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-primary px-1 font-pixel-xs text-white">
-                  {totalItems}
-                </span>
-              )}
-            </button>
-            <div className="flex items-center gap-1.5 rounded-full bg-poke-yellow px-3.5 py-2 shadow-card">
-              <AppIcon src={COIN_ICON} alt="Coins" className="h-5 w-5" />
-              <span className="text-sm font-extrabold text-foreground">
-                {coins.toLocaleString()}
+    <div className="h-full w-full overflow-y-auto pb-nav safe-x">
+      <div className="flex flex-col gap-3.5 px-4 pb-6 pt-[calc(env(safe-area-inset-top)+8px)]">
+        {/* Header (7.1): SHOP, the Bag button with what you own, your coins. */}
+        <div className="flex items-center gap-2">
+          <h1 className="na-display-m flex-1 text-foreground">SHOP</h1>
+          <button
+            type="button"
+            onClick={() => {
+              playSfx("bag_open");
+              setBagOpen(true);
+            }}
+            aria-label="Open bag"
+            className="press relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-night-card-2 shadow-[0_4px_0_#141A3F]"
+          >
+            <NaGlossIcon kind="bag" size={22} />
+            {totalItems > 0 && (
+              <span className="na-label absolute left-7 top-[-3px] flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-foreground">
+                {totalItems}
               </span>
-            </div>
-          </div>
+            )}
+          </button>
+          <NaStatPill kind="Coin" value={coins.toLocaleString()} />
         </div>
-      </div>
 
-      <div className="screen-x pb-8 pt-2">
-        {/* Daily Gift */}
-        {giftClaimable ? (
-          <button
-            onClick={handleClaimGift}
-            className="relative mb-5 flex w-full items-center gap-4 overflow-hidden rounded-3xl bg-gradient-to-br from-[#F2D64E] to-[#E8A93C] p-5 text-left shadow-card press-lg"
-          >
-            <span className="absolute right-3 top-3 rounded-full bg-primary px-2.5 py-1 font-pixel-xs uppercase text-white shadow-sm">
-              Free
+        {/* The daily gift (also on Home's chest). */}
+        <NaGlassRow
+          tone={giftClaimable ? "gold" : undefined}
+          lead={
+            <span className={giftClaimable ? "animate-wiggle" : "opacity-40 grayscale"}>
+              <NaRewardIcon kind="Gift" size={44} />
             </span>
-            {/* Wiggles only in this branch — the claimed card below renders the
-                same box with no animation, so the movement means "there is
-                something here for you" rather than being decoration. */}
-            <div className="animate-wiggle shrink-0 drop-shadow">
-              <AppIcon src={UI_ICON.dailyGift} className="h-12 w-12" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="font-pixel-xs uppercase text-on-gold/70">
-                Daily Gift · Day {giftNextDay}
-              </div>
-              <div className="text-lg font-extrabold leading-tight text-on-gold">
-                Tap to open your free item!
-              </div>
-              <div className="mt-2.5 flex items-center gap-1.5">
-                {Array.from({ length: 7 }).map((_, i) => {
-                  const day = i + 1;
-                  const filled = day <= giftLit;
-                  const active = day === giftNextDay;
-                  return (
-                    <div
-                      key={day}
-                      className={`flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold ${filled ? "bg-primary text-white" : active ? "bg-white text-primary ring-2 ring-primary" : "bg-black/10 text-on-gold/50"}`}
-                    >
-                      {day === 7 ? "★" : day}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </button>
-        ) : (
-          <div className="relative mb-5 flex w-full items-center gap-4 overflow-hidden rounded-3xl bg-card p-5 shadow-card">
-            <div className="shrink-0 opacity-40 grayscale">
-              <AppIcon src={UI_ICON.dailyGift} className="h-12 w-12" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="font-pixel-xs uppercase text-foreground/55">
-                Daily Gift · claimed today
-              </div>
-              <div className="text-lg font-extrabold leading-tight text-foreground/70">
-                Next gift in {giftClock}
-              </div>
-              <div className="mt-2.5 flex items-center gap-1.5">
-                {Array.from({ length: 7 }).map((_, i) => {
-                  const day = i + 1;
-                  const filled = day <= giftLit;
-                  return (
-                    <div
-                      key={day}
-                      className={`flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold ${filled ? "bg-primary text-white" : "bg-black/10 text-foreground/40"}`}
-                    >
-                      {day === 7 ? "★" : day}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+          }
+          title={giftClaimable ? "Your daily gift is ready" : `Next gift in ${giftClock}`}
+          sub={`Day ${giftNextDay} of 7`}
+          trailing={
+            giftClaimable ? (
+              <NaButton kind="gold" size="M" onClick={handleClaimGift}>
+                Open
+              </NaButton>
+            ) : undefined
+          }
+        />
+
+        {/* Lead with something within reach (7.1 note 2). */}
+        {almost && (
+          <>
+            <span className="na-label uppercase text-text-secondary">Almost yours</span>
+            <ShopRow
+              icon={<ItemIcon item={almost} className="h-[46px] w-[46px]" />}
+              name={almost.name}
+              sub={`Earn ${(priceOf(almost.cost) - coins).toLocaleString()} more coins to buy it!`}
+              progress={coins / priceOf(almost.cost)}
+              onClick={() => setConfirmState({ item: almost, cost: priceOf(almost.cost) })}
+            />
+          </>
         )}
 
-        {/* Featured — single discounted item, one purchase per day. Once
-            bought, the big card collapses to a slim note so the catalog below
-            isn't pushed down by a spent deal. */}
-        {featuredUsedToday ? (
-          <div className="mb-5 flex items-center justify-center gap-2 rounded-full bg-poke-dark/10 px-4 py-2 text-xs font-bold text-foreground/60">
-            <Star className="h-3.5 w-3.5" />
-            Daily deal claimed — a new deal lands tomorrow
-          </div>
-        ) : (
-          <button
-            onClick={() =>
-              setConfirmState({
-                item: featured.item,
-                cost: featured.discountedCost,
-                featured: {
-                  originalCost: featured.originalCost,
-                  discountPct: featured.discountPct,
-                },
-              })
-            }
-            className="relative mb-3 flex w-full items-center gap-3 overflow-hidden rounded-3xl border-2 border-white bg-gradient-to-br from-primary to-[#b5341f] p-3 pl-2 text-left shadow-card press-lg disabled:opacity-60"
-          >
-            <RibbonTag label="Weekly Special" bg="#5B3F95" />
-            <span className="absolute left-3 top-3 z-20 rounded-full bg-poke-yellow px-2.5 py-1 font-pixel-xs uppercase leading-none text-foreground shadow-sm">
-              {featured.discountPct}% Off
-            </span>
-            {/* The sprite leads. It was 56px inside an 80px chip beside a
-                display-lg title, so the title won a card whose whole job is to
-                sell a piece of art.
-
-                It stood on a white-rimmed disc for a while. The disc drew a
-                hard edge right where the burst is meant to fade out, so the two
-                fought and the sprite ended up sitting in a bubble. The burst
-                and the ground shadow do the staging on their own. */}
-            <div className="relative flex h-28 w-28 shrink-0 items-center justify-center">
-              <SpriteBurst tint="rgba(255,214,120,0.55)" />
-              <div
-                aria-hidden
-                className="absolute bottom-2 h-6 w-20 rounded-[50%] bg-black/25 blur-[3px]"
-              />
-              <ItemIcon item={featured.item} className="relative h-20 w-20 drop-shadow-lg" />
-            </div>
-            <div className="min-w-0 flex-1 pt-4">
-              <div className="font-display-md text-white">{featured.item.name}</div>
-              <div className="mt-1 line-clamp-3 text-[11px] leading-snug text-white/85">
-                {featured.item.desc}
-              </div>
-            </div>
-            <div className="flex shrink-0 flex-col items-end gap-1 pt-7">
-              <span className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-sm font-extrabold text-primary">
-                <AppIcon src={COIN_ICON} alt="" className="h-4 w-4" />
-                {featured.discountedCost.toLocaleString()}
-              </span>
-              <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-bold text-white/60 line-through">
-                {featured.originalCost.toLocaleString()}
-              </span>
-            </div>
-          </button>
-        )}
-
-        {/* Bundle — one purchase, several items, priced under their combined
-            shelf value. The catalog sells one thing at a time, which makes a
-            new trainer's first visit a series of small decisions with no
-            obvious starting point. See lib/shop-bundles.ts for the pricing. */}
+        <span className="na-label uppercase text-text-secondary">Weekly deals</span>
+        <ShopRow
+          icon={<ItemIcon item={featured.item} className="h-[46px] w-[46px]" />}
+          name={`${featured.item.name} · ${featured.discountPct}% OFF`}
+          sub={featuredUsedToday ? "Bought! A new deal lands tomorrow." : `Was ${featured.originalCost.toLocaleString()}. A new deal every day!`}
+          price={featuredUsedToday ? undefined : featured.discountedCost}
+          dim={featuredUsedToday}
+          onClick={
+            featuredUsedToday
+              ? undefined
+              : () =>
+                  setConfirmState({
+                    item: featured.item,
+                    cost: featured.discountedCost,
+                    featured: { originalCost: featured.originalCost, discountPct: featured.discountPct },
+                  })
+          }
+        />
         {SHOP_BUNDLES.filter((b) => !purchasedBundleIds.includes(b.id)).map((bundle) => (
-          <button
+          <ShopRow
             key={bundle.id}
+            icon={<NaRewardIcon kind="Chest" size={46} />}
+            name={bundle.name}
+            sub={bundleContents(bundle)}
+            price={bundle.cost}
             onClick={() => setBundleConfirm(bundle)}
-            className="relative mb-5 flex w-full items-center gap-3 overflow-hidden rounded-3xl border-2 border-white bg-gradient-to-br from-[#6B4FA0] to-[#3F2A6E] p-3 text-left shadow-card press-lg"
-          >
-            <RibbonTag label={bundle.ribbon} bg="var(--brand-red, #E3350D)" />
-            {/* Bare overlapping sprites on one shared burst. Each used to sit in
-                its own bordered disc, which read as three separate buttons
-                rather than as one pile of loot. */}
-            <div className="relative flex h-24 w-[92px] shrink-0 items-center justify-center">
-              <SpriteBurst tint="rgba(214,180,255,0.5)" />
-              <div className="relative flex items-center -space-x-4">
-                {bundle.contents.slice(0, 3).map((c) => {
-                  const def = ITEMS.find((i) => i.id === c.id);
-                  return def ? (
-                    <ItemIcon key={c.id} item={def} className="h-11 w-11 drop-shadow-lg" />
-                  ) : null;
-                })}
-              </div>
-            </div>
-            <div className="min-w-0 flex-1 pt-3">
-              <div className="text-[15px] font-extrabold leading-tight text-white">
-                {bundle.name}
-              </div>
-              <div className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-white/80">
-                {bundle.tagline}
-              </div>
-              <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                {bundle.contents.map((c) => {
-                  const def = ITEMS.find((i) => i.id === c.id);
-                  return def ? (
-                    <span
-                      key={c.id}
-                      className="flex items-center gap-0.5 text-[10px] font-bold text-white/90"
-                    >
-                      <ItemIcon item={def} className="h-3.5 w-3.5" />×{c.qty}
-                    </span>
-                  ) : null;
-                })}
-              </div>
-            </div>
-            <div className="flex shrink-0 flex-col items-end gap-1 pt-7">
-              <span className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-sm font-extrabold text-[#3F2A6E]">
-                <AppIcon src={COIN_ICON} alt="" className="h-4 w-4" />
-                {bundle.cost.toLocaleString()}
-              </span>
-            </div>
-          </button>
+          />
         ))}
 
-        {/* Category tabs */}
-        <div className="mb-4 grid grid-cols-4 gap-1 rounded-full bg-poke-dark/10 p-1">
-          {CATEGORIES.map((c) => (
-            <button
-              key={c.id}
-              onClick={() => setTab(c.id)}
-              className={`press h-9 rounded-full text-xs font-bold ${
-                tab === c.id ? "bg-poke-dark text-white shadow-card" : "text-foreground/60"
-              }`}
-            >
-              {c.label}
-            </button>
-          ))}
-        </div>
-
-        {items.length === 0 ? (
-          <div className="rounded-3xl border-2 border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-            Stocked trainer! Nothing else here.
-          </div>
-        ) : (
-          /* Four to a row, scrolling vertically. The old one-per-row list spent
-             a full 96px band per item on a 16px sprite and a description most
-             players already know — at four across the sprite is the row, which
-             is what a shop shelf should be. Descriptions truncate to two lines
-             here; the full text is on the buy sheet, one tap away.
-
-             Rarity groupings are deliberately absent: the catalog has no rarity
-             concept, and inventing one would be a game-design claim dressed as
-             a colour. The tints are per-item and mean nothing beyond telling
-             four tiles apart. */
-          <div className="grid grid-cols-3 gap-2.5">
-            {items.map((item, i) => {
-              const owned = inventory[item.id] ?? 0;
-              const canAfford = coins >= priceOf(item.cost);
-              return (
-                <motion.button
-                  key={item.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: Math.min(i, 12) * 0.03 }}
-                  onClick={() => setConfirmState({ item, cost: priceOf(item.cost) })}
-                  className={`relative flex flex-col items-center rounded-2xl border-2 p-2 pt-2.5 text-center shadow-card press ${
-                    item.premium ? "border-poke-yellow" : "border-white/15"
-                  }`}
-                  style={{
-                    // Tint at the top fading to the night card, so the sprite
-                    // sits on colour and the text below on the dark theme.
-                    background: `linear-gradient(180deg, ${itemTileTint(item.id)} 0%, var(--night-card) 62%)`,
-                  }}
-                >
-                  {/* Premium is the gold rim, not a badge. The star sat in the
-                      top-right corner over the tile's own tint, which is where
-                      the eye goes first — so a decoration outranked the item
-                      art. Recolouring the border the tile already has says the
-                      same thing using none of the tile's space. */}
-                  <ItemIcon item={item} className="h-16 w-16 drop-shadow-sm" />
-                  <div className="mt-1.5 line-clamp-2 text-[11px] font-extrabold leading-tight text-foreground">
-                    {item.name}
-                  </div>
-                  <div className="mt-0.5 line-clamp-2 text-[9px] leading-tight text-text-secondary">
-                    {item.desc}
-                  </div>
-                  {/* Owned always renders, even at zero. It used to appear only
-                      when held, which moved the price up and down between tiles
-                      in the same row and left the two colliding. */}
-                  <span className="mb-1.5 mt-2 rounded-full bg-white/10 px-2 py-0.5 font-pixel-xs text-[8px] leading-none text-text-secondary">
-                    OWNED ×{owned}
-                  </span>
-                  <span
-                    className={`mt-auto flex w-full items-center justify-center gap-1 rounded-full px-1 py-1.5 text-[11px] font-extrabold ${
-                      canAfford
-                        ? "bg-white/15 text-foreground shadow-sm"
-                        : "bg-black/25 text-text-muted"
-                    }`}
-                  >
-                    <AppIcon src={COIN_ICON} alt="" className="h-3.5 w-3.5" />
-                    {priceOf(item.cost).toLocaleString()}
-                  </span>
-                </motion.button>
-              );
-            })}
-          </div>
-        )}
+        <span className="na-label uppercase text-text-secondary">All items</span>
+        <NaTabs value={tab} onChange={setTab} />
+        {items.map((item) => (
+          <ShopRow
+            key={item.id}
+            icon={<ItemIcon item={item} className="h-[46px] w-[46px]" />}
+            name={item.name}
+            sub={item.desc}
+            price={priceOf(item.cost)}
+            short={coins < priceOf(item.cost)}
+            onClick={() => setConfirmState({ item, cost: priceOf(item.cost) })}
+          />
+        ))}
       </div>
 
       {/* Bundle confirmation. Its own sheet rather than a mode of the item
@@ -721,151 +573,80 @@ function ShopPage() {
         </SheetContent>
       </Sheet>
 
-      {/* Bag */}
-      <Sheet open={bagOpen} onOpenChange={setBagOpen}>
-        <SheetContent side="bottom" className="rounded-t-3xl">
-          <SheetHeader>
-            <SheetTitle className="text-center font-display-lg text-foreground">
-              Your Bag
-            </SheetTitle>
-            {/* No "N items in your bag" here: <BagCapacityBar> below already
-                states the count as "Bag space N / M", which is the same number
-                with the limit attached (owner report 2026-08-17). The empty
-                state keeps a line because there is no bar reading to replace
-                it — nothing held means nothing to count. */}
-            <SheetDescription className="text-center text-sm">
-              {totalItems > 0 ? "" : "Stock up on items to use in battle"}
-            </SheetDescription>
-          </SheetHeader>
-          {(() => {
-            const bagGroups = CATEGORIES.map((cat) => ({
-              ...cat,
-              items: ITEMS.filter(
-                (it) => CATEGORY_OF[it.id] === cat.id && (inventory[it.id] ?? 0) > 0,
-              ),
-            })).filter((g) => g.items.length > 0);
-            // Berries are Nearby-Battle-only, excluded from the shop categories;
-            // surface them here read-only so players can see what they're holding.
-            const ownedBerries = ITEMS.filter((it) => it.isBerry && (inventory[it.id] ?? 0) > 0);
-            return (
-              <div className="my-4 max-h-[65vh] space-y-3 overflow-y-auto">
-                <BagCapacityBar />
-                <BagOverflowPanel />
-                {ownedInBag.length === 0 ? (
-                  <div className="rounded-3xl bg-poke-yellow/15 p-6 text-center">
-                    <div className="font-display-md text-foreground">Your bag is empty</div>
-                    <p className="mt-1 text-xs text-foreground/60">Buy items below to stock up.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {bagGroups.map((group) => (
-                      <div key={group.id}>
-                        <div className="mb-2 font-pixel-xs uppercase tracking-wider text-foreground/45">
-                          {group.label}
-                        </div>
-                        <div className="flex flex-col gap-2.5">
-                          {group.items.map((it) => {
-                            const n = inventory[it.id] ?? 0;
-                            const isUsable =
-                              it.id === "candy" || it.id === "luckyegg" || it.id === "bignugget";
-                            const isAuto =
-                              it.id === "focusband" ||
-                              it.id === "quickclaw" ||
-                              it.id === "assaultvest" ||
-                              it.id === "revive" ||
-                              it.id === "oranberry" ||
-                              it.id === "silkscarf" ||
-                              it.id === "kingsrock" ||
-                              it.id === "leftovers" ||
-                              it.id === "metronome";
-                            const autoOn = autoItems[it.id] !== false;
-                            return (
-                              <div
-                                key={it.id}
-                                className="flex items-center gap-3.5 rounded-2xl bg-card px-4 py-3 shadow-card"
-                              >
-                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-primary/[0.08]">
-                                  <ItemIcon item={it} className="h-9 w-9" />
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <div className="font-bold leading-tight text-foreground">
-                                    {it.name}
-                                  </div>
-                                  <div className="mt-0.5 truncate text-xs text-foreground/55">
-                                    {BAG_SHORT_DESC[it.id] ?? it.desc}
-                                  </div>
-                                </div>
-                                <div className="flex shrink-0 items-center gap-2">
-                                  <span className="font-pixel-xs text-foreground">×{n}</span>
-                                  {isUsable && (
-                                    <button
-                                      onClick={() => handleUseFromBag(it)}
-                                      className="rounded-full bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-sm transition press"
-                                    >
-                                      Use
-                                    </button>
-                                  )}
-                                  {isAuto && (
-                                    <button
-                                      onClick={() => toggleAutoItem(it.id)}
-                                      className={`rounded-full px-3 py-1.5 text-xs font-bold shadow-sm transition press ${
-                                        autoOn
-                                          ? "bg-hp-good text-white"
-                                          : "bg-muted text-foreground/50"
-                                      }`}
-                                    >
-                                      {autoOn ? "Auto: On" : "Auto: Off"}
-                                    </button>
-                                  )}
-                                  <DiscardItemButton id={it.id} />
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
-                    {ownedBerries.length > 0 && (
-                      <div>
-                        <div className="mb-2 font-pixel-xs uppercase tracking-wider text-foreground/45">
-                          Berries · PvP
-                        </div>
-                        <div className="flex flex-col gap-2.5">
-                          {ownedBerries.map((it) => (
-                            <div
-                              key={it.id}
-                              className="flex items-center gap-3.5 rounded-2xl bg-card px-4 py-3 shadow-card"
-                            >
-                              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-primary/[0.08]">
-                                <ItemIcon item={it} className="h-9 w-9" />
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <div className="font-bold leading-tight text-foreground">
-                                  {it.name}
-                                </div>
-                                <div className="mt-0.5 text-xs leading-snug text-foreground/55">
-                                  {it.desc}
-                                </div>
-                              </div>
-                              <span className="shrink-0 font-pixel-xs text-foreground">
-                                ×{inventory[it.id] ?? 0}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    <div className="rounded-2xl bg-poke-blue/10 px-4 py-3 text-xs leading-snug text-foreground/70">
-                      Battle items appear in your item dock during a match. Berries are used only in
-                      PvP.
+      {/* 7.1c Your bag: what you own and what it does, grouped like the shop. */}
+      {bagOpen && (
+        <div className="na-bg-night fixed inset-0 z-50 flex flex-col overflow-y-auto pt-[env(safe-area-inset-top)]">
+          <div className="flex h-[52px] shrink-0 items-center gap-3 px-4">
+            <button type="button" aria-label="Back" onClick={() => setBagOpen(false)} className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-white/10 text-foreground">
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <h1 className="na-display-s flex-1 text-foreground">Your bag</h1>
+          </div>
+          <div className="flex flex-1 flex-col gap-3 px-4 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-2">
+            <BagCapacityBar />
+            <BagOverflowPanel />
+            <NaTabs value={bagTab} onChange={setBagTab} />
+            {(() => {
+              const owned = ITEMS.filter((it) => CATEGORY_OF[it.id] === bagTab && (inventory[it.id] ?? 0) > 0);
+              if (owned.length === 0) return <p className="na-body py-6 text-center text-text-secondary">Nothing here yet!</p>;
+              return owned.map((it) => {
+                const n = inventory[it.id] ?? 0;
+                const usable = it.id === "candy" || it.id === "luckyegg" || it.id === "bignugget";
+                const auto = AUTO_ITEMS.has(it.id);
+                const autoOn = autoItems[it.id] !== false;
+                return (
+                  <div key={it.id} className="flex items-center gap-3 rounded-[18px] bg-white/[0.08] p-3">
+                    <ItemIcon item={it} className="h-11 w-11 shrink-0" />
+                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="na-body-strong text-foreground">{it.name}</span>
+                      <span className="na-caption text-text-secondary">{it.desc}</span>
                     </div>
+                    <div className="flex shrink-0 flex-col items-end gap-0.5">
+                      <span className="na-number-m text-foreground">×{n}</span>
+                      {usable ? (
+                        <button type="button" onClick={() => handleUseFromBag(it)} className="na-label rounded-full bg-primary px-3 py-1 text-foreground">
+                          USE
+                        </button>
+                      ) : auto ? (
+                        <button
+                          type="button"
+                          aria-pressed={autoOn}
+                          onClick={() => toggleAutoItem(it.id)}
+                          className={`na-label rounded-full px-2.5 py-1 ${autoOn ? "bg-success/20 text-success" : "bg-white/10 text-text-muted"}`}
+                        >
+                          {autoOn ? "AUTO: ON" : "AUTO: OFF"}
+                        </button>
+                      ) : (
+                        <span className="na-label text-text-muted">IN BATTLE</span>
+                      )}
+                    </div>
+                    <DiscardItemButton id={it.id} />
                   </div>
-                )}
-              </div>
-            );
-          })()}
-        </SheetContent>
-      </Sheet>
+                );
+              });
+            })()}
+            {ITEMS.some((it) => it.isBerry && (inventory[it.id] ?? 0) > 0) && (
+              <>
+                <span className="na-label uppercase text-text-secondary">Berries · battles against other trainers</span>
+                {ITEMS.filter((it) => it.isBerry && (inventory[it.id] ?? 0) > 0).map((it) => (
+                  <div key={it.id} className="flex items-center gap-3 rounded-[18px] bg-white/[0.08] p-3">
+                    <ItemIcon item={it} className="h-11 w-11 shrink-0" />
+                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="na-body-strong text-foreground">{it.name}</span>
+                      <span className="na-caption text-text-secondary">{it.desc}</span>
+                    </div>
+                    <span className="na-number-m shrink-0 text-foreground">×{inventory[it.id] ?? 0}</span>
+                  </div>
+                ))}
+              </>
+            )}
+            <div className="min-h-2 flex-1" />
+            <NaButton kind="secondary" block onClick={() => setBagOpen(false)}>
+              Explore the Shop
+            </NaButton>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
