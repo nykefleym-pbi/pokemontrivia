@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Share, SquarePlus } from "lucide-react";
+import { NaIcon } from "@/components/na/icon";
 import { toast } from "sonner";
 import { useGameStore } from "@/lib/store";
 import { NaSheet } from "@/components/na/sheet";
@@ -183,11 +183,11 @@ export function PushOptIn() {
       {iosInstall && (
         <ol className="na-glass flex flex-col gap-2.5 rounded-2xl p-3.5">
           <li className="na-body flex items-center gap-2.5 text-foreground">
-            <Share className="h-5 w-5 shrink-0 text-reward-gold" />
+            <NaIcon name="share" size={20} className="shrink-0 text-reward-gold" />
             Tap Share at the bottom of Safari
           </li>
           <li className="na-body flex items-center gap-2.5 text-foreground">
-            <SquarePlus className="h-5 w-5 shrink-0 text-reward-gold" />
+            <NaIcon name="home" size={20} className="shrink-0 text-reward-gold" />
             Choose &ldquo;Add to Home Screen&rdquo;
           </li>
         </ol>

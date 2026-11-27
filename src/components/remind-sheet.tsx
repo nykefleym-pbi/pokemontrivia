@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Share, SquarePlus } from "lucide-react";
+import { NaIcon } from "@/components/na/icon";
 import { toast } from "sonner";
 import { NaSheet } from "@/components/na/sheet";
 import { enablePushNotifications } from "@/lib/push";
@@ -73,14 +73,13 @@ export function RemindSheet({
         primary={{ label: "Got it", onClick: () => onOpenChange(false) }}
       >
         {[
-          [Share, "Tap Share at the bottom of Safari"],
-          [SquarePlus, "Choose “Add to Home Screen”"],
-        ].map(([Icon, text]) => {
-          const I = Icon as typeof Share;
+          ["share", "Tap Share at the bottom of Safari"],
+          ["home", "Choose “Add to Home Screen”"],
+        ].map(([icon, text]) => {
           return (
             <div key={text as string} className="flex items-center gap-3">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10">
-                <I className="h-5 w-5 text-reward-gold" aria-hidden />
+                <NaIcon name={icon} size={20} className="text-reward-gold" />
               </span>
               <span className="na-body-strong text-foreground">{text as string}</span>
             </div>

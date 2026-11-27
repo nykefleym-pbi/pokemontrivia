@@ -1,7 +1,7 @@
 import { pageHead } from "@/lib/seo";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ChevronRight, Sparkles } from "lucide-react";
+import { NaIcon } from "@/components/na/icon";
 import { playCry, playSfx } from "@/lib/audio";
 import { useGameStore } from "@/lib/store";
 import { useStoreHydrated } from "@/lib/store-hydration";
@@ -135,7 +135,7 @@ function PokedexPage() {
           >
             <NaGlossIcon kind="map" size={16} />
             <span className="na-body-strong text-foreground">{range.region}</span>
-            <ChevronRight className="h-3.5 w-3.5 text-text-muted" />
+            <NaIcon name="chevron-right" size={14} className="text-text-muted" />
           </button>
           <EggHatch />
         </div>
@@ -207,7 +207,7 @@ function PokedexPage() {
             onClick={() => setShinyOnly((v) => !v)}
             className={`press flex items-center gap-1.5 rounded-full border bg-white/10 px-3 py-[7px] ${shinyOnly ? "border-reward-gold" : "border-white/[0.16]"}`}
           >
-            <Sparkles className="h-4 w-4 text-reward-gold" />
+            <NaIcon name="sparkle" size={16} className="text-reward-gold" />
             <span className="na-body-strong text-foreground">Shiny</span>
           </button>
         </div>

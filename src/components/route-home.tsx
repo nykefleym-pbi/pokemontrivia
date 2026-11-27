@@ -1,6 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Check, Clock } from "lucide-react";
+import { NaIcon } from "@/components/na/icon";
 import { NaGlossIcon } from "@/components/na/gloss-icon";
 import { toast } from "sonner";
 import { useGameStore } from "@/lib/store";
@@ -73,7 +74,7 @@ function evenDots(s: ReturnType<typeof seg>, gap: number) {
 function TimerChip({ text, done, color }: { text: string; done?: boolean; color?: string }) {
   return (
     <span className={`flex items-center gap-1 rounded-full px-[9px] py-[3px] ${done ? "bg-success/[0.18]" : "bg-white/[0.12]"}`}>
-      {done ? <Check className="h-3 w-3 text-success" strokeWidth={3} /> : <Clock className="h-3 w-3" style={{ color: color ?? "#FFC83D" }} strokeWidth={2.5} />}
+      {done ? <NaIcon name="check" size={12} className="text-success" /> : <Clock className="h-3 w-3" style={{ color: color ?? "#FFC83D" }} strokeWidth={2.5} />}
       <span className="na-label whitespace-nowrap text-foreground">{text}</span>
     </span>
   );
@@ -362,7 +363,7 @@ export function RouteHome({
                         : "bg-night-card-2 shadow-[0_5px_0_#141A3F]"
                   }`}
                 >
-                  {m.state === "done" && <Check className="h-8 w-8 text-on-gold" strokeWidth={3.5} />}
+                  {m.state === "done" && <NaIcon name="check" size={32} className="text-on-gold" />}
                   {cur && <NaGlossIcon kind="star" size={32} />}
                   {m.state === "locked" && <NaGlossIcon kind="lock" size={28} />}
                 </button>
@@ -381,7 +382,7 @@ export function RouteHome({
                     gift.claimable ? "na-fill-gold shadow-[0_5px_0_#B07A00]" : "bg-night-card-2 shadow-[0_5px_0_#141A3F]"
                   }`}
                 >
-                  {gift.claimable ? <NaRewardIcon kind="Gift" size={46} /> : <Check className="h-[30px] w-[30px] text-reward-gold" strokeWidth={3} />}
+                  {gift.claimable ? <NaRewardIcon kind="Gift" size={46} /> : <NaIcon name="check" size={30} className="text-reward-gold" />}
                 </button>
                 <span className={`na-caption text-center ${gift.claimable ? "text-reward-gold" : "text-text-secondary"}`}>
                   {gift.claimable ? `Day ${gift.nextDay} gift` : "Gift opened"}
@@ -486,7 +487,7 @@ function GiftCalendar({
                 }`}
               >
                 {state === "claimed" ? (
-                  <Check className="h-6 w-6 text-success" strokeWidth={3} />
+                  <NaIcon name="check" size={24} className="text-success" />
                 ) : (
                   <span className={state === "future" ? "opacity-40" : ""}>
                     <NaRewardIcon kind="Gift" size={state === "today" ? 42 : 36} />

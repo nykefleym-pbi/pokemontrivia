@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { ChevronRight, Swords, Users, X } from "lucide-react";
+import { Swords, Users, X } from "lucide-react";
+import { NaIcon } from "@/components/na/icon";
 import { FitSprite } from "@/components/na/battle";
 import { NaButton } from "@/components/na/button";
 import { useGameStore } from "@/lib/store";
@@ -44,7 +45,7 @@ export function EvolutionCard({
         <FitSprite id={pokemon.id} size={74} />
         {cost !== null && next ? (
           <>
-            <ChevronRight className="h-[26px] w-[26px] shrink-0 text-reward-gold" strokeWidth={3} />
+            <NaIcon name="chevron-right" size={26} className="shrink-0 text-reward-gold" />
             <FitSprite id={next.id} size={75} className="[filter:brightness(0)_invert(29%)_sepia(1)_saturate(3)_hue-rotate(190deg)]" />
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <span className="na-display-s text-foreground">NEXT: {targets.length > 1 ? `${targets.length} FORMS` : next.name.toUpperCase()}</span>

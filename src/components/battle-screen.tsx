@@ -21,7 +21,7 @@ import type { BattleFx } from "@/lib/battle-fx/engine";
 import { GENERATIONS } from "@/lib/dex-rewards";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { Sparkles, Play } from "lucide-react";
+import { NaIcon } from "@/components/na/icon";
 import { useGameStore, getItemDef } from "@/lib/store";
 import { MAX_ITEMS_PER_BATTLE } from "@/lib/store/slices/itemsSlice";
 import {
@@ -1668,7 +1668,7 @@ function BattleMode({
                 onReady={(img, trim) => fxSprite("enemy", img, trim)}
                 className={`${shakeWho === "enemy" && !fxReady ? "animate-shake" : ""} ${enemy.isShiny ? "shiny-glow" : ""}`}
               >
-                {enemy.isShiny && <Sparkles className="pointer-events-none absolute -right-2 -top-2 z-20 h-4 w-4 animate-pulse text-yellow-300 drop-shadow" />}
+                {enemy.isShiny && <NaIcon name="sparkle" size={16} className="pointer-events-none absolute -right-2 -top-2 z-20 animate-pulse text-yellow-300 drop-shadow" />}
               </FieldSprite>
             </motion.div>
             <motion.div
@@ -1745,7 +1745,7 @@ function BattleMode({
               exit={{ y: -10, opacity: 0 }}
               className="pointer-events-none absolute left-4 top-[392px] z-30 flex w-[358px] items-center gap-2.5 rounded-[14px] border border-white/[0.12] bg-night-deep/75 px-3.5 py-2.5 backdrop-blur-xl"
             >
-              <Play className="h-3.5 w-3.5 shrink-0 fill-reward-gold text-reward-gold" />
+              <NaIcon name="play" size={14} className="shrink-0 text-reward-gold" />
               <span className="na-body-strong text-foreground">{narration}</span>
             </motion.div>
           )}

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Check, X } from "lucide-react";
+import { NaIcon } from "@/components/na/icon";
 import { toast } from "sonner";
 import { useGameStore } from "@/lib/store";
 import { TRAINER_SPRITES, trainerSpriteUrl } from "@/lib/game-data";
@@ -167,10 +167,10 @@ export function SaveProgressSheet({
           />
           {good && (
             <span className="na-caption flex shrink-0 items-center gap-1 text-success">
-              <Check className="h-4 w-4" /> {msg}
+              <NaIcon name="check" size={16} /> {msg}
             </span>
           )}
-          {bad && <X className="h-4 w-4 shrink-0 text-danger" aria-hidden />}
+          {bad && <NaIcon name="x" size={16} className="shrink-0 text-danger" />}
         </span>
         {/* Figma 1.6 hides the helper; it speaks only while checking or on a problem. */}
         {(bad || avail === "checking") && (

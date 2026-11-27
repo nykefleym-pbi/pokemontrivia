@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, FileText } from "lucide-react";
+import { NaIcon } from "@/components/na/icon";
 import { NaButton } from "@/components/na/button";
 import { NaAnswerFace, NaCoachBubble, answerTileClass } from "@/components/na/battle";
 import type { MissedAnswer } from "@/lib/trivia-core";
@@ -28,7 +28,7 @@ export function MistakesReview({ missed, onClose }: { missed: MissedAnswer[]; on
           onClick={onClose}
           className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-white/10 text-foreground"
         >
-          <ArrowLeft className="h-5 w-5" />
+          <NaIcon name="arrow-left" size={20} />
         </button>
         <h1 className="na-display-s flex-1 uppercase text-foreground">Review your answer</h1>
         {missed.length > 1 && (
@@ -51,7 +51,7 @@ export function MistakesReview({ missed, onClose }: { missed: MissedAnswer[]; on
           </div>
           {m.explanation && (
             <div className="flex items-start gap-2.5 rounded-[14px] bg-night-deep/60 p-3">
-              <FileText className="h-5 w-5 shrink-0 text-foreground" aria-hidden />
+              <NaIcon name="review" size={20} className="shrink-0 text-foreground" />
               <p className="na-body text-foreground">{m.explanation}</p>
             </div>
           )}

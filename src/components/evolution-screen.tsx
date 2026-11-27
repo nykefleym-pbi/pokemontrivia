@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Sparkles } from "lucide-react";
+import { NaIcon } from "@/components/na/icon";
 import { FieldSprite } from "@/components/na/battle";
 import { NaButton } from "@/components/na/button";
 import { NaGlassRow } from "@/components/na/celebration";
@@ -141,7 +141,7 @@ export function EvolutionScreen({ from, to, onComplete }: Props) {
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.1 + i * 0.08 }}
             >
-              <Sparkles style={{ width: s, height: s }} />
+              <NaIcon name="sparkle" size={s} />
             </motion.span>
           ))}
       </div>

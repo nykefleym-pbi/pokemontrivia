@@ -3,7 +3,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { playSfx, playItemCue } from "@/lib/audio";
-import { ArrowLeft, Minus, Plus } from "lucide-react";
+import { Minus, Plus } from "lucide-react";
+import { NaIcon } from "@/components/na/icon";
 import { NaGlossIcon } from "@/components/na/gloss-icon";
 import { NaStatPill } from "@/components/na/top-bar";
 import { NaGlassRow } from "@/components/na/celebration";
@@ -578,7 +579,7 @@ function ShopPage() {
         <div className="na-bg-night fixed inset-0 z-50 flex flex-col overflow-y-auto pt-[env(safe-area-inset-top)]">
           <div className="flex h-[52px] shrink-0 items-center gap-3 px-4">
             <button type="button" aria-label="Back" onClick={() => setBagOpen(false)} className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-white/10 text-foreground">
-              <ArrowLeft className="h-5 w-5" />
+              <NaIcon name="arrow-left" size={20} />
             </button>
             <h1 className="na-display-s flex-1 text-foreground">Your bag</h1>
           </div>

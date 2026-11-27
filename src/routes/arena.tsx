@@ -1,15 +1,20 @@
 import { pageHead } from "@/lib/seo";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Swords, QrCode, Loader2, MessageCircle } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { NaIcon } from "@/components/na/icon";
+import { FitSprite } from "@/components/na/battle";
+import { NaButton } from "@/components/na/button";
+import { NaGlossIcon } from "@/components/na/gloss-icon";
+import { routeGym, stopsLeft } from "@/lib/route";
+import type { BattleLogEntry } from "@/lib/store/types";
 import { useGameStore } from "@/lib/store";
 import { useStoreHydrated } from "@/lib/store-hydration";
 import { ItemIcon } from "@/components/game-ui";
 import { AppIcon } from "@/components/app-icon";
 import {
   REWARD_ICON,
-  LOCK_ICON,
   ARENA_BADGE_ICON,
   VERSUS_BACKDROP,
   TRAINING_BOT_AVATAR,
@@ -19,7 +24,7 @@ import { BattleCodeQr } from "@/components/battle-code-qr";
 import { VersusScreen } from "@/components/versus-screen";
 import { trainingBotSide } from "@/lib/training-bot";
 import { ScanPanel } from "@/components/NearbyBattleSheet";
-import { trainerSpriteUrl } from "@/lib/game-data";
+import { getWeekRangeUtc, trainerArtFor, trainerSpriteUrl } from "@/lib/game-data";
 import { versusBackdropSrc } from "@/lib/versus-backdrops";
 import { ITEM_BY_ID } from "@/content/items";
 import { ARENA_REWARD_SLOTS, trophyTier, type TrophyTier } from "@/lib/arena-rewards";
@@ -45,102 +50,54 @@ export const Route = createFileRoute("/arena")({
   validateSearch: (s: Record<string, unknown>): { nearby?: 1 } => (s.nearby ? { nearby: 1 } : {}),
 });
 
-/** Per-tier badge styling. There is deliberately no textual tier label: the
- * badge art is unframed and recoloured to the tier, so the colour IS the rank.
- * `grayscale` first flattens whatever colours the webp ships with, then
- * sepia/hue-rotate/saturate tint it to the target metal; `none` stays dim and
- * desaturated so reaching Bronze reads as an unlock.
- * (A filter tint approximates metal; dedicated per-tier art would be crisper.) */
-const TROPHY_STYLE: Record<TrophyTier, { bar: string; filter: string }> = {
-  none: { bar: "bg-slate-400", filter: "grayscale(1) brightness(0.9) opacity(0.45)" },
-  bronze: {
-    bar: "bg-amber-600",
-    filter: "grayscale(1) sepia(0.9) saturate(2.6) hue-rotate(-18deg) brightness(0.92)",
-  },
-  silver: {
-    bar: "bg-slate-500",
-    filter: "grayscale(1) brightness(1.12) contrast(1.05)",
-  },
-  gold: {
-    bar: "bg-poke-yellow",
-    filter: "grayscale(1) sepia(0.95) saturate(3.4) hue-rotate(-6deg) brightness(1.06)",
-  },
-  platinum: {
-    bar: "bg-violet-400",
-    filter: "grayscale(1) brightness(1.2) sepia(0.25) hue-rotate(175deg) saturate(1.6)",
-  },
-};
+const NEXT_TIER: Record<TrophyTier, string> = { none: "bronze", bronze: "silver", silver: "gold", gold: "platinum", platinum: "platinum" };
+/** The medal's ring shows the tier you've reached. */
+const TIER_RING: Record<TrophyTier, string> = { none: "", bronze: "border-amber-600", silver: "border-slate-300", gold: "border-reward-gold", platinum: "border-violet-300" };
 
-function TrophyCard({ label, count, art }: { label: string; count: number; art: string }) {
+/**
+ * One Arena badge (7.2): the medal tinted to its tier (hold it to see its own
+ * colours), the name, a line, the meter and how many battles to the next tier.
+ */
+function TrophyCard({ label, sub, count, art, icon }: { label: string; sub: string; count: number; art: string; icon: React.ReactNode }) {
   const { tier, next } = trophyTier(count);
-  const st = TROPHY_STYLE[tier];
   const pct = next === null ? 100 : Math.min(100, Math.round((count / next) * 100));
-  // Hold to see the badge in its own colours; releasing returns it to the tier
-  // tint. Pointer events rather than onTouchStart/onMouseDown so one pair of
-  // handlers covers touch, pen and mouse, and `onPointerCancel` catches the
-  // scroll-steals-the-gesture case that would otherwise leave it stuck coloured.
+  // Pointer events cover touch, pen and mouse; cancel catches a scroll stealing the press.
   const [held, setHeld] = useState(false);
   const release = () => setHeld(false);
   return (
-    <div className="flex flex-1 flex-col items-center gap-1.5 rounded-3xl bg-card p-4 shadow-card">
-      {/* No frame — the badge art stands on its own, tinted to its tier so each
-          rank-up visibly changes the metal. */}
+    <div className="na-glass flex min-w-0 flex-1 flex-col items-center gap-1.5 rounded-[20px] p-3.5 text-center">
       <button
         type="button"
-        aria-label={`${label} badge — hold to see it in full colour`}
+        aria-label={`${label} badge: hold to see it in full colour`}
         aria-pressed={held}
         onPointerDown={() => setHeld(true)}
         onPointerUp={release}
         onPointerCancel={release}
         onPointerLeave={release}
-        // Keyboard parity: hold Space/Enter for the same effect.
         onKeyDown={(e) => {
           if (e.key === " " || e.key === "Enter") setHeld(true);
         }}
         onKeyUp={release}
         onBlur={release}
-        // `select-none` alone was not enough to keep a long press out of the
-        // browser's hands: holding the badge opened Chrome's image menu ("Copy
-        // image", "Download image") instead of colourising. That is suppressed
-        // app-wide now — styles.css plus src/lib/native-gestures.ts.
-        className="touch-none select-none rounded-full transition press"
+        className={`flex h-[68px] w-[68px] touch-none select-none items-center justify-center rounded-full border-2 bg-night-card-2 ${tier === "none" ? "border-reward-gold/60" : TIER_RING[tier]}`}
       >
-        <AppIcon
-          src={art}
-          className="h-20 w-20 drop-shadow transition-[filter] duration-150"
-          style={{ filter: held ? "none" : st.filter }}
-        />
+        {held ? <AppIcon src={art} className="h-11 w-11" /> : icon}
       </button>
-      <span className="font-pixel-xs text-primary">{label}</span>
-      <div className="w-full">
-        <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-          <div className={`h-full rounded-full ${st.bar}`} style={{ width: `${pct}%` }} />
-        </div>
-        <div className="mt-1 text-center text-[10px] text-foreground/55">
-          {next === null ? `${count} · MAX` : `${count}/${next}`}
-        </div>
-      </div>
+      <span className="na-headline text-foreground">{label}</span>
+      <span className="na-caption text-text-secondary">{sub}</span>
+      <span className="block h-2 w-full overflow-hidden rounded bg-night-deep">
+        <span className="na-fill-gold block h-full rounded" style={{ width: `${Math.max(2, pct)}%` }} />
+      </span>
+      <span className="na-label whitespace-nowrap tracking-normal text-text-muted">{next === null ? `${count} · MAX` : `${count} of ${next} battles to ${NEXT_TIER[tier]}`}</span>
     </div>
   );
 }
 
 function StatRow({ label, value }: { label: string; value: number }) {
   return (
-    <div className="flex items-baseline justify-between gap-2 text-sm">
-      <span className="shrink-0 text-foreground/55">{label}</span>
-      {/* GO colours the number, not the label — the eye lands on the figure. */}
-      <span className="font-display-md tabular-nums text-primary">{value.toLocaleString()}</span>
-    </div>
-  );
-}
-
-/** GO's section heading: a centred caption with a hairline under it, which is
- *  what separates its stacked cards without needing a heavier divider. */
-function SectionLabel({ children }: { children: ReactNode }) {
-  return (
-    <div className="flex flex-col items-center">
-      <div className="font-pixel-xs tracking-[0.2em] text-primary">{children}</div>
-      <div className="mt-1.5 h-px w-16 rounded-full bg-primary/25" />
+    <div className="flex items-center justify-between gap-2">
+      <span className="na-body text-text-secondary">{label}</span>
+      <span className="na-number-l text-brand-red-light">{value.toLocaleString()}</span>
     </div>
   );
 }
@@ -155,6 +112,16 @@ function ArenaPage() {
   const arenaStats = useGameStore((s) => s.arenaStats);
   const versusBackdropId = useGameStore((s) => s.versusBackdropId);
   const claimArenaReward = useGameStore((s) => s.claimArenaReward);
+  const battleLog = useGameStore((s) => s.battleLog);
+  const weeklyLeague = useGameStore((s) => s.weeklyLeague);
+  const route = useGameStore((s) => s.route);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  // The Weekly League card shows the gym on your route (same rules as Home).
+  const leader = routeGym(route);
+  const badgeName = leader.badge;
+  const gymLeft = stopsLeft(route);
+  const weekDone = weeklyLeague?.gymLeaderId === leader.id && (weeklyLeague.status === "won" || weeklyLeague.status === "lost");
+  const daysLeft = Math.max(1, Math.ceil((getWeekRangeUtc().nextStart - Date.now()) / 86_400_000));
 
   const [scanOpen, setScanOpen] = useState(false);
   const [trainingBusy, setTrainingBusy] = useState(false);
@@ -453,192 +420,147 @@ function ArenaPage() {
   }
 
   return (
-    <div className="bg-poke-cream h-full w-full overflow-y-auto pb-nav safe-x">
-      {/* Header. Chat lives here now, level with the title, because the list it
-          used to hang off is gone — see `latestChatMatchId`. */}
-      <div className="flex items-center justify-between gap-3 screen-x screen-top pb-2">
-        <div className="min-w-0">
-          <p className="font-pixel-xs text-primary">WELCOME TO</p>
-          <h1 className="font-display-lg text-foreground">Battle Arena</h1>
+    <div className="h-full w-full overflow-y-auto pb-nav safe-x">
+      <div className="flex flex-col gap-3.5 px-4 pb-6 pt-[calc(env(safe-area-inset-top)+8px)]">
+        {/* Header: ARENA and the match chat (rendered even with nothing to open; it says so). */}
+        <div className="flex items-center gap-2">
+          <h1 className="na-display-m flex-1 text-foreground">ARENA</h1>
+          <button
+            type="button"
+            aria-label="Open match chat"
+            onClick={() => {
+              if (!latestChatMatchId) {
+                toast.error("No recent Nearby Battle to chat about yet.");
+                return;
+              }
+              void navigate({ to: "/pvp/chat/$matchId", params: { matchId: latestChatMatchId } });
+            }}
+            className={`press flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-night-card-2 shadow-[0_4px_0_#141A3F] ${latestChatMatchId ? "text-foreground" : "text-text-muted"}`}
+          >
+            <NaIcon name="chat" size={22} />
+          </button>
         </div>
-        {/* Rendered even with nothing to open, and it says so when tapped. A
-            button that pops into the header a second after the page settles
-            shifts the title under the player's thumb. */}
-        <button
-          type="button"
-          aria-label="Open match chat"
-          onClick={() => {
-            if (!latestChatMatchId) {
-              toast.error("No recent Nearby Battle to chat about yet.");
-              return;
-            }
-            void navigate({ to: "/pvp/chat/$matchId", params: { matchId: latestChatMatchId } });
-          }}
-          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-card shadow-card transition press ${
-            latestChatMatchId ? "text-primary" : "text-foreground/35"
-          }`}
-        >
-          <MessageCircle className="h-5 w-5" />
-        </button>
-      </div>
 
-      {/* ── Group 1 — trainer + record ─────────────────────────────────────── */}
-      <div className="screen-x pt-3">
-        <div className="flex items-center gap-3 rounded-3xl bg-card p-4 shadow-card">
+        {/* Weekly League first (7.2): this week's gym on your route. It opens on Home's route once every stop is beaten. */}
+        <div className="na-card flex flex-col gap-2 rounded-[22px] border-[1.5px] border-reward-gold/50 p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="na-label uppercase text-reward-gold">Weekly League</span>
+              <span className="na-display-s text-foreground">Gym Leader {leader.name}</span>
+              <span className="na-caption text-text-secondary">
+                {weekDone
+                  ? weeklyLeague?.status === "won"
+                    ? `You won the ${badgeName}! A new gym opens Monday.`
+                    : `${leader.name} is ready for a rematch on Monday.`
+                  : `Ends in ${daysLeft} day${daysLeft === 1 ? "" : "s"} · Win the ${badgeName}!`}
+              </span>
+            </div>
+            <FitSprite id={leader.signaturePokemonId} size={64} />
+          </div>
+          {!weekDone && (
+            <NaButton size="M" block onClick={() => void navigate({ to: "/battle", search: { autostart: 0 } as never })}>
+              {gymLeft === 0 ? "Challenge" : `Beat ${gymLeft} more trainer${gymLeft === 1 ? "" : "s"} first`}
+            </NaButton>
+          )}
+        </div>
+
+        {/* Your record: Arena numbers only, so a solo win no longer reads as "Wins 0". */}
+        <div className="na-glass flex items-center gap-3.5 rounded-[22px] p-3.5">
           <img
             src={trainerSpriteUrl(trainerSprite)}
             alt={trainerSprite}
-            className="sprite h-32 w-32 shrink-0 object-contain"
+            className="sprite h-[88px] w-[88px] shrink-0 object-contain"
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).style.opacity = "0.3";
             }}
           />
-          <div className="min-w-0 flex-1 space-y-1">
-            <StatRow label="Wins" value={arenaStats.wins} />
-            <StatRow label="Battles" value={arenaStats.battles} />
-            <StatRow label="Longest Streak" value={arenaStats.longestWinStreak} />
-            <div className="flex items-baseline justify-between gap-2 text-sm">
-              <span className="shrink-0 text-foreground/55">Berries</span>
-              <div className="flex gap-1">
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+            <StatRow label="Arena wins" value={arenaStats.wins} />
+            <StatRow label="Arena battles" value={arenaStats.battles} />
+            <StatRow label="Best win streak" value={arenaStats.longestWinStreak} />
+            <div className="flex items-center justify-between gap-2">
+              <span className="na-body text-text-secondary">Last berries</span>
+              <span className="flex gap-1">
                 {[0, 1, 2].map((i) => {
                   const id = arenaStats.lastBerries[i];
                   return id ? (
-                    <ItemIcon key={i} item={ITEM_BY_ID[id]} className="h-6 w-6" />
+                    <ItemIcon key={i} item={ITEM_BY_ID[id]} className="h-[22px] w-[22px]" />
                   ) : (
-                    <span
-                      key={i}
-                      className="flex h-6 w-6 items-center justify-center text-foreground/25"
-                    >
-                      —
-                    </span>
+                    <span key={i} className="h-[22px] w-[22px] rounded-[7px] bg-night-deep/50" />
                   );
                 })}
-              </div>
+              </span>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* ── Group 2 — the two badges ───────────────────────────────────────── */}
-      <div className="flex gap-3 screen-x pt-3">
-        <TrophyCard label="PVP" count={arenaStats.nearbyBattles} art={ARENA_BADGE_ICON.nearby} />
-        <TrophyCard
-          label="TRAINING"
-          count={arenaStats.trainingBattles}
-          art={ARENA_BADGE_ICON.training}
-        />
-      </div>
+        {/* The two badges: battles against trainers, and with the Training Bot. */}
+        <div className="flex gap-2.5">
+          <TrophyCard
+            label="Trainer Battles"
+            sub="Battle real players live!"
+            count={arenaStats.nearbyBattles}
+            art={ARENA_BADGE_ICON.nearby}
+            icon={<NaIcon name="arena" size={36} />}
+          />
+          <TrophyCard label="Training Bot" sub="Practice anytime" count={arenaStats.trainingBattles} art={ARENA_BADGE_ICON.training} icon={<NaGlossIcon kind="bot" size={36} />} />
+        </div>
 
-      {/* ── Group 3 — rewards, and the one button that starts a battle ─────── */}
-      <div className="screen-x pt-3">
-        <div className="rounded-3xl bg-card p-4 shadow-card">
-          {/* Two views of the same thing — what this battle earns you, and where
-              it puts you — sharing one panel. The rankings used to be a second
-              card further down; folded in here they cost no extra height. */}
-          <div className="flex gap-1 rounded-full bg-muted/60 p-1">
+        {/* Battle Rewards and Leaderboard share one card, with Battle now under them. */}
+        <div className="na-glass flex flex-col gap-3 rounded-[22px] p-4">
+          <div role="tablist" className="flex gap-1 rounded-[14px] bg-night-deep/60 p-1">
             {(
               [
-                ["rewards", "BATTLE REWARDS"],
-                ["ranked", "RANKED"],
+                ["rewards", "Battle Rewards"],
+                ["ranked", "Leaderboard"],
               ] as const
             ).map(([key, label]) => (
               <button
                 key={key}
                 type="button"
+                role="tab"
+                aria-selected={group3Tab === key}
                 onClick={() => setGroup3Tab(key)}
-                aria-pressed={group3Tab === key}
-                className={`flex-1 rounded-full py-2 font-pixel-xs tracking-[0.12em] transition ${
-                  group3Tab === key
-                    ? "bg-card text-primary shadow-card"
-                    : "text-foreground/45 press-lg"
+                className={`flex h-[38px] flex-1 items-center justify-center rounded-[10px] ${
+                  group3Tab === key ? "na-body-strong bg-night-card-2 text-foreground shadow-[0_4px_0_#141A3F]" : "na-body text-text-secondary"
                 }`}
               >
                 {label}
               </button>
             ))}
           </div>
-
-          {/* One fixed height for both panels, sized to the taller (the top 3),
-              so the Battle button underneath stays put when the player
-              switches. The shorter panel centres in the slack rather than
-              leaving a gap under itself. */}
-          <div className="flex min-h-[144px] flex-col justify-center">
+          <div className="flex min-h-[96px] flex-col justify-center gap-3">
             {group3Tab === "rewards" ? (
               <>
-                <p className="text-center text-xs text-foreground/60">
-                  Battle other trainers to unlock all 5 rewards.
-                </p>
-                <div className="mt-3 grid grid-cols-5 gap-2">
+                <p className="na-body text-center text-text-secondary">Win trainer battles to unlock all 5 rewards!</p>
+                <div className="flex justify-between">
                   {ARENA_REWARD_SLOTS.map(({ slot, kind }) => {
                     const unlocked = slot < arenaStats.set.wins;
                     const claimed = arenaStats.set.claimed[slot];
-                    // The whole tile is the tap target when there's something to
-                    // collect — the COLLECT pill alone is ~14px tall, small enough
-                    // that a thumb regularly misses it and the tap reads as "nothing
-                    // happened, tap again".
-                    const tileCls = `flex min-h-[68px] w-full flex-col items-center justify-center gap-1 rounded-2xl p-2 text-center bg-muted/60 ${
-                      claimed ? "opacity-60" : ""
-                    }`;
-                    if (!claimed && unlocked) {
-                      return (
-                        <button
-                          key={slot}
-                          type="button"
-                          onClick={() => handleClaim(slot)}
-                          aria-label={`Collect reward ${slot + 1}`}
-                          className={`${tileCls} transition press`}
-                        >
-                          <AppIcon src={REWARD_ICON[kind]} className="h-7 w-7" />
-                          <span className="rounded-full bg-primary px-2 py-0.5 font-pixel text-[8px] text-primary-foreground">
-                            COLLECT
-                          </span>
-                        </button>
-                      );
-                    }
-                    return (
-                      <div key={slot} className={tileCls}>
-                        <AppIcon
-                          src={claimed ? REWARD_ICON[kind] : LOCK_ICON}
-                          className={claimed ? "h-7 w-7" : "h-9 w-9 opacity-50"}
-                        />
-                      </div>
+                    const tile = `flex h-14 w-14 flex-col items-center justify-center gap-0.5 rounded-2xl bg-night-deep/50 ${claimed ? "opacity-60" : ""}`;
+                    return !claimed && unlocked ? (
+                      <button key={slot} type="button" onClick={() => handleClaim(slot)} aria-label={`Collect reward ${slot + 1}`} className={`${tile} press border-2 border-reward-gold`}>
+                        <AppIcon src={REWARD_ICON[kind]} className="h-7 w-7" />
+                      </button>
+                    ) : (
+                      <span key={slot} className={tile}>
+                        {claimed ? <AppIcon src={REWARD_ICON[kind]} className="h-7 w-7" /> : <NaGlossIcon kind="lock" size={22} />}
+                      </span>
                     );
                   })}
                 </div>
               </>
             ) : board.rows.length === 0 ? (
-              // Rating only moves on human matches, so before anyone has played
-              // one there is no table to show — say why rather than draw an
-              // empty one.
-              <p className="px-2 text-center text-xs text-foreground/60">
-                Win a battle against another trainer to join the rankings.
-              </p>
+              <p className="na-body text-center text-text-secondary">Win a battle against another trainer to join the leaderboard!</p>
             ) : (
               <>
-                {board.ranked && board.me ? (
-                  <div className="text-center text-xs text-foreground/60">
-                    You: <span className="font-bold text-foreground">{board.me.rating}</span> · #
-                    {board.me.position} of {board.total}
-                  </div>
-                ) : (
-                  // Not on the board yet, so the three rows are the top three
-                  // instead of a window — say so rather than let it look like the
-                  // player is ranked among them.
-                  <div className="text-center text-xs text-foreground/60">
-                    Top {board.rows.length} — win a ranked battle to take your place
-                  </div>
-                )}
-                <div className="mt-2 space-y-1.5">
+                <p className="na-caption text-center text-text-secondary">
+                  {board.ranked && board.me ? `You: ${board.me.rating} · #${board.me.position} of ${board.total}` : `Top ${board.rows.length}. Win a ranked battle to take your place!`}
+                </p>
+                <div className="flex flex-col gap-1.5">
                   {board.rows.map((row) => (
-                    <div
-                      key={row.id}
-                      className={`flex items-center gap-2 rounded-xl px-2 py-1.5 ${
-                        board.me && row.id === board.me.id ? "bg-primary/10" : ""
-                      }`}
-                    >
-                      <span className="w-5 shrink-0 text-center font-pixel-xs text-foreground/50">
-                        {row.position}
-                      </span>
+                    <div key={row.id} className={`flex items-center gap-2 rounded-xl px-2 py-1.5 ${board.me && row.id === board.me.id ? "bg-primary/15" : ""}`}>
+                      <span className="na-label w-5 shrink-0 text-center text-text-muted">{row.position}</span>
                       <img
                         src={trainerSpriteUrl(row.trainerSprite)}
                         alt=""
@@ -647,83 +569,157 @@ function ArenaPage() {
                           (e.currentTarget as HTMLImageElement).style.opacity = "0";
                         }}
                       />
-                      <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
-                        {row.trainerName}
-                      </span>
-                      <span className="shrink-0 text-sm font-bold text-foreground">
-                        {row.rating}
-                      </span>
+                      <span className="na-body-strong min-w-0 flex-1 truncate text-foreground">{row.trainerName}</span>
+                      <span className="na-number-m shrink-0 text-foreground">{row.rating}</span>
                     </div>
                   ))}
                 </div>
               </>
             )}
           </div>
-          {/* GO puts its BATTLE button directly under the reward row, so the
-              rewards read as what this button is FOR. Same here — and it is now
-              the only way in, since Online falls back to Training by itself. */}
-          <Button
-            size="action"
-            onClick={() => void handleBattleOnline()}
-            disabled={rewardsBlockBattling || trainingBusy}
-            className="mt-4 w-full bg-gradient-to-b from-primary to-primary/85 tracking-wide shadow-pop transition press-lg disabled:opacity-60"
-          >
+          <NaButton block onClick={() => void handleBattleOnline()} disabled={rewardsBlockBattling || trainingBusy}>
             {trainingBusy ? (
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" /> Starting…
+              </>
             ) : (
-              <Swords className="mr-2 h-5 w-5" />
+              "Battle now"
             )}
-            {trainingBusy ? "Starting…" : "Battle"}
-          </Button>
-          <div className="mt-3 text-center text-[11px] text-foreground/55">
-            {arenaStats.set.battles}/5 battles played
+          </NaButton>
+          <p className={`na-caption text-center ${rewardsBlockBattling ? "text-brand-red-light" : "text-text-secondary"}`}>
+            {rewardsBlockBattling
+              ? claimFirstMessage
+              : `${arenaStats.set.battles}/5 battles played. We'll find a trainer near your level. No match in 20 seconds? Battle the Training Bot!`}
+          </p>
+        </div>
+
+        {/* Nearby Battle: show your Battle Code, or scan theirs (the scanner takes the code's place). */}
+        <div className="flex flex-col items-center gap-3 rounded-[22px] border border-primary/50 bg-white/[0.08] p-4">
+          <span className="na-label uppercase text-brand-red-light">Nearby Battle</span>
+          <span className="na-body-strong text-foreground">{scanOpen ? "Point your camera at their Battle Code!" : "Challenge a friend nearby!"}</span>
+          <div className="w-full max-w-[220px]">{scanOpen ? <ScanPanel active={scanOpen} onClose={() => setScanOpen(false)} /> : <BattleCodeQr />}</div>
+          <NaButton
+            size="M"
+            onClick={() => {
+              if (rewardsBlockBattling) {
+                toast.error(claimFirstMessage);
+                return;
+              }
+              setScanOpen((v) => !v);
+            }}
+            disabled={rewardsBlockBattling && !scanOpen}
+          >
+            {scanOpen ? "Show my code" : "Scan a Battle Code"}
+          </NaButton>
+        </div>
+
+        {/* Recent battles, moved here from Profile. See all opens 7.2c. */}
+        <div className="na-glass flex flex-col gap-2.5 rounded-[22px] p-4">
+          <div className="flex items-center justify-between">
+            <span className="na-label uppercase text-text-secondary">Recent battles</span>
+            {battleLog.length > 3 && (
+              <button type="button" onClick={() => setHistoryOpen(true)} className="na-body-strong text-[#5b8cff]">
+                See all
+              </button>
+            )}
           </div>
-          {/* Says WHY the Battle button is disabled — a dead button with no
-              explanation is the worse failure. */}
-          {rewardsBlockBattling && (
-            <p className="mt-2 text-center text-[11px] font-semibold text-primary">
-              {claimFirstMessage}
-            </p>
+          {battleLog.length === 0 ? (
+            <p className="na-body text-text-secondary">No battles yet. Your first one is waiting!</p>
+          ) : (
+            battleLog.slice(0, 3).map((e, i) => <HistoryRow key={i} e={e} compact />)
           )}
         </div>
       </div>
 
-      {/* ── Group 4 — Nearby Battle (QR + scanner) ─────────────────────────── */}
-      <div className="screen-x pt-3">
-        <div className="rounded-3xl bg-card p-4 shadow-card">
-          <SectionLabel>NEARBY BATTLE</SectionLabel>
-          {/* Scanner replaces the QR in place — same footprint, no layout jump. */}
-          <div className="mt-3 rounded-2xl bg-primary/5 p-3">
-            {scanOpen ? (
-              <ScanPanel active={scanOpen} onClose={() => setScanOpen(false)} />
-            ) : (
-              <BattleCodeQr />
-            )}
-            <p className="mt-2 text-center text-xs font-semibold text-foreground/70">
-              {scanOpen
-                ? "Point your camera at a nearby trainer's Battle Code."
-                : "Scan this Battle Code with another device to battle!"}
-            </p>
-            <Button
-              size="action"
-              onClick={() => {
-                if (rewardsBlockBattling) {
-                  toast.error(claimFirstMessage);
-                  return;
-                }
-                setScanOpen((v) => !v);
-              }}
-              disabled={rewardsBlockBattling && !scanOpen}
-              className="mt-3 w-full shadow-pop transition press-lg"
-            >
-              <QrCode className="mr-1.5 h-4 w-4" />
-              {scanOpen ? "Show My Battle Code" : "Scan a Battle Code"}
-            </Button>
-          </div>
-        </div>
-      </div>
+      {historyOpen && <BattleHistory log={battleLog} onClose={() => setHistoryOpen(false)} />}
+    </div>
+  );
+}
 
-      <div className="pb-8" />
+/** One battle in the history: result, who, which mode and when. */
+function HistoryRow({ e, compact }: { e: BattleLogEntry; compact?: boolean }) {
+  const chip = (
+    <span className={`na-label shrink-0 rounded-lg px-2 py-[3px] ${e.won ? "bg-success/[0.18] text-success" : "bg-danger/[0.18] text-danger"}`}>{e.won ? "WIN" : "LOSS"}</span>
+  );
+  const s = compact ? 36 : 40;
+  return (
+    <div className={`flex items-center gap-2.5 ${compact ? "" : "rounded-2xl bg-white/[0.08] p-3"}`}>
+      {compact && chip}
+      <span className="flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-night-card-2" style={{ width: s, height: s }}>
+        <img src={(e.opponent === "Training Bot" && TRAINING_BOT_AVATAR) || trainerArtFor(e.opponent)} alt="" className="sprite object-contain" style={{ width: s, height: s }} />
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="na-body-strong truncate text-foreground">{e.opponent}</span>
+        <span className="na-caption text-text-secondary">
+          {MODE_NAME[e.mode ?? "battle"] ?? "Battle"} · {whenLabel(e.timestamp)}
+        </span>
+      </span>
+      {!compact && chip}
+    </div>
+  );
+}
+
+const MODE_NAME: Record<string, string> = {
+  battle: "Solo battle",
+  elite: "Elite Four",
+  weekly: "Weekly League",
+  mega: "Mega Raid",
+  pvp: "Trainer battle",
+  nearby: "Nearby Battle",
+  daily: "Daily Quest",
+  whosthat: "Who's That?",
+};
+
+function whenLabel(ts: number) {
+  const day = (t: number) => Math.floor(t / 86_400_000);
+  const d = day(Date.now()) - day(ts);
+  return d <= 0 ? "today" : d === 1 ? "yesterday" : new Date(ts).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+}
+
+/** Figma 7.2c Battle history: All / Wins / Losses, grouped by when. */
+function BattleHistory({ log, onClose }: { log: BattleLogEntry[]; onClose: () => void }) {
+  const [show, setShow] = useState<"all" | "wins" | "losses">("all");
+  const rows = log.filter((e) => show === "all" || (show === "wins") === e.won);
+  const groups: [string, BattleLogEntry[]][] = [
+    ["TODAY", rows.filter((e) => whenLabel(e.timestamp) === "today")],
+    ["THIS WEEK", rows.filter((e) => whenLabel(e.timestamp) !== "today" && Date.now() - e.timestamp < 7 * 86_400_000)],
+    ["EARLIER", rows.filter((e) => Date.now() - e.timestamp >= 7 * 86_400_000)],
+  ];
+  return (
+    <div className="na-bg-night fixed inset-0 z-50 flex flex-col overflow-y-auto pt-[env(safe-area-inset-top)]">
+      <div className="flex h-[52px] shrink-0 items-center gap-3 px-4">
+        <button type="button" aria-label="Back" onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-white/10 text-foreground">
+          <NaIcon name="arrow-left" size={20} />
+        </button>
+        <h1 className="na-display-s flex-1 text-foreground">Battle history</h1>
+      </div>
+      <div className="flex flex-col gap-2.5 px-4 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-2">
+        <div role="tablist" className="flex gap-1 rounded-[14px] bg-night-deep/60 p-1">
+          {(["all", "wins", "losses"] as const).map((k) => (
+            <button
+              key={k}
+              type="button"
+              role="tab"
+              aria-selected={show === k}
+              onClick={() => setShow(k)}
+              className={`flex h-[38px] flex-1 items-center justify-center rounded-[10px] capitalize ${show === k ? "na-body-strong bg-night-card-2 text-foreground shadow-[0_4px_0_#141A3F]" : "na-body text-text-secondary"}`}
+            >
+              {k}
+            </button>
+          ))}
+        </div>
+        {groups.map(([label, g]) =>
+          g.length ? (
+            <div key={label} className="flex flex-col gap-2.5">
+              <span className="na-label text-text-muted">{label}</span>
+              {g.map((e, i) => (
+                <HistoryRow key={i} e={e} />
+              ))}
+            </div>
+          ) : null,
+        )}
+        {rows.length === 0 && <p className="na-body py-6 text-center text-text-secondary">Nothing here yet!</p>}
+      </div>
     </div>
   );
 }

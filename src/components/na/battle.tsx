@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Check, Info, Sparkles, X } from "lucide-react";
+import { X } from "lucide-react";
+import { NaIcon } from "@/components/na/icon";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { NaTypeChip } from "@/components/na/type-chip";
 import { NaGlossIcon } from "@/components/na/gloss-icon";
@@ -306,9 +307,9 @@ export function NaHpCard({
                 pulse != null ? "border-success na-glow-success" : "border-white/[0.22]",
               )}
             >
-              <Sparkles className="h-4 w-4 shrink-0 text-reward-gold" />
+              <NaIcon name="sparkle" size={16} className="shrink-0 text-reward-gold" />
               <span className="na-label truncate uppercase text-foreground">{abilityName}</span>
-              {pulse ? <span className="na-label shrink-0 text-success">{pulse}</span> : <Info className="h-3.5 w-3.5 shrink-0 text-text-secondary" />}
+              {pulse ? <span className="na-label shrink-0 text-success">{pulse}</span> : <NaIcon name="info" size={14} className="shrink-0 text-text-secondary" />}
             </button>
           </PopoverTrigger>
           <PopoverContent
@@ -316,7 +317,7 @@ export function NaHpCard({
             className="w-56 rounded-2xl border border-reward-gold/60 bg-night-raised p-3 text-foreground"
           >
             <div className="flex items-center gap-1.5">
-              <Sparkles className="h-4 w-4 text-reward-gold" />
+              <NaIcon name="sparkle" size={16} className="text-reward-gold" />
               <span className="na-headline">{abilityName}</span>
             </div>
             {abilityDescription && <p className="na-body mt-1 text-text-secondary">{abilityDescription}</p>}
@@ -496,17 +497,17 @@ export function NaAnswerFace({ index, text, state: st }: { index: number; text: 
       </span>
       {st === "correct" && (
         <span className="na-label flex shrink-0 items-center gap-1 uppercase text-[#05261a]">
-          <Check className="h-[18px] w-[18px]" strokeWidth={2.5} /> Correct
+          <NaIcon name="check" size={18} /> Correct
         </span>
       )}
       {st === "wrong" && (
         <span className="na-label flex shrink-0 items-center gap-1 uppercase text-danger">
-          <X className="h-[18px] w-[18px]" strokeWidth={2.5} /> Not quite
+          <NaIcon name="x" size={18} /> Not quite
         </span>
       )}
       {st === "reveal" && (
         <span className="na-label flex shrink-0 items-center gap-1 uppercase text-success">
-          <Check className="h-[18px] w-[18px]" strokeWidth={2.5} /> Answer
+          <NaIcon name="check" size={18} /> Answer
         </span>
       )}
     </>
@@ -526,7 +527,7 @@ export function NaFeedbackBanner({ ok, title, sub }: { ok: boolean; title: strin
       style={{ background: `linear-gradient(${ok ? "rgb(46 229 157 / 0.16)" : "rgb(255 92 138 / 0.16)"}, ${ok ? "rgb(46 229 157 / 0.16)" : "rgb(255 92 138 / 0.16)"}), #141a3f` }}
     >
       <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${ok ? "bg-success" : "bg-danger"}`}>
-        {ok ? <Check className="h-[22px] w-[22px] text-night-base" strokeWidth={3} /> : <X className="h-[22px] w-[22px] text-night-base" strokeWidth={3} />}
+        {ok ? <NaIcon name="check" size={22} className="text-night-base" /> : <NaIcon name="x" size={22} className="text-night-base" />}
       </span>
       <span className="flex min-w-0 flex-col gap-0.5">
         <span className={`na-display-s ${ok ? "text-success" : "text-danger"}`}>{title}</span>

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { BookOpen, Check, Search, Sparkles } from "lucide-react";
+import { NaIcon } from "@/components/na/icon";
 import { MiniPokeball } from "@/components/game-ui";
 import { NaRewardIcon, type RewardIconKind } from "@/components/na/reward-icon";
 import { NaGlossIcon } from "@/components/na/gloss-icon";
@@ -71,7 +71,7 @@ function Milestone({ milestone, state, onClaim }: { milestone: DexMilestone; sta
           )}
           {state === "claimed" && (
             <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-success">
-              <Check className="h-2 w-2 text-white" strokeWidth={4} />
+              <NaIcon name="check" size={8} className="text-white" />
             </span>
           )}
         </span>
@@ -148,9 +148,9 @@ export function DexCompletionCard({ gen }: { gen: number }) {
       {flipped ? (
         [
           { label: "Caught", value: stats.caught, icon: <MiniPokeball className="h-[22px] w-[22px]" /> },
-          { label: "Seen", value: stats.seen, icon: <Search className="h-[22px] w-[22px] text-night-base" strokeWidth={2.4} /> },
-          { label: "Shiny", value: stats.shiny, icon: <Sparkles className="h-[22px] w-[22px] text-reward-gold" strokeWidth={2.4} /> },
-          { label: "Total in this region", value: stats.total, icon: <BookOpen className="h-[22px] w-[22px] text-night-base" strokeWidth={2.4} /> },
+          { label: "Seen", value: stats.seen, icon: <NaIcon name="search" size={22} className="text-night-base" /> },
+          { label: "Shiny", value: stats.shiny, icon: <NaIcon name="sparkle" size={22} className="text-reward-gold" /> },
+          { label: "Total in this region", value: stats.total, icon: <NaIcon name="dex" line size={22} className="text-night-base" /> },
         ].map((c) => (
           <span key={c.label} aria-label={`${c.label}: ${c.value}`} className="flex flex-col items-center gap-1">
             {c.icon}

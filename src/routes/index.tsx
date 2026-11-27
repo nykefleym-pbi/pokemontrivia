@@ -2,7 +2,7 @@ import { pageHead } from "@/lib/seo";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Check, Sparkles } from "lucide-react";
+import { NaIcon } from "@/components/na/icon";
 import { useGameStore } from "@/lib/store";
 import {
   STARTING_PARTNERS,
@@ -218,7 +218,7 @@ function PartnerPicker({ referred, onStart }: { referred: boolean; onStart: () =
                 </div>
                 {on && (
                   <span className="na-fill-brand flex h-7 w-7 shrink-0 items-center justify-center rounded-[14px]">
-                    <Check className="h-4 w-4 text-white" strokeWidth={3} />
+                    <NaIcon name="check" size={16} className="text-white" />
                   </span>
                 )}
               </div>
@@ -227,7 +227,7 @@ function PartnerPicker({ referred, onStart }: { referred: boolean; onStart: () =
                   <span className="na-caption text-text-secondary">{evolutionLine(p)}</span>
                   {ability && (
                     <span className="flex items-start gap-1.5">
-                      <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-foreground" />
+                      <NaIcon name="sparkle" size={16} className="mt-0.5 shrink-0 text-foreground" />
                       <span className="na-caption text-foreground">
                         {ability.name}: {afterColon(ability.description)}
                       </span>
@@ -245,7 +245,7 @@ function PartnerPicker({ referred, onStart }: { referred: boolean; onStart: () =
         )}
 
         <label className="flex h-12 w-full shrink-0 items-center gap-2.5 rounded-[14px] border border-white/[0.12] bg-white/[0.08] px-3.5">
-          <Search className="h-5 w-5 shrink-0 text-text-muted" />
+          <NaIcon name="search" size={20} className="shrink-0 text-text-muted" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}

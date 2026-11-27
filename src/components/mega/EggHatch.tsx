@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, Star } from "lucide-react";
+import { NaIcon } from "@/components/na/icon";
 import { toast } from "sonner";
 import { ItemIcon } from "@/components/game-ui";
 import { FieldSprite } from "@/components/na/battle";
@@ -167,7 +167,7 @@ function HatchScreen({ mon, onDone }: { mon: Hatched; onDone: () => void }) {
               [30, 160, 14],
             ].map(([x, y, s], i) => (
               <motion.span key={i} className="absolute text-reward-gold" style={{ left: x, top: y }} initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 * i, duration: 0.5 }}>
-                <Sparkles style={{ width: s, height: s }} />
+                <NaIcon name="sparkle" size={s} />
               </motion.span>
             ))}
           </>
@@ -175,7 +175,7 @@ function HatchScreen({ mon, onDone }: { mon: Hatched; onDone: () => void }) {
       </div>
       <motion.div {...rise(0.15)} className="mt-3 flex items-center gap-1.5">
         <span className="na-fill-gold na-label flex items-center gap-1 rounded-full py-[3px] pl-1.5 pr-2.5 text-on-gold">
-          <Star className="h-3.5 w-3.5 fill-current" /> {isMythical(mon.id) ? "MYTHICAL" : "LEGENDARY"}
+          <NaIcon name="star-filled" line size={14} /> {isMythical(mon.id) ? "MYTHICAL" : "LEGENDARY"}
         </span>
         {p?.types.map((t) => <NaTypeChip key={t} type={t} />)}
       </motion.div>

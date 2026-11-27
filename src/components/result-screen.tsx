@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ChevronRight, FileText } from "lucide-react";
+import { NaIcon } from "@/components/na/icon";
 import { NaRewardIcon } from "@/components/na/reward-icon";
 import { NaButton } from "@/components/na/button";
 import { NaCatchCard, NaGlassRow, NaRewardTile, NaWordmark, VictoryHero } from "@/components/na/celebration";
@@ -179,7 +179,7 @@ export function ResultScreen({
             title={`See your ${n} ${n === 1 ? "mistake" : "mistakes"}`}
             sub="Learn the right answers."
             onClick={() => setMistakesOpen(true)}
-            trailing={<ChevronRight className="h-[18px] w-[18px] text-text-muted" aria-hidden />}
+            trailing={<NaIcon name="chevron-right" size={18} className="text-text-muted" />}
           />
         )}
         <div className="min-h-2 flex-1" />
@@ -215,7 +215,7 @@ export function ResultScreen({
             onClick={() => setMistakesOpen(true)}
             className="na-label uppercase flex items-center gap-1 rounded-full bg-white/[0.12] px-2.5 py-1 text-foreground"
           >
-            <FileText className="h-3.5 w-3.5 text-reward-gold" aria-hidden />
+            <NaIcon name="review" size={14} className="text-reward-gold" />
             {missed.length} {missed.length === 1 ? "mistake" : "mistakes"}
           </button>
         )}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { Trash2, Minus, Plus, ArrowRight, AlertTriangle } from "lucide-react";
+import { NaIcon } from "@/components/na/icon";
 import { useGameStore } from "@/lib/store";
 import { ITEM_BY_ID } from "@/content/items";
 import type { ItemId } from "@/lib/game-data";
@@ -202,7 +203,7 @@ export function DiscardItemButton({ id }: { id: ItemId }) {
         }}
         className="press flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/[0.12] text-text-muted"
       >
-        <Trash2 className="h-4 w-4" />
+        <NaIcon name="trash" size={16} />
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>

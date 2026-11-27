@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Clock } from "lucide-react";
+import { NaIcon } from "@/components/na/icon";
 import { useGameStore } from "@/lib/store";
 import { dailyReward } from "@/lib/rewards";
 import { rollLevelUpRewards } from "@/lib/level-rewards";
@@ -304,7 +304,7 @@ function DailyIntro({ total, onBack, onStart }: { total: number; onBack: () => v
     <div className="na-bg-night flex h-full w-full flex-col pt-[env(safe-area-inset-top)]">
       <div className="flex h-[52px] shrink-0 items-center gap-3 px-4">
         <button type="button" aria-label="Back" onClick={onBack} className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-white/10 text-foreground">
-          <ArrowLeft className="h-5 w-5" />
+          <NaIcon name="arrow-left" size={20} />
         </button>
         <h1 className="na-display-s flex-1 text-foreground">Daily Quest</h1>
       </div>
@@ -312,7 +312,7 @@ function DailyIntro({ total, onBack, onStart }: { total: number; onBack: () => v
         <DailyRing />
         <span className="na-fill-brand flex items-center gap-2 rounded-lg px-2.5 py-1">
           <span className="na-label uppercase text-foreground">Boss battle</span>
-          <Clock className="h-3.5 w-3.5 text-foreground" strokeWidth={2.5} />
+          <NaIcon name="clock" size={14} className="text-foreground" />
           <span className="na-label text-foreground">{timeLeft()}</span>
         </span>
         <h2 className="na-display-l text-center text-foreground">DEFEAT ROTOM!</h2>

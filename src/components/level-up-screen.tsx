@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ChevronRight } from "lucide-react";
+import { NaIcon } from "@/components/na/icon";
 import { playSfx } from "@/lib/audio";
 import { ITEMS, rankForLevel, trainerSpriteUrl, xpForLevel } from "@/lib/game-data";
 import { useGameStore } from "@/lib/store";
@@ -105,8 +105,8 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
           animate={{ opacity: 1 }}
           transition={{ delay: 1.2 }}
         >
-          <ChevronRight className="-mr-2.5 h-[26px] w-[26px] text-reward-gold" strokeWidth={3} />
-          <ChevronRight className="h-[26px] w-[26px] text-reward-gold" strokeWidth={3} />
+          <NaIcon name="chevron-right" size={26} className="-mr-2.5 text-reward-gold" />
+          <NaIcon name="chevron-right" size={26} className="text-reward-gold" />
         </motion.div>
         <motion.div
           className="absolute left-[140px] top-[22px]"

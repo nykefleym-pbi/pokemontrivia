@@ -1,5 +1,5 @@
 import { Fragment } from "react";
-import { ArrowLeft, ChevronRight, Heart, Ruler, Star, Weight } from "lucide-react";
+import { NaIcon } from "@/components/na/icon";
 import { FieldSprite, FitSprite } from "@/components/na/battle";
 import { NaGlossIcon } from "@/components/na/gloss-icon";
 import { NaTypeChip } from "@/components/na/type-chip";
@@ -75,7 +75,7 @@ export function DexDetail({ species: p, caught, shinyUnlocked, showShiny, onTogg
     <div className="na-bg-night fixed inset-0 z-50 flex flex-col overflow-y-auto pt-[env(safe-area-inset-top)]">
       <div className="flex h-[52px] shrink-0 items-center gap-3 px-4">
         <button type="button" aria-label="Back" onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-white/10 text-foreground">
-          <ArrowLeft className="h-5 w-5" />
+          <NaIcon name="arrow-left" size={20} />
         </button>
         <h1 className="na-display-s min-w-0 flex-1 truncate text-foreground">
           {num} {name}
@@ -108,7 +108,7 @@ export function DexDetail({ species: p, caught, shinyUnlocked, showShiny, onTogg
               aria-label={showShiny ? "Show normal colours" : "Show shiny colours"}
               className={`absolute right-3.5 top-3.5 flex h-10 w-10 items-center justify-center rounded-full border-2 ${showShiny ? "border-reward-gold bg-reward-gold/30" : "border-white/40 bg-night-deep/35"}`}
             >
-              <Star className="h-5 w-5 fill-reward-gold text-reward-gold" />
+              <NaIcon name="star-filled" size={20} className="text-reward-gold" />
             </button>
           )}
         </div>
@@ -125,8 +125,8 @@ export function DexDetail({ species: p, caught, shinyUnlocked, showShiny, onTogg
 
         <div className="grid grid-cols-3 gap-2">
           {[
-            { icon: <Ruler className="h-[18px] w-[18px]" strokeWidth={2.5} />, value: detail.heightM != null ? `${detail.heightM.toFixed(1)} m` : "—", label: "Height" },
-            { icon: <Weight className="h-[18px] w-[18px]" strokeWidth={2.5} />, value: detail.weightKg != null ? `${detail.weightKg.toFixed(1)} kg` : "—", label: "Weight" },
+            { icon: <NaIcon name="ruler" size={18} />, value: detail.heightM != null ? `${detail.heightM.toFixed(1)} m` : "—", label: "Height" },
+            { icon: <NaIcon name="weight" size={18} />, value: detail.weightKg != null ? `${detail.weightKg.toFixed(1)} kg` : "—", label: "Weight" },
             { icon: <NaGlossIcon kind="map" size={18} />, value: region, label: "Region" },
           ].map((f) => (
             <div key={f.label} className="flex min-w-0 flex-col gap-0.5 rounded-[14px] bg-white/[0.08] px-3 py-2.5">
@@ -141,7 +141,7 @@ export function DexDetail({ species: p, caught, shinyUnlocked, showShiny, onTogg
 
         {history && (
           <div className="flex items-center gap-3 rounded-[18px] border border-reward-gold/50 bg-white/[0.08] p-3">
-            <Heart className="h-[30px] w-[30px] shrink-0 fill-primary text-primary" />
+            <NaIcon name="heart-filled" size={30} className="shrink-0 text-primary" />
             <span className="flex min-w-0 flex-col gap-0.5">
               <span className="na-headline text-foreground">{history.title}</span>
               <span className="na-caption text-text-secondary">{history.sub}</span>
@@ -186,7 +186,7 @@ export function DexDetail({ species: p, caught, shinyUnlocked, showShiny, onTogg
             <div className="flex items-center justify-between gap-1">
               {columns.map((col, ci) => (
                 <Fragment key={ci}>
-                  {ci > 0 && <ChevronRight className="h-4 w-4 shrink-0 text-text-muted" />}
+                  {ci > 0 && <NaIcon name="chevron-right" size={16} className="shrink-0 text-text-muted" />}
                   <div className={`min-w-0 flex-1 ${col.length > 3 ? "grid grid-cols-2 gap-1" : "flex flex-col gap-1"}`}>
                     {col.map((stage) => (
                       <EvolutionStage key={stage.id} stage={stage} current={stage.id === p.id} caught={isCaught(stage.id)} onSelect={onSelect} />

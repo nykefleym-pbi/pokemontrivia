@@ -1,13 +1,13 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, ShoppingBag, BookOpen, User, Swords } from "lucide-react";
+import { NaIcon } from "@/components/na/icon";
 import { useGameStore } from "@/lib/store";
 
 const TABS = [
-  { to: "/battle", label: "Home", Icon: Home },
-  { to: "/shop", label: "Shop", Icon: ShoppingBag },
-  { to: "/arena", label: "Arena", Icon: Swords },
-  { to: "/pokedex", label: "Dex", Icon: BookOpen },
-  { to: "/profile", label: "Profile", Icon: User },
+  { to: "/battle", label: "Home", icon: "home" },
+  { to: "/shop", label: "Shop", icon: "shop" },
+  { to: "/arena", label: "Arena", icon: "arena" },
+  { to: "/pokedex", label: "Dex", icon: "dex" },
+  { to: "/profile", label: "Profile", icon: "profile" },
 ] as const;
 
 /**
@@ -34,7 +34,7 @@ export function BottomNav() {
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="mx-auto grid h-16 max-w-[440px] grid-cols-5 px-2.5 py-1.5">
-        {TABS.map(({ to, label, Icon }) => {
+        {TABS.map(({ to, label, icon }) => {
           const on = path.startsWith(to);
           return (
             <Link
@@ -47,7 +47,7 @@ export function BottomNav() {
               <span
                 className={`relative flex h-[30px] w-[52px] items-center justify-center rounded-xl ${on ? "bg-primary/20" : ""}`}
               >
-                <Icon className={`h-[22px] w-[22px] ${on ? "text-[#FF7A85]" : "text-text-muted"}`} strokeWidth={2.2} />
+                {/* The tab bar keeps the line icons (Figma Tab bar). */}<NaIcon name={icon} line size={22} className={on ? "text-[#FF7A85]" : "text-text-muted"} />
                 {to === "/shop" && giftReady && (
                   <span className="absolute right-2 top-px h-2.5 w-2.5 rounded-full border-2 border-night-deep bg-primary" />
                 )}

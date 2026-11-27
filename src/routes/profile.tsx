@@ -3,28 +3,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import {
-  RotateCcw,
-  Check,
-  Search,
-  Volume2,
-  VolumeX,
-  Music,
-  ChevronRight,
-  Copy,
-  Share2,
-  UserPlus,
-  Loader2,
-  ImageDown,
-  Lightbulb,
-  Bug,
-  Bell,
-  BellOff,
-  Swords,
-  Medal,
-  ZapOff,
-  Facebook,
-} from "lucide-react";
+import { RotateCcw, Check, Search, Volume2, VolumeX, Music, ChevronRight, Copy, Share2, UserPlus, Loader2, ImageDown, Lightbulb, Bug, Bell, BellOff, Swords, ZapOff, Facebook } from "lucide-react";
+import { NaIcon } from "@/components/na/icon";
 import { ShareCardDialog } from "@/components/share-card-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Textarea } from "@/components/ui/textarea";
@@ -604,8 +584,8 @@ function ProfilePage() {
           {[
             { icon: <NaRewardIcon kind="Streak" size={26} />, value: weekStreak, label: "Daily streak" },
             { icon: <NaRewardIcon kind="XP" size={26} />, value: bestDayStreak(battleLog), label: "Best streak" },
-            { icon: <Medal className="h-[26px] w-[26px] text-reward-gold" strokeWidth={2.4} />, value: arenaWins, label: "Trainer battles won", onClick: () => setPvpHistoryOpen(true) },
-            { icon: <Swords className="h-[26px] w-[26px] text-text-secondary" strokeWidth={2.4} />, value: stats.wins, label: "Total battles won", onClick: () => setStatsOpen(true) },
+            { icon: <NaIcon name="medal" size={26} className="text-reward-gold" />, value: arenaWins, label: "Trainer battles won", onClick: () => setPvpHistoryOpen(true) },
+            { icon: <NaIcon name="arena" size={26} className="text-text-secondary" />, value: stats.wins, label: "Total battles won", onClick: () => setStatsOpen(true) },
           ].map((s) => (
             <button
               key={s.label}
@@ -1451,7 +1431,7 @@ function ProfilePage() {
             />
             {nameGood && renameMsg !== "Current name" && (
               <span className="na-caption flex shrink-0 items-center gap-1 text-success">
-                <Check className="h-4 w-4" /> {renameMsg}
+                <NaIcon name="check" size={16} /> {renameMsg}
               </span>
             )}
           </span>

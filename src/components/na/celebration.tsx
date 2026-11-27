@@ -1,6 +1,6 @@
 import * as React from "react";
 import { motion } from "framer-motion";
-import { Clock, Flame, Sparkles, X } from "lucide-react";
+import { NaIcon } from "@/components/na/icon";
 import { cn } from "@/lib/utils";
 
 /**
@@ -36,7 +36,7 @@ export function NaWordmark({
       className={cn("flex items-center justify-center gap-2.5 py-2", className)}
       style={{ filter: `drop-shadow(0 4px 0 rgb(0 0 0 / 0.55)) drop-shadow(0 0 26px ${k.glow}80)` }}
     >
-      <Sparkles aria-hidden className="shrink-0" style={{ color: k.spark, width: size * 0.54, height: size * 0.54 }} />
+      <span style={{ color: k.spark }}><NaIcon name="sparkle" size={size * 0.54} /></span>
       {/* Figma strokes OUTSIDE the letters. A text-stroke is centred and, under
           background-clip:text, paints over the fill and thins every letter, so
           the outline is a copy behind (twice the width) and the fill sits on top. */}
@@ -54,7 +54,7 @@ export function NaWordmark({
           {children}
         </span>
       </span>
-      <Sparkles aria-hidden className="shrink-0" style={{ color: k.spark, width: size * 0.42, height: size * 0.42 }} />
+      <span style={{ color: k.spark }}><NaIcon name="sparkle" size={size * 0.42} /></span>
     </div>
   );
 }
@@ -189,7 +189,7 @@ export function NaDayDots({ week, today, popDelay = 0.8 }: { week: boolean[]; to
               transition={{ delay: popDelay, duration: 0.35 }}
             >
               {(done || isToday) && (
-                <Flame className={cn("h-[18px] w-[18px]", done ? "fill-white text-white" : "text-[#ff8a1f]")} aria-hidden />
+                <NaIcon name={done ? "flame-filled" : "flame"} line size={18} className={done ? "text-white" : "text-[#ff8a1f]"} />
               )}
             </motion.span>
             <span className={cn("na-label", isToday ? "text-foreground" : "text-text-secondary")}>{d}</span>
@@ -226,7 +226,7 @@ export function NaDailyMarks({ marks }: { marks: DailyMarkState[] }) {
           )}
           {(m === "wrong" || m === "timeout") && (
             <span className={cn("absolute left-[18px] top-[18px] flex h-4 w-4 items-center justify-center rounded-full", m === "wrong" ? "bg-danger" : "bg-night-card")}>
-              {m === "wrong" ? <X className="h-2.5 w-2.5 text-foreground" strokeWidth={3} /> : <Clock className="h-2.5 w-2.5 text-foreground" strokeWidth={3} />}
+              {m === "wrong" ? <NaIcon name="x" size={10} className="text-foreground" /> : <NaIcon name="clock" size={10} className="text-foreground" />}
             </span>
           )}
         </span>
