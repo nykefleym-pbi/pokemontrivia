@@ -8,8 +8,17 @@ import {
   NaQuestionPanel,
   NaFeedbackBanner,
   MOVE_BY_TYPE,
+  FxCanvas,
+  NaIntroTrainer,
+  NaIntroText,
+  NaCatchPanel,
+  NaCoachBubble,
   type AnswerState,
+  type Trim,
 } from "@/components/na/battle";
+import { NaWordmark } from "@/components/na/celebration";
+import type { BattleFx } from "@/lib/battle-fx/engine";
+import { GENERATIONS } from "@/lib/dex-rewards";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { Sparkles, Play } from "lucide-react";
@@ -41,7 +50,6 @@ import {
 } from "@/lib/pokemon-data";
 import { typeMatchup, type EffectivenessBand } from "@/lib/type-chart";
 import { getAbility as getAbilityFn, rollAbilityId, type Ability } from "@/lib/abilities";
-import { TutorialOverlay } from "@/components/tutorial-overlay";
 import {
   PokemonSprite,
   StatusEffectOverlay,
@@ -67,7 +75,7 @@ import { routeOpponent } from "@/lib/route";
 import { SHINY_CHANCE } from "@/lib/game-data";
 import { ShareCardDialog } from "@/components/share-card-dialog";
 import type { ShareData } from "@/components/share-card-builder";
-import { trainerSpriteUrl } from "@/lib/game-data";
+import { trainerSpriteUrl, trainerArtFor } from "@/lib/game-data";
 import type { Trivia } from "@/lib/trivia-core";
 import { shuffleAllTriviaOptions } from "@/lib/trivia-core";
 import { useForfeitGuard } from "@/lib/use-forfeit-guard";
@@ -276,6 +284,13 @@ function BattleMode({
   const [streak, setStreak] = useState(0);
   const [questionIdx, setQuestionIdx] = useState(0);
   const [introBanner, setIntroBanner] = useState<string | null>(null);
+  // 3.1: the trainer stands alone first ("trainer"), then the platforms and both Pokémon come in
+  // ("enter"). The Elite Four keeps its own intro (row 11).
+  const [introStage, setIntroStage] = useState<"trainer" | "enter" | null>(isElite ? null : "trainer");
+  const enteredRef = useRef(false);
+  const introTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const introName = isWeekly && gymLeader ? `Gym Leader ${gymLeader.name}` : enemy.name;
+  const introArt = isWeekly && gymLeader ? trainerSpriteUrl(gymLeader.trainerSpriteId) : trainerArtFor(enemy.name);
   const [shakeWho, setShakeWho] = useState<"player" | "enemy" | null>(null);
   const [floatDmg, setFloatDmg] = useState<{
     who: "player" | "enemy";
@@ -300,6 +315,61 @@ function BattleMode({
     panelObserver.current.observe(el);
     setPanelH(el.offsetHeight);
   }, []);
+
+  // ---- Pixel effects (Figma 3b, 3c, 3.4, 3.7): the plugin's pixelfx scene, loaded on demand. The
+  // sprites stay <img>s; the engine draws on two canvases and moves them with each attack's pose.
+  const fxRef = useRef<BattleFx | null>(null);
+  const fxBack = useRef<HTMLCanvasElement>(null);
+  const fxFront = useRef<HTMLCanvasElement>(null);
+  const fxEls = useRef<{ enemy?: HTMLElement | null; player?: HTMLElement | null; stage?: HTMLElement | null }>({}).current;
+  const fxSprites = useRef<Partial<Record<"enemy" | "player", { img: HTMLImageElement; trim: Trim }>>>({}).current;
+  const [fxReady, setFxReady] = useState(false);
+  // where FieldSprite puts them, in art px (half a point): opponent at 2 pt, partner at 3 pt
+  const fxPlace = { enemy: { k: 1, cx: 143, feet: 107.5 }, player: { k: 1.5, cx: 52, feet: 210 } } as const;
+  const fxSprite = (side: "enemy" | "player", img: HTMLImageElement, trim: Trim) => {
+    fxSprites[side] = { img, trim };
+    fxRef.current?.setSprite(side, { img, trim, ...fxPlace[side] });
+    if (side === "player") fxRef.current?.setStatuses("player", statuses.map((s) => s.kind));
+  };
+  useEffect(() => {
+    if (typeof navigator === "undefined" || /jsdom/i.test(navigator.userAgent)) return; // tests: no canvas
+    let live = true;
+    import("@/lib/battle-fx/engine")
+      .then(({ createBattleFx }) => {
+        if (!live || !fxBack.current || !fxFront.current) return;
+        // Settings > Reduce motion or the OS setting: no shake, flash or freeze (3.6)
+        const reduced = useGameStore.getState().reducedMotion || matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const fx = createBattleFx(fxBack.current, fxFront.current, fxEls, { reduced });
+        for (const side of ["enemy", "player"] as const) {
+          const s = fxSprites[side];
+          if (s) fx.setSprite(side, { ...s, ...fxPlace[side] });
+        }
+        fxRef.current = fx;
+        setFxReady(true);
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+      fxRef.current?.destroy();
+      fxRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  // Every hit plays its type's move (3b): yours on a right answer, the opponent's on a miss. 3, 5, 7
+  // and 10 in a row hit harder (3.4); the knockout blow always gets the freeze (3.6).
+  useEffect(() => {
+    const fx = fxRef.current;
+    if (!fx || !floatDmg?.attackType) return;
+    if (floatDmg.who === "enemy") {
+      const tier = streak >= 10 ? 4 : streak >= 7 ? 3 : streak >= 5 ? 2 : streak >= 3 ? 1 : 0;
+      void fx.attack(floatDmg.attackType, "player", enemyHp <= 0 ? Math.max(tier, 2) : tier);
+    } else void fx.attack(floatDmg.attackType, "enemy");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [floatDmg]);
+  // Statuses wrap your partner (3c).
+  useEffect(() => {
+    fxRef.current?.setStatuses("player", statuses.map((s) => s.kind));
+  }, [statuses, fxReady]);
   const [confirmExit, setConfirmExit] = useState(false);
   // Browser/Android back mid-battle asks to forfeit instead of silently
   // leaving (feedback 2286b6fc). Reuses the existing Leave-battle dialog.
@@ -314,6 +384,26 @@ function BattleMode({
   const battleStartRef = useRef<number | null>(null);
   const durationMsRef = useRef(0);
   const caughtRef = useRef<{ id: number; name: string; isNew: boolean; shiny: boolean } | null>(null);
+  // 3.7: after a win the ball is thrown on the field ("throw"), GOTCHA! shows ("caught"), and a tap
+  // moves on to the victory screen ("done"). Only where the effects run (never in tests).
+  const [catchStage, setCatchStage] = useState<"none" | "throw" | "caught" | "done">("none");
+  useEffect(() => {
+    const fx = fxRef.current;
+    if (phase !== "result" || !resultWon || !caughtRef.current || !fx || catchStage !== "none") return;
+    // 3.6 holds "Tirtouga fainted!" a moment longer, then the ball is thrown
+    setTimeout(() => {
+      setCatchStage("throw");
+      // the fainted Pokémon turns red and is pulled into the ball
+      void fx.catchPokemon((tintK, alpha) => {
+        const el = fxEls.enemy;
+        if (!el) return;
+        el.style.opacity = String(alpha);
+        el.style.filter = tintK > 0.4 ? "sepia(1) saturate(8) hue-rotate(-50deg)" : "";
+      });
+      setTimeout(() => setCatchStage("caught"), 3100); // "3.1 s · Click! Caught"
+    }, 900);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, resultWon, fxReady]);
   const startedRef = useRef(false);
   const battleEndedRef = useRef(false);
   // server-first-refactor P3 — set once startSoloBattle resolves; every
@@ -370,7 +460,8 @@ function BattleMode({
     venom: 0,
   });
   const [timer, setTimer] = useState(20);
-  const [abilityPulse, setAbilityPulse] = useState(false);
+  // HP when the ability last pulsed, so the chip can say what it did ("+2 HP", 3.3)
+  const [abilityPulse, setAbilityPulse] = useState<number | null>(null);
 
   function triggerAbilityToast(ability: Ability) {
     const already = abilityStateRef.current.triggered.has(ability.id);
@@ -384,8 +475,8 @@ function BattleMode({
       });
       lastAbilityToastRef.current = now;
     } else if (already) {
-      setAbilityPulse(true);
-      setTimeout(() => setAbilityPulse(false), 1200);
+      setAbilityPulse(playerHp);
+      setTimeout(() => setAbilityPulse(null), 1200);
     }
     if (!already) {
       abilityStateRef.current.triggered.add(ability.id);
@@ -462,51 +553,60 @@ function BattleMode({
     () => !flags.includes("tutorial_done") && !eliteMember,
     [flags, eliteMember],
   );
-  const [tutorialStep, setTutorialStep] = useState<1 | 2 | 3 | null>(null);
-
-  function dismissTutorial() {
-    const wasStep3 = tutorialStep === 3;
-    setTutorialStep(null);
-    if (wasStep3) {
-      raiseFlag("tutorial_done");
-    }
-  }
-
-  function skipTutorial() {
-    setTutorialStep(null);
-    raiseFlag("tutorial_done");
-  }
+  // 1.3 / 1.4: Professor Oak's inline hints in the first battle (no pop-up, nothing pauses): one at
+  // the answers on Q1, one at your HP bar the first time it drops. The battle's end marks it done.
+  const [oakHint, setOakHint] = useState<"answers" | "hp" | null>(null);
+  const hpHintShownRef = useRef(false);
 
   // start once
   useEffect(() => {
     if (startedRef.current) return;
     startedRef.current = true;
     startBattle();
-    if (isElite && eliteMember) {
-      playSfx("elite_intro");
-      setIntroBanner(`${eliteMember.title} ${eliteMember.name}: "${eliteMember.quote}"`);
-      setTimeout(() => revealPokemon(enemy.pokemon.id), 900);
-      setTimeout(() => setIntroBanner(`${eliteMember.name} sent out ${enemy.pokemon.name}!`), 2200);
-    } else {
-      setIntroBanner(`${enemy.name} sent out ${enemy.pokemon.name}!`);
-      revealPokemon(enemy.pokemon.id);
+    if (!(isElite && eliteMember)) {
+      // 3.1: the trainer alone for a moment (tap to skip), then the field fills in.
+      introTimerRef.current = setTimeout(enterField, 1200);
+      return;
     }
-    if (enemy.isShiny) {
-      playSfx("shiny");
-      toast.success(`A SHINY ${enemy.pokemon.name} appeared!`, {
-        duration: 3000,
-        style: { background: "linear-gradient(90deg, #fde68a, #fbbf24)", color: "#1f2937" },
-      });
-    }
-    const introDelay = isElite ? 3600 : 1500;
+    playSfx("elite_intro");
+    setIntroBanner(`${eliteMember.title} ${eliteMember.name}: "${eliteMember.quote}"`);
+    setTimeout(() => revealPokemon(enemy.pokemon.id), 900);
+    setTimeout(() => setIntroBanner(`${eliteMember.name} sent out ${enemy.pokemon.name}!`), 2200);
+    shinyCue();
     setTimeout(() => {
       setIntroBanner(`Go, ${player.name}!${superEff ? " Type advantage!" : ""}`);
       revealPokemon(player.id);
-    }, introDelay);
-    setTimeout(() => setIntroBanner(null), introDelay + 1300);
-    setTimeout(() => loadQuestion(0), introDelay + 1300);
+    }, 3600);
+    setTimeout(() => setIntroBanner(null), 4900);
+    setTimeout(() => loadQuestion(0), 4900);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function shinyCue() {
+    if (!enemy.isShiny) return;
+    playSfx("shiny");
+    toast.success(`A SHINY ${enemy.pokemon.name} appeared!`, { duration: 3000 });
+  }
+
+  /** 3.1 -> the battle: platforms rise, both Pokémon come out, then the first question (by 2.9 s). */
+  function enterField() {
+    if (enteredRef.current) return;
+    enteredRef.current = true;
+    if (introTimerRef.current) clearTimeout(introTimerRef.current);
+    setIntroStage("enter");
+    setIntroBanner(`${enemy.name} sent out ${enemy.pokemon.name}!`);
+    revealPokemon(enemy.pokemon.id);
+    shinyCue();
+    setTimeout(() => {
+      setIntroBanner(`Go, ${player.name}!${superEff ? " Type advantage!" : ""}`);
+      revealPokemon(player.id);
+    }, 700);
+    setTimeout(() => {
+      setIntroBanner(null);
+      setIntroStage(null);
+      loadQuestion(0);
+    }, 1700);
+  }
 
   function loadQuestion(idx: number) {
     setChosen(null);
@@ -623,7 +723,6 @@ function BattleMode({
   useEffect(() => {
     if (phase !== "question") return;
     if (confirmExit) return;
-    if (tutorialStep !== null) return;
     if (timer <= 0) {
       handleAnswer(-1);
       return;
@@ -632,7 +731,7 @@ function BattleMode({
     const t = setTimeout(() => setTimer((x) => x - 1), 1000);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, timer, confirmExit, tutorialStep]);
+  }, [phase, timer, confirmExit]);
 
   // Quick Claw: auto-reset the timer to 20s when it drops below 5s (once per battle)
   useEffect(() => {
@@ -645,13 +744,20 @@ function BattleMode({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timer, phase]);
 
-  // Trigger tutorial on first 3 questions
+  // Oak's hints (1.3 / 1.4)
   useEffect(() => {
-    if (phase === "question" && tutorialActive && questionIdx <= 2) {
-      const id = (questionIdx + 1) as 1 | 2 | 3;
-      setTutorialStep(id);
-    }
+    if (!tutorialActive) return;
+    if (phase === "question") setOakHint(questionIdx === 0 ? "answers" : null);
+    else if (oakHint === "answers") setOakHint(null);
+    if (phase === "result") raiseFlag("tutorial_done");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, questionIdx, tutorialActive]);
+  useEffect(() => {
+    if (!tutorialActive || hpHintShownRef.current || playerHp >= playerMaxHp || phase === "intro") return;
+    hpHintShownRef.current = true;
+    setOakHint("hp");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playerHp]);
 
   // Phase 2: ability onBattleStart effects (run once)
   useEffect(() => {
@@ -672,7 +778,7 @@ function BattleMode({
 
   // Pause/resume poison tick when battle is paused
   useEffect(() => {
-    const paused = confirmExit || tutorialStep !== null || phase === "result";
+    const paused = confirmExit || phase === "result";
     const poisoned = statuses.some((s) => s.kind === "poisoned");
     if (paused && poisonTimerRef.current) {
       stopPoisonTick();
@@ -680,7 +786,7 @@ function BattleMode({
       startPoisonTick();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [confirmExit, tutorialStep, statuses, phase]);
+  }, [confirmExit, statuses, phase]);
 
   // Foresight: every 5th question reveal a wrong option
   useEffect(() => {
@@ -705,7 +811,6 @@ function BattleMode({
 
   function handleAnswer(idx: number) {
     if (phase !== "question" || !trivia) return;
-    if (tutorialStep !== null) return;
     answerHaptic(idx === trivia.correct);
     setChosen(idx);
     const correct = idx === trivia.correct;
@@ -1414,7 +1519,8 @@ function BattleMode({
     setBagOpen(false);
   }
 
-  if (phase === "result") {
+  const catching = phase === "result" && !!resultWon && !!caughtRef.current && fxReady && catchStage !== "done";
+  if (phase === "result" && !catching) {
     const stateNow = useGameStore.getState();
     const prog = xpProgressInLevel(stateNow.xp);
     const pct = Math.min(100, (prog.current / Math.max(1, prog.need)) * 100);
@@ -1499,7 +1605,7 @@ function BattleMode({
             : { caption: null, tone: "gold" };
   const answerStates: AnswerState[] = trivia
     ? trivia.options.map((_, i) => {
-        if (phase === "feedback") {
+        if (phase === "feedback" || phase === "result") {
           if (i === trivia.correct) return chosen === trivia.correct ? "correct" : "reveal";
           return chosen === i ? "wrong" : "dimmed";
         }
@@ -1516,34 +1622,79 @@ function BattleMode({
       ? `It's ${trivia.options[trivia.correct]}.`
       : "";
 
+  const trainerStage = introStage === "trainer";
+  // 3.6: a short freeze, then the fainted Pokémon drops and fades (to where the catch picks it up).
+  const enemyKo = enemyHp <= 0 && phase !== "intro";
+  const playerKo = playerHp <= 0 && phase !== "intro";
+  const koMove = { y: 14, opacity: 0.45, transition: { delay: 0.55, duration: 0.45 } };
+  const throwing = catchStage === "throw" || catchStage === "caught";
+  const narration =
+    introBanner ?? (throwing ? null : enemyKo ? `${enemy.pokemon.name} fainted!` : playerKo ? `${player.name} fainted!` : null);
+  const region = caughtRef.current ? GENERATIONS.find((g) => caughtRef.current!.id >= g.from && caughtRef.current!.id <= g.to) : null;
+  const regionCaught = region
+    ? Object.entries(useGameStore.getState().pokedex).filter(([id, e]) => +id >= region.from && +id <= region.to && e?.caught).length
+    : 0;
+
   return (
     <div className="relative h-full min-h-0 w-full overflow-hidden bg-night-deep">
-      <NaBattleField mode={fieldMode} panelHeight={panelH}>
-        <motion.div className="absolute inset-0" initial={{ x: 60, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
-          <FieldSprite
-            id={enemy.pokemon.id}
-            shiny={enemy.isShiny}
-            k={2}
-            cx={286}
-            feetY={215}
-            className={`${shakeWho === "enemy" ? "animate-shake" : ""} ${enemy.isShiny ? "shiny-glow" : ""}`}
-          >
-            {enemy.isShiny && <Sparkles className="pointer-events-none absolute -right-2 -top-2 z-20 h-4 w-4 animate-pulse text-yellow-300 drop-shadow" />}
-            <StatusEffectOverlay statuses={[]} />
-          </FieldSprite>
-        </motion.div>
-        <motion.div className="absolute inset-0" initial={{ x: -60, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
-          <FieldSprite
-            id={player.id}
-            back
-            k={3}
-            cx={104}
-            feetY={420}
-            className={`${shakeWho === "player" ? "animate-shake" : ""} ${streak >= 5 ? "mega-glow" : ""}`}
-          >
-            <StatusEffectOverlay statuses={statuses} />
-          </FieldSprite>
-        </motion.div>
+      <NaBattleField
+        mode={fieldMode}
+        panelHeight={throwing || trainerStage ? 340 : panelH}
+        padsIn={!trainerStage}
+        night={trainerStage || throwing}
+        stageRef={(el) => {
+          fxEls.stage = el;
+        }}
+      >
+        {trainerStage && <NaIntroTrainer art={introArt} leaving={false} />}
+        <FxCanvas ref={fxBack} />
+        {!trainerStage && (
+          <>
+            <motion.div
+              className="absolute inset-0"
+              initial={{ opacity: 0 }}
+              animate={enemyKo ? koMove : { opacity: 1, transition: { duration: 0.12 } }}
+            >
+              <FieldSprite
+                id={enemy.pokemon.id}
+                shiny={enemy.isShiny}
+                k={2}
+                cx={286}
+                feetY={215}
+                spriteRef={(el) => {
+                  fxEls.enemy = el;
+                }}
+                onReady={(img, trim) => fxSprite("enemy", img, trim)}
+                className={`${shakeWho === "enemy" && !fxReady ? "animate-shake" : ""} ${enemy.isShiny ? "shiny-glow" : ""}`}
+              >
+                {enemy.isShiny && <Sparkles className="pointer-events-none absolute -right-2 -top-2 z-20 h-4 w-4 animate-pulse text-yellow-300 drop-shadow" />}
+              </FieldSprite>
+            </motion.div>
+            <motion.div
+              className="absolute inset-0"
+              initial={{ x: -160 }}
+              animate={playerKo ? { ...koMove, x: 0 } : { x: 0, transition: { duration: 0.35, ease: "easeOut" } }}
+            >
+              <FieldSprite
+                id={player.id}
+                back
+                k={3}
+                cx={104}
+                feetY={420}
+                spriteRef={(el) => {
+                  fxEls.player = el;
+                }}
+                onReady={(img, trim) => fxSprite("player", img, trim)}
+                className={`${shakeWho === "player" && !fxReady ? "animate-shake" : ""} ${streak >= 5 && !throwing ? "mega-glow" : ""}`}
+              >
+                {!fxReady && <StatusEffectOverlay statuses={statuses} />}
+              </FieldSprite>
+            </motion.div>
+          </>
+        )}
+        <FxCanvas ref={fxFront} />
+        {!trainerStage && !throwing && (
+        <>
         <NaHpCard
           side="enemy"
           trainer={trainerLine}
@@ -1568,7 +1719,7 @@ function BattleMode({
           abilityName={playerAbility.name}
           abilityDescription={playerAbility.description}
           danger={disadvantaged && !immune}
-          pulse={abilityPulse ? "" : null}
+          pulse={abilityPulse == null ? null : playerHp > abilityPulse ? `+${playerHp - abilityPulse} HP` : ""}
           testId="player"
           style={{ left: 178, top: 262 }}
         />
@@ -1577,27 +1728,59 @@ function BattleMode({
             key={`${floatDmg.who}-${floatDmg.n}-${questionIdx}`}
             value={`-${floatDmg.n}`}
             {...dmgCaption(floatDmg)}
-            style={floatDmg.who === "enemy" ? { left: 120, top: 34 } : { left: 286, top: 222 }}
+            // 1.4 / 3.5: yours sits on your card's top edge, right-aligned 6 pt in from the card's edge
+            style={floatDmg.who === "enemy" ? { left: 120, top: 34 } : { right: 18, bottom: 504 - 266 }}
           />
         )}
-        {/* Narration: "Picnicker Janine sent out Tirtouga!" */}
+        </>
+        )}
+        {/* Narration (Figma "Narration", 16 / 392): "Picnicker Janine sent out Tirtouga!", "Tirtouga fainted!" */}
         <AnimatePresence>
-          {introBanner && (
+          {narration && (
             <motion.div
-              key={introBanner}
+              key={narration}
               initial={{ y: -10, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
+              animate={{ y: 0, opacity: 1, transition: { delay: introBanner ? 0 : 0.7 } }}
               exit={{ y: -10, opacity: 0 }}
-              className="pointer-events-none absolute left-4 top-[330px] z-30 flex w-[358px] items-center gap-2.5 rounded-[14px] border border-white/[0.12] bg-night-deep/75 px-3.5 py-2.5 backdrop-blur-xl"
+              className="pointer-events-none absolute left-4 top-[392px] z-30 flex w-[358px] items-center gap-2.5 rounded-[14px] border border-white/[0.12] bg-night-deep/75 px-3.5 py-2.5 backdrop-blur-xl"
             >
               <Play className="h-3.5 w-3.5 shrink-0 fill-reward-gold text-reward-gold" />
-              <span className="na-body-strong text-foreground">{introBanner}</span>
+              <span className="na-body-strong text-foreground">{narration}</span>
             </motion.div>
           )}
         </AnimatePresence>
       </NaBattleField>
 
-      {phase !== "intro" && trivia && (
+      {/* 3.5: a wrong answer flashes the screen edge red */}
+      {floatDmg?.who === "player" && floatDmg.attackType && (
+        <motion.div
+          key={`edge-${questionIdx}`}
+          aria-hidden
+          className="pointer-events-none absolute inset-0 z-20 rounded-[44px] border-8 border-danger"
+          initial={{ opacity: 0.55 }}
+          animate={{ opacity: 0, transition: { duration: 0.6, delay: 0.35 } }}
+        />
+      )}
+      {trainerStage && (
+        <button type="button" aria-label="Skip" className="absolute inset-0 z-40" onClick={enterField}>
+          <NaIntroText name={introName} round={1} rounds={Math.max(1, Math.ceil(questions.length / QUESTIONS_PER_SET))} leaving={false} />
+        </button>
+      )}
+      {catching && catchStage === "caught" && caughtRef.current && (
+        <motion.div className="absolute inset-0 z-40" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+          <NaCatchPanel
+            name={caughtRef.current.name}
+            isNew={caughtRef.current.isNew}
+            region={region?.region ?? ""}
+            caught={regionCaught}
+            total={region ? region.to - region.from + 1 : 0}
+            onContinue={() => setCatchStage("done")}
+            wordmark={<NaWordmark kind="caught">GOTCHA!</NaWordmark>}
+          />
+        </motion.div>
+      )}
+
+      {phase !== "intro" && !throwing && trivia && (
         <NaQuestionPanel
           panelRef={panelRefCb}
           seconds={timer}
@@ -1655,7 +1838,17 @@ function BattleMode({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <TutorialOverlay step={tutorialStep} onDismiss={dismissTutorial} onSkip={skipTutorial} />
+      {oakHint === "answers" && phase === "question" && (
+        <NaCoachBubble
+          pointer="down"
+          width={290}
+          text="Choose the correct answer to attack! Answer quickly to deal more damage!"
+          style={{ left: 10, bottom: panelH - 22 }}
+        />
+      )}
+      {oakHint === "hp" && phase !== "result" && (
+        <NaCoachBubble pointer="up" text="Wrong answers cost you HP. Keep an eye on your bar." style={{ left: 71, top: 382 }} />
+      )}
     </div>
   );
 }

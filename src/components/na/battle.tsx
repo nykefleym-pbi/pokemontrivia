@@ -3,6 +3,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Check, Info, Sparkles, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { NaTypeChip } from "@/components/na/type-chip";
+import { NaGlossIcon } from "@/components/na/gloss-icon";
 import { cn } from "@/lib/utils";
 import type { PokeType } from "@/lib/pokemon-data";
 
@@ -26,12 +27,13 @@ export const MOVE_BY_TYPE: Record<string, string> = {
 };
 
 // ------------------------------------------------------------------ sprites
-type Trim = { x: number; y: number; w: number; h: number };
-const TRIM_CACHE = new Map<string, Trim>();
+export type Trim = { x: number; y: number; w: number; h: number };
+type Trimmed = { trim: Trim; img: HTMLImageElement };
+const TRIM_CACHE = new Map<string, Trimmed>();
 
 /** The visible box of a sprite (its pixels with any alpha), so it stands on its pad like the design's trimmed art. */
-function useTrim(src: string): Trim | null {
-  const [trim, setTrim] = useState<Trim | null>(() => TRIM_CACHE.get(src) ?? null);
+function useTrim(src: string): Trimmed | null {
+  const [trim, setTrim] = useState<Trimmed | null>(() => TRIM_CACHE.get(src) ?? null);
   useEffect(() => {
     if (TRIM_CACHE.has(src)) return setTrim(TRIM_CACHE.get(src)!);
     let live = true;
@@ -59,8 +61,8 @@ function useTrim(src: string): Trim | null {
       } catch {
         /* a tainted canvas: fall back to the whole image */
       }
-      TRIM_CACHE.set(src, t);
-      if (live) setTrim(t);
+      TRIM_CACHE.set(src, { trim: t, img });
+      if (live) setTrim({ trim: t, img });
     };
     img.src = src;
     return () => {
@@ -83,6 +85,9 @@ export function FieldSprite({
   cx,
   feetY,
   className,
+  style,
+  spriteRef,
+  onReady,
   children,
 }: {
   id: number;
@@ -92,16 +97,27 @@ export function FieldSprite({
   cx: number;
   feetY: number;
   className?: string;
+  style?: React.CSSProperties;
+  /** The box the effects move (lunge, knock-back, white flash). */
+  spriteRef?: (el: HTMLDivElement | null) => void;
+  /** The loaded image and its visible box, for the effects' body mask. */
+  onReady?: (img: HTMLImageElement, trim: Trim) => void;
   children?: React.ReactNode;
 }) {
   const [src, setSrc] = useState(() => spriteUrl(id, shiny, back));
   useEffect(() => setSrc(spriteUrl(id, shiny, back)), [id, shiny, back]);
-  const t = useTrim(src);
-  if (!t) return null;
+  const tr = useTrim(src);
+  useEffect(() => {
+    if (tr) onReady?.(tr.img, tr.trim);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tr]);
+  if (!tr) return null;
+  const t = tr.trim;
   return (
     <div
+      ref={spriteRef}
       className={cn("absolute", className)}
-      style={{ left: cx - (t.w * k) / 2, top: feetY - t.h * k, width: t.w * k, height: t.h * k }}
+      style={{ left: cx - (t.w * k) / 2, top: feetY - t.h * k, width: t.w * k, height: t.h * k, ...style }}
     >
       <img
         src={src}
@@ -125,11 +141,20 @@ export function FieldSprite({
 export function NaBattleField({
   mode = "morning",
   panelHeight,
+  padsIn = true,
+  stageRef,
+  night = false,
   children,
 }: {
+  /** 3.1 / 3.7: plain night under the field instead of the extended art (no question panel covers it). */
+  night?: boolean;
   mode?: FieldMode;
   /** The question panel's height, measured by the screen. */
   panelHeight: number;
+  /** 3.1: the platforms rise in after the trainer intro. */
+  padsIn?: boolean;
+  /** The 390 x 504 stage, which the effects shake. */
+  stageRef?: React.Ref<HTMLDivElement>;
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -149,9 +174,10 @@ export function NaBattleField({
     <div
       ref={ref}
       className="absolute inset-0 overflow-hidden bg-night-deep"
-      style={{ backgroundImage: `url(${bg})`, backgroundSize: "cover", backgroundPosition: "top center" }}
+      style={night ? undefined : { backgroundImage: `url(${bg})`, backgroundSize: "cover", backgroundPosition: "top center" }}
     >
       <div
+        ref={stageRef}
         className="absolute top-0"
         style={{ left: "50%", width: 390, height: 504, transform: `translateX(-50%) scale(${s})`, transformOrigin: "top center" }}
       >
@@ -161,8 +187,19 @@ export function NaBattleField({
           className="absolute inset-0"
           style={{ background: "linear-gradient(180deg, rgb(7 10 26 / 0.8) 0%, rgb(7 10 26 / 0) 30%, rgb(7 10 26 / 0) 62%, rgb(7 10 26 / 0.92) 100%)" }}
         />
-        <img src={`/battle/field/pad-enemy-${mode}.png`} alt="" draggable={false} className="absolute max-w-none [image-rendering:pixelated]" style={{ left: 210, top: 190, width: 152, height: 58 }} />
-        <img src={`/battle/field/pad-player-${mode}.png`} alt="" draggable={false} className="absolute max-w-none [image-rendering:pixelated]" style={{ left: 0, top: 388, width: 208, height: 72 }} />
+        {[
+          { src: `/battle/field/pad-enemy-${mode}.png`, box: { left: 210, top: 190, width: 152, height: 58 } },
+          { src: `/battle/field/pad-player-${mode}.png`, box: { left: 0, top: 388, width: 208, height: 72 } },
+        ].map((p) => (
+          <img
+            key={p.src}
+            src={p.src}
+            alt=""
+            draggable={false}
+            className="absolute max-w-none transition-[translate,opacity] duration-[450ms] ease-out [image-rendering:pixelated]"
+            style={{ ...p.box, translate: padsIn ? "0 0" : "0 36px", opacity: padsIn ? 1 : 0 }}
+          />
+        ))}
         {children}
       </div>
     </div>
@@ -460,6 +497,146 @@ export function NaFeedbackBanner({ ok, title, sub }: { ok: boolean; title: strin
       <span className="flex min-w-0 flex-col gap-0.5">
         <span className={`na-display-s ${ok ? "text-success" : "text-danger"}`}>{title}</span>
         <span className="na-body-strong text-foreground">{sub}</span>
+      </span>
+    </div>
+  );
+}
+
+// ------------------------------------------------------------------ effects
+/** One of the two effect layers (behind and in front of the sprites): 195 x 232 art px over the 390 x 464 stage. */
+export const FxCanvas = React.forwardRef<HTMLCanvasElement>(function FxCanvas(_, ref) {
+  return (
+    <canvas
+      ref={ref}
+      width={195}
+      height={232}
+      aria-hidden
+      className="pointer-events-none absolute left-0 top-0 h-[464px] w-[390px] [image-rendering:pixelated]"
+    />
+  );
+});
+
+
+// ------------------------------------------------------------------ 3.1 trainer intro
+/** The opponent alone in the middle of the field (inside the stage, 3 pt per pixel), on its shadow. */
+export function NaIntroTrainer({ art, leaving }: { art: string; leaving: boolean }) {
+  return (
+    <div
+      className="pointer-events-none absolute inset-0 transition-[translate,opacity] duration-500 ease-in"
+      style={{ translate: leaving ? "130px 0" : "0 0", opacity: leaving ? 0 : 1 }}
+    >
+      <div className="absolute rounded-[50%] bg-night-deep/35" style={{ left: 140, top: 404, width: 110, height: 18 }} />
+      {art && (
+        <img
+          src={art}
+          alt=""
+          draggable={false}
+          className="absolute max-w-none [image-rendering:pixelated]"
+          style={{ left: 75, top: 186, width: 240, height: 240 }}
+        />
+      )}
+    </div>
+  );
+}
+
+/** "PICNICKER JANINE wants to battle!", the round pill and TAP TO SKIP (screen coordinates). */
+export function NaIntroText({ name, round, rounds, leaving }: { name: string; round: number; rounds: number; leaving: boolean }) {
+  return (
+    <div className="pointer-events-none absolute inset-0 transition-opacity duration-300" style={{ opacity: leaving ? 0 : 1 }}>
+      <div className="absolute left-4 top-[488px] flex w-[358px] flex-col items-center gap-2.5">
+        <span className="na-display-l self-stretch text-center uppercase text-foreground">{name}</span>
+        <span className="na-title self-stretch text-center text-text-secondary">wants to battle!</span>
+        <span className="flex items-center gap-2.5 rounded-full bg-white/[0.12] px-3.5 py-1.5">
+          <span className="na-label uppercase text-reward-gold">
+            Round {round} of {rounds}
+          </span>
+          <NaGlossIcon kind="pokeball" size={16} />
+          <span className="na-label uppercase text-text-secondary">1 Pokémon</span>
+        </span>
+      </div>
+      <span className="na-label absolute inset-x-0 bottom-[64px] text-center uppercase text-text-muted">Tap to skip</span>
+    </div>
+  );
+}
+
+// ------------------------------------------------------------------ 3.7 the catch
+/** GOTCHA!, the new Pokédex entry and the region's progress, under the field (Figma 3.7 "Content"). */
+export function NaCatchPanel({
+  name,
+  isNew,
+  region,
+  caught,
+  total,
+  onContinue,
+  wordmark,
+}: {
+  name: string;
+  isNew: boolean;
+  region: string;
+  caught: number;
+  total: number;
+  onContinue: () => void;
+  wordmark: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onContinue}
+      data-testid="catch-continue"
+      className="absolute inset-x-0 top-[470px] bottom-[34px] flex flex-col items-center gap-2.5 px-5 pb-6 pt-2 text-center"
+    >
+      {wordmark}
+      <span className="na-display-m self-stretch text-foreground">You caught {name}!</span>
+      <span className="flex items-center gap-2">
+        {isNew && <span className="na-fill-gold na-label rounded-md px-[7px] py-0.5 uppercase text-on-gold">New</span>}
+        <span className="na-body-strong text-foreground">Added to your Pokédex</span>
+      </span>
+      <span className="flex w-[260px] flex-col items-center gap-1.5">
+        <span className="na-caption self-stretch text-text-secondary">
+          {region}: {caught} of {total} caught
+        </span>
+        <span className="relative h-2 self-stretch overflow-hidden rounded bg-night-deep">
+          <span className="na-fill-gold absolute inset-y-0 left-0 rounded" style={{ width: `max(4px, ${(caught / Math.max(1, total)) * 100}%)` }} />
+        </span>
+      </span>
+      <span className="flex-1" />
+      <span className="na-label self-stretch uppercase text-text-muted">Tap to continue</span>
+    </button>
+  );
+}
+// ------------------------------------------------------------------ 1.3 / 1.4 Professor Oak's hints
+/** Figma "Coach bubble": Professor Oak as on the overworld, and one line in a white bubble with a pointer. */
+export function NaCoachBubble({
+  text,
+  pointer,
+  width,
+  style,
+}: {
+  text: string;
+  pointer: "down" | "up";
+  /** The text box width (Figma: 290 for the answers hint, 236 by default). */
+  width?: number;
+  style?: React.CSSProperties;
+}) {
+  const tip = (
+    <span className="flex h-2.5 pl-7" aria-hidden>
+      <svg width="18" height="10" viewBox="0 0 18 10" className={pointer === "up" ? "rotate-180" : ""}>
+        <path d="M0 0h18L9 10z" fill="#f4f6ff" />
+      </svg>
+    </span>
+  );
+  return (
+    <div role="status" className="pointer-events-none absolute z-30 flex items-end gap-2" style={style}>
+      <img src="/battle/oak-overworld.png" alt="Professor Oak" draggable={false} className="h-[62px] w-[39px] max-w-none shrink-0 [image-rendering:pixelated]" />
+      <span className="flex flex-col items-start">
+        {pointer === "up" && tip}
+        <span
+          className="na-body-strong rounded-2xl bg-[#f4f6ff] px-3.5 py-2.5 text-[#0b1026]"
+          style={{ width: (width ?? 236) + 28, boxShadow: "0 10px 28px rgb(0 0 0 / 0.4), inset 0 1px 0 rgb(255 255 255 / 0.08)" }}
+        >
+          {text}
+        </span>
+        {pointer === "down" && tip}
       </span>
     </div>
   );

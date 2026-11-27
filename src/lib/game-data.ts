@@ -86,6 +86,17 @@ export function trainerSpriteUrl(id: string): string {
   return TRAINER_BY_ID.get(id)?.url ?? "";
 }
 
+/** The pixel trainer for a name like "Picnicker Janine" (its class, longest match), or "" if none. */
+export function trainerArtFor(name: string): string {
+  const n = name.toLowerCase();
+  let best: { url: string; len: number } | null = null;
+  for (const t of TRAINER_SPRITES) {
+    const cls = t.name.toLowerCase().replace(/ [mf]$/, "");
+    if ((n === cls || n.startsWith(cls + " ")) && (!best || cls.length > best.len)) best = { url: t.url, len: cls.length };
+  }
+  return best?.url ?? "";
+}
+
 // League ranks
 export const RANKS = [
   "Little League Champ",
