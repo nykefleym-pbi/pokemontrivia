@@ -2,7 +2,6 @@ import { pageHead } from "@/lib/seo";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
 import { toast } from "sonner";
 import {
   RotateCcw,
@@ -16,13 +15,13 @@ import {
   Share2,
   UserPlus,
   Loader2,
-  IdCard,
   ImageDown,
   Lightbulb,
   Bug,
   Bell,
   BellOff,
   Swords,
+  Medal,
   ZapOff,
   Facebook,
 } from "lucide-react";
@@ -30,7 +29,14 @@ import { ShareCardDialog } from "@/components/share-card-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Textarea } from "@/components/ui/textarea";
 import { useGameStore } from "@/lib/store";
-import { dayStreak } from "@/lib/win-streak";
+import { bestDayStreak, dayStreak } from "@/lib/win-streak";
+import { NaTopBar } from "@/components/na/top-bar";
+import { NaGlossIcon } from "@/components/na/gloss-icon";
+import { NaRewardIcon } from "@/components/na/reward-icon";
+import { NaSheet } from "@/components/na/sheet";
+import { NaGlassRow } from "@/components/na/celebration";
+import { NaButton } from "@/components/na/button";
+import { FitSprite } from "@/components/na/battle";
 import { useStoreHydrated } from "@/lib/store-hydration";
 import { hardReset } from "@/lib/hard-reset";
 import {
@@ -72,12 +78,11 @@ import { TypeChip } from "@/components/type-chip";
 import { FACEBOOK_PAGE_NAME, FACEBOOK_PAGE_URL } from "@/lib/social-links";
 import { BattleLogList } from "@/components/battle-log-list";
 import {
-  PartnerCard,
+  EvolutionCard,
   CardStat,
   FriendRow,
   StatBox,
   BadgesTab,
-  PokeballIcon,
 } from "@/components/profile-parts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -102,7 +107,7 @@ import {
   claimAchievementReward,
 } from "@/lib/achievement-rewards";
 import { AppIcon } from "@/components/app-icon";
-import { UI_ICON, LOCK_ICON } from "@/lib/app-icons";
+import { LOCK_ICON } from "@/lib/app-icons";
 import {
   BACKDROP_BATTLE_COST,
   BACKDROP_COIN_COST,
@@ -157,6 +162,7 @@ function ProfilePage() {
   const pokedex = useGameStore((s) => s.pokedex);
 
   const trainingPoints = useGameStore((s) => s.trainingPoints);
+  const arenaWins = useGameStore((s) => s.arenaStats?.wins ?? 0);
   const trainingPointsSpent = useGameStore((s) => s.trainingPointsSpent);
   const evolvePartner = useGameStore((s) => s.evolvePartner);
   const gymBadges = useGameStore((s) => s.gymBadges);
@@ -195,9 +201,6 @@ function ProfilePage() {
   };
 
   const [trophiesOpen, setTrophiesOpen] = useState(false);
-  // Date key of the weekly-streak ball currently mid-spin, or null. Cleared on
-  // animationend so the class comes off and a later tap can re-apply it.
-  const [spinDay, setSpinDay] = useState<string | null>(null);
   const friendCode = useGameStore((s) => s.friendCode);
   const pokedexCount = Object.keys(pokedex).length;
   const [cardOpen, setCardOpen] = useState(false);
@@ -462,23 +465,6 @@ function ProfilePage() {
     return pool.filter((t) => t.name.toLowerCase().startsWith(q)).slice(0, 9);
   }, [trainerQuery, brokenTrainerIds]);
 
-  // 7-day activity heatmap — must run BEFORE the conditional return
-  const heatmap = useMemo(() => {
-    const days: Array<{ date: string; count: number }> = [];
-    const now = new Date();
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(now);
-      d.setDate(now.getDate() - i);
-      const key = d.toISOString().slice(0, 10);
-      days.push({ date: key, count: 0 });
-    }
-    for (const e of battleLog) {
-      const k = new Date(e.timestamp).toISOString().slice(0, 10);
-      const slot = days.find((x) => x.date === k);
-      if (slot) slot.count++;
-    }
-    return days;
-  }, [battleLog]);
 
   // Debounced availability check while the rename dialog is open.
   useEffect(() => {
@@ -571,77 +557,37 @@ function ProfilePage() {
   }
 
   const winRate = stats.battles > 0 ? Math.round((stats.wins / stats.battles) * 100) : 0;
-  const trainerSince = new Date().toLocaleDateString(undefined, { month: "long", year: "numeric" });
   // The same day streak Home's flame shows (lib/win-streak.ts).
   const weekStreak = dayStreak(battleLog).days;
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const nameGood = renameAvail === "available";
+  const nameBad = renameAvail === "taken" || renameAvail === "invalid";
 
   return (
-    <div className="bg-poke-cream h-full w-full overflow-y-auto pb-nav safe-x">
-      {/* Hero strip */}
-      <div className="screen-x pb-5 screen-top">
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-4"
-        >
-          <button
-            onClick={handleOpenCard}
-            className="relative shrink-0 rounded-full bg-card p-1 ring-4 ring-primary shadow-pop transition press"
-          >
-            <img
-              src={trainerSpriteUrl(trainerSprite)}
-              alt={trainerSprite}
-              className="sprite h-20 w-20 rounded-full object-contain"
-            />
-          </button>
-          <div className="min-w-0 flex-1">
-            <p className="font-pixel-xs text-primary uppercase truncate">
-              {rank} · LV {level}
-            </p>
-            <button onClick={handleOpenCard} className="press text-left">
-              <h2 className="font-display-lg text-2xl font-extrabold text-foreground truncate">
-                {trainerName}
-              </h2>
-              <span className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
-                <IdCard className="h-3 w-3" /> Card
-              </span>
+    <div className="h-full w-full overflow-y-auto pb-nav safe-x">
+      <div className="flex flex-col gap-3.5 px-4 pb-6 pt-[calc(env(safe-area-inset-top)+6px)]">
+        {/* Top bar (6.3): as on Home, with the pencil after your name (6.3b). */}
+        <NaTopBar
+          onAvatar={handleOpenCard}
+          avatarLabel="Your trainer card"
+          afterName={
+            <button
+              type="button"
+              aria-label="Edit profile"
+              onClick={() => {
+                setNameDraft(trainerName);
+                setRenameOpen(true);
+              }}
+              className="press flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-night-card-2 shadow-[0_3px_0_#141A3F]"
+            >
+              <NaGlossIcon kind="pencil" size={16} />
             </button>
-            <p className="mt-0.5 text-xs text-foreground/55 truncate">
-              Trainer since {trainerSince}
-            </p>
-          </div>
-        </motion.div>
-      </div>
+          }
+        />
 
-      <div className="screen-x pb-8 pt-4">
-        {/* Partner card */}
-        {/* Stat cards */}
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={() => setStatsOpen(true)}
-            className="rounded-3xl bg-card p-4 text-left shadow-card transition press"
-          >
-            <div className="font-pixel-xs text-foreground/55">BATTLES WON</div>
-            <div className="mt-1 text-3xl font-extrabold text-foreground">{stats.wins}</div>
-            <div className="mt-1 text-xs font-semibold text-hp-good">{winRate}% win rate</div>
-          </button>
-          <button
-            onClick={() => setFriendsOpen(true)}
-            className="rounded-3xl bg-card p-4 text-left shadow-card transition press"
-          >
-            <div className="font-pixel-xs text-foreground/55">FRIENDS</div>
-            <div className="mt-1 text-3xl font-extrabold text-primary">{friends.length}</div>
-            <div className="mt-1 text-xs text-foreground/60">tap to manage</div>
-          </button>
-        </div>
-
-        {/* Partner card */}
-        <PartnerCard
+        <EvolutionCard
           pokemon={pokemon}
           tp={trainingPoints[pokemon.id] ?? 0}
           lifetime={lifetimeTp(trainingPoints, trainingPointsSpent, pokemon.id)}
-          onChange={() => setPickerOpen(true)}
           onEvolve={(target) => {
             const ok = evolvePartner(target);
             if (ok) {
@@ -653,98 +599,49 @@ function ProfilePage() {
           }}
         />
 
-        {/* This week */}
-        <div className="mt-3 rounded-3xl bg-card p-4 shadow-card">
-          <div className="flex items-center justify-between">
-            <div className="font-display-md text-foreground">This week</div>
-            <div className="font-pixel-xs text-primary">{weekStreak}-DAY STREAK</div>
-          </div>
-          <div className="mt-3 flex justify-between gap-1">
-            {heatmap.map((d) => {
-              const played = d.count > 0;
-              const isToday = d.date === todayKey;
-              // Only a day that was actually played spins — a greyed-out ball
-              // has nothing to celebrate, so it stays inert rather than
-              // rewarding a tap on an empty day (owner ruling 2026-07-26).
-              const canSpin = played;
-              const spinning = spinDay === d.date;
-              return (
-                <div key={d.date} className="flex flex-1 flex-col items-center gap-1.5">
-                  <button
-                    type="button"
-                    disabled={!canSpin}
-                    // `key` on the icon below restarts the animation on a repeat
-                    // tap; without it a second tap on an already-finished spin
-                    // would do nothing, because the class never changed.
-                    onClick={() => canSpin && setSpinDay(d.date)}
-                    onAnimationEnd={() => setSpinDay((cur) => (cur === d.date ? null : cur))}
-                    className={`flex h-10 w-10 items-center justify-center rounded-full transition ${isToday ? "ring-2 ring-primary ring-offset-1" : ""} ${canSpin ? "press" : "cursor-default"}`}
-                    title={`${d.date}: ${d.count}`}
-                    aria-label={
-                      played
-                        ? `${d.date}: ${d.count} played — tap to spin`
-                        : `${d.date}: not played`
-                    }
-                  >
-                    <PokeballIcon
-                      key={spinning ? `${d.date}-spin` : d.date}
-                      className={`h-8 w-8 text-primary ${played ? "" : "opacity-30 grayscale"} ${spinning ? "animate-pokeball-once" : ""}`}
-                    />
-                  </button>
-                  <div className="font-pixel-xs text-foreground/50 uppercase">
-                    {new Date(d.date)
-                      .toLocaleDateString(undefined, { weekday: "short" })
-                      .slice(0, 3)}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+        {/* Four clear names (6.3). Trainer battles = against other trainers; it opens their history until the Arena has it (7.2). */}
+        <div className="grid grid-cols-2 gap-x-[18px] gap-y-3">
+          {[
+            { icon: <NaRewardIcon kind="Streak" size={26} />, value: weekStreak, label: "Daily streak" },
+            { icon: <NaRewardIcon kind="XP" size={26} />, value: bestDayStreak(battleLog), label: "Best streak" },
+            { icon: <Medal className="h-[26px] w-[26px] text-reward-gold" strokeWidth={2.4} />, value: arenaWins, label: "Trainer battles won", onClick: () => setPvpHistoryOpen(true) },
+            { icon: <Swords className="h-[26px] w-[26px] text-text-secondary" strokeWidth={2.4} />, value: stats.wins, label: "Total battles won", onClick: () => setStatsOpen(true) },
+          ].map((s) => (
+            <button
+              key={s.label}
+              type="button"
+              disabled={!s.onClick}
+              onClick={s.onClick}
+              className="na-glass flex flex-col gap-1 rounded-2xl p-3.5 text-left disabled:cursor-default"
+            >
+              <span className="flex items-center gap-1.5">
+                {s.icon}
+                <span className="na-display-m text-foreground">{s.value.toLocaleString()}</span>
+              </span>
+              <span className="na-caption text-text-secondary">{s.label}</span>
+            </button>
+          ))}
         </div>
 
-        {/* Trophies / Badges / PvP / Settings buttons */}
-        <div className="mt-3 grid grid-cols-2 gap-3">
-          <button
-            onClick={() => setTrophiesOpen(true)}
-            className="relative flex flex-col items-center gap-1 rounded-3xl bg-card p-4 shadow-card transition press"
-          >
-            <AppIcon src={UI_ICON.trophies} className="h-12 w-12" />
-            <span className="font-display-md text-foreground">Trophies</span>
-            <span className="font-pixel-xs text-foreground/50">
-              {unlocked.size}/{ACHIEVEMENTS.length}
-            </span>
-            {claimableCount > 0 && (
-              <span className="absolute right-3 top-3 flex h-6 min-w-6 items-center justify-center rounded-full bg-primary px-1.5 font-pixel-xs text-primary-foreground shadow-pop">
-                {claimableCount}
+        {/* From today: friends, trophies, badges and settings. */}
+        <div className="grid grid-cols-2 gap-2.5">
+          {[
+            { icon: <NaGlossIcon kind="profile" size={28} />, title: "Add a friend", sub: friends.length ? `${friends.length} friend${friends.length === 1 ? "" : "s"}` : "No friends yet? Invite one!", onClick: () => setFriendsOpen(true) },
+            { icon: <NaRewardIcon kind="Trophy" size={28} />, title: "Trophies", sub: `${unlocked.size}/${ACHIEVEMENTS.length} earned`, count: claimableCount, onClick: () => setTrophiesOpen(true) },
+            { icon: <NaGlossIcon kind="shield" size={28} />, title: "Badges", sub: `${gymBadges.length}/${GYM_LEADERS.length} earned`, onClick: () => setBadgesOpen(true) },
+            { icon: <NaGlossIcon kind="gear" size={28} />, title: "Settings", sub: "Sound & notifications", onClick: () => setSettingsOpen(true) },
+          ].map((m) => (
+            <button key={m.title} type="button" onClick={m.onClick} className="na-glass press flex items-center gap-2.5 rounded-[18px] p-3 text-left">
+              <span className="shrink-0">{m.icon}</span>
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="na-body-strong text-foreground">{m.title}</span>
+                <span className="na-caption text-text-secondary">{m.sub}</span>
               </span>
-            )}
-          </button>
-          <button
-            onClick={() => setBadgesOpen(true)}
-            className="flex flex-col items-center gap-1 rounded-3xl bg-card p-4 shadow-card transition press"
-          >
-            <AppIcon src={UI_ICON.badges} className="h-12 w-12" />
-            <span className="font-display-md text-foreground">Badges</span>
-            <span className="font-pixel-xs text-foreground/50">
-              {gymBadges.length}/{GYM_LEADERS.length}
-            </span>
-          </button>
-          <button
-            onClick={() => setPvpHistoryOpen(true)}
-            className="flex flex-col items-center gap-1 rounded-3xl bg-card p-4 shadow-card transition press"
-          >
-            <AppIcon src={UI_ICON.battleHistory} className="h-12 w-12" />
-            <span className="font-display-md text-foreground">Battle History</span>
-            <span className="font-pixel-xs text-foreground/50">&nbsp;</span>
-          </button>
-          <button
-            onClick={() => setSettingsOpen(true)}
-            className="flex flex-col items-center gap-1 rounded-3xl bg-card p-4 shadow-card transition press"
-          >
-            <AppIcon src={UI_ICON.settings} className="h-12 w-12" />
-            <span className="font-display-md text-foreground">Settings</span>
-            <span className="font-pixel-xs text-foreground/50">&nbsp;</span>
-          </button>
+              {!!m.count && (
+                <span className="na-label flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-primary px-1 text-foreground">{m.count}</span>
+              )}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -1522,59 +1419,73 @@ function ProfilePage() {
         </SheetContent>
       </Sheet>
 
-      {/* Rename trainer dialog */}
-      <Dialog
+      {/* 6.3b Edit profile, from the pencil (and Settings > Rename): name, avatar, partner. */}
+      <NaSheet
         open={renameOpen}
         onOpenChange={(open) => {
           if (!open) suppressSettingsClose();
           setRenameOpen(open);
         }}
+        title="Edit profile"
+        body="Change your name, avatar, or partner anytime!"
+        primary={{
+          label: renaming ? "Saving…" : "Save",
+          onClick: () => void saveName(),
+          disabled: renaming || renameAvail === "checking" || nameBad || !nameDraft.trim(),
+        }}
+        secondary={{ label: "Cancel", onClick: () => setRenameOpen(false) }}
       >
-        <DialogContent className="max-w-xs">
-          <DialogHeader>
-            <DialogTitle>Rename trainer</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-2">
-            <div className="flex gap-2">
-              <Input
-                value={nameDraft}
-                onChange={(e) => setNameDraft(e.target.value)}
-                maxLength={TRAINER_NAME_MAX}
-                className="h-10 rounded-full"
-                autoFocus
-              />
-              <Button
-                onClick={() => void saveName()}
-                disabled={
-                  renaming ||
-                  renameAvail === "checking" ||
-                  renameAvail === "taken" ||
-                  renameAvail === "invalid" ||
-                  !nameDraft.trim()
-                }
-                className="rounded-full"
-              >
-                {renaming ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Check className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-            <p
-              className={`text-xs ${
-                renameAvail === "available"
-                  ? "text-green-600"
-                  : renameAvail === "taken" || renameAvail === "invalid"
-                    ? "text-red-600"
-                    : "text-foreground/55"
-              }`}
-            >
-              {renameMsg || "3–16 characters · letters, numbers, spaces, _ and -"}
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
+        <label className="flex flex-col gap-1.5">
+          <span className="na-label uppercase text-text-secondary">Trainer name</span>
+          <span
+            className={`flex h-[54px] items-center gap-2 rounded-[14px] border-2 bg-night-deep/60 px-3.5 ${
+              nameGood ? "border-success" : nameBad ? "border-danger" : "border-white/[0.16]"
+            }`}
+          >
+            <input
+              value={nameDraft}
+              onChange={(e) => setNameDraft(e.target.value)}
+              maxLength={TRAINER_NAME_MAX}
+              aria-invalid={nameBad}
+              className="na-headline w-full min-w-0 bg-transparent text-foreground outline-none"
+            />
+            {nameGood && renameMsg !== "Current name" && (
+              <span className="na-caption flex shrink-0 items-center gap-1 text-success">
+                <Check className="h-4 w-4" /> {renameMsg}
+              </span>
+            )}
+          </span>
+          {(nameBad || renameAvail === "checking") && (
+            <span className={`na-caption ${nameBad ? "text-danger" : "text-text-muted"}`}>{renameMsg}</span>
+          )}
+        </label>
+        <span className="na-label uppercase text-text-secondary">Avatar</span>
+        <NaGlassRow
+          lead={
+            <span className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border-2 border-reward-gold bg-night-card-2">
+              <img src={trainerSpriteUrl(trainerSprite)} alt="" className="sprite h-12 w-12 object-contain" />
+            </span>
+          }
+          title={TRAINER_SPRITES.find((t) => t.id === trainerSprite)?.name ?? trainerSprite}
+          sub="Your avatar"
+          trailing={
+            <NaButton kind="secondary" size="M" onClick={() => setTrainerPickerOpen(true)}>
+              Change
+            </NaButton>
+          }
+        />
+        <span className="na-label uppercase text-text-secondary">Partner</span>
+        <NaGlassRow
+          lead={<FitSprite id={pokemon.id} size={33} />}
+          title={pokemon.name}
+          sub="Your partner"
+          trailing={
+            <NaButton kind="secondary" size="M" onClick={() => setPickerOpen(true)}>
+              Change
+            </NaButton>
+          }
+        />
+      </NaSheet>
 
       <AlertDialog open={!!friendToRemove} onOpenChange={(o) => !o && setFriendToRemove(null)}>
         <AlertDialogContent>

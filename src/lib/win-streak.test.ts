@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { currentWinStreak, dayStreak, weekWins } from "@/lib/win-streak";
+import { bestDayStreak, currentWinStreak, dayStreak, weekWins } from "@/lib/win-streak";
 import type { BattleLogEntry } from "@/lib/store/types";
 
 /** Newest first, the order `pushBattleLog` actually stores. */
@@ -82,5 +82,16 @@ describe("dayStreak", () => {
     const log = [at(0, true, "daily"), at(1, true, "daily"), at(1, true)];
     expect(dayStreak(log, now, true)).toEqual({ days: 2, secured: true });
     expect(weekWins(log, now, true)).toEqual([false, false, false, true, true, false, false]);
+  });
+});
+
+describe("bestDayStreak", () => {
+  const day = (d: number, won = true): BattleLogEntry => ({ opponent: "x", won, xpGained: 0, bestStreak: 0, timestamp: Date.UTC(2026, 10, d, 12), mode: "battle" });
+  it("finds the longest run of days with a win, not the current one", () => {
+    expect(bestDayStreak([day(20), day(19), day(15), day(14), day(13), day(13), day(10)])).toBe(3);
+  });
+  it("ignores lost days and is zero with no wins", () => {
+    expect(bestDayStreak([day(2, false), day(1, false)])).toBe(0);
+    expect(bestDayStreak([day(3), day(2, false), day(1)])).toBe(1);
   });
 });

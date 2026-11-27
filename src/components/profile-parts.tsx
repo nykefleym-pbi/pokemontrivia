@@ -1,102 +1,85 @@
 import { useMemo, useState } from "react";
-import { Swords, Users, X } from "lucide-react";
+import { ChevronRight, Swords, Users, X } from "lucide-react";
+import { FitSprite } from "@/components/na/battle";
+import { NaButton } from "@/components/na/button";
 import { useGameStore } from "@/lib/store";
 import { EVOLUTION_TP_COST, getTpMultiplier } from "@/lib/game-data";
 import { canEvolve, getEvolutionTargets, type PokeEntry } from "@/lib/pokemon-data";
 import { type TrainerProfile } from "@/lib/social";
 import { GYM_LEADERS, type GymLeader } from "@/lib/gym-leaders";
-import { PokemonSprite, LegendaryFrame } from "@/components/game-ui";
+import { PokemonSprite } from "@/components/game-ui";
 import { TypeChip } from "@/components/type-chip";
 import { AppIcon } from "@/components/app-icon";
 import { UI_ICON } from "@/lib/app-icons";
-import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-export function PartnerCard({
+/**
+ * Figma 6.3 Evolution card: your partner, a chevron, the next form as a
+ * silhouette, "NEXT: IVYSAUR", the Training Points still to go, the meter and
+ * Evolve (dim until you can). A partner with nothing left to evolve into says so.
+ */
+export function EvolutionCard({
   pokemon,
   tp,
   lifetime,
-  onChange: _onChange,
   onEvolve,
 }: {
   pokemon: PokeEntry;
-  /** Spendable balance — what the evolution bar fills against. */
+  /** Spendable balance: what the meter fills against. */
   tp: number;
-  /** Everything this partner has ever earned — what the damage multiplier
-   *  reads, and what evolving no longer resets. See `lifetimeTp`. */
+  /** Everything this partner has ever earned: what the damage multiplier reads. */
   lifetime: number;
-  onChange: () => void;
   onEvolve: (target: PokeEntry) => void;
 }) {
   const targets = useMemo(() => getEvolutionTargets(pokemon), [pokemon]);
   const stage = pokemon.evolutionStage;
-  const cost = stage === 1 || stage === 2 ? EVOLUTION_TP_COST[stage] : null;
-  const eligible = canEvolve(pokemon) && cost !== null && tp >= cost;
-  // Lifetime TP, so the figure survives evolving — and shown whether or not
-  // there is an evolution left, because a fully-evolved partner still has a
-  // multiplier and used to be told nothing about it.
-  const mult = getTpMultiplier(lifetime);
+  const cost = canEvolve(pokemon) && (stage === 1 || stage === 2) ? EVOLUTION_TP_COST[stage] : null;
+  const eligible = cost !== null && tp >= cost;
   const [evoOpen, setEvoOpen] = useState(false);
-
-  function handleEvolveClick() {
-    if (!eligible) return;
-    if (targets.length === 1) {
-      onEvolve(targets[0]);
-    } else {
-      setEvoOpen(true);
-    }
-  }
+  const next = targets[0];
 
   return (
-    <LegendaryFrame pokemonId={pokemon.id} types={pokemon.types ?? []} className="mt-3">
-      <div className="rounded-3xl bg-card p-4 shadow-card">
-        <div className="flex items-center gap-4">
-          <div className="shrink-0">
-            <PokemonSprite id={pokemon.id} alt={pokemon.name} className="sprite h-20 w-20" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <span className="font-display-lg text-xl font-extrabold text-foreground truncate">
-                {pokemon.name}
+    <div className="na-glass flex flex-col gap-3 rounded-[22px] p-4">
+      <div className="flex items-center gap-2.5">
+        <FitSprite id={pokemon.id} size={74} />
+        {cost !== null && next ? (
+          <>
+            <ChevronRight className="h-[26px] w-[26px] shrink-0 text-reward-gold" strokeWidth={3} />
+            <FitSprite id={next.id} size={75} className="[filter:brightness(0)_invert(29%)_sepia(1)_saturate(3)_hue-rotate(190deg)]" />
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <span className="na-display-s text-foreground">NEXT: {targets.length > 1 ? `${targets.length} FORMS` : next.name.toUpperCase()}</span>
+              <span className="na-caption text-text-secondary">
+                {eligible ? "Ready to evolve!" : `${(cost - tp).toLocaleString()} Training Points to go`}
               </span>
-              {(pokemon.types ?? []).slice(0, 1).map((t) => (
-                <TypeChip key={t} type={t} selected size="sm" />
-              ))}
             </div>
-            <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-poke-blue to-primary"
-                style={{ width: `${cost ? Math.min(100, (tp / cost) * 100) : 100}%` }}
-              />
-            </div>
-            <div className="mt-1 text-xs font-semibold text-foreground/60">
-              TP {tp} · Damage ×{mult.toFixed(2)}
-            </div>
-          </div>
-        </div>
-        {canEvolve(pokemon) && cost !== null && (
-          <div className="mt-4 flex items-center gap-3">
-            <Button
-              size="action"
-              onClick={handleEvolveClick}
-              disabled={!eligible}
-              className={`flex-1 shadow-pop ${
-                eligible
-                  ? "bg-gradient-to-r from-poke-yellow to-primary text-white"
-                  : "bg-muted text-foreground/50"
-              }`}
-            >
-              {/* TP progress lives in the bar under the Pokémon's name; don't
-                repeat it here (feedback ab8a72c9). */}
-              ✦ Evolve
-            </Button>
+          </>
+        ) : (
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
+            <span className="na-display-s text-foreground">{pokemon.name.toUpperCase()}</span>
+            <span className="na-caption text-text-secondary">Fully evolved! Damage ×{getTpMultiplier(lifetime).toFixed(2)}</span>
           </div>
         )}
-        {pokemon.isFullyEvolved && (
-          <div className="mt-4 rounded-full bg-muted py-2 text-center text-xs font-bold text-foreground/60">
-            Fully evolved
-          </div>
-        )}
+      </div>
+      {cost !== null && (
+        <>
+          <span className="block h-2 w-full overflow-hidden rounded bg-night-deep">
+            <span className="na-fill-gold block h-full rounded" style={{ width: `${Math.max(1, Math.min(100, (tp / cost) * 100))}%` }} />
+          </span>
+          <NaButton
+            kind={eligible ? "gold" : "secondary"}
+            size="M"
+            block
+            aria-disabled={!eligible}
+            onClick={() => {
+              if (!eligible) return;
+              if (targets.length === 1) onEvolve(targets[0]);
+              else setEvoOpen(true);
+            }}
+          >
+            {eligible ? "Evolve!" : `Evolve at ${cost.toLocaleString()}`}
+          </NaButton>
+        </>
+      )}
 
         <Dialog open={evoOpen} onOpenChange={setEvoOpen}>
           <DialogContent className="max-w-xs">
@@ -125,8 +108,7 @@ export function PartnerCard({
             </div>
           </DialogContent>
         </Dialog>
-      </div>
-    </LegendaryFrame>
+    </div>
   );
 }
 

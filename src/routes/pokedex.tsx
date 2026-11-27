@@ -117,8 +117,6 @@ function PokedexPage() {
         if (show === "new") return caught && isNew(p.id);
         return true;
       }),
-    // isNew changes with the opened set, which `open` replaces
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [range, type, shinyOnly, show, pokedex, isNew],
   );
 

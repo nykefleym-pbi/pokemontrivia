@@ -5,7 +5,8 @@ import { NaGlossIcon } from "@/components/na/gloss-icon";
 import { toast } from "sonner";
 import { useGameStore } from "@/lib/store";
 import { PokemonSprite } from "@/components/game-ui";
-import { trainerSpriteUrl, xpProgressInLevel, getWeekRangeUtc } from "@/lib/game-data";
+import { getWeekRangeUtc } from "@/lib/game-data";
+import { NaTopBar } from "@/components/na/top-bar";
 import { GENERATIONS } from "@/lib/dex-rewards";
 import { ROUTE_REGIONS, regionRoute, gymTown, routeGym, routeNumber, stopTrainer, stopsForGym, stopsLeft } from "@/lib/route";
 import { dayStreak } from "@/lib/win-streak";
@@ -69,15 +70,6 @@ function evenDots(s: ReturnType<typeof seg>, gap: number) {
   return out;
 }
 
-function Pill({ kind, value }: { kind: "Streak" | "Coin"; value: string }) {
-  return (
-    <span className="flex items-center gap-1.5 rounded-full border border-white/[0.14] bg-night-deep/60 py-[3px] pl-[3px] pr-3">
-      <NaRewardIcon kind={kind} size={28} />
-      <span className="na-number-m text-foreground">{value}</span>
-    </span>
-  );
-}
-
 function TimerChip({ text, done, color }: { text: string; done?: boolean; color?: string }) {
   return (
     <span className={`flex items-center gap-1 rounded-full px-[9px] py-[3px] ${done ? "bg-success/[0.18]" : "bg-white/[0.12]"}`}>
@@ -109,12 +101,7 @@ export function RouteHome({
   dailyDone: boolean;
 }) {
   const navigate = useNavigate();
-  const trainerName = useGameStore((s) => s.trainerName);
-  const trainerSprite = useGameStore((s) => s.trainerSprite);
   const pokemon = useGameStore((s) => s.pokemon);
-  const level = useGameStore((s) => s.level);
-  const xp = useGameStore((s) => s.xp);
-  const coins = useGameStore((s) => s.coins);
   const route = useGameStore((s) => s.route);
   const weeklyLeague = useGameStore((s) => s.weeklyLeague);
   const battleLog = useGameStore((s) => s.battleLog);
@@ -227,8 +214,6 @@ export function RouteHome({
   }, [route.region, route.gym, route.beaten]);
 
   if (!pokemon) return null;
-  const xpProg = xpProgressInLevel(xp);
-  const xpPct = Math.min(100, (xpProg.current / xpProg.need) * 100);
 
   const bannerSub =
     left > 0
@@ -296,25 +281,9 @@ export function RouteHome({
           scrolled ? "bg-night-base/85 backdrop-blur-md" : ""
         }`}
       >
-        <button
-          type="button"
-          onClick={() => navigate({ to: "/profile" })}
-          aria-label="Your profile"
-          className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-reward-gold bg-night-card-2"
-        >
-          <img src={trainerSpriteUrl(trainerSprite)} alt="" className="sprite h-11 w-11 object-contain" />
-        </button>
-        <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
-          <span className="na-headline truncate text-foreground">{trainerName}</span>
-          <span className="flex items-center gap-1.5">
-            <span className="na-fill-gold na-label rounded-md px-1.5 py-px text-on-gold">LEVEL {level}</span>
-            <span className="h-1.5 w-16 overflow-hidden rounded-full bg-white/[0.12]">
-              <span className="na-fill-gold block h-full rounded-full" style={{ width: `${xpPct}%` }} />
-            </span>
-          </span>
+        <div className="flex-1">
+          <NaTopBar onAvatar={() => navigate({ to: "/profile" })} avatarLabel="Your profile" />
         </div>
-        <Pill kind="Streak" value={String(streak.days)} />
-        <Pill kind="Coin" value={coins.toLocaleString()} />
       </div>
 
       {/* Route banner + the streak line (2.3): banner 7 below the top bar, the line 6 below it, the route right after. */}

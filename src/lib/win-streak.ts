@@ -64,6 +64,17 @@ export function weekWins(log: readonly BattleLogEntry[], now = Date.now(), daily
   return Array.from({ length: 7 }, (_, i) => won.has(new Date(now + (i - dow) * 86_400_000).toISOString().slice(0, 10)));
 }
 
+/** The longest day streak in the log (Profile's Best streak, 6.3). Same 300-entry limit as dayStreak. */
+export function bestDayStreak(log: readonly BattleLogEntry[]): number {
+  const days = [...winDays(log)].map((d) => Date.parse(d) / 86_400_000).sort((a, b) => a - b);
+  let best = 0, run = 0;
+  for (let i = 0; i < days.length; i++) {
+    run = i > 0 && days[i] - days[i - 1] === 1 ? run + 1 : 1;
+    best = Math.max(best, run);
+  }
+  return best;
+}
+
 /**
  * The day streak on Home (Figma 2.3 / 2.6): days in a row with at least one
  * battle won, like a Duolingo lesson a day. It stays alive through today until
