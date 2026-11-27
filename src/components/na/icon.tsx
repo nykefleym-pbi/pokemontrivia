@@ -63,6 +63,9 @@ const LINE: Record<string, string> = {
   trash: '<path d="M4 7h16M10 7V4h4v3M6 7l1 13h10l1-13"/>',
   ruler: '<path d="m3 15 12-12 6 6L9 21z"/><path d="m7 11 2 2M10 8l2 2M13 5l2 2"/>',
   weight: '<path d="M6 9h12l2 11H4z"/><circle cx="12" cy="6" r="2.5"/>',
+  // plugin-src.js USERPLUS / SEND (rows 15-16)
+  "user-plus": '<circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/><path d="M19 8v6M16 11h6"/>',
+  send: '<path d="M4 12 20 4l-6 16-3-7z"/>',
 };
 const FILLED = new Set(["heart-filled", "play", "flame-filled", "star-filled"]);
 

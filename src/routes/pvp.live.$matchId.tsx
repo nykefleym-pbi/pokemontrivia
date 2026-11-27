@@ -3,10 +3,9 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Loader2, Share2 } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { useStoreHydrated } from "@/lib/store-hydration";
-import { PokeballSpinner, PokemonSprite } from "@/components/game-ui";
+import { ItemIcon, PokeballSpinner } from "@/components/game-ui";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -47,9 +46,14 @@ import { useForfeitGuard } from "@/lib/use-forfeit-guard";
 import { resolvePvpTypeAbilityId } from "@/lib/pvp-type-abilities";
 import { useBattleFxCues } from "@/hooks/useBattleFxCues";
 import { AddFriendPrompt } from "@/components/add-friend-prompt";
-import { MissedReview } from "@/components/MissedReview";
-import { AppIcon } from "@/components/app-icon";
-import { ITEM_CATEGORY_ICON } from "@/lib/app-icons";
+import { MistakesReview } from "@/components/mistakes-review";
+import { FittedTrainer } from "@/components/na/battle";
+import { NaButton } from "@/components/na/button";
+import { NaGlassRow, NaRewardTile, NaWordmark } from "@/components/na/celebration";
+import { NaIcon } from "@/components/na/icon";
+import { NaRewardIcon } from "@/components/na/reward-icon";
+import { BAG_SHORT_DESC } from "@/lib/item-categories";
+import type { ItemId } from "@/lib/game-data";
 import type { MissedAnswer } from "@/lib/trivia-core";
 import { ShareCardDialog } from "@/components/share-card-dialog";
 import { VersusScreen } from "@/components/versus-screen";
@@ -100,7 +104,7 @@ function MatchPageContent({ matchId }: { matchId: string }) {
   const [myId, setMyId] = useState<string | null>(null);
   const [opponentProfile, setOpponentProfile] = useState<TrainerProfile | null>(null);
   const [forfeitConfirmOpen, setForfeitConfirmOpen] = useState(false);
-  const [berryDrops, setBerryDrops] = useState<number | null>(null);
+  const [berryDrops, setBerryDrops] = useState<ItemId[] | null>(null);
   const [rematchBusy, setRematchBusy] = useState(false);
   // Missed-answer history for the defeat review (feedback #1). Accumulated here
   // (not in the battle screen) so it survives the battle→result unmount that a
@@ -524,10 +528,9 @@ function MatchPageContent({ matchId }: { matchId: string }) {
     const drops = won ? rollBerryDrops() : [];
     if (won) {
       for (const id of drops) useGameStore.getState().grantItem(id, 1);
-      setBerryDrops(drops.length);
-      toast.success(`You picked up ${drops.length} berries from this battle!`);
+      setBerryDrops(drops);
     } else {
-      setBerryDrops(0);
+      setBerryDrops([]);
     }
     useGameStore.getState().recordArenaBattle({
       won,
@@ -712,7 +715,6 @@ function MatchPageContent({ matchId }: { matchId: string }) {
 
   const iAmHost = myId === match?.hostId;
   const myFinalHp = match ? (iAmHost ? match.hostHp : match.guestHp) : null;
-  const oppFinalHp = match ? (iAmHost ? match.guestHp : match.hostHp) : null;
   const myCorrect = match ? (iAmHost ? match.hostCorrectLive : match.guestCorrectLive) : null;
   const won = phase === "forfeit_won" || (phase === "result" && match?.winnerId === myId);
   const tied = phase === "result" && match?.winnerId === null && match.status === "completed";
@@ -763,21 +765,19 @@ function MatchPageContent({ matchId }: { matchId: string }) {
         forfeitWon={phase === "forfeit_won"}
         forfeitLost={phase === "forfeit_lost"}
         opponentName={opponentProfile?.trainer_name || "Opponent"}
-        myHp={myFinalHp}
-        oppHp={oppFinalHp}
+        mySpriteId={trainerSprite}
+        opponentSpriteId={opponentProfile?.trainer_sprite || ""}
         correctCount={myCorrect}
-        partnerId={partner?.id ?? null}
-        partnerName={partner?.name ?? "Your partner"}
-        berryDrops={berryDrops}
+        oppCorrect={match ? (iAmHost ? match.guestCorrectLive : match.hostCorrectLive) : null}
+        timeMs={tally.totalMs}
+        berries={berryDrops}
+        // A Trainer Battle (or the bot) counts toward the Arena's set of 5; a Nearby Battle does not show it.
+        arenaWins={match?.matchSource === "queue" || match?.isBotMatch ? useGameStore.getState().arenaStats.set.wins : null}
         missed={missed}
-        onBack={() => navigate({ to: "/arena" })}
-        // Only on a win, and only once there is a partner to draw. Beating
-        // another trainer is the app's most brag-worthy moment and was the one
-        // that produced nothing to show for it.
+        onBack={() => navigate({ to: "/battle", search: { autostart: 0 } as never })}
+        // Only on a win, and only once there is a partner to draw.
         onShare={won && partner ? () => setShareOpen(true) : undefined}
-        // No chat for strangers paired by matchmaking. The server refuses those
-        // messages outright (send_pvp_chat_message), so offering the button would
-        // only lead somewhere broken.
+        // No chat for strangers paired by matchmaking: the server refuses those messages.
         onChat={
           match?.matchSource === "queue"
             ? undefined
@@ -785,9 +785,7 @@ function MatchPageContent({ matchId }: { matchId: string }) {
         }
         onRematch={() => void handleRematch()}
         rematchBusy={rematchBusy}
-        // Offered after a battle against a real trainer. The component decides for
-        // itself whether there is anything to offer (bot match, already friends, or
-        // a request already pending -> renders nothing).
+        // Renders nothing for a bot match, an existing friend or a pending request.
         friendPrompt={
           <AddFriendPrompt
             opponentId={opponentProfile?.id}
@@ -799,12 +797,42 @@ function MatchPageContent({ matchId }: { matchId: string }) {
   );
 }
 
+/** A trainer in a round frame (Figma avatar()): the app's own art fitted to the frame. */
+function FaceAvatar({ spriteId, ring }: { spriteId: string; ring: string }) {
+  const art = trainerSpriteUrl(spriteId);
+  return (
+    <span className="relative block h-24 w-24 shrink-0 overflow-hidden rounded-full border-[3px] bg-night-card-2" style={{ borderColor: ring }}>
+      {art && <FittedTrainer art={art} height={74} cx={45} feetY={86} />}
+    </span>
+  );
+}
+
+/** Figma faceOff(): you and them, the red VS between, and how many each got right. */
+function FaceOff({ me, them, mine, theirs }: { me: string; them: string; mine: number | null; theirs: number | null }) {
+  return (
+    <div className="relative h-[150px] w-[320px] shrink-0">
+      <span className="absolute left-0 top-0">
+        <FaceAvatar spriteId={me} ring="#FF3B4E" />
+      </span>
+      <span className="absolute right-0 top-0">
+        <FaceAvatar spriteId={them} ring="#5B8CFF" />
+      </span>
+      <span className="na-fill-brand na-headline absolute left-[132px] top-5 flex h-14 w-14 items-center justify-center rounded-full text-foreground shadow-[0_4px_0_#A3142C]">VS</span>
+      {mine != null && <span className="na-number-l absolute left-0 top-[108px] w-24 text-center text-reward-gold">{mine}</span>}
+      {theirs != null && <span className="na-number-l absolute right-0 top-[108px] w-24 text-center text-reward-gold">{theirs}</span>}
+    </div>
+  );
+}
+
+const fmtClock = (ms: number) => {
+  const s = Math.max(0, Math.round(ms / 1000));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+};
+
 /**
- * Victory / Defeat screen for Nearby Battle. Reuses the visual language of
- * Solo's `ResultScreen` (feedback c067f516) — the victory confetti + bouncing
- * partner sprite on a win, the muted grayscale defeat treatment on a loss — but
- * carries the PvP-relevant summary (HP result, correct count, berry drops)
- * instead of Solo's XP/coin/level rewards, which don't exist in Nearby Battle.
+ * Figma 15.3 "Live result: who got more right" (a Trainer Battle or the bot)
+ * and 15.5 "Nearby Battle won: 2 berries". A loss keeps the face-off under
+ * SO CLOSE!. Missed answers open the review (4.3).
  */
 function PvpResultScreen({
   won,
@@ -812,12 +840,13 @@ function PvpResultScreen({
   forfeitWon,
   forfeitLost,
   opponentName,
-  myHp,
-  oppHp,
+  mySpriteId,
+  opponentSpriteId,
   correctCount,
-  partnerId,
-  partnerName,
-  berryDrops,
+  oppCorrect,
+  timeMs,
+  berries,
+  arenaWins,
   missed,
   onBack,
   onShare,
@@ -831,261 +860,127 @@ function PvpResultScreen({
   forfeitWon: boolean;
   forfeitLost: boolean;
   opponentName: string;
-  myHp: number | null;
-  oppHp: number | null;
+  mySpriteId: string;
+  opponentSpriteId: string;
   correctCount: number | null;
-  partnerId: number | null;
-  partnerName: string;
-  berryDrops: number | null;
+  oppCorrect: number | null;
+  timeMs: number;
+  /** The berries this win dropped (Nearby Battle). */
+  berries: ItemId[] | null;
+  /** Wins in the Arena's current set of 5, for a Trainer Battle; null for Nearby. */
+  arenaWins: number | null;
   missed: MissedAnswer[];
   onBack: () => void;
-  /** Renders a "Share" button on the victory screen. A PvP win was the only
-   * win in the app with nothing to show for it — solo, evolution and daily
-   * perfect all build a share card. Victory only; nobody shares a loss. */
   onShare?: () => void;
-  /** Opens this match's full-screen chat route (docs/handoffs/global-chat).
-   * Renders a "Chat" button beside "Back to Profile" when provided. */
   onChat?: () => void;
-  /** PvP Rematch (docs/handoffs/.../03-frontend.md): renders a full-width
-   * "Rematch" button above the Back/Chat row when provided. For a bot match
-   * this starts a fresh Training match; for a human match it hands off to
-   * the Battle Code sheet on /arena. Omitted entirely when not provided (no
-   * behavior change for any caller that doesn't pass it). */
   onRematch?: () => void;
-  /** Disables the Rematch button + shows a spinner while the rematch's
-   * fetch/RPC round-trip is in flight (bot path only — the human path
-   * navigates instantly). */
   rematchBusy?: boolean;
-  /** Slot above the action buttons; empty for bot matches and existing friends. */
   friendPrompt?: React.ReactNode;
 }) {
-  const hpLine = (
-    <>
-      You: {myHp ?? "—"} HP · {opponentName}: {oppHp ?? "—"} HP
-    </>
-  );
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const right = correctCount ?? 0;
+  const won2 = won && (berries?.length ?? 0) > 0;
+  const berryDefs = (berries ?? []).map((id) => ITEMS.find((x) => x.id === id)).filter((x): x is NonNullable<typeof x> => !!x);
+  const line = forfeitWon
+    ? `${opponentName} left the battle. You win!`
+    : forfeitLost
+      ? "You left the battle."
+      : won2
+        ? `You defeated ${opponentName} and earned ${berryDefs.length} ${berryDefs.length === 1 ? "Berry" : "Berries"}!`
+        : won
+          ? `You defeated ${opponentName}! ${right} of ${PVP_QUESTIONS} correct`
+          : tied
+            ? `It's a tie! ${right} of ${PVP_QUESTIONS} correct`
+            : `${opponentName} wins this time · ${right} of ${PVP_QUESTIONS} correct`;
+  const rise = (d: number) => ({ initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { delay: d, duration: 0.3 } });
 
-  if (won) {
-    const confetti = [
-      { c: "bg-primary", s: "h-3 w-3 rounded-sm", l: "8%" },
-      { c: "bg-poke-yellow", s: "h-2 w-2 rounded-full", l: "20%" },
-      { c: "bg-poke-blue", s: "h-2.5 w-2.5 rounded-full", l: "32%" },
-      { c: "bg-hp-good", s: "h-3 w-3 rounded-sm", l: "44%" },
-      { c: "bg-poke-yellow", s: "h-2 w-2 rounded-full", l: "56%" },
-      { c: "bg-primary", s: "h-2 w-2 rounded-full", l: "68%" },
-      { c: "bg-destructive", s: "h-2.5 w-2.5 rounded-sm", l: "80%" },
-      { c: "bg-poke-blue", s: "h-2 w-2 rounded-full", l: "92%" },
-    ];
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="relative flex h-full w-full flex-col overflow-y-auto bg-victory screen-x screen-top screen-bottom"
-      >
-        {confetti.map((d, i) => (
-          <motion.span
-            key={i}
-            className={`pointer-events-none absolute ${d.s} ${d.c}`}
-            style={{ left: d.l, top: "-5%" }}
-            initial={{ y: 0, opacity: 0 }}
-            animate={{
-              y: ["-5%", "115%"],
-              x: [0, i % 2 === 0 ? 20 : -20, 0],
-              rotate: [0, 360],
-              opacity: [0, 1, 1, 0.8, 0],
-            }}
-            transition={{
-              duration: 3.5 + (i % 4) * 0.6,
-              repeat: Infinity,
-              delay: i * 0.4,
-              ease: "easeIn",
-            }}
-          />
-        ))}
-
-        <div className="flex flex-col items-center text-center">
-          <div className="font-pixel-xs uppercase tracking-[0.25em] text-primary">
-            ★ Battle Won ★
-          </div>
-          <h1 className="mt-2 font-display-xl text-foreground">Victory!</h1>
-          <p className="mt-1 text-sm text-foreground/70">
-            {forfeitWon
-              ? `${opponentName} disconnected`
-              : correctCount != null
-                ? `${opponentName} defeated · ${correctCount}/${PVP_QUESTIONS} correct`
-                : `${opponentName} defeated`}
-          </p>
-
-          {partnerId != null && (
-            <div className="relative mt-6 flex h-36 w-44 items-end justify-center">
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute bottom-2 left-1/2 h-10 w-32 -translate-x-1/2 rounded-[50%]"
-                style={{
-                  background:
-                    "radial-gradient(ellipse at 50% 35%, oklch(0.88 0.16 145) 0%, oklch(0.72 0.18 145) 55%, oklch(0.55 0.16 150) 100%)",
-                  boxShadow:
-                    "0 8px 14px -6px oklch(0.3 0.1 150 / 0.35), inset 0 1px 0 oklch(1 0 0 / 0.35)",
-                }}
-              />
-              <motion.div
-                animate={{ y: [0, -8, 0] }}
-                transition={{ duration: 1.4, repeat: Infinity }}
-                className="relative z-10"
-              >
-                <PokemonSprite id={partnerId} alt={partnerName} className="sprite h-28 w-28" />
-              </motion.div>
-            </div>
-          )}
-        </div>
-
-        <div className="mx-auto mt-6 w-full max-w-sm rounded-3xl bg-card p-4 text-center shadow-card">
-          <div className="font-pixel-xs text-foreground/70">{hpLine}</div>
-          {berryDrops != null && berryDrops > 0 && (
-            <div className="mt-2 flex items-center justify-center gap-1.5 font-display-md text-hp-good">
-              <AppIcon src={ITEM_CATEGORY_ICON.berries} className="h-5 w-5" />+{berryDrops} berr
-              {berryDrops === 1 ? "y" : "ies"}
-            </div>
-          )}
-        </div>
-
-        {friendPrompt}
-
-        <div className="btn-stack mx-auto mt-auto w-full max-w-sm pt-5">
-          {onRematch && (
-            <Button
-              size="action"
-              onClick={onRematch}
-              disabled={rematchBusy}
-              className="w-full bg-primary text-primary-foreground shadow-pop disabled:opacity-70"
-            >
-              {rematchBusy ? <Loader2 className="h-5 w-5 animate-spin" /> : "Rematch"}
-            </Button>
-          )}
-          {onShare && (
-            <Button
-              size="action"
-              variant="outline"
-              onClick={onShare}
-              className="w-full border-2 shadow-card"
-            >
-              <Share2 className="mr-2 h-4 w-4" />
-              Share result
-            </Button>
-          )}
-          <div className="flex gap-2">
-            <Button
-              size="action"
-              onClick={onBack}
-              className="flex-1 bg-primary text-primary-foreground shadow-pop"
-            >
-              Back to Arena
-            </Button>
-            {onChat && (
-              <Button
-                size="action"
-                variant="outline"
-                onClick={onChat}
-                className="flex-1 border-2 shadow-card"
-              >
-                Chat
-              </Button>
-            )}
-          </div>
-        </div>
-      </motion.div>
-    );
-  }
-
-  // DEFEAT / TIE / FORFEIT-LOSS
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="relative flex h-full w-full flex-col overflow-y-auto bg-defeat screen-x screen-top screen-bottom"
+      className="na-bg-night relative flex h-full w-full flex-col items-center gap-3 overflow-y-auto px-4 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-[calc(env(safe-area-inset-top)+16px)]"
     >
-      <div className="flex flex-col items-center text-center">
-        <div className="font-pixel-xs uppercase tracking-[0.25em] text-poke-blue/80">
-          {tied ? "Battle Tied" : "Battle Lost"}
+      <NaWordmark kind={won ? "victory" : "soclose"}>{won ? "VICTORY!" : tied ? "IT'S A TIE!" : "SO CLOSE!"}</NaWordmark>
+      {won2 ? (
+        <div className="relative h-[140px] w-[300px] shrink-0">
+          {berryDefs.slice(0, 2).map((b, i) => (
+            <ItemIcon key={b.id} item={b} className={`absolute h-[110px] w-[110px] ${i === 0 ? "left-10 top-2.5" : "left-[150px] top-5"}`} />
+          ))}
+          {[[24, 20, 22], [262, 12, 24], [270, 100, 16], [20, 110, 14]].map(([x, y, sz], i) => (
+            <span key={i} className="absolute text-reward-gold" style={{ left: x, top: y }}>
+              <NaIcon name="sparkle" size={sz} />
+            </span>
+          ))}
         </div>
-        <h1 className="mt-2 font-display-xl text-white">
-          {tied ? "It's a tie!" : forfeitLost ? "Battle forfeited" : "So close!"}
-        </h1>
-        <p className="mt-1 text-sm text-white/60">
-          {forfeitLost
-            ? "You left the battle."
-            : correctCount != null
-              ? `${opponentName} wins · ${correctCount}/${PVP_QUESTIONS} correct`
-              : `${opponentName} wins`}
-        </p>
-
-        {partnerId != null && (
-          <div className="relative mt-6 flex h-32 w-40 items-end justify-center">
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute bottom-2 left-1/2 h-8 w-28 -translate-x-1/2 rounded-[50%] bg-black/40 blur-[2px]"
-            />
-            <motion.div
-              animate={{ rotate: [0, -3, 3, 0] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="relative z-10"
-            >
-              <PokemonSprite
-                id={partnerId}
-                alt={partnerName}
-                className="sprite h-24 w-24 opacity-80 grayscale"
-              />
-            </motion.div>
-          </div>
-        )}
-      </div>
-
-      <div className="mx-auto mt-6 w-full max-w-sm rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-center">
-        <p className="text-xs text-white/70">{hpLine}</p>
-      </div>
-
-      {/* Missed-answer review at parity with Solo's defeat screen (feedback #1).
-          Renders nothing when the loss had no wrong answers (HP/forfeit). */}
-      <MissedReview missed={missed} />
-
+      ) : (
+        <FaceOff me={mySpriteId} them={opponentSpriteId} mine={correctCount} theirs={oppCorrect} />
+      )}
+      <p className="na-body-strong text-center text-text-secondary">{line}</p>
+      {won2 ? (
+        <motion.div {...rise(0.4)} className="flex w-full flex-col gap-2.5">
+          {berryDefs.map((b) => (
+            <div key={b.id} className="flex items-center gap-2.5 rounded-2xl border border-white/[0.12] bg-white/[0.08] p-2.5">
+              <ItemIcon item={b} className="h-10 w-10 shrink-0" />
+              <span className="flex min-w-0 flex-col">
+                <span className="na-body-strong text-foreground">{b.name}</span>
+                <span className="na-caption text-text-secondary">{BAG_SHORT_DESC[b.id] ?? b.desc}</span>
+              </span>
+            </div>
+          ))}
+        </motion.div>
+      ) : (
+        !forfeitWon &&
+        !forfeitLost && (
+          <motion.div {...rise(0.4)} className="flex gap-[9px]">
+            <NaRewardTile tone="success" label="Accuracy" value={`${Math.round((right / PVP_QUESTIONS) * 100)}%`} icon={<NaRewardIcon kind="Accuracy" size={30} />} />
+            <NaRewardTile tone="info" label="Time" value={fmtClock(timeMs)} icon={<NaRewardIcon kind="Time" size={30} />} />
+          </motion.div>
+        )
+      )}
+      {won && arenaWins != null && (
+        <motion.div {...rise(0.5)} className="w-full">
+          <NaGlassRow
+            tone="gold"
+            lead={<NaIcon name="medal" size={36} />}
+            title={`Trainer Battles: ${Math.min(5, arenaWins)} of 5`}
+            sub={arenaWins >= 5 ? "All 5 Arena rewards unlocked! Collect them in the Arena." : `Win ${5 - arenaWins} more ${5 - arenaWins === 1 ? "battle" : "battles"} to unlock all 5 Arena rewards!`}
+          />
+        </motion.div>
+      )}
+      {missed.length > 0 && (
+        <motion.div {...rise(0.6)} className="w-full">
+          <NaGlassRow
+            lead={<NaIcon name="review" size={28} className="text-reward-gold" />}
+            title={`Review ${missed.length} missed ${missed.length === 1 ? "answer" : "answers"}`}
+            sub="Learn them for next time!"
+            onClick={() => setReviewOpen(true)}
+            trailing={<NaIcon name="chevron-right" size={18} className="text-text-muted" />}
+          />
+        </motion.div>
+      )}
       {friendPrompt}
-
-      <div className="btn-stack mx-auto mt-auto w-full max-w-sm pt-5">
-        {onRematch && (
-          <Button
-            size="action"
-            onClick={onRematch}
-            disabled={rematchBusy}
-            className="w-full bg-primary text-primary-foreground shadow-pop disabled:opacity-70"
-          >
-            {rematchBusy ? <Loader2 className="h-5 w-5 animate-spin" /> : "Rematch"}
-          </Button>
+      <div className="min-h-2 flex-1" />
+      {onRematch && (
+        <NaButton block disabled={rematchBusy} onClick={onRematch}>
+          {rematchBusy ? "Starting…" : won2 ? "Rematch" : "Battle again"}
+        </NaButton>
+      )}
+      {onShare && (
+        <NaButton kind="secondary" size="M" block onClick={onShare}>
+          Share
+        </NaButton>
+      )}
+      <div className="flex w-full gap-2.5">
+        {onChat && (
+          <NaButton kind="secondary" size="M" className="flex-1" onClick={onChat}>
+            Match chat
+          </NaButton>
         )}
-        <div className="flex gap-2">
-          <Button
-            size="action"
-            onClick={onBack}
-            className="flex-1 bg-primary text-primary-foreground shadow-pop"
-          >
-            Back to Arena
-          </Button>
-          {onChat && (
-            <Button
-              size="action"
-              variant="outline"
-              onClick={onChat}
-              // The outline variant carries `bg-background`, which is near-white
-              // in light mode — with `text-white` on top the label was invisible
-              // on this dark screen and the button read as blank (owner report
-              // 2026-07-26). The translucent fill is the same treatment Solo's
-              // defeat screen gives "Back home".
-              className="flex-1 border-2 border-white/30 bg-white/[0.04] text-white shadow-card hover:bg-white/10 hover:text-white"
-            >
-              Chat
-            </Button>
-          )}
-        </div>
+        <NaButton kind="text" size="M" className="flex-1" onClick={onBack}>
+          Home
+        </NaButton>
       </div>
+      {reviewOpen && <MistakesReview missed={missed} onClose={() => setReviewOpen(false)} />}
     </motion.div>
   );
 }

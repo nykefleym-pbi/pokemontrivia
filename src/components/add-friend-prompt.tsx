@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { UserPlus, Check } from "lucide-react";
+import { NaIcon } from "@/components/na/icon";
+import { NaButton } from "@/components/na/button";
 import { listFriends, listPendingRequestTargets, sendFriendRequestById } from "@/lib/social";
 
 /**
@@ -43,56 +44,42 @@ export function AddFriendPrompt({
 
   if (!opponentId || !eligible || dismissed) return null;
 
+  // Figma 15.5: a glass row with the add icon, the question, Add and ×.
   return (
-    <div className="mx-auto w-full max-w-sm rounded-[20px] border border-white/15 bg-white/[0.07] px-4 py-3">
-      <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10">
-          <UserPlus className="h-4 w-4 text-white" aria-hidden />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-bold text-white">
-            {sent ? `Request sent to ${opponentName}` : `Add ${opponentName} as a friend?`}
-          </div>
-          <div className="text-xs text-white/60">
-            {sent ? "They'll see it in their inbox." : "Battle them again any time."}
-          </div>
-        </div>
-        {sent ? (
-          <Check className="h-5 w-5 shrink-0 text-hp-good" aria-hidden />
-        ) : (
-          <div className="flex shrink-0 items-center gap-1.5">
-            <button
-              onClick={async () => {
-                if (busy) return;
-                setBusy(true);
-                const res = await sendFriendRequestById(opponentId);
-                setBusy(false);
-                if (res.error) {
-                  toast.error(res.error);
-                  return;
-                }
-                setSent(true);
-                toast.success(
-                  res.status === "accepted"
-                    ? `You and ${opponentName} are now friends!`
-                    : `Friend request sent to ${opponentName}`,
-                );
-              }}
-              disabled={busy}
-              className="h-8 rounded-full bg-white px-3 text-xs font-bold text-foreground transition press disabled:opacity-50"
-            >
-              Add
-            </button>
-            <button
-              aria-label="Not now"
-              onClick={() => setDismissed(true)}
-              className="h-8 rounded-full px-2 text-xs font-bold text-white/50 transition press"
-            >
-              Not now
-            </button>
-          </div>
-        )}
-      </div>
+    <div className="flex w-full items-center gap-3 rounded-[18px] border border-white/[0.12] bg-white/[0.08] px-3.5 py-3">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/[0.12] text-foreground">
+        {sent ? <NaIcon name="check" size={18} className="text-success" /> : <NaIcon name="user-plus" size={18} />}
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="na-headline truncate text-foreground">{sent ? `Request sent to ${opponentName}` : `Add ${opponentName} as a friend?`}</span>
+        <span className="na-caption text-text-secondary">{sent ? "They'll see it in their inbox." : "Battle again anytime!"}</span>
+      </span>
+      {!sent && (
+        <span className="flex shrink-0 items-center gap-1.5">
+          <NaButton
+            kind="secondary"
+            size="M"
+            disabled={busy}
+            onClick={async () => {
+              if (busy) return;
+              setBusy(true);
+              const res = await sendFriendRequestById(opponentId);
+              setBusy(false);
+              if (res.error) {
+                toast.error(res.error);
+                return;
+              }
+              setSent(true);
+              toast.success(res.status === "accepted" ? `You and ${opponentName} are now friends!` : `Friend request sent to ${opponentName}`);
+            }}
+          >
+            Add
+          </NaButton>
+          <button type="button" aria-label="Not now" onClick={() => setDismissed(true)} className="p-1 text-text-muted press">
+            <NaIcon name="x" size={18} />
+          </button>
+        </span>
+      )}
     </div>
   );
 }
