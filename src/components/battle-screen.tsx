@@ -290,13 +290,7 @@ function BattleMode({
   const enteredRef = useRef(false);
   const introTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const introName = isWeekly && gymLeader ? `Gym Leader ${gymLeader.name}` : enemy.name;
-  // shortcut: only Brock has the design's own intro art (public/trainers/intro, from the Figma plugin); add a leader's file there as the design draws them
-  const introArt =
-    isWeekly && gymLeader
-      ? gymLeader.id === "brock"
-        ? "/trainers/intro/brock.png"
-        : trainerSpriteUrl(gymLeader.trainerSpriteId)
-      : trainerArtFor(enemy.name);
+  const introArt = isWeekly && gymLeader ? trainerSpriteUrl(gymLeader.trainerSpriteId) : trainerArtFor(enemy.name);
   const [shakeWho, setShakeWho] = useState<"player" | "enemy" | null>(null);
   const [floatDmg, setFloatDmg] = useState<{
     who: "player" | "enemy";

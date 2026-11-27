@@ -602,7 +602,9 @@ export function NaIntroTrainer({ art, leaving, gym }: { art: string; leaving: bo
         className="absolute rounded-[50%] bg-night-deep/35"
         style={gym ? { left: 131, top: 368, width: 134, height: 18 } : { left: 140, top: 404, width: 110, height: 18 }}
       />
-      {art && (
+      {art && gym ? (
+        <GymLeaderArt art={art} />
+      ) : art ? (
         <img
           src={art}
           alt=""
@@ -610,8 +612,33 @@ export function NaIntroTrainer({ art, leaving, gym }: { art: string; leaving: bo
           className="absolute max-w-none [image-rendering:pixelated]"
           style={{ left: 75, top: 186, width: 240, height: 240 }}
         />
-      )}
+      ) : null}
     </div>
+  );
+}
+
+/**
+ * 10.1: the app's own leader art (owner rule: never the design's copy), its visible
+ * figure fitted to the one Figma draws: 152 tall, centred on x 198, feet at y 381.
+ */
+function GymLeaderArt({ art }: { art: string }) {
+  const tr = useTrim(art);
+  if (!tr) return null;
+  const t = tr.trim;
+  const k = 152 / t.h;
+  return (
+    <img
+      src={art}
+      alt=""
+      draggable={false}
+      className="absolute max-w-none [image-rendering:pixelated]"
+      style={{
+        left: 198 - (t.x + t.w / 2) * k,
+        top: 381 - (t.y + t.h) * k,
+        width: tr.img.naturalWidth * k,
+        height: tr.img.naturalHeight * k,
+      }}
+    />
   );
 }
 
