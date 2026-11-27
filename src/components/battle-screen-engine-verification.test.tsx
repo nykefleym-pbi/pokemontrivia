@@ -225,6 +225,8 @@ async function runDom(
     />,
   );
 
+  // A gym leader (10.1) waits for the player's tap.
+  if (gymLeader) fireEvent.click(screen.getByLabelText("Tap to start"));
   await act(async () => {
     await vi.advanceTimersByTimeAsync(isElite ? 5000 : 3000);
   });

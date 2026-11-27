@@ -290,7 +290,13 @@ function BattleMode({
   const enteredRef = useRef(false);
   const introTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const introName = isWeekly && gymLeader ? `Gym Leader ${gymLeader.name}` : enemy.name;
-  const introArt = isWeekly && gymLeader ? trainerSpriteUrl(gymLeader.trainerSpriteId) : trainerArtFor(enemy.name);
+  // shortcut: only Brock has the design's own intro art (public/trainers/intro, from the Figma plugin); add a leader's file there as the design draws them
+  const introArt =
+    isWeekly && gymLeader
+      ? gymLeader.id === "brock"
+        ? "/trainers/intro/brock.png"
+        : trainerSpriteUrl(gymLeader.trainerSpriteId)
+      : trainerArtFor(enemy.name);
   const [shakeWho, setShakeWho] = useState<"player" | "enemy" | null>(null);
   const [floatDmg, setFloatDmg] = useState<{
     who: "player" | "enemy";
@@ -563,7 +569,8 @@ function BattleMode({
     startBattle();
     if (!(isElite && eliteMember)) {
       // 3.1: the trainer alone for a moment (tap to skip), then the field fills in.
-      introTimerRef.current = setTimeout(enterField, 1200);
+      // 10.1: a gym leader waits for the tap (one challenge a week, so the player starts it).
+      if (!isWeekly) introTimerRef.current = setTimeout(enterField, 1200);
       return;
     }
     playSfx("elite_intro");
@@ -1356,7 +1363,6 @@ function BattleMode({
           rank: rankForLevel(level),
         });
         shareSet = true;
-        toast.success(`${gymLeader.badge} earned!`, { duration: 4500 });
       }
     }
 
@@ -1567,7 +1573,7 @@ function BattleMode({
           // gymBadges. This just tells the player it happened.
           badgeEarned={
             isWeekly && resultWon && gymLeader
-              ? { name: gymLeader.badge, iconUrl: gymLeader.badgeIconUrl }
+              ? { name: gymLeader.badge, iconUrl: gymLeader.badgeIconUrl, leader: gymLeader.name }
               : undefined
           }
           missed={missedRef.current}
@@ -1647,7 +1653,7 @@ function BattleMode({
           fxEls.stage = el;
         }}
       >
-        {trainerStage && <NaIntroTrainer art={introArt} leaving={false} />}
+        {trainerStage && <NaIntroTrainer art={introArt} leaving={false} gym={isWeekly} />}
         <FxCanvas ref={fxBack} />
         {!trainerStage && (
           <>
@@ -1763,8 +1769,14 @@ function BattleMode({
         />
       )}
       {trainerStage && (
-        <button type="button" aria-label="Skip" className="absolute inset-0 z-40" onClick={enterField}>
-          <NaIntroText name={introName} round={1} rounds={Math.max(1, Math.ceil(questions.length / QUESTIONS_PER_SET))} leaving={false} />
+        <button type="button" aria-label={isWeekly ? "Tap to start" : "Skip"} className="absolute inset-0 z-40" onClick={enterField}>
+          <NaIntroText
+            name={introName}
+            round={1}
+            rounds={Math.max(1, Math.ceil(questions.length / QUESTIONS_PER_SET))}
+            leaving={false}
+            gym={isWeekly && gymLeader ? { quote: gymLeader.quote, badge: gymLeader.badge, badgeUrl: gymLeader.badgeIconUrl } : undefined}
+          />
         </button>
       )}
       {catching && catchStage === "caught" && caughtRef.current && (

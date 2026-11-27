@@ -591,13 +591,17 @@ export const FxCanvas = React.forwardRef<HTMLCanvasElement>(function FxCanvas(_,
 
 // ------------------------------------------------------------------ 3.1 trainer intro
 /** The opponent alone in the middle of the field (inside the stage, 3 pt per pixel), on its shadow. */
-export function NaIntroTrainer({ art, leaving }: { art: string; leaving: boolean }) {
+export function NaIntroTrainer({ art, leaving, gym }: { art: string; leaving: boolean; gym?: boolean }) {
   return (
     <div
       className="pointer-events-none absolute inset-0 transition-[translate,opacity] duration-500 ease-in"
       style={{ translate: leaving ? "130px 0" : "0 0", opacity: leaving ? 0 : 1 }}
     >
-      <div className="absolute rounded-[50%] bg-night-deep/35" style={{ left: 140, top: 404, width: 110, height: 18 }} />
+      {/* 10.1: a gym leader kneels, so the shadow sits under his knee and boot */}
+      <div
+        className="absolute rounded-[50%] bg-night-deep/35"
+        style={gym ? { left: 131, top: 368, width: 134, height: 18 } : { left: 140, top: 404, width: 110, height: 18 }}
+      />
       {art && (
         <img
           src={art}
@@ -611,22 +615,47 @@ export function NaIntroTrainer({ art, leaving }: { art: string; leaving: boolean
   );
 }
 
-/** "PICNICKER JANINE wants to battle!", the round pill and TAP TO SKIP (screen coordinates). */
-export function NaIntroText({ name, round, rounds, leaving }: { name: string; round: number; rounds: number; leaving: boolean }) {
+/**
+ * "PICNICKER JANINE wants to battle!", the round pill and TAP TO SKIP (screen coordinates).
+ * 10.1, a gym leader: his line and the badge at stake instead of the round pill, and TAP TO START.
+ */
+export function NaIntroText({
+  name,
+  round,
+  rounds,
+  leaving,
+  gym,
+}: {
+  name: string;
+  round: number;
+  rounds: number;
+  leaving: boolean;
+  gym?: { quote: string; badge: string; badgeUrl: string };
+}) {
   return (
     <div className="pointer-events-none absolute inset-0 transition-opacity duration-300" style={{ opacity: leaving ? 0 : 1 }}>
       <div className="absolute left-4 top-[488px] flex w-[358px] flex-col items-center gap-2.5">
         <span className="na-display-l self-stretch text-center uppercase text-foreground">{name}</span>
         <span className="na-title self-stretch text-center text-text-secondary">wants to battle!</span>
-        <span className="flex items-center gap-2.5 rounded-full bg-white/[0.12] px-3.5 py-1.5">
-          <span className="na-label uppercase text-reward-gold">
-            Round {round} of {rounds}
+        {gym ? (
+          <>
+            <span className="na-body self-stretch text-center text-foreground">“{gym.quote}”</span>
+            <span className="flex items-center gap-1.5 rounded-full border border-reward-gold/50 bg-white/[0.12] py-[5px] pl-2 pr-3">
+              <img src={gym.badgeUrl} alt="" className="h-[18px] w-[18px] object-contain" />
+              <span className="na-label uppercase text-reward-gold">{gym.badge}</span>
+            </span>
+          </>
+        ) : (
+          <span className="flex items-center gap-2.5 rounded-full bg-white/[0.12] px-3.5 py-1.5">
+            <span className="na-label uppercase text-reward-gold">
+              Round {round} of {rounds}
+            </span>
+            <NaGlossIcon kind="pokeball" size={16} />
+            <span className="na-label uppercase text-text-secondary">1 Pokémon</span>
           </span>
-          <NaGlossIcon kind="pokeball" size={16} />
-          <span className="na-label uppercase text-text-secondary">1 Pokémon</span>
-        </span>
+        )}
       </div>
-      <span className="na-label absolute inset-x-0 bottom-[64px] text-center uppercase text-text-muted">Tap to skip</span>
+      <span className="na-label absolute inset-x-0 bottom-[64px] text-center uppercase text-text-muted">{gym ? "Tap to start" : "Tap to skip"}</span>
     </div>
   );
 }

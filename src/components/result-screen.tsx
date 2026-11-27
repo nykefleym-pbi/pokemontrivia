@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import { NaIcon } from "@/components/na/icon";
 import { NaRewardIcon } from "@/components/na/reward-icon";
 import { NaButton } from "@/components/na/button";
+import { NaGlossIcon } from "@/components/na/gloss-icon";
+import { GYM_LEADERS } from "@/lib/gym-leaders";
 import { NaCatchCard, NaGlassRow, NaRewardTile, NaWordmark, VictoryHero } from "@/components/na/celebration";
 import { SaveProgressSheet } from "@/components/save-progress-sheet";
 import { MistakesReview } from "@/components/mistakes-review";
@@ -63,7 +65,7 @@ export function ResultScreen({
    * Weekly League only: it is the whole point of the mode — one attempt a week,
    * and a badge you keep — and it was the one reward the screen never mentioned.
    */
-  badgeEarned?: { name: string; iconUrl: string };
+  badgeEarned?: { name: string; iconUrl: string; leader: string };
   missed: MissedAnswer[];
   /** First question to the end, for the Time tile. */
   durationMs?: number;
@@ -196,6 +198,35 @@ export function ResultScreen({
     );
   }
 
+  if (badgeEarned) {
+    return (
+      <>
+        <BadgeWon
+          badge={badgeEarned}
+          tiles={tiles}
+          coinsEarned={coinsEarned}
+          tpEarned={tpEarned}
+          canShare={canShare}
+          onShare={onShare}
+          onHome={() => leave(onBackHome)}
+        />
+        <SaveProgressSheet open={saveOpen} onOpenChange={setSaveOpen} />
+        {streakThen && (
+          <StreakSafe
+            days={dayStreak(battleLog).days}
+            week={weekWins(battleLog)}
+            today={(new Date().getUTCDay() + 6) % 7}
+            onContinue={() => {
+              const go = streakThen;
+              setStreakThen(null);
+              go();
+            }}
+          />
+        )}
+      </>
+    );
+  }
+
   return (
     // Figma 4.1 Victory (and 1.5 First win): thunder, then the rewards, then
     // what is next. One screen, no level bar: goals live on Home and Profile.
@@ -236,8 +267,6 @@ export function ResultScreen({
         )}
         {speedBonus > 0 && <span className="na-body-strong text-success">+{speedBonus} speed bonus</span>}
       </div>
-
-      {badgeEarned && <BadgeRow badge={badgeEarned} />}
 
       {caught && (
         <NaCatchCard
@@ -324,22 +353,102 @@ export function ResultScreen({
 }
 
 /**
- * The Gym Badge a Weekly League win earns: louder than the XP and coin rows,
- * because it is the only permanent reward here and the one the mode exists for.
+ * Figma 10.3 "Badge earned: the badge is the hero". The badge drops in spinning,
+ * slams down with a shake (0.4 s), then BADGE EARNED! slams in and the rewards
+ * rise (0.8 s). No rings or glow behind it (owner rule: no sunbursts).
  */
-function BadgeRow({ badge }: { badge: { name: string; iconUrl: string } }) {
+function BadgeWon({
+  badge,
+  tiles,
+  coinsEarned,
+  tpEarned,
+  canShare,
+  onShare,
+  onHome,
+}: {
+  badge: { name: string; iconUrl: string; leader: string };
+  tiles: ReactNode;
+  coinsEarned: number;
+  tpEarned: number;
+  canShare?: boolean;
+  onShare?: () => void;
+  onHome: () => void;
+}) {
+  const owned = useGameStore((s) => s.gymBadges.length);
+  const rise = (d: number) => ({ initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { delay: d, duration: 0.3 } });
   return (
-    <div className="mt-2 flex items-center gap-3 rounded-2xl border-2 border-poke-yellow/60 bg-poke-yellow/15 px-3 py-2">
-      <img
-        src={encodeURI(badge.iconUrl)}
-        alt={badge.name}
-        draggable={false}
-        className="h-11 w-11 shrink-0 object-contain drop-shadow"
-      />
-      <div className="min-w-0">
-        <div className="font-pixel-xs uppercase tracking-wide text-foreground/60">Badge earned</div>
-        <div className="truncate font-display-md leading-tight text-foreground">{badge.name}</div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="relative flex h-full w-full flex-col items-center gap-3 overflow-y-auto px-4 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-[calc(env(safe-area-inset-top)+16px)]"
+    >
+      {/* Figma scales the wordmark to the full width: its sparkles sit in the side gutters */}
+      <motion.div
+        className="-mx-4 flex w-[calc(100%+32px)] justify-center overflow-hidden"
+        initial={{ scale: 1.6, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: 0.8, type: "spring", stiffness: 420, damping: 16 }}
+      >
+        <NaWordmark kind="victory" size={47} className="shrink-0">
+          BADGE EARNED!
+        </NaWordmark>
+      </motion.div>
+      <div className="relative h-[150px] w-[300px] shrink-0">
+        <motion.img
+          src={encodeURI(badge.iconUrl)}
+          alt={badge.name}
+          draggable={false}
+          className="absolute left-[85px] top-0 h-[130px] w-[130px] object-contain"
+          initial={{ y: -140, rotate: -540, scale: 0.4, opacity: 0 }}
+          animate={{ y: 0, rotate: 0, scale: 1, opacity: 1, x: [0, 0, -6, 6, -3, 0] }}
+          transition={{ duration: 0.4, ease: "easeIn", x: { delay: 0.4, duration: 0.3, times: [0, 0, 0.25, 0.5, 0.75, 1] } }}
+        />
+        {[[34, 30, 22], [246, 16, 26], [258, 96, 16], [26, 104, 14]].map(([x, y, s], i) => (
+          <motion.span
+            key={i}
+            className="absolute text-reward-gold"
+            style={{ left: x, top: y }}
+            initial={{ opacity: 0, scale: 0.4 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.45 + i * 0.06 }}
+          >
+            <NaIcon name="sparkle" size={s} />
+          </motion.span>
+        ))}
       </div>
-    </div>
+      <motion.p {...rise(0.9)} className="na-body-strong text-center text-text-secondary">
+        You defeated {badge.leader} and earned the {badge.name}!
+      </motion.p>
+      <motion.div {...rise(0.95)}>{tiles}</motion.div>
+      <motion.div {...rise(1)} className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+        {coinsEarned > 0 && (
+          <span className="na-body-strong flex items-center gap-1.5 text-foreground">
+            <NaRewardIcon kind="Coin" size={24} /> +{coinsEarned} coins
+          </span>
+        )}
+        {tpEarned > 0 && (
+          <span className="na-body-strong flex items-center gap-1.5 text-foreground">
+            <NaRewardIcon kind="TP" size={24} /> +{tpEarned} Training Points
+          </span>
+        )}
+      </motion.div>
+      <motion.div {...rise(1.05)} className="flex w-full flex-col gap-3">
+        <NaGlassRow
+          lead={<img src={encodeURI(badge.iconUrl)} alt="" className="h-9 w-9 object-contain" />}
+          title={owned <= 1 ? "Your first Gym Badge!" : "Another Gym Badge!"}
+          sub={`${owned}/${GYM_LEADERS.length} collected · View all in Profile > Badges`}
+        />
+        <NaGlassRow lead={<NaGlossIcon kind="calendar" size={30} />} title="A new gym opens Monday" sub="One challenge per week. Make it count!" />
+      </motion.div>
+      <div className="min-h-2 flex-1" />
+      <NaButton block onClick={onHome}>
+        Let&apos;s go!
+      </NaButton>
+      {canShare && onShare && (
+        <NaButton kind="secondary" size="M" block onClick={onShare}>
+          Share
+        </NaButton>
+      )}
+    </motion.div>
   );
 }

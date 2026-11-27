@@ -209,6 +209,8 @@ async function runBattle(abilityId: AbilityId | null, script: Action[], opts: Ru
   // Intro sequencing (banner -> reveal partner -> loadQuestion(0)) resolves
   // by ~2800ms for a regular battle, ~4900ms for an Elite Four battle (its
   // introDelay is 3600ms, not 1500ms).
+  // A gym leader (10.1) waits for the player's tap.
+  if (opts.gymLeader) fireEvent.click(screen.getByLabelText("Tap to start"));
   await act(async () => {
     await vi.advanceTimersByTimeAsync(opts.eliteMember ? 5000 : 3000);
   });
