@@ -1,14 +1,14 @@
-import { useEffect, useState, type ReactNode } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { ChevronRight } from "lucide-react";
 import { playSfx } from "@/lib/audio";
-import { ITEMS, trainerSpriteUrl, rankForLevel } from "@/lib/game-data";
-import { ItemIcon, SpriteBurst } from "@/components/game-ui";
-import { FallingBits } from "@/components/falling-bits";
-import { AppIcon } from "@/components/app-icon";
-import { UI_ICON, COIN_ICON, RESULT_ICON, LEVEL_PLAQUE_ICON } from "@/lib/app-icons";
-import { RESULT_ART, LEVEL_PLAQUE, plaqueWidth, trimmedArtStyles } from "@/lib/result-art";
+import { ITEMS, rankForLevel, trainerSpriteUrl, xpForLevel } from "@/lib/game-data";
 import { useGameStore } from "@/lib/store";
+import { ShareCardDialog } from "@/components/share-card-dialog";
+import { ItemIcon } from "@/components/game-ui";
+import { NaButton } from "@/components/na/button";
+import { NaConfetti, NaLevelBadge, NaWordmark } from "@/components/na/celebration";
+import { NaRewardIcon } from "@/components/na/reward-icon";
 import type { LevelUpRewards } from "@/lib/level-rewards";
 
 interface Props {
@@ -16,441 +16,176 @@ interface Props {
   onContinue: () => void;
 }
 
+/** The leagues the trainer level opens (rankForLevel): the next one and how far along you are. */
+const LEAGUES: Array<[number, string]> = [
+  [6, "Great League"],
+  [16, "Ultra League"],
+  [26, "Master League"],
+  [51, "Monarch rank"],
+];
+
+function rewardLine(r: LevelUpRewards): string {
+  const parts: string[] = [];
+  if (r.coins > 0) parts.push(`+${r.coins} coins`);
+  for (const it of r.items) parts.push(it.qty > 1 ? `${it.qty} ${it.name}s` : `${/^[aeiou]/i.test(it.name) ? "an" : "a"} ${it.name}`);
+  if (r.eggs > 0) parts.push(r.eggs > 1 ? `${r.eggs} Poké Eggs` : "a Poké Egg");
+  if (parts.length < 2) return parts.join("");
+  return parts.length === 2 ? parts.join(" and ") : `${parts.slice(0, -1).join(", ")}, and ${parts[parts.length - 1]}`;
+}
+
 /**
- * Full-screen "you leveled up" celebration — Level belongs to the TRAINER
- * (not the partner Pokémon, which owns Training Points instead), so this
- * shows the trainer sprite, not a PokemonSprite. Shown once the player
- * returns to the battle hub after earning the level-up (see WORKLIST /
- * battle.tsx: gated on `phase === "home"` so Rematch chains never get
- * interrupted — only leaving to the hub triggers it).
+ * Figma 4.4 "Level up: a badge you earned, and what it unlocks". The trainer
+ * level lives in a gold badge with one side per level. Level N-1 shrinks,
+ * shakes and bursts into gold pieces; Level N scales in past full size and
+ * confetti falls; then the rewards rise into the card. Shown when the player
+ * returns to the battle hub (battle.tsx gates it on phase "home").
+ * shortcut: Share uses the trainer card (new level and rank) until row 9 brings a level-up story card.
  */
 export function LevelUpScreen({ rewards, onContinue }: Props) {
-  const trainerName = useGameStore((s) => s.trainerName);
-  const trainerSprite = useGameStore((s) => s.trainerSprite);
-  const oldRank = rankForLevel(rewards.fromLevel);
-  const newRank = rankForLevel(rewards.toLevel);
-  const rankedUp = newRank !== oldRank;
-
-  const [step, setStep] = useState(0);
   useEffect(() => {
     playSfx("level");
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    timers.push(setTimeout(() => setStep(1), 300)); // trainer + level number
-    timers.push(
-      setTimeout(
-        () => {
-          setStep(2); // rank-up banner (if any)
-          if (rankedUp) playSfx("claim_reward");
-        },
-        rankedUp ? 900 : 600,
-      ),
-    );
-    timers.push(
-      setTimeout(
-        () => {
-          setStep(3); // rewards
-          playSfx("reward");
-        },
-        rankedUp ? 1500 : 1000,
-      ),
-    );
-    timers.push(setTimeout(() => setStep(4), (rankedUp ? 1500 : 1000) + 500)); // continue button
-    return () => timers.forEach(clearTimeout);
-  }, [rankedUp]);
+    const t = setTimeout(() => playSfx("reward"), 1700);
+    return () => clearTimeout(t);
+  }, []);
 
-  // Tap anywhere to skip straight to the final state.
-  function skipToEnd() {
-    setStep(4);
-  }
-
-  const chips = rewardChips(rewards);
+  const lv = rewards.toLevel;
+  const prev = LEAGUES.filter(([at]) => at <= lv).pop();
+  const next = LEAGUES.find(([at]) => at > lv);
+  const reached = prev && prev[0] > rewards.fromLevel;
+  const from = prev?.[0] ?? 1;
+  // How far along the XP road to the next league, as Figma's meter.
+  const xpTo = (a: number, b: number) => Array.from({ length: Math.max(0, b - a) }, (_, i) => xpForLevel(a + i)).reduce((x, y) => x + y, 0);
+  const pct = next ? Math.max(0.04, xpTo(from, lv) / xpTo(from, next[0])) : 1;
+  const [shareOpen, setShareOpen] = useState(false);
+  const s = useGameStore();
 
   return (
-    <div
-      // `overflow-hidden`, and every band below sized so nothing needs to
-      // scroll. The previous version centred a taller-than-viewport column in a
-      // scroll box, which does not merely add a scrollbar: a flex container
-      // centring overflowing content pushes the overflow out of BOTH ends and
-      // the top is unreachable, so the wordmark's "AMAZING!" ribbon was cut off
-      // and could not be scrolled back into view.
-      // The news — wordmark, trainer, level change, rank, rewards — is ONE
-      // group, stacked tight; only the button is pushed away, by `mt-auto` on
-      // its own band. Spreading the slack evenly (`justify-between`) gave every
-      // band the same gap and left the plaques and the rewards floating a long
-      // way from the sprite they belong with; the eye reads five separate
-      // things instead of one event.
-      //
-      // Safe here in a way centring was not: content cannot exceed the
-      // viewport, because the trainer band shrinks first (see below).
-      className="screen-top screen-bottom screen-x fixed inset-0 z-[110] flex flex-col items-center gap-2 overflow-hidden"
-      style={{
-        background:
-          "radial-gradient(circle at 50% 34%, oklch(0.42 0.09 265) 0%, oklch(0.24 0.06 265) 52%, oklch(0.16 0.04 265) 100%)",
-      }}
-      onClick={skipToEnd}
-    >
-      <FallingBits won />
-
-      <AnimatePresence>
-        {step >= 1 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="relative z-10 flex w-full shrink-0 flex-col items-center text-center"
-          >
-            <LevelUpWordmark />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Shrink-only: basis 9.5rem, grow 0, shrink 1.
-          `flex-1` here meant the trainer ate ALL the leftover height on a tall
-          phone — the sprite stayed at its cap and sat marooned in a band half
-          again its own size, with a gulf above and below it. Growth is what had
-          to go, not the shrinking: `min-h-0` still lets this collapse on a
-          short phone (a flex item's min-height defaults to `auto` and would
-          otherwise refuse to go below the image), so the trainer is still what
-          gives way rather than the button falling off the bottom. The slack it
-          no longer takes goes to the spacer below the plaques. */}
-      <div className="relative z-10 flex min-h-0 w-full flex-[0_1_11rem] items-center justify-center">
-        <AnimatePresence>
-          {step >= 1 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              // Square, sized off its own height so the burst stays circular at
-              // any viewport.
-              //
-              // The trainer is WHO levelled up, not WHAT the screen is about —
-              // given its head it was the largest thing here and the plaques,
-              // which carry the actual news, read as a footnote under it.
-              className="relative h-full max-w-full"
-              style={{ aspectRatio: "1" }}
-            >
-              {/* The burst is a positioned sibling of the sprite, so it needs an
-                  explicit negative z to sit BEHIND it — positioned elements paint
-                  above non-positioned in-flow content otherwise. */}
-              <div className="absolute inset-0 -z-10">
-                <SpriteBurst tint="rgba(255,206,94,0.5)" />
-              </div>
-              <img
-                src={trainerSpriteUrl(trainerSprite)}
-                alt={trainerName}
-                className="sprite relative h-full w-full object-contain drop-shadow-2xl"
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+    <div className="na-bg-night fixed inset-0 z-[110] flex flex-col items-center gap-4 overflow-hidden px-5 pb-[calc(env(safe-area-inset-bottom)+24px)] pt-[calc(env(safe-area-inset-top)+24px)]">
+      {/* Figma confetti covers the top 520 of the phone, status bar included. */}
+      <div className="pointer-events-none absolute left-1/2 top-[calc(env(safe-area-inset-top)-47px)] -translate-x-1/2">
+        <NaConfetti w={390} h={520} n={46} delay={0.8} />
       </div>
 
-      <AnimatePresence>
-        {step >= 1 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="relative z-10 flex w-full shrink-0 flex-col items-center text-center"
-          >
-            {/* Negative gaps, deliberately: each plaque carries its own glow out
-                to the edge of its box, so touching boxes read as a comfortable
-                gap and a real gap reads as a chasm. */}
-            <div className="mt-0.5 flex items-center justify-center">
-              <LevelPlaque kind="from" level={rewards.fromLevel} />
-              <motion.img
-                aria-hidden
-                src={encodeURI(LEVEL_PLAQUE_ICON.arrow)}
-                alt=""
-                draggable={false}
-                animate={{ x: [0, 5, 0] }}
-                transition={{ duration: 1.2, repeat: Infinity }}
-                className="relative z-10 -mx-3 w-[66px] shrink-0 select-none"
-              />
-              <LevelPlaque kind="to" level={rewards.toLevel} highlight />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+        <NaWordmark kind="levelup">LEVEL UP!</NaWordmark>
+      </motion.div>
 
-      <AnimatePresence>
-        {step >= 2 && rankedUp && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.85 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: "spring", stiffness: 200 }}
-            className="relative z-10 shrink-0 rounded-full bg-poke-dark px-4 py-1.5 text-center shadow-float"
-          >
-            <div className="flex items-center justify-center gap-1.5 font-pixel-xs uppercase tracking-wide text-poke-yellow">
-              <AppIcon src={UI_ICON.badges} className="h-3.5 w-3.5" />
-              New Rank Unlocked
-            </div>
-            <div className="text-base font-extrabold leading-tight text-white">{newRank}</div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {step >= 3 && chips.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="relative z-10 w-full max-w-xs shrink-0 rounded-3xl border-2 border-white bg-card px-3 py-2 shadow-float"
-          >
-            <div className="text-center font-pixel-xs uppercase text-foreground/50">Rewards</div>
-            <div className="mt-1.5 flex items-end justify-center gap-3">
-              {chips.map((c, i) => (
-                <RewardChip key={c.key} index={i} icon={c.icon} qty={c.qty} label={c.label} />
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {step >= 4 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="relative z-10 mt-auto w-full max-w-xs shrink-0 pt-3"
-          >
-            <Button
-              size="action"
-              onClick={(e) => {
-                e.stopPropagation();
-                onContinue();
-              }}
-              className="w-full border-2 border-white bg-primary text-primary-foreground shadow-float"
-            >
-              Continue
-            </Button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-/** At most this many reward chips before the tail collapses into a "+N". */
-const MAX_CHIPS = 5;
-
-interface Chip {
-  key: string;
-  icon: ReactNode;
-  qty: number;
-  label: string;
-}
-
-/**
- * The level-up haul as one row of art, rather than a stacked list of labelled
- * rows.
- *
- * The list version cost a line of height per grant and was the difference
- * between this screen fitting a phone and not — with a rank-up banner and two
- * items it pushed Continue off the bottom. Icon plus quantity says the same
- * thing in a fifth of the space, and the art is already there.
- *
- * The name survives as the chip's accessible label and tooltip, so what is lost
- * is only the width, not the information.
- */
-function rewardChips(rewards: LevelUpRewards): Chip[] {
-  const all: Chip[] = [];
-  if (rewards.coins > 0) {
-    all.push({
-      key: "coins",
-      icon: <AppIcon src={COIN_ICON} className="h-8 w-8" />,
-      qty: rewards.coins,
-      label: "Coins",
-    });
-  }
-  for (const it of rewards.items) {
-    const def = ITEMS.find((x) => x.id === it.id);
-    all.push({
-      key: it.id,
-      // `def` always resolves for a real granted id; the undefined arm is just
-      // belt-and-braces for an unknown one. The `fallback` is NOT belt-and-
-      // braces: without a label beside it, an item whose sprite 404s would be
-      // an empty tile and a bare "+1".
-      icon: def ? (
-        <ItemIcon item={def} className="h-8 w-8" fallback={<Initials name={it.name} />} />
-      ) : (
-        <Initials name={it.name} />
-      ),
-      qty: it.qty,
-      label: it.name,
-    });
-  }
-  if (rewards.eggs > 0) {
-    all.push({
-      key: "eggs",
-      icon: <AppIcon src={UI_ICON.pokeEgg} className="h-8 w-8" />,
-      qty: rewards.eggs,
-      label: `Poké Egg${rewards.eggs > 1 ? "s" : ""}`,
-    });
-  }
-  if (all.length <= MAX_CHIPS) return all;
-  // One row is the point, so an unusually generous level collapses its tail
-  // rather than wrapping onto a second one.
-  const shown = all.slice(0, MAX_CHIPS - 1);
-  const rest = all.slice(MAX_CHIPS - 1);
-  shown.push({
-    key: "more",
-    icon: <span className="font-display-md text-foreground/60">+{rest.length}</span>,
-    qty: rest.reduce((n, c) => n + c.qty, 0),
-    label: rest.map((c) => c.label).join(", "),
-  });
-  return shown;
-}
-
-/** Last resort when an item has no art: two letters beat an empty tile. */
-function Initials({ name }: { name: string }) {
-  const letters = name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? "")
-    .join("");
-  return <span className="text-sm font-extrabold text-foreground/70">{letters}</span>;
-}
-
-function RewardChip({
-  index,
-  icon,
-  qty,
-  label,
-}: {
-  index: number;
-  icon: ReactNode;
-  qty: number;
-  label: string;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.7 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: index * 0.12 }}
-      className="flex flex-col items-center gap-0.5"
-      title={`+${qty} ${label}`}
-      aria-label={`+${qty} ${label}`}
-    >
-      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-poke-yellow/15">
-        {icon}
+      <div className="relative h-[200px] w-[320px] shrink-0">
+        {/* Level N-1: shrinks to 90%, shakes harder and harder, bursts. */}
+        <motion.div
+          className="absolute left-2 top-[74px]"
+          initial={{ scale: 1, rotate: 0, opacity: 0.7 }}
+          animate={{
+            scale: [1, 0.9, 0.9, 0.9, 0.9, 1.25],
+            rotate: [0, 0, -6, 7, -9, 0],
+            opacity: [0.7, 0.7, 0.7, 0.7, 0.7, 0],
+          }}
+          transition={{ duration: 0.65, times: [0, 0.3, 0.45, 0.6, 0.8, 1] }}
+        >
+          <NaLevelBadge level={rewards.fromLevel} size={64} />
+        </motion.div>
+        {/* The burst: gold pieces fly out where Level N-1 was. */}
+        {[[-38, -30, 30], [36, -34, -40], [-40, 30, 60], [38, 32, -20], [0, -44, 10], [2, 42, 80]].map(([dx, dy, r], i) => (
+          <motion.span
+            key={i}
+            aria-hidden
+            className="na-fill-gold absolute left-[35px] top-[99px] h-3.5 w-2.5 rounded-sm"
+            initial={{ x: 0, y: 0, opacity: 0, rotate: 0 }}
+            animate={{ x: dx, y: dy, opacity: [0, 1, 0], rotate: r }}
+            transition={{ delay: 0.6, duration: 0.5, ease: "easeOut" }}
+          />
+        ))}
+        {/* Level N-1 comes back, small and dim, as the "from" of the pair. */}
+        <motion.div className="absolute left-2 top-[74px]" initial={{ opacity: 0 }} animate={{ opacity: 0.7 }} transition={{ delay: 1.2 }}>
+          <NaLevelBadge level={rewards.fromLevel} size={64} />
+        </motion.div>
+        <motion.div
+          className="absolute left-[80px] top-[94px] flex"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.2 }}
+        >
+          <ChevronRight className="-mr-2.5 h-[26px] w-[26px] text-reward-gold" strokeWidth={3} />
+          <ChevronRight className="h-[26px] w-[26px] text-reward-gold" strokeWidth={3} />
+        </motion.div>
+        <motion.div
+          className="absolute left-[140px] top-[22px]"
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: [0, 1.15, 1], opacity: 1 }}
+          transition={{ delay: 0.8, duration: 0.5, times: [0, 0.65, 1] }}
+        >
+          <NaLevelBadge level={lv} size={150} />
+        </motion.div>
       </div>
-      <span className="text-xs font-extrabold text-foreground">+{qty}</span>
-    </motion.div>
-  );
-}
 
-/**
- * The "LEVEL UP!" art, drawn at its visible height.
- *
- * Same wrapper/negative-margin pair as the result screen's outcome wordmarks —
- * see `trimmedArtStyles`, which explains why the negative margin cannot go
- * straight on the <img>. The old pixel eyebrow stays as the `onError` arm so a
- * missing or 404ing file degrades to text rather than to a broken image.
- */
-function LevelUpWordmark() {
-  const [failed, setFailed] = useState(false);
-  const s = trimmedArtStyles(RESULT_ART.levelUp);
-  if (failed) {
-    return (
-      <div className="font-pixel-xs uppercase tracking-[0.3em] text-poke-yellow">Level Up!</div>
-    );
-  }
-  return (
-    <div className="relative w-full max-w-[300px]" style={s.wrapper}>
-      <img
-        src={encodeURI(RESULT_ICON.levelUp)}
-        alt="Level up!"
-        draggable={false}
-        onError={() => setFailed(true)}
-        className="absolute left-0 top-0 w-full select-none"
-        style={s.image}
-      />
-    </div>
-  );
-}
-
-/** The shield BODY's width on screen at scale 1. Both plaques derive from it. */
-const PLAQUE_BODY = 66;
-
-/**
- * How big each plaque is relative to the other.
- *
- * The gap is the point: this is a before-and-after, and a pair drawn the same
- * size states two facts instead of showing one becoming the other. The old
- * level is drawn down and the new one up, so the growth is visible without a
- * word of copy.
- *
- * ONE scale drives both the shield and its number, so "the grey container is
- * smaller" and "its number is smaller" cannot drift apart — which they would
- * the moment either was tuned on its own.
- */
-const PLAQUE_SCALE = { from: 0.8, to: 1.18 } as const;
-
-/**
- * One level number on its supplied shield plaque — silver for the level you
- * left, gold for the one you reached.
- *
- * Sized by `plaqueWidth` rather than by a flat width, because the two files
- * carry differently-sized glows: given the same box the gold shield's body
- * comes out a fifth smaller than the silver one, which would cancel out the
- * growth the pair exists to show. Sizing each file by its own measured body
- * makes PLAQUE_SCALE mean what it says.
- *
- * The label is positioned against `centreY`, not centred in the box: a shield
- * tapers to a point, so its lower half is mostly empty and text on the
- * geometric middle sits visibly low.
- */
-function LevelPlaque({
-  kind,
-  level,
-  highlight = false,
-}: {
-  kind: "from" | "to";
-  level: number;
-  highlight?: boolean;
-}) {
-  const body = PLAQUE_BODY * PLAQUE_SCALE[kind];
-  const w = plaqueWidth(kind, body);
-  return (
-    <motion.div
-      initial={highlight ? { scale: 0.6, opacity: 0 } : false}
-      animate={highlight ? { scale: 1, opacity: 1 } : undefined}
-      transition={{ type: "spring", stiffness: 260, damping: 14, delay: 0.25 }}
-      className="relative shrink-0"
-      style={{ width: w }}
-    >
-      <img
-        src={encodeURI(LEVEL_PLAQUE_ICON[kind])}
-        alt=""
-        aria-hidden
-        draggable={false}
-        className="block w-full select-none"
-      />
-      {/* The label box IS the shield's plate, and the label centres inside it.
-          Positioning the text at a tuned offset instead was what made "LV 2"
-          sit high — the gold plate is shorter than the silver one, so one
-          offset cannot serve both. */}
-      <div
-        className="absolute inset-x-0 flex flex-col items-center justify-center leading-none"
-        style={{
-          top: `${LEVEL_PLAQUE[kind].faceTop * 100}%`,
-          height: `${(LEVEL_PLAQUE[kind].faceBottom - LEVEL_PLAQUE[kind].faceTop) * 100}%`,
-        }}
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.7, duration: 0.35 }}
+        className="na-glass flex w-full flex-col gap-3 rounded-[20px] p-4"
       >
-        <span
-          className={`font-pixel-xs uppercase ${highlight ? "text-white/75" : "text-white/45"}`}
-          style={{ fontSize: Math.max(7, Math.round(body * 0.14)) }}
-        >
-          Lv
-        </span>
-        <span
-          className="mt-1 font-display-lg text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.55)]"
-          // Scaled off the BODY, not the file: the gold plaque's box is wider
-          // for the same shield, so a font size taken from the box would print
-          // the new level larger than the old one for no reason.
-          style={{ fontSize: Math.round(body * (level >= 100 ? 0.36 : 0.46)) }}
-        >
-          {level}
-        </span>
+        <span className="na-label uppercase text-text-secondary">Level-up rewards</span>
+        <div className="flex items-center gap-2.5">
+          {rewards.coins > 0 && (
+            <span className="shrink-0">
+              <NaRewardIcon kind="Coin" size={32} />
+            </span>
+          )}
+          {rewards.items.slice(0, 2).map((it) => {
+            const def = ITEMS.find((x) => x.id === it.id);
+            return def ? <ItemIcon key={it.id} item={def} className="h-8 w-8 shrink-0" /> : null;
+          })}
+          {rewards.eggs > 0 && <NaRewardIcon kind="Egg" size={32} />}
+          <span className="na-body-strong text-foreground">{rewardLine(rewards)}</span>
+        </div>
+        {(next || reached) && (
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-2.5">
+              <span className="shrink-0">
+                <NaRewardIcon kind="Trophy" size={32} />
+              </span>
+              <span className="na-body-strong text-foreground">
+                {reached
+                  ? `You reached the ${prev![1]}! Face tougher questions and earn bigger rewards.`
+                  : `${next![1]} unlocks at Level ${next![0]}! Face tougher questions and earn bigger rewards.`}
+              </span>
+            </div>
+            {next && !reached && (
+              <span className="relative h-2 overflow-hidden rounded bg-night-deep">
+                <span className="na-fill-gold absolute inset-y-0 left-0 rounded" style={{ width: `${pct * 100}%` }} />
+              </span>
+            )}
+          </div>
+        )}
+      </motion.div>
+
+      <div className="min-h-2 flex-1" />
+      <div className="flex w-full flex-col gap-4">
+        <NaButton block onClick={onContinue}>
+          Let&apos;s go!
+        </NaButton>
+        <NaButton kind="secondary" size="M" block onClick={() => setShareOpen(true)}>
+          Share
+        </NaButton>
       </div>
-    </motion.div>
+      <ShareCardDialog
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        data={{
+          type: "trainer-card",
+          trainerName: s.trainerName || "Trainer",
+          trainerSpriteUrl: trainerSpriteUrl(s.trainerSprite),
+          level: lv,
+          rank: rankForLevel(lv),
+          friendCode: s.friendCode ?? "------",
+          pokedexCount: Object.keys(s.pokedex).length,
+          wins: s.stats.wins,
+          bestStreak: s.stats.bestStreak,
+          acePokemonId: s.pokemon?.id ?? 0,
+          aceShiny: false,
+          dateISO: new Date().toISOString().slice(0, 10),
+        }}
+      />
+    </div>
   );
 }

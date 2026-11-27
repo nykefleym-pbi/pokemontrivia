@@ -59,6 +59,115 @@ export function NaWordmark({
   );
 }
 
+/**
+ * Figma 4.4 level badge (plugin levelBadge): one side per level — a circle for
+ * Levels 1 and 2, then triangle, square, pentagon… White rim, orange inner rim,
+ * gold face set 2.2 low, a lighter raised centre and a gloss up-left.
+ */
+export function NaLevelBadge({ level, size }: { level: number; size: number }) {
+  const shape = (r: number, props: React.SVGProps<SVGElement>) => {
+    if (level < 3) return <circle cx={50} cy={50} r={r} {...(props as React.SVGProps<SVGCircleElement>)} />;
+    const a0 = -Math.PI / 2 + (level === 4 ? Math.PI / 4 : 0);
+    const pts = Array.from({ length: level }, (_, i) => {
+      const a = a0 + (i * 2 * Math.PI) / level;
+      return `${(50 + r * Math.cos(a)).toFixed(1)},${(50 + r * Math.sin(a)).toFixed(1)}`;
+    }).join(" ");
+    return <polygon points={pts} {...(props as React.SVGProps<SVGPolygonElement>)} />;
+  };
+  const tri = level === 3;
+  const id = React.useId().replace(/:/g, "");
+  const fsz = Math.round(size * (tri ? 0.26 : 0.38));
+  const sw = Math.max(1, size / 60);
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }} aria-label={`Level ${level}`}>
+      <svg
+        viewBox="0 0 100 100"
+        width={size}
+        height={size}
+        aria-hidden
+        className="absolute inset-0 overflow-visible"
+        style={{ filter: `drop-shadow(0 0 ${Math.round(size * 0.07)}px rgb(255 255 255 / 0.55)) drop-shadow(0 ${Math.round(size * 0.04)}px ${Math.round(size * 0.03)}px rgb(10 15 38 / 0.35))` }}
+      >
+        <defs>
+          <linearGradient id={`g${id}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#FFD84D" />
+            <stop offset="1" stopColor="#F5A000" />
+          </linearGradient>
+          <linearGradient id={`c${id}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#FFEC9A" />
+            <stop offset="1" stopColor="#FFC21F" />
+          </linearGradient>
+        </defs>
+        {shape(44, { fill: "#FFFFFF", stroke: "#FFFFFF", strokeWidth: 5, strokeLinejoin: "round" })}
+        {shape(40, { fill: "#E07F00", stroke: "#E07F00", strokeWidth: 2, strokeLinejoin: "round" })}
+        <g transform="translate(0 2.2)">{shape(37, { fill: `url(#g${id})`, strokeLinejoin: "round" })}</g>
+        <g transform="translate(0 2.2)">
+          {shape(tri ? 23 : 28, { fill: `url(#c${id})`, stroke: "#FFE27A", strokeWidth: 1.5, strokeLinejoin: "round" })}
+        </g>
+        <ellipse
+          cx={tri ? 46 : 38}
+          cy={tri ? 46 : 30}
+          rx={tri ? 7 : 12}
+          ry={tri ? 3 : 5}
+          transform={`rotate(-28 ${tri ? 46 : 38} ${tri ? 46 : 30})`}
+          fill="#FFFFFF"
+          fillOpacity={0.7}
+        />
+      </svg>
+      <span
+        className="absolute inset-x-0 grid place-items-center"
+        style={{
+          top: (2.2 * size) / 100,
+          bottom: 0,
+          fontFamily: "var(--font-lilita)",
+          fontSize: fsz,
+          lineHeight: `${Math.round(fsz * 1.1)}px`,
+          filter: `drop-shadow(0 ${Math.max(1, Math.round(size / 50))}px ${Math.max(1, Math.round(size / 80))}px rgb(153 77 0 / 0.45))`,
+        }}
+      >
+        <span aria-hidden className="[grid-area:1/1]" style={{ color: "#d98000", WebkitTextStroke: `${sw * 2}px #d98000` }}>
+          {level}
+        </span>
+        <span className="[grid-area:1/1] text-white">{level}</span>
+      </span>
+    </div>
+  );
+}
+
+/** Confetti falling from the top of a w x h area (plugin confetti()): kit colours, fewer and fainter lower down. */
+export function NaConfetti({ w, h, n = 40, delay = 0 }: { w: number; h: number; n?: number; delay?: number }) {
+  const pieces = React.useMemo(() => {
+    const cols = ["#FFC83D", "#FF3B4E", "#5B8CFF", "#2EE59D", "#F4F6FF"];
+    let r = 11;
+    const rnd = () => {
+      r = (r * 9301 + 49297) % 233280;
+      return r / 233280;
+    };
+    return Array.from({ length: n }, (_, i) => {
+      const y = Math.pow(rnd(), 1.6) * h;
+      const pw = 5 + rnd() * 4;
+      const ph = 9 + rnd() * 5;
+      const x = rnd() * (w - 12);
+      const rot = rnd() * 180 - 90;
+      return { x, y, pw, ph, rot, c: cols[i % cols.length], o: 1 - (y / h) * 0.6 };
+    });
+  }, [w, h, n]);
+  return (
+    <div aria-hidden className="pointer-events-none absolute left-0 top-0 overflow-hidden" style={{ width: w, height: h }}>
+      {pieces.map((p, i) => (
+        <motion.span
+          key={i}
+          className="absolute rounded-[1.5px]"
+          style={{ left: p.x, top: p.y, width: p.pw, height: p.ph, background: p.c }}
+          initial={{ y: -p.y - 30, opacity: 0, rotate: p.rot - 120 }}
+          animate={{ y: 0, opacity: p.o, rotate: p.rot }}
+          transition={{ delay: delay + (i % 12) * 0.03, duration: 0.9 + (p.y / h) * 0.7, ease: "easeOut" }}
+        />
+      ))}
+    </div>
+  );
+}
+
 /** The gold bolt from the Figma "Thunder" hero (64 x 96 viewBox). */
 export function NaBolt({ className, style }: { className?: string; style?: React.CSSProperties }) {
   return (

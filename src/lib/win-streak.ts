@@ -53,11 +53,23 @@ export function currentWinStreak(log: readonly BattleLogEntry[]): number {
  * today is won: `secured` says today already counts.
  * shortcut: reads the last 300 log entries; a longer streak undercounts.
  */
-export function dayStreak(log: readonly BattleLogEntry[], now = Date.now()): { days: number; secured: boolean } {
+function winDays(log: readonly BattleLogEntry[]): Set<string> {
   const won = new Set<string>();
   for (const e of log) {
     if (e.won && (e.mode === undefined || BATTLE_MODES.has(e.mode))) won.add(new Date(e.timestamp).toISOString().slice(0, 10));
   }
+  return won;
+}
+
+/** This week, Monday first (4.2 day dots): whether each day has a battle won. */
+export function weekWins(log: readonly BattleLogEntry[], now = Date.now()): boolean[] {
+  const won = winDays(log);
+  const dow = (new Date(now).getUTCDay() + 6) % 7;
+  return Array.from({ length: 7 }, (_, i) => won.has(new Date(now + (i - dow) * 86_400_000).toISOString().slice(0, 10)));
+}
+
+export function dayStreak(log: readonly BattleLogEntry[], now = Date.now()): { days: number; secured: boolean } {
+  const won = winDays(log);
   const day = (offset: number) => new Date(now - offset * 86_400_000).toISOString().slice(0, 10);
   const secured = won.has(day(0));
   let days = 0;

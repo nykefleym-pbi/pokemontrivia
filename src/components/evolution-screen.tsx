@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { PokemonSprite } from "@/components/game-ui";
-import { Button } from "@/components/ui/button";
-import { Share2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { Sparkles } from "lucide-react";
+import { FieldSprite } from "@/components/na/battle";
+import { NaButton } from "@/components/na/button";
+import { NaGlassRow } from "@/components/na/celebration";
 import { playSfx, playCry, playEvolutionCue } from "@/lib/audio";
-import type { PokeEntry } from "@/lib/pokemon-data";
+import { canEvolve, getEvolutionTargets, type PokeEntry } from "@/lib/pokemon-data";
 import { useGameStore } from "@/lib/store";
-import { trainerSpriteUrl, rankForLevel } from "@/lib/game-data";
+import { EVOLUTION_TP_COST, trainerSpriteUrl, rankForLevel } from "@/lib/game-data";
 import { ShareCardDialog } from "@/components/share-card-dialog";
 import type { ShareData } from "@/components/share-card-builder";
 
@@ -16,15 +17,28 @@ interface Props {
   onComplete: () => void;
 }
 
-type Phase = "intro" | "glow" | "morph" | "reveal" | "done";
+type Phase = "glow" | "flicker" | "burst" | "done";
 
+const SPRITE = (id: number) => `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/${id}.png`;
+
+/**
+ * Figma 4.8 "Evolution: the moment, then what is next". The partner glows, its
+ * old and new shapes flicker faster and faster, a burst of light, and the new
+ * form stands on its platform; then the next goal in Training Points.
+ */
 export function EvolutionScreen({ from, to, onComplete }: Props) {
-  const [phase, setPhase] = useState<Phase>("intro");
+  const [phase, setPhase] = useState<Phase>("glow");
+  const [showTo, setShowTo] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const trainerName = useGameStore((s) => s.trainerName);
   const trainerSprite = useGameStore((s) => s.trainerSprite);
   const level = useGameStore((s) => s.level);
   const stats = useGameStore((s) => s.stats);
+  const tp = useGameStore((s) => s.trainingPoints[to.id] ?? 0);
+
+  const nextTarget = canEvolve(to) ? getEvolutionTargets(to)[0] : undefined;
+  const stage = to.evolutionStage;
+  const cost = stage === 1 || stage === 2 ? EVOLUTION_TP_COST[stage] : null;
 
   const shareData: ShareData = {
     type: "evolution",
@@ -47,136 +61,120 @@ export function EvolutionScreen({ from, to, onComplete }: Props) {
     dateISO: new Date().toISOString().slice(0, 10),
   };
 
+  // 0.0 s glow · 1.2 s flicker, faster and faster · 2.9 s burst · 3.3 s the new form.
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = [];
     playEvolutionCue();
+    timers.push(setTimeout(() => setPhase("flicker"), 1200));
+    let t = 1200;
+    let gap = 260;
+    let on = false;
+    while (t < 2900) {
+      const show = (on = !on);
+      timers.push(setTimeout(() => setShowTo(show), t));
+      t += gap;
+      gap = Math.max(60, gap * 0.8);
+    }
+    timers.push(setTimeout(() => { setPhase("burst"); setShowTo(true); playSfx("evolution_glow"); }, 2900));
     timers.push(
       setTimeout(() => {
-        setPhase("glow");
-        // ascending arpeggio
-        playSfx("evolution_glow");
-        timers.push(setTimeout(() => playSfx("evolution_glow"), 200));
-        timers.push(setTimeout(() => playSfx("evolution_glow"), 400));
-        timers.push(setTimeout(() => playSfx("evolution_glow"), 600));
-      }, 1000),
-    );
-    timers.push(setTimeout(() => setPhase("morph"), 2000));
-    timers.push(
-      setTimeout(() => {
-        setPhase("reveal");
+        setPhase("done");
         playSfx("evolution_complete");
         playCry(to.id);
-        setTimeout(() => playSfx("cheer"), 500);
-      }, 4500),
+      }, 3300),
     );
-    timers.push(setTimeout(() => setPhase("done"), 5500));
     return () => timers.forEach(clearTimeout);
   }, [to.id]);
 
-  const showFrom = phase === "intro" || phase === "glow";
-  const isMorphing = phase === "morph";
-  const showTo = phase === "reveal" || phase === "done";
+  const done = phase === "done";
+  const id = showTo ? to.id : from.id;
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex flex-col items-center justify-center px-6"
-      style={{
-        background:
-          "radial-gradient(circle at center, var(--color-poke-blue) 0%, var(--color-poke-dark) 75%)",
-      }}
-    >
-      <AnimatePresence mode="wait">
-        {phase === "intro" && (
-          <motion.div
-            key="intro"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="text-center"
-          >
-            <div className="font-pixel-xs uppercase tracking-wide text-poke-yellow/80">
-              Evolution
-            </div>
-            <div className="mt-1 font-display-md text-poke-yellow">
-              What? <span className="italic">{from.name} is evolving!</span>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+    <div className="na-bg-night fixed inset-0 z-[100] flex flex-col items-center gap-3 px-5 pb-[calc(env(safe-area-inset-bottom)+24px)] pt-[calc(env(safe-area-inset-top)+28px)]">
+      <motion.span key={done ? "c" : "e"} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="na-label text-center uppercase text-reward-gold">
+        {done ? "Congratulations!" : "What?"}
+      </motion.span>
+      <motion.h1 key={done ? "d" : "w"} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="na-display-m text-center text-foreground">
+        {done ? `${from.name} evolved into ${to.name}!` : `${from.name} is evolving!`}
+      </motion.h1>
 
-      <div className="relative mt-8 flex h-48 w-48 items-center justify-center">
-        {(phase === "glow" || isMorphing) && (
-          <motion.div
-            initial={{ scale: 0.6, opacity: 0 }}
-            animate={{ scale: [0.8, 1.5, 1.0], opacity: [0.3, 1, 0.7] }}
-            transition={{ duration: 2.5, repeat: Infinity }}
-            className="absolute inset-0 rounded-full bg-gradient-to-br from-white via-poke-yellow to-poke-yellow blur-3xl"
+      <div className="relative h-[280px] w-[330px] shrink-0">
+        <img
+          src="/battle/field/pad-player-morning.png"
+          alt=""
+          aria-hidden
+          draggable={false}
+          className="absolute left-[61px] top-[214px] h-[72px] w-[208px] max-w-none [image-rendering:pixelated]"
+        />
+        {/* 3 pt per sprite pixel, feet on the pad (Figma spr(id, 3)). Before the reveal the
+            shape is drawn in white light, glowing harder as it goes. */}
+        <FieldSprite
+          key={done ? "to" : id}
+          id={done ? to.id : id}
+          k={3}
+          cx={165}
+          feetY={226}
+          style={done ? undefined : { filter: `brightness(0) invert(1) drop-shadow(0 0 ${phase === "glow" ? 6 : 14}px #fff)` }}
+        />
+        <span className="sr-only">{done ? to.name : `${from.name} is evolving`}</span>
+        {phase === "burst" && (
+          <motion.span
+            aria-hidden
+            className="absolute left-1/2 top-[136px] h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"
+            initial={{ scale: 0.2, opacity: 1 }}
+            animate={{ scale: 4, opacity: 0 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
           />
         )}
-
-        {showFrom && (
-          <PokemonSprite id={from.id} alt={from.name} className="sprite relative h-40 w-40" />
-        )}
-        {isMorphing && <MorphAnimation fromId={from.id} toId={to.id} />}
-        {showTo && (
-          <motion.div
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 120 }}
-            className="relative"
-          >
-            <div className="absolute inset-0 -m-4 rounded-full bg-poke-yellow/50 blur-2xl" />
-            <PokemonSprite id={to.id} alt={to.name} className="sprite relative h-40 w-40" />
-          </motion.div>
-        )}
+        {done &&
+          [
+            [40, 60, 20],
+            [276, 40, 24],
+            [290, 150, 16],
+            [30, 170, 14],
+          ].map(([x, y, s], i) => (
+            <motion.span
+              key={i}
+              className="absolute text-foreground"
+              style={{ left: x, top: y }}
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.1 + i * 0.08 }}
+            >
+              <Sparkles style={{ width: s, height: s }} />
+            </motion.span>
+          ))}
       </div>
 
-      {phase === "done" && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-8 w-full max-w-xs rounded-3xl bg-card p-5 text-center shadow-pop"
-        >
-          <div className="inline-flex rounded-full bg-poke-yellow/40 px-2.5 py-0.5 font-pixel-xs uppercase text-foreground">
-            Evolution Complete
-          </div>
-          <div className="mt-3 text-sm text-muted-foreground">Your {from.name} evolved into</div>
-          <div className="mt-1 font-display-lg text-primary">{to.name}!</div>
-          <Button
-            size="action"
-            onClick={() => setShareOpen(true)}
-            className="mt-5 w-full bg-poke-yellow text-poke-dark shadow-pop"
-          >
-            <Share2 className="mr-2 h-5 w-5" /> Share evolution
-          </Button>
-          <Button
-            size="action"
-            onClick={onComplete}
-            className="mt-3 w-full bg-primary text-primary-foreground shadow-pop"
-          >
-            Continue
-          </Button>
+      {done && nextTarget && cost !== null && (
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="w-full">
+          <NaGlassRow
+            lead={
+              <span
+                aria-hidden
+                className="block h-11 w-11 bg-[#3b4a8c]"
+                style={{ maskImage: `url(${SPRITE(nextTarget.id)})`, WebkitMaskImage: `url(${SPRITE(nextTarget.id)})`, maskSize: "100% 100%", WebkitMaskSize: "100% 100%" }}
+              />
+            }
+            title={`Next: ${nextTarget.name}`}
+            sub={tp >= cost ? "Ready to evolve!" : `${(cost - tp).toLocaleString("en-US")} Training Points to go`}
+          />
+        </motion.div>
+      )}
+
+      <div className="min-h-2 flex-1" />
+      {done && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="flex w-full flex-col gap-4">
+          <NaButton block onClick={onComplete}>
+            Let&apos;s go!
+          </NaButton>
+          <NaButton kind="secondary" size="M" block onClick={() => setShareOpen(true)}>
+            Share
+          </NaButton>
         </motion.div>
       )}
 
       <ShareCardDialog open={shareOpen} onClose={() => setShareOpen(false)} data={shareData} />
-    </div>
-  );
-}
-
-function MorphAnimation({ fromId, toId }: { fromId: number; toId: number }) {
-  const [showFrom, setShowFrom] = useState(true);
-  useEffect(() => {
-    const interval = setInterval(() => setShowFrom((v) => !v), 250);
-    return () => clearInterval(interval);
-  }, []);
-  return (
-    <div className="relative h-40 w-40">
-      <PokemonSprite
-        id={showFrom ? fromId : toId}
-        alt="evolving"
-        className="sprite-evolve-silhouette absolute inset-0 h-full w-full"
-      />
     </div>
   );
 }

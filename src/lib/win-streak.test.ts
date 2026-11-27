@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { currentWinStreak, dayStreak } from "@/lib/win-streak";
+import { currentWinStreak, dayStreak, weekWins } from "@/lib/win-streak";
 import type { BattleLogEntry } from "@/lib/store/types";
 
 /** Newest first, the order `pushBattleLog` actually stores. */
@@ -71,5 +71,10 @@ describe("dayStreak", () => {
   it("breaks on a missed day and ignores losses and the Daily Quest", () => {
     expect(dayStreak([at(1, true), at(3, true)], now).days).toBe(1);
     expect(dayStreak([at(0, false), at(0, true, "daily")], now)).toEqual({ days: 0, secured: false });
+  });
+
+  it("weekWins: Monday first, this week only (27 Nov 2026 is a Friday)", () => {
+    // Friday win, Wednesday win, last Sunday (outside this week) win
+    expect(weekWins([at(0, true), at(2, true), at(5, true)], now)).toEqual([false, false, true, false, true, false, false]);
   });
 });

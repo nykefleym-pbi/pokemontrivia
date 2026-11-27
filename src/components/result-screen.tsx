@@ -13,6 +13,10 @@ import { PokemonSprite } from "@/components/game-ui";
 import { useGameStore } from "@/lib/store";
 import { GENERATIONS } from "@/lib/dex-rewards";
 import { useDailyGift } from "@/lib/use-daily-gift";
+import { dayStreak, weekWins } from "@/lib/win-streak";
+import { StreakSafe } from "@/components/streak-safe";
+
+const STREAK_SHOWN_KEY = "poke-trivia-streak-shown";
 import type { MissedAnswer } from "@/lib/trivia-core";
 
 export function ResultScreen({
@@ -102,6 +106,26 @@ export function ResultScreen({
   }, [won, isGuest]);
   const [mistakesOpen, setMistakesOpen] = useState(false);
   const gift = useDailyGift(60_000);
+  // 4.2: the first win of the day shows the day streak on the way out (Next battle or Home).
+  const battleLog = useGameStore((s) => s.battleLog);
+  const [streakThen, setStreakThen] = useState<null | (() => void)>(null);
+  function leave(go: () => void) {
+    const today = new Date().toISOString().slice(0, 10);
+    let shown: string | null = null;
+    try {
+      shown = localStorage.getItem(STREAK_SHOWN_KEY);
+    } catch {
+      /* private mode: show it */
+    }
+    if (won && !isGuest && shown !== today && dayStreak(battleLog).secured) {
+      try {
+        localStorage.setItem(STREAK_SHOWN_KEY, today);
+      } catch {
+        /* ignore */
+      }
+      setStreakThen(() => go);
+    } else go();
+  }
 
   // 4.1 Tomorrow row: where reminders can be turned on and are not yet, or on an
   // iPhone in Safari, where the ask becomes the install steps (4.5b).
@@ -265,7 +289,7 @@ export function ResultScreen({
           a way to (owner request 2026-07-26). One-attempt modes (Daily, the
           Weekly League) set hideRematch rather than a button that only left. */}
       {!hideRematch && (
-        <NaButton block onClick={() => (onRematch ? onRematch() : onRebattle())}>
+        <NaButton block onClick={() => leave(() => (onRematch ? onRematch() : onRebattle()))}>
           Next battle
         </NaButton>
       )}
@@ -275,12 +299,24 @@ export function ResultScreen({
             Share
           </NaButton>
         )}
-        <NaButton kind={hideRematch ? "primary" : "text"} size={hideRematch ? "L" : "M"} className="flex-1" onClick={onBackHome}>
+        <NaButton kind={hideRematch ? "primary" : "text"} size={hideRematch ? "L" : "M"} className="flex-1" onClick={() => leave(onBackHome)}>
           Home
         </NaButton>
       </div>
 
       <SaveProgressSheet open={saveOpen} onOpenChange={setSaveOpen} />
+      {streakThen && (
+        <StreakSafe
+          days={dayStreak(battleLog).days}
+          week={weekWins(battleLog)}
+          today={(new Date().getUTCDay() + 6) % 7}
+          onContinue={() => {
+            const go = streakThen;
+            setStreakThen(null);
+            go();
+          }}
+        />
+      )}
       <RemindSheet open={remindOpen} onOpenChange={setRemindOpen} ios={iosInstall} onEnabled={() => setCanRemind(false)} />
       {review}
     </motion.div>
