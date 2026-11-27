@@ -76,7 +76,7 @@ import { SHINY_CHANCE } from "@/lib/game-data";
 import { ShareCardDialog } from "@/components/share-card-dialog";
 import type { ShareData } from "@/components/share-card-builder";
 import { trainerSpriteUrl, trainerArtFor } from "@/lib/game-data";
-import type { Trivia } from "@/lib/trivia-core";
+import type { MissedAnswer, Trivia } from "@/lib/trivia-core";
 import { shuffleAllTriviaOptions } from "@/lib/trivia-core";
 import { useForfeitGuard } from "@/lib/use-forfeit-guard";
 export type { Trivia };
@@ -437,9 +437,7 @@ function BattleMode({
   // (`battleStatuses`); solo only ever applies "confused" / "poisoned".
   type StatusKind = "confused" | "poisoned";
   const wrongStreakRef = useRef(0);
-  const missedRef = useRef<Array<{ question: string; correctAnswer: string; explanation: string }>>(
-    [],
-  );
+  const missedRef = useRef<MissedAnswer[]>([]);
   const newTrophiesRef = useRef<Array<{ name: string }>>([]);
   const speedBonusTotalRef = useRef(0);
 
@@ -1021,6 +1019,9 @@ function BattleMode({
         question: trivia.question,
         correctAnswer: trivia.options[trivia.correct],
         explanation: trivia.explanation,
+        correctIndex: trivia.correct,
+        // 4.3 shows the answer you chose; a timeout or a confused miss of the right one has none.
+        ...(idx >= 0 && idx !== trivia.correct ? { chosenAnswer: trivia.options[idx], chosenIndex: idx } : {}),
       });
       // Matchup-aware wrong-answer damage
 

@@ -50,7 +50,7 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-const card = () => screen.queryByText(/Want a nudge when it's ready\?/i);
+const card = () => screen.queryByText(/Never Miss a Daily Reward!/i);
 
 describe("PushOptIn", () => {
   it("appears after a first win", async () => {
@@ -87,7 +87,7 @@ describe("PushOptIn", () => {
     await waitFor(() => expect(card()).not.toBeNull());
     expect(enablePush).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole("button", { name: /notify me/i }));
+    fireEvent.click(screen.getByRole("button", { name: /turn on reminders/i }));
     await waitFor(() => expect(enablePush).toHaveBeenCalledTimes(1));
   });
 
@@ -95,7 +95,7 @@ describe("PushOptIn", () => {
     setStore({ wins: 1 });
     const { unmount } = render(<PushOptIn />);
     await waitFor(() => expect(card()).not.toBeNull());
-    fireEvent.click(screen.getByRole("button", { name: /not now/i }));
+    fireEvent.click(screen.getByRole("button", { name: /maybe later/i }));
     expect(useGameStore.getState().pushPromptState).toBe("soft-declined");
     unmount();
     cleanup();
@@ -104,7 +104,7 @@ describe("PushOptIn", () => {
     useGameStore.setState({ pushPromptLastDate: "2020-01-01" });
     render(<PushOptIn />);
     await waitFor(() => expect(card()).not.toBeNull());
-    fireEvent.click(screen.getByRole("button", { name: /not now/i }));
+    fireEvent.click(screen.getByRole("button", { name: /maybe later/i }));
     expect(useGameStore.getState().pushPromptState).toBe("asked");
   });
 
@@ -121,7 +121,7 @@ describe("PushOptIn", () => {
     setStore({ wins: 1 });
     render(<PushOptIn />);
     await waitFor(() => expect(card()).not.toBeNull());
-    fireEvent.click(screen.getByRole("button", { name: /notify me/i }));
+    fireEvent.click(screen.getByRole("button", { name: /turn on reminders/i }));
     // A denied native prompt can never be re-asked, so re-offering is pointless.
     await waitFor(() => expect(useGameStore.getState().pushPromptState).toBe("asked"));
   });

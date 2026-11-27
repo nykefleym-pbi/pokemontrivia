@@ -3,6 +3,7 @@ import { Share, SquarePlus } from "lucide-react";
 import { toast } from "sonner";
 import { useGameStore } from "@/lib/store";
 import { NaSheet } from "@/components/na/sheet";
+import { ReminderPreview } from "@/components/remind-sheet";
 import { enablePushNotifications, getPushSubscriptionState, pushSupported } from "@/lib/push";
 import { shouldAskForPush, shouldOfferInstall } from "@/lib/push-opt-in";
 import {
@@ -159,23 +160,26 @@ export function PushOptIn() {
     <NaSheet
       open={open}
       onOpenChange={(next) => (next ? setOpen(true) : decline())}
-      title={mode === "install" ? "Add Pokémon Trivia Battle to your home screen" : "Want a nudge when it's ready?"}
+      title={mode === "install" ? "Add Pokémon Trivia Battle to your home screen" : "Never Miss a Daily Reward!"}
       body={
         mode === "install"
           ? "Jump into battles with just one tap!"
-          : "Your Daily Quest, your Poké Egg and the weekly gym leader all come back on a timer. We'll let you know when they do — nothing else."
+          : "Get a friendly reminder when your Daily Quest and gift are ready."
       }
       primary={
         iosInstall
           ? { label: "Got it", onClick: decline }
           : {
-              label: busyAction ? "Just a sec…" : mode === "install" ? "Show me" : "Notify me",
+              label: busyAction ? "Just a sec…" : mode === "install" ? "Show me" : "Turn on reminders",
               onClick: () => void (mode === "install" ? acceptInstall() : acceptPush()),
               disabled: busyAction,
             }
       }
-      secondary={iosInstall ? undefined : { label: mode === "install" ? "Maybe Later" : "Not now", onClick: decline }}
+      secondary={iosInstall ? undefined : { label: "Maybe Later", onClick: decline }}
+      footnote={mode === "push" ? "Your phone will ask for permission next." : undefined}
     >
+      {/* Figma 4.5: the reminder as it will look. */}
+      {mode === "push" && <ReminderPreview />}
       {iosInstall && (
         <ol className="na-glass flex flex-col gap-2.5 rounded-2xl p-3.5">
           <li className="na-body flex items-center gap-2.5 text-foreground">

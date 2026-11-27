@@ -441,41 +441,51 @@ export function NaQuestionPanel({
               data-testid={`option-${i}`}
               disabled={disabled(i)}
               onClick={() => onAnswer(i)}
-              className={cn(
-                "flex min-h-14 w-full items-center gap-3 rounded-2xl py-2 pl-2.5 pr-3.5 text-left transition-transform active:translate-y-[3px] disabled:cursor-default",
-                TILE_CLS[st],
-              )}
+              className={cn(answerTileClass(st), "transition-transform active:translate-y-[3px] disabled:cursor-default")}
             >
-              <span className={cn("na-answer-key", KEY_CLS[st])}>{String.fromCharCode(65 + i)}</span>
-              <span
-                className={cn(
-                  "na-headline min-w-0 flex-1 break-words",
-                  st === "correct" ? "text-[#05261a]" : st === "dimmed" || st === "struck" ? "text-text-muted" : "text-foreground",
-                )}
-              >
-                {opt}
-              </span>
-              {st === "correct" && (
-                <span className="na-label flex shrink-0 items-center gap-1 uppercase text-[#05261a]">
-                  <Check className="h-[18px] w-[18px]" strokeWidth={2.5} /> Correct
-                </span>
-              )}
-              {st === "wrong" && (
-                <span className="na-label flex shrink-0 items-center gap-1 uppercase text-danger">
-                  <X className="h-[18px] w-[18px]" strokeWidth={2.5} /> Not quite
-                </span>
-              )}
-              {st === "reveal" && (
-                <span className="na-label flex shrink-0 items-center gap-1 uppercase text-success">
-                  <Check className="h-[18px] w-[18px]" strokeWidth={2.5} /> Answer
-                </span>
-              )}
+              <NaAnswerFace index={i} text={opt} state={st} />
             </button>
           );
         })}
       </div>
       {banner}
     </div>
+  );
+}
+
+/** Figma "Answer" tile box, for a button (above) or a read-only row (4.3 review). */
+export const answerTileClass = (st: AnswerState) =>
+  cn("flex min-h-14 w-full items-center gap-3 rounded-2xl py-2 pl-2.5 pr-3.5 text-left", TILE_CLS[st]);
+
+/** The inside of a Figma "Answer": key letter, text and the state's label. */
+export function NaAnswerFace({ index, text, state: st }: { index: number; text: string; state: AnswerState }) {
+  return (
+    <>
+      <span className={cn("na-answer-key", KEY_CLS[st])}>{String.fromCharCode(65 + index)}</span>
+      <span
+        className={cn(
+          "na-headline min-w-0 flex-1 break-words",
+          st === "correct" ? "text-[#05261a]" : st === "dimmed" || st === "struck" ? "text-text-muted" : "text-foreground",
+        )}
+      >
+        {text}
+      </span>
+      {st === "correct" && (
+        <span className="na-label flex shrink-0 items-center gap-1 uppercase text-[#05261a]">
+          <Check className="h-[18px] w-[18px]" strokeWidth={2.5} /> Correct
+        </span>
+      )}
+      {st === "wrong" && (
+        <span className="na-label flex shrink-0 items-center gap-1 uppercase text-danger">
+          <X className="h-[18px] w-[18px]" strokeWidth={2.5} /> Not quite
+        </span>
+      )}
+      {st === "reveal" && (
+        <span className="na-label flex shrink-0 items-center gap-1 uppercase text-success">
+          <Check className="h-[18px] w-[18px]" strokeWidth={2.5} /> Answer
+        </span>
+      )}
+    </>
   );
 }
 

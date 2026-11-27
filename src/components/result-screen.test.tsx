@@ -106,17 +106,17 @@ describe("ResultScreen — victory", () => {
 });
 
 describe("ResultScreen — defeat", () => {
-  it("still has Rematch and Back home wired the way they were", () => {
+  it("still has Try again and Home wired the way they were", () => {
     const { onRematch, onBackHome } = setup({ won: false });
-    fireEvent.click(screen.getByRole("button", { name: "Rematch" }));
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(onRematch).toHaveBeenCalledTimes(1);
-    fireEvent.click(screen.getByRole("button", { name: "Back home" }));
+    fireEvent.click(screen.getByRole("button", { name: "Home" }));
     expect(onBackHome).toHaveBeenCalledTimes(1);
   });
 
   it("falls back to onRebattle when no rematch is possible", () => {
     const { onRebattle } = setup({ won: false, onRematch: undefined });
-    fireEvent.click(screen.getByRole("button", { name: "Rematch" }));
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(onRebattle).toHaveBeenCalledTimes(1);
   });
 });
@@ -128,10 +128,10 @@ describe("ResultScreen — one-attempt modes (hideRematch)", () => {
     expect(screen.getByRole("button", { name: /^home$/i })).toBeTruthy();
   });
 
-  it("defeat: no rematch button, but Back home still gets you out", () => {
+  it("defeat: no rematch button, but Home still gets you out", () => {
     setup({ won: false, hideRematch: true });
-    expect(screen.queryByRole("button", { name: /^rematch$/i })).toBeNull();
-    expect(screen.getByRole("button", { name: /back home/i })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /^try again$/i })).toBeNull();
+    expect(screen.getByRole("button", { name: /^home$/i })).toBeTruthy();
   });
 
   it("without the flag the button is still there (regular battles unchanged)", () => {

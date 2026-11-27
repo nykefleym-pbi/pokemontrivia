@@ -23,6 +23,10 @@ export interface MissedAnswer {
   question: string;
   correctAnswer: string;
   explanation: string;
+  /** Option slots (A = 0) for the 4.3 review; absent where the caller doesn't track them. */
+  correctIndex?: number;
+  chosenAnswer?: string;
+  chosenIndex?: number;
 }
 
 export interface TriviaPayload {

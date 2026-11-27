@@ -37,21 +37,22 @@ export function NaWordmark({
       style={{ filter: `drop-shadow(0 4px 0 rgb(0 0 0 / 0.55)) drop-shadow(0 0 26px ${k.glow}80)` }}
     >
       <Sparkles aria-hidden className="shrink-0" style={{ color: k.spark, width: size * 0.54, height: size * 0.54 }} />
+      {/* Figma strokes OUTSIDE the letters. A text-stroke is centred and, under
+          background-clip:text, paints over the fill and thins every letter, so
+          the outline is a copy behind (twice the width) and the fill sits on top. */}
       <span
-        className="whitespace-nowrap"
-        style={{
-          fontFamily: "var(--font-lilita)",
-          fontSize: size,
-          lineHeight: `${Math.round(size * 1.08)}px`,
-          background: k.fill,
-          WebkitBackgroundClip: "text",
-          backgroundClip: "text",
-          color: "transparent",
-          WebkitTextStroke: `${Math.max(3, size / 8)}px #070a1a`,
-          paintOrder: "stroke fill",
-        }}
+        className="grid whitespace-nowrap"
+        style={{ fontFamily: "var(--font-lilita)", fontSize: size, lineHeight: `${Math.round(size * 1.08)}px` }}
       >
-        {children}
+        <span aria-hidden className="[grid-area:1/1]" style={{ color: "#070a1a", WebkitTextStroke: `${Math.max(6, size / 4)}px #070a1a` }}>
+          {children}
+        </span>
+        <span
+          className="[grid-area:1/1]"
+          style={{ background: k.fill, WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}
+        >
+          {children}
+        </span>
       </span>
       <Sparkles aria-hidden className="shrink-0" style={{ color: k.spark, width: size * 0.42, height: size * 0.42 }} />
     </div>
@@ -169,22 +170,27 @@ export function NaRewardTile({
   );
 }
 
-/** Catch card: gold-rimmed, glowing; a new Pokédex entry gets its moment, the
- *  sprite breaking out past the card's left edge as in Figma 1.5 / 4.1. */
+/** Catch card: gold-rimmed, glowing; the sprite in a 72 box (4.1). The very
+ *  first catch gets its moment: a 200 sprite breaking out of that box (1.5).
+ *  `sprite` is a render prop given the sprite's size in px. */
 export function NaCatchCard({
   sprite,
   title,
   sub,
   isNew,
+  big,
 }: {
-  sprite: React.ReactNode;
+  sprite: (size: number) => React.ReactNode;
   title: string;
   sub: string;
   isNew?: boolean;
+  big?: boolean;
 }) {
   return (
-    <div className="na-glow-gold flex w-full items-center gap-3 rounded-[18px] border-[1.5px] border-reward-gold bg-night-deep/60 py-3 pl-0 pr-3">
-      <div className="-ml-2 flex h-[84px] w-[96px] shrink-0 items-center justify-center overflow-visible">{sprite}</div>
+    <div className="na-glow-gold flex w-full items-center gap-3 rounded-[18px] border-[1.5px] border-reward-gold bg-night-deep/60 p-3">
+      <div className={cn("flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-visible rounded-2xl", !big && "bg-white/[0.08]")}>
+        {sprite(big ? 200 : 68)}
+      </div>
       <div className="flex min-w-0 flex-col items-start gap-1">
         {isNew && <span className="na-fill-gold na-label uppercase rounded-md px-[5px] py-px text-on-gold">New</span>}
         <span className="na-headline text-foreground">{title}</span>
