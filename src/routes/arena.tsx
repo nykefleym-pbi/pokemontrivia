@@ -19,7 +19,6 @@ import {
   VERSUS_BACKDROP,
   TRAINING_BOT_AVATAR,
 } from "@/lib/app-icons";
-import { Button } from "@/components/ui/button";
 import { BattleCodeQr } from "@/components/battle-code-qr";
 import { VersusScreen } from "@/components/versus-screen";
 import { trainingBotSide } from "@/lib/training-bot";
@@ -403,16 +402,10 @@ function ArenaPage() {
         backdrop={VERSUS_BACKDROP}
         actions={
           searching ? (
-            <Button
-              onClick={() => stopQueue(true)}
-              // Reads as a button — bordered pill, not a text link — but sized
-              // to its word rather than the screen. Cancel is the way OUT of
-              // the thing you just asked for; full width gave it the weight of
-              // a primary action.
-              className="mx-auto h-10 w-auto rounded-full border border-white/60 bg-white/10 px-8 text-sm font-bold text-white backdrop-blur-sm transition hover:bg-white/20 press-lg"
-            >
+            // Figma 15.1: a secondary M button sized to its word, not a primary action.
+            <NaButton kind="secondary" size="M" onClick={() => stopQueue(true)}>
               Cancel
-            </Button>
+            </NaButton>
           ) : undefined
         }
       />

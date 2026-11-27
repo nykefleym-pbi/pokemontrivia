@@ -633,9 +633,33 @@ export function NaIntroTrainer({ art, leaving, gym }: { art: string; leaving: bo
  * The app's own trainer art (owner rule: never the design's copy), its visible
  * figure fitted to the one Figma draws: `height` tall, centred on cx, feet at feetY.
  */
-export function FittedTrainer({ art, height, cx, feetY, alt = "" }: { art: string; height: number; cx: number; feetY: number; alt?: string }) {
+export function FittedTrainer({
+  art,
+  height,
+  cx,
+  feetY,
+  alt = "",
+  className,
+}: {
+  art: string;
+  height: number;
+  cx: number;
+  feetY: number;
+  alt?: string;
+  className?: string;
+}) {
   const tr = useTrim(art);
-  if (!tr) return null;
+  if (!tr)
+    // Until the picture is measured: the whole image in the figure's box, feet on the line.
+    return (
+      <img
+        src={art}
+        alt={alt}
+        draggable={false}
+        className={cn("absolute max-w-none object-contain object-bottom [image-rendering:pixelated]", className)}
+        style={{ left: cx - height / 2, top: feetY - height, width: height, height }}
+      />
+    );
   const t = tr.trim;
   const k = height / t.h;
   return (
@@ -643,7 +667,7 @@ export function FittedTrainer({ art, height, cx, feetY, alt = "" }: { art: strin
       src={art}
       alt={alt}
       draggable={false}
-      className="absolute max-w-none [image-rendering:pixelated]"
+      className={cn("absolute max-w-none [image-rendering:pixelated]", className)}
       style={{
         left: cx - (t.x + t.w / 2) * k,
         top: feetY - (t.y + t.h) * k,

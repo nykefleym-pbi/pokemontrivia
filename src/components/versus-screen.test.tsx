@@ -6,15 +6,16 @@ import type { ComponentPropsWithoutRef } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 
-vi.mock("framer-motion", () => {
+vi.mock("framer-motion", async () => {
   interface P extends ComponentPropsWithoutRef<"img"> {
     initial?: unknown;
     animate?: unknown;
     transition?: unknown;
   }
   const strip = ({ initial: _i, animate: _a, transition: _t, ...rest }: P) => rest;
-  const Img = (props: P) => <img {...strip(props)} />;
-  return { motion: new Proxy({} as Record<string, typeof Img>, { get: () => Img }) };
+  const { createElement } = await import("react");
+  // motion.<tag> renders a plain <tag> without the animation props.
+  return { motion: new Proxy({}, { get: (_, tag: string) => (props: P) => createElement(tag, strip(props)) }) };
 });
 
 const { VersusScreen } = await import("@/components/versus-screen");
@@ -42,7 +43,7 @@ describe("VersusScreen", () => {
 
   it("shows a rating only for trainers who have one", () => {
     render(<VersusScreen me={me} opponent={{ ...rival, rating: null }} status="x" />);
-    expect(screen.getByText("ELO 1,120")).toBeTruthy();
+    expect(screen.getByText("RATING 1,120")).toBeTruthy();
     expect(screen.queryByText(/1,210/)).toBeNull();
   });
 
@@ -55,21 +56,16 @@ describe("VersusScreen", () => {
     expect(i).toBeGreaterThanOrEqual(0);
     // Title between the name and the rating — the owner's stated hierarchy.
     expect(lines[i + 1]).toBe("Great League Champ");
-    expect(lines[i + 2]).toBe("ELO 1,120");
+    expect(lines[i + 2]).toBe("RATING 1,120");
   });
 
-  it("gives each half its own backdrop, falling back to the shared one", () => {
-    const { container } = render(
-      <VersusScreen
-        me={{ ...me, backdrop: "/versus/mine.webp" }}
-        opponent={rival}
-        status="x"
-        backdrop="/versus/default.webp"
-      />,
-    );
-    const srcs = [...container.querySelectorAll("img")].map((i) => i.getAttribute("src"));
-    expect(srcs).toContain("/versus/mine.webp"); // the player's own
-    expect(srcs).toContain("/versus/default.webp"); // the opponent has none
+  it("draws the comic split: dark while searching, their half blue once found (Figma 15.1 / 15.1b)", () => {
+    const bg = (c: HTMLElement) => [...c.querySelectorAll("img")].map((i) => i.getAttribute("src")).filter((s) => s?.startsWith("/versus/vs-"));
+    const searching = render(<VersusScreen me={me} opponent={null} status="x" />);
+    expect(bg(searching.container)).toEqual(["/versus/vs-finding.png"]);
+    cleanup();
+    const found = render(<VersusScreen me={me} opponent={rival} status="x" />);
+    expect(bg(found.container)).toEqual(["/versus/vs-found.png"]);
   });
 
   it("lets an avatar image stand in for the trainer sprite", () => {
@@ -124,7 +120,7 @@ describe("VersusScreen", () => {
     const { container } = render(
       <VersusScreen me={me} opponent={{ name: "Ghost", spriteId: "no-such-trainer" }} status="x" />,
     );
-    const srcs = [...container.querySelectorAll("img")].map((i) => i.getAttribute("src"));
+    const srcs = [...container.querySelectorAll("img.sprite")].map((i) => i.getAttribute("src"));
     // Only the player's. The unresolvable one is absent, not present-and-empty.
     expect(srcs.length).toBe(1);
     expect(srcs[0]).toBeTruthy();
