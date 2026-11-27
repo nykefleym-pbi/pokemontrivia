@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ChevronLeft, MoreHorizontal, Send } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { NaIcon } from "@/components/na/icon";
+import { FittedTrainer } from "@/components/na/battle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -134,71 +133,42 @@ export function MatchChatScreen({
     }
   }
 
+  // Figma 15.6 "Match chat: say gg, ask for a rematch".
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden bg-poke-cream">
-      {/* HEADER — pixel eyebrow à la NearbyBattleSheet's "FACE TO FACE" */}
-      <div className="shrink-0 border-b border-border/60 bg-card px-[max(1rem,env(safe-area-inset-left))] screen-top pb-3">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onBack}
-            aria-label="Back"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted press"
-          >
-            <ChevronLeft className="h-5 w-5 text-foreground" />
-          </button>
-          <div>
-            <div className="font-pixel-xs text-primary">VS {opponentName.toUpperCase()}</div>
-            <h1 className="font-display-lg text-foreground">Match Chat</h1>
-          </div>
-        </div>
+    <div className="na-bg-night flex h-full w-full flex-col overflow-hidden pt-[env(safe-area-inset-top)]">
+      <div className="flex h-[52px] shrink-0 items-center gap-3 px-4">
+        <button type="button" aria-label="Back" onClick={onBack} className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-white/10 text-foreground">
+          <NaIcon name="arrow-left" size={20} />
+        </button>
+        <h1 className="na-display-s flex-1 text-foreground">Match Chat</h1>
       </div>
 
-      {/* MESSAGE LIST */}
-      <div ref={listRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4">
+      <div ref={listRef} className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto px-4 pb-3 pt-2">
+        <span className="na-label text-center uppercase text-[#FF7A85]">VS {opponentName}</span>
         {messages.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
-            <p className="font-display text-sm text-foreground/60">
-              No messages yet — say gg or ask for a rematch!
-            </p>
-          </div>
+          <p className="na-body my-auto text-center text-text-secondary">No messages yet. Say gg or ask for a rematch!</p>
         ) : (
           messages.map((m) => {
             const mine = m.userId === myId;
+            const art = trainerSpriteUrl(m.trainerSprite);
             return (
-              <div
-                key={m.id}
-                className={`flex items-end gap-2 ${mine ? "flex-row-reverse" : "flex-row"}`}
-              >
-                <img
-                  src={trainerSpriteUrl(m.trainerSprite)}
-                  alt={m.trainerName}
-                  className="h-9 w-9 shrink-0 rounded-full bg-card shadow-card"
-                />
-                <div className={`flex max-w-[75%] flex-col ${mine ? "items-end" : "items-start"}`}>
-                  <span className="font-pixel-xs text-foreground/60">{m.trainerName}</span>
-                  <div
-                    className={`mt-0.5 flex items-center gap-1 rounded-3xl px-4 py-2 shadow-card ${
-                      mine ? "bg-primary/10 text-foreground" : "bg-card text-foreground"
-                    }`}
-                  >
-                    <span className="whitespace-pre-wrap break-words text-sm">{m.body}</span>
+              <div key={m.id} className={`flex items-end gap-2 ${mine ? "flex-row-reverse" : "flex-row"}`}>
+                <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-night-card-2">
+                  {art && <FittedTrainer art={art} alt={m.trainerName} height={28} cx={18} feetY={32} />}
+                </span>
+                <div className={`flex max-w-[75%] flex-col gap-[3px] ${mine ? "items-end" : "items-start"}`}>
+                  <span className="na-label text-text-muted">{m.trainerName}</span>
+                  <div className={`flex items-center gap-2 rounded-[20px] px-3.5 py-2 ${mine ? "bg-brand-red/[0.22]" : "bg-white/10"}`}>
+                    <span className="na-body whitespace-pre-wrap break-words text-foreground">{m.body}</span>
                     {!mine && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button
-                            type="button"
-                            aria-label="Message actions"
-                            className="ml-1 shrink-0 rounded-full p-0.5 text-foreground/40 transition hover:text-foreground/70 press"
-                          >
-                            <MoreHorizontal className="h-3.5 w-3.5" />
+                          <button type="button" aria-label="Message actions" className="na-label shrink-0 text-text-muted press">
+                            •••
                           </button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align={mine ? "end" : "start"}>
-                          <DropdownMenuItem
-                            disabled={reportedIds.has(m.id)}
-                            onClick={() => void handleReport(m.id)}
-                          >
+                        <DropdownMenuContent align="start">
+                          <DropdownMenuItem disabled={reportedIds.has(m.id)} onClick={() => void handleReport(m.id)}>
                             {reportedIds.has(m.id) ? "Reported" : "Report"}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -212,22 +182,18 @@ export function MatchChatScreen({
         )}
       </div>
 
-      {/* COMPOSER */}
-      <div className="screen-x shrink-0 border-t border-border/60 bg-card pt-3 screen-bottom">
-        {reason && (
-          <div className="mb-2 rounded-2xl bg-muted px-3 py-2 text-center text-xs text-foreground/60">
-            {reason}
-          </div>
-        )}
-        {!reason && (
-          <div className="-mx-4 mb-2 flex gap-2 overflow-x-auto px-4 pb-1">
+      <div className="flex shrink-0 flex-col gap-3.5 px-4 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-2">
+        {reason ? (
+          <p className="na-caption rounded-2xl bg-white/[0.08] px-3 py-2 text-center text-text-secondary">{reason}</p>
+        ) : (
+          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
             {QUICK_MESSAGES.map((q) => (
               <button
                 key={q}
                 type="button"
                 disabled={sending}
                 onClick={() => void send(q, false)}
-                className="shrink-0 rounded-full bg-muted px-3.5 py-2 text-xs font-semibold text-foreground shadow-sm transition press disabled:opacity-40"
+                className="na-body-strong shrink-0 rounded-full bg-white/[0.12] px-3.5 py-2 text-foreground press disabled:opacity-40"
               >
                 {q}
               </button>
@@ -235,7 +201,7 @@ export function MatchChatScreen({
           </div>
         )}
         <div className="flex items-center gap-2">
-          <Input
+          <input
             value={draft}
             onChange={(e) => setDraft(e.target.value.slice(0, BODY_MAX_LEN))}
             onKeyDown={(e) => {
@@ -247,17 +213,18 @@ export function MatchChatScreen({
             maxLength={BODY_MAX_LEN}
             placeholder={reason ? "Chat is unavailable" : "Say something…"}
             disabled={!!reason || sending}
-            className="flex-1 rounded-full"
+            aria-label="Message"
+            className="na-body h-11 min-w-0 flex-1 rounded-full border border-white/[0.16] bg-night-deep/60 px-4 text-foreground outline-none placeholder:text-text-muted disabled:opacity-60"
           />
-          <Button
-            size="icon"
+          <button
+            type="button"
             onClick={() => void handleSend()}
             disabled={!canSend}
-            className="h-10 w-10 shrink-0 rounded-full bg-primary text-primary-foreground shadow-pop"
             aria-label="Send message"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-red text-foreground press disabled:opacity-50"
           >
-            <Send className="h-4 w-4" />
-          </Button>
+            <NaIcon name="send" size={20} />
+          </button>
         </div>
       </div>
     </div>
