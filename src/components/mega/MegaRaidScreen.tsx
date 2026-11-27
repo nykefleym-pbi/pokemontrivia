@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence } from "framer-motion";
-import { Backpack } from "lucide-react";
 import { toast } from "sonner";
-import { PokemonSprite, QuestionCard } from "@/components/game-ui";
+import { FieldSprite, NaBattleField, NaHpCard, NaQuestionPanel, type AnswerState } from "@/components/na/battle";
+import { NaTypeChip } from "@/components/na/type-chip";
+import { NaGlossIcon } from "@/components/na/gloss-icon";
+import { NaButton } from "@/components/na/button";
+import { getAbility } from "@/lib/abilities";
 import type { Trivia } from "@/components/battle-screen";
 import { shuffleTriviaOptionsWithOrder } from "@/lib/trivia-core";
 import { useForfeitGuard } from "@/lib/use-forfeit-guard";
@@ -41,27 +43,6 @@ const PLAYER_MAX_HP = 100;
 const TIMER = 20;
 const BOSS_DMG = 10; // per correct answer; 40 correct depletes 400 HP
 const PLAYER_DMG = 8; // per wrong answer
-const TYPE_COLORS: Record<string, string> = {
-  fire: "#EE8130",
-  dragon: "#6F35FC",
-  water: "#6390F0",
-  grass: "#7AC74C",
-  electric: "#F7D02C",
-  ice: "#96D9D6",
-  fighting: "#C22E28",
-  poison: "#A33EA1",
-  ground: "#E2BF65",
-  flying: "#A98FF3",
-  psychic: "#F95587",
-  bug: "#A6B91A",
-  rock: "#B6A136",
-  ghost: "#735797",
-  dark: "#705746",
-  steel: "#B7B7CE",
-  fairy: "#D685AD",
-  normal: "#A8A77A",
-};
-
 const HEAL: Partial<Record<ItemId, number>> = {
   potion: 30,
   superpotion: 60,
@@ -127,7 +108,17 @@ export function MegaRaidScreen({
   // Per-question correct index, learned from the server on answer / hint item.
   const [correctIdxByQ, setCorrectIdxByQ] = useState<Record<number, number>>({});
   const currentCorrect = correctIdxByQ[qIndex];
-  const [lastElapsedMs, setLastElapsedMs] = useState(0);
+
+  // The question panel's height, so the field can shrink on short phones (as in 3.2).
+  const [panelH, setPanelH] = useState(380);
+  const panelObserver = useRef<ResizeObserver | null>(null);
+  const panelRefCb = useCallback((el: HTMLDivElement | null) => {
+    panelObserver.current?.disconnect();
+    if (!el || typeof ResizeObserver === "undefined") return;
+    panelObserver.current = new ResizeObserver(() => setPanelH(el.offsetHeight));
+    panelObserver.current.observe(el);
+    setPanelH(el.offsetHeight);
+  }, []);
 
   const startRef = useRef<number>(Date.now());
   const questionStart = useRef<number>(Date.now());
@@ -283,7 +274,6 @@ export function MegaRaidScreen({
       if (locked || phase !== "fighting") return;
       setLocked(true);
       setPicked(idx);
-      setLastElapsedMs(Date.now() - questionStart.current);
       // Fetch the correct index for this question from the server (cached per qIndex).
       let correctIdx = correctIdxByQ[qIndex];
       if (typeof correctIdx !== "number") {
@@ -479,243 +469,87 @@ export function MegaRaidScreen({
     );
   }
 
-  const bossPct = Math.max(0, (bossHp / MEGA_BOSS_HP) * 100);
-  const playerPct = Math.max(0, (playerHp / PLAYER_MAX_HP) * 100);
-
-  // Quick shortcut items shown next to the Bag button (potions only — battle items are bag-only).
-  const quickIds: ItemId[] = ["potion", "superpotion", "maxpotion"];
-  const quickShortcuts = quickIds.filter((id) => (inventory[id] ?? 0) > 0).slice(0, 3);
+  const partner = useGameStore.getState().pokemon;
+  const abilityId = useGameStore.getState().abilityId;
+  const partnerAbility = partner ? getAbility(partner.types, abilityId) : null;
+  const answerStates: AnswerState[] = q.options.map((_, i) => {
+    if (locked) {
+      if (typeof currentCorrect === "number" && i === currentCorrect) return picked === i ? "correct" : "reveal";
+      return picked === i ? "wrong" : "dimmed";
+    }
+    if (removedWrong === i) return "struck";
+    if (revealCorrect && currentCorrect === i) return "reveal";
+    return "default";
+  });
 
   return (
-    <div
-      // Same arena artwork as every other mode, behind Mega's own heavier veil
-      // (`bg-battle-field-ink`). The flat `--brand-ink-deep` fill it used before
-      // is roughly what that veil resolves to when the art is missing, so
-      // nothing here depends on the file existing. The boss banner below still
-      // paints its own ink gradient on top; this shows through around it.
-      className="bg-battle-field bg-battle-field-ink relative flex h-full w-full flex-col overflow-hidden"
-      style={{ fontFamily: "Outfit, sans-serif" }}
-    >
-      <div className="battle-stage battle-stage-ink" aria-hidden />
-      {/* ARENA — boss + partner HP. Shrinks to fit so the question card always pins to the bottom.
-          Deliberately NOT built on game-ui.tsx's shared `CombatPanel`: that
-          component is a small side-by-side card (both combatants same size,
-          type badges + ability/status chips) matching Regular Battle's 1v1
-          layout — Mega Raid's arena is a full-width boss banner with a giant
-          centered sprite and a slim partner HP row underneath, an
-          intentionally different "raid boss" presentation with no
-          abilities/status/type-matchup concepts to show. Forcing CombatPanel
-          here would be a real visual regression, not a genuine dedup — see
-          the plan's Phase 2 UI note and this session's investigation. */}
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col">
+    // Figma 13.2: the raid's own stage, the boss bar (MEGA RAID and its HP), your partner's card, the question panel.
+    <div className="relative h-full w-full overflow-hidden bg-night-deep">
+      {/* Test-observability hooks only, in the "hp/max" form the tests read. */}
+      <span data-testid="boss-hp" hidden>
+        {bossHp}/{MEGA_BOSS_HP}
+      </span>
+      <span data-testid="player-hp" hidden>
+        {playerHp}/{PLAYER_MAX_HP}
+      </span>
+      <NaBattleField mode="raid" panelHeight={panelH}>
+        <FieldSprite id={event.megaId} shiny={bossShiny} k={2} cx={286} feetY={215} />
+        {partner && <FieldSprite id={partner.id} back k={3} cx={104} feetY={420} />}
         <div
-          className="relative px-4 pb-2 screen-top"
-          style={{
-            background:
-              "radial-gradient(circle at 50% 30%, #2E3A5C 0%, var(--brand-ink) 58%, var(--brand-ink-deep) 100%)",
-            overflow: "hidden",
-          }}
+          className="absolute flex w-[188px] flex-col gap-1.5 rounded-2xl border border-white/[0.16] bg-night-deep/70 px-3 py-2.5 shadow-[inset_0_1px_0_rgb(255_255_255/0.14),0_12px_32px_rgb(0_0_0/0.35)] backdrop-blur-xl"
+          style={{ left: 12, top: 52 }}
         >
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                "repeating-conic-gradient(from 0deg at 50% 26%, rgba(242,214,78,0.14) 0deg 6deg, transparent 6deg 13deg)",
-            }}
-          />
-          <div className="relative text-center">
-            <div className="text-[20px] font-black text-white">
-              {event.name}
-              {bossShiny ? "" : ""}
-            </div>
-            <div className="mt-1 flex justify-center gap-1.5">
-              {event.types.map((t) => (
-                <span
-                  key={t}
-                  className="font-pixel text-white"
-                  style={{
-                    fontSize: 6,
-                    background: TYPE_COLORS[t] ?? "#777",
-                    padding: "3px 8px",
-                    borderRadius: 999,
-                  }}
-                >
-                  {t.toUpperCase()}
-                </span>
-              ))}
-            </div>
-            <div className="mt-2 flex items-center gap-2">
-              <span className="font-pixel text-white" style={{ fontSize: 7 }}>
-                HP
-              </span>
-              <div
-                className="flex-1 overflow-hidden"
-                style={{
-                  height: 12,
-                  borderRadius: 999,
-                  background: "rgba(0,0,0,0.35)",
-                  border: "1.5px solid rgba(255,255,255,0.25)",
-                }}
-              >
-                <div
-                  style={{
-                    width: `${bossPct}%`,
-                    height: "100%",
-                    borderRadius: 999,
-                    background: "linear-gradient(90deg, var(--brand-gold), #EE8130)",
-                    transition: "width 0.4s",
-                  }}
-                />
-              </div>
-              <span className="font-pixel text-white" style={{ fontSize: 7 }} data-testid="boss-hp">
-                {bossHp}/{MEGA_BOSS_HP}
-              </span>
-            </div>
-          </div>
+          <span className="flex items-center justify-between">
+            <span className="na-label uppercase text-[#FF7A85]">Mega Raid</span>
+            <span className="na-number-m text-foreground">{bossHp}</span>
+          </span>
+          <span className="na-headline truncate text-foreground">{event.name}</span>
+          <span className="flex gap-1">
+            {event.types.map((t) => (
+              <NaTypeChip key={t} type={t} />
+            ))}
+          </span>
+          <span className="relative h-2.5 overflow-hidden rounded-[5px] bg-night-base">
+            <span className="na-fill-gold absolute inset-y-0 left-0 rounded-[5px] transition-[width] duration-300" style={{ width: `${(bossHp / MEGA_BOSS_HP) * 100}%` }} />
+          </span>
         </div>
-
-        {/* Boss sprite — flex-1 region that scales to whatever vertical room is left. */}
-        <div
-          className="relative flex min-h-0 flex-1 items-center justify-center px-4"
-          style={{
-            background:
-              "linear-gradient(180deg, var(--brand-ink-deep) 0%, var(--brand-ink-deep) 100%)",
-          }}
-        >
-          <div
-            className="absolute"
-            style={{
-              bottom: 4,
-              width: "min(46vw, 160px)",
-              height: 22,
-              borderRadius: "50%",
-              background: "rgba(0,0,0,0.45)",
-            }}
+        {partner && (
+          <NaHpCard
+            side="player"
+            name={partner.name}
+            hp={playerHp}
+            maxHp={PLAYER_MAX_HP}
+            types={partner.types}
+            abilityName={partnerAbility?.name}
+            abilityDescription={partnerAbility?.description}
+            style={{ left: 178, top: 262 }}
           />
-          <PokemonSprite
-            id={event.megaId}
-            shiny={bossShiny}
-            alt={event.name}
-            className="relative h-full max-h-[180px] w-auto object-contain [filter:drop-shadow(0_8px_14px_rgba(0,0,0,0.55))]"
-          />
-        </div>
-
-        {/* Partner HP row */}
-        <div
-          className="flex shrink-0 items-center gap-2.5 px-4 pb-2 pt-1.5"
-          style={{ background: "var(--brand-ink-deep)" }}
-        >
-          <PartnerSprite />
-          <div className="flex-1">
-            <div className="flex items-center justify-between">
-              <span className="text-[13px] font-extrabold text-white">
-                <PartnerName />
-              </span>
-              <span
-                className="font-pixel"
-                style={{ fontSize: 6.5, color: "var(--brand-red)" }}
-                data-testid="player-hp"
-              >
-                {playerHp}/{PLAYER_MAX_HP}
-              </span>
-            </div>
-            <div
-              className="mt-1 overflow-hidden"
-              style={{ height: 9, borderRadius: 999, background: "rgba(255,255,255,0.12)" }}
-            >
-              <div
-                style={{
-                  width: `${playerPct}%`,
-                  height: "100%",
-                  borderRadius: 999,
-                  background: lowHp ? "var(--brand-red)" : "#3F9D5A",
-                  transition: "width 0.4s",
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* QUESTION CARD — pinned bottom, shrink-0, no inner scroll. */}
-      <div className="relative shrink-0 rounded-t-[28px] bg-card pt-12 px-[max(1rem,env(safe-area-inset-left))] screen-bottom shadow-[0_-8px_30px_-12px_oklch(0.3_0.05_260/0.25)]">
-        {lowHp && hasAnyPotion && (
-          <div
-            className="mb-2 flex items-center justify-between rounded-2xl px-3 py-1.5"
-            style={{ background: "rgba(226,59,46,0.1)", border: "1.5px solid rgba(226,59,46,0.4)" }}
-          >
-            <span className="text-[12px] font-bold" style={{ color: "#C22E28" }}>
-              ⚠️ Low HP — use a potion!
-            </span>
-            <button
-              onClick={() => setBagOpen(true)}
-              className="press font-pixel"
-              style={{
-                fontSize: 7,
-                color: "#fff",
-                background: "var(--brand-red)",
-                borderRadius: 999,
-                padding: "5px 10px",
-              }}
-            >
-              OPEN BAG
-            </button>
-          </div>
         )}
-
-        <AnimatePresence mode="wait">
-          <QuestionCard
-            key={qIndex}
-            trivia={{ ...q, category: q.category || "TRIVIA" }}
-            phase={locked ? "feedback" : "question"}
-            chosen={picked}
-            revealedWrong={removedWrong}
-            revealedWrong2={null}
-            revealedCorrect={
-              revealCorrect && typeof currentCorrect === "number" ? currentCorrect : null
-            }
-            timer={timer}
-            maxTime={TIMER}
-            lastElapsedMs={lastElapsedMs}
-            onAnswer={(i) => answer(i)}
-          >
-            {/* Item shortcuts row — Backpack trigger + quick item buttons (matches regular battle) */}
-            <div className="mt-3 flex items-center justify-center gap-3">
-              <button
-                data-testid="bag-button"
-                onClick={() => setBagOpen(true)}
-                className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition press"
-              >
-                <Backpack className="h-6 w-6 text-muted-foreground" />
-              </button>
-              {quickShortcuts.map((id) => {
-                const def = itemDef(id);
-                const owned = inventory[id] ?? 0;
-                const disabled = owned <= 0 || playerHp >= PLAYER_MAX_HP || locked;
-                return (
-                  <button
-                    key={id}
-                    data-testid={`item-${id}`}
-                    disabled={disabled}
-                    onClick={() => applyPotion(id)}
-                    className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition press disabled:opacity-40"
-                  >
-                    <img
-                      src={def?.iconUrl}
-                      alt={def?.name}
-                      className="sprite h-8 w-8 object-contain [image-rendering:pixelated]"
-                    />
-                    <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-poke-dark px-1 font-pixel text-[9px] text-white">
-                      {owned}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </QuestionCard>
-        </AnimatePresence>
-      </div>
-
+      </NaBattleField>
+      <NaQuestionPanel
+        panelRef={panelRefCb}
+        seconds={timer}
+        maxSeconds={TIMER}
+        category={q.category || "Trivia"}
+        progress={`Q${qIndex + 1}`}
+        question={q.question}
+        options={q.options}
+        states={answerStates}
+        disabled={(i) => locked || removedWrong === i}
+        onAnswer={(i) => void answer(i)}
+        bag={
+          <button type="button" data-testid="bag-button" aria-label="Open your bag" onClick={() => setBagOpen(true)} className="press">
+            <NaGlossIcon kind="bag" size={28} />
+          </button>
+        }
+        banner={
+          lowHp && hasAnyPotion ? (
+            <button type="button" onClick={() => setBagOpen(true)} className="na-caption mt-1 rounded-xl border border-danger/60 bg-danger/15 px-3 py-2 text-foreground">
+              Low HP! Open your bag for a potion.
+            </button>
+          ) : null
+        }
+      />
       {/* Deliberately NOT built on game-ui.tsx's shared `ItemBagSheet`: that
           component groups the FULL item catalog by `CATEGORY_OF` and gates
           use on Regular-Battle-only concepts (`itemCapReached`,
@@ -727,87 +561,43 @@ export function MegaRaidScreen({
           this bespoke two-section (Healing / Battle · Once Per Battle) sheet
           keeps the bag scoped to what actually works in this mode. */}
       {bagOpen && (
-        <div
-          className="absolute inset-0 z-50 flex flex-col justify-end"
-          onClick={() => setBagOpen(false)}
-        >
-          <div className="absolute inset-0" style={{ background: "rgba(10,8,20,0.55)" }} />
+        <div className="absolute inset-0 z-50 flex flex-col justify-end" onClick={() => setBagOpen(false)}>
+          <div className="absolute inset-0 bg-[rgb(4_6_15/0.6)]" />
           <div
-            className="relative max-h-[88vh] overflow-y-auto"
-            style={{
-              background: "var(--brand-cream)",
-              borderRadius: "28px 28px 0 0",
-              padding: "14px 20px 32px",
-              boxShadow: "0 -16px 40px -12px rgba(0,0,0,0.5)",
-            }}
+            className="na-raised relative flex max-h-[88%] flex-col gap-2.5 overflow-y-auto rounded-t-[28px] px-5 pb-[calc(env(safe-area-inset-bottom)+30px)] pt-2.5"
             onClick={(e) => e.stopPropagation()}
           >
-            <div
-              className="mx-auto"
-              style={{ width: 42, height: 5, borderRadius: 999, background: "#E2D6B6" }}
-            />
-            <div className="mt-3.5 flex items-center justify-between">
-              <div className="text-xl font-black" style={{ color: "var(--brand-ink)" }}>
-                Bag
-              </div>
-              <div
-                className="font-pixel"
-                style={{
-                  fontSize: 7,
-                  color: "#9A7320",
-                  background: "#F6E6C4",
-                  borderRadius: 999,
-                  padding: "6px 10px",
-                }}
-              >
-                RAID RULES
-              </div>
+            <div aria-hidden className="mx-auto h-[5px] w-10 shrink-0 rounded-[3px] bg-white/30" />
+            <div className="flex items-center justify-between">
+              <span className="na-display-m text-foreground">Bag</span>
+              <span className="na-label rounded-full bg-reward-gold/15 px-2.5 py-1 uppercase text-reward-gold">Raid rules</span>
             </div>
-            <div
-              className="mt-2 font-pixel"
-              style={{ fontSize: 7, letterSpacing: 1, color: "var(--brand-slate)" }}
-            >
-              HEALING · STACKABLE
-            </div>
-            <div className="mt-2.5 flex flex-col gap-2.5">
-              {(["potion", "superpotion", "maxpotion"] as ItemId[]).map((id) => (
-                <BagRow
-                  key={id}
-                  id={id}
-                  count={inventory[id] ?? 0}
-                  subtitle={`Restore ${HEAL[id]} HP · stack freely`}
-                  onUse={() => applyPotion(id)}
-                  disabled={(inventory[id] ?? 0) <= 0 || playerHp >= PLAYER_MAX_HP}
-                />
-              ))}
-            </div>
-            <div
-              className="mt-3.5 font-pixel"
-              style={{ fontSize: 7, letterSpacing: 1, color: "var(--brand-slate)" }}
-            >
-              BATTLE · ONCE PER BATTLE
-            </div>
-            <div className="mt-2.5 flex flex-col gap-2.5">
-              {(["xattack", "scope", "xaccuracy"] as ItemId[]).map((id) => (
-                <BagRow
-                  key={id}
-                  id={id}
-                  count={inventory[id] ?? 0}
-                  subtitle={itemDef(id)?.desc ?? ""}
-                  used={usedOnce.has(id)}
-                  onUse={() => applyBattleItem(id)}
-                  disabled={usedOnce.has(id) || (inventory[id] ?? 0) <= 0 || locked}
-                />
-              ))}
-            </div>
-            <button
-              data-testid="escape-button"
-              onClick={escape}
-              className="mt-4 flex h-12 w-full items-center justify-center rounded-full text-sm font-bold text-white press-lg"
-              style={{ background: "rgba(28,35,51,0.9)" }}
-            >
-              Flee with Escape Rope (doesn't count)
-            </button>
+            <span className="na-label uppercase text-text-secondary">Healing · use any time</span>
+            {(["potion", "superpotion", "maxpotion"] as ItemId[]).map((id) => (
+              <BagRow
+                key={id}
+                id={id}
+                count={inventory[id] ?? 0}
+                subtitle={`Restores ${HEAL[id]} HP`}
+                onUse={() => applyPotion(id)}
+                disabled={(inventory[id] ?? 0) <= 0 || playerHp >= PLAYER_MAX_HP}
+              />
+            ))}
+            <span className="na-label mt-1 uppercase text-text-secondary">Battle · once per raid</span>
+            {(["xattack", "scope", "xaccuracy"] as ItemId[]).map((id) => (
+              <BagRow
+                key={id}
+                id={id}
+                count={inventory[id] ?? 0}
+                subtitle={itemDef(id)?.desc ?? ""}
+                used={usedOnce.has(id)}
+                onUse={() => applyBattleItem(id)}
+                disabled={usedOnce.has(id) || (inventory[id] ?? 0) <= 0 || locked}
+              />
+            ))}
+            <NaButton kind="secondary" size="M" block data-testid="escape-button" onClick={escape} className="mt-2">
+              Flee with an Escape Rope (doesn&apos;t count)
+            </NaButton>
           </div>
         </div>
       )}
@@ -845,15 +635,6 @@ export function MegaRaidScreen({
   );
 }
 
-function PartnerSprite() {
-  const partner = useGameStore((s) => s.pokemon);
-  if (!partner) return <div style={{ width: 52, height: 52 }} />;
-  return <PokemonSprite id={partner.id} back alt={partner.name} className="h-[52px] w-[52px]" />;
-}
-function PartnerName() {
-  const partner = useGameStore((s) => s.pokemon);
-  return <>{partner?.name ?? "Partner"}</>;
-}
 
 function BagRow({
   id,
@@ -872,43 +653,19 @@ function BagRow({
 }) {
   const def = itemDef(id);
   return (
-    <div
-      className="flex items-center gap-3 rounded-2xl px-3.5 py-3"
-      style={{
-        background: "#FDF8EC",
-        boxShadow: "0 3px 0 #ECE2C8",
-        opacity: disabled && !used ? 0.55 : 1,
-      }}
-    >
-      <div
-        className="flex h-[46px] w-[46px] items-center justify-center rounded-xl"
-        style={{ background: "#F7DACB" }}
-      >
+    <div className={`na-glass flex items-center gap-3 rounded-2xl px-3.5 py-3 ${disabled && !used ? "opacity-55" : ""}`}>
+      <span className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-xl bg-night-card-2">
         <img src={def?.iconUrl} alt={def?.name} className="h-8 w-8 [image-rendering:pixelated]" />
-      </div>
-      <div className="flex-1">
-        <div className="text-[15px] font-bold" style={{ color: "var(--brand-ink)" }}>
-          {def?.name} {count > 0 && <span style={{ color: "var(--brand-slate)" }}>×{count}</span>}
-        </div>
-        <div className="text-xs" style={{ color: "var(--brand-slate)" }}>
-          {subtitle}
-        </div>
-      </div>
-      <button
-        data-testid={`bag-item-${id}`}
-        onClick={onUse}
-        disabled={disabled}
-        className="press font-pixel"
-        style={{
-          fontSize: 6.5,
-          color: used ? "var(--brand-slate)" : "#fff",
-          background: used ? "#EFE7D2" : disabled ? "#C9B998" : "var(--brand-red)",
-          borderRadius: 999,
-          padding: "8px 11px",
-        }}
-      >
-        {used ? "USED" : "USE"}
-      </button>
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="na-body-strong text-foreground">
+          {def?.name} {count > 0 && <span className="text-text-secondary">×{count}</span>}
+        </span>
+        <span className="na-caption text-text-secondary">{subtitle}</span>
+      </span>
+      <NaButton kind={used ? "secondary" : "primary"} size="M" data-testid={`bag-item-${id}`} onClick={onUse} disabled={disabled}>
+        {used ? "Used" : "Use"}
+      </NaButton>
     </div>
   );
 }

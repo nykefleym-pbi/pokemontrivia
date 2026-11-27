@@ -7,8 +7,12 @@ import { playSfx } from "@/lib/audio";
 import { MEGA_REWARD, megaRankScale, type MegaEvent } from "@/lib/mega/schedule";
 import { rollLevelUpRewards } from "@/lib/level-rewards";
 import { claimMegaReward } from "@/services/client/mega-reward-claim";
-import { AppIcon } from "@/components/app-icon";
-import { UI_ICON } from "@/lib/app-icons";
+import { NaIcon } from "@/components/na/icon";
+import { NaGlossIcon } from "@/components/na/gloss-icon";
+import { NaRewardIcon } from "@/components/na/reward-icon";
+import { NaButton } from "@/components/na/button";
+import { FitSprite, FittedTrainer } from "@/components/na/battle";
+import { findPokemon } from "@/lib/pokemon-data";
 import {
   fetchMegaLeaderboard,
   getMyMegaRun,
@@ -22,44 +26,24 @@ import {
   sendFriendRequestById,
 } from "@/lib/social";
 
-// Small per-row friend action: + (add) / Pending / Friend.
+// Small per-row friend action: Add / Pending / Friend (Figma 13.4 pills).
 function FriendChip({ state, onAdd }: { state: "add" | "pending" | "friend"; onAdd: () => void }) {
   if (state === "friend") {
     return (
-      <span
-        className="shrink-0 rounded-full px-2 py-1 font-pixel"
-        style={{
-          fontSize: 6,
-          color: "rgba(255,255,255,0.55)",
-          background: "rgba(255,255,255,0.08)",
-        }}
-      >
-        FRIEND
+      <span className="na-label flex shrink-0 items-center gap-1 rounded-full border border-success/40 bg-success/[0.14] py-[5px] pl-2 pr-3 uppercase text-success">
+        <NaIcon name="check" size={12} /> Friend
       </span>
     );
   }
   if (state === "pending") {
-    return (
-      <span
-        className="shrink-0 rounded-full px-2 py-1 font-pixel"
-        style={{ fontSize: 6, color: "var(--brand-gold)", background: "rgba(242,214,78,0.12)" }}
-      >
-        PENDING
-      </span>
-    );
+    return <span className="na-label shrink-0 rounded-full bg-white/10 px-3 py-[5px] uppercase text-text-muted">Pending</span>;
   }
   return (
-    <button
-      onClick={onAdd}
-      aria-label="Add friend"
-      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[16px] font-black leading-none transition press"
-      style={{ background: "var(--brand-gold)", color: "var(--brand-ink)" }}
-    >
-      +
+    <button type="button" onClick={onAdd} aria-label="Add friend" className="na-label flex shrink-0 items-center gap-1 rounded-full border border-white/[0.16] bg-night-card-2 py-[5px] pl-2 pr-3 uppercase text-foreground press">
+      <NaGlossIcon kind="profile" size={12} /> Add
     </button>
   );
 }
-
 function fmtTime(ms: number) {
   const s = Math.max(0, Math.round(ms / 1000));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
@@ -73,33 +57,6 @@ function fmtCountdown(ms: number) {
   if (h > 0) return `${h}H ${m}M`;
   return `${m}M`;
 }
-
-const PODIUM = {
-  1: {
-    ring: "var(--brand-gold)",
-    bar: "linear-gradient(var(--brand-gold),#D9B838)",
-    barText: "#7A5E10",
-    h: 80,
-    av: 50,
-    w: 92,
-  },
-  2: {
-    ring: "#C0C6D4",
-    bar: "linear-gradient(#3A4660,#2A3450)",
-    barText: "#C0C6D4",
-    h: 58,
-    av: 40,
-    w: 86,
-  },
-  3: {
-    ring: "#C8895A",
-    bar: "linear-gradient(#5A4636,#3F3127)",
-    barText: "#C8895A",
-    h: 44,
-    av: 40,
-    w: 86,
-  },
-} as const;
 
 interface Props {
   event: MegaEvent;
@@ -177,8 +134,6 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
 
   const ended = now >= Date.parse(event.endsAt);
   const msLeft = Date.parse(event.endsAt) - now;
-  const champion = rows[0] ?? null;
-  const isMyChampion = !!(champion && mine && champion.user_id === mine.user_id);
   const myRank = mine ? rows.findIndex((r) => r.user_id === mine.user_id) + 1 : 0;
 
   const [claiming, setClaiming] = useState(false);
@@ -249,470 +204,103 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
     playSfx("claim_reward");
   };
 
-  const Avatar = ({ sprite, size, ring }: { sprite: string; size: number; ring: string }) => (
-    <div
-      className="flex items-start justify-center overflow-hidden rounded-full"
-      style={{ width: size, height: size, background: "#2A2D3A", border: `2px solid ${ring}` }}
-    >
-      <img
-        src={trainerSpriteUrl(sprite)}
-        alt=""
-        crossOrigin="anonymous"
-        className="object-cover object-top"
-        style={{ width: size - 4, height: size - 4 }}
-        onError={(e) => {
-          (e.currentTarget as HTMLImageElement).style.visibility = "hidden";
-        }}
-      />
-    </div>
-  );
+  const rank = myRank > 0 ? myRank : 99;
+  const scale = megaRankScale(rank);
+  const pay = { xp: Math.round(MEGA_REWARD.xp * scale), coins: Math.round(MEGA_REWARD.coins * scale), tp: Math.round(MEGA_REWARD.tp * scale) };
+  const base = findPokemon(event.baseDexId)?.name ?? "the boss";
+  const done = rewardClaimed || claimed;
 
   return (
-    <div
-      className="flex h-full w-full flex-col overflow-hidden"
-      style={{ background: "var(--brand-ink-deep)", fontFamily: "Outfit, sans-serif" }}
-    >
-      {/* header banner */}
-      <div
-        className="relative px-5 pb-[18px]"
-        style={{
-          paddingTop: 44,
-          background:
-            "radial-gradient(circle at 50% 30%, #2E3A5C 0%, var(--brand-ink) 62%, var(--brand-ink-deep) 100%)",
-          overflow: "hidden",
-        }}
-      >
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "repeating-conic-gradient(from 0deg at 50% 26%, rgba(242,214,78,0.14) 0deg 7deg, transparent 7deg 15deg)",
-          }}
-        />
-        <img
-          src={`https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/${event.megaId}.png`}
-          alt={event.name}
-          crossOrigin="anonymous"
-          className="absolute object-contain"
-          style={{ right: 48, top: 40, width: 96, height: 96, opacity: 0.92 }}
-          onError={(e) => {
-            (e.currentTarget as HTMLImageElement).style.display = "none";
-          }}
-        />
-        <button
-          onClick={onBack}
-          className="relative flex h-9 w-9 items-center justify-center rounded-full text-lg text-white press"
-          style={{ background: "rgba(255,255,255,0.1)" }}
-        >
-          ‹
+    // Figma 13.4 "Leaderboard: claim when the raid ends".
+    <div className="na-bg-night flex h-full w-full flex-col overflow-y-auto pb-[calc(env(safe-area-inset-bottom)+16px)] pt-[env(safe-area-inset-top)]">
+      <div className="flex h-[52px] shrink-0 items-center gap-3 px-4">
+        <button type="button" aria-label="Back" onClick={onBack} className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-white/10 text-foreground">
+          <NaIcon name="arrow-left" size={20} />
         </button>
-        <div className="relative mt-2.5">
-          <div
-            className="font-pixel"
-            style={{ fontSize: 6.5, letterSpacing: 1, color: "var(--brand-gold)" }}
-          >
-            {ended ? "EVENT ENDED · RESULTS" : "MEGA RAID · LEADERBOARD"}
-          </div>
-          <div
-            className="mt-2 text-[23px] font-black leading-[1.1] text-white"
-            style={{ maxWidth: 220 }}
-          >
-            {event.name}
-          </div>
-          <div
-            className="mt-2.5 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5"
-            style={{ background: "rgba(0,0,0,0.3)" }}
-          >
-            {!ended && (
-              <svg width="11" height="11" viewBox="0 0 22 22" fill="none">
-                <circle cx="11" cy="11" r="8.5" stroke="var(--brand-gold)" strokeWidth="2" />
-                <path
-                  d="M11 6.5V11l3 2"
-                  stroke="var(--brand-gold)"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </svg>
-            )}
-            <span className="font-pixel" style={{ fontSize: 6.5, color: "var(--brand-gold)" }}>
-              {ended ? `${rows.length} TRAINERS COMPETED` : `ENDS IN ${fmtCountdown(msLeft)}`}
-            </span>
-          </div>
-        </div>
+        <h1 className="na-display-s flex-1 text-foreground">Leaderboard</h1>
       </div>
+      <div className="flex flex-col gap-2.5 px-4 pt-1">
+        <div className="na-glass flex items-center gap-3 rounded-[18px] px-3.5 py-2.5">
+          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="na-label uppercase text-reward-gold">
+              {ended ? "Raid ended" : `Ends in ${fmtCountdown(msLeft)}`} · {rows.length} trainer{rows.length === 1 ? "" : "s"}
+            </span>
+            <span className="na-title truncate text-foreground">{event.name}</span>
+          </span>
+          <FitSprite id={event.megaId} size={56} />
+        </div>
 
-      {loading ? (
-        <div
-          className="mt-10 text-center font-pixel"
-          style={{ fontSize: 8, color: "rgba(255,255,255,0.5)" }}
-        >
-          LOADING…
-        </div>
-      ) : rows.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center px-9 text-center">
-          <div className="text-[22px] font-black text-white [text-wrap:pretty]">
-            Be the first to challenge {event.name}!
+        {loading ? (
+          <p className="na-body py-10 text-center text-text-secondary">Loading…</p>
+        ) : rows.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 px-5 py-10 text-center">
+            <span className="na-title text-foreground">Be the first to challenge {event.name}!</span>
+            <span className="na-body text-text-secondary">No trainers have finished the raid yet. Set the pace and claim #1.</span>
+            {!ended && (
+              <NaButton block onClick={onBattle}>
+                Start the raid
+              </NaButton>
+            )}
           </div>
-          <div className="mt-2 text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>
-            No trainers have completed the raid yet. Set the pace and claim #1.
-          </div>
-          {!ended && (
-            <button
-              onClick={onBattle}
-              className="mt-6 flex h-[54px] w-full items-center justify-center rounded-full font-pixel text-white press-lg"
-              style={{
-                fontSize: 11,
-                letterSpacing: 1,
-                background: "var(--brand-red)",
-                boxShadow: "0 5px 0 #A82A20",
-              }}
-            >
-              START THE RAID
-            </button>
-          )}
-        </div>
-      ) : ended ? (
-        <div className="flex-1 overflow-y-auto px-4 pb-9 pt-3.5">
-          {mine &&
-            (() => {
-              const rank = myRank > 0 ? myRank : 99;
-              const scale = megaRankScale(rank);
-              const xp = Math.round(MEGA_REWARD.xp * scale);
-              const coins = Math.round(MEGA_REWARD.coins * scale);
-              const tp = Math.round(MEGA_REWARD.tp * scale);
-              const placementText =
-                myRank > 0 ? `You placed #${myRank} of ${rows.length}` : "You participated";
-              if (rank === 1) {
-                return (
-                  <div
-                    className="relative overflow-hidden rounded-[20px] p-[18px] text-center"
-                    style={{
-                      background:
-                        "radial-gradient(circle at 50% 0%, #6a2db5 0%, var(--brand-ink) 80%)",
-                      border: "1.5px solid var(--brand-gold)",
-                    }}
-                  >
-                    <div
-                      className="absolute inset-0"
-                      style={{
-                        background:
-                          "repeating-conic-gradient(from 0deg at 50% 30%, rgba(242,214,78,0.16) 0deg 6deg, transparent 6deg 13deg)",
-                      }}
-                    />
-                    <div className="relative">
-                      <AppIcon src={UI_ICON.trophies} className="mx-auto h-[38px] w-[38px]" />
-                      <div
-                        className="mt-1.5 font-pixel"
-                        style={{ fontSize: 10, letterSpacing: 1, color: "var(--brand-gold)" }}
-                      >
-                        YOU'RE THE CHAMPION!
-                      </div>
-                      <div className="mt-2 text-[13px]" style={{ color: "rgba(255,255,255,0.8)" }}>
-                        {placementText}
-                      </div>
-                      <div
-                        className="mt-2 text-[12px] font-bold"
-                        style={{ color: "var(--brand-gold)" }}
-                      >
-                        +{xp} XP · +{coins} Coins · +{tp} TP
-                      </div>
-                      <div className="mt-1 text-[11px]" style={{ color: "rgba(255,255,255,0.7)" }}>
-                        + 10 items · Poké Egg · Pokédex · Trophy
-                      </div>
-                      {rewardClaimed || claimed ? (
-                        <div
-                          className="mt-3.5 flex h-[54px] items-center justify-center rounded-full font-pixel"
-                          style={{
-                            fontSize: 10,
-                            letterSpacing: 1,
-                            background: "rgba(242,214,78,0.16)",
-                            color: "var(--brand-gold)",
-                          }}
-                        >
-                          REWARDS CLAIMED ✓
-                        </div>
-                      ) : null}
-                      {!(rewardClaimed || claimed) && (
-                        <button
-                          onClick={() => void claimReward()}
-                          disabled={claiming}
-                          className="mt-3.5 flex h-[54px] w-full items-center justify-center rounded-full font-pixel press-lg disabled:opacity-60"
-                          style={{
-                            fontSize: 11,
-                            letterSpacing: 1,
-                            background:
-                              "linear-gradient(95deg, var(--brand-gold), var(--brand-amber))",
-                            color: "var(--brand-ink)",
-                            boxShadow: "0 5px 0 var(--brand-gold-shadow)",
-                          }}
-                        >
-                          {claiming ? "CLAIMING…" : "CLAIM REWARDS"}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              }
-              return (
-                <div
-                  className="rounded-[20px] p-4 text-center"
-                  style={{
-                    background: "rgba(255,255,255,0.05)",
-                    border: "1.5px solid rgba(255,255,255,0.14)",
-                  }}
-                >
-                  <div
-                    className="font-pixel"
-                    style={{ fontSize: 9, letterSpacing: 1, color: "var(--brand-gold)" }}
-                  >
-                    EVENT REWARDS
-                  </div>
-                  <div className="mt-1.5 text-[14px] font-extrabold text-white">
-                    {placementText}
-                  </div>
-                  <div
-                    className="mt-1 text-[13px] font-bold"
-                    style={{ color: "rgba(255,255,255,0.85)" }}
-                  >
-                    +{xp} XP · +{coins} Coins · +{tp} TP
-                  </div>
-                  {rewardClaimed ? (
-                    <div
-                      className="mt-3 flex h-12 items-center justify-center rounded-full font-pixel"
-                      style={{
-                        fontSize: 9,
-                        letterSpacing: 1,
-                        background: "rgba(255,255,255,0.08)",
-                        color: "rgba(255,255,255,0.7)",
-                      }}
-                    >
-                      REWARDS CLAIMED ✓
-                    </div>
-                  ) : null}
-                  {!rewardClaimed && (
-                    <button
-                      onClick={() => void claimReward()}
-                      disabled={claiming}
-                      className="mt-3 flex h-12 w-full items-center justify-center rounded-full font-pixel press-lg disabled:opacity-60"
-                      style={{
-                        fontSize: 10,
-                        letterSpacing: 1,
-                        background: "linear-gradient(95deg, var(--brand-gold), var(--brand-amber))",
-                        color: "var(--brand-ink)",
-                        boxShadow: "0 4px 0 var(--brand-gold-shadow)",
-                      }}
-                    >
-                      {claiming ? "CLAIMING…" : "CLAIM REWARDS"}
-                    </button>
-                  )}
-                </div>
-              );
-            })()}
-          <div
-            className="mt-3.5 font-pixel"
-            style={{ fontSize: 7, letterSpacing: 1, color: "rgba(255,255,255,0.5)" }}
-          >
-            RANKINGS
-          </div>
-          <div className="mt-2.5 flex flex-col gap-2">
-            {rows.slice(0, 50).map((r, i) => {
-              const rank = i + 1;
-              const me = mine?.user_id === r.user_id;
-              const medal =
-                rank === 1
-                  ? "var(--brand-gold)"
-                  : rank === 2
-                    ? "#C0C6D4"
-                    : rank === 3
-                      ? "#C8895A"
-                      : "rgba(255,255,255,0.5)";
-              return (
-                <div
-                  key={r.user_id}
-                  className="flex items-center gap-3 rounded-[14px] px-3.5 py-[11px]"
-                  style={
-                    me
-                      ? {
-                          background:
-                            "linear-gradient(95deg, rgba(242,214,78,0.2), rgba(242,214,78,0.05))",
-                          border: "1.5px solid var(--brand-gold)",
-                        }
-                      : undefined
-                  }
-                >
-                  <span
-                    className="font-pixel"
-                    style={{ fontSize: rank <= 3 ? 10 : 9, color: medal, width: 24 }}
-                  >
-                    {rank}
-                  </span>
-                  <Avatar
-                    sprite={r.trainer_sprite}
-                    size={rank <= 3 ? 36 : 34}
-                    ring={medal === "rgba(255,255,255,0.5)" ? "#2A2D3A" : medal}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-[14px] font-bold text-white">
-                      {me ? "You" : r.trainer_name}
-                    </div>
-                    {me && isMyChampion && (
-                      <div
-                        className="font-pixel"
-                        style={{ fontSize: 6, color: "var(--brand-gold)" }}
-                      >
-                        CHAMPION
-                      </div>
-                    )}
-                  </div>
-                  {!me && r.user_id !== myUid && (
-                    <FriendChip
-                      state={friendState(r.user_id)}
-                      onAdd={() => void addFriend(r.user_id)}
-                    />
-                  )}
-                  <div
-                    className="text-[17px] font-black"
-                    style={{ color: medal === "rgba(255,255,255,0.5)" ? "#fff" : medal }}
-                  >
-                    {Math.round(r.accuracy)}%
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <div className="px-4 pt-3">
-            <div
-              className="flex items-center gap-2 rounded-[14px] px-3.5 py-2.5"
-              style={{
-                background: "linear-gradient(95deg, var(--brand-gold), var(--brand-amber))",
-              }}
-            >
-              <AppIcon src={UI_ICON.trophies} className="h-4 w-4 shrink-0" />
-              <span className="text-[11.5px] font-bold leading-tight" style={{ color: "#5A3E12" }}>
-                Champion: {MEGA_REWARD.xp.toLocaleString()} XP ·{" "}
-                {MEGA_REWARD.coins.toLocaleString()} Coins · {MEGA_REWARD.tp} TP ·{" "}
-                {MEGA_REWARD.items} items · Trophy — top 3 & all who place win rank-scaled rewards
-              </span>
-            </div>
-          </div>
-          <div className="flex items-end justify-center gap-2 px-[18px] pt-3.5">
-            {([2, 1, 3] as const).map((rank) => {
-              const r = rows[rank - 1];
-              if (!r) return <div key={rank} style={{ width: PODIUM[rank].w }} />;
-              const p = PODIUM[rank];
-              return (
-                <div key={rank} className="flex flex-col items-center" style={{ width: p.w }}>
-                  <div
-                    className={rank === 1 ? "mt-0.5" : ""}
-                    style={
-                      rank === 1
-                        ? { filter: "drop-shadow(0 0 14px rgba(242,214,78,0.6))" }
-                        : undefined
-                    }
-                  >
-                    <Avatar sprite={r.trainer_sprite} size={p.av} ring={p.ring} />
-                  </div>
-                  <div className="mt-1 text-[12px] font-bold text-white">
-                    {mine?.user_id === r.user_id ? "You" : r.trainer_name}
-                  </div>
-                  <div className="text-[13px] font-black" style={{ color: p.ring }}>
-                    {Math.round(r.accuracy)}%
-                  </div>
-                  <div
-                    className="mt-1.5 flex w-full justify-center rounded-t-lg pt-1.5 font-pixel"
-                    style={{
-                      height: p.h,
-                      background: p.bar,
-                      fontSize: rank === 1 ? 14 : rank === 2 ? 12 : 11,
-                      color: p.barText,
-                    }}
-                  >
-                    {rank}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <div className="flex-1 overflow-y-auto px-3.5 pt-1">
-            {rows.slice(3).map((r, i) => {
-              const rank = i + 4;
-              const me = mine?.user_id === r.user_id;
-              return (
-                <div
-                  key={r.user_id}
-                  className="flex items-center gap-3 rounded-xl px-3 py-2.5"
-                  style={i % 2 === 1 ? { background: "rgba(255,255,255,0.04)" } : undefined}
-                >
-                  <span
-                    className="font-pixel"
-                    style={{ fontSize: 9, color: "rgba(255,255,255,0.5)", width: 22 }}
-                  >
-                    {rank}
-                  </span>
-                  <Avatar sprite={r.trainer_sprite} size={34} ring="#2A2D3A" />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-[14px] font-bold text-white">
-                      {me ? "You" : r.trainer_name}
-                    </div>
-                    <div
-                      className="font-pixel"
-                      style={{ fontSize: 6, color: "rgba(255,255,255,0.45)" }}
-                    >
-                      {r.correct}/{r.total} · {fmtTime(r.time_ms)}
-                    </div>
-                  </div>
-                  {!me && r.user_id !== myUid && (
-                    <FriendChip
-                      state={friendState(r.user_id)}
-                      onAdd={() => void addFriend(r.user_id)}
-                    />
-                  )}
-                  <div className="text-[17px] font-black text-white">{Math.round(r.accuracy)}%</div>
-                </div>
-              );
-            })}
-          </div>
-          {mine && myRank > 0 && (
-            <div
-              className="px-3.5 pb-9 pt-2"
-              style={{
-                background: "linear-gradient(180deg, transparent, var(--brand-ink-deep) 40%)",
-              }}
-            >
-              <div
-                className="flex items-center gap-3 rounded-2xl px-3.5 py-3"
-                style={{
-                  background: "linear-gradient(95deg, rgba(226,59,46,0.25), rgba(242,214,78,0.25))",
-                  border: "1.5px solid var(--brand-gold)",
-                }}
-              >
-                <span
-                  className="font-pixel"
-                  style={{ fontSize: 10, color: "var(--brand-gold)", width: 30 }}
-                >
-                  {myRank}
+        ) : (
+          <>
+            {mine && (
+              <div className="flex flex-col items-center gap-2.5 rounded-[20px] border-[1.5px] border-reward-gold/60 bg-night-card p-4">
+                <span className="na-title text-center text-foreground">
+                  {myRank > 0 ? (ended ? `You placed #${myRank} out of ${rows.length}!` : `You're #${myRank} of ${rows.length} so far!`) : "You took part!"}
                 </span>
-                <Avatar sprite={mine.trainer_sprite} size={36} ring="var(--brand-red)" />
-                <div className="min-w-0 flex-1">
-                  <div className="text-[15px] font-extrabold text-white">You</div>
-                  <div
-                    className="font-pixel"
-                    style={{ fontSize: 6, color: "rgba(255,255,255,0.6)" }}
-                  >
-                    {mine.correct}/{mine.total} · {fmtTime(mine.time_ms)}
-                  </div>
-                </div>
-                <div className="text-[18px] font-black text-white">
-                  {Math.round(mine.accuracy)}%
-                </div>
+                <span className="flex flex-wrap items-center justify-center gap-3.5">
+                  {[["XP", `+${pay.xp} XP`], ["Coin", `+${pay.coins} coins`], ["TP", `+${pay.tp} TP`]].map(([k, v]) => (
+                    <span key={k} className="flex items-center gap-1">
+                      <NaRewardIcon kind={k as "XP" | "Coin" | "TP"} size={22} />
+                      <span className="na-body-strong text-foreground">{v}</span>
+                    </span>
+                  ))}
+                </span>
+                {ended ? (
+                  done ? (
+                    <span className="na-label uppercase text-success">Rewards claimed</span>
+                  ) : (
+                    <NaButton kind="gold" block disabled={claiming} onClick={() => void claimReward()}>
+                      {claiming ? "Claiming…" : "Claim rewards"}
+                    </NaButton>
+                  )
+                ) : (
+                  <span className="na-caption text-center text-text-secondary">Claim these when the raid ends, in {fmtCountdown(msLeft).toLowerCase()}.</span>
+                )}
+                <span className="na-caption text-center text-text-secondary">
+                  {rank === 1 && ended ? `You also earned 10 items, a Poké Egg & ${base} for your Pokédex!` : `1st Place also ${ended ? "earned" : "gets"} 10 items, a Poké Egg & ${base} for their Pokédex!`}
+                </span>
               </div>
-            </div>
-          )}
-        </div>
-      )}
+            )}
+            {rows.slice(0, 50).map((r, i) => {
+              const n = i + 1;
+              const me = mine?.user_id === r.user_id;
+              return (
+                <div
+                  key={r.user_id}
+                  className={`flex items-center gap-2.5 rounded-2xl border px-3 py-2 ${me ? "border-reward-gold/60 bg-reward-gold/[0.12]" : "border-white/[0.12] bg-white/[0.08]"}`}
+                >
+                  <span className={`na-number-m w-8 ${n === 1 ? "text-reward-gold" : "text-text-secondary"}`}>#{n}</span>
+                  <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-night-card-2">
+                    <FittedTrainer art={trainerSpriteUrl(r.trainer_sprite)} height={30} cx={18} feetY={33} />
+                  </span>
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="flex items-center gap-1">
+                      <span className="na-body-strong truncate text-foreground">{me ? `${r.trainer_name} (you)` : r.trainer_name}</span>
+                      {n === 1 && <NaGlossIcon kind="crown" size={14} />}
+                    </span>
+                    <span className="na-caption text-text-secondary">
+                      {Math.round(r.accuracy)}% accuracy · {fmtTime(r.time_ms)}
+                    </span>
+                  </span>
+                  {!me && r.user_id !== myUid && <FriendChip state={friendState(r.user_id)} onAdd={() => void addFriend(r.user_id)} />}
+                </div>
+              );
+            })}
+          </>
+        )}
+      </div>
     </div>
   );
 }

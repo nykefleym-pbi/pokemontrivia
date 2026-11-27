@@ -130,7 +130,7 @@ async function renderAndWaitForBoard(rank2nd = false) {
     await Promise.resolve();
     await Promise.resolve();
   });
-  await waitFor(() => screen.getByText("CLAIM REWARDS"));
+  await waitFor(() => screen.getByText("Claim rewards"));
 }
 
 describe("MegaLeaderboard mega-reward-claim wiring", () => {
@@ -147,7 +147,7 @@ describe("MegaLeaderboard mega-reward-claim wiring", () => {
     const prevCoins = useGameStore.getState().coins;
 
     await act(async () => {
-      fireEvent.click(screen.getByText("CLAIM REWARDS"));
+      fireEvent.click(screen.getByText("Claim rewards"));
       await Promise.resolve();
     });
 
@@ -170,7 +170,7 @@ describe("MegaLeaderboard mega-reward-claim wiring", () => {
     const prevEggs = useGameStore.getState().pokeEggs?.length ?? 0;
 
     await act(async () => {
-      fireEvent.click(screen.getByText("CLAIM REWARDS"));
+      fireEvent.click(screen.getByText("Claim rewards"));
       await Promise.resolve();
     });
 
@@ -194,7 +194,7 @@ describe("MegaLeaderboard mega-reward-claim wiring", () => {
     await renderAndWaitForBoard(false); // rank 1 (champion)
 
     await act(async () => {
-      fireEvent.click(screen.getByText("CLAIM REWARDS"));
+      fireEvent.click(screen.getByText("Claim rewards"));
       await Promise.resolve();
     });
 
@@ -206,7 +206,7 @@ describe("MegaLeaderboard mega-reward-claim wiring", () => {
     await renderAndWaitForBoard(true);
 
     await act(async () => {
-      fireEvent.click(screen.getByText("CLAIM REWARDS"));
+      fireEvent.click(screen.getByText("Claim rewards"));
       await Promise.resolve();
     });
 

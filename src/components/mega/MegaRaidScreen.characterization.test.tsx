@@ -367,7 +367,10 @@ describe("MegaRaidScreen characterization (regression baseline)", () => {
     expect(screen.getByTestId("player-hp").textContent).toBe("92/100");
 
     await act(async () => {
-      fireEvent.click(screen.getByTestId("item-potion")); // +30 HP, capped at 100
+      fireEvent.click(screen.getByTestId("bag-button"));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("bag-item-potion")); // +30 HP, capped at 100
     });
     expect(screen.getByTestId("player-hp").textContent).toBe("100/100");
   });

@@ -13,6 +13,7 @@ import { playBgm } from "@/lib/audio";
 import { ApiError } from "@/lib/api/client";
 import { MegaRaidScreen } from "@/components/mega/MegaRaidScreen";
 import { MegaLeaderboard } from "@/components/mega/MegaLeaderboard";
+import { MegaIntro } from "@/components/mega/MegaIntro";
 import { RouteHome, type MegaHomeState } from "@/components/route-home";
 import { EliteChallenge } from "@/components/elite-challenge";
 import { LevelUpScreen } from "@/components/level-up-screen";
@@ -94,7 +95,7 @@ function BattlePage() {
   const navigate = useNavigate();
   const search = Route.useSearch();
   const [phase, setPhase] = useState<
-    "home" | "loading" | "fighting" | "daily" | "elite" | "weekly" | "mega" | "megaLeaderboard"
+    "home" | "loading" | "fighting" | "daily" | "elite" | "weekly" | "mega" | "megaIntro" | "megaLeaderboard"
   >("home");
   // Which mode card was pressed, or null for a plain Start Battle.
   //
@@ -108,6 +109,7 @@ function BattlePage() {
   const [eliteOpponent, setEliteOpponent] = useState<EliteMember | null>(null);
   const [weeklyOpponent, setWeeklyOpponent] = useState<GymLeader | null>(null);
   const [megaEvent, setMegaEvent] = useState<MegaEvent | null>(null);
+  const [megaAttemptsLeft, setMegaAttemptsLeft] = useState(MEGA_MAX_ATTEMPTS);
   const [activeMega, setActiveMega] = useState<MegaEvent | null>(null);
   const [megaStats, setMegaStats] = useState<{
     rank: number;
@@ -209,6 +211,7 @@ function BattlePage() {
         playBgm("weekly_league");
         break;
       case "mega":
+      case "megaIntro":
         playBgm("mega");
         break;
       case "megaLeaderboard":
@@ -230,6 +233,7 @@ function BattlePage() {
       phase === "elite" ||
       phase === "weekly" ||
       phase === "mega" ||
+      phase === "megaIntro" ||
       phase === "megaLeaderboard";
     if (!inBattle && !eliteTakeover) playBgm("home", { level });
   }, [level, phase, eliteTakeover]);
@@ -286,7 +290,7 @@ function BattlePage() {
   // Hide the persistent bottom nav while a Mega Raid or its end screens are on-screen,
   // so the nav pill can't overlay raid action buttons or be tapped by accident.
   useEffect(() => {
-    const inMega = phase === "mega" || phase === "megaLeaderboard";
+    const inMega = phase === "mega" || phase === "megaIntro" || phase === "megaLeaderboard";
     if (!inMega) return;
     const { setBattleScreenActive } = useGameStore.getState();
     setBattleScreenActive(true);
@@ -495,6 +499,27 @@ function BattlePage() {
       setQuestions(qs);
       setBattleKey((k) => k + 1);
       setPhase("mega");
+    } catch (e) {
+      console.error(e);
+      toast.error("Couldn't load the Mega Raid.");
+      setPhase("home");
+    }
+  }
+
+  /** Home's Mega Raid stop opens the 13.1 intro first; its Start raid calls startMega. */
+  async function openMegaIntro() {
+    setPrepping("Mega Raid");
+    setPhase("loading");
+    try {
+      const ev = await fetchActiveMegaEvent();
+      if (!ev) {
+        toast.error("No Mega Raid is active right now.");
+        setPhase("home");
+        return;
+      }
+      setMegaAttemptsLeft(Math.max(0, MEGA_MAX_ATTEMPTS - (await getMegaAttempts(ev.id))));
+      setMegaEvent(ev);
+      setPhase("megaIntro");
     } catch (e) {
       console.error(e);
       toast.error("Couldn't load the Mega Raid.");
@@ -1282,6 +1307,15 @@ function BattlePage() {
           onViewLeaderboard={() => setPhase("megaLeaderboard")}
           onRematch={() => setBattleKey((k) => k + 1)}
         />
+      ) : phase === "megaIntro" && megaEvent ? (
+        <MegaIntro
+          event={megaEvent}
+          attemptsLeft={megaAttemptsLeft}
+          loading={false}
+          onStart={() => void startMega()}
+          onLeaderboard={() => setPhase("megaLeaderboard")}
+          onBack={() => setPhase("home")}
+        />
       ) : phase === "megaLeaderboard" && megaEvent ? (
         <MegaLeaderboard event={megaEvent} onBack={() => setPhase("home")} onBattle={startMega} />
       ) : phase === "weekly" && weeklyOpponent ? (
@@ -1305,7 +1339,7 @@ function BattlePage() {
           onStart={startBattle}
           onStartDaily={startDaily}
           onStartWeekly={startWeekly}
-          onStartMega={startMega}
+          onStartMega={() => void openMegaIntro()}
           mega={megaHomeState}
           loading={phase === "loading"}
           dailyDone={dailyDone}

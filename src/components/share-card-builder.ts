@@ -41,6 +41,21 @@ export interface LevelUpShareData {
   dateISO: string;
 }
 
+export interface MegaShareData {
+  type: "mega";
+  trainerName: string;
+  trainerSpriteUrl: string;
+  level: number;
+  bossName: string;
+  megaId: number;
+  shiny: boolean;
+  correct: number;
+  total: number;
+  rank: number | null;
+  timeMs: number;
+  dateISO: string;
+}
+
 export interface EvolutionShareData {
   type: "evolution";
   trainerName: string;
@@ -77,7 +92,7 @@ export interface TrainerCardShareData {
   dateISO: string;
 }
 
-export type ShareData = BattleShareData | EvolutionShareData | TrainerCardShareData | LevelUpShareData;
+export type ShareData = BattleShareData | EvolutionShareData | TrainerCardShareData | LevelUpShareData | MegaShareData;
 
 const CARD_SIZE = 1080;
 const SYSTEM_FONT = "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
@@ -113,6 +128,21 @@ export function storySpec(data: Exclude<ShareData, TrainerCardShareData>): Story
         { value: String(data.statBattles), label: "BATTLES TOGETHER", kind: "heart" },
       ],
       hero: (g) => evolutionHero(g, data.fromPokemonId, data.toPokemonId, data.toShiny),
+    };
+  }
+  if (data.type === "mega") {
+    const stats: StorySpec["stats"] = [{ value: `${data.correct}/${data.total}`, label: "RIGHT", kind: "right" }];
+    if (data.rank) stats.push({ value: `#${data.rank}`, label: "SO FAR", kind: "rank" });
+    stats.push({ value: fmtTime(data.timeMs), label: "TIME", kind: "time" });
+    return {
+      ...who,
+      level: data.level,
+      bg: ["#2FD3C1", "#0E8F88"],
+      confetti: ["#FFFFFF", "#FFD23F", "#FF7A2F"],
+      headline: "RAID WON!",
+      line: `Took down ${data.bossName}`,
+      stats,
+      hero: (g) => standSprite(g, data.megaId, data.shiny, 3),
     };
   }
   if (data.type === "level-up") {

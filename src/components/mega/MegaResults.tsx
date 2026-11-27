@@ -1,9 +1,15 @@
-import { useEffect } from "react";
-import { PokemonSprite } from "@/components/game-ui";
-import { AppIcon } from "@/components/app-icon";
-import { UI_ICON } from "@/lib/app-icons";
+import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import { playSfx } from "@/lib/audio";
 import type { MegaEvent } from "@/lib/mega/schedule";
+import { useGameStore } from "@/lib/store";
+import { trainerSpriteUrl } from "@/lib/game-data";
+import { FieldSprite } from "@/components/na/battle";
+import { NaButton } from "@/components/na/button";
+import { NaGlassRow, NaRewardTile, NaWordmark } from "@/components/na/celebration";
+import { NaRewardIcon } from "@/components/na/reward-icon";
+import { ShareCardDialog } from "@/components/share-card-dialog";
+import type { ShareData } from "@/components/share-card-builder";
 
 export interface MegaRewardItem {
   id: string;
@@ -33,22 +39,18 @@ function fmtTime(ms: number) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
-export function MegaResults({
-  event,
-  outcome,
-  accuracy,
-  correct,
-  total,
-  timeMs,
-  rank,
-  shiny,
-
-  canRematch,
-  onRematch,
-  onHome,
-  onViewLeaderboard,
-}: MegaResultsProps) {
+/**
+ * Figma 13.3 "Raid result: your rank so far". RAID VICTORY! (or, under 40
+ * right, the boss gets away and the second try is offered), the boss, accuracy,
+ * time and your rank so far (it opens the leaderboard), and when rewards come.
+ */
+export function MegaResults({ event, outcome, accuracy, correct, total, timeMs, rank, shiny, canRematch, onRematch, onHome, onViewLeaderboard }: MegaResultsProps) {
   const win = outcome === "win";
+  const [shareOpen, setShareOpen] = useState(false);
+  const trainerName = useGameStore((s) => s.trainerName);
+  const trainerSprite = useGameStore((s) => s.trainerSprite);
+  const level = useGameStore((s) => s.level);
+  const ends = new Date(event.endsAt).toLocaleDateString("en-US", { weekday: "long" });
 
   useEffect(() => {
     playSfx(win ? "victory" : "defeat");
@@ -64,224 +66,77 @@ export function MegaResults({
     return () => clearTimeout(c);
   }, [win, shiny]);
 
-  return (
-    <div
-      className="flex h-full w-full flex-col overflow-y-auto"
-      style={{ background: "var(--brand-ink-deep)", fontFamily: "Outfit, sans-serif" }}
-    >
-      {/* header: navy hero + gold sunburst */}
-      <div
-        className="relative px-6 pb-6 text-center"
-        style={{
-          paddingTop: 56,
-          background:
-            "radial-gradient(circle at 50% 30%, #2E3A5C 0%, var(--brand-ink) 58%, var(--brand-ink-deep) 100%)",
-          overflow: "hidden",
-        }}
-      >
-        <div
-          className="absolute inset-0"
-          style={{
-            background: `repeating-conic-gradient(from 0deg at 50% 26%, rgba(242,214,78,${win ? 0.14 : 0.08}) 0deg 6deg, transparent 6deg 13deg)`,
-          }}
-        />
-        <div
-          className="relative inline-block font-pixel"
-          style={{
-            fontSize: 9,
-            lineHeight: 1.5,
-            letterSpacing: 1,
-            color: win ? "var(--brand-ink)" : "rgba(255,255,255,0.6)",
-            background: win ? "var(--brand-gold)" : "rgba(255,255,255,0.08)",
-            borderRadius: 999,
-            padding: "9px 18px",
-            boxShadow: win ? "0 4px 0 #C9AE2E" : "none",
-          }}
-        >
-          {win ? `${event.name.toUpperCase()} CAPTURED!` : "RAID FAILED"}
-        </div>
-        <div className="relative mt-3.5 flex justify-center">
-          {win && (
-            <div
-              className="absolute"
-              style={{
-                width: 180,
-                height: 180,
-                borderRadius: "50%",
-                background: "radial-gradient(circle, rgba(242,214,78,0.3) 0%, transparent 68%)",
-              }}
-            />
-          )}
-          <PokemonSprite
-            id={event.megaId}
-            shiny={shiny}
-            alt={event.name}
-            className="relative h-[150px] w-[150px] object-contain"
-          />
-        </div>
-        {!win && (
-          <div className="relative mt-1 text-[26px] font-black leading-tight text-white">
-            {event.name}
-            <br />
-            got away…
-          </div>
-        )}
-      </div>
-
-      {/* stats: 2×2 */}
-      <div className="grid grid-cols-2 gap-2 px-6 pt-5">
-        <StatCard label="ACCURACY" value={`${accuracy}%`} big highlight={win} />
-        <button
-          onClick={onViewLeaderboard}
-          className="flex flex-col justify-center rounded-2xl px-4 py-3.5 text-left press-lg"
-          style={
-            win
-              ? {
-                  background: "linear-gradient(95deg, var(--brand-gold), var(--brand-amber))",
-                  boxShadow: "0 4px 0 var(--brand-gold-shadow)",
-                }
-              : { background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }
-          }
-        >
-          <span
-            className="font-pixel"
-            style={{ fontSize: 6, color: win ? "#7A5E10" : "rgba(255,255,255,0.6)" }}
-          >
-            LEADERBOARD RANK ›
-          </span>
-          <span
-            className="mt-1.5 text-[26px] font-black leading-none"
-            style={{ color: win ? "var(--brand-ink)" : "rgba(255,255,255,0.85)" }}
-          >
-            {rank ? `#${rank}` : "—"}
-          </span>
-        </button>
-        <StatCard label="CORRECT" value={`${correct}/${total}`} />
-        <StatCard label="TIME" value={fmtTime(timeMs)} />
-      </div>
-
-      {/* event-end reward note (shown win or loss) */}
-      <div className="px-6 pt-4.5">
-        <div
-          className="rounded-2xl p-3.5"
-          style={{ background: "rgba(242,214,78,0.10)", border: "1px solid rgba(242,214,78,0.35)" }}
-        >
-          <div className="flex items-start gap-2.5">
-            <AppIcon src={UI_ICON.trophies} className="h-5 w-5 shrink-0" />
-            <div
-              className="text-[13px] font-semibold leading-snug"
-              style={{ color: "rgba(255,255,255,0.85)" }}
-            >
-              Rewards are awarded by your{" "}
-              <span className="font-extrabold" style={{ color: "var(--brand-gold)" }}>
-                final rank
-              </span>{" "}
-              when the event ends. Come back to the leaderboard after it closes to claim yours.
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex-1" />
-
-      {/* actions */}
-      <div className="flex flex-col gap-2.5 px-6 pb-11 pt-4">
-        {win ? (
-          <>
-            <button
-              onClick={onViewLeaderboard}
-              className="flex h-14 items-center justify-center rounded-full text-base font-extrabold press-lg"
-              style={{
-                background: "linear-gradient(95deg, var(--brand-gold), var(--brand-amber))",
-                color: "var(--brand-ink)",
-                boxShadow: "0 4px 0 var(--brand-gold-shadow)",
-              }}
-            >
-              View Leaderboard
-            </button>
-            <button
-              onClick={onHome}
-              className="press flex h-14 items-center justify-center rounded-full text-base font-bold text-white"
-              style={{
-                background: "rgba(255,255,255,0.08)",
-                border: "1.5px solid rgba(255,255,255,0.18)",
-              }}
-            >
-              Back home
-            </button>
-          </>
-        ) : (
-          <>
-            {canRematch && (
-              <button
-                onClick={onRematch}
-                className="flex h-14 items-center justify-center rounded-full text-base font-bold text-white press-lg"
-                style={{
-                  background: "var(--brand-red)",
-                  boxShadow: "0 14px 30px -8px rgba(226,59,46,0.55)",
-                }}
-              >
-                Rematch (1 retake left)
-              </button>
-            )}
-            <button
-              onClick={onViewLeaderboard}
-              className="press flex h-14 items-center justify-center rounded-full text-base font-bold text-white"
-              style={{
-                background: "rgba(255,255,255,0.08)",
-                border: "1.5px solid rgba(255,255,255,0.18)",
-              }}
-            >
-              View Leaderboard
-            </button>
-            <button
-              onClick={onHome}
-              className="press flex h-14 items-center justify-center rounded-full text-base font-bold text-white"
-              style={{
-                background: "rgba(255,255,255,0.04)",
-                border: "1.5px solid rgba(255,255,255,0.12)",
-              }}
-            >
-              Back home
-            </button>
-          </>
-        )}
-      </div>
-    </div>
+  // Row 9 "Raid won" story card.
+  const shareData = useMemo<ShareData>(
+    () => ({
+      type: "mega",
+      trainerName: trainerName || "Trainer",
+      trainerSpriteUrl: trainerSpriteUrl(trainerSprite),
+      level,
+      bossName: event.name,
+      megaId: event.megaId,
+      shiny,
+      correct,
+      total,
+      rank,
+      timeMs,
+      dateISO: new Date().toISOString().slice(0, 10),
+    }),
+    [trainerName, trainerSprite, level, event, shiny, correct, total, rank, timeMs],
   );
-}
 
-function StatCard({
-  label,
-  value,
-  big,
-  highlight,
-}: {
-  label: string;
-  value: string;
-  big?: boolean;
-  highlight?: boolean;
-}) {
   return (
-    <div
-      className="rounded-2xl px-4 py-3.5"
-      style={
-        highlight
-          ? { background: "rgba(242,214,78,0.14)", border: "1px solid rgba(242,214,78,0.4)" }
-          : { background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }
-      }
-    >
-      <div
-        className="font-pixel"
-        style={{ fontSize: 6, color: highlight ? "var(--brand-gold)" : "rgba(255,255,255,0.6)" }}
-      >
-        {label}
+    <div className="na-bg-night flex h-full w-full flex-col items-center gap-3 overflow-y-auto px-4 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-[calc(env(safe-area-inset-top)+12px)]">
+      <motion.div initial={{ scale: 1.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 420, damping: 16 }}>
+        <NaWordmark kind={win ? "victory" : "soclose"} className="text-center">
+          {win ? "RAID" : "IT GOT"}
+          <br />
+          {win ? "VICTORY!" : "AWAY!"}
+        </NaWordmark>
+      </motion.div>
+      <div className="relative h-[160px] w-[300px] shrink-0">
+        <FieldSprite id={event.megaId} shiny={shiny} k={1.6} cx={150} feetY={0} centerY={80} />
       </div>
-      <div
-        className={`mt-1.5 font-black leading-none text-white ${big ? "text-[26px]" : "text-[22px]"}`}
-      >
-        {value}
+      <p className="na-body-strong text-center text-text-secondary">
+        {win ? `You defeated ${event.name}!` : `${event.name} got away · ${correct} of ${total} right`}
+      </p>
+      <div className="flex items-stretch gap-[9px]">
+        <NaRewardTile tone="success" label="Accuracy" value={`${accuracy}%`} icon={<NaRewardIcon kind="Accuracy" size={30} />} />
+        <NaRewardTile tone="info" label="Time" value={fmtTime(timeMs)} icon={<NaRewardIcon kind="Time" size={30} />} />
+        <button
+          type="button"
+          onClick={onViewLeaderboard}
+          className="na-fill-gold flex w-[100px] flex-col items-center justify-center rounded-2xl px-4 py-2.5 shadow-[0_4px_0_#B07A00] press"
+        >
+          <span className="na-label whitespace-pre-line text-center uppercase text-on-gold">{`Current\nrank:\n${rank ? `#${rank}` : "—"}`}</span>
+        </button>
       </div>
+      <div className="w-full">
+        <NaGlassRow
+          tone="gold"
+          lead={<NaRewardIcon kind="Trophy" size={36} />}
+          title="Rewards arrive when the raid ends!"
+          sub={`Your final rank determines your rewards. Return ${ends} to claim them!`}
+        />
+      </div>
+      <div className="min-h-2 flex-1" />
+      {!win && canRematch && (
+        <NaButton block onClick={onRematch}>
+          Try again (1 try left)
+        </NaButton>
+      )}
+      <NaButton block kind={!win && canRematch ? "secondary" : "primary"} size={!win && canRematch ? "M" : "L"} onClick={onViewLeaderboard}>
+        View leaderboard
+      </NaButton>
+      {win && (
+        <NaButton kind="secondary" size="M" block onClick={() => setShareOpen(true)}>
+          Share
+        </NaButton>
+      )}
+      <NaButton kind="text" size="M" block onClick={onHome}>
+        Back to home
+      </NaButton>
+      {win && <ShareCardDialog open={shareOpen} onClose={() => setShareOpen(false)} data={shareData} />}
     </div>
   );
 }

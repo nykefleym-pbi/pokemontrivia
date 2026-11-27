@@ -350,7 +350,10 @@ describe("engine/mega-replay item support matches the real MegaRaidScreen compon
       await vi.advanceTimersByTimeAsync(1200);
     });
     await act(async () => {
-      fireEvent.click(screen.getByTestId("item-potion")); // +30 HP, capped
+      fireEvent.click(screen.getByTestId("bag-button"));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("bag-item-potion")); // +30 HP, capped
     });
     const domPlayerHp = screen.getByTestId("player-hp").textContent;
 
