@@ -1,5 +1,5 @@
 import type { PokeType } from "@/lib/pokemon-data";
-import { TypeChip } from "@/components/type-chip";
+import { NaTypeChip } from "@/components/na/type-chip";
 
 /**
  * Type chips for the partner pickers. The predicates that go with it live in
@@ -27,9 +27,7 @@ export function PartnerTypeFilter({
       <button
         onClick={() => onChange(null)}
         aria-pressed={value === null}
-        className={`shrink-0 rounded-full px-3 py-1 font-pixel text-[9px] uppercase tracking-wide transition press ${
-          value === null ? "bg-foreground text-background shadow-sm" : "bg-muted text-foreground/50"
-        }`}
+        className={`na-label shrink-0 rounded-full px-3 py-1.5 uppercase transition press ${value === null ? "bg-foreground text-night-deep" : "bg-white/10 text-text-secondary"}`}
       >
         All
       </button>
@@ -41,13 +39,9 @@ export function PartnerTypeFilter({
           aria-label={`${t} type`}
           // Tapping the active chip clears it, so the filter can be undone
           // without hunting for "All" at the far left of a scrolled row.
-          className={`shrink-0 rounded-full transition press ${
-            value === t
-              ? "ring-2 ring-foreground ring-offset-1 ring-offset-background"
-              : "opacity-45"
-          }`}
+          className={`shrink-0 rounded-full transition press ${value === t ? "ring-2 ring-foreground" : "opacity-45"}`}
         >
-          <TypeChip type={t} selected size="sm" />
+          <NaTypeChip type={t} />
         </button>
       ))}
     </div>

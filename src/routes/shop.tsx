@@ -3,21 +3,19 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { playSfx, playItemCue } from "@/lib/audio";
-import { Minus, Plus } from "lucide-react";
 import { NaIcon } from "@/components/na/icon";
 import { NaGlossIcon } from "@/components/na/gloss-icon";
 import { NaStatPill } from "@/components/na/top-bar";
 import { NaGlassRow } from "@/components/na/celebration";
 import { NaRewardIcon } from "@/components/na/reward-icon";
 import { NaButton } from "@/components/na/button";
+import { NaSheet } from "@/components/na/sheet";
 import { useGameStore } from "@/lib/store";
 import { useDailyGift } from "@/lib/use-daily-gift";
 import { useStoreHydrated } from "@/lib/store-hydration";
 import { ITEMS, type ItemDef } from "@/lib/game-data";
 import { getAbility } from "@/lib/abilities";
 import { CATEGORIES, CATEGORY_OF, type ItemCategory } from "@/lib/item-categories";
-import { AppIcon } from "@/components/app-icon";
-import { COIN_ICON } from "@/lib/app-icons";
 import {
   SHOP_BUNDLES,
   bundleFaceValue,
@@ -27,14 +25,6 @@ import {
 import { ItemIcon } from "@/components/game-ui";
 import { BagCapacityBar, BagOverflowPanel, DiscardItemButton } from "@/components/bag-overflow";
 import { bagCapacity, bagUnitsUsed, isBagExempt } from "@/lib/store/slices/itemsSlice";
-import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet";
 
 export const Route = createFileRoute("/shop")({
   head: () => pageHead("/shop"),
@@ -164,6 +154,9 @@ function ShopPage() {
   const [bagOpen, setBagOpen] = useState(false);
   const [bagTab, setBagTab] = useState<Category>("HEALING");
   const [qty, setQty] = useState(1);
+  const [short, setShort] = useState<{ item: ItemDef; cost: number } | null>(null);
+  /** 17.1 when you can pay for one, 17.2 when you cannot. */
+  const openBuy = (s: NonNullable<ConfirmState>) => (s.cost > coins ? setShort({ item: s.item, cost: s.cost }) : setConfirmState(s));
 
   const totalItems = useMemo(
     () => Object.values(inventory).reduce((a, b) => a + (b ?? 0), 0),
@@ -349,7 +342,7 @@ function ShopPage() {
               name={almost.name}
               sub={`Earn ${(priceOf(almost.cost) - coins).toLocaleString()} more coins to buy it!`}
               progress={coins / priceOf(almost.cost)}
-              onClick={() => setConfirmState({ item: almost, cost: priceOf(almost.cost) })}
+              onClick={() => openBuy({ item: almost, cost: priceOf(almost.cost) })}
             />
           </>
         )}
@@ -365,7 +358,7 @@ function ShopPage() {
             featuredUsedToday
               ? undefined
               : () =>
-                  setConfirmState({
+                  openBuy({
                     item: featured.item,
                     cost: featured.discountedCost,
                     featured: { originalCost: featured.originalCost, discountPct: featured.discountPct },
@@ -393,186 +386,129 @@ function ShopPage() {
             sub={item.desc}
             price={priceOf(item.cost)}
             short={coins < priceOf(item.cost)}
-            onClick={() => setConfirmState({ item, cost: priceOf(item.cost) })}
+            onClick={() => openBuy({ item, cost: priceOf(item.cost) })}
           />
         ))}
       </div>
 
-      {/* Bundle confirmation. Its own sheet rather than a mode of the item
-          sheet: there is no quantity stepper (a bundle is bought whole) and
-          the body is a contents manifest, not one item's description. */}
-      <Sheet open={!!bundleConfirm} onOpenChange={(o) => !o && setBundleConfirm(null)}>
-        <SheetContent side="bottom" className="rounded-t-3xl">
-          {bundleConfirm && (
-            <>
-              <SheetHeader>
-                <SheetTitle>{bundleConfirm.name}</SheetTitle>
-                <SheetDescription>{bundleConfirm.tagline}</SheetDescription>
-              </SheetHeader>
-              <div className="mt-3 flex flex-col gap-2">
-                {bundleConfirm.contents.map((c) => {
-                  const def = ITEMS.find((i) => i.id === c.id);
-                  if (!def) return null;
-                  return (
-                    <div
-                      key={c.id}
-                      className="flex items-center gap-3 rounded-2xl bg-poke-dark/5 p-2.5"
-                    >
-                      <ItemIcon item={def} className="h-9 w-9 shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm font-bold text-foreground">{def.name}</div>
-                        <div className="truncate text-xs text-muted-foreground">{def.desc}</div>
-                      </div>
-                      <span className="shrink-0 font-pixel-xs text-foreground/70">×{c.qty}</span>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="mt-3 flex items-center justify-between rounded-2xl bg-poke-yellow/15 px-3 py-2">
-                <span className="text-xs font-bold text-foreground/70">
-                  Worth {bundleFaceValue(bundleConfirm).toLocaleString()} separately
-                </span>
-                <span className="font-pixel-xs text-primary">
-                  SAVE {bundleSavingPct(bundleConfirm)}%
-                </span>
-              </div>
-              <Button
-                size="action"
-                onClick={confirmBundle}
-                disabled={coins < bundleConfirm.cost}
-                className="mt-4 w-full"
-              >
-                <AppIcon src={COIN_ICON} alt="" className="mr-2 h-5 w-5" />
-                {coins < bundleConfirm.cost
-                  ? "Not enough Coins"
-                  : `Buy for ${bundleConfirm.cost.toLocaleString()}`}
-              </Button>
-            </>
-          )}
-        </SheetContent>
-      </Sheet>
+      {/* Bundle: bought whole, so no stepper; the contents instead. */}
+      <NaSheet
+        open={!!bundleConfirm}
+        onOpenChange={(o) => !o && setBundleConfirm(null)}
+        title={bundleConfirm?.name ?? ""}
+        body={bundleConfirm?.tagline}
+        primary={
+          bundleConfirm
+            ? {
+                label: coins < bundleConfirm.cost ? "Not enough coins" : `Buy for ${bundleConfirm.cost.toLocaleString()} Coins`,
+                disabled: coins < bundleConfirm.cost,
+                onClick: confirmBundle,
+              }
+            : undefined
+        }
+        secondary={{ label: "Cancel", onClick: () => setBundleConfirm(null) }}
+      >
+        {bundleConfirm?.contents.map((c) => {
+          const def = ITEMS.find((i) => i.id === c.id);
+          if (!def) return null;
+          return <NaGlassRow key={c.id} lead={<ItemIcon item={def} className="h-9 w-9" />} title={def.name} sub={def.desc} trailing={<span className="na-number-m text-text-secondary">×{c.qty}</span>} />;
+        })}
+        {bundleConfirm && (
+          <div className="flex items-center justify-between px-1">
+            <span className="na-body text-text-secondary">Worth {bundleFaceValue(bundleConfirm).toLocaleString()} separately</span>
+            <span className="na-number-m text-success">Save {bundleSavingPct(bundleConfirm)}%</span>
+          </div>
+        )}
+      </NaSheet>
 
-      {/* Purchase confirmation */}
-      <Sheet open={!!confirmState} onOpenChange={(o) => !o && setConfirmState(null)}>
-        <SheetContent side="bottom" className="rounded-t-3xl">
-          {confirmState && (
-            <>
-              {/* Top row: icon + name + desc (left-aligned) */}
-              <div className="flex items-center gap-4 pt-2">
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-poke-yellow/20">
-                  <ItemIcon item={confirmState.item} className="h-11 w-11" />
+      {/* 17.1 Buy: the item, how many, the cost and what you have left. */}
+      {(() => {
+        const unitCost = confirmState?.cost ?? 0;
+        const totalCost = unitCost * qty;
+        const balanceAfter = coins - totalCost;
+        const canAfford = balanceAfter >= 0;
+        const maxQty = unitCost > 0 ? Math.max(1, Math.floor(coins / unitCost)) : 1;
+        const line = (label: string, value: string, valueClass: string, strong?: boolean) => (
+          <div className="flex items-center justify-between">
+            <span className={strong ? "na-body-strong text-foreground" : "na-body text-text-secondary"}>{label}</span>
+            <span className={`na-number-m ${valueClass}`}>{value}</span>
+          </div>
+        );
+        return (
+          <NaSheet
+            open={!!confirmState}
+            onOpenChange={(o) => !o && setConfirmState(null)}
+            title={confirmState?.item.name ?? ""}
+            hideTitle
+            primary={{ label: `Confirm — ${totalCost.toLocaleString()} Coins`, disabled: !canAfford, onClick: confirmPurchase }}
+            secondary={{ label: "Cancel", onClick: () => setConfirmState(null) }}
+          >
+            {confirmState && (
+              <>
+                <div className="flex items-center gap-3.5">
+                  <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[18px] bg-reward-gold/[0.16]">
+                    <ItemIcon item={confirmState.item} className="h-11 w-11" />
+                  </span>
+                  <span className="flex min-w-0 flex-col gap-0.5">
+                    <span className="na-title text-foreground">{confirmState.item.name}</span>
+                    <span className="na-caption text-text-secondary">{confirmState.item.desc}</span>
+                  </span>
                 </div>
-                <div className="min-w-0">
-                  <div className="font-display-lg text-foreground">{confirmState.item.name}</div>
-                  <div className="mt-0.5 text-sm text-muted-foreground">
-                    {confirmState.item.desc}
+                {confirmState.featured ? (
+                  <span className="na-label self-start rounded-full bg-reward-gold px-3 py-1 uppercase text-night-deep">
+                    {confirmState.featured.discountPct}% off · one a day
+                  </span>
+                ) : (
+                  <div className="flex items-center justify-between rounded-[16px] bg-white/10 px-3.5 py-2.5">
+                    <span className="na-body-strong text-foreground">Quantity</span>
+                    <span className="flex items-center gap-4">
+                      <button type="button" aria-label="Decrease quantity" disabled={qty <= 1} onClick={() => setQty((q) => Math.max(1, q - 1))} className="na-headline flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.16] text-foreground disabled:opacity-40">
+                        −
+                      </button>
+                      <span className="na-number-l w-6 text-center text-foreground">{qty}</span>
+                      <button type="button" aria-label="Increase quantity" disabled={qty >= maxQty} onClick={() => setQty((q) => Math.min(maxQty, q + 1))} className="na-headline flex h-9 w-9 items-center justify-center rounded-full bg-brand-red text-foreground disabled:opacity-40">
+                        +
+                      </button>
+                    </span>
                   </div>
+                )}
+                <div className="flex flex-col gap-2">
+                  {line("Your Coins", coins.toLocaleString(), "text-foreground")}
+                  {line("Cost", `−${totalCost.toLocaleString()}`, "text-brand-red-light")}
+                  <div className="h-px bg-white/[0.16]" />
+                  {line("Balance after", `${balanceAfter.toLocaleString()} Coins`, canAfford ? "text-success" : "text-danger", true)}
                 </div>
-              </div>
+              </>
+            )}
+          </NaSheet>
+        );
+      })()}
 
-              {/* Featured discount note (only for featured) */}
-              {confirmState.featured && (
-                <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-poke-yellow px-3 py-1 font-pixel-xs uppercase text-foreground">
-                  Discounted {confirmState.featured.discountPct}% off
-                </div>
-              )}
-
-              {/* Quantity stepper — hidden for the featured deal (one per day) */}
-              {!confirmState.featured &&
-                (() => {
-                  const unitCost = confirmState.cost;
-                  const maxQty = unitCost > 0 ? Math.max(1, Math.floor(coins / unitCost)) : 1;
-                  return (
-                    <div className="mt-4 flex items-center justify-between rounded-2xl bg-poke-blue/10 px-4 py-3">
-                      <span className="font-bold text-foreground">Quantity</span>
-                      <div className="flex items-center gap-4">
-                        <button
-                          onClick={() => setQty((q) => Math.max(1, q - 1))}
-                          disabled={qty <= 1}
-                          className="flex h-9 w-9 items-center justify-center rounded-full bg-card text-foreground shadow-card disabled:opacity-40 press"
-                          aria-label="Decrease quantity"
-                        >
-                          <Minus className="h-4 w-4" />
-                        </button>
-                        <span className="w-6 text-center text-lg font-extrabold tabular-nums text-foreground">
-                          {qty}
-                        </span>
-                        <button
-                          onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
-                          disabled={qty >= maxQty}
-                          className="flex h-9 w-9 items-center justify-center rounded-full bg-poke-dark text-white shadow-card disabled:opacity-40 press"
-                          aria-label="Increase quantity"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-              {/* Cost breakdown rows */}
-              {(() => {
-                const unitCost = confirmState.cost;
-                const totalCost = unitCost * qty;
-                const balanceAfter = coins - totalCost;
-                const canAfford = balanceAfter >= 0;
-                return (
-                  <div className="mt-4 space-y-2.5">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Your Coins</span>
-                      <span className="font-bold text-foreground tabular-nums">
-                        {coins.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Cost</span>
-                      <span className="font-bold text-primary tabular-nums">
-                        −{totalCost.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="border-t border-dashed border-border pt-2.5">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-foreground">Balance after</span>
-                        <span
-                          className={`font-extrabold tabular-nums ${canAfford ? "text-hp-good" : "text-destructive"}`}
-                        >
-                          {balanceAfter.toLocaleString()} Coins
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Confirm + Cancel */}
-              {(() => {
-                const unitCost = confirmState.cost;
-                const totalCost = unitCost * qty;
-                const balanceAfter = coins - totalCost;
-                const canAfford = balanceAfter >= 0;
-                return (
-                  <div className="mt-5 space-y-2">
-                    <Button
-                      size="action"
-                      disabled={!canAfford}
-                      onClick={confirmPurchase}
-                      className="w-full bg-primary text-primary-foreground shadow-pop disabled:opacity-50"
-                    >
-                      Confirm — {totalCost.toLocaleString()} Coins
-                    </Button>
-                    <button
-                      onClick={() => setConfirmState(null)}
-                      className="w-full py-2 text-center text-sm font-bold text-muted-foreground press"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                );
-              })()}
-            </>
-          )}
-        </SheetContent>
-      </Sheet>
+      {/* 17.2 Not enough coins: how many more, and three ways to earn them. */}
+      <NaSheet
+        open={!!short}
+        onOpenChange={(o) => !o && setShort(null)}
+        title="Need more coins!"
+        body={short ? `You need ${(short.cost - coins).toLocaleString()} more coins for ${/^[aeiou]/i.test(short.item.name) ? "an" : "a"} ${short.item.name}!` : undefined}
+        primary={{ label: "Battle now", onClick: () => void navigate({ to: "/battle", search: { autostart: 1 } as never }) }}
+        secondary={{ label: "Maybe Later", onClick: () => setShort(null) }}
+      >
+        <NaGlassRow lead={<NaIcon name="arena" size={32} />} title="Win a battle" sub="Every win earns coins!" onClick={() => void navigate({ to: "/battle", search: { autostart: 1 } as never })} />
+        <NaGlassRow lead={<NaGlossIcon kind="calendar" size={32} />} title="Play the Daily Quest" sub="New quests every day!" onClick={() => void navigate({ to: "/battle", search: { mode: "daily" } as never })} />
+        <NaGlassRow
+          lead={<NaRewardIcon kind="Gift" size={32} />}
+          title="Claim your daily gift"
+          sub={giftClaimable ? `Day ${giftNextDay} of 7 is ready!` : `Next gift in ${giftClock}`}
+          onClick={
+            giftClaimable
+              ? () => {
+                  setShort(null);
+                  handleClaimGift();
+                }
+              : undefined
+          }
+        />
+      </NaSheet>
 
       {/* 7.1c Your bag: what you own and what it does, grouped like the shop. */}
       {bagOpen && (

@@ -1,20 +1,12 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Trash2, Minus, Plus, ArrowRight, AlertTriangle } from "lucide-react";
 import { NaIcon } from "@/components/na/icon";
 import { useGameStore } from "@/lib/store";
 import { ITEM_BY_ID } from "@/content/items";
 import type { ItemId } from "@/lib/game-data";
 import { ItemIcon } from "@/components/game-ui";
 import { NaButton } from "@/components/na/button";
-import { Slider } from "@/components/ui/slider";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { NaSheet } from "@/components/na/sheet";
 import {
   bagCapacity,
   bagUnitsUsed,
@@ -39,7 +31,7 @@ export function BagCapacityBar() {
 
   return (
     // Figma 7.1c Bag space: the bar turns red when the bag is full (17.10).
-    <div className={`na-glass flex flex-col gap-2 rounded-[20px] p-3.5 ${full ? "border-danger/60" : ""}`}>
+    <div className={`na-glass flex flex-col gap-2 rounded-[20px] p-3.5 ${full ? "border border-danger/60 bg-danger/[0.06]" : ""}`}>
       <div className="flex items-center justify-between gap-3">
         <span className="na-label uppercase text-text-secondary">Bag space</span>
         <span className={`na-number-m ${full ? "text-danger" : "text-foreground"}`}>
@@ -60,7 +52,7 @@ export function BagCapacityBar() {
             else toast.error(`Need ${price.toLocaleString()} coins`);
           }}
         >
-          +10 space · {price.toLocaleString()}
+          Add 10 slots · {price.toLocaleString()} coins
         </NaButton>
       )}
       <p className="na-caption text-text-muted">
@@ -70,10 +62,11 @@ export function BagCapacityBar() {
   );
 }
 
+
 /**
- * Rewards that would not fit. Each row offers the three ways out the owner
- * specified — take it (once there is room), half its shop value in coins, or
- * give it up — and keeps offering for as long as the bag is too full to hold it.
+ * Figma 17.10: rewards that would not fit wait here. Each row offers the three
+ * ways out the owner specified — take it (once there is room), sell it for half
+ * its shop price, or let it go — for as long as the bag is too full to hold it.
  */
 export function BagOverflowPanel() {
   const pending = useGameStore((s) => s.pendingBagOverflow);
@@ -87,79 +80,72 @@ export function BagOverflowPanel() {
   const room = Math.max(0, bagCapacity(bagUpgrades) - bagUnitsUsed(inventory));
 
   return (
-    <div className="rounded-2xl border-2 border-destructive/35 bg-destructive/[0.06] px-4 py-3">
-      <div className="font-display-md text-foreground">Bag full — rewards waiting</div>
-      <p className="mt-0.5 text-xs leading-snug text-foreground/65">
-        These are being held for you. Make room and take them, trade them for half their shop value,
-        or give them up.
+    <div className="flex flex-col gap-2 rounded-[20px] border border-danger/40 bg-danger/[0.08] p-3">
+      <span className="na-headline text-foreground">
+        {room < 1 ? "Your bag is full! " : ""}
+        {pending.length} reward{pending.length === 1 ? " is" : "s are"} waiting.
+      </span>
+      <p className="na-caption text-text-secondary">
+        Make room to claim them, sell them for half price, or let them go. We&apos;ll keep them safe until you decide.
       </p>
-      <div className="mt-3 flex flex-col gap-2.5">
-        {pending.map((entry) => {
-          const def = ITEM_BY_ID[entry.id];
-          if (!def) return null;
-          const refund = overflowRefundValue(entry.id, entry.qty);
-          return (
-            <div key={entry.id} className="rounded-2xl bg-card px-3.5 py-3 shadow-card">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-primary/[0.08]">
-                  <ItemIcon item={def} className="h-7 w-7" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="font-bold leading-tight text-foreground">{def.name}</div>
-                  <div className="text-xs text-foreground/55">×{entry.qty} waiting</div>
-                </div>
-              </div>
-              <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                <button
-                  onClick={() => {
-                    if (claimOverflow(entry.id)) toast.success(`${def.name} moved to your bag`);
-                  }}
-                  disabled={room < 1}
-                  className="h-8 rounded-full bg-hp-good px-3 text-xs font-bold text-white shadow-sm transition press disabled:opacity-40"
-                >
-                  {room < 1 ? "No room" : `Move ${Math.min(entry.qty, room)} to bag`}
-                </button>
-                <button
-                  onClick={() => {
-                    const paid = refundOverflow(entry.id);
-                    toast.success(`Traded for ${paid.toLocaleString()} coins`);
-                  }}
-                  className="h-8 rounded-full bg-poke-yellow px-3 text-xs font-bold text-foreground shadow-sm transition press"
-                >
-                  Refund {refund.toLocaleString()}
-                </button>
-                <button
-                  onClick={() => {
-                    if (forfeitOverflow(entry.id)) toast(`${def.name} given up`);
-                  }}
-                  className="h-8 rounded-full bg-muted px-3 text-xs font-bold text-foreground/60 transition press"
-                >
-                  Give up
-                </button>
-              </div>
+      {pending.map((entry) => {
+        const def = ITEM_BY_ID[entry.id];
+        if (!def) return null;
+        const refund = overflowRefundValue(entry.id, entry.qty);
+        return (
+          <div key={entry.id} className="flex flex-col gap-1.5 rounded-[14px] bg-night-card-2 px-2.5 py-2">
+            <div className="flex items-center gap-2">
+              <ItemIcon item={def} className="h-7 w-7 shrink-0" />
+              <span className="na-body-strong flex-1 text-foreground">{def.name}</span>
+              <span className="na-caption text-text-secondary">×{entry.qty} waiting</span>
             </div>
-          );
-        })}
-      </div>
+            <div className="flex items-center gap-1.5">
+              <NaButton
+                kind="secondary"
+                size="M"
+                className="flex-1"
+                disabled={room < 1}
+                onClick={() => {
+                  if (claimOverflow(entry.id)) toast.success(`${def.name} moved to your bag`);
+                }}
+              >
+                {room < 1 ? "Bag full" : `Move ${Math.min(entry.qty, room)} to bag`}
+              </NaButton>
+              <NaButton
+                kind="gold"
+                size="M"
+                className="flex-1"
+                onClick={() => {
+                  const paid = refundOverflow(entry.id);
+                  toast.success(`Sold for ${paid.toLocaleString()} coins`);
+                }}
+              >
+                Sell for {refund.toLocaleString()}
+              </NaButton>
+              <NaButton
+                kind="text"
+                size="M"
+                onClick={() => {
+                  if (forfeitOverflow(entry.id)) toast(`${def.name} let go`);
+                }}
+              >
+                Let go
+              </NaButton>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
 
+// shortcut: English plural by adding "s"; fine for every item name today, revisit if one ends oddly.
+const plural = (name: string, n: number) => (n === 1 || name.endsWith("s") ? name : `${name}s`);
+
 /**
- * Throws items away to make room, behind an explicit confirmation with a
- * quantity slider.
- *
- * This replaced an arm-then-tap-again button that discarded exactly one unit.
- * Two things were wrong with it: clearing a 30-unit stack meant thirty taps, and
- * "Sure?" appearing in place of a bin icon is not a confirmation anyone reads —
- * on a stack of Max Potions the second tap lands before the first has registered
- * as a question. Discarding pays nothing back, so it needs a dialog that names
- * the item and the amount.
- *
- * The dialog answers the two questions the first version left out. It showed what
- * you would LOSE but never what you would be LEFT WITH, and it never showed the
- * bag space being bought — which is the entire reason anyone opens it. Both are
- * now before→after, so the trade is legible without arithmetic.
+ * Figma 17.11: the buy sheet (17.1) turned round for throwing away. − and +
+ * choose how many, All N takes the lot; what you have, what goes, what you keep
+ * and the bag space after, so nobody does the sums. Pays nothing back, and says so.
  */
 export function DiscardItemButton({ id }: { id: ItemId }) {
   const discardItem = useGameStore((s) => s.discardItem);
@@ -171,27 +157,21 @@ export function DiscardItemButton({ id }: { id: ItemId }) {
   const def = ITEM_BY_ID[id];
   if (!def || isBagExempt(id)) return null;
 
-  // Bounded by what is held RIGHT NOW. Reading `owned` from the store rather than
-  // a prop matters: using an item from the same row while the dialog is open would
-  // otherwise leave the slider offering a quantity that no longer exists, and
-  // discardItem would silently clamp it — the player taps "Discard 12" and loses 3.
+  // Bounded by what is held RIGHT NOW (read from the store): using the item while
+  // the sheet is open must not leave it offering a quantity that no longer exists.
   const max = Math.max(1, owned);
   const amount = Math.min(qty, max);
   const left = Math.max(0, owned - amount);
-
-  // Discarding is how you make room, so the room is worth showing. Non-exempt
-  // items are 1 unit each, so freeing `amount` units is exact.
   const cap = bagCapacity(bagUpgrades);
-  const usedNow = bagUnitsUsed(inventory);
-  const usedAfter = Math.max(0, usedNow - amount);
-  const pctNow = Math.min(100, Math.round((usedNow / cap) * 100));
-  const pctAfter = Math.min(100, Math.round((usedAfter / cap) * 100));
-
-  // What is being thrown away, at shop price. NOT a refund — the copy has to be
-  // careful here, because a number next to a discard button reads as a payout.
+  const usedAfter = Math.max(0, bagUnitsUsed(inventory) - amount);
+  // Value thrown away at shop price — never shown as a payout.
   const valueLost = def.cost * amount;
-
-  const step = (delta: number) => setQty(Math.max(1, Math.min(max, amount + delta)));
+  const line = (label: string, value: string, valueClass: string, strong?: boolean) => (
+    <div className="flex items-center justify-between">
+      <span className={strong ? "na-body-strong text-foreground" : "na-body text-text-secondary"}>{label}</span>
+      <span className={`na-number-m ${valueClass}`}>{value}</span>
+    </div>
+  );
 
   return (
     <>
@@ -206,182 +186,63 @@ export function DiscardItemButton({ id }: { id: ItemId }) {
         <NaIcon name="trash" size={16} />
       </button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-[330px] gap-0 overflow-hidden p-0">
-          {/* Danger-tinted head so the dialog reads as a destructive action at a
-              glance, rather than as another shop sheet. */}
-          <div className="screen-x bg-destructive/[0.07] pb-4 pt-5">
-            {/* pr-7 keeps a long item name clear of DialogContent's own close X,
-                which sits at right-4 top-4. */}
-            <DialogHeader className="space-y-1 pr-7 text-left">
-              <DialogTitle className="flex items-center gap-2 text-[19px]">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-destructive/15">
-                  <Trash2 className="h-4 w-4 text-destructive" aria-hidden />
-                </span>
-                Discard {def.name}?
-              </DialogTitle>
-              <DialogDescription className="text-xs leading-snug">
-                Thrown-away items are gone for good and pay nothing back.
-              </DialogDescription>
-            </DialogHeader>
-          </div>
-
-          <div className="screen-x pb-5 pt-4">
-            {/* Item, and the count going. */}
-            <div className="flex items-center gap-3.5">
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[18px] bg-primary/[0.08]">
-                <ItemIcon item={def} className="h-12 w-12" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="truncate font-display-md leading-tight text-foreground">
-                  {def.name}
-                </div>
-                <div className="mt-0.5 font-pixel-xs uppercase tracking-wider text-foreground/40">
-                  {def.category}
-                </div>
-              </div>
-              <div className="shrink-0 text-right">
-                <div className="font-display-lg leading-none text-destructive">−{amount}</div>
-              </div>
-            </div>
-
-            {/* The two before→afters. Left column is the stack, right is bag room:
-                what you keep, and what you gain by giving it up. */}
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              <div className="rounded-[16px] bg-muted/50 px-3 py-2.5">
-                <div className="font-pixel-xs uppercase tracking-wider text-foreground/40">
-                  You keep
-                </div>
-                <div className="mt-1 flex items-baseline gap-1.5">
-                  <span className="text-sm font-bold text-foreground/35 line-through">{owned}</span>
-                  <ArrowRight className="h-3 w-3 shrink-0 text-foreground/35" aria-hidden />
-                  <span
-                    className={`font-display-md leading-none ${left === 0 ? "text-destructive" : "text-foreground"}`}
-                  >
-                    {left}
-                  </span>
-                </div>
-              </div>
-              <div className="rounded-[16px] bg-muted/50 px-3 py-2.5">
-                <div className="font-pixel-xs uppercase tracking-wider text-foreground/40">
-                  Bag space
-                </div>
-                <div className="mt-1 flex items-baseline gap-1.5">
-                  <span className="text-sm font-bold text-foreground/35 line-through">
-                    {usedNow}
-                  </span>
-                  <ArrowRight className="h-3 w-3 shrink-0 text-foreground/35" aria-hidden />
-                  <span className="font-display-md leading-none text-hp-good">{usedAfter}</span>
-                  <span className="text-[11px] font-bold text-foreground/40">/{cap}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* The bar the Bag sheet already shows, so freeing room is something
-                you can SEE rather than infer from two numbers. */}
-            <div className="relative mt-2.5 h-2 w-full overflow-hidden rounded-full bg-muted">
-              <div
-                className="absolute inset-y-0 left-0 rounded-full bg-hp-good/30"
-                style={{ width: `${pctNow}%` }}
-              />
-              <div
-                className="absolute inset-y-0 left-0 rounded-full bg-hp-good transition-[width]"
-                style={{ width: `${pctAfter}%` }}
-              />
-            </div>
-
+      <NaSheet
+        open={open}
+        onOpenChange={setOpen}
+        title={`Throw away ${def.name}?`}
+        hideTitle
+        primary={{
+          label: `Throw away ${amount} ${plural(def.name, amount)}`,
+          onClick: () => {
+            if (discardItem(id, amount)) toast(`Threw away ${amount} ${plural(def.name, amount)}`);
+            setOpen(false);
+          },
+        }}
+        secondary={{ label: amount === 1 ? "Keep it" : "Keep them", onClick: () => setOpen(false) }}
+      >
+        <div className="flex items-center gap-3.5">
+          <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[18px] bg-danger/[0.14]">
+            <ItemIcon item={def} className="h-11 w-11" />
+          </span>
+          <span className="flex min-w-0 flex-col gap-0.5">
+            <span className="na-title text-foreground">{def.name}</span>
+            <span className="na-caption text-text-secondary">{def.desc}</span>
+          </span>
+        </div>
+        <div className="flex items-center justify-between rounded-[16px] bg-white/10 px-3.5 py-2.5">
+          <span className="flex items-center gap-2">
+            <span className="na-body-strong text-foreground">Quantity</span>
             {max > 1 && (
-              <div className="mt-4">
-                <div className="flex items-center gap-3">
-                  {/* Steppers flank the slider because a 60-wide slider on a phone
-                      cannot reliably land on one exact unit. */}
-                  <button
-                    aria-label="One fewer"
-                    onClick={() => step(-1)}
-                    disabled={amount <= 1}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-foreground transition press disabled:opacity-30"
-                  >
-                    <Minus className="h-4 w-4" />
-                  </button>
-                  <Slider
-                    value={[amount]}
-                    min={1}
-                    max={max}
-                    step={1}
-                    onValueChange={([v]) => setQty(v ?? 1)}
-                    aria-label={`Amount of ${def.name} to discard`}
-                    className="flex-1"
-                  />
-                  <button
-                    aria-label="One more"
-                    onClick={() => step(1)}
-                    disabled={amount >= max}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-foreground transition press disabled:opacity-30"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                </div>
-                <div className="mt-2 flex items-center justify-between">
-                  <button
-                    onClick={() => setQty(1)}
-                    className="rounded-full bg-muted/60 px-2.5 py-1 font-pixel-xs uppercase tracking-wider text-foreground/50 transition press"
-                  >
-                    Just 1
-                  </button>
-                  <button
-                    onClick={() => setQty(max)}
-                    className="rounded-full bg-destructive/10 px-2.5 py-1 font-pixel-xs uppercase tracking-wider text-destructive transition press"
-                  >
-                    All {max}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Only for things worth real money. Shown as value THROWN AWAY, never
-                as an amount received — this is the discard path, and the overflow
-                panel's half-value refund is a different offer entirely. */}
-            {valueLost > 0 && (def.premium || valueLost >= 500) && (
-              <div className="mt-4 flex items-start gap-2 rounded-[16px] border border-destructive/25 bg-destructive/[0.06] px-3 py-2.5">
-                <AlertTriangle className="mt-[1px] h-4 w-4 shrink-0 text-destructive" aria-hidden />
-                <div className="text-[11.5px] leading-snug text-foreground/75">
-                  {def.premium ? (
-                    <>
-                      <span className="font-bold text-foreground">Premium item.</span> You&apos;re
-                      giving up {valueLost.toLocaleString()} coins of value for nothing.
-                    </>
-                  ) : (
-                    <>
-                      That&apos;s {valueLost.toLocaleString()} coins of value, and none of it comes
-                      back.
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <div className="mt-4 flex gap-2">
-              <button
-                onClick={() => setOpen(false)}
-                className="h-12 flex-1 rounded-full bg-muted text-sm font-bold text-foreground/70 transition press"
-              >
-                Keep it
+              <button type="button" onClick={() => setQty(max)} className="na-label rounded-full border border-danger/30 bg-danger/[0.12] px-2 py-0.5 uppercase text-danger">
+                All {max}
               </button>
-              <button
-                onClick={() => {
-                  if (discardItem(id, amount)) {
-                    toast(`Discarded ${amount} ${def.name}`);
-                  }
-                  setOpen(false);
-                }}
-                className="h-12 flex-1 rounded-full bg-destructive text-sm font-bold text-white shadow-pop transition press"
-              >
-                Discard {amount}
-              </button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+            )}
+          </span>
+          <span className="flex items-center gap-4">
+            <button type="button" aria-label="One fewer" disabled={amount <= 1} onClick={() => setQty(Math.max(1, amount - 1))} className="na-headline flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.16] text-foreground disabled:opacity-40">
+              −
+            </button>
+            <span className="na-number-l w-6 text-center text-foreground">{amount}</span>
+            <button type="button" aria-label="One more" disabled={amount >= max} onClick={() => setQty(Math.min(max, amount + 1))} className="na-headline flex h-9 w-9 items-center justify-center rounded-full bg-brand-red text-foreground disabled:opacity-40">
+              +
+            </button>
+          </span>
+        </div>
+        <div className="flex flex-col gap-2">
+          {line(`Your ${plural(def.name, 2)}`, String(owned), "text-foreground")}
+          {line("Throwing away", `−${amount}`, "text-brand-red-light")}
+          <div className="h-px bg-white/[0.16]" />
+          {line("You keep", `${left} ${plural(def.name, left)}`, left === 0 ? "text-danger" : "text-foreground", true)}
+          {line("Bag space after", `${usedAfter}/${cap}`, "text-success")}
+        </div>
+        {valueLost > 0 && (def.premium || valueLost >= 500) ? (
+          <p className="na-caption rounded-[14px] border border-danger/25 bg-danger/[0.06] px-3 py-2 text-center text-foreground">
+            {def.premium ? "A Premium item! " : ""}That&apos;s {valueLost.toLocaleString()} coins of value, and none of it comes back.
+          </p>
+        ) : (
+          <p className="na-caption text-center text-text-muted">Thrown-away items are gone for good, and you get no coins back.</p>
+        )}
+      </NaSheet>
     </>
   );
 }

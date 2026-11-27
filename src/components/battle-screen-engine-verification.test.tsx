@@ -82,6 +82,7 @@ vi.mock("@/lib/game-data", async (importOriginal) => {
 });
 
 import { BattleScreen } from "./battle-screen";
+import { CATEGORY_OF } from "@/lib/item-categories";
 import { useGameStore } from "@/lib/store";
 import { findPokemon, isPlayerDisadvantaged, isPlayerImmune, isSuperEffective } from "@/lib/pokemon-data";
 import { shuffleTriviaOptions, type Trivia } from "@/lib/trivia-core";
@@ -242,8 +243,13 @@ async function runDom(
       // Items live in the bag now (Figma 3.2): open it, then tap the item.
       const bag = screen.queryByTestId("bag-button");
       if (bag) await act(async () => fireEvent.click(bag));
+      // 17.3: the item's category tab, the item, then Use.
+      const tab = screen.queryByTestId(`bag-tab-${CATEGORY_OF[itemId as ItemId]}`);
+      if (tab) await act(async () => fireEvent.click(tab));
       const itemBtn = screen.queryByTestId(`bag-item-${itemId}`);
       if (itemBtn) await act(async () => fireEvent.click(itemBtn));
+      const useBtn = screen.queryByRole("button", { name: /^Use / });
+      if (itemBtn && useBtn) await act(async () => fireEvent.click(useBtn));
     }
     const idx = action === "correct" ? correctIdx : wrongIdx;
     const btn = screen.queryByTestId(`option-${idx}`);

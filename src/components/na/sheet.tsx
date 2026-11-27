@@ -26,6 +26,10 @@ export interface NaSheetProps {
   /** 0.72 over a result screen (1.6), lighter elsewhere. */
   scrim?: number;
   className?: string;
+  /** Keep the title for screen readers only: the sheet draws its own header (17.1, 17.11). */
+  hideTitle?: boolean;
+  /** 17.9: a red glow round the whole screen, for the one dangerous sheet. */
+  edge?: "danger";
 }
 
 export function NaSheet({
@@ -39,6 +43,8 @@ export function NaSheet({
   footnote,
   scrim = 0.6,
   className,
+  hideTitle,
+  edge,
 }: NaSheetProps) {
   const container = useFramePortalContainer();
   return (
@@ -48,6 +54,9 @@ export function NaSheet({
           className="fixed inset-0 z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
           style={{ background: `rgb(4 6 15 / ${scrim})` }}
         />
+        {edge === "danger" && (
+          <div aria-hidden className="pointer-events-none fixed inset-0 z-[51] border-[3px] border-danger/90 bg-danger/[0.04] shadow-[inset_0_0_70px_8px_rgba(255,45,85,0.75)]" />
+        )}
         <DialogPrimitive.Content
           className={cn(
             "na-raised fixed inset-x-0 bottom-0 z-50 flex max-h-[92%] flex-col gap-3.5 overflow-y-auto rounded-t-[28px] px-5 pt-2.5 outline-none",
@@ -57,7 +66,7 @@ export function NaSheet({
           )}
         >
           <div aria-hidden className="mx-auto h-[5px] w-10 shrink-0 rounded-[3px] bg-white/30" />
-          <DialogPrimitive.Title className="na-display-m text-foreground">{title}</DialogPrimitive.Title>
+          <DialogPrimitive.Title className={hideTitle ? "sr-only" : "na-display-m text-foreground"}>{title}</DialogPrimitive.Title>
           {body ? (
             <DialogPrimitive.Description className="na-body text-text-secondary">{body}</DialogPrimitive.Description>
           ) : (

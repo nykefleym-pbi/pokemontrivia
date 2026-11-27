@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Backpack, Info } from "lucide-react";
+import { Info } from "lucide-react";
 import { findPokemon, spriteFallbacks, type PokeType } from "@/lib/pokemon-data";
 import type { ItemDef, ItemId, StatusKind } from "@/lib/game-data";
 import { ITEMS } from "@/lib/game-data";
@@ -10,9 +10,13 @@ import type { Trivia } from "@/lib/trivia-core";
 import { TimerRing } from "@/components/timer-ring";
 import { TypeChip } from "@/components/type-chip";
 import { typeRowFontSize, COMBAT_PANEL_WIDTH } from "@/lib/type-row-fit";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CATEGORIES, CATEGORY_OF, BAG_SHORT_DESC } from "@/lib/item-categories";
+import { CATEGORIES, CATEGORY_OF, BAG_SHORT_DESC, type ItemCategory } from "@/lib/item-categories";
+import { NaSheet } from "@/components/na/sheet";
+
+/** Items that trigger by themselves: shown in the bag, never tapped. */
+const AUTO_ITEM_IDS = new Set<ItemId>(["focusband", "quickclaw", "assaultvest", "revive", "oranberry", "silkscarf", "kingsrock", "leftovers", "metronome"] as ItemId[]);
+const isAutoItem = (id: ItemId) => AUTO_ITEM_IDS.has(id);
 import { ITEM_CATEGORY_ICON } from "@/lib/app-icons";
 import { BATTLE_PLATFORM } from "@/lib/battle-field";
 import { NaGlossIcon } from "@/components/na/gloss-icon";
@@ -1135,6 +1139,17 @@ export function ItemBagSheet({
   escapeDisabled: boolean;
   onUseItem: (id: ItemId) => void;
 }) {
+  const ownedIn = (cat: ItemCategory) => ITEMS.filter((it) => CATEGORY_OF[it.id] === cat && (inventory[it.id] ?? 0) > 0);
+  const [bagTab, setBagTab] = useState<ItemCategory>(CATEGORIES[0].id);
+  const [bagPick, setBagPick] = useState<ItemId | null>(null);
+  // Each opening starts on the first category you own something in, nothing picked.
+  useEffect(() => {
+    if (!bagOpen) return;
+    setBagTab((CATEGORIES.find((c) => ownedIn(c.id).length > 0) ?? CATEGORIES[0]).id);
+    setBagPick(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bagOpen]);
+  const pickedItem = bagPick ? ITEMS.find((i) => i.id === bagPick) : undefined;
   const isManuallyDisabled = (it: ItemDef, isAuto: boolean) => {
     const used = usedThisBattle[it.id] ?? false;
     return (
@@ -1149,114 +1164,86 @@ export function ItemBagSheet({
 
   return (
     <div className={variant === "icon" ? "flex" : "mt-3 flex items-center justify-center gap-3"}>
-      <Sheet open={bagOpen} onOpenChange={onBagOpenChange}>
-        <SheetTrigger asChild>
-          {variant === "icon" ? (
-            <button
-              type="button"
-              aria-label="Your bag"
-              data-testid="bag-button"
-              className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-white/10 press"
-            >
-              <NaGlossIcon kind="bag" size={18} />
-            </button>
-          ) : (
-            <button data-testid="bag-button" className="relative flex h-12 w-12 items-center justify-center rounded-full bg-muted shadow-sm transition press">
-              <Backpack className="h-6 w-6 text-muted-foreground" />
-            </button>
-          )}
-        </SheetTrigger>
-        <SheetContent side="bottom" className="rounded-t-3xl">
-          <SheetHeader>
-            <SheetTitle className="text-center font-display-lg text-foreground">
-              Your Bag
-            </SheetTitle>
-            <div className="text-center text-xs font-semibold text-muted-foreground">
-              {itemsUsedThisBattleCount}/{maxItemsPerBattle} items used this battle
-            </div>
-          </SheetHeader>
-          {(() => {
-            // Same grouped, owned-only layout as the Shop bag.
-            const bagGroups = CATEGORIES.map((cat) => ({
-              ...cat,
-              items: ITEMS.filter(
-                (it) => CATEGORY_OF[it.id] === cat.id && (inventory[it.id] ?? 0) > 0,
-              ),
-            })).filter((g) => g.items.length > 0);
+      {variant === "icon" ? (
+        <button
+          type="button"
+          aria-label="Your bag"
+          data-testid="bag-button"
+          onClick={() => onBagOpenChange(true)}
+          className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-white/10 press"
+        >
+          <NaGlossIcon kind="bag" size={18} />
+        </button>
+      ) : (
+        <button type="button" aria-label="Your bag" data-testid="bag-button" onClick={() => onBagOpenChange(true)} className="relative flex h-12 w-12 items-center justify-center rounded-full bg-white/10 transition press">
+          <NaGlossIcon kind="bag" size={24} />
+        </button>
+      )}
+      {/* Figma 17.3 "Your bag": the shop's four categories as tabs, pick an item, then Use. */}
+      <NaSheet
+        open={bagOpen}
+        onOpenChange={onBagOpenChange}
+        title="Your bag"
+        body={`Use up to ${maxItemsPerBattle} items per battle. Each item works once!${itemsUsedThisBattleCount > 0 ? ` ${itemsUsedThisBattleCount}/${maxItemsPerBattle} used.` : ""}`}
+        primary={{
+          label: pickedItem ? `Use ${pickedItem.name}` : "Choose an item",
+          disabled: !pickedItem || isManuallyDisabled(pickedItem, isAutoItem(pickedItem.id)),
+          onClick: () => {
+            if (!pickedItem) return;
+            onUseItem(pickedItem.id);
+            setBagPick(null);
+          },
+        }}
+        secondary={{ label: "Close", onClick: () => onBagOpenChange(false) }}
+      >
+        <div className="flex gap-1">
+          {CATEGORIES.map((cat) => {
+            const has = ownedIn(cat.id).length > 0;
+            const on = bagTab === cat.id;
             return (
-              <div className="my-4 max-h-[65vh] overflow-y-auto">
-                {bagGroups.length === 0 ? (
-                  <div className="rounded-3xl bg-poke-yellow/15 p-6 text-center">
-                    <div className="font-display-md text-foreground">Your bag is empty</div>
-                    <p className="mt-1 text-xs text-foreground/60">
-                      Visit the Shop to stock up on items.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-4 pb-2">
-                    {bagGroups.map((group) => (
-                      <div key={group.id}>
-                        <div className="mb-2 font-pixel-xs uppercase tracking-wider text-foreground/45">
-                          {group.label}
-                        </div>
-                        <div className="flex flex-col gap-2.5">
-                          {group.items.map((it) => {
-                            const owned = inventory[it.id] ?? 0;
-                            const used = usedThisBattle[it.id] ?? false;
-                            const isAuto =
-                              it.id === "focusband" ||
-                              it.id === "quickclaw" ||
-                              it.id === "assaultvest" ||
-                              it.id === "revive" ||
-                              it.id === "oranberry" ||
-                              it.id === "silkscarf" ||
-                              it.id === "kingsrock" ||
-                              it.id === "leftovers" ||
-                              it.id === "metronome";
-                            const disabled = isManuallyDisabled(it, isAuto);
-                            return (
-                              <button
-                                key={it.id}
-                                data-testid={`bag-item-${it.id}`}
-                                disabled={disabled}
-                                onClick={() => onUseItem(it.id)}
-                                className="flex items-center gap-3.5 rounded-2xl bg-card px-4 py-3 text-left shadow-card transition press-lg disabled:opacity-40"
-                              >
-                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-primary/[0.08]">
-                                  <ItemIcon item={it} className="h-9 w-9" />
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                                    {it.name}
-                                    <span className="font-pixel text-[9px] text-primary">
-                                      ×{owned}
-                                    </span>
-                                  </div>
-                                  <div className="text-[11px] leading-tight text-muted-foreground">
-                                    {BAG_SHORT_DESC[it.id] ?? it.desc}
-                                  </div>
-                                  {isAuto && (
-                                    <div className="text-[10px] text-primary">Auto-activates</div>
-                                  )}
-                                  {used && !isAuto && (
-                                    <div className="text-[10px] text-destructive">
-                                      Used this battle
-                                    </div>
-                                  )}
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <button
+                key={cat.id}
+                type="button"
+                data-testid={`bag-tab-${cat.id}`}
+                disabled={!has}
+                onClick={() => {
+                  setBagTab(cat.id);
+                  setBagPick(null);
+                }}
+                className={`na-label flex flex-1 items-center justify-center rounded-full px-1.5 py-1.5 uppercase ${on ? "bg-foreground text-night-deep" : has ? "bg-white/10 text-text-secondary" : "bg-white/10 text-text-muted opacity-50"}`}
+              >
+                {cat.label}
+              </button>
             );
-          })()}
-        </SheetContent>
-      </Sheet>
+          })}
+        </div>
+        {ownedIn(bagTab).length === 0 ? (
+          <p className="na-body py-4 text-center text-text-secondary">Your bag is empty. Visit the Shop to stock up!</p>
+        ) : (
+          ownedIn(bagTab).map((it) => {
+            const auto = isAutoItem(it.id);
+            const used = usedThisBattle[it.id] ?? false;
+            const on = bagPick === it.id;
+            return (
+              <button
+                key={it.id}
+                type="button"
+                data-testid={`bag-item-${it.id}`}
+                disabled={isManuallyDisabled(it, auto)}
+                onClick={() => setBagPick(it.id)}
+                className={`flex items-center gap-2.5 rounded-2xl border p-2.5 text-left disabled:opacity-50 ${on ? "border-2 border-brand-red bg-white/[0.14]" : "border-white/[0.12] bg-white/[0.08]"}`}
+              >
+                <ItemIcon item={it} className="h-10 w-10 shrink-0" />
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="na-body-strong text-foreground">{it.name}</span>
+                  <span className="na-caption text-text-secondary">{auto ? "Works on its own when needed" : used ? "Used this battle" : (BAG_SHORT_DESC[it.id] ?? it.desc)}</span>
+                </span>
+                <span className="na-number-m text-foreground">×{inventory[it.id] ?? 0}</span>
+              </button>
+            );
+          })
+        )}
+      </NaSheet>
       {variant === "row" && ITEMS.filter(
         (it) =>
           (inventory[it.id] ?? 0) > 0 &&

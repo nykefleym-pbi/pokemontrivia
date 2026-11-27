@@ -129,14 +129,6 @@ export function StatBox({ label, value }: { label: string; value: string | numbe
   );
 }
 
-const REGION_TINT: Record<string, string> = {
-  Kanto: "bg-primary/10",
-  Johto: "bg-poke-yellow/15",
-  Hoenn: "bg-hp-good/12",
-  Sinnoh: "bg-poke-blue/12",
-  Unova: "bg-purple-500/10",
-};
-
 export function BadgesTab() {
   const gymBadges = useGameStore((s) => s.gymBadges);
   const owned = new Set(gymBadges);
@@ -146,9 +138,9 @@ export function BadgesTab() {
       {regions.map((r) => {
         const leaders = GYM_LEADERS.filter((g) => g.region === r);
         return (
-          <div key={r} className={`rounded-3xl p-3 shadow-card ${REGION_TINT[r] ?? "bg-card"}`}>
-            <div className="mb-2 text-center font-pixel-xs text-foreground/60">
-              {r.toUpperCase()}
+          <div key={r} className="flex flex-col gap-2 rounded-[20px] border border-white/[0.12] bg-white/[0.06] p-3">
+            <div className="na-label text-center uppercase text-text-secondary">
+              {r} · {leaders.filter((g) => owned.has(g.id)).length} of {leaders.length}
             </div>
             <div className="grid grid-cols-4 gap-2">
               {leaders.map((g) => {
@@ -179,14 +171,14 @@ function BadgeCell({ leader, got }: { leader: GymLeader; got: boolean }) {
   return (
     <div
       title={got ? `${leader.name} — ${leader.badge}` : "???"}
-      className={`flex flex-col items-center rounded-2xl p-2 ${got ? "bg-poke-yellow/20" : "bg-muted/40"}`}
+      className={`flex flex-col items-center gap-0.5 rounded-[14px] px-1 py-2 ${got ? "bg-reward-gold/[0.16]" : "bg-night-deep/40"}`}
     >
       {!imgBroken ? (
         <img
           src={leader.badgeIconUrl}
           alt={got ? leader.badge : "Locked badge"}
           crossOrigin="anonymous"
-          className={`h-12 w-12 object-contain ${got ? "" : "badge-silhouette"}`}
+          className={`h-10 w-10 object-contain ${got ? "" : "badge-silhouette"}`}
           onError={() => setImgBroken(true)}
         />
       ) : (
@@ -204,16 +196,12 @@ function BadgeCell({ leader, got }: { leader: GymLeader; got: boolean }) {
           truncate rather than wrap, so a long pair can't make one cell taller
           than the rest of the row. */}
       <div
-        className={`mt-1 w-full truncate text-center text-[10px] font-semibold leading-tight ${
-          got ? "text-foreground" : "text-foreground/40"
-        }`}
+        className={`na-caption w-full truncate text-center ${got ? "text-foreground" : "text-text-muted opacity-70"}`}
       >
         {leader.name}
       </div>
       <div
-        className={`w-full truncate text-center text-[9px] leading-tight ${
-          got ? "text-foreground/55" : "text-foreground/30"
-        }`}
+        className={`na-label w-full truncate text-center ${got ? "text-text-secondary" : "text-text-muted opacity-50"}`}
       >
         {leader.badge.replace(/\s*badge$/i, "")}
       </div>

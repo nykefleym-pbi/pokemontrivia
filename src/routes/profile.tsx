@@ -3,11 +3,10 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Check, Search, Copy, Share2, ImageDown, Swords } from "lucide-react";
+import { Copy, Share2, ImageDown, Swords } from "lucide-react";
 import { NaIcon } from "@/components/na/icon";
 import { ShareCardDialog } from "@/components/share-card-dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { Textarea } from "@/components/ui/textarea";
 import { useGameStore } from "@/lib/store";
 import { bestDayStreak, dayStreak } from "@/lib/win-streak";
 import { NaTopBar } from "@/components/na/top-bar";
@@ -17,7 +16,8 @@ import { NaRewardIcon } from "@/components/na/reward-icon";
 import { NaSheet } from "@/components/na/sheet";
 import { NaGlassRow } from "@/components/na/celebration";
 import { NaButton } from "@/components/na/button";
-import { FitSprite } from "@/components/na/battle";
+import { FitSprite, FittedTrainer } from "@/components/na/battle";
+import { NaScreenDialog, NaSearchField } from "@/components/na/screen-dialog";
 import { useStoreHydrated } from "@/lib/store-hydration";
 import { hardReset } from "@/lib/hard-reset";
 import {
@@ -51,8 +51,6 @@ import { matchesPartnerFilters, partnerTypeOptions } from "@/lib/partner-filter"
 
 import { EvolutionScreen } from "@/components/evolution-screen";
 import { FriendsScreen, FRIENDS_REFRESH_EVENT, OPEN_FRIENDS_EVENT, takePendingFriendsView, type FriendsView } from "@/components/friends-screen";
-import { PokemonSprite } from "@/components/game-ui";
-import { TypeChip } from "@/components/type-chip";
 import { FACEBOOK_PAGE_URL } from "@/lib/social-links";
 import { BattleLogList } from "@/components/battle-log-list";
 import {
@@ -62,7 +60,6 @@ import {
   BadgesTab,
 } from "@/components/profile-parts";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -79,7 +76,6 @@ import {
 import { ACHIEVEMENTS, unlockedAchievements } from "@/lib/achievements";
 import {
   achievementReward,
-  achievementRewardLabel,
   claimAchievementReward,
 } from "@/lib/achievement-rewards";
 import { AppIcon } from "@/components/app-icon";
@@ -341,6 +337,8 @@ function ProfilePage() {
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<PokeType | null>(null);
   const [trainerQuery, setTrainerQuery] = useState("");
+  const [trainerPick, setTrainerPick] = useState<string | null>(null);
+  const [partnerPick, setPartnerPick] = useState<PokeEntry | null>(null);
   const [resetOpen, setResetOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameAvail, setRenameAvail] = useState<
@@ -355,7 +353,6 @@ function ProfilePage() {
   const reducedMotion = useGameStore((s) => s.reducedMotion);
   const setReducedMotion = useGameStore((s) => s.setReducedMotion);
 
-  const [brokenTrainerIds, setBrokenTrainerIds] = useState<Set<string>>(new Set());
   const [evolvingFrom, setEvolvingFrom] = useState<PokeEntry | null>(null);
   const [evolvingTo, setEvolvingTo] = useState<PokeEntry | null>(null);
 
@@ -379,15 +376,15 @@ function ProfilePage() {
   // Chips come from the pool, so they only ever offer types the player owns.
   const typeOptions = useMemo(() => partnerTypeOptions(partnerPool), [partnerPool]);
   const results = useMemo(
-    () => partnerPool.filter((p) => matchesPartnerFilters(p, query, typeFilter)).slice(0, 9),
+    () => partnerPool.filter((p) => matchesPartnerFilters(p, query, typeFilter)).slice(0, 60),
     [partnerPool, query, typeFilter],
   );
   const trainerResults = useMemo(() => {
     const q = trainerQuery.trim().toLowerCase();
-    const pool = TRAINER_SPRITES.filter((t) => !brokenTrainerIds.has(t.id));
+    const pool = TRAINER_SPRITES;
     if (!q) return pool.slice(0, 9);
     return pool.filter((t) => t.name.toLowerCase().startsWith(q)).slice(0, 9);
-  }, [trainerQuery, brokenTrainerIds]);
+  }, [trainerQuery]);
 
 
   // Debounced availability check while the rename dialog is open.
@@ -667,8 +664,8 @@ function ProfilePage() {
         }}
       />
 
-      {/* Feedback sheet */}
-      <Sheet
+      {/* 17.8 Share your feedback: one sheet, switched to Idea or Problem. */}
+      <NaSheet
         open={feedbackOpen !== null}
         onOpenChange={(open) => {
           if (!open) {
@@ -676,144 +673,127 @@ function ProfilePage() {
             setFeedbackOpen(null);
           }
         }}
+        title="Share your feedback"
+        body={feedbackOpen === "bug" ? "Found a problem? Tell us what happened!" : "Have an idea? We'd love to hear it!"}
+        primary={{ label: sendingFeedback ? "Sending…" : "Send", disabled: sendingFeedback || feedbackMsg.trim().length < 10, onClick: () => void submitFeedback() }}
+        secondary={{
+          label: "Cancel",
+          onClick: () => {
+            suppressSettingsClose();
+            setFeedbackOpen(null);
+          },
+        }}
+        footnote="Your message goes straight to the team. Thank you!"
       >
-        <SheetContent side="bottom" className="rounded-t-3xl bg-poke-cream">
-          <SheetHeader>
-            <SheetTitle className="font-display-xl text-foreground">
-              {feedbackOpen === "bug" ? "Report a bug" : "Submit a suggestion"}
-            </SheetTitle>
-          </SheetHeader>
-          <div className="mt-3 space-y-3 pb-4">
-            <Textarea
-              value={feedbackMsg}
-              onChange={(e) => setFeedbackMsg(e.target.value)}
-              maxLength={2000}
-              rows={5}
-              placeholder={
-                feedbackOpen === "bug"
-                  ? "What happened? What did you expect to happen?"
-                  : "What would make the game more fun?"
-              }
-              className="rounded-2xl bg-card"
-            />
-            <Input
-              value={feedbackContact}
-              onChange={(e) => setFeedbackContact(e.target.value)}
-              maxLength={200}
-              placeholder="Contact (optional — email or trainer name)"
-              className="rounded-2xl bg-card"
-            />
-            <Button
-              size="action"
-              onClick={() => void submitFeedback()}
-              disabled={sendingFeedback || feedbackMsg.trim().length < 10}
-              className="w-full bg-primary text-primary-foreground shadow-pop"
+        <div className="flex gap-1 rounded-[14px] bg-night-deep/60 p-1">
+          {(["suggestion", "bug"] as const).map((k) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setFeedbackOpen(k)}
+              className={`flex h-[38px] flex-1 items-center justify-center rounded-[10px] ${feedbackOpen === k ? "na-body-strong bg-night-card-2 text-foreground shadow-[0_4px_0_#141A3F]" : "na-body text-text-secondary"}`}
             >
-              {sendingFeedback ? "Sending…" : "Send"}
-            </Button>
-          </div>
-        </SheetContent>
-      </Sheet>
+              {k === "bug" ? "Problem" : "Idea"}
+            </button>
+          ))}
+        </div>
+        <label className="flex flex-col gap-1.5">
+          <span className="na-label uppercase text-text-secondary">{feedbackOpen === "bug" ? "What happened?" : "Your idea"}</span>
+          <textarea
+            value={feedbackMsg}
+            onChange={(e) => setFeedbackMsg(e.target.value)}
+            maxLength={2000}
+            rows={1}
+            placeholder={feedbackOpen === "bug" ? "What happened? What did you expect to happen?" : "What would make the game more fun?"}
+            className={`na-headline h-[54px] w-full resize-none rounded-[14px] border-2 bg-night-deep/60 px-3.5 py-3.5 text-foreground outline-none placeholder:text-text-muted ${feedbackMsg.trim().length >= 10 ? "border-success" : "border-white/[0.16]"}`}
+          />
+          <span className="na-caption text-text-secondary">Write at least 10 characters</span>
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className="na-label uppercase text-text-secondary">Want a reply? (optional)</span>
+          <input
+            value={feedbackContact}
+            onChange={(e) => setFeedbackContact(e.target.value)}
+            maxLength={200}
+            placeholder="Email or trainer name"
+            className="na-headline h-[54px] w-full rounded-[14px] border-2 border-white/[0.16] bg-night-deep/60 px-3.5 text-foreground outline-none placeholder:text-text-muted"
+          />
+        </label>
+      </NaSheet>
 
-      {/* Trophies sheet */}
-      <Sheet
+      {/* 17.6 Trophies: claim what you earned, then what is still to earn. */}
+      <NaScreenDialog
         open={trophiesOpen}
         onOpenChange={(o) => {
           playSfx(o ? "panel_open" : "panel_close");
           setTrophiesOpen(o);
         }}
+        title="Trophies"
       >
-        <SheetContent
-          side="bottom"
-          className="rounded-t-3xl bg-poke-cream max-h-[85vh] overflow-y-auto"
-        >
-          <SheetHeader>
-            <div className="font-pixel-xs text-primary">
-              {unlocked.size} OF {ACHIEVEMENTS.length} EARNED
-              {claimableCount > 0 ? ` · ${claimableCount} TO CLAIM` : ""}
-            </div>
-            <SheetTitle className="font-display-xl text-foreground">Trophies</SheetTitle>
-          </SheetHeader>
-          <div className="mt-3 space-y-2.5">
-            {/* Unclaimed-but-earned first: the trophy you can act on should never
-                be below the fold behind ones you have already collected. */}
-            {[...ACHIEVEMENTS]
-              .sort((a, b) => trophySortRank(a.id) - trophySortRank(b.id))
-              .map((a) => {
-                const got = unlocked.has(a.id);
-                const claimed = claimedAchievements.includes(a.id);
-                const reward = achievementReward(a.id);
+        <span className="na-label uppercase text-reward-gold">
+          {unlocked.size}/{ACHIEVEMENTS.length} earned
+        </span>
+        <div className="h-2 shrink-0 overflow-hidden rounded-full bg-night-deep">
+          <div className="h-full rounded-full bg-reward-gold" style={{ width: `${Math.max(4, (unlocked.size / ACHIEVEMENTS.length) * 100)}%` }} />
+        </div>
+        {(() => {
+          const sorted = [...ACHIEVEMENTS].sort((a, b) => trophySortRank(a.id) - trophySortRank(b.id));
+          const toClaim = sorted.filter((a) => unlocked.has(a.id) && !claimedAchievements.includes(a.id));
+          const done = sorted.filter((a) => claimedAchievements.includes(a.id));
+          const locked = sorted.filter((a) => !unlocked.has(a.id));
+          const art = (a: (typeof ACHIEVEMENTS)[number], dim?: boolean) => (
+            <img src={a.art} alt="" className={`h-12 w-12 object-contain [image-rendering:pixelated] ${dim ? "opacity-60 grayscale" : ""}`} />
+          );
+          return (
+            <>
+              {toClaim.map((a) => (
+                <NaGlassRow key={a.id} tone="gold" lead={art(a)} title={a.name} sub={a.desc} trailing={<NaButton kind="gold" size="M" onClick={() => claimTrophy(a.id, a.name)}>Claim</NaButton>} />
+              ))}
+              {done.length > 0 && <span className="na-label uppercase text-text-secondary">Earned</span>}
+              {done.map((a) => (
+                <NaGlassRow key={a.id} lead={art(a)} title={a.name} sub={a.desc} trailing={<NaIcon name="check" size={20} className="text-success" />} />
+              ))}
+              {locked.length > 0 && <span className="na-label uppercase text-text-secondary">Still to earn</span>}
+              {locked.map((a) => {
+                const r = achievementReward(a.id);
                 return (
-                  <div
-                    key={a.id}
-                    className={`flex items-center gap-3 rounded-3xl p-4 shadow-card ${got ? "bg-card" : "bg-card/60"}`}
-                  >
-                    <div
-                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${claimed ? "bg-poke-yellow/25" : "bg-muted"}`}
-                    >
-                      <AppIcon
-                        src={claimed ? a.art : LOCK_ICON}
-                        className={`h-9 w-9 ${claimed ? "" : "opacity-50"}`}
-                      />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div
-                        className={`font-display-md ${got ? "text-foreground" : "text-foreground/50"}`}
-                      >
-                        {a.name}
-                      </div>
-                      <div className="text-xs text-foreground/55">{a.desc}</div>
-                      {reward && !claimed && (
-                        // Shown on locked rows too — knowing the payout is half
-                        // the reason to chase a trophy — but muted there so the
-                        // rows you can actually claim still read first.
-                        <div
-                          className={`mt-0.5 text-xs font-semibold ${got ? "text-primary" : "text-foreground/40"}`}
-                        >
-                          {achievementRewardLabel(reward)}
-                        </div>
-                      )}
-                    </div>
-                    {claimed ? (
-                      <Check className="h-5 w-5 shrink-0 text-hp-good" />
-                    ) : got ? (
-                      <Button
-                        onClick={() => claimTrophy(a.id, a.name)}
-                        className="h-9 shrink-0 rounded-full bg-primary px-4 font-bold text-primary-foreground shadow-pop"
-                      >
-                        Claim
-                      </Button>
-                    ) : null}
+                  <div key={a.id} className="opacity-70">
+                    <NaGlassRow
+                      lead={art(a, true)}
+                      title={a.name}
+                      sub={a.desc}
+                      trailing={
+                        r ? (
+                          <span className="flex items-center gap-1">
+                            <NaRewardIcon kind="Coin" size={18} />
+                            <span className="na-number-m text-reward-gold">{r.coins.toLocaleString()}</span>
+                          </span>
+                        ) : undefined
+                      }
+                    />
                   </div>
                 );
               })}
-          </div>
-        </SheetContent>
-      </Sheet>
+            </>
+          );
+        })()}
+      </NaScreenDialog>
 
-      {/* Badges sheet */}
-      <Sheet
+      {/* 17.7 Badge case: every region, earned or not. */}
+      <NaScreenDialog
         open={badgesOpen}
         onOpenChange={(o) => {
           playSfx(o ? "panel_open" : "panel_close");
           setBadgesOpen(o);
         }}
+        title="Badge case"
       >
-        <SheetContent
-          side="bottom"
-          className="rounded-t-3xl bg-poke-cream max-h-[85vh] overflow-y-auto"
-        >
-          <SheetHeader>
-            <div className="font-pixel-xs text-primary">
-              {gymBadges.length} OF {GYM_LEADERS.length} EARNED
-            </div>
-            <SheetTitle className="font-display-xl text-foreground">Badge case</SheetTitle>
-          </SheetHeader>
-          <div className="mt-3">
-            <BadgesTab />
-          </div>
-        </SheetContent>
-      </Sheet>
+        <span className="na-label uppercase text-reward-gold">
+          {gymBadges.length}/{GYM_LEADERS.length} earned
+        </span>
+        <NaGlassRow lead={<NaGlossIcon kind="calendar" size={32} />} title="One gym challenge a week" sub="Beat every trainer on your route to open the next gym. Make it count!" />
+        <BadgesTab />
+      </NaScreenDialog>
 
       {/* PvP match history sheet */}
       <Sheet open={pvpHistoryOpen} onOpenChange={setPvpHistoryOpen}>
@@ -1134,85 +1114,74 @@ function ProfilePage() {
           void refreshFriends();
         }}
       />
-      <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Reset all progress?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This erases everything on this device — your trainer, level, items, stats and
-              settings — and starts a brand-new account, so game cooldowns start over too. It
-              cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={doReset}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Reset
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* 17.9 Start over? The one sheet with a red edge round the screen. */}
+      <NaSheet
+        open={resetOpen}
+        onOpenChange={setResetOpen}
+        edge="danger"
+        title="Start over?"
+        body="You'll lose all your Pokémon, items, and coins. This can't be undone."
+        primary={{ label: "Yes, reset everything", onClick: doReset }}
+        secondary={{ label: "KEEP MY PROGRESS", onClick: () => setResetOpen(false) }}
+      >
+        <div className="flex justify-center">
+          <NaGlossIcon kind="warning" size={64} />
+        </div>
+      </NaSheet>
 
-      {/* Pokémon picker */}
-      <Dialog
+      {/* 17.4 Choose your partner: pick one, then Let's go. */}
+      <NaScreenDialog
         open={pickerOpen}
         onOpenChange={(open) => {
           if (!open) suppressSettingsClose();
           setPickerOpen(open);
+          if (open) setPartnerPick(null);
         }}
+        title="Choose your partner"
+        footer={
+          <NaButton
+            block
+            disabled={!partnerPick || partnerPick.id === pokemon?.id}
+            onClick={() => {
+              if (!partnerPick) return;
+              setPokemon(partnerPick);
+              suppressSettingsClose();
+              setPickerOpen(false);
+              toast.success(`${partnerPick.name} is your partner!`);
+            }}
+          >
+            {partnerPick ? `Let's go, ${partnerPick.name}!` : "Choose a Pokémon"}
+          </NaButton>
+        }
       >
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Change partner</DialogTitle>
-          </DialogHeader>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by name or type..."
-              className="pl-10"
-            />
-          </div>
-          <PartnerTypeFilter options={typeOptions} value={typeFilter} onChange={setTypeFilter} />
-          <div className="grid grid-cols-3 gap-2">
-            {results.map((p) => (
+        <p className="na-body text-text-secondary">Choose a Pokémon to battle by your side!</p>
+        <NaSearchField value={query} onChange={setQuery} placeholder="Search your Pokémon…" />
+        <PartnerTypeFilter options={typeOptions} value={typeFilter} onChange={setTypeFilter} />
+        <div className="flex flex-wrap gap-2.5">
+          {results.map((p) => {
+            const on = partnerPick?.id === p.id;
+            const now = pokemon?.id === p.id;
+            return (
               <button
                 key={p.id}
-                onClick={() => {
-                  setPokemon(p);
-                  suppressSettingsClose();
-                  setPickerOpen(false);
-                  toast.success(`${p.name} chosen!`);
-                }}
-                className="flex flex-col items-center rounded-2xl border-2 p-2 transition press hover:border-primary"
+                type="button"
+                aria-pressed={on}
+                onClick={() => setPartnerPick(p)}
+                className={`flex w-[106px] flex-col items-center gap-0.5 rounded-[18px] p-2 ${on ? "border-[2.5px] border-brand-red bg-white/[0.14]" : "border border-white/[0.12] bg-white/[0.08]"}`}
               >
-                <PokemonSprite id={p.id} alt={p.name} className="sprite h-14 w-14" />
-                <div className="text-[11px] font-semibold">{p.name}</div>
-                {/* Type is what grants the ability, and it's what the chips
-                    filter on — showing it here makes the filter legible. */}
-                <div className="mt-0.5">
-                  <TypeChip type={p.types[0]} selected size="sm" />
-                </div>
+                <FitSprite id={p.id} size={72} />
+                <span className="na-body-strong w-full truncate text-center text-foreground">{p.name}</span>
+                {now && <span className="na-label rounded-[8px] bg-reward-gold px-2 py-0.5 text-night-deep">PARTNER</span>}
               </button>
-            ))}
-            {results.length === 0 && (
-              <div className="col-span-3 rounded-2xl bg-muted/40 p-5 text-center text-xs text-muted-foreground">
-                {/* An empty POOL and an empty FILTER need different advice —
-                    telling someone with 200 captures to go capture more is
-                    nonsense when they have simply filtered to a type they
-                    haven't caught yet. */}
-                {partnerPool.length === 0
-                  ? "Capture Pokémon in battle to unlock them as partners!"
-                  : "None of your Pokémon match that search."}
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+            );
+          })}
+          {results.length === 0 && (
+            <p className="na-body w-full py-6 text-center text-text-secondary">
+              {partnerPool.length === 0 ? "Catch Pokémon in battle to make them your partner!" : "None of your Pokémon match that search."}
+            </p>
+          )}
+        </div>
+      </NaScreenDialog>
 
       {/* Battle background picker. Portrait thumbnails at the shape they are
           actually drawn in — a square crop of a 12:13 backdrop hides most of
@@ -1373,62 +1342,52 @@ function ProfilePage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Trainer picker */}
-      <Dialog
+      {/* 17.5 Choose your avatar: pick a look, then Save. */}
+      <NaScreenDialog
         open={trainerPickerOpen}
         onOpenChange={(open) => {
           if (!open) suppressSettingsClose();
           setTrainerPickerOpen(open);
+          if (open) setTrainerPick(trainerSprite);
         }}
+        title="Choose your avatar"
+        footer={
+          <NaButton
+            block
+            disabled={!trainerPick || trainerPick === trainerSprite}
+            onClick={() => {
+              if (trainerPick) setTrainerSprite(trainerPick);
+              suppressSettingsClose();
+              setTrainerPickerOpen(false);
+              toast.success("Looking good!");
+            }}
+          >
+            Save
+          </NaButton>
+        }
       >
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Change trainer</DialogTitle>
-          </DialogHeader>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={trainerQuery}
-              onChange={(e) => setTrainerQuery(e.target.value)}
-              placeholder="Search trainers..."
-              className="pl-10"
-            />
-          </div>
-          <div className="grid max-h-[60vh] grid-cols-3 gap-2 overflow-y-auto">
-            {trainerResults.map((t) => (
+        <p className="na-body text-text-secondary">Choose how other trainers see you!</p>
+        <NaSearchField value={trainerQuery} onChange={setTrainerQuery} placeholder="Search looks…" />
+        <div className="flex flex-wrap gap-3">
+          {trainerResults.map((t) => {
+            const on = trainerPick === t.id;
+            return (
               <button
                 key={t.id}
-                onClick={() => {
-                  setTrainerSprite(t.id);
-                  // See the background picker: a programmatic close skips this
-                  // dialog's onOpenChange, so the Settings sheet behind it
-                  // needs the guard raised by hand or it closes too.
-                  suppressSettingsClose();
-                  setTrainerPickerOpen(false);
-                  toast.success("Trainer updated!");
-                }}
-                className="flex flex-col items-center rounded-2xl border-2 p-2 transition press hover:border-primary"
+                type="button"
+                aria-pressed={on}
+                onClick={() => setTrainerPick(t.id)}
+                className={`flex w-[104px] flex-col items-center gap-0.5 rounded-[18px] bg-white/[0.08] p-1.5 ${on ? "border-[2.5px] border-brand-red" : "border border-white/[0.12]"}`}
               >
-                <img
-                  src={trainerSpriteUrl(t.id)}
-                  alt={t.name}
-                  crossOrigin="anonymous"
-                  className="sprite h-16 w-16 object-contain"
-                  loading="lazy"
-                  onError={() =>
-                    setBrokenTrainerIds((s) => {
-                      const n = new Set(s);
-                      n.add(t.id);
-                      return n;
-                    })
-                  }
-                />
-                <div className="text-[11px] font-semibold capitalize">{t.name}</div>
+                <span className="relative block h-20 w-20 overflow-hidden">
+                  <FittedTrainer art={trainerSpriteUrl(t.id)} height={76} cx={40} feetY={78} alt={t.name} />
+                </span>
+                <span className="na-caption w-full truncate text-center capitalize text-text-secondary">{t.name}</span>
               </button>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
+            );
+          })}
+        </div>
+      </NaScreenDialog>
 
       {evolvingFrom && evolvingTo && (
         <EvolutionScreen
