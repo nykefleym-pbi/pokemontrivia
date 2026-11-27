@@ -9,57 +9,27 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as ArenaRouteImport } from './routes/arena'
-import { Route as BattleRouteImport } from './routes/battle'
-import { Route as PokedexRouteImport } from './routes/pokedex'
-import { Route as ProfileRouteImport } from './routes/profile'
-import { Route as ReferRouteImport } from './routes/refer'
-import { Route as ShopRouteImport } from './routes/shop'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as WhosThatPokemonRouteImport } from './routes/whos-that-pokemon'
-import { Route as ApiDailyChallengeRouteImport } from './routes/api.daily-challenge'
-import { Route as ApiMegaQuestionsRouteImport } from './routes/api.mega-questions'
-import { Route as ApiTriviaRouteImport } from './routes/api.trivia'
-import { Route as ApiTriviaBatchRouteImport } from './routes/api.trivia-batch'
-import { Route as ApiTriviaEliteRouteImport } from './routes/api.trivia-elite'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as ShopRouteImport } from './routes/shop'
+import { Route as ReferRouteImport } from './routes/refer'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as PokedexRouteImport } from './routes/pokedex'
+import { Route as BattleRouteImport } from './routes/battle'
+import { Route as ArenaRouteImport } from './routes/arena'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as PvpMatchIdRouteImport } from './routes/pvp.$matchId'
-import { Route as PvpChatMatchIdRouteImport } from './routes/pvp.chat.$matchId'
+import { Route as ApiTriviaEliteRouteImport } from './routes/api.trivia-elite'
+import { Route as ApiTriviaBatchRouteImport } from './routes/api.trivia-batch'
+import { Route as ApiTriviaRouteImport } from './routes/api.trivia'
+import { Route as ApiMegaQuestionsRouteImport } from './routes/api.mega-questions'
+import { Route as ApiDailyChallengeRouteImport } from './routes/api.daily-challenge'
 import { Route as PvpLiveMatchIdRouteImport } from './routes/pvp.live.$matchId'
+import { Route as PvpChatMatchIdRouteImport } from './routes/pvp.chat.$matchId'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ArenaRoute = ArenaRouteImport.update({
-  id: '/arena',
-  path: '/arena',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BattleRoute = BattleRouteImport.update({
-  id: '/battle',
-  path: '/battle',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PokedexRoute = PokedexRouteImport.update({
-  id: '/pokedex',
-  path: '/pokedex',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProfileRoute = ProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ReferRoute = ReferRouteImport.update({
-  id: '/refer',
-  path: '/refer',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ShopRoute = ShopRouteImport.update({
-  id: '/shop',
-  path: '/shop',
+const WhosThatPokemonRoute = WhosThatPokemonRouteImport.update({
+  id: '/whos-that-pokemon',
+  path: '/whos-that-pokemon',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -67,34 +37,39 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
-const WhosThatPokemonRoute = WhosThatPokemonRouteImport.update({
-  id: '/whos-that-pokemon',
-  path: '/whos-that-pokemon',
+const ShopRoute = ShopRouteImport.update({
+  id: '/shop',
+  path: '/shop',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiDailyChallengeRoute = ApiDailyChallengeRouteImport.update({
-  id: '/api/daily-challenge',
-  path: '/api/daily-challenge',
+const ReferRoute = ReferRouteImport.update({
+  id: '/refer',
+  path: '/refer',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiMegaQuestionsRoute = ApiMegaQuestionsRouteImport.update({
-  id: '/api/mega-questions',
-  path: '/api/mega-questions',
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiTriviaRoute = ApiTriviaRouteImport.update({
-  id: '/api/trivia',
-  path: '/api/trivia',
+const PokedexRoute = PokedexRouteImport.update({
+  id: '/pokedex',
+  path: '/pokedex',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiTriviaBatchRoute = ApiTriviaBatchRouteImport.update({
-  id: '/api/trivia-batch',
-  path: '/api/trivia-batch',
+const BattleRoute = BattleRouteImport.update({
+  id: '/battle',
+  path: '/battle',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiTriviaEliteRoute = ApiTriviaEliteRouteImport.update({
-  id: '/api/trivia-elite',
-  path: '/api/trivia-elite',
+const ArenaRoute = ArenaRouteImport.update({
+  id: '/arena',
+  path: '/arena',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PvpMatchIdRoute = PvpMatchIdRouteImport.update({
@@ -102,14 +77,39 @@ const PvpMatchIdRoute = PvpMatchIdRouteImport.update({
   path: '/pvp/$matchId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PvpChatMatchIdRoute = PvpChatMatchIdRouteImport.update({
-  id: '/pvp/chat/$matchId',
-  path: '/pvp/chat/$matchId',
+const ApiTriviaEliteRoute = ApiTriviaEliteRouteImport.update({
+  id: '/api/trivia-elite',
+  path: '/api/trivia-elite',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTriviaBatchRoute = ApiTriviaBatchRouteImport.update({
+  id: '/api/trivia-batch',
+  path: '/api/trivia-batch',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTriviaRoute = ApiTriviaRouteImport.update({
+  id: '/api/trivia',
+  path: '/api/trivia',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMegaQuestionsRoute = ApiMegaQuestionsRouteImport.update({
+  id: '/api/mega-questions',
+  path: '/api/mega-questions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDailyChallengeRoute = ApiDailyChallengeRouteImport.update({
+  id: '/api/daily-challenge',
+  path: '/api/daily-challenge',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PvpLiveMatchIdRoute = PvpLiveMatchIdRouteImport.update({
   id: '/pvp/live/$matchId',
   path: '/pvp/live/$matchId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PvpChatMatchIdRoute = PvpChatMatchIdRouteImport.update({
+  id: '/pvp/chat/$matchId',
+  path: '/pvp/chat/$matchId',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -253,53 +253,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/arena': {
-      id: '/arena'
-      path: '/arena'
-      fullPath: '/arena'
-      preLoaderRoute: typeof ArenaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/battle': {
-      id: '/battle'
-      path: '/battle'
-      fullPath: '/battle'
-      preLoaderRoute: typeof BattleRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pokedex': {
-      id: '/pokedex'
-      path: '/pokedex'
-      fullPath: '/pokedex'
-      preLoaderRoute: typeof PokedexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/profile': {
-      id: '/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof ProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/refer': {
-      id: '/refer'
-      path: '/refer'
-      fullPath: '/refer'
-      preLoaderRoute: typeof ReferRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/shop': {
-      id: '/shop'
-      path: '/shop'
-      fullPath: '/shop'
-      preLoaderRoute: typeof ShopRouteImport
+    '/whos-that-pokemon': {
+      id: '/whos-that-pokemon'
+      path: '/whos-that-pokemon'
+      fullPath: '/whos-that-pokemon'
+      preLoaderRoute: typeof WhosThatPokemonRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -309,46 +267,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/whos-that-pokemon': {
-      id: '/whos-that-pokemon'
-      path: '/whos-that-pokemon'
-      fullPath: '/whos-that-pokemon'
-      preLoaderRoute: typeof WhosThatPokemonRouteImport
+    '/shop': {
+      id: '/shop'
+      path: '/shop'
+      fullPath: '/shop'
+      preLoaderRoute: typeof ShopRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/daily-challenge': {
-      id: '/api/daily-challenge'
-      path: '/api/daily-challenge'
-      fullPath: '/api/daily-challenge'
-      preLoaderRoute: typeof ApiDailyChallengeRouteImport
+    '/refer': {
+      id: '/refer'
+      path: '/refer'
+      fullPath: '/refer'
+      preLoaderRoute: typeof ReferRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/mega-questions': {
-      id: '/api/mega-questions'
-      path: '/api/mega-questions'
-      fullPath: '/api/mega-questions'
-      preLoaderRoute: typeof ApiMegaQuestionsRouteImport
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/trivia': {
-      id: '/api/trivia'
-      path: '/api/trivia'
-      fullPath: '/api/trivia'
-      preLoaderRoute: typeof ApiTriviaRouteImport
+    '/pokedex': {
+      id: '/pokedex'
+      path: '/pokedex'
+      fullPath: '/pokedex'
+      preLoaderRoute: typeof PokedexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/trivia-batch': {
-      id: '/api/trivia-batch'
-      path: '/api/trivia-batch'
-      fullPath: '/api/trivia-batch'
-      preLoaderRoute: typeof ApiTriviaBatchRouteImport
+    '/battle': {
+      id: '/battle'
+      path: '/battle'
+      fullPath: '/battle'
+      preLoaderRoute: typeof BattleRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/trivia-elite': {
-      id: '/api/trivia-elite'
-      path: '/api/trivia-elite'
-      fullPath: '/api/trivia-elite'
-      preLoaderRoute: typeof ApiTriviaEliteRouteImport
+    '/arena': {
+      id: '/arena'
+      path: '/arena'
+      fullPath: '/arena'
+      preLoaderRoute: typeof ArenaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pvp/$matchId': {
@@ -358,11 +323,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PvpMatchIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/pvp/chat/$matchId': {
-      id: '/pvp/chat/$matchId'
-      path: '/pvp/chat/$matchId'
-      fullPath: '/pvp/chat/$matchId'
-      preLoaderRoute: typeof PvpChatMatchIdRouteImport
+    '/api/trivia-elite': {
+      id: '/api/trivia-elite'
+      path: '/api/trivia-elite'
+      fullPath: '/api/trivia-elite'
+      preLoaderRoute: typeof ApiTriviaEliteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/trivia-batch': {
+      id: '/api/trivia-batch'
+      path: '/api/trivia-batch'
+      fullPath: '/api/trivia-batch'
+      preLoaderRoute: typeof ApiTriviaBatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/trivia': {
+      id: '/api/trivia'
+      path: '/api/trivia'
+      fullPath: '/api/trivia'
+      preLoaderRoute: typeof ApiTriviaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/mega-questions': {
+      id: '/api/mega-questions'
+      path: '/api/mega-questions'
+      fullPath: '/api/mega-questions'
+      preLoaderRoute: typeof ApiMegaQuestionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/daily-challenge': {
+      id: '/api/daily-challenge'
+      path: '/api/daily-challenge'
+      fullPath: '/api/daily-challenge'
+      preLoaderRoute: typeof ApiDailyChallengeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pvp/live/$matchId': {
@@ -370,6 +363,13 @@ declare module '@tanstack/react-router' {
       path: '/pvp/live/$matchId'
       fullPath: '/pvp/live/$matchId'
       preLoaderRoute: typeof PvpLiveMatchIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pvp/chat/$matchId': {
+      id: '/pvp/chat/$matchId'
+      path: '/pvp/chat/$matchId'
+      fullPath: '/pvp/chat/$matchId'
+      preLoaderRoute: typeof PvpChatMatchIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
