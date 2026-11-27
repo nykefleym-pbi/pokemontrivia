@@ -34,7 +34,7 @@ export function WhosThatWordmark({ className = "" }: { className?: string }) {
         alt="Who's that Pokémon?"
         draggable={false}
         onError={() => setFailed(true)}
-        className="absolute left-0 top-0 w-full select-none"
+        className="absolute left-0 top-0 w-full select-none [image-rendering:pixelated]"
         style={s.image}
       />
     </div>

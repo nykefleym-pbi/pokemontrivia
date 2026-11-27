@@ -85,10 +85,10 @@ describe("WhosThatPokemon server-authority wiring", () => {
     const input = await screen.findByPlaceholderText("Type the Pokémon's name…");
     fireEvent.change(input, { target: { value: "Pikachu" } });
     await act(async () => {
-      fireEvent.click(screen.getByText("SUBMIT"));
+      fireEvent.click(screen.getByText("Submit"));
     });
 
-    expect(await screen.findByText("COLLECT")).toBeTruthy();
+    expect(await screen.findByText("Home")).toBeTruthy();
     expect(submitWhosThat).toHaveBeenCalledWith("round-1", { guessText: "Pikachu" });
     const state = useGameStore.getState();
     expect(state.xp).toBe(initialStoreState.xp + 100);
@@ -104,14 +104,14 @@ describe("WhosThatPokemon server-authority wiring", () => {
     const input = await screen.findByPlaceholderText("Type the Pokémon's name…");
     fireEvent.change(input, { target: { value: "Bulbasaur" } });
     await act(async () => {
-      fireEvent.click(screen.getByText("SUBMIT"));
+      fireEvent.click(screen.getByText("Submit"));
     });
 
     // The screen names the species that got away — that is what "shows the
     // answer" means here, and it survives the wording of the heading changing
     // (it has, twice) because it asserts the DATA rather than the copy.
     expect(await screen.findByText("Pikachu")).toBeTruthy();
-    expect(await screen.findByAltText("It fled!")).toBeTruthy();
+    expect((await screen.findAllByText("IT FLED!")).length).toBeGreaterThan(0);
     // The wrong-guess wording, not the timeout wording. Both paths land on this
     // same screen, and telling a player who answered that they ran out of time
     // is simply false — which is what it used to say.
@@ -144,7 +144,7 @@ describe("WhosThatPokemon server-authority wiring", () => {
       });
     }
 
-    expect(await screen.findByAltText("It fled!")).toBeTruthy();
+    expect((await screen.findAllByText("IT FLED!")).length).toBeGreaterThan(0);
     expect(screen.getByText(/in time/)).toBeTruthy();
     expect(screen.queryByText(/wasn’t the right guess/)).toBeNull();
     vi.useRealTimers();
@@ -167,10 +167,10 @@ describe("WhosThatPokemon server-authority wiring", () => {
       fireEvent.click(typeButton);
     });
     await act(async () => {
-      fireEvent.click(screen.getByText("SUBMIT"));
+      fireEvent.click(screen.getByText("Submit"));
     });
 
-    expect(await screen.findByText("COLLECT")).toBeTruthy();
+    expect(await screen.findByText("Home")).toBeTruthy();
     expect(submitWhosThat).toHaveBeenCalledWith("round-2", { guessTypes: ["electric"] });
   });
 
@@ -182,10 +182,10 @@ describe("WhosThatPokemon server-authority wiring", () => {
     const input = await screen.findByPlaceholderText("Type the Pokémon's name…");
     fireEvent.change(input, { target: { value: "Pikachu" } });
     await act(async () => {
-      fireEvent.click(screen.getByText("SUBMIT"));
+      fireEvent.click(screen.getByText("Submit"));
     });
 
-    await screen.findByText("COLLECT");
+    await screen.findByText("Home");
     const state = useGameStore.getState();
     expect(state.xp).toBe(initialStoreState.xp);
     expect(state.inventory.potion ?? 0).toBe(initialStoreState.inventory.potion ?? 0);
@@ -199,10 +199,10 @@ describe("WhosThatPokemon server-authority wiring", () => {
     const input = await screen.findByPlaceholderText("Type the Pokémon's name…");
     fireEvent.change(input, { target: { value: "Pikachu" } });
     await act(async () => {
-      fireEvent.click(screen.getByText("SUBMIT"));
+      fireEvent.click(screen.getByText("Submit"));
     });
 
-    expect(await screen.findByText("COLLECT")).toBeTruthy();
+    expect(await screen.findByText("Home")).toBeTruthy();
     // No reward applied — a network failure never grants XP/items locally.
     expect(useGameStore.getState().xp).toBe(initialStoreState.xp);
   });

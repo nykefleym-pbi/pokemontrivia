@@ -5,9 +5,10 @@ import { useGameStore } from "@/lib/store";
 import { findPokemon, spriteUrl, type PokeType } from "@/lib/pokemon-data";
 import type { ItemId } from "@/lib/game-data";
 import { rollLevelUpRewards } from "@/lib/level-rewards";
-import { PokeballSpinner, PokemonSprite } from "@/components/game-ui";
-import { TypeChip } from "@/components/type-chip";
-import { Button } from "@/components/ui/button";
+import { PokeballSpinner, typeColorMap } from "@/components/game-ui";
+import { NaButton } from "@/components/na/button";
+import { NaIcon } from "@/components/na/icon";
+import { FitSprite } from "@/components/na/battle";
 import { WhosThatWordmark } from "@/components/whos-that-wordmark";
 import { WhosThatCaught } from "@/components/whos-that-caught";
 import { WhosThatFled } from "@/components/whos-that-fled";
@@ -345,55 +346,43 @@ export function WhosThatPokemon() {
 
   if (locked) {
     return (
-      <div className="flex h-full w-full flex-col overflow-y-auto bg-poke-cream screen-x pb-10 pt-8 text-center">
+      <div className="na-bg-night flex h-full w-full flex-col overflow-y-auto px-4 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-[calc(env(safe-area-inset-top)+24px)] text-center">
         <WhosThatWordmark />
-        <div className="flex flex-1 flex-col items-center justify-center gap-3">
-          <div className="font-pixel text-[10px] uppercase tracking-wide text-foreground/50">
-            Play again in
-          </div>
-          <div className="font-pixel text-xl text-primary">{fmtHMS(msToNextHour)}</div>
+        <div className="flex flex-1 flex-col items-center justify-center gap-2">
+          <span className="na-label uppercase text-text-secondary">Play again in</span>
+          <span className="na-display-m tabular-nums text-foreground">{fmtHMS(msToNextHour)}</span>
         </div>
-        <button
-          onClick={goHome}
-          className="rounded-full border-2 border-poke-dark/15 bg-white py-3.5 font-pixel text-sm tracking-wide text-poke-dark shadow-card press-lg"
-        >
-          CLOSE
-        </button>
+        <NaButton block onClick={goHome}>
+          Home
+        </NaButton>
       </div>
     );
   }
 
   if (loadError) {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-poke-cream px-5 text-center">
-        <div className="font-pixel text-[10px] text-text-secondary">
-          Couldn&apos;t load — check your connection.
-        </div>
-        <div className="btn-stack w-full max-w-[260px]">
-          <Button
-            size="action"
+      <div className="na-bg-night flex h-full w-full flex-col items-center justify-center gap-4 px-4 text-center">
+        <p className="na-body text-text-secondary">Couldn&apos;t load. Check your connection.</p>
+        <div className="flex w-full max-w-[300px] flex-col gap-3">
+          <NaButton
+            block
             onClick={() => {
               setLoadError(false);
               setStartNonce((n) => n + 1);
             }}
-            className="w-full bg-primary text-primary-foreground shadow-card"
           >
-            TRY AGAIN
-          </Button>
-          <Button
-            size="action"
-            onClick={goHome}
-            className="w-full border-2 border-poke-dark/15 bg-white text-poke-dark shadow-card"
-          >
-            CLOSE
-          </Button>
+            Try again
+          </NaButton>
+          <NaButton kind="secondary" size="M" block onClick={goHome}>
+            Home
+          </NaButton>
         </div>
       </div>
     );
   }
   if (!round) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-poke-cream">
+      <div className="na-bg-night flex h-full w-full items-center justify-center">
         <PokeballSpinner spinning />
       </div>
     );
@@ -409,6 +398,7 @@ export function WhosThatPokemon() {
         awardedXp={awardedXp}
         rewardName={round.rewardName}
         rewardIcon={round.rewardIcon}
+        nextMin={Math.ceil(msToNextHour / 60_000)}
         onCollect={goHome}
       />
     );
@@ -419,105 +409,85 @@ export function WhosThatPokemon() {
       <WhosThatFled
         id={round.monId}
         name={round.name}
+        guess={round.mode === "3" ? (selChoice ?? undefined) : round.mode === "1B" ? undefined : guess.trim() || undefined}
         flavor={fledDetail.flavor}
         flavorSettled={fledDetail.status !== "loading"}
-        countdown={fmtHMS(msToNextHour)}
+        genus={fledDetail.genus}
+        heightM={fledDetail.heightM}
+        nextMin={Math.ceil(msToNextHour / 60_000)}
         reason={fledReason}
         onClose={goHome}
       />
     );
   }
 
-  const silhouettePanel = (
-    // Edge to edge: `-mx-7` cancels the screen gutter this sits inside, which
-    // is the only way a child of a padded screen reaches the bezel. Height is
-    // unchanged from the square it replaced (16rem), so the reveal beat and the
-    // space below it stay where they were — this got WIDER, not taller.
-    // `h-64` is the WANTED height, not a guaranteed one: this is a flex item in
-    // a fixed-height column, so it gets compressed by whatever sits below it —
-    // mode 1B's 18-chip type picker squeezed it from 256px to 143px on a
-    // 390x844 phone. That is fine on its own; what cropped the silhouette
-    // (owner report 2026-08-06) is that the sprite inside was a FIXED 15rem and
-    // `overflow-hidden` cut off whatever no longer fit. The sprite is now sized
-    // as a share of the panel (below), so shrinking scales it instead of
-    // clipping it, and `min-h` stops the shrink before the shape gets too small
-    // to read — past that the screen scrolls.
-    <div
-      className="relative -mx-7 mt-6 h-64 min-h-[11.5rem] overflow-hidden border-y-4 border-poke-yellow shadow-card"
-      style={{
-        background: "radial-gradient(circle at 50% 45%, #ff6a5d 0%, #e03a2f 55%, #b3261c 100%)",
-      }}
-    >
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            "repeating-conic-gradient(from 0deg at 50% 45%, rgba(255,255,255,0.10) 0deg 4deg, transparent 4deg 9deg)",
-        }}
-      />
-      {/* Golden halo behind the shape. Blurred and circular so it reads as the
-          silhouette being lit rather than as a second border. */}
-      <div
-        aria-hidden
-        className="absolute left-1/2 top-1/2 h-52 w-52 -translate-x-1/2 -translate-y-1/2 rounded-full blur-2xl"
-        style={{ background: "radial-gradient(circle, rgba(255,214,92,0.55) 0%, transparent 70%)" }}
-      />
-      {/* Sized as a PERCENTAGE of the panel, not a fixed 15rem: 94% of the
-          16rem box is the same ~15rem it has always been, but it now tracks the
-          panel instead of being able to outgrow it and get clipped. `w-full` +
-          `object-contain` (PokemonSprite's default) means the height is the
-          binding constraint, so a tall Pokémon fits whole. PokéAPI sprites carry
-          their own transparent margin, so the black shape lands short of the
-          remaining 0.5rem again and never touches the gold rule. */}
-      <PokemonSprite
-        id={round.monId}
-        alt="silhouette"
-        className="absolute left-1/2 top-1/2 h-[94%] w-full -translate-x-1/2 -translate-y-1/2 [filter:brightness(0)] [image-rendering:pixelated]"
-      />
+  // ---- Figma 12.1 / 12.4: the round on the Night Arena background.
+  const key3d = "shadow-[0_4px_0_#9AA3C7,inset_0_2px_0_rgb(255_255_255/0.35)] bg-[#F4F6FF] text-night-base";
+  const silhouette = (
+    // The shadow in black on a plain white spotlight: no glow, no rings, no prize before you answer.
+    <div className="relative mx-auto h-[230px] w-[300px] shrink-0" role="img" aria-label="silhouette">
+      <span className="absolute left-[37px] top-[2px] h-[226px] w-[226px] rounded-full bg-white" />
+      <span className="absolute left-[62px] top-[27px]">
+        <FitSprite id={round.monId} size={176} className="[filter:brightness(0)]" />
+      </span>
     </div>
   );
   const nameInput = (
-    <div className="mt-auto pt-8">
-      <input
-        value={guess}
-        onChange={(e) => setGuess(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") submit();
-        }}
-        placeholder="Type the Pokémon's name…"
-        autoFocus
-        className="w-full rounded-full border-2 border-poke-dark/10 bg-white px-5 py-4 text-base text-poke-dark shadow-card outline-none placeholder:text-poke-dark/35 focus:border-primary/40"
-      />
-      <button
-        onClick={submit}
-        disabled={!canSubmit}
-        className="mt-3 w-full rounded-full bg-primary py-4 font-pixel text-base tracking-wide text-primary-foreground shadow-card disabled:opacity-50 press-lg"
-      >
-        SUBMIT
-      </button>
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor="whos-guess" className="na-label uppercase text-text-secondary">
+        Your answer
+      </label>
+      <span className="flex h-[54px] items-center rounded-[14px] border-2 border-info bg-night-deep/60 px-3.5">
+        <input
+          id="whos-guess"
+          value={guess}
+          onChange={(e) => setGuess(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") submit();
+          }}
+          placeholder="Type the Pokémon's name…"
+          autoFocus
+          autoComplete="off"
+          className="na-headline w-full min-w-0 bg-transparent text-foreground outline-none placeholder:text-text-muted"
+        />
+      </span>
+      <span className="na-caption text-text-secondary">Type the Pokémon&apos;s name</span>
     </div>
+  );
+  const submitBtn = (
+    <NaButton block disabled={!canSubmit} onClick={submit}>
+      Submit
+    </NaButton>
   );
 
   return (
-    <div className="flex h-full w-full flex-col overflow-y-auto bg-poke-cream px-5 pb-8 pt-6">
+    <div className="na-bg-night flex h-full w-full flex-col gap-3 overflow-y-auto px-4 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-[calc(env(safe-area-inset-top)+8px)]">
       <div className="flex items-center justify-between">
         <button
+          type="button"
           onClick={goHome}
           aria-label="Back"
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-xl text-poke-dark shadow-card press"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-night-card-2 text-foreground shadow-[0_4px_0_#04060F,inset_0_1px_0_rgb(255_255_255/0.1)] press"
         >
-          ‹
+          <NaIcon name="arrow-left" size={22} />
         </button>
-        <div className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 font-pixel text-[11px] text-primary shadow-card">
-          {`0:${String(timeLeft).padStart(2, "0")}`}
-        </div>
+        <span className="flex items-center gap-1.5 rounded-full bg-white/[0.12] py-[5px] pl-2 pr-3">
+          <span className="text-reward-gold">
+            <NaIcon name="clock" size={16} />
+          </span>
+          <span className="na-label tabular-nums text-foreground">{`0:${String(timeLeft).padStart(2, "0")}`}</span>
+        </span>
       </div>
-      <WhosThatWordmark className="mt-3" />
+      {/* Figma gives the logo a 300 x 126 box */}
+      <div className="flex h-[126px] shrink-0 items-center">
+        <WhosThatWordmark />
+      </div>
 
-      {(round.mode === "1A" || round.mode === "1B") && silhouettePanel}
+      {(round.mode === "1A" || round.mode === "1B") && silhouette}
 
       {round.mode === "2" && (
-        <div className="relative mx-auto mt-8 h-60 w-60 overflow-hidden rounded-full border-[6px] border-poke-dark bg-poke-dark shadow-card ring-4 ring-white">
+        // A zoomed-in piece of it, sometimes from behind, in a gold-rimmed lens.
+        <div className="relative mx-auto mt-4 h-[200px] w-[200px] shrink-0 overflow-hidden rounded-full border-4 border-reward-gold/70 bg-night-raised">
           <div
             className="absolute inset-0 [image-rendering:pixelated]"
             style={{
@@ -531,153 +501,98 @@ export function WhosThatPokemon() {
       )}
 
       {round.mode === "3" && (
-        <div className="mt-6 flex flex-1 flex-col">
-          <div className="flex flex-col items-center">
-            <button
-              onClick={playCryNow}
-              disabled={playsLeft <= 0}
-              className="flex items-center gap-2 rounded-full border-b-4 border-primary/60 bg-white px-7 py-3.5 font-pixel text-base text-primary shadow-card disabled:opacity-40 press-push active:border-b-0"
-            >
-              PLAY CRY
-            </button>
-            <div className="mt-2 font-pixel text-[9px] uppercase tracking-wide text-foreground/45">
-              {playsLeft} {playsLeft === 1 ? "play" : "plays"} left
-            </div>
-          </div>
-          <div className="mt-6 grid grid-cols-2 gap-3">
-            {round.choices.map((c) => {
-              const on = selChoice === c;
-              return (
-                <button
-                  key={c}
-                  onClick={() => setSelChoice(c)}
-                  className={`rounded-2xl px-3 py-5 text-base font-extrabold shadow-card transition press ${on ? "bg-[oklch(0.62_0.16_250)] text-white" : "bg-white text-poke-dark"}`}
-                >
-                  {c}
-                </button>
-              );
-            })}
-          </div>
-          <div className="mt-auto pt-8">
-            <button
-              onClick={submit}
-              disabled={!canSubmit}
-              className="w-full rounded-full bg-primary py-4 font-pixel text-base tracking-wide text-primary-foreground shadow-card disabled:opacity-50 press-lg"
-            >
-              SUBMIT
-            </button>
+        <div className="mt-4 flex flex-col items-center gap-2">
+          <button type="button" onClick={playCryNow} disabled={playsLeft <= 0} className={`na-button-m flex items-center gap-1.5 rounded-full px-[18px] py-2.5 disabled:opacity-40 press ${key3d}`}>
+            <NaIcon name="volume" size={18} line /> Play cry
+          </button>
+          <span className="na-caption text-text-secondary">
+            {playsLeft} {playsLeft === 1 ? "play" : "plays"} left
+          </span>
+          <div className="mt-2 grid w-full grid-cols-2 gap-2">
+            {round.choices.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setSelChoice(c)}
+                className={`na-button-m rounded-[14px] px-3 py-[9px] press ${
+                  selChoice === c ? "bg-info text-foreground shadow-[0_4px_0_#2B4FB8,inset_0_2px_0_rgb(255_255_255/0.35)]" : key3d
+                }`}
+              >
+                {c}
+              </button>
+            ))}
           </div>
         </div>
       )}
 
       {round.mode === "4" && (
-        <div className="mt-12 flex flex-col items-center">
+        <div className="mt-10 flex flex-col items-center gap-5">
           <div className="flex items-center gap-3">
             {round.types.map((t, i) => (
-              <div key={t} className="flex items-center gap-3">
-                {i > 0 && <span className="font-pixel text-lg text-foreground/50">+</span>}
-                <TypeChip type={t} size="lg" />
-              </div>
+              <span key={t} className="flex items-center gap-3">
+                {i > 0 && <span className="na-title text-text-muted">+</span>}
+                <span className={`na-title rounded-full px-[26px] py-2.5 uppercase text-foreground shadow-[0_4px_0_rgb(0_0_0/0.35),inset_0_2px_0_rgb(255_255_255/0.35)] ${typeColorMap[t]}`}>
+                  {t}
+                </span>
+              </span>
             ))}
           </div>
-          <p className="mt-6 text-center text-2xl font-extrabold leading-tight text-foreground">
-            Name any Pokémon with
-            <br />
-            this typing.
-          </p>
+          <p className="na-body-strong text-center text-foreground">Name any Pokémon with this typing.</p>
         </div>
       )}
 
       {round.mode === "5" && (
-        <div className="mt-6">
+        <div className="mt-2">
           {!dexEntry || dexLoading ? (
-            <div className="py-16 text-center font-pixel text-[10px] text-foreground/50">
-              Loading Pokédex entry…
-            </div>
+            <p className="na-body py-16 text-center text-text-secondary">Reading the Pokédex…</p>
           ) : dexEntry.flavor === "" ? (
-            <div className="py-12 text-center">
-              <div className="font-pixel text-[10px] text-text-secondary">
-                Couldn't load the entry.
-              </div>
-              <button
-                onClick={() => setDexNonce((n) => n + 1)}
-                className="mt-3 rounded-full bg-primary px-5 py-2 font-pixel text-[10px] text-primary-foreground press"
-              >
-                RETRY
-              </button>
+            <div className="flex flex-col items-center gap-3 py-12">
+              <p className="na-body text-text-secondary">Couldn&apos;t load the entry.</p>
+              <NaButton kind="secondary" size="M" onClick={() => setDexNonce((n) => n + 1)}>
+                Try again
+              </NaButton>
             </div>
           ) : (
-            <div className="mx-auto w-full max-w-[340px] rounded-[22px] bg-[#e23b30] p-4 shadow-card">
-              <div className="flex items-center gap-2">
-                <span className="h-5 w-5 rounded-full bg-[#4aa3df] ring-2 ring-white" />
-                <span className="h-2.5 w-2.5 rounded-full bg-white/80" />
-                <span className="h-2.5 w-2.5 rounded-full bg-yellow-300" />
-                <span className="h-2.5 w-2.5 rounded-full bg-green-400" />
-              </div>
-              <div className="mt-3 rounded-2xl border-2 border-poke-dark/80 bg-[#dfe8d6] p-4">
-                <div className="font-pixel text-[9px] tracking-wide text-poke-dark/70">
-                  POKÉDEX ENTRY
-                </div>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {dexEntry.genus && (
-                    <span className="rounded-md bg-yellow-200 px-2 py-1 font-pixel text-[9px] text-poke-dark">
-                      {dexEntry.genus}
-                    </span>
-                  )}
-                  {dexEntry.heightM && (
-                    <span className="rounded-md bg-blue-200 px-2 py-1 font-pixel text-[9px] text-poke-dark">
-                      {dexEntry.heightM}
-                    </span>
-                  )}
-                </div>
-                <p className="mt-3 text-[15px] font-semibold leading-relaxed text-poke-dark">
-                  "{dexEntry.flavor}"
-                </p>
-              </div>
-              <div className="mt-3 text-center font-pixel text-[9px] tracking-wide text-white">
-                WHO IS BEING DESCRIBED?
-              </div>
+            <div className="flex flex-col gap-1.5 rounded-xl bg-night-raised p-3">
+              <span className="na-label uppercase text-reward-gold">Pokédex entry</span>
+              <span className="flex flex-wrap gap-1.5">
+                {dexEntry.genus && <span className="na-label rounded-full bg-white/[0.12] px-2.5 py-1 text-foreground">{dexEntry.genus}</span>}
+                {dexEntry.heightM && <span className="na-label rounded-full bg-white/[0.12] px-2.5 py-1 text-foreground">{dexEntry.heightM}</span>}
+              </span>
+              <p className="na-body text-foreground">“{dexEntry.flavor}”</p>
             </div>
           )}
         </div>
       )}
 
       {round.mode === "1B" && (
-        <div className="mt-5 flex flex-1 flex-col">
-          <div className="text-center text-xl font-extrabold text-foreground">What type is it?</div>
-          <div className="mt-0.5 text-center text-sm text-text-secondary">Choose 1 or 2 types.</div>
-          <div className="mt-3 grid grid-cols-3 gap-2">
-            {TYPES.map((t) => (
-              <TypeChip
-                key={t}
-                type={t}
-                size="pick"
-                selected={selTypes.includes(t)}
-                onClick={() => toggleType(t)}
-              />
-            ))}
+        <div className="flex flex-col gap-2">
+          <p className="na-headline text-center text-foreground">What type is it?</p>
+          <p className="na-caption -mt-1.5 text-center text-text-secondary">Choose 1 or 2 types.</p>
+          <div className="grid grid-cols-3 gap-2">
+            {TYPES.map((t) => {
+              const on = selTypes.includes(t);
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => toggleType(t)}
+                  className={`na-label rounded-[14px] px-1.5 py-2 uppercase text-foreground press ${typeColorMap[t]} ${
+                    on ? "outline outline-[3px] outline-foreground" : ""
+                  } shadow-[0_4px_0_rgb(0_0_0/0.35),inset_0_2px_0_rgb(255_255_255/0.35)]`}
+                >
+                  {t}
+                </button>
+              );
+            })}
           </div>
-          <button
-            onClick={submit}
-            disabled={!canSubmit}
-            className="mt-5 w-full rounded-full bg-primary py-4 font-pixel text-base tracking-wide text-primary-foreground shadow-card disabled:opacity-50 press-lg"
-          >
-            SUBMIT
-          </button>
         </div>
       )}
 
-      {(round.mode === "1A" || round.mode === "2" || round.mode === "4" || round.mode === "5") &&
-        nameInput}
+      <div className="min-h-2 flex-1" />
+      {(round.mode === "1A" || round.mode === "2" || round.mode === "4" || round.mode === "5") && nameInput}
+      {submitBtn}
     </div>
   );
 }
-
-/**
- * One reward on the catch screen: art over a tinted card, then what it is.
- *
- * The tint is passed as a raw colour and mixed here rather than taken as a
- * class, because the three tiles differ ONLY by hue — spelling out three
- * near-identical class strings at the call site is how they drift apart.
- */
-
