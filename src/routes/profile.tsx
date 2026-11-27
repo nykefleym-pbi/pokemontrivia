@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Check, Search, Copy, Share2, UserPlus, Loader2, ImageDown, Swords } from "lucide-react";
+import { Check, Search, Copy, Share2, ImageDown, Swords } from "lucide-react";
 import { NaIcon } from "@/components/na/icon";
 import { ShareCardDialog } from "@/components/share-card-dialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,8 +22,6 @@ import { useStoreHydrated } from "@/lib/store-hydration";
 import { hardReset } from "@/lib/hard-reset";
 import {
   listFriends,
-  addFriendByCode,
-  removeFriend,
   syncProfile,
   isTrainerNameAvailable,
   claimTrainerName,
@@ -38,8 +36,7 @@ import {
   enablePushNotifications,
   disablePushNotifications,
 } from "@/lib/push";
-import { createPvpChallenge, listPvpMatches, type PvpMatch } from "@/lib/pvp";
-import { fetchBattleQuestions } from "@/lib/api/trivia";
+import { listPvpMatches, type PvpMatch } from "@/lib/pvp";
 import { validateTrainerName, claimErrorMessage, TRAINER_NAME_MAX } from "@/lib/trainer-name";
 import { inviteUrl } from "@/lib/referral-rewards";
 import {
@@ -47,13 +44,13 @@ import {
   lifetimeTp,
   TRAINER_SPRITES,
   trainerSpriteUrl,
-  adaptiveDifficultyBand,
 } from "@/lib/game-data";
 import { ALL_POKEMON, type PokeEntry, type PokeType } from "@/lib/pokemon-data";
 import { PartnerTypeFilter } from "@/components/partner-type-filter";
 import { matchesPartnerFilters, partnerTypeOptions } from "@/lib/partner-filter";
 
 import { EvolutionScreen } from "@/components/evolution-screen";
+import { FriendsScreen, FRIENDS_REFRESH_EVENT, OPEN_FRIENDS_EVENT, takePendingFriendsView, type FriendsView } from "@/components/friends-screen";
 import { PokemonSprite } from "@/components/game-ui";
 import { TypeChip } from "@/components/type-chip";
 import { FACEBOOK_PAGE_URL } from "@/lib/social-links";
@@ -61,7 +58,6 @@ import { BattleLogList } from "@/components/battle-log-list";
 import {
   EvolutionCard,
   CardStat,
-  FriendRow,
   StatBox,
   BadgesTab,
 } from "@/components/profile-parts";
@@ -146,12 +142,6 @@ function ProfilePage() {
   const trainingPointsSpent = useGameStore((s) => s.trainingPointsSpent);
   const evolvePartner = useGameStore((s) => s.evolvePartner);
   const gymBadges = useGameStore((s) => s.gymBadges);
-  const seenHashes = useGameStore((s) => s.seenQuestionHashes);
-  const seenQuestions = useGameStore((s) => s.seenQuestions);
-  const seenCuratedIds = useGameStore((s) => s.seenCuratedIds);
-  const recentAnswers = useGameStore((s) => s.recentAnswers);
-  const markQuestionsSeen = useGameStore((s) => s.markQuestionsSeen);
-  const markCuratedSeen = useGameStore((s) => s.markCuratedSeen);
   const unlocked = useMemo(() => {
     const ctx = { stats, flags, peakLevel, pokedex } as Parameters<typeof unlockedAchievements>[0];
     return new Set(unlockedAchievements(ctx));
@@ -185,12 +175,13 @@ function ProfilePage() {
   const pokedexCount = Object.keys(pokedex).length;
   const [cardOpen, setCardOpen] = useState(false);
   const [friendsOpen, setFriendsOpen] = useState(false);
+  const [friendsView, setFriendsView] = useState<FriendsView>("list");
+  const openFriends = (v: FriendsView) => {
+    setFriendsView(v);
+    setFriendsOpen(true);
+  };
   const [friends, setFriends] = useState<TrainerProfile[]>([]);
-  const [friendCodeInput, setFriendCodeInput] = useState("");
-  const [addingFriend, setAddingFriend] = useState(false);
   const [cardShareOpen, setCardShareOpen] = useState(false);
-  const [friendToRemove, setFriendToRemove] = useState<TrainerProfile | null>(null);
-  const [challengingId, setChallengingId] = useState<string | null>(null);
   const [pvpHistoryOpen, setPvpHistoryOpen] = useState(false);
   const [pvpMatches, setPvpMatches] = useState<PvpMatch[]>([]);
   const [pvpProfiles, setPvpProfiles] = useState<Record<string, TrainerProfile>>({});
@@ -206,9 +197,17 @@ function ProfilePage() {
     const handler = () => {
       void refreshFriends();
     };
-    window.addEventListener("poketrivia:friends-refresh", handler);
-    return () => window.removeEventListener("poketrivia:friends-refresh", handler);
+    window.addEventListener(FRIENDS_REFRESH_EVENT, handler);
+    return () => window.removeEventListener(FRIENDS_REFRESH_EVENT, handler);
   }, [refreshFriends]);
+  // A request toast or another screen asks for Friends: open it here.
+  useEffect(() => {
+    const open = (e: Event) => openFriends(((e as CustomEvent).detail as FriendsView | undefined) ?? "list");
+    const pending = takePendingFriendsView();
+    if (pending) openFriends(pending);
+    window.addEventListener(OPEN_FRIENDS_EVENT, open);
+    return () => window.removeEventListener(OPEN_FRIENDS_EVENT, open);
+  }, []);
 
   useEffect(() => {
     if (!pvpHistoryOpen) return;
@@ -229,64 +228,9 @@ function ProfilePage() {
     })();
   }, [pvpHistoryOpen]);
 
-  async function handleChallenge(friend: TrainerProfile) {
-    if (challengingId) return;
-    setChallengingId(friend.id);
-    try {
-      const data = await fetchBattleQuestions({
-        difficulties: adaptiveDifficultyBand(level, recentAnswers),
-        seenHashes,
-        seenSamples: seenQuestions.slice(-80),
-        excludeIds: seenCuratedIds,
-        flowSeed: Math.floor(Math.random() * 1_000_000),
-      });
-      if (!data.questions || data.questions.length < 5) {
-        toast.error("Couldn't prepare the challenge. Try again.");
-        return;
-      }
-      markQuestionsSeen(data.questions.map((q) => q.question));
-      markCuratedSeen(data.servedIds ?? []);
-      const res = await createPvpChallenge(friend.id, data.questions);
-      if (!res.ok) {
-        toast.error("Couldn't send the challenge. Try again.");
-        return;
-      }
-      toast.success(`Challenge sent to ${friend.trainer_name || "trainer"}!`);
-      void navigate({ to: "/pvp/$matchId", params: { matchId: res.matchId } });
-    } finally {
-      setChallengingId(null);
-    }
-  }
-
   function handleOpenCard() {
     setCardOpen(true);
     void syncProfile();
-  }
-  async function handleAddFriend() {
-    const code = friendCodeInput.trim().toUpperCase();
-    if (!code || addingFriend) return;
-    setAddingFriend(true);
-    const res = await addFriendByCode(code);
-    setAddingFriend(false);
-    if (res.error) {
-      toast.error(res.error);
-      return;
-    }
-    const name = res.profile?.trainer_name ?? "trainer";
-    if (res.status === "accepted") {
-      toast.success(`You're now friends with ${name}!`);
-      setFriendCodeInput("");
-      void refreshFriends();
-    } else if (res.status === "already_pending") {
-      toast("Request already sent — waiting for them to accept.");
-      setFriendCodeInput("");
-    } else {
-      toast.success(`Friend request sent to ${name}!`);
-      setFriendCodeInput("");
-    }
-  }
-  async function handleRemoveFriend(id: string) {
-    if (await removeFriend(id)) setFriends((f) => f.filter((x) => x.id !== id));
   }
   const [badgesOpen, setBadgesOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -606,7 +550,7 @@ function ProfilePage() {
         {/* From today: friends, trophies, badges and settings. */}
         <div className="grid grid-cols-2 gap-2.5">
           {[
-            { icon: <NaGlossIcon kind="profile" size={28} />, title: "Add a friend", sub: friends.length ? `${friends.length} friend${friends.length === 1 ? "" : "s"}` : "No friends yet? Invite one!", onClick: () => setFriendsOpen(true) },
+            { icon: <NaGlossIcon kind="profile" size={28} />, title: "Add a friend", sub: friends.length ? `${friends.length} friend${friends.length === 1 ? "" : "s"}` : "No friends yet? Invite one!", onClick: () => openFriends("list") },
             { icon: <NaRewardIcon kind="Trophy" size={28} />, title: "Trophies", sub: `${unlocked.size}/${ACHIEVEMENTS.length} earned`, count: claimableCount, onClick: () => setTrophiesOpen(true) },
             { icon: <NaGlossIcon kind="shield" size={28} />, title: "Badges", sub: `${gymBadges.length}/${GYM_LEADERS.length} earned`, onClick: () => setBadgesOpen(true) },
             { icon: <NaGlossIcon kind="gear" size={28} />, title: "Settings", sub: "Sound & notifications", onClick: () => setSettingsOpen(true) },
@@ -722,61 +666,6 @@ function ProfilePage() {
           dateISO: new Date().toISOString().slice(0, 10),
         }}
       />
-
-      {/* Friends sheet */}
-      <Sheet open={friendsOpen} onOpenChange={setFriendsOpen}>
-        <SheetContent
-          side="bottom"
-          className="rounded-t-3xl bg-poke-cream max-h-[85vh] overflow-y-auto"
-        >
-          <SheetHeader>
-            <div className="font-pixel-xs text-primary">{friends.length} ADDED</div>
-            <SheetTitle className="font-display-xl text-foreground">Friends</SheetTitle>
-          </SheetHeader>
-          <div className="mt-4 space-y-4">
-            <div className="flex gap-2">
-              <Input
-                value={friendCodeInput}
-                onChange={(e) => setFriendCodeInput(e.target.value.toUpperCase())}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") void handleAddFriend();
-                }}
-                placeholder="ENTER CODE"
-                maxLength={6}
-                className="h-12 flex-1 rounded-full bg-card font-pixel text-sm uppercase tracking-[0.2em]"
-              />
-              <Button
-                onClick={() => void handleAddFriend()}
-                disabled={addingFriend}
-                className="h-12 rounded-full px-5"
-              >
-                {addingFriend ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <UserPlus className="h-5 w-5" />
-                )}
-              </Button>
-            </div>
-            <div className="space-y-2">
-              {friends.length === 0 ? (
-                <div className="rounded-3xl bg-card p-6 text-center text-sm text-foreground/55 shadow-card">
-                  No friends yet. Tap your name to open your Trainer Card and share your code!
-                </div>
-              ) : (
-                friends.map((f) => (
-                  <FriendRow
-                    key={f.id}
-                    friend={f}
-                    onRemove={() => setFriendToRemove(f)}
-                    onChallenge={() => void handleChallenge(f)}
-                    challengeBusy={challengingId === f.id}
-                  />
-                ))
-              )}
-            </div>
-          </div>
-        </SheetContent>
-      </Sheet>
 
       {/* Feedback sheet */}
       <Sheet
@@ -1125,18 +1014,7 @@ function ProfilePage() {
               title="Share the game"
               sub="Invite friends to join the battle!"
               trailing={<NaIcon name="chevron-right" size={18} className="text-text-muted" />}
-              onClick={() => {
-                const url = window.location.origin;
-                // The phone's share sheet where there is one; the clipboard on a desktop.
-                if (navigator.share) {
-                  void navigator.share({ title: "Pokémon Trivia Battle", text: "Battle me in Pokémon trivia!", url }).catch(() => undefined);
-                  return;
-                }
-                void navigator.clipboard
-                  ?.writeText(url)
-                  .then(() => toast.success("Link copied!"))
-                  .catch(() => toast.error("Could not copy the link"));
-              }}
+              onClick={() => openFriends("invite")}
             />
 
             <span className="na-label uppercase text-danger">Danger zone</span>
@@ -1247,28 +1125,15 @@ function ProfilePage() {
         />
       </NaSheet>
 
-      <AlertDialog open={!!friendToRemove} onOpenChange={(o) => !o && setFriendToRemove(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove friend?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Remove {friendToRemove?.trainer_name ?? "this trainer"} from your friends list? You
-              can add them back anytime with their friend code.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (friendToRemove) void handleRemoveFriend(friendToRemove.id);
-                setFriendToRemove(null);
-              }}
-            >
-              Remove
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* 16.1 Friends / 16.2 requests / 16.7 invite: over everything, Settings included. */}
+      <FriendsScreen
+        open={friendsOpen}
+        view={friendsView}
+        onClose={() => {
+          setFriendsOpen(false);
+          void refreshFriends();
+        }}
+      />
       <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

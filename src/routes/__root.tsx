@@ -24,6 +24,7 @@ import { useGameStore } from "@/lib/store";
 import { useEnsureSocial } from "@/lib/social";
 import { FriendRequestInbox } from "@/components/FriendRequestInbox";
 import { PvpInviteInbox } from "@/components/PvpInviteInbox";
+import { InviteRewardScreen } from "@/components/invite-reward-screen";
 import { LivePvpWatcher } from "@/components/LivePvpWatcher";
 import { NameReclaimPrompt } from "@/components/NameReclaimPrompt";
 import { Toaster } from "@/components/ui/sonner";
@@ -407,6 +408,7 @@ function RootComponent() {
             <Toaster position="top-center" />
             <FriendRequestInbox />
             <PvpInviteInbox />
+            <InviteRewardScreen />
             <LivePvpWatcher />
             <NameReclaimPrompt />
             <PushOptIn />

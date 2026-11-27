@@ -1,26 +1,32 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Loader2, Swords, X } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useGameStore } from "@/lib/store";
 import { ensureSession, getProfileById, type TrainerProfile } from "@/lib/social";
 import { listPvpInvites, declinePvpChallenge, type PvpMatch } from "@/lib/pvp";
 import { playSfx } from "@/lib/audio";
-import { trainerSpriteUrl } from "@/lib/game-data";
+import { ALL_POKEMON_SLIM } from "@/lib/pokemon-data.slim.generated";
+import { NaSheet } from "@/components/na/sheet";
+import { FaceAvatar } from "@/components/na/face-off";
 
 interface Invite extends PvpMatch {
   challenger: TrainerProfile | null;
 }
 
+/**
+ * Figma 16.4 "A battle invite arrives": one sheet per challenge, never during a
+ * battle. Closing it keeps the challenge waiting in Friends (Play on that friend).
+ */
 export function PvpInviteInbox() {
   const hasOnboarded = useGameStore((s) => s.hasOnboarded);
+  const inBattle = useGameStore((s) => s.battleScreenActive);
   const navigate = useNavigate();
+  // never over a battle, the pop-up rule (2.2) — friend battles included
+  const onPvp = useLocation({ select: (l) => l.pathname.startsWith("/pvp") });
   const [invites, setInvites] = useState<Invite[]>([]);
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
 
   const refresh = useCallback(async () => {
     const rows = await listPvpInvites();
@@ -28,7 +34,6 @@ export function PvpInviteInbox() {
       rows.map(async (m) => ({ ...m, challenger: await getProfileById(m.challengerId) })),
     );
     setInvites(withProfiles);
-    setOpen(withProfiles.length > 0);
   }, []);
 
   useEffect(() => {
@@ -81,94 +86,49 @@ export function PvpInviteInbox() {
     };
   }, [hasOnboarded, refresh]);
 
-  function dismiss(matchId: string) {
-    setInvites((rs) => {
-      const next = rs.filter((r) => r.id !== matchId);
-      if (next.length === 0) setOpen(false);
-      return next;
-    });
-  }
+  const inv = invites.find((i) => !dismissed.has(i.id));
+  const hide = (id: string) => setDismissed((d) => new Set(d).add(id));
 
-  async function handleDecline(matchId: string) {
-    if (busyId) return;
-    setBusyId(matchId);
-    const res = await declinePvpChallenge(matchId);
-    setBusyId(null);
+  async function decline(id: string) {
+    if (busy) return;
+    setBusy(true);
+    const res = await declinePvpChallenge(id);
+    setBusy(false);
     if (!res.ok) {
       toast.error("Couldn't decline, try again.");
       return;
     }
-    dismiss(matchId);
+    setInvites((rs) => rs.filter((r) => r.id !== id));
   }
 
-  function handlePlay(matchId: string) {
-    dismiss(matchId);
-    setOpen(false);
-    void navigate({ to: "/pvp/$matchId", params: { matchId } });
-  }
-
-  if (!hasOnboarded || invites.length === 0) return null;
+  if (!hasOnboarded || !inv) return null;
+  const name = inv.challenger?.trainer_name || "A trainer";
+  const partner = inv.challenger?.ace_pokemon_id ? ALL_POKEMON_SLIM.find((p) => p.id === inv.challenger?.ace_pokemon_id)?.name : undefined;
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(o) => {
-        if (!o) setOpen(false);
+    <NaSheet
+      open={!inBattle && !onPvp}
+      onOpenChange={(o) => !o && hide(inv.id)}
+      title={`${name} challenges you!`}
+      body={`Answer the same questions as ${name}. Beat their score to win!`}
+      primary={{
+        label: "Accept",
+        disabled: busy,
+        onClick: () => {
+          hide(inv.id);
+          void navigate({ to: "/pvp/$matchId", params: { matchId: inv.id } });
+        },
       }}
+      secondary={{ label: "Decline", onClick: () => void decline(inv.id) }}
+      footnote="You can find this challenge in Friends anytime."
     >
-      <DialogContent className="max-w-sm rounded-3xl">
-        <DialogHeader>
-          <DialogTitle className="font-display-xl text-foreground">
-            PvP {invites.length === 1 ? "challenge" : "challenges"}
-          </DialogTitle>
-        </DialogHeader>
-        <div className="space-y-3">
-          {invites.map((inv) => {
-            const busy = busyId === inv.id;
-            return (
-              <div
-                key={inv.id}
-                className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-card"
-              >
-                <img
-                  src={trainerSpriteUrl(inv.challenger?.trainer_sprite || "red")}
-                  alt=""
-                  className="sprite h-12 w-12 shrink-0 object-contain"
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="truncate font-display text-base text-foreground">
-                    {inv.challenger?.trainer_name || "A trainer"}
-                  </div>
-                  <div className="font-pixel-xs text-foreground/55">
-                    LV {inv.challenger?.level ?? 1} · challenged you
-                  </div>
-                </div>
-                <div className="flex shrink-0 gap-1.5">
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    className="h-9 w-9 rounded-full"
-                    disabled={busy}
-                    onClick={() => void handleDecline(inv.id)}
-                    aria-label="Decline"
-                  >
-                    {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
-                  </Button>
-                  <Button
-                    size="icon"
-                    className="h-9 w-9 rounded-full"
-                    disabled={busy}
-                    onClick={() => handlePlay(inv.id)}
-                    aria-label="Play"
-                  >
-                    <Swords className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </DialogContent>
-    </Dialog>
+      <div className="flex items-center gap-3">
+        <FaceAvatar spriteId={inv.challenger?.trainer_sprite || "red"} size={56} ring="#5B8CFF" />
+        <span className="flex min-w-0 flex-col">
+          <span className="na-headline truncate text-foreground">{name}</span>
+          <span className="na-caption text-text-secondary">{[`Level ${inv.challenger?.level ?? 1}`, partner].filter(Boolean).join(" · ")}</span>
+        </span>
+      </div>
+    </NaSheet>
   );
 }

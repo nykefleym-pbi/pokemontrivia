@@ -47,7 +47,7 @@ import { resolvePvpTypeAbilityId } from "@/lib/pvp-type-abilities";
 import { useBattleFxCues } from "@/hooks/useBattleFxCues";
 import { AddFriendPrompt } from "@/components/add-friend-prompt";
 import { MistakesReview } from "@/components/mistakes-review";
-import { FittedTrainer } from "@/components/na/battle";
+import { FaceOff } from "@/components/na/face-off";
 import { NaButton } from "@/components/na/button";
 import { NaGlassRow, NaRewardTile, NaWordmark } from "@/components/na/celebration";
 import { NaIcon } from "@/components/na/icon";
@@ -794,33 +794,6 @@ function MatchPageContent({ matchId }: { matchId: string }) {
         }
       />
     </>
-  );
-}
-
-/** A trainer in a round frame (Figma avatar()): the app's own art fitted to the frame. */
-function FaceAvatar({ spriteId, ring }: { spriteId: string; ring: string }) {
-  const art = trainerSpriteUrl(spriteId);
-  return (
-    <span className="relative block h-24 w-24 shrink-0 overflow-hidden rounded-full border-[3px] bg-night-card-2" style={{ borderColor: ring }}>
-      {art && <FittedTrainer art={art} height={74} cx={45} feetY={86} />}
-    </span>
-  );
-}
-
-/** Figma faceOff(): you and them, the red VS between, and how many each got right. */
-function FaceOff({ me, them, mine, theirs }: { me: string; them: string; mine: number | null; theirs: number | null }) {
-  return (
-    <div className="relative h-[150px] w-[320px] shrink-0">
-      <span className="absolute left-0 top-0">
-        <FaceAvatar spriteId={me} ring="#FF3B4E" />
-      </span>
-      <span className="absolute right-0 top-0">
-        <FaceAvatar spriteId={them} ring="#5B8CFF" />
-      </span>
-      <span className="na-fill-brand na-headline absolute left-[132px] top-5 flex h-14 w-14 items-center justify-center rounded-full text-foreground shadow-[0_4px_0_#A3142C]">VS</span>
-      {mine != null && <span className="na-number-l absolute left-0 top-[108px] w-24 text-center text-reward-gold">{mine}</span>}
-      {theirs != null && <span className="na-number-l absolute right-0 top-[108px] w-24 text-center text-reward-gold">{theirs}</span>}
-    </div>
   );
 }
 

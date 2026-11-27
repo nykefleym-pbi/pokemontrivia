@@ -1,12 +1,10 @@
 import { useMemo, useState } from "react";
-import { Swords, Users, X } from "lucide-react";
 import { NaIcon } from "@/components/na/icon";
 import { FitSprite } from "@/components/na/battle";
 import { NaButton } from "@/components/na/button";
 import { useGameStore } from "@/lib/store";
 import { EVOLUTION_TP_COST, getTpMultiplier } from "@/lib/game-data";
 import { canEvolve, getEvolutionTargets, type PokeEntry } from "@/lib/pokemon-data";
-import { type TrainerProfile } from "@/lib/social";
 import { GYM_LEADERS, type GymLeader } from "@/lib/gym-leaders";
 import { PokemonSprite } from "@/components/game-ui";
 import { TypeChip } from "@/components/type-chip";
@@ -118,48 +116,6 @@ export function CardStat({ label, value }: { label: string; value: string | numb
     <div className="rounded-2xl bg-card px-3 py-3 text-center shadow-card">
       <div className="text-xl font-extrabold text-foreground">{value}</div>
       <div className="mt-0.5 font-pixel-xs text-foreground/50">{label}</div>
-    </div>
-  );
-}
-
-export function FriendRow({
-  friend,
-  onRemove,
-  onChallenge,
-  challengeBusy,
-}: {
-  friend: TrainerProfile;
-  onRemove: () => void;
-  onChallenge?: () => void;
-  challengeBusy?: boolean;
-}) {
-  return (
-    <div className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-card">
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-muted">
-        <Users className="h-5 w-5 text-foreground/60" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="truncate font-display-md text-foreground">{friend.trainer_name}</div>
-        <div className="text-xs text-foreground/55">
-          LV {friend.level} · {friend.pokedex_count} caught
-        </div>
-      </div>
-      {onChallenge && (
-        <button
-          onClick={onChallenge}
-          disabled={challengeBusy}
-          aria-label="Challenge to PvP"
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary transition press disabled:opacity-50"
-        >
-          <Swords className="h-4 w-4" />
-        </button>
-      )}
-      <button
-        onClick={onRemove}
-        className="flex h-9 w-9 items-center justify-center rounded-full bg-destructive/10 text-destructive transition press"
-      >
-        <X className="h-4 w-4" />
-      </button>
     </div>
   );
 }

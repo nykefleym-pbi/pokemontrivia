@@ -1,8 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useRef } from "react";
-import { toast } from "sonner";
 import { useGameStore } from "@/lib/store";
 import { rollReferralReward } from "@/lib/referral-rewards";
+import { showInviteReward } from "@/lib/invite-reward-event";
 import { pushLocalSaveToServer } from "@/lib/store-sync";
 
 // Loosely-typed table client so this compiles even before Supabase types regenerate.
@@ -181,21 +181,16 @@ export async function notifyFriendAccepted(requesterId: string): Promise<void> {
 async function collectPendingReferralRewards(): Promise<void> {
   const count = await claimPendingReferralRewards();
   if (count <= 0) return;
-  let coins = 0;
-  let eggs = 0;
-  let itemCount = 0;
+  const rewards = [];
   for (let i = 0; i < count; i++) {
     const reward = rollReferralReward();
-    coins += reward.coins;
-    eggs += reward.eggs;
-    itemCount += reward.items.length;
+    rewards.push(reward);
     useGameStore.getState().addCoins(reward.coins);
     useGameStore.getState().grantPokeEgg(reward.eggs);
     for (const it of reward.items) useGameStore.getState().grantItem(it.id, it.qty);
   }
-  toast.success(
-    `${count} friend${count > 1 ? "s" : ""} joined using your invite! +${coins} coins, +${eggs} Poké Egg${eggs === 1 ? "" : "s"}, +${itemCount} items!`,
-  );
+  // Figma 16.8: the gift screen, not a toast.
+  showInviteReward({ joined: count, rewards });
 }
 
 /** Idempotent app-load bootstrap (runs once). */

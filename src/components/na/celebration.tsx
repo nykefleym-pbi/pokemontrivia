@@ -378,7 +378,7 @@ export function NaGlassRow({
   title: string;
   sub?: string;
   trailing?: React.ReactNode;
-  tone?: "gold" | "danger";
+  tone?: "gold" | "danger" | "red";
   onClick?: () => void;
 }) {
   const Tag = onClick ? "button" : "div";
@@ -388,7 +388,7 @@ export function NaGlassRow({
       onClick={onClick}
       className={cn(
         "flex w-full items-center gap-3 rounded-[18px] bg-white/[0.08] p-3 text-left",
-        tone === "gold" ? "border-[1.5px] border-reward-gold" : tone === "danger" ? "border-[1.5px] border-danger" : "border border-white/[0.12]",
+        tone === "gold" ? "border-[1.5px] border-reward-gold" : tone === "red" ? "border-[1.5px] border-brand-red" : tone === "danger" ? "border-[1.5px] border-danger" : "border border-white/[0.12]",
       )}
     >
       <span className="flex shrink-0 items-center justify-center">{lead}</span>

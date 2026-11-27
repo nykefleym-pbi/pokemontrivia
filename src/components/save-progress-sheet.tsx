@@ -9,7 +9,9 @@ import {
   claimTrainerName,
   claimReferral,
   syncProfile,
+  getProfileByCode,
 } from "@/lib/social";
+import { showInviteReward } from "@/lib/invite-reward-event";
 import { rollReferralReward } from "@/lib/referral-rewards";
 import { validateTrainerName, claimErrorMessage, TRAINER_NAME_MAX } from "@/lib/trainer-name";
 import { getPendingReferral, clearPendingReferral } from "@/lib/pending-referral";
@@ -123,9 +125,11 @@ export function SaveProgressSheet({
         g.addCoins(reward.coins);
         g.grantPokeEgg(reward.eggs);
         for (const it of reward.items) g.grantItem(it.id, it.qty);
-        toast.success(
-          `Invite bonus! +${reward.coins} coins, +${reward.eggs} Poké Egg, +${reward.items.length} items!`,
-        );
+        const inviter = await getProfileByCode(ref);
+        showInviteReward({
+          from: inviter ? { name: inviter.trainer_name || "Your friend", sprite: inviter.trainer_sprite } : undefined,
+          rewards: [reward],
+        });
       });
     } finally {
       setSaving(false);

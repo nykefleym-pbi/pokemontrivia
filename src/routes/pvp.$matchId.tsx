@@ -5,12 +5,17 @@ import { toast } from "sonner";
 import { useGameStore } from "@/lib/store";
 import { useStoreHydrated } from "@/lib/store-hydration";
 import { PokeballSpinner } from "@/components/game-ui";
-import { Button } from "@/components/ui/button";
 import { getPvpMatch, submitPvpResult, type PvpMatch } from "@/lib/pvp";
 import { getProfileById, ensureSession, type TrainerProfile } from "@/lib/social";
 import { PvpBattleScreen, type PvpBattleResult } from "@/components/pvp-battle-screen";
 import { playBgm } from "@/lib/audio";
-import { trainerSpriteUrl } from "@/lib/game-data";
+import { inviteUrl } from "@/lib/referral-rewards";
+import { sendFriendChallenge } from "@/components/friends-screen";
+import { NaButton } from "@/components/na/button";
+import { NaGlassRow, NaRewardTile, NaWordmark } from "@/components/na/celebration";
+import { NaGlossIcon } from "@/components/na/gloss-icon";
+import { NaRewardIcon } from "@/components/na/reward-icon";
+import { FaceOff } from "@/components/na/face-off";
 
 export const Route = createFileRoute("/pvp/$matchId")({
   head: () => noindexHead(),
@@ -37,6 +42,9 @@ function PvpMatchPage() {
   const [opponentProfile, setOpponentProfile] = useState<TrainerProfile | null>(null);
   const [myScore, setMyScore] = useState<number | null>(null);
   const [pendingResult, setPendingResult] = useState<PvpBattleResult | null>(null);
+  const [rematching, setRematching] = useState(false);
+  /** Only known for the side that just played on this phone. */
+  const [accuracy, setAccuracy] = useState<number | null>(null);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -93,6 +101,7 @@ function PvpMatchPage() {
     }
     setPendingResult(null);
     setMyScore(res.score);
+    if (result.total > 0) setAccuracy(Math.round((result.correct / result.total) * 100));
     useGameStore.getState().pushBattleLog({
       opponent: "PvP Battle",
       won: result.correct > result.total / 2,
@@ -110,21 +119,8 @@ function PvpMatchPage() {
 
   if (phase === "loading") {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-poke-cream">
+      <div className="na-bg-night flex h-full w-full items-center justify-center">
         <PokeballSpinner spinning />
-      </div>
-    );
-  }
-
-  if (phase === "not_found") {
-    return (
-      <div className="screen-x flex h-full w-full flex-col items-center justify-center gap-4 bg-poke-cream text-center">
-        <div className="font-display text-lg text-foreground">
-          This challenge isn't available anymore.
-        </div>
-        <Button size="action" onClick={() => navigate({ to: "/arena" })}>
-          Back to Arena
-        </Button>
       </div>
     );
   }
@@ -133,75 +129,107 @@ function PvpMatchPage() {
     return <PvpBattleScreen questions={match.questions} onFinish={handleFinish} />;
   }
 
-  if (phase === "submit_error") {
-    return (
-      <div className="screen-x flex h-full w-full flex-col items-center justify-center gap-4 bg-poke-cream text-center">
-        <div className="font-display text-lg text-foreground">
-          Couldn't submit your result — your answers are still saved here.
-        </div>
-        <Button
-          size="action"
-          onClick={() => {
-            if (pendingResult) void handleFinish(pendingResult);
-          }}
-        >
-          Try again
-        </Button>
-      </div>
-    );
-  }
+  const oppName = opponentProfile?.trainer_name || "your friend";
+  const goHome = () => void navigate({ to: "/battle", search: { autostart: 0 } as never });
 
-  if (phase === "inactive") {
+  // The plain states: gone, declined, expired or a failed submit.
+  if (phase === "not_found" || phase === "inactive" || phase === "submit_error") {
+    const text =
+      phase === "submit_error"
+        ? "Couldn't send your result. Your answers are still saved here."
+        : phase === "not_found"
+          ? "This challenge isn't available anymore."
+          : match?.status === "declined"
+            ? `${oppName} declined this challenge.`
+            : "This challenge expired.";
     return (
-      <div className="screen-x flex h-full w-full flex-col items-center justify-center gap-4 bg-poke-cream text-center">
-        <div className="font-display text-lg text-foreground">
-          {match?.status === "declined"
-            ? "Your opponent declined this challenge."
-            : "This challenge expired."}
-        </div>
-        {myScore !== null && (
-          <div className="font-pixel-xs text-foreground/60">Your score: {myScore}</div>
+      <div className="na-bg-night flex h-full w-full flex-col items-center justify-center gap-4 px-5 pb-[calc(env(safe-area-inset-bottom)+24px)] text-center">
+        <p className="na-title text-foreground">{text}</p>
+        {phase === "inactive" && myScore !== null && <p className="na-body text-text-secondary">Your score: {myScore}</p>}
+        {phase === "submit_error" ? (
+          <NaButton block onClick={() => pendingResult && void handleFinish(pendingResult)}>
+            Try again
+          </NaButton>
+        ) : (
+          <NaButton block onClick={goHome}>
+            Home
+          </NaButton>
         )}
-        <Button size="action" onClick={() => navigate({ to: "/arena" })}>
-          Back to Arena
-        </Button>
       </div>
     );
   }
 
+  const mySprite = useGameStore.getState().trainerSprite;
+  const oppSprite = opponentProfile?.trainer_sprite || "red";
   const iAmChallenger = myId === match?.challengerId;
   const myFinal = match ? (iAmChallenger ? match.challengerScore : match.opponentScore) : myScore;
   const oppFinal = match ? (iAmChallenger ? match.opponentScore : match.challengerScore) : null;
-  const won = phase === "result" && myFinal !== null && oppFinal !== null && myFinal > oppFinal;
-  const tied = phase === "result" && myFinal !== null && oppFinal !== null && myFinal === oppFinal;
 
+  // Figma 16.5: your score is in, theirs is a question mark until they play.
+  if (phase === "waiting") {
+    return (
+      <div className="na-bg-night flex h-full w-full flex-col items-center gap-3.5 px-5 pb-[calc(env(safe-area-inset-bottom)+24px)] pt-[calc(env(safe-area-inset-top)+40px)]">
+        <h1 className="na-display-m text-center text-foreground">Nice battle!</h1>
+        <FaceOff me={mySprite} them={oppSprite} mine={myFinal ?? myScore} theirs="?" />
+        <p className="na-title text-center text-foreground">Waiting for {oppName} to play…</p>
+        <NaGlassRow lead={<NaGlossIcon kind="bell" size={32} />} title="We'll tell you who won!" sub="Find the result in Friends and Recent Battles." />
+        <div className="flex-1" />
+        <NaButton block onClick={goHome}>
+          Home
+        </NaButton>
+      </div>
+    );
+  }
+
+  // Figma 16.6: both scores side by side, the winner's crown.
+  const won = myFinal !== null && oppFinal !== null && myFinal > oppFinal;
+  const tied = myFinal !== null && oppFinal !== null && myFinal === oppFinal;
+  const opp = opponentProfile;
+  async function rematch() {
+    if (!opp || rematching) return;
+    setRematching(true);
+    try {
+      const id = await sendFriendChallenge(opp.id, opp.trainer_name);
+      if (id) void navigate({ to: "/pvp/$matchId", params: { matchId: id } });
+    } finally {
+      setRematching(false);
+    }
+  }
+  function share() {
+    const text = `${won ? `I beat ${oppName}` : tied ? `I tied with ${oppName}` : `${oppName} beat me`} ${myFinal} to ${oppFinal} in Pokémon Trivia Battle! Battle me too:`;
+    const url = inviteUrl(useGameStore.getState().friendCode);
+    if (navigator.share) navigator.share({ text, url }).catch(() => {});
+    else {
+      void navigator.clipboard?.writeText(`${text} ${url}`);
+      toast.success("Copied!");
+    }
+  }
   return (
-    <div className="screen-x flex h-full w-full flex-col items-center justify-center gap-6 bg-poke-cream text-center">
-      <img
-        src={trainerSpriteUrl(opponentProfile?.trainer_sprite || "red")}
-        alt=""
-        className="sprite h-24 w-24 object-contain"
-      />
-      {phase === "waiting" ? (
-        <>
-          <div className="font-display-xl text-foreground">Your score: {myFinal ?? myScore}</div>
-          <div className="font-pixel-xs text-foreground/60">
-            Waiting for {opponentProfile?.trainer_name || "your opponent"} to play their side…
-          </div>
-        </>
-      ) : (
-        <>
-          <div className="font-display-xl text-foreground">
-            {won ? "You won!" : tied ? "It's a tie!" : "You lost this one."}
-          </div>
-          <div className="font-pixel-xs text-foreground/60">
-            You: {myFinal} · {opponentProfile?.trainer_name || "Opponent"}: {oppFinal}
-          </div>
-        </>
+    <div className="na-bg-night flex h-full w-full flex-col items-center gap-3.5 px-4 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-[calc(env(safe-area-inset-top)+16px)]">
+      <NaWordmark kind={won || tied ? "victory" : "soclose"}>{won ? "YOU WIN!" : tied ? "A TIE!" : "SO CLOSE!"}</NaWordmark>
+      <div className="pt-[30px]">
+        <FaceOff me={mySprite} them={oppSprite} mine={myFinal} theirs={oppFinal} crown={won ? "me" : tied ? undefined : "them"} />
+      </div>
+      <p className="na-body-strong text-center text-text-secondary">
+        {won ? `You beat ${oppName}` : tied ? `You tied with ${oppName}` : `${oppName} won`} · {myFinal} to {oppFinal}
+      </p>
+      {accuracy !== null && (
+        <div className="flex gap-[9px]">
+          <NaRewardTile tone="success" label="Accuracy" value={`${accuracy}%`} icon={<NaRewardIcon kind="Accuracy" size={30} />} />
+        </div>
       )}
-      <Button size="action" onClick={() => navigate({ to: "/arena" })}>
-        Back to Arena
-      </Button>
+      <div className="flex-1" />
+      <NaButton block disabled={!opp || rematching} onClick={() => void rematch()}>
+        Rematch
+      </NaButton>
+      <div className="flex w-full gap-2.5">
+        <NaButton kind="secondary" size="M" className="flex-1" onClick={share}>
+          Share
+        </NaButton>
+        <NaButton kind="text" size="M" className="flex-1" onClick={goHome}>
+          Home
+        </NaButton>
+      </div>
     </div>
   );
 }
