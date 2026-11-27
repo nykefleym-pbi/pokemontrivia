@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { NaIcon } from "@/components/na/icon";
 import { playSfx } from "@/lib/audio";
-import { ITEMS, rankForLevel, trainerSpriteUrl, xpForLevel } from "@/lib/game-data";
+import { ITEMS, trainerSpriteUrl, xpForLevel } from "@/lib/game-data";
 import { useGameStore } from "@/lib/store";
 import { ShareCardDialog } from "@/components/share-card-dialog";
+import type { ShareData } from "@/components/share-card-builder";
 import { ItemIcon } from "@/components/game-ui";
 import { NaButton } from "@/components/na/button";
 import { NaConfetti, NaLevelBadge, NaWordmark } from "@/components/na/celebration";
@@ -39,7 +40,6 @@ function rewardLine(r: LevelUpRewards): string {
  * shakes and bursts into gold pieces; Level N scales in past full size and
  * confetti falls; then the rewards rise into the card. Shown when the player
  * returns to the battle hub (battle.tsx gates it on phase "home").
- * shortcut: Share uses the trainer card (new level and rank) until row 9 brings a level-up story card.
  */
 export function LevelUpScreen({ rewards, onContinue }: Props) {
   useEffect(() => {
@@ -57,7 +57,22 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
   const xpTo = (a: number, b: number) => Array.from({ length: Math.max(0, b - a) }, (_, i) => xpForLevel(a + i)).reduce((x, y) => x + y, 0);
   const pct = next ? Math.max(0.04, xpTo(from, lv) / xpTo(from, next[0])) : 1;
   const [shareOpen, setShareOpen] = useState(false);
-  const s = useGameStore();
+  const trainerName = useGameStore((st) => st.trainerName);
+  const trainerSprite = useGameStore((st) => st.trainerSprite);
+  // Figma 9 "Level up" story: the level, the coins and the first item it gave.
+  const shareData = useMemo<ShareData>(() => {
+    const it = rewards.items[0];
+    const def = it && ITEMS.find((x) => x.id === it.id);
+    return {
+      type: "level-up",
+      trainerName: trainerName || "Trainer",
+      trainerSpriteUrl: trainerSpriteUrl(trainerSprite),
+      level: lv,
+      coins: rewards.coins,
+      item: def ? { name: def.name, iconUrl: def.iconUrl, qty: it.qty } : undefined,
+      dateISO: new Date().toISOString().slice(0, 10),
+    };
+  }, [rewards, lv, trainerName, trainerSprite]);
 
   return (
     <div className="na-bg-night fixed inset-0 z-[110] flex flex-col items-center gap-4 overflow-hidden px-5 pb-[calc(env(safe-area-inset-bottom)+24px)] pt-[calc(env(safe-area-inset-top)+24px)]">
@@ -171,20 +186,7 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
       <ShareCardDialog
         open={shareOpen}
         onClose={() => setShareOpen(false)}
-        data={{
-          type: "trainer-card",
-          trainerName: s.trainerName || "Trainer",
-          trainerSpriteUrl: trainerSpriteUrl(s.trainerSprite),
-          level: lv,
-          rank: rankForLevel(lv),
-          friendCode: s.friendCode ?? "------",
-          pokedexCount: Object.keys(s.pokedex).length,
-          wins: s.stats.wins,
-          bestStreak: s.stats.bestStreak,
-          acePokemonId: s.pokemon?.id ?? 0,
-          aceShiny: false,
-          dateISO: new Date().toISOString().slice(0, 10),
-        }}
+        data={shareData}
       />
     </div>
   );

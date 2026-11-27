@@ -28,6 +28,10 @@ const ICON: Record<string, [string, string]> = {
 
 export type RewardIconKind = "Coin" | "XP" | "TP" | "Streak" | "Freeze" | "Gift" | "Egg" | "Chest" | "Trophy" | "Potion" | "Accuracy" | "Time";
 
+/** The same icon as a standalone SVG string (the share card draws it on a canvas). */
+export const rewardIconSvg = (kind: RewardIconKind) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">${hifi(`<defs>${ICON[kind][0]}</defs>${ICON[kind][1]}`)}</svg>`;
+
 export function NaRewardIcon({ kind, size = 24, className }: { kind: RewardIconKind; size?: number; className?: string }) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const [defs, body] = ICON[kind];

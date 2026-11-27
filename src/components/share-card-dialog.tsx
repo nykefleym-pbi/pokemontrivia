@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Share2, X, Image as ImageIcon } from "lucide-react";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { useFramePortalContainer } from "@/components/frame-portal";
+import { NaIcon } from "@/components/na/icon";
 import { PokeballSpinner } from "@/components/game-ui";
 import { buildShareCard, type ShareData } from "./share-card-builder";
 import { inviteUrl } from "@/lib/referral-rewards";
@@ -12,119 +12,110 @@ interface Props {
   onClose: () => void;
   data: ShareData;
   /**
-   * The sharer's friend code. When given, the shared text carries their
-   * `/refer?code=` link, so a card that gets passed around can actually bring
-   * someone in — the referral loop pays both sides but only fires through that
-   * URL. Omit it and the share stays exactly as it was.
+   * The sharer's friend code. When given, the shared text and the copied link
+   * carry their `/refer?code=` link, so a card that gets passed around can
+   * bring someone in — the referral loop only fires through that URL.
    */
   inviteCode?: string | null;
 }
 
+const GAME_URL = "https://pokemontriviabattle.vercel.app";
+
+/**
+ * Figma 9.1 "Share your win": a sheet over the result with the story card at
+ * half size, then Stories, Chats, Save image and Copy link. The preview is the
+ * exact PNG that gets shared (story-card.ts).
+ */
 export function ShareCardDialog({ open, onClose, data, inviteCode }: Props) {
+  const container = useFramePortalContainer();
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const link = inviteCode ? inviteUrl(inviteCode) : GAME_URL;
 
   useEffect(() => {
     if (!open) return;
     setLoading(true);
     buildShareCard(data)
       .then(setImageUrl)
-      .catch(() => toast.error("Couldn't generate share image."))
+      .catch(() => toast.error("Couldn't make your card."))
       .finally(() => setLoading(false));
   }, [open, data]);
 
-  function handleSave() {
+  function save() {
     if (!imageUrl) return;
-    const link = document.createElement("a");
-    link.href = imageUrl;
-    link.download = `pokemon-trivia-${data.type}-${data.dateISO}.png`;
-    link.click();
+    const a = document.createElement("a");
+    a.href = imageUrl;
+    a.download = `pokemon-trivia-${data.type}-${data.dateISO}.png`;
+    a.click();
     toast.success("Image saved!");
   }
 
-  async function handleShare() {
+  /** The phone's share sheet with the picture: Stories sends it alone, Chats adds the dare and the link. */
+  async function share(withText: boolean) {
     if (!imageUrl) return;
     try {
       const blob = await (await fetch(imageUrl)).blob();
       const file = new File([blob], `poketrivia-${data.dateISO}.png`, { type: "image/png" });
-      const nav = navigator as Navigator & {
-        canShare?: (d: { files: File[] }) => boolean;
-        share?: (d: { files?: File[]; title?: string; text?: string }) => Promise<void>;
-      };
-      if (nav.canShare && nav.share && nav.canShare({ files: [file] })) {
-        const text = inviteCode ? `Beat my score! ${inviteUrl(inviteCode)}` : "Beat my score!";
-        await nav.share({ files: [file], title: "Pokémon Trivia Battle", text });
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share(withText ? { files: [file], title: "Pokémon Trivia Battle", text: `Think you can beat me? ${link}` } : { files: [file] });
       } else {
-        handleSave();
-        toast.info("Sharing not supported here — image saved instead.");
+        save();
+        toast.info("Sharing isn't available here, so we saved the image instead.");
       }
     } catch {
-      /* user cancelled — no-op */
+      /* the player closed the share sheet */
     }
   }
 
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(link);
+      toast.success("Link copied!");
+    } catch {
+      toast.error("Couldn't copy the link.");
+    }
+  }
+
+  const targets: Array<[string, string, () => void]> = [
+    ["image", "Stories", () => void share(false)],
+    ["share", "Chats", () => void share(true)],
+    ["image", "Save image", save],
+    ["link", "Copy link", () => void copy()],
+  ];
+
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      {/* z-[200]: must sit above full-screen overlays that open this dialog
-          (the evolution screen is fixed at z-[100]); the default z-50 would
-          render it invisibly underneath while still blocking all clicks. */}
-      {/* `inset-0` (not 100dvh/100vw) so it fills whatever containing block it
-          lands in: the viewport on a phone, or the desktop phone-frame when one
-          is active. Overrides DialogContent's centered base classes. */}
-      <DialogContent className="inset-0 z-[200] flex h-full w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-0 bg-poke-dark p-0 sm:rounded-none">
-        <DialogTitle className="sr-only">Share Result</DialogTitle>
-        {/* Header */}
-        <div className="screen-x flex shrink-0 items-center justify-between screen-top pb-3">
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white press"
-          >
-            <X className="h-5 w-5" />
-          </button>
-          <span className="font-pixel text-[11px] uppercase tracking-[0.25em] text-poke-yellow">
-            Share Result
-          </span>
-          <div className="h-10 w-10" />
-        </div>
-
-        {/* Card preview */}
-        <div className="flex flex-1 items-center justify-center overflow-y-auto px-5 py-2">
-          {loading && (
-            <div className="flex aspect-square w-full max-w-sm items-center justify-center rounded-3xl bg-white/5">
-              <PokeballSpinner size={64} spinning />
-            </div>
-          )}
-          {imageUrl && !loading && (
-            <img
-              src={imageUrl}
-              alt="Battle result"
-              className="w-full max-w-sm rounded-3xl shadow-2xl"
-            />
-          )}
-        </div>
-
-        {/* Action bar */}
-        <div className="screen-x flex shrink-0 gap-3 pt-3 screen-bottom">
-          <Button
-            size="action"
-            onClick={handleShare}
-            disabled={!imageUrl}
-            className="flex-1 bg-primary text-primary-foreground shadow-pop"
-          >
-            <Share2 className="mr-2 h-5 w-5" /> Share
-          </Button>
-          <Button
-            size="action"
-            onClick={handleSave}
-            disabled={!imageUrl}
-            variant="outline"
-            className="flex-1 border-2 border-black/10 bg-white text-poke-dark hover:bg-white/90"
-          >
-            <ImageIcon className="mr-2 h-5 w-5" /> Save image
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+    <DialogPrimitive.Root open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogPrimitive.Portal container={container ?? undefined}>
+        {/* z-[200]: above the full-screen result, level-up and evolution screens that open it. */}
+        <DialogPrimitive.Overlay className="fixed inset-0 z-[200] bg-[rgb(4_6_15/0.75)] data-[state=open]:animate-in data-[state=open]:fade-in-0" />
+        <DialogPrimitive.Content className="na-raised fixed inset-x-0 bottom-0 z-[200] flex flex-col items-center gap-4 rounded-t-[28px] px-5 pb-[calc(env(safe-area-inset-bottom)+30px)] pt-2.5 outline-none data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom">
+          <div aria-hidden className="h-[5px] w-10 shrink-0 rounded-[3px] bg-white/30" />
+          <DialogPrimitive.Title className="na-display-s text-center text-foreground">Share your win</DialogPrimitive.Title>
+          <DialogPrimitive.Description className="sr-only">A story card of your result, ready to share.</DialogPrimitive.Description>
+          <div className="relative h-[320px] w-[180px] shrink-0 overflow-hidden rounded-[14px] bg-night-card">
+            {imageUrl && !loading ? (
+              <img src={imageUrl} alt="Your story card" className="h-full w-full" />
+            ) : (
+              <span className="absolute inset-0 grid place-items-center">
+                <PokeballSpinner size={48} spinning />
+              </span>
+            )}
+          </div>
+          <div className="flex gap-[18px]">
+            {targets.map(([icon, label, go]) => (
+              <button key={label} type="button" disabled={!imageUrl} onClick={go} className="press flex flex-col items-center gap-1.5 disabled:opacity-50">
+                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-night-card-2 text-foreground shadow-[0_4px_0_#04060F,inset_0_1px_0_rgb(255_255_255/0.1)]">
+                  <NaIcon name={icon} size={24} />
+                </span>
+                <span className="na-caption text-text-secondary">{label}</span>
+              </button>
+            ))}
+          </div>
+          <p className="na-caption text-center text-text-muted">
+            Your card only shows your Trainer name and level. No other personal details are shared.
+          </p>
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 }

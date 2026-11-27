@@ -117,6 +117,10 @@ function RewardArt({ kind, size, className }: { kind: string; size: number; clas
   );
 }
 
+/** A line icon as a standalone SVG string in `color` (the share card draws it on a canvas). */
+export const lineIconSvg = (name: string, color: string) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="${FILLED.has(name) ? color : "none"}" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${LINE[name]}</svg>`;
+
 export function NaIcon({ name, size = 24, className, line }: { name: string; size?: number; className?: string; line?: boolean }) {
   const g = !line ? GLOSS_OF[name] : undefined;
   if (g?.startsWith("RI:")) return <NaRewardIcon kind={g.slice(3) as RewardIconKind} size={size} className={className} />;

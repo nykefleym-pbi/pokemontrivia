@@ -624,6 +624,7 @@ function DailyResultScreen({
           avgTimeMs,
           level,
           rank: rankForLevel(level),
+          dayStreak: dayStreak ?? undefined,
         }
       : null;
   const left = total - correct;

@@ -64,16 +64,30 @@ export function NaWordmark({
  * Levels 1 and 2, then triangle, square, pentagon… White rim, orange inner rim,
  * gold face set 2.2 low, a lighter raised centre and a gloss up-left.
  */
-export function NaLevelBadge({ level, size }: { level: number; size: number }) {
-  const shape = (r: number, props: React.SVGProps<SVGElement>) => {
-    if (level < 3) return <circle cx={50} cy={50} r={r} {...(props as React.SVGProps<SVGCircleElement>)} />;
+/** The badge's shapes on a 100 grid, without the number (also drawn on the share card's canvas). */
+export function levelBadgeSvg(level: number, id: string): string {
+  const shape = (r: number, attrs: string) => {
+    if (level < 3) return `<circle cx="50" cy="50" r="${r}" ${attrs}/>`;
     const a0 = -Math.PI / 2 + (level === 4 ? Math.PI / 4 : 0);
     const pts = Array.from({ length: level }, (_, i) => {
       const a = a0 + (i * 2 * Math.PI) / level;
       return `${(50 + r * Math.cos(a)).toFixed(1)},${(50 + r * Math.sin(a)).toFixed(1)}`;
     }).join(" ");
-    return <polygon points={pts} {...(props as React.SVGProps<SVGPolygonElement>)} />;
+    return `<polygon points="${pts}" ${attrs}/>`;
   };
+  const tri = level === 3;
+  return (
+    `<defs><linearGradient id="g${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFD84D"/><stop offset="1" stop-color="#F5A000"/></linearGradient>` +
+    `<linearGradient id="c${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFEC9A"/><stop offset="1" stop-color="#FFC21F"/></linearGradient></defs>` +
+    shape(44, 'fill="#FFFFFF" stroke="#FFFFFF" stroke-width="5" stroke-linejoin="round"') +
+    shape(40, 'fill="#E07F00" stroke="#E07F00" stroke-width="2" stroke-linejoin="round"') +
+    `<g transform="translate(0 2.2)">${shape(37, `fill="url(#g${id})" stroke-linejoin="round"`)}</g>` +
+    `<g transform="translate(0 2.2)">${shape(tri ? 23 : 28, `fill="url(#c${id})" stroke="#FFE27A" stroke-width="1.5" stroke-linejoin="round"`)}</g>` +
+    `<ellipse cx="${tri ? 46 : 38}" cy="${tri ? 46 : 30}" rx="${tri ? 7 : 12}" ry="${tri ? 3 : 5}" transform="rotate(-28 ${tri ? 46 : 38} ${tri ? 46 : 30})" fill="#FFFFFF" fill-opacity="0.7"/>`
+  );
+}
+
+export function NaLevelBadge({ level, size }: { level: number; size: number }) {
   const tri = level === 3;
   const id = React.useId().replace(/:/g, "");
   const fsz = Math.round(size * (tri ? 0.26 : 0.38));
@@ -87,33 +101,8 @@ export function NaLevelBadge({ level, size }: { level: number; size: number }) {
         aria-hidden
         className="absolute inset-0 overflow-visible"
         style={{ filter: `drop-shadow(0 0 ${Math.round(size * 0.07)}px rgb(255 255 255 / 0.55)) drop-shadow(0 ${Math.round(size * 0.04)}px ${Math.round(size * 0.03)}px rgb(10 15 38 / 0.35))` }}
-      >
-        <defs>
-          <linearGradient id={`g${id}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#FFD84D" />
-            <stop offset="1" stopColor="#F5A000" />
-          </linearGradient>
-          <linearGradient id={`c${id}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#FFEC9A" />
-            <stop offset="1" stopColor="#FFC21F" />
-          </linearGradient>
-        </defs>
-        {shape(44, { fill: "#FFFFFF", stroke: "#FFFFFF", strokeWidth: 5, strokeLinejoin: "round" })}
-        {shape(40, { fill: "#E07F00", stroke: "#E07F00", strokeWidth: 2, strokeLinejoin: "round" })}
-        <g transform="translate(0 2.2)">{shape(37, { fill: `url(#g${id})`, strokeLinejoin: "round" })}</g>
-        <g transform="translate(0 2.2)">
-          {shape(tri ? 23 : 28, { fill: `url(#c${id})`, stroke: "#FFE27A", strokeWidth: 1.5, strokeLinejoin: "round" })}
-        </g>
-        <ellipse
-          cx={tri ? 46 : 38}
-          cy={tri ? 46 : 30}
-          rx={tri ? 7 : 12}
-          ry={tri ? 3 : 5}
-          transform={`rotate(-28 ${tri ? 46 : 38} ${tri ? 46 : 30})`}
-          fill="#FFFFFF"
-          fillOpacity={0.7}
-        />
-      </svg>
+        dangerouslySetInnerHTML={{ __html: levelBadgeSvg(level, id) }}
+      />
       <span
         className="absolute inset-x-0 grid place-items-center"
         style={{
