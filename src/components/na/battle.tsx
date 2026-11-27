@@ -136,6 +136,27 @@ export function FieldSprite({
   );
 }
 
+/** A sprite trimmed to its pixels and fitted into a size x size box, centred (the design's Pokémon art in cells and rows). */
+export function FitSprite({ id, shiny = false, size, className }: { id: number; shiny?: boolean; size: number; className?: string }) {
+  const src = spriteUrl(id, shiny, false);
+  const tr = useTrim(src);
+  if (!tr) return <span className="block shrink-0" style={{ width: size, height: size }} />;
+  const t = tr.trim;
+  const k = size / Math.max(t.w, t.h);
+  return (
+    <span className="relative block shrink-0" style={{ width: size, height: size }}>
+      <img
+        src={src}
+        alt=""
+        draggable={false}
+        crossOrigin="anonymous"
+        className={cn("pointer-events-none absolute max-w-none select-none [image-rendering:pixelated]", className)}
+        style={{ left: (size - t.w * k) / 2 - t.x * k, top: (size - t.h * k) / 2 - t.y * k, width: 96 * k, height: 96 * k }}
+      />
+    </span>
+  );
+}
+
 // ------------------------------------------------------------------ the field
 /**
  * The 390 x 504 stage, scaled to the width and to the room above the question

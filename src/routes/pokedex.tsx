@@ -1,23 +1,20 @@
 import { pageHead } from "@/lib/seo";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
-import { Search, X, Star, Eye } from "lucide-react";
-import { motion } from "framer-motion";
+import { ChevronRight, Sparkles } from "lucide-react";
 import { playCry, playSfx } from "@/lib/audio";
 import { useGameStore } from "@/lib/store";
 import { useStoreHydrated } from "@/lib/store-hydration";
 import { EggHatch } from "@/components/mega/EggHatch";
 import { ALL_POKEMON, type PokeType } from "@/lib/pokemon-data";
-import { Input } from "@/components/ui/input";
-import { MiniPokeball, PokemonSprite } from "@/components/game-ui";
-import { TypeChip } from "@/components/type-chip";
+import { FitSprite } from "@/components/na/battle";
 import { DexCompletionCard } from "@/components/dex-completion-card";
 import { DexDetail } from "@/components/dex-detail";
-import { GENERATIONS, generation } from "@/lib/dex-rewards";
-import { parseDexQuery, matchesDexQuery } from "@/lib/dex-search";
+import { NaGlossIcon } from "@/components/na/gloss-icon";
+import { NaRegionRow } from "@/components/na/region-row";
+import { NaSheet } from "@/components/na/sheet";
+import { GENERATIONS, dexStats, generation, nextClaimableMilestone } from "@/lib/dex-rewards";
 import { dexStatus } from "@/lib/pokedex";
-import { typeRowFontSize, DEX_CARD_WIDTH, DEX_CARD_PAD_PX } from "@/lib/type-row-fit";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export const Route = createFileRoute("/pokedex")({
@@ -26,49 +23,76 @@ export const Route = createFileRoute("/pokedex")({
 });
 
 const ALL_TYPES: PokeType[] = [
-  "normal",
-  "fire",
-  "water",
-  "electric",
-  "grass",
-  "ice",
-  "fighting",
-  "poison",
-  "ground",
-  "flying",
-  "psychic",
-  "bug",
-  "rock",
-  "ghost",
-  "dragon",
-  "dark",
-  "steel",
-  "fairy",
+  "normal", "fire", "water", "electric", "grass", "ice", "fighting", "poison", "ground",
+  "flying", "psychic", "bug", "rock", "ghost", "dragon", "dark", "steel", "fairy",
 ];
 
-/** The default generation — Kanto, where a new player's dex starts filling. */
-const DEFAULT_GEN = 1;
+/**
+ * Entries you've opened in the Pokédex, so fresh catches wear NEW until you open
+ * them (Figma 6.1, mechanic 2). The first visit counts every catch so far as
+ * opened: an old save shouldn't light up a hundred badges.
+ * shortcut: this device only; move into the store and save payload if NEW should follow a player across phones.
+ */
+const OPENED_KEY = "poke-trivia-dex-opened";
+function useOpened(caughtIds: number[]) {
+  const [opened, setOpened] = useState<Set<number> | null>(null);
+  useEffect(() => {
+    let ids: number[] | null = null;
+    try {
+      const raw = localStorage.getItem(OPENED_KEY);
+      ids = raw ? (JSON.parse(raw) as number[]) : null;
+    } catch {
+      /* private mode: every catch just counts as opened */
+    }
+    if (!ids) {
+      ids = caughtIds;
+      try {
+        localStorage.setItem(OPENED_KEY, JSON.stringify(ids));
+      } catch {
+        /* ignore */
+      }
+    }
+    setOpened(new Set(ids));
+    // read once per visit
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const open = (id: number) =>
+    setOpened((s) => {
+      if (!s || s.has(id)) return s;
+      const n = new Set(s).add(id);
+      try {
+        localStorage.setItem(OPENED_KEY, JSON.stringify([...n]));
+      } catch {
+        /* ignore */
+      }
+      return n;
+    });
+  return { isNew: (id: number) => !!opened && !opened.has(id), open };
+}
+
+type Show = "all" | "caught" | "new";
 
 function PokedexPage() {
   const hasOnboarded = useGameStore((s) => s.hasOnboarded);
   const hydrated = useStoreHydrated();
   const pokedex = useGameStore((s) => s.pokedex);
-  const partnerId = useGameStore((s) => s.pokemon?.id ?? null);
-  const trainerName = useGameStore((s) => s.trainerName);
+  const claimed = useGameStore((s) => s.claimedDexRewards);
+  const battleRegion = useGameStore((s) => s.route.region);
   const navigate = useNavigate();
-  const [gen, setGen] = useState(DEFAULT_GEN);
-  const [query, setQuery] = useState("");
+  // Starts on the region you battle in (route regions are generations 1-5).
+  const [gen, setGen] = useState(battleRegion + 1);
+  const [show, setShow] = useState<Show>("all");
   const [type, setType] = useState<"all" | PokeType>("all");
-  const [capturedOnly, setCapturedOnly] = useState(false);
-  const [seenOnly, setSeenOnly] = useState(false);
   const [shinyOnly, setShinyOnly] = useState(false);
   const [detailId, setDetailId] = useState<number | null>(null);
   const [showShiny, setShowShiny] = useState(false);
+  const [regionOpen, setRegionOpen] = useState(false);
+  const [cardOpen, setCardOpen] = useState(false);
 
-  // Play the cry the moment a Pokémon is opened (owner ruling 2026-07-26).
-  // Keyed on `detailId`, so it fires exactly once per selection — reopening the
-  // same Pokémon plays it again, staying on it does not, and any further replay
-  // is the "Play cry" button's job.
+  const caughtIds = useMemo(() => Object.keys(pokedex).map(Number).filter((id) => dexStatus(pokedex[id]) === "caught"), [pokedex]);
+  const { isNew, open } = useOpened(caughtIds);
+
+  // The cry plays the moment an entry opens (owner ruling 2026-07-26).
   useEffect(() => {
     if (detailId != null) playCry(detailId);
   }, [detailId]);
@@ -77,94 +101,101 @@ function PokedexPage() {
     if (hydrated && !hasOnboarded) navigate({ to: "/" });
   }, [hydrated, hasOnboarded, navigate]);
 
-  // The search box understands the same vocabulary as the chips — region, type,
-  // caught/seen/shiny, dex number — so anything typeable is also filterable.
-  // See lib/dex-search.ts.
-  const parsed = useMemo(() => parseDexQuery(query), [query]);
-  // A typed region MOVES the grid rather than filtering it, because the grid is
-  // scoped to one generation at a time. It overrides the Gen chip while the
-  // word is in the box; deleting it hands control straight back.
-  const effectiveGen = parsed.gen ?? gen;
-  const range = generation(effectiveGen);
+  const range = generation(gen);
+  const stats = useMemo(() => dexStats(pokedex, gen), [pokedex, gen]);
+  const claimable = nextClaimableMilestone(stats, gen, claimed ?? []);
 
-  const filtered = useMemo(() => {
-    return ALL_POKEMON.filter((p) => {
-      if (p.id < range.from || p.id > range.to) return false;
-      if (type !== "all" && !p.types.includes(type)) return false;
-      // Caught and Seen are one status filter with two switches, not two
-      // independent ones. Treated independently they contradict each other —
-      // an entry cannot be both — so turning both on would empty the grid;
-      // read as a set, it shows everything registered, which is what someone
-      // pressing both is asking for.
-      if (capturedOnly || seenOnly) {
-        const status = dexStatus(pokedex[p.id]);
-        if (status === null) return false;
-        if (status === "caught" && !capturedOnly) return false;
-        if (status === "seen" && !seenOnly) return false;
-      }
-      if (shinyOnly && !pokedex[p.id]?.shinyUnlocked) return false;
-      const entry = pokedex[p.id];
-      const st = dexStatus(entry);
-      return matchesDexQuery(parsed, p, {
-        caught: st === "caught",
-        seen: st !== null,
-        shiny: !!entry?.shinyUnlocked,
-      });
-    });
-  }, [range, parsed, type, capturedOnly, seenOnly, shinyOnly, pokedex]);
+  const filtered = useMemo(
+    () =>
+      ALL_POKEMON.filter((p) => {
+        if (p.id < range.from || p.id > range.to) return false;
+        if (type !== "all" && !p.types.includes(type)) return false;
+        const e = pokedex[p.id];
+        if (shinyOnly && !e?.shinyUnlocked) return false;
+        const caught = dexStatus(e) === "caught";
+        if (show === "caught") return caught;
+        if (show === "new") return caught && isNew(p.id);
+        return true;
+      }),
+    // isNew changes with the opened set, which `open` replaces
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [range, type, shinyOnly, show, pokedex, isNew],
+  );
 
   if (!hydrated || !hasOnboarded) return null;
 
   return (
-    <div className="bg-poke-cream h-full w-full overflow-y-auto pb-nav safe-x">
-      {/* Hero */}
-      <div className="screen-x pb-5 screen-top">
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            {trainerName && (
-              <p className="truncate font-pixel-xs uppercase text-primary">{trainerName}'s</p>
-            )}
-            <h1 className="font-display-xl text-foreground">Pokédex</h1>
-          </div>
-
-          {/* The caught/total ring used to sit here. It said the same thing as
-              the completion card a few hundred pixels below — same generation,
-              same numbers — so it cost a corner of the header to repeat the
-              card. The egg takes the space instead, which is the one thing on
-              this screen with nowhere else to live. */}
+    <div className="h-full w-full overflow-y-auto pb-nav safe-x">
+      <div className="flex flex-col gap-3.5 px-4 pb-2 pt-[calc(env(safe-area-inset-top)+8px)]">
+        {/* Header (6.1): title, the region chip and the egg button. */}
+        <div className="flex items-center gap-2">
+          <h1 className="na-display-m flex-1 text-foreground">POKÉDEX</h1>
+          <button
+            type="button"
+            onClick={() => setRegionOpen(true)}
+            className="press flex items-center gap-1.5 rounded-full border border-white/[0.16] bg-white/10 py-1.5 pl-2.5 pr-2"
+          >
+            <NaGlossIcon kind="map" size={16} />
+            <span className="na-body-strong text-foreground">{range.region}</span>
+            <ChevronRight className="h-3.5 w-3.5 text-text-muted" />
+          </button>
           <EggHatch />
         </div>
-        <div className="mt-3 flex flex-wrap gap-1.5">
+
+        {/* Region progress; tapping it opens the rewards card (6.1a), which also opens by itself when a reward is waiting. */}
+        <button type="button" aria-expanded={cardOpen || claimable !== null} onClick={() => setCardOpen((v) => !v)} className="flex flex-col gap-1.5 text-left">
+          <span className="na-caption text-text-secondary">
+            {stats.caught} of {stats.total} registered! Complete your Pokédex to earn rewards!
+          </span>
+          <span className="block h-2 w-full overflow-hidden rounded bg-night-deep">
+            <span className="na-fill-gold block h-full rounded" style={{ width: `${Math.max(1, stats.pct * 100)}%` }} />
+          </span>
+        </button>
+        {(cardOpen || claimable !== null) && <DexCompletionCard gen={gen} />}
+
+        {/* All / Caught / New */}
+        <div role="tablist" className="flex gap-1 rounded-[14px] bg-night-deep/60 p-1">
+          {(["all", "caught", "new"] as const).map((s) => (
+            <button
+              key={s}
+              type="button"
+              role="tab"
+              aria-selected={show === s}
+              onClick={() => setShow(s)}
+              className={`flex h-[38px] flex-1 items-center justify-center rounded-[10px] ${
+                show === s ? "na-body-strong bg-night-card-2 text-foreground shadow-[0_4px_0_#141A3F]" : "na-body text-text-secondary"
+              }`}
+            >
+              {s === "all" ? "All" : s === "caught" ? "Caught" : "New"}
+            </button>
+          ))}
+        </div>
+
+        {/* Type and Shiny, as today. */}
+        <div className="flex gap-2">
           <Popover>
             <PopoverTrigger asChild>
               <button
-                className={`press shrink-0 rounded-full px-3 py-1.5 text-xs font-bold capitalize shadow-card ${
-                  type === "all"
-                    ? "bg-card text-foreground/70"
-                    : "bg-primary text-primary-foreground"
-                }`}
+                type="button"
+                className={`press flex items-center gap-1.5 rounded-full border bg-white/10 px-3 py-[7px] ${type === "all" ? "border-white/[0.16]" : "border-reward-gold"}`}
               >
-                {type === "all" ? "+ Type" : type}
+                <span className="flex gap-0.5" aria-hidden>
+                  {(type === "all" ? (["grass", "fire", "water"] as const) : [type]).map((t) => (
+                    <span key={t} className="h-2.5 w-2.5 rounded-full" style={{ background: `var(--type-${t})` }} />
+                  ))}
+                </span>
+                <span className="na-body-strong capitalize text-foreground">{type === "all" ? "+ Type" : type}</span>
               </button>
             </PopoverTrigger>
-            <PopoverContent className="w-64 rounded-2xl bg-card p-2" align="start">
+            <PopoverContent className="w-64 rounded-2xl border-white/10 bg-night-raised p-2" align="start">
               <div className="flex flex-wrap gap-1">
-                <button
-                  onClick={() => setType("all")}
-                  className={`press rounded-full px-2.5 py-1 text-[11px] font-bold ${
-                    type === "all"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-foreground/70"
-                  }`}
-                >
-                  All
-                </button>
-                {ALL_TYPES.map((t) => (
+                {(["all", ...ALL_TYPES] as const).map((t) => (
                   <button
                     key={t}
+                    type="button"
                     onClick={() => setType(t)}
-                    className="rounded-full px-2.5 py-1 text-[11px] font-bold capitalize text-white press"
-                    style={{ background: `var(--type-${t})`, opacity: type === t ? 1 : 0.7 }}
+                    className={`press rounded-full px-2.5 py-1 text-[11px] font-bold capitalize text-white ${type === t ? "ring-2 ring-reward-gold" : ""}`}
+                    style={{ background: t === "all" ? "rgb(255 255 255 / 0.14)" : `var(--type-${t})` }}
                   >
                     {t}
                   </button>
@@ -172,248 +203,88 @@ function PokedexPage() {
               </div>
             </PopoverContent>
           </Popover>
-
-          {/* Generation sits with the other filters now, immediately after
-              Type, and reads "+ Gen" at its Kanto default so the whole row is
-              one family of chips. Which generation is active is never in doubt
-              even while the chip is unlabelled — the completion card below the
-              search field names the region outright. */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                className={`press shrink-0 rounded-full px-3 py-1.5 text-xs font-bold shadow-card ${
-                  gen === DEFAULT_GEN
-                    ? "bg-card text-foreground/70"
-                    : "bg-primary text-primary-foreground"
-                }`}
-              >
-                {gen === DEFAULT_GEN ? "+ Gen" : `Gen ${gen}`}
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-64 rounded-2xl bg-card p-2" align="start">
-              <div className="flex flex-wrap gap-1">
-                {GENERATIONS.map((g) => (
-                  <button
-                    key={g.gen}
-                    onClick={() => setGen(g.gen)}
-                    className={`press rounded-full px-2.5 py-1 text-[11px] font-bold ${
-                      g.gen === gen
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-foreground/70"
-                    }`}
-                  >
-                    {g.region}
-                  </button>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
-
-          <ToggleChip
-            active={capturedOnly}
-            onToggle={() => setCapturedOnly((v) => !v)}
-            label="Caught"
-          />
-          <ToggleChip active={seenOnly} onToggle={() => setSeenOnly((v) => !v)} label="Seen" />
-          <ToggleChip active={shinyOnly} onToggle={() => setShinyOnly((v) => !v)} label="Shiny" />
-          {/* Clear is an icon, and it sits in the row rather than being pushed
-              to the far end by `ml-auto`. As a labelled pill at the end of the
-              line it took enough width to wrap the row onto two lines on a
-              narrow phone — a control that only exists to tidy up should not be
-              the thing that costs the most space. */}
-          {(type !== "all" || gen !== DEFAULT_GEN || capturedOnly || seenOnly || shinyOnly) && (
-            <button
-              onClick={() => {
-                setType("all");
-                setGen(DEFAULT_GEN);
-                setCapturedOnly(false);
-                setSeenOnly(false);
-                setShinyOnly(false);
-              }}
-              aria-label="Clear filters"
-              title="Clear filters"
-              className="press flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground shadow-card"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
+          <button
+            type="button"
+            aria-pressed={shinyOnly}
+            onClick={() => setShinyOnly((v) => !v)}
+            className={`press flex items-center gap-1.5 rounded-full border bg-white/10 px-3 py-[7px] ${shinyOnly ? "border-reward-gold" : "border-white/[0.16]"}`}
+          >
+            <Sparkles className="h-4 w-4 text-reward-gold" />
+            <span className="na-body-strong text-foreground">Shiny</span>
+          </button>
         </div>
-      </div>
 
-      {/* Sticky search */}
-      <div className="sticky top-0 z-20 border-b border-border/60 bg-background/95 screen-x py-3 backdrop-blur">
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Name, #, type, region, caught…"
-            className="h-11 rounded-full border-0 bg-card pl-11 text-sm shadow-card"
-          />
-        </div>
-      </div>
-
-      {/* Deliberately OUTSIDE the sticky block above. Pinned, the search field
-          and this card together hold about a quarter of a phone screen for the
-          whole scroll; only the search earns that. */}
-      <div className="screen-x pt-3">
-        <DexCompletionCard gen={effectiveGen} />
-      </div>
-
-      {/* Grid — three per row.
-          Four columns left the sprite at 64px, small enough that a Pokedex
-          entry read as a list item rather than as a card of a creature. Three
-          buys ~40% more width per cell, which is what pays for the 88px sprite,
-          both type chips and a status line. */}
-      <div className="px-3 pb-8 pt-3">
-        <div className="grid grid-cols-3 gap-2.5">
-          {filtered.map((p, i) => {
+        {/* The grid: four per row, number under each (Figma Dex cell). */}
+        <div className="grid grid-cols-4 gap-x-3 gap-y-3.5 pb-6">
+          {filtered.map((p) => {
             const e = pokedex[p.id];
             const status = dexStatus(e);
-            const got = status !== null;
             const caught = status === "caught";
-            const shiny = !!e?.shinyUnlocked;
-            const isPartner = partnerId === p.id;
+            const fresh = caught && isNew(p.id);
+            const num = `#${String(p.id).padStart(3, "0")}`;
             return (
-              <motion.button
+              <button
                 key={p.id}
-                // Same entrance as the Shop's item grid (routes/shop.tsx) —
-                // same three-column shape, so it should feel the same. The
-                // stagger is capped so a 151-card generation still finishes
-                // arriving in well under half a second; uncapped, the last
-                // Kanto card would wait four and a half.
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: Math.min(i, 12) * 0.03 }}
+                type="button"
+                aria-label={status ? `${p.name} ${num}${fresh ? ", new" : ""}` : `Unknown ${num}`}
                 onClick={() => {
+                  open(p.id);
                   setDetailId(p.id);
-                  // Open in shiny form when the shiny is unlocked.
-                  setShowShiny(shiny);
+                  setShowShiny(!!e?.shinyUnlocked);
                 }}
-                style={
-                  {
-                    contentVisibility: "auto",
-                    containIntrinsicSize: "150px 150px",
-                    ...(shiny
-                      ? {
-                          backgroundImage:
-                            "linear-gradient(135deg, color-mix(in oklab, var(--color-poke-yellow) 35%, var(--color-card)), var(--color-card))",
-                        }
-                      : caught
-                        ? {
-                            backgroundImage: `linear-gradient(135deg, color-mix(in oklab, var(--type-${p.types[0]}) 18%, transparent), var(--color-card))`,
-                          }
-                        : got
-                          ? {
-                              // Seen but not caught: the SAME gradient the caught
-                              // card gets, drained of its type colour (owner
-                              // request 2026-08-17). Grey rather than absent, so
-                              // a seen card reads as a caught card you haven't
-                              // finished — which is what it is — instead of as an
-                              // unknown one.
-                              backgroundImage: `linear-gradient(135deg, color-mix(in oklab, var(--color-foreground) 14%, transparent), var(--color-card))`,
-                            }
-                          : {}),
-                  } as React.CSSProperties
-                }
-                className={`press relative flex flex-col items-center rounded-2xl border-2 px-2 pb-2.5 pt-2 shadow-card ${
-                  shiny
-                    ? "border-poke-yellow"
-                    : caught
-                      ? "border-white"
-                      : got
-                        ? "border-white bg-card"
-                        : "border-white/70 bg-muted/40"
+                style={{ contentVisibility: "auto", containIntrinsicSize: "80px 92px" }}
+                className={`press relative flex flex-col items-center gap-1 rounded-2xl px-1.5 py-[7px] ${
+                  fresh
+                    ? "na-glow-gold border-[1.5px] border-reward-gold bg-white/[0.08]"
+                    : status
+                      ? "border border-white/[0.12] bg-white/[0.08]"
+                      : "border border-white/[0.12] bg-white/[0.04]"
                 }`}
               >
-                {/* Dex number and the partner star share the top row rather than
-                    being absolutely positioned, so neither can crowd the other
-                    or ride the card's rounded corner.
-                    
-                    `px-1` on top of the card's own `px-2` is the safe inset. A
-                    16px radius means the corner has already curved away by the
-                    time you are 4-5px in, so anything sitting flush against the
-                    padding box visually collides with the arc even though the
-                    boxes do not overlap. */}
-                <div className="flex w-full items-center justify-between gap-1 px-1">
-                  <span className="text-[10px] font-bold tabular-nums text-foreground/45">
-                    #{String(p.id).padStart(3, "0")}
+                {status ? (
+                  <FitSprite id={p.id} shiny={!!e?.shinyUnlocked} size={56} className={caught ? "" : "sprite-silhouette"} />
+                ) : (
+                  <span className="flex h-14 w-14 items-center justify-center rounded-full bg-night-deep/60">
+                    <NaGlossIcon kind="question" size={28} />
                   </span>
-                  <Star
-                    className={`h-3.5 w-3.5 shrink-0 ${
-                      isPartner ? "fill-poke-yellow text-poke-yellow" : "text-foreground/20"
-                    }`}
-                    aria-label={isPartner ? "Your partner" : undefined}
-                  />
-                </div>
-
-                <PokemonSprite
-                  id={p.id}
-                  shiny={shiny}
-                  alt={got ? p.name : "???"}
-                  // Three states, three treatments: caught is in full colour,
-                  // SEEN is greyscale (you've met it, you haven't got it), and
-                  // unknown stays a flat silhouette.
-                  className={`sprite h-[88px] w-[88px] ${
-                    caught ? "" : got ? "sprite-seen" : "sprite-silhouette"
-                  }`}
-                />
-
-                <div className="mt-0.5 w-full truncate text-center text-[14px] font-extrabold leading-tight text-foreground">
-                  {got ? p.name : "???"}
-                </div>
-
-                {/* Both types on ONE line, always. `flex-wrap` put a dual-type
-                    Pokemon's second badge on its own row, which made those cards
-                    a line taller than the rest and broke the grid's rhythm. The
-                    badges shrink to fit instead, the same trick the combat panel
-                    uses — see `typeRowFontSize`. */}
-                <div className="mt-1 flex w-full flex-nowrap items-center justify-center gap-1">
-                  {got ? (
-                    p.types.map((t) => (
-                      <TypeChip
-                        key={t}
-                        type={t}
-                        selected
-                        size="sm"
-                        fontSize={typeRowFontSize(p.types, DEX_CARD_WIDTH, DEX_CARD_PAD_PX)}
-                      />
-                    ))
-                  ) : (
-                    // An empty spacer, not a second "???" — the name line right
-                    // above already says it, and saying it twice per card put
-                    // the string on screen 300 times in a full Kanto grid (owner
-                    // report 2026-08-17). It still occupies the row so unknown
-                    // cards stay the same height as the rest of the grid.
-                    <span aria-hidden className="h-[15px]" />
-                  )}
-                </div>
-
-                <div className="mt-1.5 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide">
-                  {caught ? (
-                    <>
-                      <MiniPokeball />
-                      <span className="text-hp-good">Caught</span>
-                    </>
-                  ) : got ? (
-                    <>
-                      <Eye className="h-3 w-3 text-foreground/40" />
-                      <span className="text-foreground/45">Seen</span>
-                    </>
-                  ) : (
-                    <span className="text-foreground/30">Unknown</span>
-                  )}
-                </div>
-              </motion.button>
+                )}
+                <span className={`na-label ${status ? "text-text-secondary" : "text-text-muted"}`}>{num}</span>
+                {fresh && <span className="na-fill-gold na-label absolute left-1 top-1 rounded-md px-[5px] py-px text-on-gold">NEW</span>}
+              </button>
             );
           })}
           {filtered.length === 0 && (
-            <div className="col-span-3 py-10 text-center text-xs text-muted-foreground">
-              No matches.
-            </div>
+            <p className="na-body col-span-4 py-10 text-center text-text-secondary">
+              {show === "new" ? "No new Pokémon. Win battles to catch more!" : "Nothing here yet!"}
+            </p>
           )}
         </div>
       </div>
+
+      <NaSheet
+        open={regionOpen}
+        onOpenChange={setRegionOpen}
+        title="CHOOSE A REGION"
+        body="See every Pokémon of a region and how many you've caught!"
+        secondary={{ label: "Cancel", onClick: () => setRegionOpen(false) }}
+      >
+        {GENERATIONS.map((g) => {
+          const s = dexStats(pokedex, g.gen);
+          return (
+            <NaRegionRow
+              key={g.gen}
+              name={g.region}
+              sub={`${s.caught} of ${s.total} caught`}
+              pct={s.pct}
+              on={g.gen === gen}
+              onClick={() => {
+                setGen(g.gen);
+                setRegionOpen(false);
+              }}
+            />
+          );
+        })}
+      </NaSheet>
 
       {detailId !== null &&
         (() => {
@@ -434,6 +305,7 @@ function PokedexPage() {
               }
               onPlayCry={() => playCry(p.id)}
               onSelect={(id) => {
+                open(id);
                 setDetailId(id);
                 setShowShiny(false);
               }}
@@ -443,27 +315,5 @@ function PokedexPage() {
           );
         })()}
     </div>
-  );
-}
-
-function ToggleChip({
-  active,
-  onToggle,
-  label,
-}: {
-  active: boolean;
-  onToggle: () => void;
-  label: string;
-}) {
-  return (
-    <button
-      aria-pressed={active}
-      onClick={onToggle}
-      className={`press shrink-0 rounded-full px-3 py-1.5 text-xs font-bold shadow-card ${
-        active ? "bg-primary text-primary-foreground" : "bg-card text-foreground/70"
-      }`}
-    >
-      {label}
-    </button>
   );
 }

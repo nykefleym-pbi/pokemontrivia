@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { BookOpen, Check, Eye, Sparkles } from "lucide-react";
-import { AppIcon } from "@/components/app-icon";
+import { motion } from "framer-motion";
+import { BookOpen, Check, Search, Sparkles } from "lucide-react";
 import { MiniPokeball } from "@/components/game-ui";
-import { COIN_ICON, LOCK_ICON, REWARD_ICON, TP_ICON } from "@/lib/app-icons";
+import { NaRewardIcon, type RewardIconKind } from "@/components/na/reward-icon";
+import { NaGlossIcon } from "@/components/na/gloss-icon";
 import { playSfx } from "@/lib/audio";
 import {
   DEX_MILESTONES,
@@ -21,64 +22,28 @@ import { useGameStore } from "@/lib/store";
 
 /** How long a face is shown before the card turns over. */
 const FLIP_EVERY_MS = 6000;
-/**
- * How long a tap holds the card still.
- *
- * Turning the card away from a button someone is reaching for is the one way
- * this feature can be actively annoying, so any deliberate interaction buys a
- * pause long enough to read the face and act on it.
- */
+/** How long a tap holds the card still: turning a card away from a reward someone is reaching for is the one way this can annoy. */
 const HOLD_AFTER_TAP_MS = 15000;
 
-const REWARD_ART: Record<DexRewardIcon, string> = {
-  coins: COIN_ICON,
-  xp: REWARD_ICON.xp,
-  tp: TP_ICON,
-  chest: REWARD_ICON.premium,
-};
+const REWARD_KIND: Record<DexRewardIcon, RewardIconKind> = { coins: "Coin", xp: "XP", tp: "TP", chest: "Chest" };
 
 /**
- * One rung of the ladder — and, once it unlocks, the control that claims it.
- *
- * Sized off the viewport rather than fixed: four rungs plus their labels have to
- * fit the width of a 320px phone with room to spare at the ends for the track's
- * inset.
- *
- * There is no separate Claim button any more. A button that is disabled most of
- * the time still costs its width all of the time, and it pointed at a reward
- * that was already on screen; tapping the reward itself says the same thing
- * with nothing added to the row.
- *
- * A claimable rung is the only one that reacts to a tap, so it is the only one
- * that advertises: it grows, glows and pulses. Locked and claimed rungs stay
- * inert on purpose — an affordance nobody can act on is a worse lie than no
- * affordance at all.
- *
- * `role="button"` on a span rather than a real <button>, because this sits
- * inside the card's own flip button and nested buttons are invalid HTML.
+ * One rung of the ladder (Figma 6.1a): a reached reward grows to 38, gets a gold
+ * ring and pulses, and tapping it claims it. Locked rungs are dim with a lock;
+ * claimed ones get a green check. role="button" on a span because the whole
+ * face is the flip button and buttons can't nest.
  */
-function Milestone({
-  milestone,
-  state,
-  onClaim,
-}: {
-  milestone: DexMilestone;
-  state: DexMilestoneState;
-  onClaim: () => void;
-}) {
-  const reward = DEX_MILESTONE_REWARDS[milestone];
+function Milestone({ milestone, state, onClaim }: { milestone: DexMilestone; state: DexMilestoneState; onClaim: () => void }) {
   const claimable = state === "claimable";
   const claim = (e: React.SyntheticEvent) => {
     if (!claimable) return;
-    // The tap must claim WITHOUT also turning the card over.
-    e.stopPropagation();
+    e.stopPropagation(); // claim without also turning the card over
     onClaim();
   };
+  const s = claimable ? 38 : 32;
   return (
-    <div className="flex flex-col items-center gap-0.5">
-      {/* Fixed-height slot sized to the LARGEST rung, so the claimable one can
-          grow without shunting its own threshold label below the other three. */}
-      <span className="flex h-[clamp(26px,8.2vw,34px)] items-center justify-center">
+    <span className="flex flex-col items-center">
+      <span className="flex h-[38px] items-center justify-center">
         <span
           role={claimable ? "button" : undefined}
           tabIndex={claimable ? 0 : undefined}
@@ -89,83 +54,37 @@ function Milestone({
             e.preventDefault();
             claim(e);
           }}
-          className={`relative flex items-center justify-center rounded-full bg-white shadow-card ring-2 ${
+          className={`relative flex items-center justify-center rounded-full ${
             claimable
-              ? "press h-[clamp(26px,8.2vw,34px)] w-[clamp(26px,8.2vw,34px)] animate-pulse ring-poke-yellow ring-offset-2 ring-offset-primary"
-              : `h-[clamp(22px,7vw,30px)] w-[clamp(22px,7vw,30px)] ${
-                  state === "claimed" ? "ring-hp-good" : "ring-white/45"
-                }`
+              ? "press animate-pulse border-[3px] border-reward-gold bg-night-deep/90"
+              : `border-2 bg-night-deep/55 ${state === "claimed" ? "border-success" : "border-white/45"}`
           }`}
+          style={{ width: s, height: s }}
         >
-          {/* A locked rung shows the padlock OVER a dimmed glyph rather than
-            hiding what it pays — the ladder is the reason to keep filling the
-            generation, so it has to be legible from the first percent. */}
-          <AppIcon
-            src={REWARD_ART[reward.icon]}
-            className={`h-[78%] w-[78%] ${state === "locked" ? "opacity-30" : ""}`}
-          />
+          <span className={state === "locked" ? "opacity-30" : ""}>
+            <NaRewardIcon kind={REWARD_KIND[DEX_MILESTONE_REWARDS[milestone].icon]} size={22} />
+          </span>
           {state === "locked" && (
-            <AppIcon src={LOCK_ICON} className="absolute h-3 w-3 opacity-90" />
+            <span className="absolute bottom-0 right-0">
+              <NaGlossIcon kind="lock" size={12} />
+            </span>
           )}
           {state === "claimed" && (
-            <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-hp-good ring-2 ring-primary">
+            <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-success">
               <Check className="h-2 w-2 text-white" strokeWidth={4} />
             </span>
           )}
         </span>
       </span>
-      {/* On the red face the threshold is white — the old foreground greys were
-          tuned for a card background and vanish against the primary fill. */}
-      <span
-        className={`text-[8px] font-bold leading-none tabular-nums ${
-          state === "locked" ? "text-white/55" : "text-white"
-        }`}
-      >
-        {milestone}%
-      </span>
-    </div>
-  );
-}
-
-/** One count on the back face. Icon and number only — no caption. */
-function StatTile({
-  value,
-  tone,
-  icon,
-  label,
-}: {
-  value: number;
-  tone: string;
-  icon: React.ReactNode;
-  /** Screen readers only: the icons carry the meaning visually. */
-  label: string;
-}) {
-  return (
-    <div
-      className="flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl bg-white/[0.08] py-2"
-      aria-label={`${label}: ${value}`}
-    >
-      {icon}
-      <span className={`text-[16px] font-extrabold leading-none tabular-nums ${tone}`}>
-        {value}
-      </span>
-    </div>
+      <span className={`na-label mt-1.5 tabular-nums ${state === "locked" ? "text-text-secondary" : "text-foreground"}`}>{milestone}%</span>
+    </span>
   );
 }
 
 /**
- * Per-generation completion and its four reward rungs, with the
- * caught/seen/shiny/total counts on the back, turned to every few seconds.
- *
- * The front is one red band: a single centred line naming the region and its
- * percentage, over a progress bar whose rungs ARE the rewards. There is no
- * Claim button — an unlocked rung is claimed by tapping it, which is what lets
- * the card be a line and a bar rather than three columns fighting for a phone's
- * width.
- *
- * Reactive to the Pokedex's generation filter: switching to Johto retitles this
- * "Johto Completion" and repoints every number and every rung at that
- * generation's ladder. That is why `gen` is a prop rather than internal state.
+ * Figma 6.1a: a region's completion and its four reward rungs on a red card; every
+ * few seconds it turns over to the caught, seen, shiny and total counts. It holds
+ * still after a tap and while a reward is waiting.
  */
 export function DexCompletionCard({ gen }: { gen: number }) {
   const pokedex = useGameStore((s) => s.pokedex);
@@ -177,174 +96,85 @@ export function DexCompletionCard({ gen }: { gen: number }) {
   const claimable = nextClaimableMilestone(stats, gen, claimedList);
 
   const [flipped, setFlipped] = useState(false);
-  // Timestamp until which the auto-flip is suspended by a tap, and whether a
-  // rung is currently claimable. Refs, not state: the interval reads them and
-  // must not be torn down and rebuilt every time either changes — an interval
-  // that restarts on each render never reaches its own delay.
+  // Refs, not state: the interval reads them and must not restart on every change.
   const holdUntil = useRef(0);
   const claimablePending = useRef(false);
   claimablePending.current = claimable !== null;
 
   useEffect(() => {
     const id = setInterval(() => {
-      // Both guards live INSIDE the tick. Checking "is anything claimable" in a
-      // separate effect keyed on `claimable` is not enough: that effect runs
-      // once when the value changes and the interval then turns the card over
-      // anyway a few seconds later, which is exactly what it was meant to stop.
-      if (claimablePending.current) return;
-      if (Date.now() < holdUntil.current) return;
+      if (claimablePending.current || Date.now() < holdUntil.current) return;
       setFlipped((f) => !f);
     }, FLIP_EVERY_MS);
     return () => clearInterval(id);
   }, []);
-
-  // Switching generation resets to the rewards face, so the title, the bar and
-  // the visible face all describe the same region on the first frame.
-  useEffect(() => {
-    setFlipped(false);
-  }, [gen]);
-
-  // Turn back at once if a rung becomes claimable while the stats are showing.
+  useEffect(() => setFlipped(false), [gen]);
   useEffect(() => {
     if (claimable !== null) setFlipped(false);
   }, [claimable]);
 
-  const pct = Math.round(stats.pct * 1000) / 10;
-
+  const hold = () => {
+    holdUntil.current = Date.now() + HOLD_AFTER_TAP_MS;
+  };
   const onClaim = (milestone: DexMilestone) => {
     hold();
     const res = claimDexReward(gen, milestone, useGameStore.getState());
     if (!res) return;
     playSfx("claim_reward");
-    toast.success(`${region} ${milestone}% complete`, {
-      description: res.text,
-      duration: 4000,
-    });
+    toast.success(`${region} ${milestone}% complete`, { description: res.text, duration: 4000 });
   };
 
-  const hold = () => {
-    holdUntil.current = Date.now() + HOLD_AFTER_TAP_MS;
+  const pct = Math.round(stats.pct * 1000) / 10;
+  const turn = () => {
+    hold();
+    setFlipped((f) => !f);
   };
-
-  const faceCls =
-    "press-card flex h-full w-full items-center gap-1.5 rounded-2xl border-2 border-white/20 p-2 text-left shadow-card";
 
   return (
-    <div className="flip-card h-[96px] w-full">
-      <div className="flip-card-inner" data-flipped={flipped}>
-        {/* Front — the whole face is the completion bar. */}
-        <div className="flip-face">
-          <button
-            type="button"
-            onClick={() => {
-              hold();
-              setFlipped(true);
-            }}
-            aria-label={`${region} completion — show caught, seen and shiny counts`}
-            className={`${faceCls} flex-col gap-1.5 bg-gradient-to-br from-primary to-primary/80 px-2.5`}
-          >
-            {/* Title and percentage on ONE centred line. Stacked they read as
-                two facts; side by side they read as the one sentence they are.
-                With the Claim button gone there is width to spare for it. */}
-            <div className="flex w-full items-center justify-center gap-1.5">
-              <MiniPokeball className="h-4 w-4 shrink-0" />
-              <span className="truncate text-[9px] font-bold uppercase leading-none tracking-wide text-white/85">
-                {region} Completion
+    <motion.button
+      key={flipped ? "back" : "front"}
+      type="button"
+      onClick={turn}
+      initial={{ rotateX: 90, opacity: 0.4 }}
+      animate={{ rotateX: 0, opacity: 1 }}
+      transition={{ duration: 0.28 }}
+      aria-label={flipped ? `${region} counts. Show completion rewards` : `${region} completion. Show caught, seen and shiny counts`}
+      className={
+        flipped
+          ? "grid w-full grid-cols-4 gap-2 rounded-[22px] bg-[#f4f6ff]/[0.92] p-3"
+          : "na-fill-brand flex w-full flex-col gap-3 rounded-[22px] px-4 pb-3 pt-3.5 shadow-[0_4px_0_#a3142c]"
+      }
+    >
+      {flipped ? (
+        [
+          { label: "Caught", value: stats.caught, icon: <MiniPokeball className="h-[22px] w-[22px]" /> },
+          { label: "Seen", value: stats.seen, icon: <Search className="h-[22px] w-[22px] text-night-base" strokeWidth={2.4} /> },
+          { label: "Shiny", value: stats.shiny, icon: <Sparkles className="h-[22px] w-[22px] text-reward-gold" strokeWidth={2.4} /> },
+          { label: "Total in this region", value: stats.total, icon: <BookOpen className="h-[22px] w-[22px] text-night-base" strokeWidth={2.4} /> },
+        ].map((c) => (
+          <span key={c.label} aria-label={`${c.label}: ${c.value}`} className="flex flex-col items-center gap-1">
+            {c.icon}
+            <span className="na-number-m text-night-base">{c.value}</span>
+          </span>
+        ))
+      ) : (
+        <>
+          <span className="na-headline na-emboss text-center text-foreground">
+            {region} Completion · {pct}%
+          </span>
+          {/* The rungs ARE the bar: the track is inset 20 each side and every rung sits on the inset span, so the fill reaches a rung as it unlocks. */}
+          <span className="relative block h-16 w-full">
+            <span className="absolute inset-x-5 top-[15px] h-2 overflow-hidden rounded bg-night-deep/45">
+              <span className="na-fill-gold block h-full rounded transition-[width] duration-500" style={{ width: `${Math.min(100, stats.pct * 100)}%` }} />
+            </span>
+            {DEX_MILESTONES.map((m) => (
+              <span key={m} className="absolute top-0 -translate-x-1/2" style={{ left: `calc(20px + ${m / 100} * (100% - 40px))` }}>
+                <Milestone milestone={m} state={dexMilestoneState(m, stats, gen, claimedList)} onClaim={() => onClaim(m)} />
               </span>
-              <span className="text-[15px] font-extrabold leading-none tabular-nums text-white">
-                {pct}%
-              </span>
-            </div>
-
-            {/* The reward rungs ARE the progress bar.
-             *
-             * They used to be a separate strip crammed into a middle column
-             * beside the pill, which is what made the row feel crowded — three
-             * elements each fighting for a third of a phone's width. Laid along
-             * the track they cost no extra width at all, and the bar gains a
-             * meaning it did not have: the fill physically reaches a rung at
-             * the moment that rung unlocks.
-             *
-             * That only holds because the track is INSET by half a rung at each
-             * end and every position is measured across the inset span. Placing
-             * a rung at a naive `left: 25%` would put its centre a half-rung to
-             * the left of where the fill says 25% is, and the 100% rung would
-             * hang off the card entirely. */}
-            <div
-              className="relative w-full"
-              style={{ "--rung": "clamp(22px, 7vw, 30px)" } as React.CSSProperties}
-            >
-              <div
-                className="absolute inset-x-[calc(var(--rung)/2)] h-1.5 -translate-y-1/2 overflow-hidden rounded-full bg-black/30"
-                style={{ top: "calc(var(--rung) / 2)" }}
-              >
-                <div
-                  className="h-full rounded-full bg-white transition-[width] duration-500"
-                  style={{ width: `${Math.min(100, stats.pct * 100)}%` }}
-                />
-              </div>
-              {DEX_MILESTONES.map((m) => (
-                <div
-                  key={m}
-                  className="absolute top-0 -translate-x-1/2"
-                  style={{ left: `calc(var(--rung) / 2 + ${m / 100} * (100% - var(--rung)))` }}
-                >
-                  <Milestone
-                    milestone={m}
-                    state={dexMilestoneState(m, stats, gen, claimedList)}
-                    onClaim={() => onClaim(m)}
-                  />
-                </div>
-              ))}
-              {/* Reserves the row's height: the rungs above are absolute and so
-                  contribute none of their own. */}
-              <div className="h-[calc(var(--rung)+12px)]" aria-hidden />
-            </div>
-          </button>
-        </div>
-
-        {/* Back — the counts, icons only. Deliberately NOT red: it is a
-            different kind of information, and the colour change is what makes
-            the turn legible at a glance. */}
-        <div className="flip-face flip-face-back">
-          <button
-            type="button"
-            onClick={() => {
-              hold();
-              setFlipped(false);
-            }}
-            aria-label={`${region} counts — show completion rewards`}
-            className={`${faceCls} bg-card`}
-          >
-            <div className="grid w-full grid-cols-4 gap-1.5">
-              <StatTile
-                label="Caught"
-                value={stats.caught}
-                tone="text-hp-good"
-                icon={<MiniPokeball className="h-5 w-5" />}
-              />
-              <StatTile
-                label="Seen"
-                value={stats.seen}
-                tone="text-foreground/70"
-                icon={<Eye className="h-5 w-5 text-foreground/45" />}
-              />
-              <StatTile
-                label="Shiny"
-                value={stats.shiny}
-                tone="text-poke-yellow"
-                icon={<Sparkles className="h-5 w-5 text-poke-yellow" />}
-              />
-              <StatTile
-                label="Total in this generation"
-                value={stats.total}
-                tone="text-foreground"
-                icon={<BookOpen className="h-5 w-5 text-primary" />}
-              />
-            </div>
-          </button>
-        </div>
-      </div>
-    </div>
+            ))}
+          </span>
+        </>
+      )}
+    </motion.button>
   );
 }
