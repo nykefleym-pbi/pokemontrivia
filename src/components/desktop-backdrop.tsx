@@ -1,96 +1,47 @@
-import { useMemo } from "react";
-import { motion, useReducedMotion } from "framer-motion";
-import { PokeballSpinner } from "@/components/game-ui";
-import { TypeIcon } from "@/components/type-chip";
-import { typeColorVar } from "@/lib/type-color";
-import type { PokeType } from "@/lib/pokemon-data.generated";
+import { AppIcon } from "@/components/app-icon";
+import { NaIcon } from "@/components/na/icon";
+import { UI_ICON } from "@/lib/app-icons";
 
-const TYPES: PokeType[] = [
-  "fire", "water", "electric", "grass", "ice", "fighting", "poison", "ground",
-  "flying", "psychic", "bug", "rock", "ghost", "dragon", "dark", "steel", "fairy", "normal",
+/** Paul's desktop keys (Figma 8.2); the question panel listens for them (na/battle.tsx). */
+const KEYS: [string, string][] = [
+  ["Up / Down", "Select an answer"],
+  ["Space", "Submit"],
+  ["1–4 or A–D", "Answer instantly"],
+  ["Ctrl", "Open your bag"],
 ];
 
-interface Drifter {
-  id: number;
-  kind: "ball" | "type";
-  type: PokeType;
-  size: number;
-  top: number;
-  left: number;
-  opacity: number;
-  dx: number;
-  dy: number;
-  rot: number;
-  dur: number;
-  delay: number;
-}
-
-const rand = (min: number, max: number) => min + Math.random() * (max - min);
-
-function buildDrifters(count: number): Drifter[] {
-  return Array.from({ length: count }, (_, id) => {
-    // A wide duration spread is the whole point: some pieces creep, others
-    // dart across "fast and wild" — feedback 2026-08-06.
-    const dur = rand(7, 26);
-    const wild = dur < 12; // the fast ones also travel further and spin harder
-    return {
-      id,
-      kind: id % 3 === 0 ? "type" : "ball",
-      type: TYPES[Math.floor(rand(0, TYPES.length))],
-      size: rand(30, 90),
-      top: rand(0, 94),
-      left: rand(0, 94),
-      opacity: rand(0.5, 0.82),
-      dx: rand(-1, 1) * (wild ? rand(90, 190) : rand(20, 70)),
-      dy: rand(-1, 1) * (wild ? rand(90, 190) : rand(20, 70)),
-      rot: rand(-1, 1) * (wild ? rand(120, 320) : rand(20, 90)),
-      dur,
-      delay: rand(0, 8),
-    };
-  });
-}
-
 /**
- * The ambient wallpaper behind the desktop phone mockup: the home tab's beige
- * (`.bg-poke-cream`) with Poké Balls and real type glyphs drifting at
- * randomised, wildly-varying speeds. Rendered only when the frame is active
- * (see routes/__root.tsx), so phones never pay for it. `pointer-events-none`
- * and low-opacity so it never competes with the phone it sits behind.
+ * Figma 8.2: the night around the desktop phone, the logo and the landing lines
+ * to its left and the keyboard card to its right. Rendered only when the phone
+ * is framed (routes/__root.tsx); the side pieces hide when the window is too
+ * narrow for them. Positioned off --frame-width, which the frame sets.
  */
 export function DesktopBackdrop() {
-  const reduced = useReducedMotion();
-  const drifters = useMemo(() => buildDrifters(reduced ? 12 : 24), [reduced]);
-
   return (
-    <div className="bg-poke-cream pointer-events-none fixed inset-0 z-0 overflow-hidden">
-      {drifters.map((d) => (
-        <motion.div
-          key={d.id}
-          className="absolute"
-          style={{
-            top: `${d.top}%`,
-            left: `${d.left}%`,
-            opacity: d.opacity,
-            // A soft shadow gives the white Poké Ball body a visible edge on the
-            // cream backdrop (it would otherwise disappear into it).
-            filter: "drop-shadow(0 3px 6px oklch(0.25 0.03 265 / 0.5))",
-          }}
-          animate={reduced ? undefined : { x: [0, d.dx, 0], y: [0, d.dy, 0], rotate: [0, d.rot, 0] }}
-          transition={{ duration: d.dur, delay: d.delay, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
-        >
-          {d.kind === "ball" ? (
-            <PokeballSpinner size={d.size} />
-          ) : (
-            // The real type glyph (public/types/*.svg) in its own type colour —
-            // the same icon the Pokédex detail screen drifts, not a plain disc.
-            <TypeIcon
-              type={d.type}
-              className="block shrink-0"
-              style={{ width: d.size * 0.82, height: d.size * 0.82, color: typeColorVar(d.type) }}
-            />
-          )}
-        </motion.div>
-      ))}
+    <div className="na-bg-night pointer-events-none fixed inset-0 z-0 overflow-hidden">
+      <div
+        className="absolute top-1/2 hidden w-[400px] -translate-y-1/2 flex-col items-center gap-2.5 text-center min-[1180px]:flex"
+        style={{ right: "calc(50% + var(--frame-width) / 2 + 115px)" }}
+      >
+        <AppIcon src={UI_ICON.appLogo} alt="Pokémon Trivia Battle" className="h-[150px] w-[260px] object-contain" eager />
+        <p className="na-title mt-3 text-foreground">Prove your Pokémon knowledge in battle!</p>
+        <p className="na-body max-w-[340px] text-text-secondary">Answer trivia, defeat trainers, catch Pokémon, and build your team!</p>
+      </div>
+      <div
+        className="na-deep absolute top-1/2 hidden w-[300px] -translate-y-1/2 flex-col gap-3 rounded-[22px] p-5 min-[1180px]:flex"
+        style={{ left: "calc(50% + var(--frame-width) / 2 + 95px)" }}
+      >
+        <span className="flex items-center gap-2">
+          <NaIcon name="keyboard" size={22} />
+          <span className="na-label text-reward-gold">KEYBOARD</span>
+        </span>
+        {KEYS.map(([k, what]) => (
+          <span key={k} className="flex items-center gap-2.5">
+            <span className="na-body-strong rounded-lg bg-night-card-2 px-2.5 py-1 text-foreground shadow-[0_3px_0_#141A3F]">{k}</span>
+            <span className="na-body text-text-secondary">{what}</span>
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

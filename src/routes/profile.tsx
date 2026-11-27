@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { RotateCcw, Check, Search, Volume2, VolumeX, Music, ChevronRight, Copy, Share2, UserPlus, Loader2, ImageDown, Lightbulb, Bug, Bell, BellOff, Swords, ZapOff, Facebook } from "lucide-react";
+import { Check, Search, Copy, Share2, UserPlus, Loader2, ImageDown, Swords } from "lucide-react";
 import { NaIcon } from "@/components/na/icon";
 import { ShareCardDialog } from "@/components/share-card-dialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useGameStore } from "@/lib/store";
 import { bestDayStreak, dayStreak } from "@/lib/win-streak";
 import { NaTopBar } from "@/components/na/top-bar";
+import { NaToggleRow } from "@/components/na/toggle-row";
 import { NaGlossIcon } from "@/components/na/gloss-icon";
 import { NaRewardIcon } from "@/components/na/reward-icon";
 import { NaSheet } from "@/components/na/sheet";
@@ -55,7 +56,7 @@ import { matchesPartnerFilters, partnerTypeOptions } from "@/lib/partner-filter"
 import { EvolutionScreen } from "@/components/evolution-screen";
 import { PokemonSprite } from "@/components/game-ui";
 import { TypeChip } from "@/components/type-chip";
-import { FACEBOOK_PAGE_NAME, FACEBOOK_PAGE_URL } from "@/lib/social-links";
+import { FACEBOOK_PAGE_URL } from "@/lib/social-links";
 import { BattleLogList } from "@/components/battle-log-list";
 import {
   EvolutionCard,
@@ -66,7 +67,6 @@ import {
 } from "@/components/profile-parts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -1031,349 +1031,129 @@ function ProfilePage() {
           that: only let an external close request through when no child
           overlay is open — an explicit close (the X / Continue button) always
           still works via setSettingsOpen(false) directly. */}
-      <Sheet
-        open={settingsOpen}
-        onOpenChange={(open) => {
-          if (!open && suppressSettingsCloseRef.current) return;
-          setSettingsOpen(open);
-        }}
-      >
-        <SheetContent
-          side="bottom"
-          className="rounded-t-3xl bg-poke-cream max-h-[85vh] overflow-y-auto"
-        >
-          <SheetHeader>
-            <SheetTitle>Settings</SheetTitle>
-          </SheetHeader>
-          <div className="mt-3 space-y-5">
-            <section>
-              <div className="mb-2 font-pixel-xs uppercase text-foreground/45">General</div>
-              <div className="overflow-hidden rounded-3xl bg-card shadow-card divide-y divide-border">
-                <div className="flex items-center justify-between p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
-                      <Music className="h-5 w-5 text-foreground" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-foreground">Music</div>
-                      <div className="text-xs text-foreground/55">Background themes</div>
-                    </div>
-                  </div>
-                  <Switch
-                    checked={musicOn}
-                    onCheckedChange={(v) => {
-                      setMusicOn(v);
-                      setMusicState(v);
-                    }}
-                  />
-                </div>
-                <div className="flex items-center gap-3 p-4">
-                  <div className="text-xs font-semibold text-foreground/55">Music volume</div>
+      {/* 8.1 Settings: a full screen of its own. The pickers and the feedback and reset
+          dialogs still open over it. Dark only (Paul), so no Appearance section. */}
+      {settingsOpen && (
+        <div className="na-bg-night fixed inset-0 z-50 flex flex-col overflow-y-auto pt-[env(safe-area-inset-top)]">
+          <div className="flex h-[52px] shrink-0 items-center gap-3 px-4">
+            <button type="button" aria-label="Back" onClick={() => setSettingsOpen(false)} className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-white/10 text-foreground">
+              <NaIcon name="arrow-left" size={20} />
+            </button>
+            <h1 className="na-display-s flex-1 text-foreground">Settings</h1>
+          </div>
+          <div className="flex flex-col gap-3 px-4 pb-[calc(env(safe-area-inset-bottom)+24px)] pt-2">
+            <span className="na-label uppercase text-text-secondary">Sound</span>
+            <div className="flex flex-col">
+              <NaToggleRow
+                label="Music"
+                description="Enjoy music on the Home screen and in battles!"
+                on={musicOn}
+                onChange={(v) => {
+                  setMusicOn(v);
+                  setMusicState(v);
+                }}
+              >
+                {musicOn && (
+                  <Slider aria-label="Music volume" value={[musicVol]} min={0} max={100} step={1} onValueChange={(v) => { setMusicVolState(v[0]); setMusicVolume(v[0]); }} />
+                )}
+              </NaToggleRow>
+              <NaToggleRow
+                label="Sound effects"
+                description="Hear every hit, cheer, and tap!"
+                on={sfxOn}
+                onChange={(v) => {
+                  setSfxOn(v);
+                  setSfxState(v);
+                }}
+              >
+                {sfxOn && (
                   <Slider
-                    className="flex-1"
-                    value={[musicVol]}
-                    min={0}
-                    max={100}
-                    step={1}
-                    onValueChange={(v) => {
-                      setMusicVolState(v[0]);
-                      setMusicVolume(v[0]);
-                    }}
-                  />
-                  <div className="w-10 text-right text-xs font-semibold tabular-nums text-foreground">
-                    {musicVol}%
-                  </div>
-                </div>
-                <div className="flex items-center justify-between p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
-                      {sfxOn ? (
-                        <Volume2 className="h-5 w-5 text-foreground" />
-                      ) : (
-                        <VolumeX className="h-5 w-5 text-foreground" />
-                      )}
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-foreground">Sound effects</div>
-                      <div className="text-xs text-foreground/55">Battle cries &amp; SFX</div>
-                    </div>
-                  </div>
-                  <Switch
-                    checked={sfxOn}
-                    onCheckedChange={(v) => {
-                      setSfxOn(v);
-                      setSfxState(v);
-                    }}
-                  />
-                </div>
-                <div className="flex items-center gap-3 p-4">
-                  <div className="text-xs font-semibold text-foreground/55">SFX volume</div>
-                  <Slider
-                    className="flex-1"
+                    aria-label="Sound effects volume"
                     value={[sfxVol]}
                     min={0}
                     max={100}
                     step={1}
-                    onValueChange={(v) => {
-                      setSfxVolState(v[0]);
-                      setSfxVolume(v[0]);
-                    }}
+                    onValueChange={(v) => { setSfxVolState(v[0]); setSfxVolume(v[0]); }}
                     onValueCommit={() => playSfx("tap")}
                   />
-                  <div className="w-10 text-right text-xs font-semibold tabular-nums text-foreground">
-                    {sfxVol}%
-                  </div>
-                </div>
-                <div className="flex items-center justify-between p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
-                      <ZapOff className="h-5 w-5 text-foreground" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-foreground">Reduce motion</div>
-                      <div className="text-xs text-foreground/55">
-                        Minimize animations and effects
-                      </div>
-                    </div>
-                  </div>
-                  <Switch checked={reducedMotion} onCheckedChange={(v) => setReducedMotion(v)} />
-                </div>
-                {pushSupported() && (
-                  <div className="flex items-center justify-between p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
-                        {pushSubscribed ? (
-                          <Bell className="h-5 w-5 text-foreground" />
-                        ) : (
-                          <BellOff className="h-5 w-5 text-foreground" />
-                        )}
-                      </div>
-                      <div>
-                        <div className="text-sm font-semibold text-foreground">Notifications</div>
-                        <div className="text-xs text-foreground/55">
-                          Mode reminders, friend requests &amp; more
-                        </div>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={pushSubscribed}
-                      disabled={pushBusy}
-                      onCheckedChange={(v) => void togglePush(v)}
-                    />
-                  </div>
                 )}
-              </div>
-            </section>
+              </NaToggleRow>
+            </div>
 
-            <section>
-              <div className="mb-2 font-pixel-xs uppercase text-foreground/45">Feedback</div>
-              <div className="overflow-hidden rounded-3xl bg-card shadow-card divide-y divide-border">
-                <button
-                  onClick={() => setFeedbackOpen("suggestion")}
-                  className="flex w-full items-center justify-between p-4 text-left transition press-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
-                      <Lightbulb className="h-5 w-5 text-foreground" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-foreground">
-                        Submit a suggestion
-                      </div>
-                      <div className="text-xs text-foreground/55">
-                        Ideas to make the game better
-                      </div>
-                    </div>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-foreground/40" />
-                </button>
-                <button
-                  onClick={() => setFeedbackOpen("bug")}
-                  className="flex w-full items-center justify-between p-4 text-left transition press-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
-                      <Bug className="h-5 w-5 text-foreground" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-foreground">Report a bug</div>
-                      <div className="text-xs text-foreground/55">
-                        Something broken? Tell us about it
-                      </div>
-                    </div>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-foreground/40" />
-                </button>
-              </div>
-            </section>
+            <span className="na-label uppercase text-text-secondary">Battles</span>
+            <NaToggleRow
+              label="Reduce motion"
+              description="Reduce shaking and flashes during battles. Automatically enabled if your device uses reduced motion."
+              on={reducedMotion}
+              onChange={(v) => setReducedMotion(v)}
+            />
+            <NaGlassRow
+              lead={<img src={versusBackdropSrc(versusBackdropId)} alt="" className="h-8 w-8 rounded-lg object-cover" />}
+              title="Battle background"
+              sub={versusBackdrop(versusBackdropId).label}
+              trailing={<NaIcon name="chevron-right" size={18} className="text-text-muted" />}
+              onClick={() => setBackdropPickerOpen(true)}
+            />
 
-            <section>
-              <div className="mb-2 font-pixel-xs uppercase text-foreground/45">Community</div>
-              <div className="overflow-hidden rounded-3xl bg-card shadow-card divide-y divide-border">
-                {/* An <a>, not a router Link: this leaves the app. rel=noreferrer
-                    as well as noopener so the Facebook tab gets no referrer. */}
-                <a
-                  href={FACEBOOK_PAGE_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex w-full items-center justify-between p-4 text-left transition press-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
-                      <Facebook className="h-5 w-5 text-foreground" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-foreground">
-                        {FACEBOOK_PAGE_NAME} on Facebook
-                      </div>
-                      <div className="text-xs text-foreground/55">
-                        News, events and new questions
-                      </div>
-                    </div>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-foreground/40" />
-                </a>
-                <button
-                  onClick={() => {
-                    const url = FACEBOOK_PAGE_URL;
-                    // Native share sheet where there is one (this is a PWA on a
-                    // phone most of the time); clipboard is the desktop fallback.
-                    if (typeof navigator !== "undefined" && navigator.share) {
-                      void navigator
-                        .share({ title: FACEBOOK_PAGE_NAME, url })
-                        .catch(() => undefined);
-                      return;
-                    }
-                    void navigator.clipboard
-                      ?.writeText(url)
-                      .then(() => toast.success("Facebook page link copied"))
-                      .catch(() => toast.error("Could not copy the link"));
-                  }}
-                  className="flex w-full items-center justify-between p-4 text-left transition press-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
-                      <Share2 className="h-5 w-5 text-foreground" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-foreground">Share the page</div>
-                      <div className="text-xs text-foreground/55">
-                        Invite a friend to follow along
-                      </div>
-                    </div>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-foreground/40" />
-                </button>
-              </div>
-            </section>
+            {pushSupported() && (
+              <>
+                <span className="na-label uppercase text-text-secondary">Reminders</span>
+                <NaToggleRow
+                  label="Daily reminder"
+                  description="Get reminded when your Daily Quest and daily gift are ready!"
+                  on={pushSubscribed}
+                  disabled={pushBusy}
+                  onChange={(v) => void togglePush(v)}
+                />
+              </>
+            )}
 
-            <section>
-              <div className="mb-2 font-pixel-xs uppercase text-foreground/45">Trainer</div>
-              <div className="overflow-hidden rounded-3xl bg-card shadow-card divide-y divide-border">
-                <button
-                  onClick={() => {
-                    setNameDraft(trainerName);
-                    setRenameOpen(true);
-                  }}
-                  className="flex w-full items-center justify-between p-4 text-left transition press-lg"
-                >
-                  <div>
-                    <div className="text-sm font-semibold text-foreground">Rename trainer</div>
-                    <div className="text-xs text-foreground/55 truncate">
-                      Currently: {trainerName}
-                    </div>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-foreground/40" />
-                </button>
-                <button
-                  onClick={() => {
-                    setTrainerPickerOpen(true);
-                  }}
-                  className="flex w-full items-center justify-between p-4 text-left transition press-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted">
-                      <img
-                        src={trainerSpriteUrl(trainerSprite)}
-                        alt=""
-                        className="sprite h-8 w-8 object-contain"
-                      />
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-foreground">Repick avatar</div>
-                      <div className="text-xs text-foreground/55 truncate">
-                        Currently: {trainerSprite}
-                      </div>
-                    </div>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-foreground/40" />
-                </button>
-                <button
-                  onClick={() => {
-                    setPickerOpen(true);
-                  }}
-                  className="flex w-full items-center justify-between p-4 text-left transition press-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted">
-                      <PokemonSprite id={pokemon.id} alt="" className="sprite h-8 w-8" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-foreground">Repick partner</div>
-                      <div className="text-xs text-foreground/55 truncate">
-                        Currently: {pokemon.name}
-                      </div>
-                    </div>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-foreground/40" />
-                </button>
-                <button
-                  onClick={() => {
-                    setBackdropPickerOpen(true);
-                  }}
-                  className="flex w-full items-center justify-between p-4 text-left transition press-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    {/* The thumbnail IS the setting — a name alone tells a
-                        player nothing about art they have not seen. */}
-                    <img
-                      src={versusBackdropSrc(versusBackdropId)}
-                      alt=""
-                      className="h-10 w-10 shrink-0 rounded-2xl object-cover"
-                    />
-                    <div>
-                      <div className="text-sm font-semibold text-foreground">Battle background</div>
-                      <div className="text-xs text-foreground/55 truncate">
-                        Currently: {versusBackdrop(versusBackdropId).label}
-                      </div>
-                    </div>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-foreground/40" />
-                </button>
-              </div>
-            </section>
+            <span className="na-label uppercase text-text-secondary">Feedback</span>
+            <NaGlassRow lead={<NaGlossIcon kind="idea" size={32} />} title="Send a suggestion" sub="Have an idea? We'd love to hear it!" trailing={<NaIcon name="chevron-right" size={18} className="text-text-muted" />} onClick={() => setFeedbackOpen("suggestion")} />
+            <NaGlassRow lead={<NaGlossIcon kind="bug" size={32} />} title="Report a bug" sub="Found a bug? Let us know!" trailing={<NaIcon name="chevron-right" size={18} className="text-text-muted" />} onClick={() => setFeedbackOpen("bug")} />
 
-            <section>
-              <div className="mb-2 font-pixel-xs uppercase text-destructive/70">Danger zone</div>
-              <button
-                onClick={() => {
-                  playSfx("warning");
-                  setResetOpen(true);
-                }}
-                className="flex w-full items-center gap-3 rounded-3xl bg-card p-4 shadow-card transition press"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-destructive/10">
-                  <RotateCcw className="h-5 w-5 text-destructive" />
-                </div>
-                <div className="text-left">
-                  <div className="text-sm font-semibold text-destructive">Reset progress</div>
-                  <div className="text-xs text-foreground/55">Wipes XP, badges & Pokédex</div>
-                </div>
-              </button>
-            </section>
+            <span className="na-label uppercase text-text-secondary">Community</span>
+            <NaGlassRow
+              lead={<NaGlossIcon kind="facebook" size={32} />}
+              title="Join us on Facebook"
+              sub="Meet fellow Trainers and get the latest game news!"
+              trailing={<NaIcon name="chevron-right" size={18} className="text-text-muted" />}
+              onClick={() => window.open(FACEBOOK_PAGE_URL, "_blank", "noopener,noreferrer")}
+            />
+            <NaGlassRow
+              lead={<NaGlossIcon kind="share" size={32} />}
+              title="Share the game"
+              sub="Invite friends to join the battle!"
+              trailing={<NaIcon name="chevron-right" size={18} className="text-text-muted" />}
+              onClick={() => {
+                const url = window.location.origin;
+                // The phone's share sheet where there is one; the clipboard on a desktop.
+                if (navigator.share) {
+                  void navigator.share({ title: "Pokémon Trivia Battle", text: "Battle me in Pokémon trivia!", url }).catch(() => undefined);
+                  return;
+                }
+                void navigator.clipboard
+                  ?.writeText(url)
+                  .then(() => toast.success("Link copied!"))
+                  .catch(() => toast.error("Could not copy the link"));
+              }}
+            />
+
+            <span className="na-label uppercase text-danger">Danger zone</span>
+            <NaGlassRow
+              tone="danger"
+              lead={<NaGlossIcon kind="warning" size={32} />}
+              title="Reset progress"
+              sub="Start fresh from Level 1. All your Pokémon, items, and coins will be lost. This action cannot be undone."
+              trailing={<NaIcon name="chevron-right" size={18} className="text-text-muted" />}
+              onClick={() => {
+                playSfx("warning");
+                setResetOpen(true);
+              }}
+            />
           </div>
-        </SheetContent>
-      </Sheet>
+        </div>
+      )}
 
       {/* All stats sheet */}
       <Sheet open={statsOpen} onOpenChange={setStatsOpen}>

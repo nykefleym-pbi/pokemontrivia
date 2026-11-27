@@ -556,14 +556,14 @@
 .app-root--framed {
   display: grid;
   place-items: center;
-  /* Tight margin so the phone gets as much of the window as possible. */
-  padding: 0.5rem;
+  /* 28px top and bottom (Figma 8.2), so the 13px bezel ring is never cut off. */
+  padding: 28px 0.5rem;
   /* No background here: the beige <DesktopBackdrop> (z-0) is the surround. */
   background: transparent;
   /* Aspect-locked to a real phone (9 : 19.5): the height fills the window (up to
    * the app's native 480px width → ~1040px tall) and the WIDTH is derived from
    * it, so the mockup keeps true handset proportions instead of going squarish. */
-  --frame-height: min(calc(100dvh - 1rem), 1040px);
+  --frame-height: min(calc(100dvh - 56px), 1040px);
   --frame-width: min(calc(100vw - 1rem), calc(var(--frame-height) * 9 / 19.5));
 }
 .phone-frame {

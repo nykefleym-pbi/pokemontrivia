@@ -1,6 +1,5 @@
 import * as React from "react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
 import { NaIcon } from "@/components/na/icon";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { NaTypeChip } from "@/components/na/type-chip";
@@ -443,6 +442,42 @@ export function NaQuestionPanel({
   banner?: React.ReactNode;
   panelRef?: React.Ref<HTMLDivElement>;
 }) {
+  // Desktop keys (Figma 8.2): Up / Down select, Space submits, 1–4 or A–D answer at once, Ctrl opens the bag.
+  const [sel, setSel] = useState<number | null>(null);
+  const bagRef = useRef<HTMLSpanElement>(null);
+  useEffect(() => setSel(null), [question]);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      if (e.key === "Control") return void bagRef.current?.querySelector("button")?.click();
+      const k = e.key.length === 1 ? e.key.toLowerCase() : "";
+      const direct = k ? Math.max("1234".indexOf(k), "abcd".indexOf(k)) : -1;
+      if (direct >= 0 && direct < options.length) {
+        if (!disabled(direct)) {
+          e.preventDefault();
+          onAnswer(direct);
+        }
+        return;
+      }
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        const step = e.key === "ArrowDown" ? 1 : -1;
+        let i = sel ?? (step > 0 ? -1 : options.length);
+        for (let n = 0; n < options.length; n++) {
+          i = (i + step + options.length) % options.length;
+          if (!disabled(i)) return setSel(i);
+        }
+        return;
+      }
+      if (e.key === " " && sel != null && !disabled(sel)) {
+        e.preventDefault();
+        onAnswer(sel);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [options.length, disabled, onAnswer, sel]);
   return (
     <div
       ref={panelRef}
@@ -452,7 +487,9 @@ export function NaQuestionPanel({
         <NaTimerChip seconds={seconds} max={maxSeconds} />
         <span className="na-label rounded-full bg-white/10 px-3 py-1.5 uppercase text-text-secondary">{category}</span>
         <span className="flex-1" />
-        {bag}
+        <span ref={bagRef} className="contents">
+          {bag}
+        </span>
         <span className="na-number-m text-text-secondary">{progress}</span>
       </div>
       <p className="na-title text-foreground">{question}</p>
@@ -466,7 +503,7 @@ export function NaQuestionPanel({
               data-testid={`option-${i}`}
               disabled={disabled(i)}
               onClick={() => onAnswer(i)}
-              className={cn(answerTileClass(st), "transition-transform active:translate-y-[3px] disabled:cursor-default")}
+              className={cn(answerTileClass(st), sel === i && st === "default" && "na-answer-selected", "transition-transform active:translate-y-[3px] disabled:cursor-default")}
             >
               <NaAnswerFace index={i} text={opt} state={st} />
             </button>
