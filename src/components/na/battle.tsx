@@ -84,6 +84,7 @@ export function FieldSprite({
   k,
   cx,
   feetY,
+  centerY,
   className,
   style,
   spriteRef,
@@ -96,6 +97,8 @@ export function FieldSprite({
   k: number;
   cx: number;
   feetY: number;
+  /** Centre the visible sprite on this y instead of standing it on feetY (a hovering boss). */
+  centerY?: number;
   className?: string;
   style?: React.CSSProperties;
   /** The box the effects move (lunge, knock-back, white flash). */
@@ -117,7 +120,7 @@ export function FieldSprite({
     <div
       ref={spriteRef}
       className={cn("absolute", className)}
-      style={{ left: cx - (t.w * k) / 2, top: feetY - t.h * k, width: t.w * k, height: t.h * k, ...style }}
+      style={{ left: cx - (t.w * k) / 2, top: centerY != null ? centerY - (t.h * k) / 2 : feetY - t.h * k, width: t.w * k, height: t.h * k, ...style }}
     >
       <img
         src={src}

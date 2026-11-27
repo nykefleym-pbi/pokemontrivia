@@ -1,6 +1,6 @@
 import * as React from "react";
 import { motion } from "framer-motion";
-import { Sparkles } from "lucide-react";
+import { Clock, Flame, Sparkles, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -163,6 +163,73 @@ export function NaConfetti({ w, h, n = 40, delay = 0 }: { w: number; h: number; 
           animate={{ y: 0, opacity: p.o, rotate: p.rot }}
           transition={{ delay: delay + (i % 12) * 0.03, duration: 0.9 + (p.y / h) * 0.7, ease: "easeOut" }}
         />
+      ))}
+    </div>
+  );
+}
+
+const WEEK_DAYS = ["M", "T", "W", "T", "F", "S", "S"];
+
+/** Figma "Day dot" × 7, Monday first: Done (flame fill), Today (flame ring), Future. Today's dot pops when done. */
+export function NaDayDots({ week, today, popDelay = 0.8 }: { week: boolean[]; today: number; popDelay?: number }) {
+  return (
+    <div className="flex gap-1.5" aria-label={`${week.filter(Boolean).length} days this week`}>
+      {WEEK_DAYS.map((d, i) => {
+        const done = week[i];
+        const isToday = i === today;
+        return (
+          <div key={i} className="flex w-10 flex-col items-center gap-1">
+            <motion.span
+              className={cn(
+                "flex h-9 w-9 items-center justify-center rounded-full",
+                done ? "na-fill-flame shadow-[0_0_18px_rgb(255_138_31/0.55)]" : isToday ? "border-[2.5px] border-[#ff8a1f] bg-night-deep" : "bg-white/10",
+              )}
+              initial={isToday && done ? { scale: 0.4 } : false}
+              animate={isToday && done ? { scale: [0.4, 1.2, 1] } : undefined}
+              transition={{ delay: popDelay, duration: 0.35 }}
+            >
+              {(done || isToday) && (
+                <Flame className={cn("h-[18px] w-[18px]", done ? "fill-white text-white" : "text-[#ff8a1f]")} aria-hidden />
+              )}
+            </motion.span>
+            <span className={cn("na-label", isToday ? "text-foreground" : "text-text-secondary")}>{d}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Figma "Daily mark": one Poké Ball per Daily Quest question, in the reward-icon style. */
+export type DailyMarkState = "right" | "wrong" | "timeout" | "now" | "empty";
+export function NaDailyMarks({ marks }: { marks: DailyMarkState[] }) {
+  return (
+    <div className="flex gap-1" aria-label={`${marks.filter((m) => m === "right").length} right so far`}>
+      {marks.map((m, i) => (
+        <span key={i} className="relative h-8 w-8 shrink-0">
+          {m === "empty" || m === "now" ? (
+            <span
+              className={cn(
+                "absolute left-[2.5px] top-[2.5px] h-[27px] w-[27px] rounded-full border-2",
+                m === "now" ? "border-reward-gold bg-reward-gold/[0.12]" : "border-dashed border-white/30",
+              )}
+            />
+          ) : (
+            <svg viewBox="0 0 32 32" className="h-8 w-8" style={{ opacity: m === "timeout" ? 0.55 : 1 }} aria-hidden>
+              <circle cx="16" cy="16" r="13.5" fill={m === "right" ? "#F4F6FF" : "#8E98CF"} />
+              <path d="M2.5 16a13.5 13.5 0 0 1 27 0z" fill={m === "right" ? "#FF3B4E" : "#4B5590"} />
+              <path d="M2.5 16h27" stroke="#0B1026" strokeWidth="3" />
+              <circle cx="16" cy="16" r="13.5" stroke="#0B1026" strokeWidth="3" fill="none" />
+              <circle cx="16" cy="16" r="4.5" fill={m === "right" ? "#FFFFFF" : "#8E98CF"} stroke="#0B1026" strokeWidth="3" />
+              <path d="M8 9.5a9 9 0 0 1 5-3.5" stroke="#FFFFFF" strokeOpacity=".75" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+            </svg>
+          )}
+          {(m === "wrong" || m === "timeout") && (
+            <span className={cn("absolute left-[18px] top-[18px] flex h-4 w-4 items-center justify-center rounded-full", m === "wrong" ? "bg-danger" : "bg-night-card")}>
+              {m === "wrong" ? <X className="h-2.5 w-2.5 text-foreground" strokeWidth={3} /> : <Clock className="h-2.5 w-2.5 text-foreground" strokeWidth={3} />}
+            </span>
+          )}
+        </span>
       ))}
     </div>
   );

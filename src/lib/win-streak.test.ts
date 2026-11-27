@@ -77,4 +77,10 @@ describe("dayStreak", () => {
     // Friday win, Wednesday win, last Sunday (outside this week) win
     expect(weekWins([at(0, true), at(2, true), at(5, true)], now)).toEqual([false, false, true, false, true, false, false]);
   });
+
+  it("daily: counts Daily Quests only", () => {
+    const log = [at(0, true, "daily"), at(1, true, "daily"), at(1, true)];
+    expect(dayStreak(log, now, true)).toEqual({ days: 2, secured: true });
+    expect(weekWins(log, now, true)).toEqual([false, false, false, true, true, false, false]);
+  });
 });

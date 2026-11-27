@@ -1,11 +1,7 @@
 import { motion } from "framer-motion";
-import { Flame } from "lucide-react";
 import { NaButton } from "@/components/na/button";
-import { NaWordmark } from "@/components/na/celebration";
+import { NaDayDots, NaWordmark } from "@/components/na/celebration";
 import { NaRewardIcon } from "@/components/na/reward-icon";
-import { cn } from "@/lib/utils";
-
-const DAYS = ["M", "T", "W", "T", "F", "S", "S"];
 
 /**
  * Figma 4.2 "Streak safe (first win of the day)": an ember catches, the flame
@@ -71,30 +67,7 @@ export function StreakSafe({
       </div>
       <span className="na-display-m text-center uppercase text-text-secondary">Day streak</span>
       <NaWordmark kind="streak">STREAK SAFE!</NaWordmark>
-      <div className="flex gap-1.5" aria-label={`${week.filter(Boolean).length} days won this week`}>
-        {DAYS.map((d, i) => {
-          const done = week[i];
-          const isToday = i === today;
-          return (
-            <div key={i} className="flex w-10 flex-col items-center gap-1">
-              <motion.span
-                className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-full",
-                  done ? "na-fill-flame shadow-[0_0_18px_rgb(255_138_31/0.55)]" : isToday ? "border-[2.5px] border-[#ff8a1f] bg-night-deep" : "bg-white/10",
-                )}
-                initial={isToday && done ? { scale: 0.4 } : false}
-                animate={isToday && done ? { scale: [0.4, 1.2, 1] } : undefined}
-                transition={{ delay: 0.8, duration: 0.35 }}
-              >
-                {(done || isToday) && (
-                  <Flame className={cn("h-[18px] w-[18px]", done ? "fill-white text-white" : "text-[#ff8a1f]")} aria-hidden />
-                )}
-              </motion.span>
-              <span className={cn("na-label", isToday ? "text-foreground" : "text-text-secondary")}>{d}</span>
-            </div>
-          );
-        })}
-      </div>
+      <NaDayDots week={week} today={today} />
       <div className="min-h-2 flex-1" />
       <NaButton block onClick={onContinue}>
         Let&apos;s go!

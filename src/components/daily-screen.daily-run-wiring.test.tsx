@@ -111,6 +111,8 @@ async function runDaily(script: Action[]) {
   seedStore();
   const questions = makeQuestions(script.length);
   render(<DailyScreen questions={questions} onExit={() => {}} />);
+  // 5.1: the intro comes first; the run starts on Start.
+  fireEvent.click(screen.getByRole("button", { name: "Start" }));
 
   for (const step of script) {
     if (step === "timeout") {
