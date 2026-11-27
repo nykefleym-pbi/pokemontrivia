@@ -14,6 +14,9 @@ import { ApiError } from "@/lib/api/client";
 import { MegaRaidScreen } from "@/components/mega/MegaRaidScreen";
 import { MegaLeaderboard } from "@/components/mega/MegaLeaderboard";
 import { MegaIntro } from "@/components/mega/MegaIntro";
+import { NaSheet } from "@/components/na/sheet";
+import { NaGlossIcon } from "@/components/na/gloss-icon";
+import { NaIcon } from "@/components/na/icon";
 import { RouteHome, type MegaHomeState } from "@/components/route-home";
 import { EliteChallenge } from "@/components/elite-challenge";
 import { LevelUpScreen } from "@/components/level-up-screen";
@@ -165,6 +168,9 @@ function BattlePage() {
   const pendingElite = nextPendingElite(peakLevel, defeatedElites);
   // 11.1: a pending challenger stands on the road; her stop opens the 11.2 challenge.
   const [eliteOpen, setEliteOpen] = useState(false);
+  const [whatsNewOpen, setWhatsNewOpen] = useState(false);
+  // 14.3: the load that failed, to run again from the No connection sheet.
+  const [offlineRetry, setOfflineRetry] = useState<null | (() => void)>(null);
   const eliteTakeover = !!pendingElite && eliteOpen && phase !== "elite";
 
   // Home-screen Mega Raid card state (the raid entry moved here from the Battle
@@ -350,18 +356,18 @@ function BattlePage() {
       setPhase("fighting");
     } catch (e) {
       if (e instanceof ApiError && e.status === 429) {
-        toast.error("Rate limited. Please wait a moment.");
+        toast.error("Lots of trainers are battling right now. Try again in a moment!");
         setPhase("home");
         return;
       }
       if (e instanceof ApiError && e.status === 402) {
-        toast.error("AI credits exhausted. Add credits in Settings.");
+        toast.error("Battles are taking a short break. Try again soon!");
         setPhase("home");
         return;
       }
       console.error(e);
-      toast.error("Couldn't prepare battle. Try again.");
       setPhase("home");
+      setOfflineRetry(() => () => void startBattle());
     }
   }
 
@@ -391,18 +397,18 @@ function BattlePage() {
       setPhase("elite");
     } catch (e) {
       if (e instanceof ApiError && e.status === 429) {
-        toast.error("Rate limited.");
+        toast.error("Lots of trainers are battling right now. Try again in a moment!");
         setPhase("home");
         return;
       }
       if (e instanceof ApiError && e.status === 402) {
-        toast.error("AI credits exhausted.");
+        toast.error("Battles are taking a short break. Try again soon!");
         setPhase("home");
         return;
       }
       console.error(e);
-      toast.error("Couldn't prepare Elite battle.");
       setPhase("home");
+      setOfflineRetry(() => () => void startElite());
     }
   }
 
@@ -422,8 +428,8 @@ function BattlePage() {
       setPhase("daily");
     } catch (e) {
       console.error(e);
-      toast.error("Couldn't load daily.");
       setPhase("home");
+      setOfflineRetry(() => () => void startDaily());
     }
   }
 
@@ -458,18 +464,18 @@ function BattlePage() {
       setPhase("weekly");
     } catch (e) {
       if (e instanceof ApiError && e.status === 429) {
-        toast.error("Rate limited.");
+        toast.error("Lots of trainers are battling right now. Try again in a moment!");
         setPhase("home");
         return;
       }
       if (e instanceof ApiError && e.status === 402) {
-        toast.error("AI credits exhausted.");
+        toast.error("Battles are taking a short break. Try again soon!");
         setPhase("home");
         return;
       }
       console.error(e);
-      toast.error("Couldn't prepare Weekly League.");
       setPhase("home");
+      setOfflineRetry(() => () => void startWeekly());
     }
   }
 
@@ -501,8 +507,8 @@ function BattlePage() {
       setPhase("mega");
     } catch (e) {
       console.error(e);
-      toast.error("Couldn't load the Mega Raid.");
       setPhase("home");
+      setOfflineRetry(() => () => void startMega());
     }
   }
 
@@ -522,8 +528,8 @@ function BattlePage() {
       setPhase("megaIntro");
     } catch (e) {
       console.error(e);
-      toast.error("Couldn't load the Mega Raid.");
       setPhase("home");
+      setOfflineRetry(() => () => void openMegaIntro());
     }
   }
 
@@ -630,18 +636,11 @@ function BattlePage() {
       heroSrc?: string;
       heroPokeId?: number;
     }> = [];
-    // What's New leads the carousel until dismissed (once per release).
+    // 14.6: a new release's What's New is this open's one pop-up, in place of the carousel.
     if (lastSeenWhatsNew < WHATS_NEW.version) {
-      cards.push({
-        kind: "whatsnew",
-        // No title: the "WHAT'S NEW" pill this card renders above its bullets
-        // is the heading, and a second one underneath it read as a duplicate.
-        title: "",
-        desc: WHATS_NEW.bullets.join("\n"),
-        chip: WHATS_NEW.release,
-        cta: "Got it!",
-        onPlay: () => markWhatsNewSeen(WHATS_NEW.version),
-      });
+      engageShownRef.current = true;
+      setWhatsNewOpen(true);
+      return;
     }
     const dailyIncluded = !dailyDone;
     if (dailyIncluded) {
@@ -1347,6 +1346,54 @@ function BattlePage() {
           onElite={() => setEliteOpen(true)}
         />
       )}
+      {/* Figma 14.6 "What's new, as one of the pop-ups": once per release. */}
+      <NaSheet
+        open={whatsNewOpen}
+        onOpenChange={(o) => {
+          if (o) return;
+          setWhatsNewOpen(false);
+          markWhatsNewSeen(WHATS_NEW.version);
+        }}
+        title="What's New"
+        body="A new adventure awaits! Here's what's new."
+        primary={{
+          label: "Let's go!",
+          onClick: () => {
+            setWhatsNewOpen(false);
+            markWhatsNewSeen(WHATS_NEW.version);
+          },
+        }}
+      >
+        {WHATS_NEW.items.map(([icon, text]) => (
+          <span key={text} className="flex items-center gap-2.5">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-white/10 text-foreground">
+              <NaIcon name={icon} size={20} />
+            </span>
+            <span className="na-caption text-foreground">{text}</span>
+          </span>
+        ))}
+      </NaSheet>
+      {/* Figma 14.3 "No connection": a load failed; Try again runs it again, Home stays put. */}
+      <NaSheet
+        open={!!offlineRetry}
+        onOpenChange={(o) => !o && setOfflineRetry(null)}
+        title="No connection"
+        body="You need an internet connection to load battle questions. Check your connection and try again!"
+        primary={{
+          label: "Try again",
+          onClick: () => {
+            const go = offlineRetry;
+            setOfflineRetry(null);
+            go?.();
+          },
+        }}
+        secondary={{ label: "Home", onClick: () => setOfflineRetry(null) }}
+        footnote="Don't worry! Your progress is saved on this device."
+      >
+        <span className="flex h-[72px] w-[72px] items-center justify-center rounded-full bg-white/10">
+          <NaGlossIcon kind="wifi-off" size={36} />
+        </span>
+      </NaSheet>
     </>
   );
 }

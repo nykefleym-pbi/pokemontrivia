@@ -570,7 +570,7 @@ function BattleMode({
     playSfx("elite_intro");
     setIntroBanner(`${eliteMember.title} ${eliteMember.name}: "${eliteMember.quote}"`);
     setTimeout(() => revealPokemon(enemy.pokemon.id), 900);
-    setTimeout(() => setIntroBanner(`${eliteMember.name} sent out ${enemy.pokemon.name}!`), 2200);
+    setTimeout(() => setIntroBanner(enemy.isShiny ? `A shiny ${enemy.pokemon.name} appeared!` : `${eliteMember.name} sent out ${enemy.pokemon.name}!`), 2200);
     shinyCue();
     setTimeout(() => {
       setIntroBanner(`Go, ${player.name}!${superEff ? " Type advantage!" : ""}`);
@@ -584,7 +584,7 @@ function BattleMode({
   function shinyCue() {
     if (!enemy.isShiny) return;
     playSfx("shiny");
-    toast.success(`A SHINY ${enemy.pokemon.name} appeared!`, { duration: 3000 });
+    // 14.2: one line in the battle narration, in place of the old yellow toast
   }
 
   /** 3.1 -> the battle: platforms rise, both Pokémon come out, then the first question (by 2.9 s). */
@@ -593,7 +593,7 @@ function BattleMode({
     enteredRef.current = true;
     if (introTimerRef.current) clearTimeout(introTimerRef.current);
     setIntroStage("enter");
-    setIntroBanner(`${enemy.name} sent out ${enemy.pokemon.name}!`);
+    setIntroBanner(enemy.isShiny ? `A shiny ${enemy.pokemon.name} appeared!` : `${enemy.name} sent out ${enemy.pokemon.name}!`);
     revealPokemon(enemy.pokemon.id);
     shinyCue();
     setTimeout(() => {
@@ -1677,9 +1677,15 @@ function BattleMode({
                   fxEls.enemy = el;
                 }}
                 onReady={(img, trim) => fxSprite("enemy", img, trim)}
-                className={`${shakeWho === "enemy" && !fxReady ? "animate-shake" : ""} ${enemy.isShiny ? "shiny-glow" : ""}`}
+                className={shakeWho === "enemy" && !fxReady ? "animate-shake" : ""}
               >
-                {enemy.isShiny && <NaIcon name="sparkle" size={16} className="pointer-events-none absolute -right-2 -top-2 z-20 animate-pulse text-yellow-300 drop-shadow" />}
+                {enemy.isShiny &&
+                  // 14.2: sparkles burst round a shiny (Figma: around its sprite box)
+                  ([["-14px", "8px", 22], ["calc(100% - 8px)", "-6px", 26], ["calc(100% - 2px)", "84px", 16], ["-18px", "78px", 18], ["46px", "-18px", 14]] as const).map(([l, tp, sz], i) => (
+                    <span key={i} className="pointer-events-none absolute z-20 animate-pulse text-reward-gold" style={{ left: l, top: tp, animationDelay: `${i * 0.15}s` }}>
+                      <NaIcon name="sparkle" size={sz} />
+                    </span>
+                  ))}
               </FieldSprite>
             </motion.div>
             <motion.div
@@ -1709,6 +1715,7 @@ function BattleMode({
         <>
         <NaHpCard
           side="enemy"
+          shiny={enemy.isShiny}
           trainer={trainerLine}
           name={enemy.pokemon.name}
           hp={enemyHp}

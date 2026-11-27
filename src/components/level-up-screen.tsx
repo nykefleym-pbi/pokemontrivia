@@ -2,13 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { NaIcon } from "@/components/na/icon";
 import { playSfx } from "@/lib/audio";
-import { ITEMS, trainerSpriteUrl, xpForLevel } from "@/lib/game-data";
+import { ITEMS, rankForLevel, trainerSpriteUrl, xpForLevel } from "@/lib/game-data";
 import { useGameStore } from "@/lib/store";
 import { ShareCardDialog } from "@/components/share-card-dialog";
 import type { ShareData } from "@/components/share-card-builder";
 import { ItemIcon } from "@/components/game-ui";
 import { NaButton } from "@/components/na/button";
-import { NaConfetti, NaLevelBadge, NaWordmark } from "@/components/na/celebration";
+import { NaConfetti, NaGlassRow, NaLevelBadge, NaWordmark } from "@/components/na/celebration";
 import { NaRewardIcon } from "@/components/na/reward-icon";
 import type { LevelUpRewards } from "@/lib/level-rewards";
 
@@ -73,6 +73,59 @@ export function LevelUpScreen({ rewards, onContinue }: Props) {
       dateISO: new Date().toISOString().slice(0, 10),
     };
   }, [rewards, lv, trainerName, trainerSprite]);
+
+  if (reached && prev) {
+    // Figma 14.1 "Level up into a new league": the new badge, the rank it unlocks,
+    // the league trophy (claimed in Profile) and the usual rewards.
+    return (
+      <div className="na-bg-night fixed inset-0 z-[110] flex flex-col items-center gap-3.5 overflow-hidden px-5 pb-[calc(env(safe-area-inset-bottom)+24px)] pt-[calc(env(safe-area-inset-top)+24px)]">
+        <div className="pointer-events-none absolute left-1/2 top-[calc(env(safe-area-inset-top)-47px)] -translate-x-1/2">
+          <NaConfetti w={390} h={520} n={46} delay={0.6} />
+        </div>
+        <NaWordmark kind="levelup">LEVEL UP!</NaWordmark>
+        <motion.div
+          className="flex h-[170px] w-[320px] shrink-0 justify-center pt-2.5"
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: [0, 1.15, 1], opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.5, times: [0, 0.65, 1] }}
+        >
+          <NaLevelBadge level={lv} size={150} />
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.9, duration: 0.3 }}
+          className="na-glow-info flex w-full flex-col items-center gap-1.5 rounded-[20px] border-[1.5px] border-info/60 bg-white/[0.08] p-4 text-center"
+        >
+          <span className="na-label uppercase text-info">New rank unlocked</span>
+          <span className="na-display-s text-foreground">{rankForLevel(lv)}</span>
+          <span className="na-body text-text-secondary">Take on tougher questions and earn greater rewards!</span>
+        </motion.div>
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.1, duration: 0.3 }} className="w-full">
+          <NaGlassRow tone="gold" lead={<NaRewardIcon kind="Trophy" size={36} />} title={`New trophy: ${prev[1].replace(" rank", "")}`} sub="Claim your reward in Profile > Trophies!" />
+        </motion.div>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.3 }} className="flex w-full items-center gap-2.5">
+          {rewards.coins > 0 && <NaRewardIcon kind="Coin" size={28} />}
+          {rewards.items.slice(0, 2).map((it) => {
+            const def = ITEMS.find((x) => x.id === it.id);
+            return def ? <ItemIcon key={it.id} item={def} className="h-7 w-7 shrink-0" /> : null;
+          })}
+          {rewards.eggs > 0 && <NaRewardIcon kind="Egg" size={28} />}
+          <span className="na-body-strong text-foreground">{rewardLine(rewards)}</span>
+        </motion.div>
+        <div className="min-h-2 flex-1" />
+        <div className="flex w-full flex-col gap-4">
+          <NaButton block onClick={onContinue}>
+            Let&apos;s go!
+          </NaButton>
+          <NaButton kind="secondary" size="M" block onClick={() => setShareOpen(true)}>
+            Share
+          </NaButton>
+        </div>
+        <ShareCardDialog open={shareOpen} onClose={() => setShareOpen(false)} data={shareData} />
+      </div>
+    );
+  }
 
   return (
     <div className="na-bg-night fixed inset-0 z-[110] flex flex-col items-center gap-4 overflow-hidden px-5 pb-[calc(env(safe-area-inset-bottom)+24px)] pt-[calc(env(safe-area-inset-top)+24px)]">

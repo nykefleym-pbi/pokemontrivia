@@ -245,7 +245,9 @@ export function NaHpCard({
   danger,
   testId,
   style,
+  shiny,
 }: {
+  shiny?: boolean;
   side: "enemy" | "player";
   trainer?: string | null;
   name: string;
@@ -279,7 +281,16 @@ export function NaHpCard({
     >
       {side === "enemy" && trainer && <span className="na-caption truncate text-text-secondary">{trainer}</span>}
       <div className="flex items-center justify-between gap-2">
-        <span className="na-headline truncate text-foreground">{name}</span>
+        {shiny ? (
+          // 14.2: a shiny's name turns gold, with stars after it (no SHINY tag)
+          <span className="flex min-w-0 items-center gap-0.5">
+            <span className="na-headline truncate text-reward-gold">{name}</span>
+            <NaIcon name="sparkle" size={16} className="shrink-0 text-reward-gold" />
+            <NaIcon name="sparkle" size={11} className="-mt-2.5 shrink-0 text-reward-gold" />
+          </span>
+        ) : (
+          <span className="na-headline truncate text-foreground">{name}</span>
+        )}
         <span className="na-number-m shrink-0 text-foreground" data-testid={testId && `${testId}-hp`}>
           {Math.round(hp)}
         </span>

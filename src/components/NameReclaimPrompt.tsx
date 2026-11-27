@@ -1,15 +1,8 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useGameStore } from "@/lib/store";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { NaSheet } from "@/components/na/sheet";
+import { NaIcon } from "@/components/na/icon";
 import { isTrainerNameAvailable, claimTrainerName, bootstrapSocial } from "@/lib/social";
 import { validateTrainerName, claimErrorMessage, TRAINER_NAME_MAX } from "@/lib/trainer-name";
 
@@ -21,6 +14,7 @@ export function NameReclaimPrompt() {
   const setName = useGameStore((s) => s.setName);
   const setNameReconciled = useGameStore((s) => s.setNameReconciled);
   const setNeedsNameReclaim = useGameStore((s) => s.setNeedsNameReclaim);
+  const oldName = useGameStore((s) => s.trainerName);
 
   const open = hasOnboarded && needsNameReclaim;
 
@@ -34,7 +28,8 @@ export function NameReclaimPrompt() {
       setDraft("");
       setAvail("idle");
       setMsg("");
-    }
+    } else setDraft(oldName ?? ""); // 14.5: the taken name shows in the field, marked "Already taken"
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   useEffect(() => {
@@ -98,53 +93,45 @@ export function NameReclaimPrompt() {
   }
 
   const canConfirm = !submitting && avail === "available";
+  const bad = avail === "taken" || avail === "invalid";
 
+  // Figma 14.5 "Your name was taken": a sheet that can't be dismissed (friends and
+  // leaderboards need a name); Save lights up once the name is free.
   return (
-    <Dialog open={open}>
-      <DialogContent
-        className="sm:max-w-md rounded-2xl [&>button]:hidden"
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
-        onInteractOutside={(e) => e.preventDefault()}
+    <NaSheet
+      open={open}
+      onOpenChange={() => {}}
+      title="Choose a new trainer name"
+      body={`"${oldName || "Your name"}" is already taken. Try another name to continue!`}
+      primary={{ label: submitting ? "Saving…" : "Save", onClick: () => void handleConfirm(), disabled: !canConfirm }}
+    >
+      <label htmlFor="reclaim-name" className="na-label uppercase text-text-secondary">
+        Trainer name
+      </label>
+      <span
+        className={`-mt-1 flex h-[54px] items-center gap-2 rounded-[14px] border-2 bg-night-deep/60 px-3.5 ${
+          avail === "available" ? "border-success" : bad ? "border-danger" : "border-white/[0.16]"
+        }`}
       >
-        <DialogHeader>
-          <DialogTitle>Pick a new trainer name</DialogTitle>
-          <DialogDescription>
-            Your previous trainer name is no longer available. Choose a new one to continue.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="mt-2">
-          <Input
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder="New trainer name"
-            maxLength={TRAINER_NAME_MAX}
-            autoFocus
-            className="h-12 rounded-full border-[2.5px] border-primary bg-card px-5 text-base font-bold"
-          />
-          <p
-            className={`mt-2 text-xs ${
-              avail === "available"
-                ? "text-green-600"
-                : avail === "taken" || avail === "invalid"
-                  ? "text-red-600"
-                  : "text-foreground/60"
-            }`}
-          >
-            {msg || "3–16 characters · letters, numbers, spaces, _ and -"}
-          </p>
-        </div>
-        <div className="mt-2 flex justify-end">
-          <Button
-            size="action"
-            onClick={() => void handleConfirm()}
-            disabled={!canConfirm}
-            className=""
-          >
-            {submitting ? "Saving…" : "Confirm"}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+        <input
+          id="reclaim-name"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          maxLength={TRAINER_NAME_MAX}
+          autoFocus
+          aria-invalid={bad}
+          className="na-headline w-full min-w-0 bg-transparent text-foreground outline-none"
+        />
+        {(avail === "available" || bad) && (
+          <span className={`na-caption flex shrink-0 items-center gap-1 ${bad ? "text-danger" : "text-success"}`}>
+            <NaIcon name={bad ? "x" : "check"} size={16} className={bad ? "text-foreground" : undefined} />
+            {avail === "taken" ? "Already taken" : msg}
+          </span>
+        )}
+      </span>
+      <span className="na-caption -mt-1 text-text-secondary">
+        {avail === "invalid" ? msg : "3–16 characters: letters, numbers, spaces, _ or -"}
+      </span>
+    </NaSheet>
   );
 }

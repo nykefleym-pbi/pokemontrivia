@@ -90,28 +90,54 @@ const appleSplashLinks = APPLE_SPLASH.flatMap(({ base, w, h, r }) =>
   })),
 );
 
+/**
+ * Figma 14.4 "Page not found": 404, a Poké Ball dashing off like Eevee on 12.3
+ * (after-images, speed streaks, dust), the joke in plain words, and Home.
+ */
 function NotFoundComponent() {
+  const B = { x: 69, y: 104, s: 70 }; // the ball inside its 80 x 110 art, drawn at 2.5x
+  // A full screen like the result screens: the tab bar steps aside (one claim, one release).
+  const setBattleScreenActive = useGameStore((s) => s.setBattleScreenActive);
+  useEffect(() => {
+    setBattleScreenActive(true);
+    return () => setBattleScreenActive(false);
+  }, [setBattleScreenActive]);
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="font-pixel text-5xl text-primary">404</h1>
-        <h2 className="mt-4 text-xl font-semibold">Wild PAGE fled!</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          This route doesn't exist in the Pokédex.
-        </p>
-        <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-pop transition press"
-          >
-            Back to Battle
-          </Link>
-        </div>
+    <div className="na-bg-night flex min-h-screen flex-col items-center gap-3.5 px-6 pb-[calc(env(safe-area-inset-bottom)+32px)] pt-[calc(env(safe-area-inset-top)+80px)]">
+      <div className="relative h-[200px] w-[300px] shrink-0">
+        <span className="absolute inset-x-0 top-0 grid justify-center" style={{ fontFamily: "var(--font-lilita)", fontSize: 48, lineHeight: "52px" }}>
+          <span aria-hidden className="[grid-area:1/1]" style={{ color: "#070a1a", WebkitTextStroke: "10px #070a1a" }}>
+            404
+          </span>
+          <span className="na-fill-brand [grid-area:1/1]" style={{ WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>
+            404
+          </span>
+        </span>
+        {[[84, 0.12], [44, 0.28], [0, 1]].map(([dx, op]) => (
+          <img key={dx} src="/ui/pixel/ball.png" alt="" className="absolute h-[110px] w-[80px] [image-rendering:pixelated]" style={{ left: 64 + dx, top: 84, opacity: op }} />
+        ))}
+        {[[B.y + 14, 9], [B.y + 32, 12], [B.y + 50, 8]].map(([y, n]) =>
+          Array.from({ length: n }, (_, i) => (
+            <span
+              key={`${y}-${i}`}
+              className="absolute h-1.5 bg-white"
+              style={{ left: B.x + B.s * 0.6 + i * 12, top: y, width: i < 3 ? 10 : 6, opacity: Math.max(0.08, 0.7 - i * 0.07) }}
+            />
+          )),
+        )}
+        {[[0, 0, 22, 0.35], [18, -10, 16, 0.25], [30, 6, 12, 0.18], [44, -4, 8, 0.12]].map(([dx, dy, d, op]) => (
+          <span key={dx} className="absolute rounded-full bg-text-secondary" style={{ left: B.x + B.s - 16 + dx, top: B.y + B.s - 14 + dy, width: d, height: d, opacity: op }} />
+        ))}
       </div>
+      <h1 className="na-display-m text-center text-foreground">A wild page appeared... then fled!</h1>
+      <p className="na-body text-center text-text-secondary">This page isn&apos;t in our Pokédex!</p>
+      <div className="min-h-4 flex-1" />
+      <Link to="/battle" search={{ autostart: 0 } as never} className="na-btn na-btn-l na-btn-primary w-full max-w-[342px]">
+        Home
+      </Link>
     </div>
   );
 }
-
 export const Route = createRootRoute({
   head: () => ({
     meta: [
