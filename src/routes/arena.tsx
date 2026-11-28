@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { NaIcon } from "@/components/na/icon";
+import { NaOfflineRow } from "@/components/na/offline-row";
 import { FitSprite } from "@/components/na/battle";
 import { NaButton } from "@/components/na/button";
 import { NaGlossIcon } from "@/components/na/gloss-icon";
@@ -415,6 +416,7 @@ function ArenaPage() {
   return (
     <div className="h-full w-full overflow-y-auto pb-nav safe-x">
       <div className="flex flex-col gap-3.5 px-4 pb-6 pt-[calc(env(safe-area-inset-top)+8px)]">
+        <NaOfflineRow />
         {/* Header: ARENA and the match chat (rendered even with nothing to open; it says so). */}
         <div className="flex items-center gap-2">
           <h1 className="na-display-m flex-1 text-foreground">ARENA</h1>

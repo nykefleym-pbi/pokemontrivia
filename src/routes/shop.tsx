@@ -10,6 +10,7 @@ import { NaGlassRow } from "@/components/na/celebration";
 import { NaRewardIcon } from "@/components/na/reward-icon";
 import { NaButton } from "@/components/na/button";
 import { NaSheet } from "@/components/na/sheet";
+import { NaOfflineRow } from "@/components/na/offline-row";
 import { useGameStore } from "@/lib/store";
 import { useDailyGift } from "@/lib/use-daily-gift";
 import { useStoreHydrated } from "@/lib/store-hydration";
@@ -313,6 +314,7 @@ function ShopPage() {
           </button>
           <NaStatPill kind="Coin" value={coins.toLocaleString()} />
         </div>
+        <NaOfflineRow />
 
         {/* The daily gift (also on Home's chest). */}
         <NaGlassRow

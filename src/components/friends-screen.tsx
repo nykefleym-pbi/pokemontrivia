@@ -20,6 +20,7 @@ import { adaptiveDifficultyBand, ITEMS } from "@/lib/game-data";
 import { inviteUrl } from "@/lib/referral-rewards";
 import { ALL_POKEMON_SLIM } from "@/lib/pokemon-data.slim.generated";
 import { NaIcon } from "@/components/na/icon";
+import { NaOfflineRow } from "@/components/na/offline-row";
 import { NaButton } from "@/components/na/button";
 import { NaSheet } from "@/components/na/sheet";
 import { NaGlassRow } from "@/components/na/celebration";
@@ -224,6 +225,7 @@ export function FriendsScreen({
         <>
           <Header title="Friends" onBack={back} />
           <div className="flex flex-col gap-3 px-4 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-2">
+            <NaOfflineRow onRetry={() => void refresh()} />
             <div className="flex flex-col gap-2 rounded-[20px] border border-reward-gold/50 bg-white/[0.08] p-3.5">
               <span className="na-label uppercase text-reward-gold">Your friend code</span>
               <span className="na-display-m tracking-wide text-foreground">{friendCode ?? "------"}</span>

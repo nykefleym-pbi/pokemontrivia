@@ -8,6 +8,7 @@ import { MEGA_REWARD, megaRankScale, type MegaEvent } from "@/lib/mega/schedule"
 import { rollLevelUpRewards } from "@/lib/level-rewards";
 import { claimMegaReward } from "@/services/client/mega-reward-claim";
 import { NaIcon } from "@/components/na/icon";
+import { NaOfflineRow } from "@/components/na/offline-row";
 import { NaGlossIcon } from "@/components/na/gloss-icon";
 import { NaRewardIcon } from "@/components/na/reward-icon";
 import { NaButton } from "@/components/na/button";
@@ -220,6 +221,7 @@ export function MegaLeaderboard({ event, onBack, onBattle }: Props) {
         <h1 className="na-display-s flex-1 text-foreground">Leaderboard</h1>
       </div>
       <div className="flex flex-col gap-2.5 px-4 pt-1">
+        <NaOfflineRow />
         <div className="na-glass flex items-center gap-3 rounded-[18px] px-3.5 py-2.5">
           <span className="flex min-w-0 flex-1 flex-col gap-0.5">
             <span className="na-label uppercase text-reward-gold">
