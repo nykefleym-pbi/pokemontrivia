@@ -791,7 +791,6 @@ function ProfilePage() {
         <span className="na-label uppercase text-reward-gold">
           {gymBadges.length}/{GYM_LEADERS.length} earned
         </span>
-        <NaGlassRow lead={<NaGlossIcon kind="calendar" size={32} />} title="One gym challenge a week" sub="Beat every trainer on your route to open the next gym. Make it count!" />
         <BadgesTab />
       </NaScreenDialog>
 
@@ -978,8 +977,8 @@ function ProfilePage() {
             )}
 
             <span className="na-label uppercase text-text-secondary">Feedback</span>
-            <NaGlassRow lead={<NaGlossIcon kind="idea" size={32} />} title="Send a suggestion" sub="Have an idea? We'd love to hear it!" trailing={<NaIcon name="chevron-right" size={18} className="text-text-muted" />} onClick={() => setFeedbackOpen("suggestion")} />
-            <NaGlassRow lead={<NaGlossIcon kind="bug" size={32} />} title="Report a bug" sub="Found a bug? Let us know!" trailing={<NaIcon name="chevron-right" size={18} className="text-text-muted" />} onClick={() => setFeedbackOpen("bug")} />
+            {/* One row: 17.8 switches between an idea and a problem. */}
+            <NaGlassRow lead={<NaGlossIcon kind="idea" size={32} />} title="Share your feedback" sub="Have an idea or found a bug? Let us know!" trailing={<NaIcon name="chevron-right" size={18} className="text-text-muted" />} onClick={() => setFeedbackOpen("suggestion")} />
 
             <span className="na-label uppercase text-text-secondary">Community</span>
             <NaGlassRow

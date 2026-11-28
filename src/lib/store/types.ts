@@ -164,7 +164,7 @@ export interface GameState {
   /** YYYY-MM-DD the one-per-week forgiven miss was last spent. */
   dailyGiftFreezeUsedDate: string | null;
   /** YYYY-MM-DD of the last day the discounted featured shop item was bought
-   * (the featured deal is limited to one purchase per day). */
+   * (the weekly featured deal is limited to one purchase per week). */
   featuredDealLastPurchase: string | null;
   /** Bundle ids already bought. A bundle is a one-time starter offer, so it is
    *  retired from the shop once purchased rather than resold. */

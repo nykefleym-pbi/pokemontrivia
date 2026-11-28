@@ -10,6 +10,8 @@ import { NaGlassRow } from "@/components/na/celebration";
 import { NaRewardIcon } from "@/components/na/reward-icon";
 import { NaButton } from "@/components/na/button";
 import { NaSheet } from "@/components/na/sheet";
+import { NaListTabs } from "@/components/na/list-tabs";
+import { NaStepper } from "@/components/na/stepper";
 import { NaOfflineRow } from "@/components/na/offline-row";
 import { useGameStore } from "@/lib/store";
 import { useDailyGift } from "@/lib/use-daily-gift";
@@ -33,6 +35,9 @@ export const Route = createFileRoute("/shop")({
 });
 
 type Category = ItemCategory;
+
+/** Weeks since 1970 that start on Monday (UTC), for the weekly deal. */
+const weekOf = (ms: number) => Math.floor((Math.floor(ms / 86_400_000) + 3) / 7);
 
 /** Bag items that fire by themselves in battle; the bag lets you switch each off. */
 const AUTO_ITEMS = new Set(["focusband", "quickclaw", "assaultvest", "revive", "oranberry", "silkscarf", "kingsrock", "leftovers", "metronome"]);
@@ -94,26 +99,6 @@ function ShopRow({
   );
 }
 
-/** The four categories as a glass pill strip; the open one is white. */
-function NaTabs({ value, onChange }: { value: Category; onChange: (c: Category) => void }) {
-  return (
-    <div role="tablist" className="flex gap-1 rounded-full bg-white/[0.08] p-1">
-      {CATEGORIES.map((c) => (
-        <button
-          key={c.id}
-          type="button"
-          role="tab"
-          aria-selected={value === c.id}
-          onClick={() => onChange(c.id)}
-          className={`na-body-strong flex-1 rounded-full px-1 py-2 ${value === c.id ? "bg-[#f4f6ff] text-night-base" : "text-text-secondary"}`}
-        >
-          {c.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 type ConfirmState = {
   item: ItemDef;
   cost: number;
@@ -170,9 +155,10 @@ function ShopPage() {
   // indefinitely — which is what "the discounted item is not changing" was.
   // `giftNow` already ticks once a second for the gift countdown, so this rides
   // it rather than adding a second timer.
-  const featuredDay = Math.floor(giftNow / 86_400_000);
+  // Weekly (7.1, Paul 2026-11-28): a new deal every Monday. Day 0 (1 Jan 1970) was a Thursday, so +3 starts weeks on Monday.
+  const featuredWeek = weekOf(giftNow);
   const featured = useMemo(() => {
-    const day = featuredDay;
+    const day = featuredWeek;
     // Berries are Nearby-Battle-only drops; never feature them in the Solo shop.
     const shoppable = ITEMS.filter((it) => !it.pvpOnly);
     const item = shoppable[day % shoppable.length];
@@ -180,7 +166,7 @@ function ShopPage() {
     const discountPct = steps[day % steps.length];
     const discountedCost = Math.max(1, Math.round((item.cost * (100 - discountPct)) / 100));
     return { item, originalCost: item.cost, discountedCost, discountPct };
-  }, [featuredDay]);
+  }, [featuredWeek]);
 
   useEffect(() => {
     if (hydrated && !hasOnboarded) navigate({ to: "/" });
@@ -196,9 +182,8 @@ function ShopPage() {
   // The cheapest shop item you can't afford yet: the "Almost yours" row.
   const almost = ITEMS.filter((it) => !it.pvpOnly && CATEGORY_OF[it.id] && priceOf(it.cost) > coins).sort((a, b) => a.cost - b.cost)[0];
 
-  // The discounted featured item is limited to one purchase per day.
-  const todayISO = new Date().toISOString().slice(0, 10);
-  const featuredUsedToday = featuredDealLastPurchase === todayISO;
+  // The discounted featured item is limited to one purchase per week.
+  const featuredBoughtThisWeek = featuredDealLastPurchase != null && weekOf(Date.parse(featuredDealLastPurchase)) === featuredWeek;
 
   function confirmBundle() {
     if (!bundleConfirm) return;
@@ -229,11 +214,11 @@ function ShopPage() {
   function confirmPurchase() {
     if (!confirmState) return;
     const { item, cost } = confirmState;
-    // Featured deal: always a single unit, and only once per day.
+    // Featured deal: always a single unit, and only once per week.
     const isFeatured = !!confirmState.featured;
-    if (isFeatured && featuredUsedToday) {
+    if (isFeatured && featuredBoughtThisWeek) {
       playSfx("error");
-      toast.error("You've already grabbed today's deal — check back tomorrow!");
+      toast.error("You've already grabbed this week's deal. Check back Monday!");
       setConfirmState(null);
       return;
     }
@@ -353,11 +338,11 @@ function ShopPage() {
         <ShopRow
           icon={<ItemIcon item={featured.item} className="h-[46px] w-[46px]" />}
           name={`${featured.item.name} · ${featured.discountPct}% OFF`}
-          sub={featuredUsedToday ? "Bought! A new deal lands tomorrow." : `Was ${featured.originalCost.toLocaleString()}. A new deal every day!`}
-          price={featuredUsedToday ? undefined : featured.discountedCost}
-          dim={featuredUsedToday}
+          sub={featuredBoughtThisWeek ? "Bought! A new deal lands Monday." : `Was ${featured.originalCost.toLocaleString()}. New deals every Monday!`}
+          price={featuredBoughtThisWeek ? undefined : featured.discountedCost}
+          dim={featuredBoughtThisWeek}
           onClick={
-            featuredUsedToday
+            featuredBoughtThisWeek
               ? undefined
               : () =>
                   openBuy({
@@ -379,7 +364,7 @@ function ShopPage() {
         ))}
 
         <span className="na-label uppercase text-text-secondary">All items</span>
-        <NaTabs value={tab} onChange={setTab} />
+        <NaListTabs tabs={CATEGORIES} value={tab} onChange={setTab} />
         {items.map((item) => (
           <ShopRow
             key={item.id}
@@ -458,21 +443,10 @@ function ShopPage() {
                 </div>
                 {confirmState.featured ? (
                   <span className="na-label self-start rounded-full bg-reward-gold px-3 py-1 uppercase text-night-deep">
-                    {confirmState.featured.discountPct}% off · one a day
+                    {confirmState.featured.discountPct}% off · one a week
                   </span>
                 ) : (
-                  <div className="flex items-center justify-between rounded-[16px] bg-white/10 px-3.5 py-2.5">
-                    <span className="na-body-strong text-foreground">Quantity</span>
-                    <span className="flex items-center gap-4">
-                      <button type="button" aria-label="Decrease quantity" disabled={qty <= 1} onClick={() => setQty((q) => Math.max(1, q - 1))} className="na-headline flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.16] text-foreground disabled:opacity-40">
-                        −
-                      </button>
-                      <span className="na-number-l w-6 text-center text-foreground">{qty}</span>
-                      <button type="button" aria-label="Increase quantity" disabled={qty >= maxQty} onClick={() => setQty((q) => Math.min(maxQty, q + 1))} className="na-headline flex h-9 w-9 items-center justify-center rounded-full bg-brand-red text-foreground disabled:opacity-40">
-                        +
-                      </button>
-                    </span>
-                  </div>
+                  <NaStepper value={qty} max={maxQty} onChange={setQty} />
                 )}
                 <div className="flex flex-col gap-2">
                   {line("Your Coins", coins.toLocaleString(), "text-foreground")}
@@ -524,7 +498,7 @@ function ShopPage() {
           <div className="flex flex-1 flex-col gap-3 px-4 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-2">
             <BagCapacityBar />
             <BagOverflowPanel />
-            <NaTabs value={bagTab} onChange={setBagTab} />
+            <NaListTabs tabs={CATEGORIES} value={bagTab} onChange={setBagTab} />
             {(() => {
               const owned = ITEMS.filter((it) => CATEGORY_OF[it.id] === bagTab && (inventory[it.id] ?? 0) > 0);
               if (owned.length === 0) return <p className="na-body py-6 text-center text-text-secondary">Nothing here yet!</p>;

@@ -403,7 +403,9 @@ function BattleMode({
         el.style.opacity = String(alpha);
         el.style.filter = tintK > 0.4 ? "sepia(1) saturate(8) hue-rotate(-50deg)" : "";
       });
-      setTimeout(() => setCatchStage("caught"), 3100); // "3.1 s · Click! Caught"
+      // "3.1 s · Click! Caught"; with reduced motion the ball is already shut (engine CATCH_CLICK_REDUCED, 0.7 s)
+      const calm = useGameStore.getState().reducedMotion || matchMedia("(prefers-reduced-motion: reduce)").matches;
+      setTimeout(() => setCatchStage("caught"), calm ? 800 : 3100);
     }, 900);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, resultWon, fxReady]);

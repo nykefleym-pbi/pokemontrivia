@@ -13,6 +13,7 @@ import { typeRowFontSize, COMBAT_PANEL_WIDTH } from "@/lib/type-row-fit";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CATEGORIES, CATEGORY_OF, BAG_SHORT_DESC, type ItemCategory } from "@/lib/item-categories";
 import { NaSheet } from "@/components/na/sheet";
+import { NaListTabs } from "@/components/na/list-tabs";
 
 /** Items that trigger by themselves: shown in the bag, never tapped. */
 const AUTO_ITEM_IDS = new Set<ItemId>(["focusband", "quickclaw", "assaultvest", "revive", "oranberry", "silkscarf", "kingsrock", "leftovers", "metronome"] as ItemId[]);
@@ -1215,27 +1216,15 @@ export function ItemBagSheet({
         }}
         secondary={{ label: "Close", onClick: () => onBagOpenChange(false) }}
       >
-        <div className="flex gap-1">
-          {CATEGORIES.map((cat) => {
-            const has = ownedIn(cat.id).length > 0;
-            const on = bagTab === cat.id;
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                data-testid={`bag-tab-${cat.id}`}
-                disabled={!has}
-                onClick={() => {
-                  setBagTab(cat.id);
-                  setBagPick(null);
-                }}
-                className={`na-label flex flex-1 items-center justify-center rounded-full px-1.5 py-1.5 uppercase ${on ? "bg-foreground text-night-deep" : has ? "bg-white/10 text-text-secondary" : "bg-white/10 text-text-muted opacity-50"}`}
-              >
-                {cat.label}
-              </button>
-            );
-          })}
-        </div>
+        <NaListTabs
+          tabs={CATEGORIES.map((c) => ({ ...c, disabled: ownedIn(c.id).length === 0 }))}
+          value={bagTab}
+          onChange={(id) => {
+            setBagTab(id);
+            setBagPick(null);
+          }}
+          testIdPrefix="bag-tab-"
+        />
         {ownedIn(bagTab).length === 0 ? (
           <p className="na-body py-4 text-center text-text-secondary">Your bag is empty. Visit the Shop to stock up!</p>
         ) : (

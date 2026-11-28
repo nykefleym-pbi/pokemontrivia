@@ -61,6 +61,8 @@ function sideOf(s, side) {
 const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
 const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a)); return t * t * (3 - 2 * t); };
 export const CATCH_LEN = 3.9;
+/** Reduced motion: the ball is shut and the sparkles show at this time (s); GOTCHA! follows. */
+export const CATCH_CLICK_REDUCED = 0.7;
 
 export function createBattleFx(back, front, els, opts = {}) {
   const reduced = !!opts.reduced;
@@ -159,7 +161,10 @@ export function createBattleFx(back, front, els, opts = {}) {
       if (!E) return Promise.resolve();
       const start = [-6, 250], hover = [E.chest[0] - 4, E.chest[1] - 22], floor = [E.feet[0], E.feet[1] - 7];
       const wob = (tt) => { for (const w0 of [1.75, 2.3, 2.85]) { const k = (tt - w0) / 0.32; if (k >= 0 && k <= 1) return Math.sin(k * Math.PI * 2) * 0.55 * (1 - k * 0.3); } return 0; };
-      const ball = (tt) => {
+      // Reduced motion (Figma 3.7, calm): no throw, beam or wobble. The shut ball sits where the
+      // Pokémon stood, the Pokémon fades into it, then the three sparkles.
+      const R = reduced;
+      const ball = R ? (tt) => ({ x: floor[0], y: floor[1], ang: 0, open: 0, glow: tt >= CATCH_CLICK_REDUCED ? 1 : 0 }) : (tt) => {
         if (tt < 0.6) { const k = tt / 0.6; return { x: start[0] + (hover[0] - start[0]) * k, y: start[1] + (hover[1] - start[1]) * k - Math.sin(k * Math.PI) * 70, ang: tt * 16, open: 0 }; }
         if (tt < 1.15) return { x: hover[0], y: hover[1] + Math.sin(tt * 12) * 0.6, ang: 0, open: tt < 1.0 ? smooth(0.6, 0.72, tt) : 1 - smooth(1.0, 1.15, tt) };
         if (tt < 1.5) { const k = smooth(1.15, 1.5, tt), bounce = tt > 1.4 ? Math.sin(((tt - 1.4) / 0.1) * Math.PI) * 3 : 0; return { x: hover[0], y: hover[1] + (floor[1] - hover[1]) * k * k - bounce, ang: 0, open: 0 }; }
@@ -171,23 +176,24 @@ export function createBattleFx(back, front, els, opts = {}) {
           resolve,
           update(dt) {
             t += dt;
-            if (!flash && t >= 0.62) flash = core.createFx(FX["impacts/hit-spark"], { x: hover[0], y: hover[1] + 4, palette: core.PAL.holy });
-            if (!stars && t >= 3.0) stars = core.createFx(FX["pickups/collect-burst"], { x: floor[0], y: floor[1] + 4 });
+            if (!R && !flash && t >= 0.62) flash = core.createFx(FX["impacts/hit-spark"], { x: hover[0], y: hover[1] + 4, palette: core.PAL.holy });
+            if (!R && !stars && t >= 3.0) stars = core.createFx(FX["pickups/collect-burst"], { x: floor[0], y: floor[1] + 4 });
             if (flash) flash.update(dt);
             if (stars) stars.update(dt);
-            onEnemy?.(smooth(0.62, 0.8, t) * 0.85, t < 1.02 ? 1 - smooth(0.78, 1.02, t) : 0);
+            if (R) onEnemy?.(0, 1 - smooth(0.1, 0.6, t));
+            else onEnemy?.(smooth(0.62, 0.8, t) * 0.85, t < 1.02 ? 1 - smooth(0.78, 1.02, t) : 0);
           },
           draw(f) {
             // a red beam pulls the Pokémon into the ball while it is open
-            if (t > 0.62 && t < 1.05) for (let i = 0; i < 6; i++) { const a = -0.6 + i * 0.24; for (let s = 0; s < 18; s++) if ((s + i + Math.floor(t * 30)) % 3 === 0) put(f, hover[0] + Math.sin(a) * s * 1.2, hover[1] + 6 + s * 1.6, 0xff7878ff); }
+            if (!R && t > 0.62 && t < 1.05) for (let i = 0; i < 6; i++) { const a = -0.6 + i * 0.24; for (let s = 0; s < 18; s++) if ((s + i + Math.floor(t * 30)) % 3 === 0) put(f, hover[0] + Math.sin(a) * s * 1.2, hover[1] + 6 + s * 1.6, 0xff7878ff); }
             const b = ball(t), img = drawBall(b.ang, b.open, b.glow || 0), ox = Math.round(b.x - 8), oy = Math.round(b.y - 11);
             for (let y = 0; y < img.h; y++) for (let x = 0; x < img.w; x++) { const c = img.px[y * img.w + x]; if (c >>> 24 >= 128) put(f, ox + x, oy + y, ((c & 0xffffff) | 0xff000000) >>> 0); }
             if (flash && !flash.done()) flash.draw(f);
             if (stars && !stars.done()) stars.draw(f);
             // Figma 3.7: three sparkles round the shut ball
-            if (t >= 3.1) for (const [dx, dy, r] of [[-20, -11, 4], [18, -13, 5], [6, -28, 3]]) sparkle(f, floor[0] + dx, floor[1] + dy, r);
+            if (t >= (R ? CATCH_CLICK_REDUCED : 3.1)) for (const [dx, dy, r] of [[-20, -11, 4], [18, -13, 5], [6, -28, 3]]) sparkle(f, floor[0] + dx, floor[1] + dy, r);
           },
-          done: () => t >= CATCH_LEN,
+          done: () => t >= (R ? CATCH_CLICK_REDUCED + 0.8 : CATCH_LEN),
         };
         run();
       });

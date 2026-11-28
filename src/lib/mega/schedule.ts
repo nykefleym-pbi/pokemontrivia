@@ -127,6 +127,24 @@ export async function fetchNextMegaEvent(now: Date = new Date()): Promise<MegaEv
   return !error && data ? mapEvent(data) : null;
 }
 
+/** The raid that ended most recently, for the Arena card when none is live or coming. */
+export async function fetchLastMegaEvent(now: Date = new Date()): Promise<MegaEvent | null> {
+  const { data, error } = await db
+    .from("mega_events")
+    .select("*")
+    .lte("ends_at", now.toISOString())
+    .order("ends_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return !error && data ? mapEvent(data) : null;
+}
+
+/** "Dec 15 – Jan 31": the raid's days in Manila time, where the schedule is set (the end is exclusive). */
+export function megaRange(ev: Pick<MegaEvent, "startsAt" | "endsAt">): string {
+  const day = (ms: number) => new Date(ms).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "Asia/Manila" });
+  return `${day(Date.parse(ev.startsAt))} – ${day(Date.parse(ev.endsAt) - 1)}`;
+}
+
 /** Look up a single event by id (used by the leaderboard + champion-claim flows). */
 export async function fetchMegaEvent(id: string): Promise<MegaEvent | null> {
   const { data, error } = await db.from("mega_events").select("*").eq("id", id).maybeSingle();

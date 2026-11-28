@@ -66,6 +66,9 @@ const LINE: Record<string, string> = {
   // plugin-src.js USERPLUS / SEND (rows 15-16)
   "user-plus": '<circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/><path d="M19 8v6M16 11h6"/>',
   send: '<path d="M4 12 20 4l-6 16-3-7z"/>',
+  // build-scripts.txt ICONS plus / minus (the 17.1 / 17.11 stepper)
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  minus: '<path d="M5 12h14"/>',
 };
 const FILLED = new Set(["heart-filled", "play", "flame-filled", "star-filled"]);
 

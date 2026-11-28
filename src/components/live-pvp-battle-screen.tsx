@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FieldSprite, NaBattleField, NaHpCard, NaQuestionPanel, type AnswerState } from "@/components/na/battle";
 import { NaGlossIcon } from "@/components/na/gloss-icon";
 import { NaSheet } from "@/components/na/sheet";
+import { NaListTabs } from "@/components/na/list-tabs";
 
 import { toast } from "sonner";
 
@@ -25,7 +26,7 @@ import { findPokemon, type PokeType } from "@/lib/pokemon-data";
 import { ITEMS, STATUS_META, type ItemId, type StatusKind, type PvpStat } from "@/lib/game-data";
 import { MAX_ITEMS_PER_BATTLE } from "@/lib/store/slices/itemsSlice";
 
-import { BAG_SHORT_DESC } from "@/lib/item-categories";
+import { BAG_SHORT_DESC, CATEGORIES, CATEGORY_OF, type ItemCategory } from "@/lib/item-categories";
 import {
   multiplierConditionHolds,
   phasePayoffIndex,
@@ -415,8 +416,8 @@ export function LivePvpBattleScreen({
   // on a realtime round trip. -1 = nothing answered yet.
   const [selfAnsweredIdx, setSelfAnsweredIdx] = useState(-1);
   const [oppAnsweredIdx, setOppAnsweredIdx] = useState(-1);
-  // Figma 15.4: the bag's Berries / Items tabs and the row picked before Use.
-  const [bagTab, setBagTab] = useState<"berries" | "items">("berries");
+  // Figma 15.4/17.3: the bag's open tab (Berries first) and the row picked before Use.
+  const [bagTab, setBagTab] = useState<ItemCategory>("BERRY");
   const [bagPick, setBagPick] = useState<ItemId | null>(null);
   // The question panel's height, so the field can shrink on short phones (as in 3.2).
   const [panelH, setPanelH] = useState(380);
@@ -2078,9 +2079,9 @@ export function LivePvpBattleScreen({
   // 15.2: a glowing dot before their name: red while they think, green once they answer.
   const oppThinking = oppAnsweredIdx < displayedIndex;
   const hour = new Date().getHours();
-  const berries = bagItems.filter((it) => it.isBerry);
-  const others = bagItems.filter((it) => !it.isBerry);
-  const shown = bagTab === "berries" ? berries : others;
+  // 17.3 tabs with Berries first (Nearby only), then the shop's four categories.
+  const bagTabs = [{ id: "BERRY" as const, label: "Berries" }, ...CATEGORIES].map((c) => ({ ...c, disabled: c.id !== "BERRY" && !bagItems.some((it) => CATEGORY_OF[it.id] === c.id) }));
+  const shown = bagItems.filter((it) => CATEGORY_OF[it.id] === bagTab);
   const picked = shown.find((it) => it.id === bagPick) ?? null;
   const bagFull = itemsUsedRef.current >= MAX_ITEMS_PER_BATTLE;
   const liveSprite = (who: "opponent" | "player", id: number | null, statuses: ActiveStatus[], confused: boolean) => {
@@ -2199,7 +2200,7 @@ export function LivePvpBattleScreen({
         />
       )}
 
-      {/* Figma 15.4 "Your bag": Berries and Items tabs, pick one, then Use. */}
+      {/* Figma 15.4 "Your bag" in the 17.3 tabs: Berries, then the shop categories; pick one, then Use. */}
       <NaSheet
         open={bagOpen}
         onOpenChange={(o) => {
@@ -2221,23 +2222,16 @@ export function LivePvpBattleScreen({
         secondary={{ label: "Close", onClick: () => setBagOpen(false) }}
         footnote="Win a Nearby Battle to earn 2 berries!"
       >
-        <div className="flex gap-1 rounded-[14px] bg-night-deep/60 p-1">
-          {(["berries", "items"] as const).map((k) => (
-            <button
-              key={k}
-              type="button"
-              onClick={() => {
-                setBagTab(k);
-                setBagPick(null);
-              }}
-              className={`flex h-[38px] flex-1 items-center justify-center rounded-[10px] capitalize ${bagTab === k ? "na-body-strong bg-night-card-2 text-foreground shadow-[0_4px_0_#141A3F]" : "na-body text-text-secondary"}`}
-            >
-              {k}
-            </button>
-          ))}
-        </div>
+        <NaListTabs
+          tabs={bagTabs}
+          value={bagTab}
+          onChange={(id) => {
+            setBagTab(id);
+            setBagPick(null);
+          }}
+        />
         {shown.length === 0 ? (
-          <p className="na-body py-4 text-center text-text-secondary">{bagTab === "berries" ? "No berries yet. Win a Nearby Battle to earn some!" : "No battle items in your bag."}</p>
+          <p className="na-body py-4 text-center text-text-secondary">{bagTab === "BERRY" ? "No berries yet. Win a Nearby Battle to earn some!" : "No battle items in your bag."}</p>
         ) : (
           shown.map((it) => {
             const used = usedItemIdsRef.current.has(it.id);

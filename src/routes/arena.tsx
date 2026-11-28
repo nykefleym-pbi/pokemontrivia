@@ -8,7 +8,7 @@ import { NaOfflineRow } from "@/components/na/offline-row";
 import { FitSprite } from "@/components/na/battle";
 import { NaButton } from "@/components/na/button";
 import { NaGlossIcon } from "@/components/na/gloss-icon";
-import { fetchActiveMegaEvent, fetchNextMegaEvent, type MegaEvent } from "@/lib/mega/schedule";
+import { fetchActiveMegaEvent, fetchLastMegaEvent, fetchNextMegaEvent, megaRange, type MegaEvent } from "@/lib/mega/schedule";
 import type { BattleLogEntry } from "@/lib/store/types";
 import { useGameStore } from "@/lib/store";
 import { useStoreHydrated } from "@/lib/store-hydration";
@@ -114,14 +114,16 @@ function ArenaPage() {
   const claimArenaReward = useGameStore((s) => s.claimArenaReward);
   const battleLog = useGameStore((s) => s.battleLog);
   const [historyOpen, setHistoryOpen] = useState(false);
-  // The Mega Raid card: the live raid, else the next one on the schedule.
+  // The Mega Raid card: the live raid, else the next one, else the last one marked Expired (13.1).
   const [raid, setRaid] = useState<MegaEvent | null>(null);
   const [nextRaid, setNextRaid] = useState<MegaEvent | null>(null);
+  const [lastRaid, setLastRaid] = useState<MegaEvent | null>(null);
   useEffect(() => {
     void fetchActiveMegaEvent().then(setRaid).catch(() => {});
     void fetchNextMegaEvent().then(setNextRaid).catch(() => {});
+    void fetchLastMegaEvent().then(setLastRaid).catch(() => {});
   }, []);
-  const raidDays = raid ? Math.max(1, Math.ceil((Date.parse(raid.endsAt) - Date.now()) / 86_400_000)) : 0;
+  const shownRaid = raid ?? nextRaid ?? lastRaid;
 
   const [scanOpen, setScanOpen] = useState(false);
   const [trainingBusy, setTrainingBusy] = useState(false);
@@ -442,16 +444,18 @@ function ArenaPage() {
           <div className="flex items-center gap-3">
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="na-label uppercase text-brand-red-light">Mega Raid</span>
-              <span className="na-display-s text-foreground">{raid?.name ?? nextRaid?.name ?? "Mega Raid"}</span>
+              <span className="na-display-s text-foreground">{shownRaid?.name ?? "Mega Raid"}</span>
               <span className="na-caption text-text-secondary">
                 {raid
-                  ? `Ends in ${raidDays} day${raidDays === 1 ? "" : "s"} · 2 tries to beat it!`
+                  ? `Live now · ${megaRange(raid)} · 2 tries to beat it!`
                   : nextRaid
-                    ? `Opens ${new Date(nextRaid.startsAt).toLocaleDateString("en-US", { month: "long", day: "numeric" })}. Get ready!`
-                    : "No raid right now. Check back soon!"}
+                    ? `Coming soon · ${megaRange(nextRaid)}. Get ready!`
+                    : lastRaid
+                      ? `Expired · ${megaRange(lastRaid)}`
+                      : "No raid right now. Check back soon!"}
               </span>
             </div>
-            {(raid ?? nextRaid) && <FitSprite id={(raid ?? nextRaid)!.megaId} size={64} />}
+            {shownRaid && <FitSprite id={shownRaid.megaId} size={64} />}
           </div>
           {raid && (
             <NaButton size="M" block onClick={() => void navigate({ to: "/battle", search: { mega: 1 } as never })}>

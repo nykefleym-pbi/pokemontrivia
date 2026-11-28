@@ -98,6 +98,15 @@ export function WhosThatPokemon() {
   // correct while you are still guessing, wrong once the answer is on screen.
   // Passing null outside the fled phase keeps it from fetching during play.
   const fledDetail = useSpeciesDetail(phase === "incorrect" ? round?.monId ?? null : null);
+  // The spotlight's height: it shrinks (to 150) when 1B's 18 type keys need the room, as the old app did.
+  const [spotH, setSpotH] = useState(230);
+  const spotObserver = useRef<ResizeObserver | null>(null);
+  const spotRefCb = useCallback((el: HTMLDivElement | null) => {
+    spotObserver.current?.disconnect();
+    if (!el || typeof ResizeObserver === "undefined") return;
+    spotObserver.current = new ResizeObserver(() => setSpotH(el.offsetHeight || 230));
+    spotObserver.current.observe(el);
+  }, []);
   const [timeLeft, setTimeLeft] = useState(ANSWER_SECONDS);
   const [now, setNow] = useState(Date.now());
   const [startNonce, setStartNonce] = useState(0);
@@ -423,12 +432,13 @@ export function WhosThatPokemon() {
 
   // ---- Figma 12.1 / 12.4: the round on the Night Arena background.
   const key3d = "shadow-[0_4px_0_#9AA3C7,inset_0_2px_0_rgb(255_255_255/0.35)] bg-[#F4F6FF] text-night-base";
+  const spot = Math.max(150, Math.min(230, spotH));
   const silhouette = (
     // The shadow in black on a plain white spotlight: no glow, no rings, no prize before you answer.
-    <div className="relative mx-auto h-[230px] w-[300px] shrink-0" role="img" aria-label="silhouette">
-      <span className="absolute left-[37px] top-[2px] h-[226px] w-[226px] rounded-full bg-white" />
-      <span className="absolute left-[62px] top-[27px]">
-        <FitSprite id={round.monId} size={176} className="[filter:brightness(0)]" />
+    // 230 tall by default; a flex item that gives up height (not the screen scrolling) when the keys below need it.
+    <div ref={spotRefCb} className="flex min-h-[150px] w-full flex-[0_1_230px] items-center justify-center" role="img" aria-label="silhouette">
+      <span className="flex items-center justify-center rounded-full bg-white" style={{ width: spot - 4, height: spot - 4 }}>
+        <FitSprite id={round.monId} size={Math.round((spot * 176) / 230)} className="[filter:brightness(0)]" />
       </span>
     </div>
   );

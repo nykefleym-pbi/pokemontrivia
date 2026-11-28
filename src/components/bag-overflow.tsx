@@ -7,6 +7,7 @@ import type { ItemId } from "@/lib/game-data";
 import { ItemIcon } from "@/components/game-ui";
 import { NaButton } from "@/components/na/button";
 import { NaSheet } from "@/components/na/sheet";
+import { NaStepper } from "@/components/na/stepper";
 import {
   bagCapacity,
   bagUnitsUsed,
@@ -209,25 +210,18 @@ export function DiscardItemButton({ id }: { id: ItemId }) {
             <span className="na-caption text-text-secondary">{def.desc}</span>
           </span>
         </div>
-        <div className="flex items-center justify-between rounded-[16px] bg-white/10 px-3.5 py-2.5">
-          <span className="flex items-center gap-2">
-            <span className="na-body-strong text-foreground">Quantity</span>
-            {max > 1 && (
+        <NaStepper
+          value={amount}
+          max={max}
+          onChange={setQty}
+          extra={
+            max > 1 && (
               <button type="button" onClick={() => setQty(max)} className="na-label rounded-full border border-danger/30 bg-danger/[0.12] px-2 py-0.5 uppercase text-danger">
                 All {max}
               </button>
-            )}
-          </span>
-          <span className="flex items-center gap-4">
-            <button type="button" aria-label="One fewer" disabled={amount <= 1} onClick={() => setQty(Math.max(1, amount - 1))} className="na-headline flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.16] text-foreground disabled:opacity-40">
-              −
-            </button>
-            <span className="na-number-l w-6 text-center text-foreground">{amount}</span>
-            <button type="button" aria-label="One more" disabled={amount >= max} onClick={() => setQty(Math.min(max, amount + 1))} className="na-headline flex h-9 w-9 items-center justify-center rounded-full bg-brand-red text-foreground disabled:opacity-40">
-              +
-            </button>
-          </span>
-        </div>
+            )
+          }
+        />
         <div className="flex flex-col gap-2">
           {line(`Your ${plural(def.name, 2)}`, String(owned), "text-foreground")}
           {line("Throwing away", `−${amount}`, "text-brand-red-light")}

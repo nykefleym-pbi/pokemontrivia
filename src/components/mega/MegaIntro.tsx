@@ -4,7 +4,7 @@ import { NaRewardIcon } from "@/components/na/reward-icon";
 import { NaButton } from "@/components/na/button";
 import { NaTypeChip } from "@/components/na/type-chip";
 import { FieldSprite } from "@/components/na/battle";
-import { MEGA_QUESTION_COUNT, MEGA_REWARD, MEGA_WIN_CORRECT, type MegaEvent } from "@/lib/mega/schedule";
+import { MEGA_QUESTION_COUNT, MEGA_REWARD, MEGA_WIN_CORRECT, megaRange, type MegaEvent } from "@/lib/mega/schedule";
 
 /**
  * Figma 13.1 "Before the raid: the boss and the rules". Opens from the Mega
@@ -28,9 +28,8 @@ export function MegaIntro({
   /** In place of Home (2+ badges, no try yet): no Back, and the tab bar stays. */
   takeover?: boolean;
 }) {
-  const ms = Date.parse(event.endsAt) - Date.now();
-  const days = Math.floor(ms / 86_400_000), hours = Math.max(1, Math.floor((ms % 86_400_000) / 3_600_000));
-  const ends = days >= 1 ? `${days} day${days === 1 ? "" : "s"}` : `${hours} hour${hours === 1 ? "" : "s"}`;
+  // 13.1: the raid's dates, not a countdown; once it ends it says so (Paul, 2026-11-28).
+  const expired = Date.now() >= Date.parse(event.endsAt);
   const fmt = (n: number) => n.toLocaleString("en-US");
   const rules: Array<[React.ReactNode, string]> = [
     [<NaGlossIcon key="t" kind="target" size={24} />, `Get ${MEGA_WIN_CORRECT} out of ${MEGA_QUESTION_COUNT} questions right to defeat the Mega Pokémon!`],
@@ -52,7 +51,7 @@ export function MegaIntro({
           <span className="text-[#FF7A85]">
             <NaIcon name="clock" size={14} />
           </span>
-          <span className="na-label uppercase text-foreground">Live now · ends in {ends}</span>
+          <span className="na-label uppercase text-foreground">{expired ? "Expired" : "Live now"} · {megaRange(event)}</span>
         </span>
         <div className="relative h-[150px] w-[300px] shrink-0">
           <FieldSprite id={event.megaId} k={1.6} cx={150} feetY={0} centerY={75} />
@@ -85,8 +84,8 @@ export function MegaIntro({
           </span>
         </div>
         <div className="min-h-3 flex-1" />
-        <NaButton block disabled={loading || attemptsLeft <= 0} onClick={onStart}>
-          {attemptsLeft <= 0 ? "No attempts left" : "Start raid"}
+        <NaButton block disabled={loading || expired || attemptsLeft <= 0} onClick={onStart}>
+          {expired ? "This raid is over" : attemptsLeft <= 0 ? "No attempts left" : "Start raid"}
         </NaButton>
         <NaButton kind="text" size="M" block onClick={onLeaderboard}>
           View leaderboard

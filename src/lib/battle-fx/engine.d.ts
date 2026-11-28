@@ -21,6 +21,7 @@ export interface BattleFx {
 }
 
 export const CATCH_LEN: number;
+export const CATCH_CLICK_REDUCED: number;
 
 export function createBattleFx(
   back: HTMLCanvasElement,
