@@ -8,7 +8,7 @@ import { NaOfflineRow } from "@/components/na/offline-row";
 import { FitSprite } from "@/components/na/battle";
 import { NaButton } from "@/components/na/button";
 import { NaGlossIcon } from "@/components/na/gloss-icon";
-import { routeGym, stopsLeft } from "@/lib/route";
+import { fetchActiveMegaEvent, fetchNextMegaEvent, type MegaEvent } from "@/lib/mega/schedule";
 import type { BattleLogEntry } from "@/lib/store/types";
 import { useGameStore } from "@/lib/store";
 import { useStoreHydrated } from "@/lib/store-hydration";
@@ -24,7 +24,7 @@ import { BattleCodeQr } from "@/components/battle-code-qr";
 import { VersusScreen } from "@/components/versus-screen";
 import { trainingBotSide } from "@/lib/training-bot";
 import { ScanPanel } from "@/components/NearbyBattleSheet";
-import { getWeekRangeUtc, trainerArtFor, trainerSpriteUrl } from "@/lib/game-data";
+import { trainerArtFor, trainerSpriteUrl } from "@/lib/game-data";
 import { versusBackdropSrc } from "@/lib/versus-backdrops";
 import { ITEM_BY_ID } from "@/content/items";
 import { ARENA_REWARD_SLOTS, trophyTier, type TrophyTier } from "@/lib/arena-rewards";
@@ -113,15 +113,15 @@ function ArenaPage() {
   const versusBackdropId = useGameStore((s) => s.versusBackdropId);
   const claimArenaReward = useGameStore((s) => s.claimArenaReward);
   const battleLog = useGameStore((s) => s.battleLog);
-  const weeklyLeague = useGameStore((s) => s.weeklyLeague);
-  const route = useGameStore((s) => s.route);
   const [historyOpen, setHistoryOpen] = useState(false);
-  // The Weekly League card shows the gym on your route (same rules as Home).
-  const leader = routeGym(route);
-  const badgeName = leader.badge;
-  const gymLeft = stopsLeft(route);
-  const weekDone = weeklyLeague?.gymLeaderId === leader.id && (weeklyLeague.status === "won" || weeklyLeague.status === "lost");
-  const daysLeft = Math.max(1, Math.ceil((getWeekRangeUtc().nextStart - Date.now()) / 86_400_000));
+  // The Mega Raid card: the live raid, else the next one on the schedule.
+  const [raid, setRaid] = useState<MegaEvent | null>(null);
+  const [nextRaid, setNextRaid] = useState<MegaEvent | null>(null);
+  useEffect(() => {
+    void fetchActiveMegaEvent().then(setRaid).catch(() => {});
+    void fetchNextMegaEvent().then(setNextRaid).catch(() => {});
+  }, []);
+  const raidDays = raid ? Math.max(1, Math.ceil((Date.parse(raid.endsAt) - Date.now()) / 86_400_000)) : 0;
 
   const [scanOpen, setScanOpen] = useState(false);
   const [trainingBusy, setTrainingBusy] = useState(false);
@@ -436,29 +436,29 @@ function ArenaPage() {
           </button>
         </div>
 
-        {/* Weekly League first (7.2): this week's gym on your route. It opens on Home's route once every stop is beaten. */}
-        <div className="na-card flex flex-col gap-2 rounded-[22px] border-[1.5px] border-reward-gold/50 p-4">
+        {/* Paul 2026-11-28: the Mega Raid takes the Weekly League's place (the gym stays on Home's
+            route). Players with 2+ badges meet a live raid on Home first; everyone can join here. */}
+        <div className="na-card flex flex-col gap-2 rounded-[22px] border-[1.5px] border-brand-red/50 p-4">
           <div className="flex items-center gap-3">
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <span className="na-label uppercase text-reward-gold">Weekly League</span>
-              <span className="na-display-s text-foreground">Gym Leader {leader.name}</span>
+              <span className="na-label uppercase text-brand-red-light">Mega Raid</span>
+              <span className="na-display-s text-foreground">{raid?.name ?? nextRaid?.name ?? "Mega Raid"}</span>
               <span className="na-caption text-text-secondary">
-                {weekDone
-                  ? weeklyLeague?.status === "won"
-                    ? `You won the ${badgeName}! A new gym opens Monday.`
-                    : `${leader.name} is ready for a rematch on Monday.`
-                  : `Ends in ${daysLeft} day${daysLeft === 1 ? "" : "s"} · Win the ${badgeName}!`}
+                {raid
+                  ? `Ends in ${raidDays} day${raidDays === 1 ? "" : "s"} · 2 tries to beat it!`
+                  : nextRaid
+                    ? `Opens ${new Date(nextRaid.startsAt).toLocaleDateString("en-US", { month: "long", day: "numeric" })}. Get ready!`
+                    : "No raid right now. Check back soon!"}
               </span>
             </div>
-            <FitSprite id={leader.signaturePokemonId} size={64} />
+            {(raid ?? nextRaid) && <FitSprite id={(raid ?? nextRaid)!.megaId} size={64} />}
           </div>
-          {!weekDone && (
-            <NaButton size="M" block onClick={() => void navigate({ to: "/battle", search: { autostart: 0 } as never })}>
-              {gymLeft === 0 ? "Challenge" : `Beat ${gymLeft} more trainer${gymLeft === 1 ? "" : "s"} first`}
+          {raid && (
+            <NaButton size="M" block onClick={() => void navigate({ to: "/battle", search: { mega: 1 } as never })}>
+              Join the raid
             </NaButton>
           )}
         </div>
-
         {/* Your record: Arena numbers only, so a solo win no longer reads as "Wins 0". */}
         <div className="na-glass flex items-center gap-3.5 rounded-[22px] p-3.5">
           <img

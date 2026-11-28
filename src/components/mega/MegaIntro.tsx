@@ -17,13 +17,16 @@ export function MegaIntro({
   onStart,
   onLeaderboard,
   onBack,
+  takeover = false,
 }: {
   event: MegaEvent;
   attemptsLeft: number;
   loading: boolean;
   onStart: () => void;
   onLeaderboard: () => void;
-  onBack: () => void;
+  onBack?: () => void;
+  /** In place of Home (2+ badges, no try yet): no Back, and the tab bar stays. */
+  takeover?: boolean;
 }) {
   const ms = Date.parse(event.endsAt) - Date.now();
   const days = Math.floor(ms / 86_400_000), hours = Math.max(1, Math.floor((ms % 86_400_000) / 3_600_000));
@@ -35,11 +38,13 @@ export function MegaIntro({
     [<NaRewardIcon key="w" kind="Trophy" size={24} />, "Every correct answer brings you closer to the top!"],
   ];
   return (
-    <div className="na-bg-night flex h-full w-full flex-col overflow-y-auto pb-[calc(env(safe-area-inset-bottom)+16px)] pt-[env(safe-area-inset-top)]">
+    <div className={`na-bg-night flex h-full w-full flex-col overflow-y-auto pt-[env(safe-area-inset-top)] ${takeover ? "pb-nav" : "pb-[calc(env(safe-area-inset-bottom)+16px)]"}`}>
       <div className="flex h-[52px] shrink-0 items-center gap-3 px-4">
-        <button type="button" aria-label="Back" onClick={onBack} className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-white/10 text-foreground">
-          <NaIcon name="arrow-left" size={20} />
-        </button>
+        {onBack && !takeover && (
+          <button type="button" aria-label="Back" onClick={onBack} className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-white/10 text-foreground">
+            <NaIcon name="arrow-left" size={20} />
+          </button>
+        )}
         <h1 className="na-display-s flex-1 text-foreground">Mega Raid</h1>
       </div>
       <div className="flex flex-1 flex-col items-center gap-3 px-4 pt-1">

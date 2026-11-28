@@ -89,6 +89,7 @@ function BattlePage() {
   const level = useGameStore((s) => s.level);
   const peakLevel = useGameStore((s) => s.peakLevel);
   const defeatedElites = useGameStore((s) => s.defeatedElites);
+  const gymBadges = useGameStore((s) => s.gymBadges);
   const seenHashes = useGameStore((s) => s.seenQuestionHashes);
   const seenQuestions = useGameStore((s) => s.seenQuestions);
   const seenCuratedIds = useGameStore((s) => s.seenCuratedIds);
@@ -170,6 +171,9 @@ function BattlePage() {
   // 14.3: the load that failed, to run again from the No connection sheet.
   const [offlineRetry, setOfflineRetry] = useState<null | (() => void)>(null);
   const eliteTakeover = !!pendingElite && phase !== "elite";
+  // 13.1 as a blocker (Paul 2026-11-28): a live raid, 2+ gym badges, no try yet. Elite Four goes first.
+  const megaBlocks =
+    !pendingElite && phase === "home" && !!activeMega && megaStats !== null && megaStats.attempts === 0 && gymBadges.length >= 2;
 
   // Home-screen Mega Raid card state (the raid entry moved here from the Battle
   // Arena tab). `null` while stats are still loading, `"none"` once we've
@@ -325,7 +329,8 @@ function BattlePage() {
   useEffect(() => {
     if (hasOnboarded && search.mega === 1 && !megaAutoStartedRef.current && phase === "home") {
       megaAutoStartedRef.current = true;
-      startMega();
+      // From the Arena's Mega Raid card: the rules first (13.1), then Start raid.
+      void openMegaIntro();
     }
   }, [hasOnboarded, search.mega, phase]);
 
@@ -610,6 +615,8 @@ function BattlePage() {
     if (popupOwner && popupOwner !== "carousel") return;
     const dismissedToday = engageDismissDate === today ? engageDismissCount : 0;
     if (dismissedToday >= 3) return;
+    // Never over a Mega Raid blocker: that screen is the one thing to do.
+    if (megaBlocks) return;
     const hasMega = !!activeMega && Date.parse(activeMega.endsAt) > Date.now();
     if (megaStats === null && !engageDelayPassed) return;
     const now = Date.now();
@@ -742,6 +749,7 @@ function BattlePage() {
   }, [
     phase,
     pendingElite,
+    megaBlocks,
     pendingLevelUp,
     installSettled,
     popupOwner,
@@ -1330,6 +1338,19 @@ function BattlePage() {
         // Paul 2026-11-28: a pending Elite Four member blocks Home outright (the old
         // takeover), never a stop on the route. The tab bar stays for Shop and Pokédex.
         <EliteChallenge elite={pendingElite} onStart={startElite} loading={phase === "loading"} takeover />
+      ) : megaBlocks && activeMega ? (
+        // Paul 2026-11-28: with 2+ badges a live raid blocks Home until the first try.
+        <MegaIntro
+          event={activeMega}
+          attemptsLeft={MEGA_MAX_ATTEMPTS}
+          loading={false}
+          onStart={() => void startMega()}
+          onLeaderboard={() => {
+            setMegaEvent(activeMega);
+            setPhase("megaLeaderboard");
+          }}
+          takeover
+        />
       ) : phase === "loading" && prepping ? (
         <ModePrep label={prepping} />
       ) : (

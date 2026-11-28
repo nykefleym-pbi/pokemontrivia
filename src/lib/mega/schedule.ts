@@ -115,6 +115,18 @@ export async function fetchActiveMegaEvent(
   return null;
 }
 
+/** The next raid that hasn't opened yet, for the Arena's Mega Raid card. */
+export async function fetchNextMegaEvent(now: Date = new Date()): Promise<MegaEvent | null> {
+  const { data, error } = await db
+    .from("mega_events")
+    .select("*")
+    .gt("starts_at", now.toISOString())
+    .order("starts_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  return !error && data ? mapEvent(data) : null;
+}
+
 /** Look up a single event by id (used by the leaderboard + champion-claim flows). */
 export async function fetchMegaEvent(id: string): Promise<MegaEvent | null> {
   const { data, error } = await db.from("mega_events").select("*").eq("id", id).maybeSingle();
