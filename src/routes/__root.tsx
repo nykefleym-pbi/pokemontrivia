@@ -22,6 +22,7 @@ import { BootSplash } from "@/components/boot-splash";
 import { PwaRegister } from "@/components/pwa-register";
 import { useGameStore } from "@/lib/store";
 import { useEnsureSocial } from "@/lib/social";
+import { healPushSubscription } from "@/lib/push";
 import { FriendRequestInbox } from "@/components/FriendRequestInbox";
 import { PvpInviteInbox } from "@/components/PvpInviteInbox";
 import { InviteRewardScreen } from "@/components/invite-reward-screen";
@@ -337,6 +338,10 @@ function RootComponent() {
   // first open of that day; the whole point of the engagement work is to move
   // this number, so it is measured before anything is built to move it.
   useEffect(() => trackReturnVisit(), []);
+  // After the 2026-11-28 VAPID key rotation, move an already-allowed device onto the new key.
+  useEffect(() => {
+    void healPushSubscription();
+  }, []);
 
   // Chrome fires beforeinstallprompt once, early, and only keeps the event if
   // it is preventDefault()ed — so it has to be captured here, long before the

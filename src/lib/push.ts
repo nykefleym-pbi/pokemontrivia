@@ -5,7 +5,7 @@ import { ensureSession } from "@/lib/social";
 // (only the private key, held server-side as an Edge Function secret, is
 // sensitive).
 const VAPID_PUBLIC_KEY =
-  "BNpowSglajqo7pTCX2nslQ0F0775ytOD4twr3W9cpeNtG6wc5sFp30mdVTDq__DSNFdx9UF-hFNpXW3XQXinE1w";
+  "BN2JzvCyF2FLLYgnLzDpzEeqwFJD8reo8LMI8n1R9usOhDio2TZuLdZKcvCWG87cH79bWAuhagEZPAhmCXXHTXk";
 
 const db = supabase as unknown as { from: (t: string) => any }; // eslint-disable-line @typescript-eslint/no-explicit-any -- matches the loose-typing pattern used elsewhere in social.ts / mega/runs.ts
 
@@ -23,6 +23,31 @@ function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
   const out = new Uint8Array(new ArrayBuffer(raw.length));
   for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
   return out;
+}
+
+/** True when the subscription was made with the current VAPID public key. */
+function sameKey(sub: PushSubscription): boolean {
+  const k = sub.options?.applicationServerKey;
+  if (!k) return true; // shortcut: browsers that hide the key are trusted as-is
+  const a = new Uint8Array(k);
+  const b = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+  return a.length === b.length && a.every((v, i) => v === b[i]);
+}
+
+/**
+ * Re-subscribe, silently, a device that already granted permission but holds a
+ * subscription from the old key (the 2026-11-28 key rotation). No prompt: only
+ * runs when permission is already "granted".
+ */
+export async function healPushSubscription(): Promise<void> {
+  if (!pushSupported() || Notification.permission !== "granted") return;
+  try {
+    const reg = await withTimeout(navigator.serviceWorker.ready, 8000, "Service worker registration");
+    const sub = await reg.pushManager.getSubscription();
+    if (sub && !sameKey(sub)) await enablePushNotifications();
+  } catch (e) {
+    console.warn("[push] healPushSubscription threw:", e);
+  }
 }
 
 export function pushSupported(): boolean {
@@ -77,6 +102,12 @@ export async function enablePushNotifications(): Promise<{ ok: boolean; error?: 
       "Service worker registration",
     );
     let sub = await reg.pushManager.getSubscription();
+    // A subscription made with an older key can never receive (the server signs
+    // with the new one): drop it and subscribe again.
+    if (sub && !sameKey(sub)) {
+      await sub.unsubscribe().catch(() => false);
+      sub = null;
+    }
     if (!sub) {
       sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,

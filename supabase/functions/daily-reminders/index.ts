@@ -75,12 +75,25 @@ Deno.serve(async (req) => {
     .limit(1);
   const megaEventActive = (activeEvents?.length ?? 0) > 0;
 
+  // Only players who turned push on can be reminded. Scanning every profile
+  // made one send-push call per player per run, which hit the edge rate limit
+  // after ~30 calls and crashed the whole run with a 500.
+  const { data: subs, error: subErr } = await admin.from("push_subscriptions").select("user_id");
+  if (subErr) return new Response(JSON.stringify({ error: subErr.message }), { status: 500 });
+  const subscribed = [...new Set((subs ?? []).map((s) => s.user_id as string))];
+  if (subscribed.length === 0) {
+    return new Response(JSON.stringify({ scanned: 0, notified: 0 }), {
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   const cooldownCutoff = new Date(now.getTime() - REMINDER_COOLDOWN).toISOString();
   const { data: profiles, error } = await admin
     .from("profiles")
     .select(
       "id, last_daily_claim, last_weekly_attempt, last_whos_that_played, last_mega_played, last_gift_claim, last_reminder_sent",
     )
+    .in("id", subscribed)
     .or(`last_reminder_sent.is.null,last_reminder_sent.lt.${cooldownCutoff}`);
 
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
@@ -116,16 +129,23 @@ Deno.serve(async (req) => {
         ? `${modes[0]} is ready — jump back in!`
         : `${modes.slice(0, -1).join(", ")} and ${modes[modes.length - 1]} are ready — jump back in!`;
 
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Cron-Secret": CRON_SECRET },
-      body: JSON.stringify({
-        kind: "mode_reminder",
-        toUserId: p.id,
-        title: "Pokémon Trivia Battle",
-        body,
-      }),
-    });
+    let res: Response;
+    try {
+      res = await fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Cron-Secret": CRON_SECRET },
+        body: JSON.stringify({
+          kind: "mode_reminder",
+          toUserId: p.id,
+          title: "Pokémon Trivia Battle",
+          body,
+        }),
+      });
+    } catch (e) {
+      // A rate limit or network blip skips this player; the next run retries.
+      console.error("[daily-reminders] send-push failed:", e);
+      continue;
+    }
     if (res.ok) {
       notified++;
       await admin.from("profiles").update({ last_reminder_sent: now.toISOString() }).eq("id", p.id);
