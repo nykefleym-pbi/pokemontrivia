@@ -179,6 +179,8 @@ export function WhosThatPokemon() {
       playSfx(phase === "correct" ? "correct" : "wrong");
       if (round) revealPokemon(round.monId);
       consumeWhosThat();
+      // The route's Who's That step: played, caught or fled (Paul, 2026-11-28).
+      useGameStore.getState().markRouteWhos();
       void syncActivity("last_whos_that_played");
     }
   }, [phase, round, consumeWhosThat]);

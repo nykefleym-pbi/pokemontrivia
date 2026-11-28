@@ -333,7 +333,7 @@ export interface GameState {
   /** Where the player is on the Home route (lib/route.ts). Its gym is the Weekly League. */
   route: RouteState;
   /** Each other region's place on its own route, kept while you battle elsewhere. */
-  routeSaved: Record<number, { gym: number; beaten: number }>;
+  routeSaved: Record<number, Omit<RouteState, "region">>;
 
   // preferences
   darkMode: boolean;
@@ -493,7 +493,10 @@ export interface GameState {
   applyStreakFreezes: () => void;
   clearFreezeNotice: () => void;
   /** A trainer stop on the route was beaten. */
-  recordRouteStopWin: () => void;
+  /** A route battle won: a stop advances the route; a trainer win with no stop reopens a lost gym. */
+  recordRouteStopWin: (stop: number | null, kind: "wild" | "trainer") => void;
+  /** This route's Who's That round was played (caught or fled). */
+  markRouteWhos: () => void;
   /** Switch to another region's route (Figma 6.2), keeping every region's place. */
   chooseRegion: (region: number) => void;
 

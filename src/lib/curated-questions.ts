@@ -69,14 +69,17 @@ export async function pickBattleCurated(opts: {
   difficulties: CuratedDifficulty[];
   count: number;
   excludeIds?: string[];
+  /** Route battles: prefer questions about these regions, topping up from anywhere (2026-11-28). */
+  regions?: string[];
 }): Promise<{ questions: TriviaPayload[]; servedIds: string[] }> {
-  const { difficulties, count, excludeIds = [] } = opts;
+  const { difficulties, count, excludeIds = [], regions } = opts;
   if (count <= 0 || difficulties.length === 0) return { questions: [], servedIds: [] };
   try {
     const { data, error } = await supabase.rpc("pick_battle_curated", {
       p_difficulties: difficulties,
       p_count: count,
       p_exclude: excludeIds,
+      ...(regions?.length ? { p_regions: regions } : {}),
     });
     if (error || !Array.isArray(data)) {
       console.warn("pick_battle_curated failed:", error?.message);

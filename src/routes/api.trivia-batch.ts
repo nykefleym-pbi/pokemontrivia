@@ -18,22 +18,25 @@ export const Route = createFileRoute("/api/trivia-batch")({
         // normaliser so a stale client can't fall off the band it asked for.
         let difficulties: CuratedDifficulty[] = ["easy"];
         let excludeIds: string[] = [];
+        let regions: string[] | undefined;
         try {
           const body = (await request.json()) as {
             difficulties?: unknown;
             difficulty?: unknown;
             excludeIds?: string[];
+            regions?: unknown;
           };
           difficulties =
             normalizeDifficultyBand(body.difficulties ?? body.difficulty) ?? difficulties;
           if (Array.isArray(body.excludeIds)) excludeIds = body.excludeIds.slice(-2000);
+          if (Array.isArray(body.regions)) regions = body.regions.filter((r): r is string => typeof r === "string").slice(0, 9);
         } catch {
           /* defaults */
         }
 
         const TOTAL = 20;
 
-        const curatedResult = await pickBattleCurated({ difficulties, count: TOTAL, excludeIds });
+        const curatedResult = await pickBattleCurated({ difficulties, count: TOTAL, excludeIds, regions });
 
         await recordCuratedServed(curatedResult.servedIds).catch(() => {
           console.warn("Failed to record curated served (non-fatal).");

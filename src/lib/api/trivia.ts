@@ -7,6 +7,8 @@ export interface BattleQuestionsParams {
   seenSamples: string[];
   excludeIds: string[];
   flowSeed: number;
+  /** A route battle's region: its questions come first. */
+  regions?: string[];
 }
 export function fetchBattleQuestions(p: BattleQuestionsParams) {
   return postJson<{ questions: Trivia[]; servedIds?: string[] }>("/api/trivia-batch", p);

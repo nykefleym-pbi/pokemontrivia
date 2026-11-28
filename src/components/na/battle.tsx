@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { NaIcon } from "@/components/na/icon";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { NaTypeChip } from "@/components/na/type-chip";
@@ -137,7 +138,8 @@ export function FieldSprite({
 }
 
 /** A sprite trimmed to its pixels and fitted into a size x size box, centred (the design's Pokémon art in cells and rows). */
-export function FitSprite({ id, shiny = false, size, className }: { id: number; shiny?: boolean; size: number; className?: string }) {
+/** The sprite trimmed to the Pokémon and fitted in a size box: centred, or standing on the box's bottom edge. */
+export function FitSprite({ id, shiny = false, size, className, feet = false }: { id: number; shiny?: boolean; size: number; className?: string; feet?: boolean }) {
   const src = spriteUrl(id, shiny, false);
   const tr = useTrim(src);
   if (!tr) return <span className="block shrink-0" style={{ width: size, height: size }} />;
@@ -151,7 +153,7 @@ export function FitSprite({ id, shiny = false, size, className }: { id: number; 
         draggable={false}
         crossOrigin="anonymous"
         className={cn("pointer-events-none absolute max-w-none select-none [image-rendering:pixelated]", className)}
-        style={{ left: (size - t.w * k) / 2 - t.x * k, top: (size - t.h * k) / 2 - t.y * k, width: 96 * k, height: 96 * k }}
+        style={{ left: (size - t.w * k) / 2 - t.x * k, top: (feet ? size - t.h * k : (size - t.h * k) / 2) - t.y * k, width: 96 * k, height: 96 * k }}
       />
     </span>
   );
@@ -160,8 +162,9 @@ export function FitSprite({ id, shiny = false, size, className }: { id: number; 
 // ------------------------------------------------------------------ the field
 /**
  * The stage: the 390-wide field scaled to the phone's width only, so it never moves or
- * resizes with the question (Paul, 2026-11-28). The art runs on to the bottom of the screen
- * (the ground mirrored below it), and the question panel sits over the lower part.
+ * resizes with the question (Paul, 2026-11-28). The art is one picture 1000 pt tall (the
+ * plugin's field carried on below the 464 pt battle area, never mirrored), so it reaches the
+ * bottom of any phone; the question panel sits over the lower part.
  */
 export function NaBattleField({
   mode = "morning",
@@ -191,7 +194,8 @@ export function NaBattleField({
   }, []);
   const s = box.w / 390;
   const tall = Math.max(504, Math.ceil(box.h / s)); // the stage reaches the bottom of the screen
-  const bg = `/battle/field/bg-${mode}.png`;
+  // the plugin's stage art carried on to 1000 pt as one picture (render-assets.mjs, bg-<mode>-tall)
+  const bg = `/battle/field/bg-${mode}-tall.png`;
   return (
     <div ref={ref} className="absolute inset-0 overflow-hidden bg-night-deep">
       <div
@@ -199,11 +203,11 @@ export function NaBattleField({
         className="absolute left-0 top-0"
         style={{ width: 390, height: 504, transform: `scale(${s})`, transformOrigin: "top left" }}
       >
-        {!night && tall > 504 && (
-          // below the art: its ground again, mirrored, so no blank band shows under a short panel
-          <img src={bg} alt="" className="absolute left-0 top-[504px] h-[504px] w-[390px] max-w-none -scale-y-100 [image-rendering:pixelated]" draggable={false} />
+        {night ? (
+          <img src={bg} alt="" className="absolute left-0 top-0 h-[1000px] w-[390px] max-w-none [image-rendering:pixelated] [clip-path:inset(0_0_536px_0)]" draggable={false} />
+        ) : (
+          <img src={bg} alt="" className="absolute left-0 top-0 h-[1000px] w-[390px] max-w-none [image-rendering:pixelated]" draggable={false} />
         )}
-        <img src={bg} alt="" className="absolute inset-0 h-[504px] w-[390px] max-w-none [image-rendering:pixelated]" draggable={false} />
         {/* BG/Arena vignette (Figma: dark at the top, clear over the field, darker toward the panel) */}
         <div
           className="absolute inset-x-0 top-0"
@@ -686,6 +690,150 @@ export function FittedTrainer({
   );
 }
 
+// ------------------------------------------------------------------ 3.1w a wild Pokémon (Paul, 2026-11-28)
+/** A patch of tall grass as pixel art, 48 x 18 px drawn 4 pt to the pixel: blades in three greens. */
+function GrassPatch() {
+  const blades: Array<[number, number, string, string]> = [];
+  for (let x = 0; x < 48; x += 2) {
+    const h = 8 + ((x * 7 + 3) % 11); // fixed, so the patch looks the same every time
+    blades.push([x, h, x % 6 === 0 ? "#2e7d32" : x % 6 === 2 ? "#43a047" : "#388e3c", (x / 2) % 3 === 0 ? "#9ccc65" : "#66bb6a"]);
+  }
+  return (
+    <svg viewBox="0 0 48 18" width={192} height={72} shapeRendering="crispEdges" aria-hidden>
+      <rect x="0" y="14" width="48" height="4" fill="#1b5e20" />
+      {blades.map(([x, h, c, tip]) => (
+        <g key={x}>
+          <rect x={x} y={18 - h} width="2" height={h} fill={c} />
+          <rect x={x} y={18 - h} width="1" height="2" fill={tip} />
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+/** 3.1 for a wild Pokémon: no trainer; the tall grass rustles, then the Pokémon springs out of it (inside the stage). */
+export function NaIntroWild({ id, shiny }: { id: number; shiny?: boolean }) {
+  return (
+    <div className="pointer-events-none absolute inset-0">
+      <div className="absolute rounded-[50%] bg-night-deep/35" style={{ left: 120, top: 398, width: 150, height: 18 }} />
+      <motion.div className="absolute inset-0" initial={{ y: 70, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.8, type: "spring", stiffness: 260, damping: 13 }}>
+        <FieldSprite id={id} shiny={shiny} k={2.5} cx={195} feetY={404} />
+      </motion.div>
+      <motion.div
+        className="absolute"
+        style={{ left: 99, top: 340, transformOrigin: "50% 100%" }}
+        animate={{ rotate: [0, -4, 4, -3, 3, 0], x: [0, -4, 4, -3, 3, 0] }}
+        transition={{ duration: 0.7, times: [0, 0.2, 0.4, 0.6, 0.8, 1] }}
+      >
+        <GrassPatch />
+      </motion.div>
+    </div>
+  );
+}
+
+// ------------------------------------------------------------------ the Pokédex scan (Paul, 2026-11-28)
+/** The Pokédex, held up beside the opponent (it is the one being scanned, Paul 2026-11-28): its lens
+ *  faces the Pokémon, a short beam covers it and a scan line sweeps it top to bottom (inside the stage). */
+export function NaPokedexScan() {
+  return (
+    <div className="pointer-events-none absolute inset-0 z-10">
+      <motion.svg
+        className="absolute left-0 top-0"
+        width={390}
+        height={504}
+        viewBox="0 0 390 504"
+        aria-hidden
+        initial={{ opacity: 0 }}
+        animate={{ opacity: [0, 0.9, 0.6, 0.9] }}
+        transition={{ delay: 0.45, duration: 1.4 }}
+      >
+        <defs>
+          <linearGradient id="scan-beam" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stopColor="#7fe8ff" stopOpacity="0.8" />
+            <stop offset="1" stopColor="#7fe8ff" stopOpacity="0.1" />
+          </linearGradient>
+        </defs>
+        <polygon points="188,132 216,56 364,56 364,228 216,228 188,150" fill="url(#scan-beam)" />
+      </motion.svg>
+      {/* the scan line, top to bottom of the opponent, three passes */}
+      <motion.div
+        className="absolute h-[3px] rounded-full bg-[#b8f3ff] shadow-[0_0_12px_#7fe8ff]"
+        style={{ left: 216, width: 148, top: 56 }}
+        initial={{ y: 0, opacity: 0 }}
+        animate={{ y: [0, 170, 0, 170], opacity: [0, 1, 1, 0] }}
+        transition={{ delay: 0.55, duration: 1.6, ease: "easeInOut" }}
+      />
+      {/* the device: red, three lights, a dark screen, and the big blue lens on the side facing the Pokémon */}
+      <motion.svg
+        className="absolute"
+        style={{ left: 100, top: 112 }}
+        width={104}
+        height={78}
+        viewBox="0 0 104 78"
+        aria-hidden
+        initial={{ x: -120, opacity: 0, rotate: -6 }}
+        animate={{ x: 0, opacity: 1, rotate: -6 }}
+        transition={{ type: "spring", stiffness: 220, damping: 20 }}
+      >
+        <rect x="2" y="6" width="100" height="70" rx="12" fill="#a3142c" />
+        <rect x="2" y="2" width="100" height="68" rx="12" fill="#e3233b" stroke="#0b1026" strokeWidth="3" />
+        <circle cx="80" cy="22" r="13" fill="#f4f6ff" stroke="#0b1026" strokeWidth="3" />
+        <circle cx="80" cy="22" r="9" fill="#4c7dff" />
+        <circle cx="77" cy="19" r="3" fill="#cfe0ff" />
+        <circle cx="14" cy="12" r="3.5" fill="#ff7a85" stroke="#0b1026" strokeWidth="1.5" />
+        <circle cx="24" cy="12" r="3.5" fill="#ffc83d" stroke="#0b1026" strokeWidth="1.5" />
+        <circle cx="34" cy="12" r="3.5" fill="#2ee59d" stroke="#0b1026" strokeWidth="1.5" />
+        <rect x="8" y="24" width="56" height="36" rx="5" fill="#0b2a2e" stroke="#0b1026" strokeWidth="2.5" />
+        <rect x="13" y="30" width="30" height="3" rx="1.5" fill="#7fe8ff" />
+        <rect x="13" y="37" width="44" height="3" rx="1.5" fill="#7fe8ff" opacity="0.6" />
+        <rect x="13" y="44" width="22" height="3" rx="1.5" fill="#7fe8ff" opacity="0.6" />
+      </motion.svg>
+    </div>
+  );
+}
+
+/** REGISTERED!, what was added and the region's seen count, under the field (in place of the catch, 3.7). */
+export function NaScanPanel({
+  name,
+  isNew,
+  region,
+  seen,
+  total,
+  onContinue,
+  wordmark,
+}: {
+  name: string;
+  isNew: boolean;
+  region: string;
+  seen: number;
+  total: number;
+  onContinue: () => void;
+  wordmark: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onContinue}
+      data-testid="scan-continue"
+      className="absolute inset-x-0 top-[470px] bottom-[34px] flex flex-col items-center gap-2.5 px-5 pb-6 pt-2 text-center"
+    >
+      {wordmark}
+      <span className="na-display-m self-stretch text-foreground">{name} is in your Pokédex!</span>
+      {isNew && <span className="na-label rounded-md bg-info px-[7px] py-0.5 uppercase text-foreground">New</span>}
+      <span className="flex w-[260px] flex-col items-center gap-1.5">
+        <span className="na-caption self-stretch text-text-secondary">
+          {region}: {seen} of {total} seen
+        </span>
+        <span className="relative h-2 self-stretch overflow-hidden rounded bg-night-deep">
+          <span className="absolute inset-y-0 left-0 rounded bg-info" style={{ width: `max(4px, ${(seen / Math.max(1, total)) * 100}%)` }} />
+        </span>
+      </span>
+      <span className="flex-1" />
+      <span className="na-label self-stretch uppercase text-text-muted">Tap to continue</span>
+    </button>
+  );
+}
+
 /**
  * "PICNICKER JANINE wants to battle!", the round pill and TAP TO SKIP (screen coordinates).
  * 10.1, a gym leader: his line and the badge at stake instead of the round pill, and TAP TO START.
@@ -696,18 +844,21 @@ export function NaIntroText({
   rounds,
   leaving,
   gym,
+  wild,
 }: {
   name: string;
   round: number;
   rounds: number;
   leaving: boolean;
   gym?: { quote: string; badge: string; badgeUrl: string };
+  /** A wild Pokémon: "WILD PIDGEY / appeared from the tall grass!" */
+  wild?: boolean;
 }) {
   return (
     <div className="pointer-events-none absolute inset-0 transition-opacity duration-300" style={{ opacity: leaving ? 0 : 1 }}>
       <div className="absolute left-4 top-[488px] flex w-[358px] flex-col items-center gap-2.5">
         <span className="na-display-l self-stretch text-center uppercase text-foreground">{name}</span>
-        <span className="na-title self-stretch text-center text-text-secondary">wants to battle!</span>
+        <span className="na-title self-stretch text-center text-text-secondary">{wild ? "appeared from the tall grass!" : "wants to battle!"}</span>
         {gym ? (
           <>
             <span className="na-body self-stretch text-center text-foreground">“{gym.quote}”</span>

@@ -6,7 +6,7 @@ import { Facebook } from "lucide-react";
 import { useGameStore } from "@/lib/store";
 import { useStoreHydrated } from "@/lib/store-hydration";
 import { PokeballSpinner, PokemonSprite } from "@/components/game-ui";
-import { adaptiveDifficultyBand } from "@/lib/game-data";
+import { ROUTE_REGIONS, battleKind, gymTown, nextStep } from "@/lib/route";
 import { BattleScreen, type Trivia } from "@/components/battle-screen";
 import { fetchBattleQuestions, fetchEliteQuestions, fetchDailyChallenge } from "@/lib/api/trivia";
 import { playBgm } from "@/lib/audio";
@@ -18,7 +18,7 @@ import { NaRewardIcon } from "@/components/na/reward-icon";
 import { NaSheet } from "@/components/na/sheet";
 import { NaGlossIcon } from "@/components/na/gloss-icon";
 import { NaIcon } from "@/components/na/icon";
-import { RouteHome, type MegaHomeState } from "@/components/route-home";
+import { RouteHome } from "@/components/route-home";
 import { EliteChallenge } from "@/components/elite-challenge";
 import { LevelUpScreen } from "@/components/level-up-screen";
 
@@ -96,7 +96,6 @@ function BattlePage() {
   const seenHashes = useGameStore((s) => s.seenQuestionHashes);
   const seenQuestions = useGameStore((s) => s.seenQuestions);
   const seenCuratedIds = useGameStore((s) => s.seenCuratedIds);
-  const recentAnswers = useGameStore((s) => s.recentAnswers);
   const markQuestionsSeen = useGameStore((s) => s.markQuestionsSeen);
   const markCuratedSeen = useGameStore((s) => s.markCuratedSeen);
   const navigate = useNavigate();
@@ -177,26 +176,6 @@ function BattlePage() {
   // 13.1 as a blocker (Paul 2026-11-28): a live raid, 2+ gym badges, no try yet. Elite Four goes first.
   const megaBlocks =
     !pendingElite && phase === "home" && !!activeMega && megaStats !== null && megaStats.attempts === 0 && gymBadges.length >= 2;
-
-  // Home-screen Mega Raid card state (the raid entry moved here from the Battle
-  // Arena tab). `null` while stats are still loading, `"none"` once we've
-  // confirmed no raid is live, else the event with its disabled/reason state.
-  const megaHomeState: MegaHomeState =
-    megaStats === null
-      ? null
-      : !activeMega
-        ? "none"
-        : (() => {
-            const won = megaStats.won;
-            const exhausted = megaStats.attempts >= MEGA_MAX_ATTEMPTS;
-            return {
-              name: activeMega.name,
-              megaId: activeMega.megaId,
-              endsAt: activeMega.endsAt,
-              disabled: won || exhausted,
-              reason: won ? "cleared" : exhausted ? "exhausted" : "active",
-            };
-          })();
 
   // Background music per battle phase / mode. Keyed on `phase` (NOT level):
   // winning awards XP which can change `level` mid-battle — re-running this
@@ -312,7 +291,7 @@ function BattlePage() {
   useEffect(() => {
     if (useGameStore.getState().weeklyLeague?.status === "in_progress") {
       recordWeeklyLeagueResult(false);
-      toast.error("Previous Weekly League attempt counted as a loss.");
+      toast.error("Your last gym battle was left early, so it counted as a loss.");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -345,7 +324,10 @@ function BattlePage() {
     setPhase("loading");
     try {
       const data = await fetchBattleQuestions({
-        difficulties: adaptiveDifficultyBand(level, recentAnswers),
+        // Route battles (Paul, 2026-11-28): wild Pokémon ask easy questions, trainers medium to
+        // hard, both from the route's region first (topped up from anywhere when it runs short).
+        difficulties: battleKind(useGameStore.getState().route) === "wild" ? ["easy"] : ["medium", "hard"],
+        regions: [ROUTE_REGIONS[useGameStore.getState().route.region]],
         seenHashes,
         seenSamples: seenQuestions.slice(-80),
         excludeIds: seenCuratedIds,
@@ -440,10 +422,11 @@ function BattlePage() {
 
   async function startWeekly() {
     if (!weeklyLeague) return;
-    if (weeklyLeague.status === "won" || weeklyLeague.status === "lost") return;
+    // No weekly schedule (Paul, 2026-11-28): the gym opens whenever the route reaches it.
+    if (nextStep(useGameStore.getState().route, dailyDone).kind !== "gym") return;
     const leader = findGymLeader(weeklyLeague.gymLeaderId);
     if (!leader) return;
-    setPrepping("Weekly League");
+    setPrepping("Gym battle");
     setPhase("loading");
     try {
       const data = await fetchEliteQuestions({
@@ -457,7 +440,7 @@ function BattlePage() {
         flowSeed: Math.floor(Math.random() * 1_000_000),
       });
       if (!data.questions?.length) {
-        toast.error("Couldn't prepare Weekly League.");
+        toast.error("Couldn't prepare the gym battle.");
         setPhase("home");
         return;
       }
@@ -631,7 +614,6 @@ function BattlePage() {
         new Date(now).getUTCDate() + 1,
       ) - now;
     const dailyClock = `${Math.floor(msToNextDay / 3_600_000)}H ${String(Math.floor((msToNextDay % 3_600_000) / 60_000)).padStart(2, "0")}M`;
-    const weeklyStatus = weeklyLeague?.status;
     const leader = weeklyLeague ? findGymLeader(weeklyLeague.gymLeaderId) : null;
     const cards: Array<{
       kind: "whatsnew" | "daily" | "weekly" | "whosthat" | "mega" | "megaleaderboard" | "facebook";
@@ -660,17 +642,14 @@ function BattlePage() {
         onPlay: startDaily,
       });
     }
-    const weeklyIncluded = weeklyStatus !== "won" && weeklyStatus !== "lost";
+    const weeklyIncluded = !!leader && nextStep(useGameStore.getState().route, dailyDone).kind === "gym";
     if (weeklyIncluded) {
       cards.push({
         kind: "weekly",
-        title: "Weekly League is open!",
-        desc:
-          weeklyStatus === "in_progress"
-            ? "Finish your run before the week resets."
-            : "Challenge this week's Gym Leader and climb the ranks.",
-        chip: "RESETS MONDAY",
-        cta: "Enter Weekly League",
+        title: `${gymTown(leader)} is open!`,
+        desc: `Beat ${leader.name} for the ${leader.badge}!`,
+        chip: "ON YOUR ROUTE",
+        cta: `Challenge ${leader.name}`,
         onPlay: startWeekly,
         heroSrc: leader ? `/trainers/gym/${leader.trainerSpriteId}.png` : undefined,
       });
@@ -1362,8 +1341,6 @@ function BattlePage() {
           onStart={startBattle}
           onStartDaily={startDaily}
           onStartWeekly={startWeekly}
-          onStartMega={() => void openMegaIntro()}
-          mega={megaHomeState}
           loading={phase === "loading"}
           dailyDone={dailyDone}
         />

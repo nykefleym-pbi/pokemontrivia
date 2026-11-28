@@ -22,6 +22,7 @@ export const createLeaguesSlice: StoreSlice<
     | "route"
     | "routeSaved"
     | "recordRouteStopWin"
+    | "markRouteWhos"
     | "chooseRegion"
     | "trainingPoints"
     | "trainingPointsSpent"
@@ -48,13 +49,10 @@ export const createLeaguesSlice: StoreSlice<
   initWeeklyLeague: () => {
     const s = get();
     const { start: weekStartTs } = getWeekRangeUtc();
-    // This week's gym is the one at the end of the player's route. A week drawn
-    // before the route existed (a random leader) is swapped while still untried;
-    // a week already played keeps its result.
+    // The gym is the one at the end of the player's route, with no weekly schedule
+    // (Paul, 2026-11-28): only a new route's leader starts a fresh record.
     const leader = routeGym(s.route);
-    if (s.weeklyLeague && s.weeklyLeague.weekStartTs === weekStartTs) {
-      if (s.weeklyLeague.status !== "not_started" || s.weeklyLeague.gymLeaderId === leader.id) return;
-    }
+    if (s.weeklyLeague && s.weeklyLeague.gymLeaderId === leader.id) return;
     set({
       weeklyLeague: {
         weekStartTs,
@@ -66,17 +64,11 @@ export const createLeaguesSlice: StoreSlice<
     });
   },
 
+  // Any number of tries; Home only offers one when the gym is open (lost: after a trainer win).
   startWeeklyLeagueAttempt: () => {
     const s = get();
     if (!s.weeklyLeague) return;
-    if (s.weeklyLeague.status !== "not_started" && s.weeklyLeague.status !== "in_progress") return;
-    set({
-      weeklyLeague: {
-        ...s.weeklyLeague,
-        status: "in_progress",
-        attemptStartedAt: s.weeklyLeague.attemptStartedAt ?? Date.now(),
-      },
-    });
+    set({ weeklyLeague: { ...s.weeklyLeague, status: "in_progress", attemptStartedAt: Date.now(), questionsAnswered: 0 } });
   },
 
   recordWeeklyLeagueResult: (won) => {
@@ -108,7 +100,7 @@ export const createLeaguesSlice: StoreSlice<
       gymBadges: newBadges,
       ...gift,
       weeklyLeagueHistory: newHistory,
-      ...(routeWon ? { route: nextRoute(s.route) } : {}),
+      ...(routeWon ? { route: nextRoute(s.route) } : !won && s.weeklyLeague.gymLeaderId === routeGym(s.route).id ? { route: { ...s.route, gymLost: true } } : {}),
     });
   },
 
@@ -125,9 +117,14 @@ export const createLeaguesSlice: StoreSlice<
   },
   clearFreezeNotice: () => set({ freezeNotice: null }),
 
-  recordRouteStopWin: () => {
+  recordRouteStopWin: (stop, kind) => {
     const r = get().route;
-    if (stopsLeft(r) > 0) set({ route: { ...r, beaten: r.beaten + 1 } });
+    if (stop !== null && stop === r.beaten && stopsLeft(r) > 0) set({ route: { ...r, beaten: r.beaten + 1 } });
+    else if (stop === null && kind === "trainer" && r.gymLost) set({ route: { ...r, gymLost: false } });
+  },
+  markRouteWhos: () => {
+    const r = get().route;
+    if (!r.whos) set({ route: { ...r, whos: true } });
   },
 
   routeSaved: {},
@@ -135,7 +132,7 @@ export const createLeaguesSlice: StoreSlice<
     const s = get();
     if (region === s.route.region) return;
     set({
-      routeSaved: { ...s.routeSaved, [s.route.region]: { gym: s.route.gym, beaten: s.route.beaten } },
+      routeSaved: { ...s.routeSaved, [s.route.region]: { gym: s.route.gym, beaten: s.route.beaten, whos: s.route.whos, gymLost: s.route.gymLost } },
       route: regionRoute(region, s.route, s.routeSaved),
     });
     // An untried week follows the route to the new region's gym.

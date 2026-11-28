@@ -277,6 +277,8 @@ export interface EnemyTrainer {
   title: string;
   pokemon: PokeEntry;
   isShiny: boolean;
+  /** A wild Pokémon from the tall grass: no trainer, and it can be caught. */
+  wild?: boolean;
 }
 
 export const SHINY_CHANCE = 1 / 256;

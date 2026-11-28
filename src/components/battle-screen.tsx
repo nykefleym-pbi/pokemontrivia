@@ -10,8 +10,11 @@ import {
   MOVE_BY_TYPE,
   FxCanvas,
   NaIntroTrainer,
+  NaIntroWild,
   NaIntroText,
   NaCatchPanel,
+  NaPokedexScan,
+  NaScanPanel,
   NaCoachBubble,
   type AnswerState,
   type Trim,
@@ -207,12 +210,14 @@ function BattleMode({
   const tickBattleStatusCure = useGameStore((s) => s.tickBattleStatusCure);
   const clearAllBattleStatuses = useGameStore((s) => s.clearAllBattleStatuses);
 
-  // The route stop this battle is for (null: an extra battle, or not a route battle).
+  // The route stop this battle is for (null: an extra battle, or not a route battle), and its kind.
   const routeStopRef = useRef<number | null>(null);
+  const routeKindRef = useRef<"wild" | "trainer">("trainer");
   const [enemy] = useState<EnemyTrainer>(() => {
     if (route && !gymLeader && !eliteMember) {
       const o = routeOpponent(useGameStore.getState().route, SHINY_CHANCE);
       routeStopRef.current = o.stop;
+      routeKindRef.current = o.kind;
       return useGameStore.getState().guaranteedShinyPending ? { ...o.enemy, isShiny: true } : o.enemy;
     }
     if (gymLeader) {
@@ -273,6 +278,8 @@ function BattleMode({
   // further down. Without this the Pokédex's seen state would have no writer
   // and the status would be dead UI. Seen never overwrites caught, so a rematch
   // against something you already own changes nothing.
+  // Whether this meeting was the first: the scan's NEW chip (seen is recorded right away).
+  const seenNewRef = useRef(!useGameStore.getState().pokedex[enemy.pokemon.id]);
   useEffect(() => {
     recordPokedexSeen(enemy.pokemon.id);
   }, [enemy.pokemon.id, recordPokedexSeen]);
@@ -390,6 +397,19 @@ function BattleMode({
   // 3.7: after a win the ball is thrown on the field ("throw"), GOTCHA! shows ("caught"), and a tap
   // moves on to the victory screen ("done"). Only where the effects run (never in tests).
   const [catchStage, setCatchStage] = useState<"none" | "throw" | "caught" | "done">("none");
+  // The trainer's Pokémon instead: the Pokédex scans it ("scan"), REGISTERED! shows ("shown"), a tap moves on.
+  const scannedRef = useRef<{ id: number; name: string; isNew: boolean } | null>(null);
+  const [scanStage, setScanStage] = useState<"none" | "scan" | "shown" | "done">("none");
+  useEffect(() => {
+    if (phase !== "result" || !resultWon || !scannedRef.current || !fxReady || scanStage !== "none") return;
+    const t1 = setTimeout(() => setScanStage("scan"), 900);
+    const t2 = setTimeout(() => setScanStage("shown"), 2700);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, resultWon, fxReady]);
   useEffect(() => {
     const fx = fxRef.current;
     if (phase !== "result" || !resultWon || !caughtRef.current || !fx || catchStage !== "none") return;
@@ -569,7 +589,8 @@ function BattleMode({
     if (!(isElite && eliteMember)) {
       // 3.1: the trainer alone for a moment (tap to skip), then the field fills in.
       // 10.1: a gym leader waits for the tap (one challenge a week, so the player starts it).
-      if (!isWeekly) introTimerRef.current = setTimeout(enterField, 1200);
+      // a wild one gets longer: the grass rustles, then it springs out (3.1w)
+      if (!isWeekly) introTimerRef.current = setTimeout(enterField, enemy.wild ? 2200 : 1200);
       return;
     }
     playSfx("elite_intro");
@@ -598,7 +619,13 @@ function BattleMode({
     enteredRef.current = true;
     if (introTimerRef.current) clearTimeout(introTimerRef.current);
     setIntroStage("enter");
-    setIntroBanner(enemy.isShiny ? `A shiny ${enemy.pokemon.name} appeared!` : `${enemy.name} sent out ${enemy.pokemon.name}!`);
+    setIntroBanner(
+      enemy.wild
+        ? `A wild ${enemy.isShiny ? "shiny " : ""}${enemy.pokemon.name} appeared!`
+        : enemy.isShiny
+          ? `A shiny ${enemy.pokemon.name} appeared!`
+          : `${enemy.name} sent out ${enemy.pokemon.name}!`,
+    );
     revealPokemon(enemy.pokemon.id);
     shinyCue();
     setTimeout(() => {
@@ -1296,17 +1323,22 @@ function BattleMode({
       raiseFlag("comeback");
     }
 
-    // Pokédex capture on win
+    // On a win a wild Pokémon is caught; a trainer's (gym and Elite Four too) is only
+    // scanned into the Pokédex as seen, which meeting it already did (Paul, 2026-11-28).
     if (won) {
-      caughtRef.current = {
-        id: enemy.pokemon.id,
-        name: enemy.pokemon.name,
-        isNew: !useGameStore.getState().pokedex[enemy.pokemon.id]?.caught,
-        shiny: enemy.isShiny,
-      };
-      recordPokedexCapture(enemy.pokemon.id, enemy.isShiny);
+      if (enemy.wild) {
+        caughtRef.current = {
+          id: enemy.pokemon.id,
+          name: enemy.pokemon.name,
+          isNew: !useGameStore.getState().pokedex[enemy.pokemon.id]?.caught,
+          shiny: enemy.isShiny,
+        };
+        recordPokedexCapture(enemy.pokemon.id, enemy.isShiny);
+      } else {
+        scannedRef.current = { id: enemy.pokemon.id, name: enemy.pokemon.name, isNew: seenNewRef.current };
+      }
       if (!isWeekly && !isElite) useGameStore.getState().consumeGuaranteedShiny();
-      if (routeStopRef.current !== null) useGameStore.getState().recordRouteStopWin();
+      if (route && !isWeekly && !isElite) useGameStore.getState().recordRouteStopWin(routeStopRef.current, routeKindRef.current);
     }
 
     // Elite Four bookkeeping + premium item rewards
@@ -1522,7 +1554,9 @@ function BattleMode({
   }
 
   const catching = phase === "result" && !!resultWon && !!caughtRef.current && fxReady && catchStage !== "done";
-  if (phase === "result" && !catching) {
+  // Like the catch, only where the field's effects run (never in tests).
+  const scanning = phase === "result" && !!resultWon && !!scannedRef.current && fxReady && scanStage !== "done";
+  if (phase === "result" && !catching && !scanning) {
     const stateNow = useGameStore.getState();
     const prog = xpProgressInLevel(stateNow.xp);
     const pct = Math.min(100, (prog.current / Math.max(1, prog.need)) * 100);
@@ -1608,7 +1642,7 @@ function BattleMode({
   // ---- Figma 3.2 / 3.3 / 3.5: the battlefield, the HP cards, the combo and the question panel.
   const hour = new Date().getHours();
   const fieldMode = isWeekly ? "gym" : isElite ? "elite" : hour >= 18 || hour < 6 ? "evening" : "morning";
-  const trainerLine = isWeekly && gymLeader ? `Gym Leader ${gymLeader.name}` : isElite && eliteMember ? `Elite Four ${eliteMember.name}` : enemy.name;
+  const trainerLine = isWeekly && gymLeader ? `Gym Leader ${gymLeader.name}` : isElite && eliteMember ? `Elite Four ${eliteMember.name}` : enemy.wild ? "Wild Pokémon" : enemy.name;
   if (floatDmg?.who === "enemy") lastHitRef.current = { n: floatDmg.n, type: floatDmg.attackType ?? player.types[0] };
   const dmgCaption = (d: NonNullable<typeof floatDmg>): { caption: string | null; tone: "gold" | "brand" | "glass" } =>
     d.band === "super"
@@ -1644,25 +1678,27 @@ function BattleMode({
   const enemyKo = enemyHp <= 0 && phase !== "intro";
   const playerKo = playerHp <= 0 && phase !== "intro";
   const koMove = { y: 14, opacity: 0.45, transition: { delay: 0.55, duration: 0.45 } };
-  const throwing = catchStage === "throw" || catchStage === "caught";
+  const throwing = catchStage === "throw" || catchStage === "caught" || scanStage === "scan" || scanStage === "shown";
   const narration =
     introBanner ?? (throwing ? null : enemyKo ? `${enemy.pokemon.name} fainted!` : playerKo ? `${player.name} fainted!` : null);
-  const region = caughtRef.current ? GENERATIONS.find((g) => caughtRef.current!.id >= g.from && caughtRef.current!.id <= g.to) : null;
-  const regionCaught = region
-    ? Object.entries(useGameStore.getState().pokedex).filter(([id, e]) => +id >= region.from && +id <= region.to && e?.caught).length
-    : 0;
+  const shownId = caughtRef.current?.id ?? scannedRef.current?.id;
+  const region = shownId != null ? GENERATIONS.find((g) => shownId >= g.from && shownId <= g.to) : null;
+  const regionEntries = region ? Object.entries(useGameStore.getState().pokedex).filter(([id, e]) => +id >= region.from && +id <= region.to && e) : [];
+  const regionCaught = regionEntries.filter(([, e]) => e?.caught !== false).length;
 
   return (
     <div className="relative h-full min-h-0 w-full overflow-hidden bg-night-deep">
       <NaBattleField
         mode={fieldMode}
         padsIn={!trainerStage}
-        night={trainerStage || throwing}
+        // the field always runs to the bottom of the screen: no plain night band under it (Paul, 2026-11-28)
+        night={false}
         stageRef={(el) => {
           fxEls.stage = el;
         }}
       >
-        {trainerStage && <NaIntroTrainer art={introArt} leaving={false} gym={isWeekly} />}
+        {trainerStage && (enemy.wild ? <NaIntroWild id={enemy.pokemon.id} shiny={enemy.isShiny} /> : <NaIntroTrainer art={introArt} leaving={false} gym={isWeekly} />)}
+        {scanStage === "scan" && <NaPokedexScan />}
         <FxCanvas ref={fxBack} />
         {!trainerStage && (
           <>
@@ -1792,8 +1828,22 @@ function BattleMode({
             rounds={Math.max(1, Math.ceil(questions.length / QUESTIONS_PER_SET))}
             leaving={false}
             gym={isWeekly && gymLeader ? { quote: gymLeader.quote, badge: gymLeader.badge, badgeUrl: gymLeader.badgeIconUrl } : undefined}
+            wild={!!enemy.wild}
           />
         </button>
+      )}
+      {scanning && scanStage === "shown" && scannedRef.current && (
+        <motion.div className="absolute inset-0 z-40" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+          <NaScanPanel
+            name={scannedRef.current.name}
+            isNew={scannedRef.current.isNew}
+            region={region?.region ?? ""}
+            seen={regionEntries.length}
+            total={region ? region.to - region.from + 1 : 0}
+            onContinue={() => setScanStage("done")}
+            wordmark={<NaWordmark kind="levelup">REGISTERED!</NaWordmark>}
+          />
+        </motion.div>
       )}
       {catching && catchStage === "caught" && caughtRef.current && (
         <motion.div className="absolute inset-0 z-40" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
