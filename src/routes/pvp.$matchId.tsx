@@ -16,6 +16,7 @@ import { NaGlassRow, NaRewardTile, NaWordmark } from "@/components/na/celebratio
 import { NaGlossIcon } from "@/components/na/gloss-icon";
 import { NaRewardIcon } from "@/components/na/reward-icon";
 import { FaceOff } from "@/components/na/face-off";
+import { markResultSeen } from "@/lib/friend-results";
 
 export const Route = createFileRoute("/pvp/$matchId")({
   head: () => noindexHead(),
@@ -66,9 +67,13 @@ function PvpMatchPage() {
 
       const iCompleted =
         uid === m.challengerId ? m.challengerCompletedAt !== null : m.opponentCompletedAt !== null;
+      // Past its expiry counts as expired, whatever the row says yet.
+      const expired = m.status === "expired" || (m.status === "pending" && Date.parse(m.expiresAt) < Date.now());
       if (iCompleted) {
         setMyScore(uid === m.challengerId ? m.challengerScore : m.opponentScore);
-        setPhase(phaseForCompletedSide(m.status));
+        setPhase(m.status !== "completed" && expired ? "inactive" : phaseForCompletedSide(m.status));
+      } else if (m.status === "declined" || expired) {
+        setPhase("inactive");
       } else if (m.status !== "pending") {
         setPhase("not_found");
       } else {
@@ -81,6 +86,11 @@ function PvpMatchPage() {
   useEffect(() => {
     playBgm("battle_regular");
   }, []);
+
+  // Opening a result once turns the friend's Results button back into Battle.
+  useEffect(() => {
+    if (match && (phase === "result" || phase === "inactive")) markResultSeen(match.id);
+  }, [match, phase]);
 
   async function handleFinish(result: PvpBattleResult) {
     if (!match || !myId) return;
@@ -132,7 +142,43 @@ function PvpMatchPage() {
   const oppName = opponentProfile?.trainer_name || "your friend";
   const goHome = () => void navigate({ to: "/battle", search: { autostart: 0 } as never });
 
-  // The plain states: gone, declined, expired or a failed submit.
+  // 16.6 for a challenge that never finished: declined, or nobody played in time.
+  if (phase === "inactive" && match) {
+    const declined = match.status === "declined";
+    const iChallenged = myId === match.challengerId;
+    const mine = iChallenged ? match.challengerScore : match.opponentScore;
+    const friend = opponentProfile;
+    return (
+      <div className="na-bg-night flex h-full w-full flex-col items-center gap-3.5 px-4 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-[calc(env(safe-area-inset-top)+40px)]">
+        <h1 className="na-display-m text-center text-foreground">{declined ? "Challenge declined" : "Challenge expired"}</h1>
+        <FaceOff me={useGameStore.getState().trainerSprite} them={opponentProfile?.trainer_sprite || "red"} mine={mine ?? "–"} theirs="–" />
+        <p className="na-body-strong text-center text-text-secondary">
+          {declined ? `${oppName} declined this one.` : iChallenged ? `${oppName} didn't play in time.` : "You didn't play this one in time."}
+        </p>
+        <div className="flex-1" />
+        <NaButton
+          block
+          disabled={!friend || rematching}
+          onClick={() => {
+            if (!friend) return;
+            setRematching(true);
+            void sendFriendChallenge(friend.id, friend.trainer_name)
+              .then((id) => {
+                if (id) void navigate({ to: "/pvp/$matchId", params: { matchId: id } });
+              })
+              .finally(() => setRematching(false));
+          }}
+        >
+          Challenge again
+        </NaButton>
+        <NaButton kind="text" size="M" onClick={goHome}>
+          Home
+        </NaButton>
+      </div>
+    );
+  }
+
+  // The plain states: gone or a failed submit.
   if (phase === "not_found" || phase === "inactive" || phase === "submit_error") {
     const text =
       phase === "submit_error"

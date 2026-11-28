@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useGameStore } from "@/lib/store";
 import {
   addFriendByCode,
+  ensureSession,
   getProfileById,
   listFriends,
   listIncomingFriendRequests,
@@ -14,7 +15,8 @@ import {
   respondFriendRequest,
   type TrainerProfile,
 } from "@/lib/social";
-import { createPvpChallenge, listPvpInvites } from "@/lib/pvp";
+import { createPvpChallenge, listPvpInvites, listPvpMatches } from "@/lib/pvp";
+import { readSeenResults, unseenResultWith } from "@/lib/friend-results";
 import { fetchBattleQuestions } from "@/lib/api/trivia";
 import { adaptiveDifficultyBand, ITEMS } from "@/lib/game-data";
 import { inviteUrl } from "@/lib/referral-rewards";
@@ -133,6 +135,8 @@ export function FriendsScreen({
   const [picked, setPicked] = useState<TrainerProfile | null>(null);
   /** challengerId -> matchId: challenges waiting for you (16.4 footnote). */
   const [waiting, setWaiting] = useState<Record<string, string>>({});
+  /** friendId -> matchId: a result you haven't opened yet. */
+  const [results, setResults] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (open) setView(initialView);
@@ -144,8 +148,13 @@ export function FriendsScreen({
     setIncoming(inc);
     const profiles = await Promise.all([...targets].map((id) => getProfileById(id)));
     setSent(profiles.filter((p): p is TrainerProfile => !!p));
-    const inv = await listPvpInvites();
+    const [inv, matches, me] = await Promise.all([listPvpInvites(), listPvpMatches(), ensureSession()]);
     setWaiting(Object.fromEntries(inv.map((m) => [m.challengerId, m.id])));
+    // 16.6: a finished, declined or expired challenge you haven't opened turns Battle into Results.
+    const seen = readSeenResults();
+    setResults(
+      me ? Object.fromEntries(f.map((fr) => [fr.id, unseenResultWith(matches, me, fr.id, seen)]).filter(([, id]) => id)) : {},
+    );
   }, []);
   useEffect(() => {
     if (!open) return;
@@ -300,6 +309,17 @@ export function FriendsScreen({
                       }}
                     >
                       Play
+                    </NaButton>
+                  ) : results[f.id] ? (
+                    <NaButton
+                      kind="gold"
+                      size="M"
+                      onClick={() => {
+                        onClose();
+                        void navigate({ to: "/pvp/$matchId", params: { matchId: results[f.id] } });
+                      }}
+                    >
+                      Results
                     </NaButton>
                   ) : (
                     <NaButton kind="secondary" size="M" onClick={() => setChallenge(f)}>
