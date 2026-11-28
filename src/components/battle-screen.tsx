@@ -1656,7 +1656,6 @@ function BattleMode({
     <div className="relative h-full min-h-0 w-full overflow-hidden bg-night-deep">
       <NaBattleField
         mode={fieldMode}
-        panelHeight={throwing || trainerStage ? 340 : panelH}
         padsIn={!trainerStage}
         night={trainerStage || throwing}
         stageRef={(el) => {

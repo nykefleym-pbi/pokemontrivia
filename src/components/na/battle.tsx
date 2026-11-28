@@ -159,12 +159,12 @@ export function FitSprite({ id, shiny = false, size, className }: { id: number; 
 
 // ------------------------------------------------------------------ the field
 /**
- * The 390 x 504 stage, scaled to the width and to the room above the question
- * panel (so a short phone shrinks the field instead of hiding your partner).
+ * The stage: the 390-wide field scaled to the phone's width only, so it never moves or
+ * resizes with the question (Paul, 2026-11-28). The art runs on to the bottom of the screen
+ * (the ground mirrored below it), and the question panel sits over the lower part.
  */
 export function NaBattleField({
   mode = "morning",
-  panelHeight,
   padsIn = true,
   stageRef,
   night = false,
@@ -173,8 +173,6 @@ export function NaBattleField({
   /** 3.1 / 3.7: plain night under the field instead of the extended art (no question panel covers it). */
   night?: boolean;
   mode?: FieldMode;
-  /** The question panel's height, measured by the screen. */
-  panelHeight: number;
   /** 3.1: the platforms rise in after the trainer intro. */
   padsIn?: boolean;
   /** The 390 x 504 stage, which the effects shake. */
@@ -191,25 +189,25 @@ export function NaBattleField({
     setBox({ w: el.clientWidth || 390, h: el.clientHeight || 844 });
     return () => ro.disconnect();
   }, []);
-  // Figma: the field (464 tall to its lower edge) meets the panel 28 above the panel's top.
-  const s = Math.min(box.w / 390, Math.max(0.5, (box.h - panelHeight + 28) / 464));
+  const s = box.w / 390;
+  const tall = Math.max(504, Math.ceil(box.h / s)); // the stage reaches the bottom of the screen
   const bg = `/battle/field/bg-${mode}.png`;
   return (
-    <div
-      ref={ref}
-      className="absolute inset-0 overflow-hidden bg-night-deep"
-      style={night ? undefined : { backgroundImage: `url(${bg})`, backgroundSize: "cover", backgroundPosition: "top center" }}
-    >
+    <div ref={ref} className="absolute inset-0 overflow-hidden bg-night-deep">
       <div
         ref={stageRef}
-        className="absolute top-0"
-        style={{ left: "50%", width: 390, height: 504, transform: `translateX(-50%) scale(${s})`, transformOrigin: "top center" }}
+        className="absolute left-0 top-0"
+        style={{ width: 390, height: 504, transform: `scale(${s})`, transformOrigin: "top left" }}
       >
+        {!night && tall > 504 && (
+          // below the art: its ground again, mirrored, so no blank band shows under a short panel
+          <img src={bg} alt="" className="absolute left-0 top-[504px] h-[504px] w-[390px] max-w-none -scale-y-100 [image-rendering:pixelated]" draggable={false} />
+        )}
         <img src={bg} alt="" className="absolute inset-0 h-[504px] w-[390px] max-w-none [image-rendering:pixelated]" draggable={false} />
-        {/* BG/Arena vignette */}
+        {/* BG/Arena vignette (Figma: dark at the top, clear over the field, darker toward the panel) */}
         <div
-          className="absolute inset-0"
-          style={{ background: "linear-gradient(180deg, rgb(7 10 26 / 0.8) 0%, rgb(7 10 26 / 0) 30%, rgb(7 10 26 / 0) 62%, rgb(7 10 26 / 0.92) 100%)" }}
+          className="absolute inset-x-0 top-0"
+          style={{ height: night ? 504 : tall, background: "linear-gradient(180deg, rgb(7 10 26 / 0.8) 0px, rgb(7 10 26 / 0) 151px, rgb(7 10 26 / 0) 312px, rgb(7 10 26 / 0.7) 504px, rgb(7 10 26 / 0.7) 100%)" }}
         />
         {[
           { src: `/battle/field/pad-enemy-${mode}.png`, box: { left: 210, top: 190, width: 152, height: 58 } },

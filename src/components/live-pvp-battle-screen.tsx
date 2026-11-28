@@ -419,16 +419,6 @@ export function LivePvpBattleScreen({
   // Figma 15.4/17.3: the bag's open tab (Berries first) and the row picked before Use.
   const [bagTab, setBagTab] = useState<ItemCategory>("BERRY");
   const [bagPick, setBagPick] = useState<ItemId | null>(null);
-  // The question panel's height, so the field can shrink on short phones (as in 3.2).
-  const [panelH, setPanelH] = useState(380);
-  const panelObserver = useRef<ResizeObserver | null>(null);
-  const panelRefCb = useCallback((el: HTMLDivElement | null) => {
-    panelObserver.current?.disconnect();
-    if (!el || typeof ResizeObserver === "undefined") return;
-    panelObserver.current = new ResizeObserver(() => setPanelH(el.offsetHeight));
-    panelObserver.current.observe(el);
-    setPanelH(el.offsetHeight);
-  }, []);
   // Mirror of displayedIndex read inside timers/effects that must see the latest
   // value without a stale closure (Fix 3: wall-clock ceiling and both-answered
   // early-advance converge on it so neither re-enters nor rewinds a question).
@@ -2125,7 +2115,7 @@ export function LivePvpBattleScreen({
     // Figma 15.2 "A live battle against a real trainer": the field, both HP cards
     // (theirs with the live dot), the question panel and the bag (15.4).
     <div className="relative h-full w-full overflow-hidden bg-night-deep">
-      <NaBattleField mode={hour >= 18 || hour < 6 ? "evening" : "morning"} panelHeight={panelH}>
+      <NaBattleField mode={hour >= 18 || hour < 6 ? "evening" : "morning"}>
         {liveSprite("opponent", opponentPartnerId, oppStatusesDisplay, oppConfused)}
         {liveSprite("player", mySpriteId, myStatusesDisplay, selfConfused)}
         <NaHpCard
@@ -2172,13 +2162,13 @@ export function LivePvpBattleScreen({
       </NaBattleField>
 
       {frozen || stillSleepLocked ? (
-        <div ref={panelRefCb} className="absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-2 rounded-t-[28px] bg-night-raised px-4 pb-[calc(env(safe-area-inset-bottom)+40px)] pt-10 text-center">
+        <div className="absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-2 rounded-t-[28px] bg-night-raised px-4 pb-[calc(env(safe-area-inset-bottom)+40px)] pt-10 text-center">
           <span className="na-title text-foreground">{frozen ? "Frozen solid!" : "Waking up…"}</span>
           <span className="na-caption text-text-secondary">{frozen ? "This question is skipped." : "Your partner is asleep. Hang on!"}</span>
         </div>
       ) : (
         <NaQuestionPanel
-          panelRef={panelRefCb}
+          
           seconds={msLeft / 1000}
           maxSeconds={Math.ceil(personalTimerMs / 1000)}
           category={q.category || "Trivia"}

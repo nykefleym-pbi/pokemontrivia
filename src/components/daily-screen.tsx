@@ -427,14 +427,6 @@ function DailyBoss({
   const rotom = findPokemon(ROTOM);
   const xpSoFar = dailyReward({ correct: correctCount, total, level }).xp;
 
-  const [panelH, setPanelH] = useState(380);
-  const panelRo = useRef<ResizeObserver | null>(null);
-  const panelRef = (el: HTMLDivElement | null) => {
-    panelRo.current?.disconnect();
-    if (!el || typeof ResizeObserver === "undefined") return;
-    panelRo.current = new ResizeObserver(() => setPanelH(el.offsetHeight));
-    panelRo.current.observe(el);
-  };
 
   // Pixel effects (3b): your partner's move hits Rotom on each right answer.
   const fxRef = useRef<BattleFx | null>(null);
@@ -483,7 +475,6 @@ function DailyBoss({
     <div className="relative h-full min-h-0 w-full overflow-hidden bg-night-deep">
       <NaBattleField
         mode="evening"
-        panelHeight={panelH}
         stageRef={(el) => {
           fxEls.stage = el;
         }}
@@ -545,7 +536,7 @@ function DailyBoss({
         {ok && <NaDamage key={`hit-${idx}`} value="HIT!" style={{ left: 196, top: 176 }} />}
       </NaBattleField>
       <NaQuestionPanel
-        panelRef={panelRef}
+        
         seconds={timer}
         maxSeconds={20}
         category={trivia.category}

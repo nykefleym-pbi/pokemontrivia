@@ -109,16 +109,6 @@ export function MegaRaidScreen({
   const [correctIdxByQ, setCorrectIdxByQ] = useState<Record<number, number>>({});
   const currentCorrect = correctIdxByQ[qIndex];
 
-  // The question panel's height, so the field can shrink on short phones (as in 3.2).
-  const [panelH, setPanelH] = useState(380);
-  const panelObserver = useRef<ResizeObserver | null>(null);
-  const panelRefCb = useCallback((el: HTMLDivElement | null) => {
-    panelObserver.current?.disconnect();
-    if (!el || typeof ResizeObserver === "undefined") return;
-    panelObserver.current = new ResizeObserver(() => setPanelH(el.offsetHeight));
-    panelObserver.current.observe(el);
-    setPanelH(el.offsetHeight);
-  }, []);
 
   const startRef = useRef<number>(Date.now());
   const questionStart = useRef<number>(Date.now());
@@ -492,7 +482,7 @@ export function MegaRaidScreen({
       <span data-testid="player-hp" hidden>
         {playerHp}/{PLAYER_MAX_HP}
       </span>
-      <NaBattleField mode="raid" panelHeight={panelH}>
+      <NaBattleField mode="raid">
         <FieldSprite id={event.megaId} shiny={bossShiny} k={2} cx={286} feetY={215} />
         {partner && <FieldSprite id={partner.id} back k={3} cx={104} feetY={420} />}
         <div
@@ -527,7 +517,7 @@ export function MegaRaidScreen({
         )}
       </NaBattleField>
       <NaQuestionPanel
-        panelRef={panelRefCb}
+        
         seconds={timer}
         maxSeconds={TIMER}
         category={q.category || "Trivia"}
