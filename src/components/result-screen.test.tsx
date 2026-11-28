@@ -5,7 +5,7 @@
 // screen at all. The defeat screen already had both (Rematch + Back home); this
 // pins the win screen to the same contract.
 import type { ComponentPropsWithoutRef } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { ResultScreen } from "@/components/result-screen";
 import { useGameStore } from "@/lib/store";
@@ -170,25 +170,36 @@ describe("ResultScreen — the bottom nav claim", () => {
 });
 
 describe("ResultScreen — Save your progress (guest)", () => {
+  beforeEach(() => localStorage.removeItem("poke-trivia-save-ask"));
   afterEach(() => useGameStore.setState({ isGuest: false }));
+  const SHEET = "Choose your trainer name to save your Pokémon, Pokédex, and battle streak!";
 
   it("never covers the win: the sheet waits for Home, then Maybe Later carries on home", () => {
     useGameStore.setState({ isGuest: true });
     const { onBackHome } = setup();
-    expect(screen.queryByText("Choose your trainer name to save your Pokémon, Pokédex, and battle streak!")).toBeNull();
+    expect(screen.queryByText(SHEET)).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Home" }));
     expect(onBackHome).not.toHaveBeenCalled();
-    expect(screen.getByText("Choose your trainer name to save your Pokémon, Pokédex, and battle streak!")).toBeTruthy();
+    expect(screen.getByText(SHEET)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Maybe Later" }));
     expect(onBackHome).toHaveBeenCalledTimes(1);
   });
 
-  it("asks again on Next battle after a later win, then starts it", () => {
+  it("after an ask, the next battle leaves without asking", () => {
     useGameStore.setState({ isGuest: true });
+    localStorage.setItem("poke-trivia-save-ask", JSON.stringify({ asked: true, since: 0 }));
     const { onRematch } = setup();
     fireEvent.click(screen.getByRole("button", { name: "Next battle" }));
-    expect(onRematch).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Maybe Later" }));
     expect(onRematch).toHaveBeenCalledTimes(1);
+  });
+
+  it("the second battle after an ask asks again, even a loss", () => {
+    useGameStore.setState({ isGuest: true });
+    localStorage.setItem("poke-trivia-save-ask", JSON.stringify({ asked: true, since: 1 }));
+    const { onBackHome } = setup({ won: false });
+    fireEvent.click(screen.getByRole("button", { name: "Home" }));
+    expect(onBackHome).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Maybe Later" }));
+    expect(onBackHome).toHaveBeenCalledTimes(1);
   });
 });

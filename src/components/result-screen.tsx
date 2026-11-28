@@ -11,6 +11,7 @@ import { FittedTrainer } from "@/components/na/battle";
 import { ItemIcon } from "@/components/game-ui";
 import { NaCatchCard, NaGlassRow, NaRewardTile, NaWordmark, VictoryHero } from "@/components/na/celebration";
 import { SaveProgressSheet } from "@/components/save-progress-sheet";
+import { countBattleForSaveAsk, markSaveAsked } from "@/lib/save-ask";
 import { MistakesReview } from "@/components/mistakes-review";
 import { RemindSheet } from "@/components/remind-sheet";
 import { getPushSubscriptionState, pushSupported } from "@/lib/push";
@@ -112,6 +113,8 @@ export function ResultScreen({
   // or not, carries on to where they were going.
   const [saveOpen, setSaveOpen] = useState(false);
   const [afterSave, setAfterSave] = useState<null | (() => void)>(null);
+  // First win, then every second battle, win or lose (Paul 2026-11-28). Counted once per result.
+  const [askOnLeave] = useState(() => isGuest && typeof window !== "undefined" && countBattleForSaveAsk(won));
   const onSaveOpenChange = (open: boolean) => {
     setSaveOpen(open);
     if (!open && afterSave) {
@@ -126,7 +129,8 @@ export function ResultScreen({
   const battleLog = useGameStore((s) => s.battleLog);
   const [streakThen, setStreakThen] = useState<null | (() => void)>(null);
   function leave(go: () => void) {
-    if (won && isGuest) {
+    if (isGuest && askOnLeave && !saveOpen && !afterSave) {
+      markSaveAsked();
       setAfterSave(() => go);
       setSaveOpen(true);
       return;
@@ -205,14 +209,15 @@ export function ResultScreen({
         )}
         <div className="min-h-2 flex-1" />
         {!hideRematch && (
-          <NaButton block onClick={() => (onRematch ? onRematch() : onRebattle())}>
+          <NaButton block onClick={() => leave(() => (onRematch ? onRematch() : onRebattle()))}>
             Try again
           </NaButton>
         )}
-        <NaButton kind={hideRematch ? "primary" : "text"} size={hideRematch ? "L" : "M"} block={!!hideRematch} onClick={onBackHome}>
+        <NaButton kind={hideRematch ? "primary" : "text"} size={hideRematch ? "L" : "M"} block={!!hideRematch} onClick={() => leave(onBackHome)}>
           Home
         </NaButton>
         {review}
+        <SaveProgressSheet open={saveOpen} onOpenChange={onSaveOpenChange} />
       </motion.div>
     );
   }
