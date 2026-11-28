@@ -29,8 +29,7 @@ export function partnerTypeOptions(pool: PokeEntry[]): PokeType[] {
 }
 
 /**
- * Name-or-type text match, prefix-based like the pickers' original name-only
- * search.
+ * Name text match, prefix-based: the start of the Pokémon's name.
  *
  * Typing "wat" matches Water Pokémon as well as Wartortle, so the feature works
  * whether the player reaches for the chips or just types the type in — the chips
@@ -39,7 +38,8 @@ export function partnerTypeOptions(pool: PokeEntry[]): PokeType[] {
 export function matchesPartnerSearch(p: PokeEntry, query: string): boolean {
   const q = query.trim().toLowerCase();
   if (!q) return true;
-  return p.name.toLowerCase().startsWith(q) || p.types.some((t) => t.startsWith(q));
+  // Names only (Paul, 2026-11-28): "P" means Pidgey, not every Poison or Psychic type; the chips filter by type.
+  return p.name.toLowerCase().startsWith(q);
 }
 
 /** A pool entry passes when it matches the text box AND carries the chosen type. */

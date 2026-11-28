@@ -20,19 +20,11 @@ describe("matchesPartnerSearch", () => {
     expect(matchesPartnerSearch(squirtle, "char")).toBe(false);
   });
 
-  it("matches on a type prefix, which is the new half", () => {
-    expect(matchesPartnerSearch(charmander, "fire")).toBe(true);
-    expect(matchesPartnerSearch(charmander, "fir")).toBe(true);
-    expect(matchesPartnerSearch(squirtle, "wat")).toBe(true);
-    expect(matchesPartnerSearch(squirtle, "fire")).toBe(false);
-  });
-
-  it("matches a SECONDARY type, not just the badge shown on the card", () => {
-    // Bulbasaur is grass/poison and the grid only renders types[0]. Searching
-    // "poison" still has to find it, or the filter contradicts itself.
-    expect(bulbasaur.types).toContain("poison");
-    expect(bulbasaur.types[0]).not.toBe("poison");
-    expect(matchesPartnerSearch(bulbasaur, "poison")).toBe(true);
+  it("never matches on a type: P finds Pidgey, not grass/poison Bulbasaur", () => {
+    expect(matchesPartnerSearch(bulbasaur, "p")).toBe(false);
+    expect(matchesPartnerSearch(bulbasaur, "poison")).toBe(false);
+    expect(matchesPartnerSearch(findPokemon(16)!, "p")).toBe(true);
+    expect(matchesPartnerSearch(charmander, "fire")).toBe(false);
   });
 
   it("an empty or whitespace query matches everything", () => {

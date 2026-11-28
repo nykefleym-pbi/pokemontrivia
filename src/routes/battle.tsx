@@ -56,19 +56,18 @@ const ENGAGE_DELAY_MS = 10000; // safety cap: show carousel by now even if mega 
  * fails and we fall back to the hub, the nav comes back with it.
  */
 function ModePrep({ label }: { label: string }) {
+  // Night, like the battle it leads into (the old cream card flashed between two dark screens).
   const setBattleScreenActive = useGameStore((s) => s.setBattleScreenActive);
   useEffect(() => {
     setBattleScreenActive(true);
     return () => setBattleScreenActive(false);
   }, [setBattleScreenActive]);
   return (
-    <div className="bg-poke-cream flex h-full w-full flex-col items-center justify-center gap-5 safe-x">
+    <div className="na-bg-night flex h-full w-full flex-col items-center justify-center gap-5 safe-x">
       <PokeballSpinner size={72} spinning />
-      <div className="text-center">
-        <p className="font-pixel text-[10px] uppercase tracking-wider text-foreground/55">
-          Preparing
-        </p>
-        <p className="mt-2 font-display-md text-foreground">{label}</p>
+      <div className="flex flex-col items-center gap-1.5 text-center">
+        <p className="na-label uppercase text-text-secondary">Preparing</p>
+        <p className="na-display-s text-foreground">{label}</p>
       </div>
     </div>
   );
@@ -325,7 +324,7 @@ function BattlePage() {
   useEffect(() => {
     if (hasOnboarded && search.autostart === 1 && !autoStartedRef.current && phase === "home") {
       autoStartedRef.current = true;
-      startBattle();
+      startBattle(); // straight to the battle (1.2 → 3.1): the render below shows Preparing, never Home
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasOnboarded, search.autostart, phase]);
@@ -1355,8 +1354,9 @@ function BattlePage() {
           }}
           takeover
         />
-      ) : phase === "loading" && prepping ? (
-        <ModePrep label={prepping} />
+      ) : (search.autostart === 1 && (phase === "loading" || !autoStartedRef.current)) || (phase === "loading" && prepping) ? (
+        // An autostart (from choosing your partner, or Next battle) shows this from the first frame.
+        <ModePrep label={prepping ?? "Battle"} />
       ) : (
         <RouteHome
           onStart={startBattle}
