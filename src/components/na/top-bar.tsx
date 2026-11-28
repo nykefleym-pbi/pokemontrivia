@@ -25,7 +25,8 @@ export function NaTopBar({ onAvatar, avatarLabel, afterName }: { onAvatar: () =>
   const xp = useGameStore((s) => s.xp);
   const coins = useGameStore((s) => s.coins);
   const battleLog = useGameStore((s) => s.battleLog);
-  const streak = useMemo(() => dayStreak(battleLog).days, [battleLog]);
+  const frozenDays = useGameStore((s) => s.frozenDays);
+  const streak = useMemo(() => dayStreak(battleLog, Date.now(), false, frozenDays).days, [battleLog, frozenDays]);
   const prog = xpProgressInLevel(xp);
   return (
     <div className="flex items-center gap-2.5">

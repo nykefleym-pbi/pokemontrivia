@@ -81,11 +81,51 @@ export function bestDayStreak(log: readonly BattleLogEntry[]): number {
  * today is won: `secured` says today already counts. `daily` counts Daily Quests instead.
  * shortcut: reads the last 300 log entries; a longer streak undercounts.
  */
-export function dayStreak(log: readonly BattleLogEntry[], now = Date.now(), daily = false): { days: number; secured: boolean } {
+export function dayStreak(
+  log: readonly BattleLogEntry[],
+  now = Date.now(),
+  daily = false,
+  /** Days a Streak Freeze covered: they keep the run alive but don't add to it. */
+  frozen: readonly string[] = [],
+): { days: number; secured: boolean } {
   const won = winDays(log, daily);
+  const ice = new Set(frozen);
   const day = (offset: number) => new Date(now - offset * 86_400_000).toISOString().slice(0, 10);
   const secured = won.has(day(0));
   let days = 0;
-  for (let i = secured ? 0 : 1; won.has(day(i)); i++) days++;
+  for (let i = secured ? 0 : 1; won.has(day(i)) || ice.has(day(i)); i++) if (won.has(day(i))) days++;
   return { days, secured };
+}
+
+/** The most Streak Freezes a player can hold (Paul 2026-11-28, Duolingo's rule). */
+export const MAX_STREAK_FREEZES = 2;
+
+/**
+ * The missed days a Streak Freeze should cover now: every day between the last
+ * kept day (won or already frozen) and yesterday, but only when the freezes held
+ * cover ALL of them; otherwise the streak is gone and the freezes are kept.
+ * Nothing to protect (no win in the last 60 days) also uses none.
+ */
+export function freezesToUse(
+  log: readonly BattleLogEntry[],
+  frozen: readonly string[],
+  held: number,
+  now = Date.now(),
+): string[] {
+  const won = winDays(log);
+  const ice = new Set(frozen);
+  const gaps: string[] = [];
+  for (let i = 1; i <= 60; i++) {
+    const d = new Date(now - i * 86_400_000).toISOString().slice(0, 10);
+    if (won.has(d) || ice.has(d)) return gaps.length <= held ? gaps : [];
+    gaps.push(d);
+  }
+  return [];
+}
+
+/** This week, Monday first: whether each day was covered by a freeze (4.2 dots). */
+export function weekFrozen(frozen: readonly string[], now = Date.now()): boolean[] {
+  const ice = new Set(frozen);
+  const dow = (new Date(now).getUTCDay() + 6) % 7;
+  return Array.from({ length: 7 }, (_, i) => ice.has(new Date(now + (i - dow) * 86_400_000).toISOString().slice(0, 10)));
 }

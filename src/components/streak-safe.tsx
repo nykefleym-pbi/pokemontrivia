@@ -7,12 +7,14 @@ import { NaRewardIcon } from "@/components/na/reward-icon";
  * Figma 4.2 "Streak safe (first win of the day)": an ember catches, the flame
  * flares, the number rolls up to today's streak and an ember flies into
  * today's dot. Shown once a day, after the first win.
- * shortcut: no Streak Freeze pill or frozen days — the day streak has no freeze yet.
+ * The freeze pill says how many Streak Freezes are held; frozen days show as ice.
  */
 export function StreakSafe({
   days,
   week,
   today,
+  frozen,
+  freezes = 0,
   onContinue,
 }: {
   days: number;
@@ -20,6 +22,10 @@ export function StreakSafe({
   week: boolean[];
   /** 0 = Monday. */
   today: number;
+  /** Monday first: days a Streak Freeze covered. */
+  frozen?: boolean[];
+  /** Streak Freezes held. */
+  freezes?: number;
   onContinue: () => void;
 }) {
   return (
@@ -67,7 +73,13 @@ export function StreakSafe({
       </div>
       <span className="na-display-m text-center uppercase text-text-secondary">Day streak</span>
       <NaWordmark kind="streak">STREAK SAFE!</NaWordmark>
-      <NaDayDots week={week} today={today} />
+      <NaDayDots week={week} today={today} frozen={frozen} />
+      <span className="flex items-center gap-1.5 rounded-full border border-[#8FD8FF]/40 bg-[#5BC8F5]/15 px-3 py-1.5">
+        <NaRewardIcon kind="Freeze" size={20} />
+        <span className="na-body-strong text-foreground">
+          {freezes === 0 ? "No Streak Freezes yet. Win a gym badge to earn one!" : `${freezes} Streak Freeze${freezes === 1 ? "" : "s"} ready`}
+        </span>
+      </span>
       <div className="min-h-2 flex-1" />
       <NaButton block onClick={onContinue}>
         Let&apos;s go!

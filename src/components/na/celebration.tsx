@@ -1,6 +1,7 @@
 import * as React from "react";
 import { motion } from "framer-motion";
 import { NaIcon } from "@/components/na/icon";
+import { NaRewardIcon } from "@/components/na/reward-icon";
 import { cn } from "@/lib/utils";
 
 /**
@@ -160,24 +161,37 @@ export function NaConfetti({ w, h, n = 40, delay = 0 }: { w: number; h: number; 
 const WEEK_DAYS = ["M", "T", "W", "T", "F", "S", "S"];
 
 /** Figma "Day dot" × 7, Monday first: Done (flame fill), Today (flame ring), Future. Today's dot pops when done. */
-export function NaDayDots({ week, today, popDelay = 0.8 }: { week: boolean[]; today: number; popDelay?: number }) {
+export function NaDayDots({
+  week,
+  today,
+  popDelay = 0.8,
+  frozen,
+}: {
+  week: boolean[];
+  today: number;
+  popDelay?: number;
+  /** Monday first: days a Streak Freeze covered (ice). */
+  frozen?: boolean[];
+}) {
   return (
     <div className="flex gap-1.5" aria-label={`${week.filter(Boolean).length} days this week`}>
       {WEEK_DAYS.map((d, i) => {
         const done = week[i];
         const isToday = i === today;
+        const ice = !done && !!frozen?.[i];
         return (
           <div key={i} className="flex w-10 flex-col items-center gap-1">
             <motion.span
               className={cn(
                 "flex h-9 w-9 items-center justify-center rounded-full",
-                done ? "na-fill-flame shadow-[0_0_18px_rgb(255_138_31/0.55)]" : isToday ? "border-[2.5px] border-[#ff8a1f] bg-night-deep" : "bg-white/10",
+                done ? "na-fill-flame shadow-[0_0_18px_rgb(255_138_31/0.55)]" : ice ? "bg-[#5BC8F5]/25 ring-2 ring-[#8FD8FF]" : isToday ? "border-[2.5px] border-[#ff8a1f] bg-night-deep" : "bg-white/10",
               )}
               initial={isToday && done ? { scale: 0.4 } : false}
               animate={isToday && done ? { scale: [0.4, 1.2, 1] } : undefined}
               transition={{ delay: popDelay, duration: 0.35 }}
             >
-              {(done || isToday) && (
+              {ice && <NaRewardIcon kind="Freeze" size={20} />}
+              {!ice && (done || isToday) && (
                 <NaIcon name={done ? "flame-filled" : "flame"} line size={18} className={done ? "text-white" : "text-[#ff8a1f]"} />
               )}
             </motion.span>

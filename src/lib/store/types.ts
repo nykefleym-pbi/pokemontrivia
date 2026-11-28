@@ -321,6 +321,14 @@ export interface GameState {
   // Phase 4: Weekly League
   weeklyLeague: WeeklyLeagueState | null;
   gymBadges: string[];
+  /** Streak Freezes held, 0 to MAX_STREAK_FREEZES (Paul 2026-11-28). */
+  streakFreezes: number;
+  /** UTC days (YYYY-MM-DD) a freeze covered. */
+  frozenDays: string[];
+  /** Days just covered, for the one-time Streak frozen sheet; null once seen. */
+  freezeNotice: string[] | null;
+  /** What the last new badge also gave: a freeze, or coins when 2 were already held. */
+  lastBadgeGift: "freeze" | "coins" | null;
   weeklyLeagueHistory: WeeklyLeagueAttempt[];
   /** Where the player is on the Home route (lib/route.ts). Its gym is the Weekly League. */
   route: RouteState;
@@ -481,6 +489,9 @@ export interface GameState {
   initWeeklyLeague: () => void;
   startWeeklyLeagueAttempt: () => void;
   recordWeeklyLeagueResult: (won: boolean) => void;
+  /** On app open: cover missed days with held freezes when they can save the streak. */
+  applyStreakFreezes: () => void;
+  clearFreezeNotice: () => void;
   /** A trainer stop on the route was beaten. */
   recordRouteStopWin: () => void;
   /** Switch to another region's route (Figma 6.2), keeping every region's place. */

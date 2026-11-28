@@ -338,6 +338,11 @@ function RootComponent() {
   // first open of that day; the whole point of the engagement work is to move
   // this number, so it is measured before anything is built to move it.
   useEffect(() => trackReturnVisit(), []);
+  // Streak Freeze (Paul 2026-11-28): on app open, cover missed days when held freezes can save the streak.
+  const onboarded = useGameStore((s) => s.hasOnboarded);
+  useEffect(() => {
+    if (onboarded) useGameStore.getState().applyStreakFreezes();
+  }, [onboarded]);
   // After the 2026-11-28 VAPID key rotation, move an already-allowed device onto the new key.
   useEffect(() => {
     void healPushSubscription();

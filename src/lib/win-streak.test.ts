@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { bestDayStreak, currentWinStreak, dayStreak, weekWins } from "@/lib/win-streak";
+import { bestDayStreak, currentWinStreak, dayStreak, freezesToUse, weekWins } from "@/lib/win-streak";
 import type { BattleLogEntry } from "@/lib/store/types";
 
 /** Newest first, the order `pushBattleLog` actually stores. */
@@ -93,5 +93,30 @@ describe("bestDayStreak", () => {
   it("ignores lost days and is zero with no wins", () => {
     expect(bestDayStreak([day(2, false), day(1, false)])).toBe(0);
     expect(bestDayStreak([day(3), day(2, false), day(1)])).toBe(1);
+  });
+});
+describe("Streak Freeze", () => {
+  const D = (iso: string) => Date.parse(`${iso}T12:00:00Z`);
+  const winOn = (...days: string[]): BattleLogEntry[] =>
+    days.map((d) => ({ opponent: "x", won: true, xpGained: 0, bestStreak: 0, timestamp: D(d), mode: "battle" }));
+  const now = D("2026-11-28");
+
+  it("covers the missed days when enough freezes are held", () => {
+    // Won 24, 25; missed 26 and 27; today is 28.
+    expect(freezesToUse(winOn("2026-11-24", "2026-11-25"), [], 2, now)).toEqual(["2026-11-27", "2026-11-26"]);
+  });
+
+  it("uses none when the gap is longer than the freezes held: the streak is gone, freezes stay", () => {
+    expect(freezesToUse(winOn("2026-11-24"), [], 2, now)).toEqual([]);
+  });
+
+  it("uses none when yesterday was won", () => {
+    expect(freezesToUse(winOn("2026-11-27"), [], 2, now)).toEqual([]);
+  });
+
+  it("frozen days keep the run alive without adding to it", () => {
+    const log2 = winOn("2026-11-24", "2026-11-25", "2026-11-28");
+    expect(dayStreak(log2, now)).toEqual({ days: 1, secured: true });
+    expect(dayStreak(log2, now, false, ["2026-11-26", "2026-11-27"])).toEqual({ days: 3, secured: true });
   });
 });

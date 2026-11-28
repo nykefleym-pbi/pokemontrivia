@@ -119,7 +119,8 @@ export function RouteHome({
   const [regionOpen, setRegionOpen] = useState(false);
 
   const now = gift.now;
-  const streak = useMemo(() => dayStreak(battleLog, now), [battleLog, now]);
+  const frozenDays = useGameStore((s) => s.frozenDays);
+  const streak = useMemo(() => dayStreak(battleLog, now, false, frozenDays), [battleLog, now, frozenDays]);
   const leader = routeGym(route);
   const town = gymTown(leader);
   const left = stopsLeft(route);

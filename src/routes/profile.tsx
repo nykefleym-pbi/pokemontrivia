@@ -479,7 +479,7 @@ function ProfilePage() {
 
   const winRate = stats.battles > 0 ? Math.round((stats.wins / stats.battles) * 100) : 0;
   // The same day streak Home's flame shows (lib/win-streak.ts).
-  const weekStreak = dayStreak(battleLog).days;
+  const weekStreak = dayStreak(battleLog, Date.now(), false, useGameStore.getState().frozenDays).days;
   const nameGood = renameAvail === "available";
   const nameBad = renameAvail === "taken" || renameAvail === "invalid";
 

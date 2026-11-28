@@ -14,6 +14,7 @@ import { ApiError } from "@/lib/api/client";
 import { MegaRaidScreen } from "@/components/mega/MegaRaidScreen";
 import { MegaLeaderboard } from "@/components/mega/MegaLeaderboard";
 import { MegaIntro } from "@/components/mega/MegaIntro";
+import { NaRewardIcon } from "@/components/na/reward-icon";
 import { NaSheet } from "@/components/na/sheet";
 import { NaGlossIcon } from "@/components/na/gloss-icon";
 import { NaIcon } from "@/components/na/icon";
@@ -90,6 +91,9 @@ function BattlePage() {
   const peakLevel = useGameStore((s) => s.peakLevel);
   const defeatedElites = useGameStore((s) => s.defeatedElites);
   const gymBadges = useGameStore((s) => s.gymBadges);
+  const freezeNotice = useGameStore((s) => s.freezeNotice);
+  const streakFreezes = useGameStore((s) => s.streakFreezes);
+  const clearFreezeNotice = useGameStore((s) => s.clearFreezeNotice);
   const seenHashes = useGameStore((s) => s.seenQuestionHashes);
   const seenQuestions = useGameStore((s) => s.seenQuestions);
   const seenCuratedIds = useGameStore((s) => s.seenCuratedIds);
@@ -1364,6 +1368,19 @@ function BattlePage() {
           dailyDone={dailyDone}
         />
       )}
+      {/* Streak frozen (4.2b): a freeze covered the days you missed; shown once, on Home. */}
+      <NaSheet
+        open={!!freezeNotice && phase === "home" && !pendingElite && !megaBlocks}
+        onOpenChange={(o) => !o && clearFreezeNotice()}
+        title="Streak frozen!"
+        body={`A Streak Freeze kept your streak safe for ${freezeNotice?.length === 1 ? "the day" : `${freezeNotice?.length} days`} you missed. Win a battle today to keep it going!`}
+        primary={{ label: "Keep it going!", onClick: clearFreezeNotice }}
+        footnote={streakFreezes === 0 ? "No Streak Freezes left. Win a gym badge to earn another!" : `${streakFreezes} Streak Freeze${streakFreezes === 1 ? "" : "s"} left.`}
+      >
+        <span className="flex justify-center">
+          <NaRewardIcon kind="Freeze" size={96} />
+        </span>
+      </NaSheet>
       {/* Figma 14.6 "What's new, as one of the pop-ups": once per release. */}
       <NaSheet
         open={whatsNewOpen}

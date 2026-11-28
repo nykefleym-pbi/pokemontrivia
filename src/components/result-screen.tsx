@@ -20,7 +20,8 @@ import { PokemonSprite } from "@/components/game-ui";
 import { useGameStore } from "@/lib/store";
 import { GENERATIONS } from "@/lib/dex-rewards";
 import { useDailyGift } from "@/lib/use-daily-gift";
-import { dayStreak, weekWins } from "@/lib/win-streak";
+import { dayStreak, weekFrozen, weekWins } from "@/lib/win-streak";
+import { FULL_FREEZE_COINS } from "@/lib/store/slices/leaguesSlice";
 import { StreakSafe } from "@/components/streak-safe";
 
 const STREAK_SHOWN_KEY = "poke-trivia-streak-shown";
@@ -127,6 +128,8 @@ export function ResultScreen({
   const gift = useDailyGift(60_000);
   // 4.2: the first win of the day shows the day streak on the way out (Next battle or Home).
   const battleLog = useGameStore((s) => s.battleLog);
+  const frozenDays = useGameStore((s) => s.frozenDays);
+  const streakFreezes = useGameStore((s) => s.streakFreezes);
   const [streakThen, setStreakThen] = useState<null | (() => void)>(null);
   function leave(go: () => void) {
     if (isGuest && askOnLeave && !saveOpen && !afterSave) {
@@ -142,7 +145,7 @@ export function ResultScreen({
     } catch {
       /* private mode: show it */
     }
-    if (won && !isGuest && shown !== today && dayStreak(battleLog).secured) {
+    if (won && !isGuest && shown !== today && dayStreak(battleLog, Date.now(), false, frozenDays).secured) {
       try {
         localStorage.setItem(STREAK_SHOWN_KEY, today);
       } catch {
@@ -251,8 +254,10 @@ export function ResultScreen({
         <SaveProgressSheet open={saveOpen} onOpenChange={onSaveOpenChange} />
         {streakThen && (
           <StreakSafe
-            days={dayStreak(battleLog).days}
+            days={dayStreak(battleLog, Date.now(), false, frozenDays).days}
             week={weekWins(battleLog)}
+            frozen={weekFrozen(frozenDays)}
+            freezes={streakFreezes}
             today={(new Date().getUTCDay() + 6) % 7}
             onContinue={() => {
               const go = streakThen;
@@ -374,8 +379,10 @@ export function ResultScreen({
       <SaveProgressSheet open={saveOpen} onOpenChange={onSaveOpenChange} />
       {streakThen && (
         <StreakSafe
-          days={dayStreak(battleLog).days}
+          days={dayStreak(battleLog, Date.now(), false, frozenDays).days}
           week={weekWins(battleLog)}
+          frozen={weekFrozen(frozenDays)}
+          freezes={streakFreezes}
           today={(new Date().getUTCDay() + 6) % 7}
           onContinue={() => {
             const go = streakThen;
@@ -517,6 +524,7 @@ function BadgeWon({
   onShare?: () => void;
   onHome: () => void;
 }) {
+  const gift = useGameStore((s) => s.lastBadgeGift);
   const owned = useGameStore((s) => s.gymBadges.length);
   const rise = (d: number) => ({ initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { delay: d, duration: 0.3 } });
   return (
@@ -572,6 +580,17 @@ function BadgeWon({
         {tpEarned > 0 && (
           <span className="na-body-strong flex items-center gap-1.5 text-foreground">
             <NaRewardIcon kind="TP" size={24} /> +{tpEarned} Training Points
+          </span>
+        )}
+        {/* Every new badge also gives a Streak Freeze (coins when 2 are already held). */}
+        {gift === "freeze" && (
+          <span className="na-body-strong flex items-center gap-1.5 text-foreground">
+            <NaRewardIcon kind="Freeze" size={24} /> +1 Streak Freeze
+          </span>
+        )}
+        {gift === "coins" && (
+          <span className="na-body-strong flex items-center gap-1.5 text-foreground">
+            <NaRewardIcon kind="Coin" size={24} /> +{FULL_FREEZE_COINS} coins (Streak Freezes full)
           </span>
         )}
       </motion.div>

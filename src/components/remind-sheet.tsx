@@ -11,7 +11,7 @@ import { dayStreak } from "@/lib/win-streak";
 export function ReminderPreview() {
   const partner = useGameStore((s) => s.pokemon?.name ??"Your partner");
   const log = useGameStore((s) => s.battleLog);
-  const days = dayStreak(log).days;
+  const days = dayStreak(log, Date.now(), false, useGameStore.getState().frozenDays).days;
   return (
     <div className="flex w-full items-start gap-2.5 rounded-[22px] border border-white/[0.12] bg-white/[0.16] p-3 shadow-[inset_0_1px_0_rgb(255_255_255/0.14),0_12px_32px_rgb(0_0_0/0.35)]">
       <img src="/icons/icon-192.png" alt="" className="h-[38px] w-[38px] shrink-0 rounded-[9px] bg-night-base" />
