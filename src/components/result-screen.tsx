@@ -107,18 +107,30 @@ export function ResultScreen({
   const regionLine = region
     ? ` · ${region.region}: ${Object.entries(pokedex).filter(([id, e]) => +id >= region.from && +id <= region.to && e?.caught).length} of ${region.to - region.from + 1} caught`
     : "";
+  // Paul 2026-11-28: never over the win itself. A guest sees the sheet on the way
+  // out (Next battle or Home), after every win until they save; closing it, saved
+  // or not, carries on to where they were going.
   const [saveOpen, setSaveOpen] = useState(false);
-  useEffect(() => {
-    if (!won || !isGuest) return;
-    const t = window.setTimeout(() => setSaveOpen(true), 1400);
-    return () => window.clearTimeout(t);
-  }, [won, isGuest]);
+  const [afterSave, setAfterSave] = useState<null | (() => void)>(null);
+  const onSaveOpenChange = (open: boolean) => {
+    setSaveOpen(open);
+    if (!open && afterSave) {
+      const go = afterSave;
+      setAfterSave(null);
+      go();
+    }
+  };
   const [mistakesOpen, setMistakesOpen] = useState(false);
   const gift = useDailyGift(60_000);
   // 4.2: the first win of the day shows the day streak on the way out (Next battle or Home).
   const battleLog = useGameStore((s) => s.battleLog);
   const [streakThen, setStreakThen] = useState<null | (() => void)>(null);
   function leave(go: () => void) {
+    if (won && isGuest) {
+      setAfterSave(() => go);
+      setSaveOpen(true);
+      return;
+    }
     const today = new Date().toISOString().slice(0, 10);
     let shown: string | null = null;
     try {
@@ -231,7 +243,7 @@ export function ResultScreen({
             onHome={() => leave(onBackHome)}
           />
         )}
-        <SaveProgressSheet open={saveOpen} onOpenChange={setSaveOpen} />
+        <SaveProgressSheet open={saveOpen} onOpenChange={onSaveOpenChange} />
         {streakThen && (
           <StreakSafe
             days={dayStreak(battleLog).days}
@@ -354,7 +366,7 @@ export function ResultScreen({
         </NaButton>
       </div>
 
-      <SaveProgressSheet open={saveOpen} onOpenChange={setSaveOpen} />
+      <SaveProgressSheet open={saveOpen} onOpenChange={onSaveOpenChange} />
       {streakThen && (
         <StreakSafe
           days={dayStreak(battleLog).days}

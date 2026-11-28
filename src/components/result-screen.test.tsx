@@ -168,3 +168,27 @@ describe("ResultScreen — the bottom nav claim", () => {
     expect(useGameStore.getState().battleScreenActive).toBe(false);
   });
 });
+
+describe("ResultScreen — Save your progress (guest)", () => {
+  afterEach(() => useGameStore.setState({ isGuest: false }));
+
+  it("never covers the win: the sheet waits for Home, then Maybe Later carries on home", () => {
+    useGameStore.setState({ isGuest: true });
+    const { onBackHome } = setup();
+    expect(screen.queryByText("Choose your trainer name to save your Pokémon, Pokédex, and battle streak!")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Home" }));
+    expect(onBackHome).not.toHaveBeenCalled();
+    expect(screen.getByText("Choose your trainer name to save your Pokémon, Pokédex, and battle streak!")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Maybe Later" }));
+    expect(onBackHome).toHaveBeenCalledTimes(1);
+  });
+
+  it("asks again on Next battle after a later win, then starts it", () => {
+    useGameStore.setState({ isGuest: true });
+    const { onRematch } = setup();
+    fireEvent.click(screen.getByRole("button", { name: "Next battle" }));
+    expect(onRematch).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Maybe Later" }));
+    expect(onRematch).toHaveBeenCalledTimes(1);
+  });
+});
