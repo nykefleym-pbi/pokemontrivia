@@ -42,6 +42,74 @@ export function track(event: AnalyticsEvent, props?: Record<string, PropValue>):
   } catch {
     /* a dropped event is never worth an error surfacing to the player */
   }
+  // Vercel drops custom events on the Hobby plan; our own table keeps them.
+  void flushAnalytics({ event, props: props ?? {}, at: new Date().toISOString() }).catch(() => {});
+}
+
+const QUEUE_KEY = "poke-trivia-analytics-queue";
+const QUEUE_MAX = 30;
+export interface QueuedEvent {
+  event: AnalyticsEvent;
+  props: Record<string, PropValue>;
+  at: string;
+}
+type Store = Pick<Storage, "getItem" | "setItem">;
+interface Sink {
+  /** Whether a signed-in (anonymous counts) session exists — read locally, never created here. */
+  hasSession: () => Promise<boolean>;
+  insert: (rows: { event: string; props: Record<string, PropValue> }[]) => Promise<{ error: unknown }>;
+}
+
+const readQueue = (s: Store): QueuedEvent[] => {
+  try {
+    const q = JSON.parse(s.getItem(QUEUE_KEY) ?? "[]");
+    return Array.isArray(q) ? q : [];
+  } catch {
+    return [];
+  }
+};
+const writeQueue = (s: Store, q: QueuedEvent[]) => {
+  try {
+    s.setItem(QUEUE_KEY, JSON.stringify(q.slice(-QUEUE_MAX)));
+  } catch {
+    /* private mode: the event is lost, never the battle */
+  }
+};
+
+const supabaseSink: Sink = {
+  hasSession: async () => {
+    const { supabase } = await import("@/integrations/supabase/client");
+    const { data } = await supabase.auth.getSession();
+    return !!data.session;
+  },
+  insert: async (rows) => {
+    const { supabase } = await import("@/integrations/supabase/client");
+    const db = supabase as unknown as { from: (t: string) => { insert: (r: unknown) => Promise<{ error: unknown }> } };
+    return db.from("analytics_events").insert(rows);
+  },
+};
+
+/**
+ * Sends `next` (if any) plus everything queued to `analytics_events`. Before a
+ * session exists (a new player's first minutes) events wait in localStorage,
+ * capped at 30, and go out with the first event after sign-in. Never creates a
+ * session itself, so analytics never makes accounts.
+ */
+export async function flushAnalytics(
+  next?: QueuedEvent,
+  storage: Store = window.localStorage,
+  sink: Sink = supabaseSink,
+): Promise<void> {
+  const q = readQueue(storage);
+  if (next) q.push(next);
+  if (q.length === 0) return;
+  if (!(await sink.hasSession())) {
+    writeQueue(storage, q);
+    return;
+  }
+  writeQueue(storage, []);
+  const { error } = await sink.insert(q.map((e) => ({ event: e.event, props: { ...e.props, at: e.at } })));
+  if (error) writeQueue(storage, [...readQueue(storage), ...q]);
 }
 
 const LAST_SEEN_KEY = "poke-trivia-last-seen-day";

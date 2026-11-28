@@ -202,6 +202,8 @@ export function bootstrapSocial(): Promise<string | null> {
         await syncProfile();
         await reconcileTrainerName();
         void collectPendingReferralRewards();
+        // Funnel events from before sign-in were queued; send them now.
+        void import("@/lib/analytics").then((a) => a.flushAnalytics()).catch(() => {});
         void pushLocalSaveToServer();
       }
       return uid;

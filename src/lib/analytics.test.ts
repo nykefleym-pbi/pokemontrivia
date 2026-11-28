@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { readReturnGap } from "@/lib/analytics";
+import { describe, it, expect, vi } from "vitest";
+import { flushAnalytics, readReturnGap, type QueuedEvent } from "@/lib/analytics";
 
 function memoryStorage(seed?: string) {
   const map = new Map<string, string>();
@@ -62,5 +62,30 @@ describe("readReturnGap", () => {
       },
     };
     expect(readReturnGap(at("2026-07-26"), readOnly)).toBe(2);
+  });
+});
+
+describe("flushAnalytics (analytics_events table)", () => {
+  const ev = (event: QueuedEvent["event"]): QueuedEvent => ({ event, props: {}, at: "2026-11-28T09:00:00Z" });
+  const store = () => {
+    const m = new Map<string, string>();
+    return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v), m };
+  };
+
+  it("queues events while there is no session, then sends them all with the first one after sign-in", async () => {
+    const s = store();
+    const insert = vi.fn().mockResolvedValue({ error: null });
+    await flushAnalytics(ev("onboard_play_first"), s, { hasSession: async () => false, insert });
+    expect(insert).not.toHaveBeenCalled();
+    await flushAnalytics(ev("first_battle_complete"), s, { hasSession: async () => true, insert });
+    expect(insert).toHaveBeenCalledTimes(1);
+    expect(insert.mock.calls[0][0].map((r: { event: string }) => r.event)).toEqual(["onboard_play_first", "first_battle_complete"]);
+    expect(JSON.parse(s.m.get("poke-trivia-analytics-queue") ?? "[]")).toEqual([]);
+  });
+
+  it("keeps the events when the insert fails", async () => {
+    const s = store();
+    await flushAnalytics(ev("daily_claimed"), s, { hasSession: async () => true, insert: async () => ({ error: new Error("offline") }) });
+    expect(JSON.parse(s.m.get("poke-trivia-analytics-queue") ?? "[]")).toHaveLength(1);
   });
 });
