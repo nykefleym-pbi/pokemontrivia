@@ -12,18 +12,34 @@ import { ELITE_FOUR, type EliteMember } from "@/lib/elite-four";
 import { useGameStore } from "@/lib/store";
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+/** Type colours light enough to need dark text on the button. */
+const LIGHT_TYPES = new Set(["electric", "ice", "normal", "ground", "fairy", "bug", "steel", "flying"]);
 
 /**
  * Figma 11.2 "The challenge: who she is and what you win". Opens from her stop
  * on the road (11.1); Back returns to Home, which stays open around her.
  */
-export function EliteChallenge({ elite, onStart, onBack, loading }: { elite: EliteMember; onStart: () => void; onBack: () => void; loading: boolean }) {
-  // A full screen: the tab bar steps aside, as for every battle screen.
+export function EliteChallenge({
+  elite,
+  onStart,
+  onBack,
+  loading,
+  takeover = false,
+}: {
+  elite: EliteMember;
+  onStart: () => void;
+  onBack?: () => void;
+  loading: boolean;
+  /** In place of Home until beaten: no Back, and the tab bar stays. */
+  takeover?: boolean;
+}) {
+  // Opened on its own it is a full screen: the tab bar steps aside, as for every battle screen.
   const setBattleScreenActive = useGameStore((s) => s.setBattleScreenActive);
   useEffect(() => {
+    if (takeover) return;
     setBattleScreenActive(true);
     return () => setBattleScreenActive(false);
-  }, [setBattleScreenActive]);
+  }, [setBattleScreenActive, takeover]);
 
   const four = ELITE_FOUR.filter((m) => m.region === elite.region);
   const nth = four.findIndex((m) => m.id === elite.id) + 1;
@@ -31,11 +47,13 @@ export function EliteChallenge({ elite, onStart, onBack, loading }: { elite: Eli
   const items = ["candy", "luckyegg"].map((id) => ITEMS.find((x) => x.id === id)).filter((x): x is NonNullable<typeof x> => !!x);
 
   return (
-    <div className="na-bg-night flex h-full w-full flex-col overflow-y-auto pb-[calc(env(safe-area-inset-bottom)+16px)] pt-[env(safe-area-inset-top)]">
+    <div className={`na-bg-night flex h-full w-full flex-col overflow-y-auto pt-[env(safe-area-inset-top)] ${takeover ? "pb-nav" : "pb-[calc(env(safe-area-inset-bottom)+16px)]"}`}>
       <div className="flex h-[52px] shrink-0 items-center gap-3 px-4">
-        <button type="button" aria-label="Back" onClick={onBack} className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-white/10 text-foreground">
-          <NaIcon name="arrow-left" size={20} />
-        </button>
+        {onBack && !takeover && (
+          <button type="button" aria-label="Back" onClick={onBack} className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-white/10 text-foreground">
+            <NaIcon name="arrow-left" size={20} />
+          </button>
+        )}
         <h1 className="na-display-s flex-1 text-foreground">Elite Four</h1>
       </div>
       <div className="flex flex-1 flex-col items-center gap-3 px-4 pt-1">
@@ -82,7 +100,17 @@ export function EliteChallenge({ elite, onStart, onBack, loading }: { elite: Eli
           </span>
         </div>
         <div className="min-h-4 flex-1" />
-        <NaButton kind="gold" block disabled={loading} onClick={onStart}>
+        {/* Paul 2026-11-28: the button wears her Pokémon's main type colour. */}
+        <NaButton
+          block
+          disabled={loading}
+          onClick={onStart}
+          style={{
+            background: `var(--type-${elite.type.toLowerCase()})`,
+            boxShadow: `0 4px 0 color-mix(in srgb, var(--type-${elite.type.toLowerCase()}) 55%, black)`,
+            color: LIGHT_TYPES.has(elite.type.toLowerCase()) ? "#0B1030" : "#FFFFFF",
+          }}
+        >
           Challenge {elite.name}
         </NaButton>
         <p className="na-caption text-center text-text-secondary">Tough {type}-type questions await! Win to unlock the next route!</p>

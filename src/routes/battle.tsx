@@ -166,12 +166,10 @@ function BattlePage() {
   const recordWeeklyLeagueResult = useGameStore((s) => s.recordWeeklyLeagueResult);
 
   const pendingElite = nextPendingElite(peakLevel, defeatedElites);
-  // 11.1: a pending challenger stands on the road; her stop opens the 11.2 challenge.
-  const [eliteOpen, setEliteOpen] = useState(false);
   const [whatsNewOpen, setWhatsNewOpen] = useState(false);
   // 14.3: the load that failed, to run again from the No connection sheet.
   const [offlineRetry, setOfflineRetry] = useState<null | (() => void)>(null);
-  const eliteTakeover = !!pendingElite && eliteOpen && phase !== "elite";
+  const eliteTakeover = !!pendingElite && phase !== "elite";
 
   // Home-screen Mega Raid card state (the raid entry moved here from the Battle
   // Arena tab). `null` while stats are still loading, `"none"` once we've
@@ -393,8 +391,7 @@ function BattlePage() {
       markQuestionsSeen(data.questions.map((q) => q.question));
       setEliteOpponent(pendingElite);
       setQuestions(data.questions);
-      setEliteOpen(false); // the battle ends back on Home's road
-      setPhase("elite");
+        setPhase("elite");
     } catch (e) {
       if (e instanceof ApiError && e.status === 429) {
         toast.error("Lots of trainers are battling right now. Try again in a moment!");
@@ -1329,8 +1326,10 @@ function BattlePage() {
         <BattleScreen key={battleKey} questions={questions} onExit={exitBattle} mode="daily" />
       ) : phase === "home" && pendingLevelUp ? (
         <LevelUpScreen rewards={pendingLevelUp} onContinue={clearPendingLevelUp} />
-      ) : pendingElite && eliteOpen ? (
-        <EliteChallenge elite={pendingElite} onStart={startElite} onBack={() => setEliteOpen(false)} loading={phase === "loading"} />
+      ) : pendingElite ? (
+        // Paul 2026-11-28: a pending Elite Four member blocks Home outright (the old
+        // takeover), never a stop on the route. The tab bar stays for Shop and Pokédex.
+        <EliteChallenge elite={pendingElite} onStart={startElite} loading={phase === "loading"} takeover />
       ) : phase === "loading" && prepping ? (
         <ModePrep label={prepping} />
       ) : (
@@ -1342,8 +1341,6 @@ function BattlePage() {
           mega={megaHomeState}
           loading={phase === "loading"}
           dailyDone={dailyDone}
-          elite={pendingElite}
-          onElite={() => setEliteOpen(true)}
         />
       )}
       {/* Figma 14.6 "What's new, as one of the pop-ups": once per release. */}
