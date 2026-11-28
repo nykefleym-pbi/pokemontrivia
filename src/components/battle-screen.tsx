@@ -77,7 +77,7 @@ import { ShareCardDialog } from "@/components/share-card-dialog";
 import type { ShareData } from "@/components/share-card-builder";
 import { trainerSpriteUrl, trainerArtFor } from "@/lib/game-data";
 import type { MissedAnswer, Trivia } from "@/lib/trivia-core";
-import { shuffleAllTriviaOptions } from "@/lib/trivia-core";
+import { shuffleTriviaOptionsWithOrder } from "@/lib/trivia-core";
 import { useForfeitGuard } from "@/lib/use-forfeit-guard";
 export type { Trivia };
 import { DailyScreen } from "@/components/daily-screen";
@@ -113,9 +113,12 @@ export function BattleScreen({
 }: Props) {
   // Randomize option order once per battle so repeat questions can't be
   // answered from memorized answer positions.
-  const questions = useMemo(() => shuffleAllTriviaOptions(rawQuestions), [rawQuestions]);
+  // The permutation is kept: Daily is graded on the server in the ORIGINAL
+  // option order, so its picks are mapped back before they are submitted.
+  const shuffled = useMemo(() => rawQuestions.map((q) => shuffleTriviaOptionsWithOrder(q)), [rawQuestions]);
+  const questions = useMemo(() => shuffled.map((s) => s.q), [shuffled]);
   if (mode === "daily") {
-    return <DailyScreen questions={questions} onExit={onExit} />;
+    return <DailyScreen questions={questions} optionOrders={shuffled.map((s) => s.order)} onExit={onExit} />;
   }
   if (mode === "elite" && eliteMember) {
     return (

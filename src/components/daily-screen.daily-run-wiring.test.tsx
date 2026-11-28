@@ -146,6 +146,33 @@ describe("DailyScreen daily-run wiring", () => {
     expect(submitDailyRun).toHaveBeenCalledWith([0, 1, null], expect.any(Number));
   });
 
+  it("submits each pick as its ORIGINAL option index when the options were shuffled", async () => {
+    // The server grades daily_questions in their stored order; the phone shows
+    // them shuffled. order[shown] === original, so shown 0 → 2 and shown 1 → 3.
+    submitDailyRun.mockResolvedValue({ correct: 0, total: 2, reward: null, save: null });
+    seedStore();
+    render(
+      <DailyScreen
+        questions={makeQuestions(2)}
+        optionOrders={[
+          [2, 0, 1, 3],
+          [1, 3, 0, 2],
+        ]}
+        onExit={() => {}}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Start" }));
+    for (const shown of [0, 1]) {
+      await act(async () => {
+        fireEvent.click(screen.getByTestId(`option-${shown}`));
+      });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1600);
+      });
+    }
+    expect(submitDailyRun).toHaveBeenCalledWith([2, 3], expect.any(Number));
+  });
+
   it("applies the server-returned reward, not a locally recomputed one", async () => {
     // If the fallback path fired instead, dailyReward({correct:10,total:10,level:1})
     // would compute xp=100 (perfect-run 2x) — assert the DIVERGENT mocked

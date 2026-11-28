@@ -60,7 +60,16 @@ const toMarks = (pattern: DailyMark[], total: number, now: number | null): Daily
     i < pattern.length ? (pattern[i] === "correct" ? "right" : pattern[i]) : i === now ? "now" : "empty",
   );
 
-export function DailyScreen({ questions, onExit }: { questions: Trivia[]; onExit: () => void }) {
+export function DailyScreen({
+  questions,
+  optionOrders,
+  onExit,
+}: {
+  questions: Trivia[];
+  /** Per question, `order[shownIndex] === originalIndex` (shuffleTriviaOptionsWithOrder). Absent = not shuffled. */
+  optionOrders?: number[][];
+  onExit: () => void;
+}) {
   const recordDaily = useGameStore((s) => s.recordDaily);
   const recordAnswer = useGameStore((s) => s.recordAnswer);
   const [idx, setIdx] = useState(0);
@@ -130,7 +139,8 @@ export function DailyScreen({ questions, onExit }: { questions: Trivia[]; onExit
     const sym: DailyMark = picked === -1 ? "timeout" : correct ? "correct" : "wrong";
     const nextPattern: DailyMark[] = [...pattern, sym];
     setPattern(nextPattern);
-    picksRef.current = [...picksRef.current, picked === -1 ? null : picked];
+    // The server grades in the ORIGINAL option order: send the original index of the shown answer.
+    picksRef.current = [...picksRef.current, picked === -1 ? null : (optionOrders?.[idx]?.[picked] ?? picked)];
     if (correct) {
       setCorrectCount((c) => c + 1);
       setHit((h) => h + 1);
