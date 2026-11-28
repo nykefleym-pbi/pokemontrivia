@@ -8,5 +8,7 @@ export interface InviteRewardDetail {
   /** Friends who joined with your code (the inviter's side). */
   joined?: number;
   rewards: ReferralReward[];
+  /** Runs on Let's go (a new player's invite link carries on into the first session). */
+  then?: () => void;
 }
 export const showInviteReward = (d: InviteRewardDetail) => window.dispatchEvent(new CustomEvent(INVITE_REWARD_EVENT, { detail: d }));

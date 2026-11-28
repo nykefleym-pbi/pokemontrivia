@@ -66,7 +66,13 @@ export function InviteRewardScreen() {
         })}
       </div>
       <div className="flex-1" />
-      <NaButton block onClick={() => setD(null)}>
+      <NaButton
+        block
+        onClick={() => {
+          setD(null);
+          d.then?.();
+        }}
+      >
         Let's go!
       </NaButton>
     </div>
