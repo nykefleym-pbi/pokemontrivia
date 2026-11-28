@@ -20,6 +20,8 @@ const isAutoItem = (id: ItemId) => AUTO_ITEM_IDS.has(id);
 import { ITEM_CATEGORY_ICON } from "@/lib/app-icons";
 import { BATTLE_PLATFORM } from "@/lib/battle-field";
 import { NaGlossIcon } from "@/components/na/gloss-icon";
+import { NaIcon } from "@/components/na/icon";
+import { useGameStore } from "@/lib/store";
 
 /** Owner-supplied category art, used when an item's own sprite fails to load:
  * every berry shares one image, the three potions another. Items outside these
@@ -1150,6 +1152,9 @@ export function ItemBagSheet({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bagOpen]);
   const pickedItem = bagPick ? ITEMS.find((i) => i.id === bagPick) : undefined;
+  const starredItem = useGameStore((s) => s.starredItem);
+  const setStarredItem = useGameStore((s) => s.setStarredItem);
+  const starred = starredItem && (inventory[starredItem] ?? 0) > 0 ? ITEMS.find((i) => i.id === starredItem) : undefined;
   const isManuallyDisabled = (it: ItemDef, isAuto: boolean) => {
     const used = usedThisBattle[it.id] ?? false;
     return (
@@ -1163,7 +1168,21 @@ export function ItemBagSheet({
   };
 
   return (
-    <div className={variant === "icon" ? "flex" : "mt-3 flex items-center justify-center gap-3"}>
+    <div className={variant === "icon" ? "flex items-center gap-1.5" : "mt-3 flex items-center justify-center gap-3"}>
+      {/* The starred item (17.3): one tap uses it, without opening the bag. */}
+      {variant === "icon" && starred && (
+        <button
+          type="button"
+          aria-label={`Use ${starred.name}`}
+          data-testid="starred-item"
+          disabled={isManuallyDisabled(starred, false)}
+          onClick={() => onUseItem(starred.id)}
+          className="flex h-[30px] items-center gap-1 rounded-full bg-reward-gold/20 pl-1 pr-2 press disabled:opacity-40"
+        >
+          <ItemIcon item={starred} className="h-6 w-6" />
+          <span className="na-label text-foreground">×{inventory[starred.id] ?? 0}</span>
+        </button>
+      )}
       {variant === "icon" ? (
         <button
           type="button"
@@ -1225,21 +1244,34 @@ export function ItemBagSheet({
             const used = usedThisBattle[it.id] ?? false;
             const on = bagPick === it.id;
             return (
-              <button
-                key={it.id}
-                type="button"
-                data-testid={`bag-item-${it.id}`}
-                disabled={isManuallyDisabled(it, auto)}
-                onClick={() => setBagPick(it.id)}
-                className={`flex items-center gap-2.5 rounded-2xl border p-2.5 text-left disabled:opacity-50 ${on ? "border-2 border-brand-red bg-white/[0.14]" : "border-white/[0.12] bg-white/[0.08]"}`}
-              >
-                <ItemIcon item={it} className="h-10 w-10 shrink-0" />
-                <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="na-body-strong text-foreground">{it.name}</span>
-                  <span className="na-caption text-text-secondary">{auto ? "Works on its own when needed" : used ? "Used this battle" : (BAG_SHORT_DESC[it.id] ?? it.desc)}</span>
-                </span>
-                <span className="na-number-m text-foreground">×{inventory[it.id] ?? 0}</span>
-              </button>
+              <div key={it.id} className={`flex items-center gap-1 rounded-2xl border pr-2 ${on ? "border-2 border-brand-red bg-white/[0.14]" : "border-white/[0.12] bg-white/[0.08]"}`}>
+                <button
+                  type="button"
+                  data-testid={`bag-item-${it.id}`}
+                  disabled={isManuallyDisabled(it, auto)}
+                  onClick={() => setBagPick(it.id)}
+                  className="flex min-w-0 flex-1 items-center gap-2.5 p-2.5 text-left disabled:opacity-50"
+                >
+                  <ItemIcon item={it} className="h-10 w-10 shrink-0" />
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="na-body-strong text-foreground">{it.name}</span>
+                    <span className="na-caption text-text-secondary">{auto ? "Works on its own when needed" : used ? "Used this battle" : (BAG_SHORT_DESC[it.id] ?? it.desc)}</span>
+                  </span>
+                  <span className="na-number-m text-foreground">×{inventory[it.id] ?? 0}</span>
+                </button>
+                {!auto && (
+                  // The star puts this item on a chip beside the bag button: one tap uses it.
+                  <button
+                    type="button"
+                    aria-label={starredItem === it.id ? `Unstar ${it.name}` : `Star ${it.name}`}
+                    aria-pressed={starredItem === it.id}
+                    onClick={() => setStarredItem(starredItem === it.id ? null : it.id)}
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center ${starredItem === it.id ? "text-reward-gold" : "text-text-muted"}`}
+                  >
+                    <NaIcon name={starredItem === it.id ? "star-filled" : "star"} size={22} />
+                  </button>
+                )}
+              </div>
             );
           })
         )}

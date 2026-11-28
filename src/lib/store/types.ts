@@ -258,6 +258,8 @@ export interface GameState {
   leftoversUsedWeek: number;
   metronomeUsedWeek: number;
   autoItems: Partial<Record<ItemId, boolean>>;
+  /** 17.3: the bag item shown as a one-tap chip beside the battle bag button. */
+  starredItem: ItemId | null;
   whosThatHourKey: number;
   whosThatActiveRound: WhosThatRound | null;
   whosThatRoundHourKey: number | null;
@@ -402,6 +404,7 @@ export interface GameState {
   tryAutoLeftovers: () => boolean;
   tryAutoMetronome: () => boolean;
   toggleAutoItem: (id: ItemId) => void;
+  setStarredItem: (id: ItemId | null) => void;
   /** Adds items. A NEGATIVE qty spends them instead (Mega Raid consumes through
    *  this action), and only a positive delta is subject to bag capacity. */
   grantItem: (id: ItemId, qty?: number) => void;

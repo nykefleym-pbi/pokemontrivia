@@ -150,6 +150,7 @@ export const createItemsSlice: StoreSlice<
     | "purchaseBagUpgrade"
     | "itemCooldowns"
     | "autoItems"
+    | "starredItem"
     | "luckyEggExpiresAt"
     | "bigNuggetExpiresAt"
     | "luckyEggUsedWeek"
@@ -167,6 +168,7 @@ export const createItemsSlice: StoreSlice<
     | "markFeaturedDealPurchased"
     | "useItem"
     | "toggleAutoItem"
+    | "setStarredItem"
     | "tryAutoFocusBand"
     | "tryAutoQuickClaw"
     | "tryAutoAssaultVest"
@@ -187,6 +189,7 @@ export const createItemsSlice: StoreSlice<
   purchasedBundleIds: [],
   itemCooldowns: {},
   autoItems: {},
+  starredItem: null,
   luckyEggExpiresAt: 0,
   bigNuggetExpiresAt: 0,
   luckyEggUsedWeek: 0,
@@ -346,6 +349,7 @@ export const createItemsSlice: StoreSlice<
     return true;
   },
 
+  setStarredItem: (id) => set({ starredItem: id }),
   toggleAutoItem: (id) => {
     const s = get();
     const enabled = s.autoItems[id] !== false;
